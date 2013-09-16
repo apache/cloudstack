@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
@@ -62,6 +63,10 @@ public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
             description = "the availability zone ID")
     private Long zoneId;
+    
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class,
+            description = "list by network id the rule belongs to")
+    private Long networkId;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -85,6 +90,10 @@ public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
 
     public Long getZoneId() {
         return zoneId;
+    }
+    
+    public Long getNetworkId() {
+        return networkId;
     }
 
     // ///////////////////////////////////////////////////

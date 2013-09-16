@@ -198,7 +198,7 @@ if [ ${tmpltname%.vhd} != ${tmpltname} ]
 then
   if  which  vhd-util &>/dev/null
   then 
-    vhd-util check -n ${tmpltimg2} > /dev/null
+    vhd-util read -p -n ${tmpltimg2} > /dev/null
     rollback_if_needed $tmpltfs $? "vhd check of $tmpltimg2 failed\n"
     vhd-util set -n ${tmpltimg2} -f "hidden" -v "0" > /dev/null
     rollback_if_needed $tmpltfs $? "vhd remove $tmpltimg2 hidden failed\n"

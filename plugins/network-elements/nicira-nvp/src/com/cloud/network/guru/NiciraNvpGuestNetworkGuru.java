@@ -212,7 +212,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public void reserve(NicProfile nic, Network network,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
@@ -222,7 +222,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public boolean release(NicProfile nic,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             String reservationId) {
         // TODO Auto-generated method stub
         return super.release(nic, vm, reservationId);
@@ -245,7 +245,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
         NiciraNvpDeviceVO niciraNvpDevice = devices.get(0);
         HostVO niciraNvpHost = _hostDao.findById(niciraNvpDevice.getHostId());
         
-        DeleteLogicalSwitchCommand cmd = new DeleteLogicalSwitchCommand(networkObject.getBroadcastUri().getSchemeSpecificPart());
+        DeleteLogicalSwitchCommand cmd = new DeleteLogicalSwitchCommand(BroadcastDomainType.getValue(networkObject.getBroadcastUri()));
         DeleteLogicalSwitchAnswer answer = (DeleteLogicalSwitchAnswer) _agentMgr.easySend(niciraNvpHost.getId(), cmd);
         
         if (answer == null || !answer.getResult()) {
@@ -256,9 +256,8 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public boolean trash(Network network, NetworkOffering offering,
-            Account owner) {
-        return super.trash(network, offering, owner);
+    public boolean trash(Network network, NetworkOffering offering) {
+        return super.trash(network, offering);
     }
     
     

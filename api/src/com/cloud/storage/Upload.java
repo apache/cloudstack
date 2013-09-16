@@ -35,7 +35,7 @@ public interface Upload extends InternalIdentity, Identity {
         FTP_UPLOAD, HTTP_DOWNLOAD
     }
 
-    long getHostId();
+    long getDataStoreId();
 
     Date getCreated();
 

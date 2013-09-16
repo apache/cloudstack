@@ -38,6 +38,11 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
         Disabled,
         Enabled
     }
+    
+    public enum Detail {
+        InternalLbProvider,
+        PublicLbProvider
+    }
 
     public final static String SystemPublicNetwork = "System-Public-Network";
     public final static String SystemControlNetwork = "System-Control-Network";
@@ -46,6 +51,7 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     public final static String SystemPrivateGatewayNetworkOffering = "System-Private-Gateway-Network-Offering";
 
     public final static String DefaultSharedNetworkOfferingWithSGService = "DefaultSharedNetworkOfferingWithSGService";
+    public final static String QuickCloudNoServices = "QuickCloudNoServices";
     public final static String DefaultIsolatedNetworkOfferingWithSourceNatService = "DefaultIsolatedNetworkOfferingWithSourceNatService";
     public final static String OvsIsolatedNetworkOfferingWithSourceNatService = "OvsIsolatedNetworkOfferingWithSourceNatService";
     public final static String DefaultSharedNetworkOffering = "DefaultSharedNetworkOffering";
@@ -53,6 +59,8 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     public final static String DefaultSharedEIPandELBNetworkOffering = "DefaultSharedNetscalerEIPandELBNetworkOffering";
     public final static String DefaultIsolatedNetworkOfferingForVpcNetworks = "DefaultIsolatedNetworkOfferingForVpcNetworks";
     public final static String DefaultIsolatedNetworkOfferingForVpcNetworksNoLB = "DefaultIsolatedNetworkOfferingForVpcNetworksNoLB";
+    public final static String DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB = "DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB";
+
 
     /**
      * @return name for the network offering.
@@ -106,6 +114,8 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
 
     boolean getElasticIp();
 
+    boolean getAssociatePublicIP();
+
     boolean getElasticLb();
 
     boolean getSpecifyIpRanges();
@@ -113,5 +123,11 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     boolean isInline();
 
     boolean getIsPersistent();
+    
+    boolean getInternalLb();
 
+    boolean getPublicLb();
+    boolean getEgressDefaultPolicy();
+
+    Integer getConcurrentConnections();
 }

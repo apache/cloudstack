@@ -25,13 +25,14 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
 import com.cloud.network.VpnUser;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "addVpnUser", description="Adds vpn users", responseObject=VpnUsersResponse.class)
 public class AddVpnUserCmd extends BaseAsyncCreateCmd {
@@ -97,7 +98,7 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
 
         return accountId;

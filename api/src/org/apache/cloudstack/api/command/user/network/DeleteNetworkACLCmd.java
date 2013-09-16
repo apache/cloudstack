@@ -16,23 +16,21 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.FirewallRuleResponse;
+import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.user.UserContext;
+import com.cloud.user.Account;
 
 @APICommand(name = "deleteNetworkACL", description="Deletes a Network ACL", responseObject=SuccessResponse.class)
 public class DeleteNetworkACLCmd extends BaseAsyncCmd {
@@ -43,14 +41,10 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = FirewallRuleResponse.class,
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = NetworkACLItemResponse.class,
             required=true, description="the ID of the network ACL")
     private Long id;
 
-    // unexposed parameter needed for events logging
-    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.UUID, entityType = AccountResponse.class,
-            expose=false)
-    private Long ownerId;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -69,7 +63,7 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_FIREWALL_CLOSE;
+        return EventTypes.EVENT_NETWORK_ACL_ITEM_DELETE;
     }
 
     @Override
@@ -79,44 +73,22 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        if (ownerId == null) {
-            FirewallRule rule = _networkACLService.getNetworkACL(id);
-            if (rule == null) {
-                throw new InvalidParameterValueException("Unable to find network ACL by id=" + id);
-            } else {
-                ownerId = rule.getAccountId();
-            }
-        }
-        return ownerId;
+        Account caller = CallContext.current().getCallingAccount();
+        return caller.getAccountId();
     }
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        UserContext.current().setEventDetails("Network ACL Id: " + id);
-        boolean result = _networkACLService.revokeNetworkACL(id, true);
+        CallContext.current().setEventDetails("Network ACL Item Id: " + id);
+        boolean result = _networkACLService.revokeNetworkACLItem(id);
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete network ACL");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete network ACL Item");
         }
     }
 
-
-    @Override
-    public String getSyncObjType() {
-        return BaseAsyncCmd.networkSyncObject;
-    }
-
-    @Override
-    public Long getSyncObjId() {
-        return _firewallService.getFirewallRule(id).getNetworkId();
-    }
-
-    @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.FirewallRule;
-    }
 }
 

@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ http://www.apache.org/licenses/LICENSE-2.0.
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<!-- Please keep the doctype and license declarations above intact in each doc file.  -->
+<!-- Make your modifications below this line.  -->
+
+<section id="create-linux-template">
+    <title>Creating a Linux Template</title>
+    <para>Linux templates should be prepared using this documentation in order to prepare your linux VMs for template deployment. For ease of documentation, the VM which you are configuring the template on will be referred to as "Template Master". This guide currently covers legacy setups which do not take advantage of UserData and cloud-init and assumes openssh-server is installed during installation.
+    </para>
+    
+    <para>An overview of the procedure is as follow:</para>
+    <orderedlist>
+        <listitem><para>Upload your Linux ISO.</para> <para>For more information, see <xref linkend="add-iso"/>.</para></listitem>
+        <listitem><para>Create a VM Instance with this ISO.</para><para> For more information, see <xref linkend="creating-vms"/>.</para></listitem>
+        <listitem><para>Prepare the Linux VM</para></listitem>		
+        <listitem><para>Create a template from the VM.</para><para> For more information, see <xref linkend="create-template-from-existing-vm"/>.</para></listitem>
+    </orderedlist>
+    
+    <xi:include href="prepare-linux-template.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+	</section>    
+

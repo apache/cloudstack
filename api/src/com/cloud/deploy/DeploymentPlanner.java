@@ -29,12 +29,12 @@ import com.cloud.host.Host;
 import com.cloud.org.Cluster;
 import com.cloud.storage.StoragePool;
 import com.cloud.utils.component.Adapter;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
  */
 public interface DeploymentPlanner extends Adapter {
+
     /**
      * plan is called to determine where a virtual machine should be running.
      *
@@ -46,7 +46,8 @@ public interface DeploymentPlanner extends Adapter {
      *            avoid these data centers, pods, clusters, or hosts.
      * @return DeployDestination for that virtual machine.
      */
-    DeployDestination plan(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException;
+    @Deprecated
+    DeployDestination plan(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException;
 
     /**
      * check() is called right before the virtual machine starts to make sure
@@ -63,7 +64,7 @@ public interface DeploymentPlanner extends Adapter {
      * @return true if it's okay to start; false if not. If false, the exclude list will include what should be
      *         excluded.
      */
-    boolean check(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, DeployDestination dest, ExcludeList exclude);
+    boolean check(VirtualMachineProfile vm, DeploymentPlan plan, DeployDestination dest, ExcludeList exclude);
 
     /**
      * canHandle is called before plan to determine if the plan can do the allocation. Planers should be exclusive so
@@ -78,7 +79,7 @@ public interface DeploymentPlanner extends Adapter {
      *            avoid these data centers, pods, clusters, or hosts.
      * @return true if it's okay to allocate; false or not
      */
-    boolean canHandle(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid);
+    boolean canHandle(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid);
 
     public enum AllocationAlgorithm {
         random,
@@ -86,6 +87,10 @@ public interface DeploymentPlanner extends Adapter {
         userdispersing,
         userconcentratedpod_random,
         userconcentratedpod_firstfit;
+    }
+
+    public enum PlannerResourceUsage {
+        Shared, Dedicated;
     }
 
     public static class ExcludeList {
@@ -99,10 +104,22 @@ public interface DeploymentPlanner extends Adapter {
         }
 
         public ExcludeList(Set<Long> _dcIds, Set<Long> _podIds, Set<Long> _clusterIds, Set<Long> _hostIds, Set<Long> _poolIds) {
-            this._dcIds = _dcIds;
-            this._podIds = _podIds;
-            this._clusterIds = _clusterIds;
-            this._poolIds = _poolIds;
+            if (_dcIds != null) {
+                this._dcIds = new HashSet<Long>(_dcIds);
+            }
+            if (_podIds != null) {
+                this._podIds = new HashSet<Long>(_podIds);
+            }
+            if (_clusterIds != null) {
+                this._clusterIds = new HashSet<Long>(_clusterIds);
+            }
+
+            if (_hostIds != null) {
+                this._hostIds = new HashSet<Long>(_hostIds);
+            }
+            if (_poolIds != null) {
+                this._poolIds = new HashSet<Long>(_poolIds);
+            }
         }
 
         public boolean add(InsufficientCapacityException e) {
@@ -174,6 +191,13 @@ public interface DeploymentPlanner extends Adapter {
             _podIds.add(podId);
         }
 
+        public void addPodList(Collection<Long> podList) {
+            if (_podIds == null) {
+                _podIds = new HashSet<Long>();
+            }
+            _podIds.addAll(podList);
+        }
+
         public void addCluster(long clusterId) {
             if (_clusterIds == null) {
                 _clusterIds = new HashSet<Long>();
@@ -193,6 +217,13 @@ public interface DeploymentPlanner extends Adapter {
                 _hostIds = new HashSet<Long>();
             }
             _hostIds.add(hostId);
+        }
+
+        public void addHostList(Collection<Long> hostList) {
+            if (_hostIds == null) {
+                _hostIds = new HashSet<Long>();
+            }
+            _hostIds.addAll(hostList);
         }
 
         public boolean shouldAvoid(Host host) {

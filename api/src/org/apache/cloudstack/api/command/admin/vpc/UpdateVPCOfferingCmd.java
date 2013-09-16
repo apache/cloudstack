@@ -38,7 +38,7 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = VpcOfferingResponse.class,
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = VpcOfferingResponse.class, required=true,
             description="the id of the VPC offering")
     private Long id;
 

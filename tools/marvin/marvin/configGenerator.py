@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,14 +20,16 @@ import os
 from optparse import OptionParser
 import jsonHelper
 
-class managementServer():
+
+class managementServer(object):
     def __init__(self):
         self.mgtSvrIp = None
         self.port = 8096
         self.apiKey = None
         self.securityKey = None
-        
-class dbServer():
+
+
+class dbServer(object):
     def __init__(self):
         self.dbSvr = None
         self.port = 3306
@@ -35,18 +37,21 @@ class dbServer():
         self.passwd = "cloud"
         self.db = "cloud"
 
-class configuration():
+
+class configuration(object):
     def __init__(self):
         self.name = None
         self.value = None
 
-class logger():
+
+class logger(object):
     def __init__(self):
         '''TestCase/TestClient'''
         self.name = None
         self.file = None
 
-class cloudstackConfiguration():
+
+class cloudstackConfiguration(object):
     def __init__(self):
         self.zones = []
         self.mgtSvr = []
@@ -54,7 +59,8 @@ class cloudstackConfiguration():
         self.globalConfig = []
         self.logger = []
 
-class zone():
+
+class zone(object):
     def __init__(self):
         self.dns1 = None
         self.internaldns1 = None
@@ -70,22 +76,27 @@ class zone():
         self.physical_networks = []
         self.pods = []
         self.secondaryStorages = []
-        
-class traffictype():
+        self.cacheStorages = []
+
+
+class traffictype(object):
     def __init__(self, typ, labeldict=None):
-        self.typ = typ #Guest/Management/Public
+        self.typ = typ  # Guest/Management/Public
         if labeldict:
             self.xen = labeldict['xen'] if 'xen' in labeldict.keys() else None
             self.kvm = labeldict['kvm'] if 'kvm' in labeldict.keys() else None
-            self.vmware = labeldict['vmware'] if 'vmware' in labeldict.keys() else None
-            self.simulator = labeldict['simulator'] if 'simulator' in labeldict.keys() else None
+            self.vmware = labeldict['vmware']\
+                if 'vmware' in labeldict.keys() else None
+            self.simulator = labeldict['simulator']\
+                if 'simulator' in labeldict.keys() else None
         #{
         #    'xen' : 'cloud-xen',
         #    'kvm' : 'cloud-kvm',
         #    'vmware' : 'cloud-vmware'
         #}
 
-class pod():
+
+class pod(object):
     def __init__(self):
         self.gateway = None
         self.name = None
@@ -94,10 +105,21 @@ class pod():
         self.endip = None
         self.zoneid = None
         self.clusters = []
+        self.vmwaredc = []
         '''Used in basic network mode'''
         self.guestIpRanges = []
 
-class cluster():
+
+class VmwareDc(object):
+    def __init__(self):
+        self.zoneid = None
+        self.name = None
+        self.vcenter = None
+        self.username = None
+        self.password = None
+
+
+class cluster(object):
     def __init__(self):
         self.clustername = None
         self.clustertype = None
@@ -109,8 +131,9 @@ class cluster():
         self.username = None
         self.hosts = []
         self.primaryStorages = []
-  
-class host():
+
+
+class host(object):
     def __init__(self):
         self.hypervisor = None
         self.password = None
@@ -125,20 +148,23 @@ class host():
         self.hostmac = None
         self.hosttags = None
         self.memory = None
-        
-class physical_network():
+
+
+class physical_network(object):
     def __init__(self):
         self.name = None
         self.tags = []
         self.traffictypes = []
         self.broadcastdomainrange = 'Zone'
         self.vlan = None
+        self.isolationmethods = []
         '''enable default virtual router provider'''
         vrouter = provider()
         vrouter.name = 'VirtualRouter'
         self.providers = [vrouter]
 
-class provider():
+
+class provider(object):
     def __init__(self, name=None):
         self.name = name
         self.state = None
@@ -147,7 +173,8 @@ class provider():
         self.servicelist = []
         self.devices = []
 
-class network():
+
+class network(object):
     def __init__(self):
         self.displaytext = None
         self.name = None
@@ -157,8 +184,9 @@ class network():
         self.networkdomain = None
         self.networkofferingid = None
         self.ipranges = []
-      
-class iprange():
+
+
+class iprange(object):
     def __init__(self):
         '''tagged/untagged'''
         self.gateway = None
@@ -170,16 +198,28 @@ class iprange():
         self.account = None
         self.domain = None
 
-class primaryStorage():
+
+class primaryStorage(object):
     def __init__(self):
         self.name = None
         self.url = None
 
-class secondaryStorage():
+
+class secondaryStorage(object):
     def __init__(self):
         self.url = None
+        self.provider = None
+        self.details = None
 
-class s3():
+
+class cacheStorage(object):
+    def __init__(self):
+        self.url = None
+        self.provider = None
+        self.details = None
+
+
+class s3(object):
     def __init__(self):
         self.accesskey = None
         self.secretkey = None
@@ -190,7 +230,8 @@ class s3():
         self.maxerrorrety = None
         self.usehttps = None
 
-class netscaler():
+
+class netscaler(object):
     def __init__(self, hostname=None, username='nsroot', password='nsroot'):
         self.hostname = hostname
         self.username = username
@@ -207,10 +248,11 @@ class netscaler():
 
     def __repr__(self):
         req = zip(self.__dict__.keys(), self.__dict__.values())
-        return self.hostname+"?" + "&".join(["=".join([r[0], r[1]]) \
-                                                     for r in req])
+        return self.hostname+"?" + "&".join(["=".join([r[0], r[1]])
+                                             for r in req])
 
-class srx():
+
+class srx(object):
     def __init__(self, hostname=None, username='root', password='admin'):
         self.hostname = hostname
         self.username = username
@@ -229,10 +271,11 @@ class srx():
 
     def __repr__(self):
         req = zip(self.__dict__.keys(), self.__dict__.values())
-        return self.hostname+"?" + "&".join(["=".join([r[0], r[1]]) \
-                                                     for r in req])
+        return self.hostname+"?" + "&".join(["=".join([r[0], r[1]])
+                                             for r in req])
 
-class bigip():
+
+class bigip(object):
     def __init__(self, hostname=None, username='root', password='default'):
         self.hostname = hostname
         self.username = username
@@ -249,147 +292,149 @@ class bigip():
 
     def __repr__(self):
         req = zip(self.__dict__.keys(), self.__dict__.values())
-        return self.hostname+"?" + "&".join(["=".join([r[0], r[1]]) \
-                                                     for r in req])
+        return self.hostname+"?" + "&".join(["=".join([r[0], r[1]])
+                                             for r in req])
+
 
 def getDeviceUrl(obj):
     req = zip(obj.__dict__.keys(), obj.__dict__.values())
     if obj.hostname:
-        return "http://" + obj.hostname+"?" + "&".join(["=".join([r[0], r[1]]) \
-                                                     for r in req])
+        return "http://" + obj.hostname+"?" + "&".join(["=".join([r[0],
+                                                                  r[1]])
+                                                        for r in req])
     else:
         return None
 
-  
-'''sample code to generate setup configuration file'''
+
 def describe_setup_in_basic_mode():
+    '''sample code to generate setup configuration file'''
     zs = cloudstackConfiguration()
-    
+
     for l in range(1):
         z = zone()
         z.dns1 = "8.8.8.8"
-        z.dns2 = "4.4.4.4"
+        z.dns2 = "8.8.4.4"
         z.internaldns1 = "192.168.110.254"
         z.internaldns2 = "192.168.110.253"
         z.name = "test"+str(l)
         z.networktype = 'Basic'
         z.securitygroupenabled = 'True'
-    
+
         #If security groups are reqd
         sgprovider = provider()
         sgprovider.broadcastdomainrange = 'Pod'
         sgprovider.name = 'SecurityGroupProvider'
-        
+
         pn = physical_network()
         pn.name = "test-network"
         pn.traffictypes = [traffictype("Guest"), traffictype("Management")]
         pn.providers.append(sgprovider)
-        
+
         z.physical_networks.append(pn)
-        
+
         '''create 10 pods'''
         for i in range(2):
             p = pod()
-            p.name = "test" +str(l) + str(i)
-            p.gateway = "192.168.%d.1"%i
+            p.name = "test" + str(l) + str(i)
+            p.gateway = "192.168.%d.1" % i
             p.netmask = "255.255.255.0"
-            p.startip = "192.168.%d.150"%i
-            p.endip = "192.168.%d.220"%i
-        
+            p.startip = "192.168.%d.150" % i
+            p.endip = "192.168.%d.220" % i
+
             '''add two pod guest ip ranges'''
             for j in range(2):
                 ip = iprange()
                 ip.gateway = p.gateway
                 ip.netmask = p.netmask
-                ip.startip = "192.168.%d.%d"%(i,j*20)
-                ip.endip = "192.168.%d.%d"%(i,j*20+10)
-            
+                ip.startip = "192.168.%d.%d" % (i, j*20)
+                ip.endip = "192.168.%d.%d" % (i, j*20+10)
+
                 p.guestIpRanges.append(ip)
-        
+
             '''add 10 clusters'''
             for j in range(2):
                 c = cluster()
                 c.clustername = "test"+str(l)+str(i) + str(j)
                 c.clustertype = "CloudManaged"
                 c.hypervisor = "Simulator"
-            
+
                 '''add 10 hosts'''
                 for k in range(2):
                     h = host()
                     h.username = "root"
                     h.password = "password"
                     memory = 8*1024*1024*1024
-                    localstorage=1*1024*1024*1024*1024
-                    #h.url = "http://sim/%d%d%d%d/cpucore=1&cpuspeed=8000&memory=%d&localstorage=%d"%(l,i,j,k,memory,localstorage)
-                    h.url = "http://sim/%d%d%d%d"%(l,i,j,k)
+                    localstorage = 1*1024*1024*1024*1024
+                    h.url = "http://sim/%d%d%d%d" % (l, i, j, k)
                     c.hosts.append(h)
-                
+
                 '''add 2 primary storages'''
                 for m in range(2):
                     primary = primaryStorage()
                     primary.name = "primary"+str(l) + str(i) + str(j) + str(m)
-                    #primary.url = "nfs://localhost/path%s/size=%d"%(str(l) + str(i) + str(j) + str(m), size)
-                    primary.url = "nfs://localhost/path%s"%(str(l) + str(i) + str(j) + str(m))
+                    primary.url = "nfs://localhost/path%s" % (str(l) + str(i) +
+                                                              str(j) + str(m))
                     c.primaryStorages.append(primary)
-        
+
                 p.clusters.append(c)
-            
+
             z.pods.append(p)
-            
+
         '''add two secondary'''
         for i in range(5):
             secondary = secondaryStorage()
             secondary.url = "nfs://localhost/path"+str(l) + str(i)
             z.secondaryStorages.append(secondary)
-        
+
         zs.zones.append(z)
-    
+
     '''Add one mgt server'''
     mgt = managementServer()
     mgt.mgtSvrIp = "localhost"
     zs.mgtSvr.append(mgt)
-    
+
     '''Add a database'''
     db = dbServer()
     db.dbSvr = "localhost"
-    
+
     zs.dbSvr = db
-    
+
     '''add global configuration'''
     global_settings = {'expunge.delay': '60',
                        'expunge.interval': '60',
                        'expunge.workers': '3',
                        }
-    for k,v in global_settings.iteritems():
+    for k, v in global_settings.iteritems():
         cfg = configuration()
         cfg.name = k
         cfg.value = v
         zs.globalConfig.append(cfg)
-    
+
     ''''add loggers'''
     testClientLogger = logger()
     testClientLogger.name = "TestClient"
     testClientLogger.file = "/tmp/testclient.log"
-    
+
     testCaseLogger = logger()
     testCaseLogger.name = "TestCase"
     testCaseLogger.file = "/tmp/testcase.log"
-    
+
     zs.logger.append(testClientLogger)
     zs.logger.append(testCaseLogger)
-    
+
     return zs
+
 
 def describe_setup_in_eip_mode():
     """
     Setting up an EIP/ELB enabled zone with netscaler provider
     """
     zs = cloudstackConfiguration()
-    
+
     for l in range(1):
         z = zone()
         z.dns1 = "8.8.8.8"
-        z.dns2 = "4.4.4.4"
+        z.dns2 = "8.8.4.4"
         z.internaldns1 = "192.168.110.254"
         z.internaldns2 = "192.168.110.253"
         z.name = "test"+str(l)
@@ -402,133 +447,138 @@ def describe_setup_in_eip_mode():
         ips.gateway = "10.147.49.1"
         ips.netmask = "255.255.255.0"
         z.ipranges.append(ips)
-        
+
         #If security groups are reqd
         sgprovider = provider()
         sgprovider.broadcastdomainrange = 'Pod'
         sgprovider.name = 'SecurityGroupProvider'
-        
+
         nsprovider = provider()
         nsprovider.name = 'Netscaler'
         ns = netscaler()
         ns.hostname = '10.147.40.100'
         nsprovider.devices.append(ns)
-        
+
         pn = physical_network()
         pn.name = "test-network"
-        pn.traffictypes = [traffictype("Guest", {"xen": "cloud-guest"}), traffictype("Management"), traffictype("Public", { "xen": "cloud-public"})]
+        pn.traffictypes = [traffictype("Guest",
+                                       {"xen": "cloud-guest"}),
+                           traffictype("Management"),
+                           traffictype("Public", {"xen": "cloud-public"})]
         pn.providers.extend([sgprovider, nsprovider])
         z.physical_networks.append(pn)
-        
+
         '''create 10 pods'''
         for i in range(2):
             p = pod()
-            p.name = "test" +str(l) + str(i)
-            p.gateway = "192.168.%d.1"%i
+            p.name = "test" + str(l) + str(i)
+            p.gateway = "192.168.%d.1" % i
             p.netmask = "255.255.255.0"
-            p.startip = "192.168.%d.150"%i
-            p.endip = "192.168.%d.220"%i
-        
+            p.startip = "192.168.%d.150" % i
+            p.endip = "192.168.%d.220" % i
+
             '''add two pod guest ip ranges'''
             for j in range(2):
                 ip = iprange()
                 ip.gateway = p.gateway
                 ip.netmask = p.netmask
-                ip.startip = "192.168.%d.%d"%(i,j*20)
-                ip.endip = "192.168.%d.%d"%(i,j*20+10)
-            
+                ip.startip = "192.168.%d.%d" % (i, j*20)
+                ip.endip = "192.168.%d.%d" % (i, j*20+10)
+
                 p.guestIpRanges.append(ip)
-        
+
             '''add 10 clusters'''
             for j in range(2):
                 c = cluster()
                 c.clustername = "test"+str(l)+str(i) + str(j)
                 c.clustertype = "CloudManaged"
                 c.hypervisor = "Simulator"
-            
+
                 '''add 10 hosts'''
                 for k in range(2):
                     h = host()
                     h.username = "root"
                     h.password = "password"
-                    #h.url = "http://Sim/%d%d%d%d/cpucore=1&cpuspeed=8000&memory=%d&localstorage=%d"%(l,i,j,k,memory,localstorage)
-                    h.url = "http://Sim/%d%d%d%d"%(l,i,j,k)
+                    h.url = "http://Sim/%d%d%d%d" % (l, i, j, k)
                     c.hosts.append(h)
-                
+
                 '''add 2 primary storages'''
                 for m in range(2):
                     primary = primaryStorage()
                     primary.name = "primary"+str(l) + str(i) + str(j) + str(m)
-                    #primary.url = "nfs://localhost/path%s/size=%d"%(str(l) + str(i) + str(j) + str(m), size)
-                    primary.url = "nfs://localhost/path%s"%(str(l) + str(i) + str(j) + str(m))
+                    primary.url = "nfs://localhost/path%s" % (str(l) + str(i)
+                                                              + str(j)
+                                                              + str(m))
                     c.primaryStorages.append(primary)
-        
+
                 p.clusters.append(c)
-            
+
             z.pods.append(p)
-            
+
         '''add two secondary'''
         for i in range(5):
             secondary = secondaryStorage()
             secondary.url = "nfs://localhost/path"+str(l) + str(i)
             z.secondaryStorages.append(secondary)
-        
+
         zs.zones.append(z)
-    
+
     '''Add one mgt server'''
     mgt = managementServer()
     mgt.mgtSvrIp = "localhost"
     zs.mgtSvr.append(mgt)
-    
+
     '''Add a database'''
     db = dbServer()
     db.dbSvr = "localhost"
-    
+
     zs.dbSvr = db
-    
+
     '''add global configuration'''
     global_settings = {'expunge.delay': '60',
                        'expunge.interval': '60',
                        'expunge.workers': '3',
                        }
-    for k,v in global_settings.iteritems():
+    for k, v in global_settings.iteritems():
         cfg = configuration()
         cfg.name = k
         cfg.value = v
         zs.globalConfig.append(cfg)
-    
+
     ''''add loggers'''
     testClientLogger = logger()
     testClientLogger.name = "TestClient"
     testClientLogger.file = "/tmp/testclient.log"
-    
+
     testCaseLogger = logger()
     testCaseLogger.name = "TestCase"
     testCaseLogger.file = "/tmp/testcase.log"
-    
+
     zs.logger.append(testClientLogger)
     zs.logger.append(testCaseLogger)
-    
+
     return zs
-    
-'''sample code to generate setup configuration file'''
+
+
 def describe_setup_in_advanced_mode():
+    '''sample code to generate setup configuration file'''
     zs = cloudstackConfiguration()
-    
+
     for l in range(1):
         z = zone()
         z.dns1 = "8.8.8.8"
-        z.dns2 = "4.4.4.4"
+        z.dns2 = "8.8.4.4"
         z.internaldns1 = "192.168.110.254"
         z.internaldns2 = "192.168.110.253"
         z.name = "test"+str(l)
         z.networktype = 'Advanced'
         z.guestcidraddress = "10.1.1.0/24"
         z.vlan = "100-2000"
-        
+
         pn = physical_network()
         pn.name = "test-network"
-        pn.traffictypes = [traffictype("Guest"), traffictype("Management"), traffictype("Public")]
+        pn.traffictypes = [traffictype("Guest"), traffictype("Management"),
+                           traffictype("Public")]
 
         vpcprovider = provider('VpcVirtualRouter')
 
@@ -543,52 +593,57 @@ def describe_setup_in_advanced_mode():
 
         pn.providers.extend([vpcprovider, nsprovider, srxprovider, f5provider])
         z.physical_networks.append(pn)
-    
+
         '''create 10 pods'''
         for i in range(2):
             p = pod()
-            p.name = "test" +str(l) + str(i)
-            p.gateway = "192.168.%d.1"%i
+            p.name = "test" + str(l) + str(i)
+            p.gateway = "192.168.%d.1" % i
             p.netmask = "255.255.255.0"
-            p.startip = "192.168.%d.200"%i
-            p.endip = "192.168.%d.220"%i
-        
+            p.startip = "192.168.%d.200" % i
+            p.endip = "192.168.%d.220" % i
+
             '''add 10 clusters'''
             for j in range(2):
                 c = cluster()
                 c.clustername = "test"+str(l)+str(i) + str(j)
                 c.clustertype = "CloudManaged"
                 c.hypervisor = "Simulator"
-            
+
                 '''add 10 hosts'''
                 for k in range(2):
                     h = host()
                     h.username = "root"
                     h.password = "password"
-                    memory = 8*1024*1024*1024
-                    localstorage=1*1024*1024*1024*1024
-                    #h.url = "http://sim/%d%d%d%d/cpucore=1&cpuspeed=8000&memory=%d&localstorage=%d"%(l,i,j,k,memory,localstorage)
-                    h.url = "http://sim/%d%d%d%d"%(l,i,j,k)
+                    memory = 8 * 1024 * 1024 * 1024
+                    localstorage = 1 * 1024 * 1024 * 1024 * 1024
+                    #h.url = "http://sim/%d%d%d%d/cpucore=1&cpuspeed=8000&\
+                    #    memory=%d&localstorage=%d"%(l, i, j, k, memory,
+                    #                                localstorage)
+                    h.url = "http://sim/%d%d%d%d" % (l, i, j, k)
                     c.hosts.append(h)
-                
+
                 '''add 2 primary storages'''
                 for m in range(2):
                     primary = primaryStorage()
                     primary.name = "primary"+str(l) + str(i) + str(j) + str(m)
-                    #primary.url = "nfs://localhost/path%s/size=%d"%(str(l) + str(i) + str(j) + str(m), size)
-                    primary.url = "nfs://localhost/path%s"%(str(l) + str(i) + str(j) + str(m))
+                    #primary.url = "nfs://localhost/path%s/size=%d" %
+                    #    (str(l) + str(i) + str(j) + str(m), size)
+                    primary.url = "nfs://localhost/path%s" % (str(l) + str(i)
+                                                              + str(j)
+                                                              + str(m))
                     c.primaryStorages.append(primary)
-        
+
                 p.clusters.append(c)
-            
+
             z.pods.append(p)
-            
+
         '''add two secondary'''
         for i in range(5):
             secondary = secondaryStorage()
             secondary.url = "nfs://localhost/path"+str(l) + str(i)
             z.secondaryStorages.append(secondary)
-        
+
         '''add default public network'''
         ips = iprange()
         ips.vlan = "26"
@@ -597,45 +652,170 @@ def describe_setup_in_advanced_mode():
         ips.gateway = "172.16.26.1"
         ips.netmask = "255.255.255.0"
         z.ipranges.append(ips)
-        
-        
+
         zs.zones.append(z)
-    
+
     '''Add one mgt server'''
     mgt = managementServer()
     mgt.mgtSvrIp = "localhost"
     zs.mgtSvr.append(mgt)
-    
+
     '''Add a database'''
     db = dbServer()
     db.dbSvr = "localhost"
-    
+
     zs.dbSvr = db
-    
+
     '''add global configuration'''
     global_settings = {'expunge.delay': '60',
                        'expunge.interval': '60',
                        'expunge.workers': '3',
                        }
-    for k,v in global_settings.iteritems():
+    for k, v in global_settings.iteritems():
         cfg = configuration()
         cfg.name = k
         cfg.value = v
         zs.globalConfig.append(cfg)
-    
+
     ''''add loggers'''
     testClientLogger = logger()
     testClientLogger.name = "TestClient"
     testClientLogger.file = "/tmp/testclient.log"
-    
+
     testCaseLogger = logger()
     testCaseLogger.name = "TestCase"
     testCaseLogger.file = "/tmp/testcase.log"
-    
+
     zs.logger.append(testClientLogger)
     zs.logger.append(testCaseLogger)
-    
+
     return zs
+
+'''sample code to generate setup configuration file'''
+
+
+def describe_setup_in_advancedsg_mode():
+    zs = cloudstackConfiguration()
+
+    for l in range(1):
+        z = zone()
+        z.dns1 = "8.8.8.8"
+        z.dns2 = "8.8.4.4"
+        z.internaldns1 = "192.168.110.254"
+        z.internaldns2 = "192.168.110.253"
+        z.name = "test"+str(l)
+        z.networktype = 'Advanced'
+        z.vlan = "100-2000"
+        z.securitygroupenabled = "true"
+
+        pn = physical_network()
+        pn.name = "test-network"
+        pn.traffictypes = [traffictype("Guest"), traffictype("Management")]
+
+        #If security groups are reqd
+        sgprovider = provider()
+        sgprovider.broadcastdomainrange = 'ZONE'
+        sgprovider.name = 'SecurityGroupProvider'
+
+        pn.providers.append(sgprovider)
+        z.physical_networks.append(pn)
+
+        '''create 10 pods'''
+        for i in range(2):
+            p = pod()
+            p.name = "test" + str(l) + str(i)
+            p.gateway = "192.168.%d.1" % i
+            p.netmask = "255.255.255.0"
+            p.startip = "192.168.%d.200" % i
+            p.endip = "192.168.%d.220" % i
+
+            '''add 10 clusters'''
+            for j in range(2):
+                c = cluster()
+                c.clustername = "test"+str(l)+str(i) + str(j)
+                c.clustertype = "CloudManaged"
+                c.hypervisor = "Simulator"
+
+                '''add 10 hosts'''
+                for k in range(2):
+                    h = host()
+                    h.username = "root"
+                    h.password = "password"
+                    memory = 8 * 1024 * 1024 * 1024
+                    localstorage = 1 * 1024 * 1024 * 1024 * 1024
+                    #h.url = "http://sim/%d%d%d%d/cpucore=1&cpuspeed=8000&\
+                        #memory=%d&localstorage=%d" % (l, i, j, k, memory,
+                        #localstorage)
+                    h.url = "http://sim/%d%d%d%d" % (l, i, j, k)
+                    c.hosts.append(h)
+
+                '''add 2 primary storages'''
+                for m in range(2):
+                    primary = primaryStorage()
+                    primary.name = "primary"+str(l) + str(i) + str(j) + str(m)
+                    #primary.url = "nfs://localhost/path%s/size=%d" % \
+                        #(str(l) + str(i) + str(j) + str(m), size)
+                    primary.url = "nfs://localhost/path%s" % \
+                        (str(l) + str(i) + str(j) + str(m))
+                    c.primaryStorages.append(primary)
+
+                p.clusters.append(c)
+
+            z.pods.append(p)
+
+        '''add two secondary'''
+        for i in range(5):
+            secondary = secondaryStorage()
+            secondary.url = "nfs://localhost/path"+str(l) + str(i)
+            z.secondaryStorages.append(secondary)
+
+        '''add default guest network'''
+        ips = iprange()
+        ips.vlan = "26"
+        ips.startip = "172.16.26.2"
+        ips.endip = "172.16.26.100"
+        ips.gateway = "172.16.26.1"
+        ips.netmask = "255.255.255.0"
+        z.ipranges.append(ips)
+
+        zs.zones.append(z)
+
+    '''Add one mgt server'''
+    mgt = managementServer()
+    mgt.mgtSvrIp = "localhost"
+    zs.mgtSvr.append(mgt)
+
+    '''Add a database'''
+    db = dbServer()
+    db.dbSvr = "localhost"
+
+    zs.dbSvr = db
+
+    '''add global configuration'''
+    global_settings = {'expunge.delay': '60',
+                       'expunge.interval': '60',
+                       'expunge.workers': '3',
+                       }
+    for k, v in global_settings.iteritems():
+        cfg = configuration()
+        cfg.name = k
+        cfg.value = v
+        zs.globalConfig.append(cfg)
+
+    ''''add loggers'''
+    testClientLogger = logger()
+    testClientLogger.name = "TestClient"
+    testClientLogger.file = "/tmp/testclient.log"
+
+    testCaseLogger = logger()
+    testCaseLogger.name = "TestCase"
+    testCaseLogger.file = "/tmp/testcase.log"
+
+    zs.logger.append(testClientLogger)
+    zs.logger.append(testCaseLogger)
+
+    return zs
+
 
 def generate_setup_config(config, file=None):
     describe = config
@@ -645,11 +825,12 @@ def generate_setup_config(config, file=None):
         fp = open(file, 'w')
         json.dump(jsonHelper.jsonDump.dump(describe), fp, indent=4)
         fp.close()
-        
-    
+
+
 def get_setup_config(file):
     if not os.path.exists(file):
-        raise IOError("config file %s not found. please specify a valid config file"%file)
+        raise IOError("config file %s not found. \
+please specify a valid config file" % file)
     config = cloudstackConfiguration()
     configLines = []
     with open(file, 'r') as fp:
@@ -662,20 +843,28 @@ def get_setup_config(file):
 
 if __name__ == "__main__":
     parser = OptionParser()
-  
-    parser.add_option("-i", "--input", action="store", default=None , dest="inputfile", help="input file")
-    parser.add_option("-a", "--advanced", action="store_true", default=False, dest="advanced", help="use advanced networking")
-    parser.add_option("-o", "--output", action="store", default="./datacenterCfg", dest="output", help="the path where the json config file generated, by default is ./datacenterCfg")
-    
+
+    parser.add_option("-i", "--input", action="store", default=None,
+                      dest="inputfile", help="input file")
+    parser.add_option("-a", "--advanced", action="store_true", default=False,
+                      dest="advanced", help="use advanced networking")
+    parser.add_option("-s", "--advancedsg", action="store_true", default=False,
+                      dest="advancedsg", help="use advanced networking \
+with security groups")
+    parser.add_option("-o", "--output", action="store",
+                      default="./datacenterCfg", dest="output",
+                      help="the path where the json config file generated, \
+by default is ./datacenterCfg")
+
     (options, args) = parser.parse_args()
-    
+
     if options.inputfile:
         config = get_setup_config(options.inputfile)
     if options.advanced:
         config = describe_setup_in_advanced_mode()
+    elif options.advancedsg:
+        config = describe_setup_in_advancedsg_mode()
     else:
         config = describe_setup_in_basic_mode()
-        
+
     generate_setup_config(config, options.output)
-    
-    

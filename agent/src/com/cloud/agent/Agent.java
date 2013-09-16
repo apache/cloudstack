@@ -51,8 +51,6 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.ShutdownCommand;
 import com.cloud.agent.api.StartupAnswer;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.UpgradeAnswer;
-import com.cloud.agent.api.UpgradeCommand;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.exception.AgentControlChannelException;
@@ -214,27 +212,6 @@ public class Agent implements HandlerFactory, IAgentControl {
 
     public String getResourceName() {
         return _resource.getClass().getSimpleName();
-    }
-
-    public void upgradeAgent(final String url, boolean protocol) {
-        // shell needs to take care of synchronization when multiple-instances demand upgrade
-        // at the same time
-        _shell.upgradeAgent(url);
-
-        // To stop agent after it has been upgraded, as shell executor may prematurely time out
-        // tasks if agent is in shutting down process
-        if (protocol) {
-            if (_connection != null) {
-                _connection.stop();
-                _connection = null;
-            }
-            if (_resource != null) {
-                _resource.stop();
-                _resource = null;
-            }
-        } else {
-            stop(ShutdownCommand.Update, null);
-        }
     }
 
     public void start() {
@@ -482,9 +459,6 @@ public class Agent implements HandlerFactory, IAgentControl {
                         final CronCommand watch = (CronCommand) cmd;
                         scheduleWatch(link, request, watch.getInterval() * 1000, watch.getInterval() * 1000);
                         answer = new Answer(cmd, true, null);
-                    } else if (cmd instanceof UpgradeCommand) {
-                        final UpgradeCommand upgrade = (UpgradeCommand) cmd;
-                        answer = upgradeAgent(upgrade.getUpgradeUrl(), upgrade);
                     } else if (cmd instanceof ShutdownCommand) {
                         ShutdownCommand shutdown = (ShutdownCommand) cmd;
                         s_logger.debug("Received shutdownCommand, due to: " + shutdown.getReason());
@@ -646,25 +620,6 @@ public class Agent implements HandlerFactory, IAgentControl {
             }
         } else {
             s_logger.warn("Ignoring an unknown task");
-        }
-    }
-
-    protected UpgradeAnswer upgradeAgent(final String url, final UpgradeCommand cmd) {
-        try {
-            upgradeAgent(url, cmd == null);
-            return null;
-        } catch (final Exception e) {
-            s_logger.error("Unable to run this agent because we couldn't complete the upgrade process.", e);
-            if (cmd != null) {
-                final StringWriter writer = new StringWriter();
-                writer.append(e.getMessage());
-                writer.append("===>Stack<===");
-                e.printStackTrace(new PrintWriter(writer));
-                return new UpgradeAnswer(cmd, writer.toString());
-            }
-
-            System.exit(3);
-            return null;
         }
     }
 

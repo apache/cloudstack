@@ -27,7 +27,11 @@ public class KVMPhysicalDisk {
         String rbdOpts;
 
         rbdOpts = "rbd:" + image;
-        rbdOpts += ":mon_host=" + monHost + "\\\\:" + monPort;
+        rbdOpts += ":mon_host=" + monHost;
+        if (monPort != 6789) {
+            rbdOpts += "\\\\:" + monPort;
+        }
+
         if (authUserName == null) {
             rbdOpts += ":auth_supported=none";
         } else {

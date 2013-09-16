@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AlertResponse;
-import org.apache.cloudstack.api.response.ConditionResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
@@ -48,8 +47,13 @@ public class ArchiveAlertsCmd extends BaseCmd {
             description = "the IDs of the alerts")
     private List<Long> ids;
 
-    @Parameter(name=ApiConstants.OLDER_THAN, type=CommandType.DATE, description="archive alerts older than this date (use format \"yyyy-MM-dd\")")
-    private Date olderThan;
+    @Parameter(name=ApiConstants.END_DATE, type=CommandType.DATE, description="end date range to archive alerts" +
+            " (including) this date (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-ddThh:mm:ss\")")
+    private Date endDate;
+
+    @Parameter(name=ApiConstants.START_DATE, type=CommandType.DATE, description="start date range to archive alerts" +
+            " (including) this date (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-ddThh:mm:ss\")")
+    private Date startDate;
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "archive by alert type")
     private String type;
@@ -62,8 +66,12 @@ public class ArchiveAlertsCmd extends BaseCmd {
         return ids;
     }
 
-    public Date getOlderThan() {
-        return olderThan;
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public Date getStartDate() {
+        return startDate;
     }
 
     public String getType() {
@@ -86,8 +94,10 @@ public class ArchiveAlertsCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        if(ids == null && type == null && olderThan == null) {
-            throw new InvalidParameterValueException("either ids, type or olderthan must be specified");
+        if(ids == null && type == null && endDate == null) {
+            throw new InvalidParameterValueException("either ids, type, startdate or enddate must be specified");
+        } else if (startDate != null && endDate == null) {
+            throw new InvalidParameterValueException("enddate must be specified with startdate parameter");
         }
         boolean result = _mgr.archiveAlerts(this);
         if (result) {

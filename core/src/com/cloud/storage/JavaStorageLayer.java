@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -161,6 +162,21 @@ public class JavaStorageLayer implements StorageLayer {
     public long getSize(String path) {
         File file = new File(path);
         return file.length();
+    }
+
+    @Override
+    public File createUniqDir() {
+        String dirName = System.getProperty("java.io.tmpdir");
+        if (dirName != null) {
+            File dir = new File(dirName);
+            if (dir.exists()) {
+                String uniqDirName = dir.getAbsolutePath() + File.separator + UUID.randomUUID().toString();
+                if (this.mkdir(uniqDirName)) {
+                    return new File(uniqDirName);
+                }
+            }
+        }
+        return null;
     }
 
     @Override

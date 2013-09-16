@@ -22,5 +22,8 @@
 -->
 <section id="Introduction-to-the-Nicira-NVP-Plugin">
     <title>Introduction to the Nicira NVP Plugin</title>
-    <para>The Nicira NVP plugin allows CloudStack to use the Nicira solution for virtualized network as a provider for CloudStack networks and services.</para>
+    <para>The Nicira NVP plugin adds Nicira NVP as one of the available SDN implementations in
+        CloudStack. With the plugin an exisiting Nicira NVP setup can be used by CloudStack to
+        implement isolated guest networks and to provide additional services like routing and
+        NAT.</para>
 </section>

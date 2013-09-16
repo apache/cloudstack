@@ -37,6 +37,11 @@ public class VolumeTO implements InternalIdentity {
     private long deviceId;
     private String chainInfo;
     private String guestOsType;
+    private Long bytesReadRate;
+    private Long bytesWriteRate;
+    private Long iopsReadRate;
+    private Long iopsWriteRate;
+    private Long chainSize;
 
     public VolumeTO(long id, Volume.Type type, StoragePoolType poolType, String poolUuid, String name, String mountPoint, String path, long size, String chainInfo) {
         this.id = id;
@@ -73,6 +78,7 @@ public class VolumeTO implements InternalIdentity {
         this.storagePoolUuid = pool.getUuid();
         this.mountPoint = volume.getFolder();
         this.chainInfo = volume.getChainInfo();
+        this.chainSize = volume.getVmSnapshotChainSize();
         if (volume.getDeviceId() != null)
             this.deviceId = volume.getDeviceId();
     }
@@ -120,6 +126,10 @@ public class VolumeTO implements InternalIdentity {
     public String getChainInfo() {
         return chainInfo;
     }
+    
+    public void setChainInfo(String chainInfo) {
+    	this.chainInfo = chainInfo;
+    }
 
     public String getOsType() {
         return guestOsType;
@@ -132,5 +142,45 @@ public class VolumeTO implements InternalIdentity {
     @Override
     public String toString() {
         return new StringBuilder("Vol[").append(id).append("|").append(type).append("|").append(path).append("|").append(size).append("]").toString();
+    }
+
+    public void setBytesReadRate(Long bytesReadRate) {
+        this.bytesReadRate = bytesReadRate;
+    }
+
+    public Long getBytesReadRate() {
+        return bytesReadRate;
+    }
+
+    public void setBytesWriteRate(Long bytesWriteRate) {
+        this.bytesWriteRate = bytesWriteRate;
+    }
+
+    public Long getBytesWriteRate() {
+        return bytesWriteRate;
+    }
+
+    public void setIopsReadRate(Long iopsReadRate) {
+        this.iopsReadRate = iopsReadRate;
+    }
+
+    public Long getIopsReadRate() {
+        return iopsReadRate;
+    }
+
+    public void setIopsWriteRate(Long iopsWriteRate) {
+        this.iopsWriteRate = iopsWriteRate;
+    }
+
+    public Long getIopsWriteRate() {
+        return iopsWriteRate;
+    }
+
+    public Long getChainSize() {
+        return chainSize;
+    }
+
+    public void setChainSize(Long chainSize) {
+        this.chainSize = chainSize;
     }
 }

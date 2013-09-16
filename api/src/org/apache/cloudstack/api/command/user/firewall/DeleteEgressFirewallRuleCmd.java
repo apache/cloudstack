@@ -18,8 +18,10 @@
 package org.apache.cloudstack.api.command.user.firewall;
 
 import org.apache.cloudstack.api.APICommand;
+
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -29,12 +31,12 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import com.cloud.async.AsyncJob;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteEgressFirewallRule", description="Deletes an ggress firewall rule", responseObject=SuccessResponse.class)
 public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
@@ -93,7 +95,7 @@ public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        UserContext.current().setEventDetails("Rule Id: " + id);
+        CallContext.current().setEventDetails("Rule Id: " + id);
         boolean result = _firewallService.revokeFirewallRule(id, true);
 
         if (result) {
@@ -116,7 +118,7 @@ public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.FirewallRule;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.FirewallRule;
     }
 }

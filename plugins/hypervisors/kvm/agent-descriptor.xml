@@ -23,7 +23,7 @@
   <formats>
     <format>zip</format>
   </formats>
-  <includeBaseDirectory>yes</includeBaseDirectory>
+  <includeBaseDirectory>true</includeBaseDirectory>
   <dependencySets>
     <dependencySet>
       <outputDirectory></outputDirectory>

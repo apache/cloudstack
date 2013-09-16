@@ -28,54 +28,54 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.fsm.NoTransitionException;
 
 public class HostEntityImpl implements HostEntity {
-	
+
 	private DataCenterResourceManager manager;
-    
+
     private EngineHostVO hostVO;
 
     public HostEntityImpl(String uuid, DataCenterResourceManager manager) {
-    	this.manager = manager;
-    	hostVO = manager.loadHost(uuid);
+	this.manager = manager;
+	hostVO = manager.loadHost(uuid);
     }
 
 	@Override
 	public boolean enable() {
-    	try {
+	try {
 			manager.changeState(this, Event.EnableRequest);
 		} catch (NoTransitionException e) {
 			return false;
 		}
-    	return true;
+	return true;
 	}
 
 	@Override
 	public boolean disable() {
-    	try {
+	try {
 			manager.changeState(this, Event.DisableRequest);
 		} catch (NoTransitionException e) {
 			return false;
 		}
-    	return true;
+	return true;
 	}
 
 	@Override
 	public boolean deactivate() {
-    	try {
+	try {
 			manager.changeState(this, Event.DeactivateRequest);
 		} catch (NoTransitionException e) {
 			return false;
 		}
-    	return true;
+	return true;
 	}
 
 	@Override
 	public boolean reactivate() {
-    	try {
+	try {
 			manager.changeState(this, Event.ActivatedRequest);
 		} catch (NoTransitionException e) {
 			return false;
 		}
-    	return true;
+	return true;
 	}
 
 	@Override
@@ -131,11 +131,11 @@ public class HostEntityImpl implements HostEntity {
 		return hostVO.getOwner();
 	}
 
-	
+
     public void setDetails(Map<String,String> details) {
-    	hostVO.setDetails(details);
+	hostVO.setDetails(details);
     }
-    
+
 	@Override
 	public Map<String, String> getDetails() {
 		return hostVO.getDetails();
@@ -206,10 +206,10 @@ public class HostEntityImpl implements HostEntity {
 	public void setOwner(String owner) {
 		hostVO.setOwner(owner);
 	}
-	
+
 	public void setName(String name) {
 		hostVO.setName(name);
 	}
-	
+
 
 }

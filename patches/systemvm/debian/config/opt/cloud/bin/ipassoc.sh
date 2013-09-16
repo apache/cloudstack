@@ -106,8 +106,8 @@ remove_routing() {
   local tableNo=$(echo $ethDev | awk -F'eth' '{print $2}')
 
   local tableName="Table_$ethDev"
-  local ethMask=$(ip route list scope link dev $ethDev | awk '{print $1}')
-  if [ "$ethMask" == "" ]
+  local remainip=`ip addr show $ethDev | grep "inet "`
+  if [ "$remainip" == "" ]
   then
 # rules and routes will be deleted for the last ip of the interface.
      sudo ip rule delete fwmark $tableNo table $tableName
@@ -125,7 +125,7 @@ copy_routes_from_main() {
 #get the network masks from the main table
   local eth0Mask=$(ip route list scope link dev eth0 | awk '{print $1}')
   local eth1Mask=$(ip route list scope link dev eth1 | awk '{print $1}')
-  local ethMask=$(ip route list scope link dev $ethDev  | awk '{print $1}')
+  local ethMask=$(getcidr $ethDev)
 
 # eth0,eth1 and other know routes will be skipped, so as main routing table will decide the route. This will be useful if the interface is down and up.  
   sudo ip route add throw $eth0Mask table $tableName proto static 
@@ -164,7 +164,7 @@ add_routing() {
   sudo ip route add default via $defaultGwIP table $tableName proto static
   sudo ip route flush cache
 
-  local ethMask=$(ip route list scope link dev $ethDev  | awk '{print $1}')
+  local ethMask=$(getcidr $ethDev)
   local rulePresent=$(ip rule show | grep $ethMask)
   if [ "$rulePresent" == "" ]
   then
@@ -227,9 +227,10 @@ add_first_ip() {
   if [ $if_keep_state -ne 1 -o $old_state -ne 0 ]
   then
       sudo ip link set $ethDev up
-      sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
+      sudo arping -c 1 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
+      sudo arping -c 1 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
   fi
-  add_routing $1 
+  add_routing $1
 
   return 0
 }
@@ -273,9 +274,10 @@ add_an_ip () {
   if [ $if_keep_state -ne 1 -o $old_state -ne 0 ]
   then
       sudo ip link set $ethDev up
-      sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
+      sudo arping -c 1 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
+      sudo arping -c 1 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
   fi
-  add_routing $1 
+  add_routing $1
   return $?
    
 }
@@ -301,11 +303,41 @@ remove_an_ip () {
   return 0
 }
 
+enable_rpsrfs() {
+    #enable rps and rfs for this new interface
+    if [  -f /etc/rpsrfsenable ]
+    then
+        enable=$(cat /etc/rpsrfsenable)
+        if [ $enable -eq 1 ]
+        then
+          proc=$(cat /proc/cpuinfo | grep "processor" | wc -l)
+          if [ $proc -le 1 ]
+          then
+              return $status;
+          fi
+
+          num=1
+          num=$(($num<<$proc))
+          num=$(($num-1));
+          echo $num;
+          hex=$(printf "%x\n" $num)
+          echo $hex;
+          #enable rps
+          echo $hex > /sys/class/net/$ethDev/queues/rx-0/rps_cpus
+
+          #enable rfs
+          echo 256 > /sys/class/net/$ethDev/queues/rx-0/rps_flow_cnt
+
+         fi
+     fi
+}
+
 #set -x
 sflag=0
 lflag=
 fflag=
 cflag=
+nflag=
 op=""
 
 is_master=0
@@ -326,7 +358,7 @@ then
     if_keep_state=1
 fi
 
-while getopts 'sfADa:l:c:g:' OPTION
+while getopts 'sfADna:l:c:g:' OPTION
 do
   case $OPTION in
   A)	Aflag=1
@@ -348,6 +380,8 @@ do
   g)	gflag=1
   		defaultGwIP="$OPTARG"
   		;;
+  n)   nflag=1
+        ;;
   ?)	usage
                 unlock_exit 2 $lock $locked
 		;;
@@ -367,6 +401,13 @@ then
     unlock_exit 2 $lock $locked
 fi
 
+
+if [ "$Aflag" == "1" ] && [ "$nflag" == "1" ]
+then
+    #enable rps, rfs for the new interface
+    enable_rpsrfs
+
+ fi
 
 if [ "$fflag" == "1" ] && [ "$Aflag" == "1" ]
 then

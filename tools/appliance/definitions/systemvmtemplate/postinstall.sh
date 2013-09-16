@@ -21,6 +21,12 @@ ROOTPW=password
 HOSTNAME=systemvm
 CLOUDSTACK_RELEASE=4.2.0
 
+add_backports () {
+    sed -i '/backports/d' /etc/apt/sources.list
+    echo 'deb http://http.us.debian.org/debian wheezy-backports main' >> /etc/apt/sources.list
+    apt-get update
+}
+
 install_packages() {
   DEBIAN_FRONTEND=noninteractive
   DEBIAN_PRIORITY=critical
@@ -37,12 +43,14 @@ install_packages() {
   apt-get --no-install-recommends -q -y --force-yes install sysstat
   # apache
   apt-get --no-install-recommends -q -y --force-yes install apache2 ssl-cert
-  # haproxy
-  apt-get --no-install-recommends -q -y --force-yes install haproxy
+
   # dnsmasq
-  apt-get --no-install-recommends -q -y --force-yes install dnsmasq
+  apt-get --no-install-recommends -q -y --force-yes install dnsmasq dnsmasq-utils
   # nfs client
   apt-get --no-install-recommends -q -y --force-yes install nfs-common
+  # nfs irqbalance
+  apt-get --no-install-recommends -q -y --force-yes install irqbalance
+
 
   # vpn stuff
   apt-get --no-install-recommends -q -y --force-yes install xl2tpd bcrelay ppp ipsec-tools tdb-tools
@@ -50,8 +58,6 @@ install_packages() {
   echo "openswan openswan/install_x509_certificate seen true" | debconf-set-selections
   apt-get --no-install-recommends -q -y --force-yes install openswan
 
-  # vmware tools
-  apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
   # xenstore utils
   apt-get --no-install-recommends -q -y --force-yes install xenstore-utils libxenstore3.0
   # keepalived and conntrackd for redundant router
@@ -64,6 +70,24 @@ install_packages() {
   echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
   echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
   apt-get --no-install-recommends -q -y --force-yes install iptables-persistent
+
+  # vmware tools
+  apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
+  # commented installaion of vmware-tools  as we are using the opensource open-vm-tools:
+  # apt-get --no-install-recommends -q -y --force-yes install build-essential linux-headers-`uname -r`
+  # df -h
+  # PREVDIR=$PWD
+  # cd /opt
+  # wget http://people.apache.org/~bhaisaab/cloudstack/VMwareTools-9.2.1-818201.tar.gz
+  # tar xzf VMwareTools-9.2.1-818201.tar.gz
+  # rm VMwareTools-*.tar.gz
+  # cd vmware-tools-distrib
+  # ./vmware-install.pl -d
+  # cd $PREV
+  # rm -fr /opt/vmware-tools-distrib
+  # apt-get -q -y --force-yes purge build-essential
+
+  apt-get --no-install-recommends -q -y --force-yes install haproxy
 }
 
 setup_accounts() {
@@ -92,7 +116,7 @@ fix_nameserver() {
   # Replace /etc/resolv.conf also
   cat > /etc/resolv.conf << EOF
 nameserver 8.8.8.8
-nameserver 4.4.4.4
+nameserver 8.8.4.4
 EOF
 }
 
@@ -140,12 +164,18 @@ EOF
   locale-gen en_US.UTF-8
 }
 
+fix_vhdutil() {
+  wget --no-check-certificate http://download.cloud.com.s3.amazonaws.com/tools/vhd-util -O /bin/vhd-util
+  chmod a+x /bin/vhd-util
+}
+
 do_fixes() {
   fix_nameserver
   fix_inittab
   fix_acpid
   fix_hostname
   fix_locale
+  fix_vhdutil
 }
 
 configure_apache2() {
@@ -171,7 +201,7 @@ configure_services() {
   snapshot_url="https://git-wip-us.apache.org/repos/asf?p=cloudstack.git;a=snapshot;h=HEAD;sf=tgz"
   snapshot_dir="/opt/cloudstack*"
   cd /opt
-  wget $snapshot_url -O cloudstack.tar.gz
+  wget --no-check-certificate $snapshot_url -O cloudstack.tar.gz
   tar -zxvf cloudstack.tar.gz
   cp -rv $snapshot_dir/patches/systemvm/debian/config/* /
   cp -rv $snapshot_dir/patches/systemvm/debian/vpn/* /
@@ -202,6 +232,8 @@ do_signature() {
 
 begin=$(date +%s)
 
+echo "*************ADDING BACKPORTS********************"
+add_backports
 echo "*************INSTALLING PACKAGES********************"
 install_packages
 echo "*************DONE INSTALLING PACKAGES********************"

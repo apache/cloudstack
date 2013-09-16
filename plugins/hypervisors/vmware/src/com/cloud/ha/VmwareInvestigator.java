@@ -11,18 +11,18 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.ha;
 
 import javax.ejb.Local;
 
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 
 @Local(value=Investigator.class)
 public class VmwareInvestigator extends AdapterBase implements Investigator {
@@ -30,7 +30,7 @@ public class VmwareInvestigator extends AdapterBase implements Investigator {
     }
     
     @Override
-    public Status isAgentAlive(HostVO agent) {
+    public Status isAgentAlive(Host agent) {
     	if(agent.getHypervisorType() == HypervisorType.VMware)
     		return Status.Disconnected;
     	
@@ -38,7 +38,7 @@ public class VmwareInvestigator extends AdapterBase implements Investigator {
     }
     
     @Override
-    public Boolean isVmAlive(VMInstanceVO vm, HostVO host) {
+    public Boolean isVmAlive(VirtualMachine vm, Host host) {
     	if(vm.getHypervisorType() == HypervisorType.VMware)
     		return true;
     	

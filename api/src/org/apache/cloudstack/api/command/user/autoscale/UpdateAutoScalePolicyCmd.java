@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.user.autoscale;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -27,13 +28,13 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.ConditionResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "updateAutoScalePolicy", description = "Updates an existing autoscale policy.", responseObject = AutoScalePolicyResponse.class)
 public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
@@ -61,7 +62,7 @@ public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        UserContext.current().setEventDetails("AutoScale Policy Id: " + getId());
+        CallContext.current().setEventDetails("AutoScale Policy Id: " + getId());
         AutoScalePolicy result = _autoScaleService.updateAutoScalePolicy(this);
         if (result != null) {
             AutoScalePolicyResponse response = _responseGenerator.createAutoScalePolicyResponse(result);
@@ -120,7 +121,7 @@ public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.AutoScalePolicy;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.AutoScalePolicy;
     }
 }

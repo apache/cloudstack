@@ -23,8 +23,6 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.springframework.stereotype.Component;
-
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
@@ -36,7 +34,6 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Component
 @Local(value={HostAllocator.class})
 public class TestingAllocator extends AdapterBase implements HostAllocator {
     @Inject HostDao _hostDao;
@@ -45,16 +42,22 @@ public class TestingAllocator extends AdapterBase implements HostAllocator {
     Long _routingHost;
 
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type,
             ExcludeList avoid, int returnUpTo) {
         return allocateTo(vmProfile, plan, type, avoid, returnUpTo, true);
     }
 
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type,
+            ExcludeList avoid, List<? extends Host> hosts, int returnUpTo, boolean considerReservedCapacity) {
+        return allocateTo(vmProfile, plan, type, avoid, returnUpTo, considerReservedCapacity);
+    }
+
+    @Override
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type,
             ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity) {
         List<Host> availableHosts = new ArrayList<Host>();
-        Host host = null;    	
+        Host host = null;
         if (type == Host.Type.Routing && _routingHost != null) {
             host = _hostDao.findById(_routingHost);
         } else if (type == Host.Type.Storage && _storageHost != null) {

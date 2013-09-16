@@ -67,13 +67,29 @@
         </listitem>
         <listitem>
           <para><emphasis role="bold">Stickiness</emphasis>: (Optional) Click Configure and choose
-            the algorithm for the stickiness policy. See Sticky Session Policies for Load Balancer
-            Rules.</para>
+            the algorithm for the stickiness policy. See <xref
+            linkend="sticky-session-policies-for-lb-rules"/>.</para>
         </listitem>
         <listitem>
           <para><emphasis role="bold">AutoScale</emphasis>: Click Configure and complete the
             AutoScale configuration as explained in <xref linkend="autoscale"/>.</para>
         </listitem>
+        <listitem><para><emphasis role="bold">Health Check</emphasis>: (Optional; NetScaler load balancers only) Click
+          Configure and fill in the characteristics of the health check policy. See <xref
+            linkend="health-checks-for-lb-rules"/>.</para>		
+          <itemizedlist>
+            <listitem><para><emphasis role="bold">Ping path (Optional)</emphasis>: Sequence of destinations to which to send health check queries.
+              Default: / (all).</para></listitem>			
+            <listitem><para><emphasis role="bold">Response time (Optional)</emphasis>: How long to wait for a response from the health check (2 - 60 seconds).
+              Default: 5 seconds.</para></listitem>
+            <listitem><para><emphasis role="bold">Interval time (Optional)</emphasis>: Amount of time between health checks (1 second - 5 minutes).
+              Default value is set in the global configuration parameter lbrule_health check_time_interval.</para></listitem>
+            <listitem><para><emphasis role="bold">Healthy threshold (Optional)</emphasis>: Number of consecutive health check successes
+              that are required before declaring an instance healthy.
+              Default: 2.</para></listitem>
+            <listitem><para><emphasis role="bold">Unhealthy threshold (Optional)</emphasis>: Number of consecutive health check failures that are required before declaring an instance unhealthy. 
+              Default: 10.</para></listitem>     
+          </itemizedlist></listitem>
       </itemizedlist>
     </listitem>
     <listitem>

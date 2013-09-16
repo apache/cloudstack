@@ -24,7 +24,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.2.0-SNAPSHOT</version>
+    <version>4.3.0-SNAPSHOT</version>
   </parent>
   <dependencies>
     <dependency>
@@ -32,6 +32,11 @@
       <artifactId>cloud-utils</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-web</artifactId>
+      <version>${org.springframework.version}</version>
+    </dependency>    
     <dependency>
       <groupId>org.apache.axis2</groupId>
       <artifactId>axis2</artifactId>
@@ -68,6 +73,16 @@
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
       <version>${cs.log4j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-syslog-alerts</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-snmp-alerts</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.neethi</groupId>
@@ -266,7 +281,6 @@
     <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
-      <version>${cs.mysql.version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -284,14 +298,13 @@
       <artifactId>javassist</artifactId>
       <version>3.9.0.GA</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-framework-db</artifactId>
+      <version>${project.version}</version>
+    </dependency>    
   </dependencies>
   <build>
-    <defaultGoal>install</defaultGoal>
-    <sourceDirectory>src</sourceDirectory>
-    <!--  Tests still depend on hibernate, 
-          so thats not going to work 
-    <testSourceDirectory>test</testSourceDirectory>
-    -->
     <resources>
       <resource>
         <directory>src</directory>
@@ -307,6 +320,17 @@
       </resource>
     </resources>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>com/cloud/gate/util/UtilTestCase.java</exclude>
+            <exclude>com/cloud/gate/service/ServiceTestCase.java</exclude>
+            <exclude>com/cloud/gate/util/CloudStackClientTestCase.java</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
 	  <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
@@ -329,7 +353,7 @@
           </connectors>
           <contextPath>/awsapi</contextPath>
           <webXml>${basedir}/web/web.xml</webXml>
-          <webAppSourceDirectory>${basedir}/target/generated-webapp</webAppSourceDirectory>
+          <webAppSourceDirectory>${project.build.directory}/${project.build.finalName}</webAppSourceDirectory>
         </configuration>
       </plugin>
       <plugin>
@@ -363,23 +387,34 @@
           </execution>
 		</executions>
 	  </plugin>
-    </plugins>
-    <!--
-        <plugins>
          <plugin>
-           <groupId>org.apache.maven.plugins</groupId>
-           <artifactId>maven-jar-plugin</artifactId>
-           <version>2.2</version>
-           <executions>
-             <execution>
-               <goals>
-                 <goal>test-jar</goal>
-               </goals>
-             </execution>
-           </executions>
+            <groupId>org.apache.axis2</groupId>
+            <artifactId>axis2-aar-maven-plugin</artifactId>
+            <version>1.6.2</version>
+            <extensions>true</extensions>
+            <configuration>
+              <includeDependencies>false</includeDependencies>
+              <aarName>cloud-ec2</aarName>
+              <outputDirectory>${project.build.directory}/WEB-INF/services</outputDirectory>
+              <fileSets>
+                <fileSet>
+                  <directory>resource/AmazonEC2</directory>
+                  <outputDirectory>META-INF</outputDirectory>
+                  <includes>
+                    <include>services.xml</include>
+                  </includes>
+                </fileSet>
+              </fileSets>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>aar</goal>
+                </goals>
+              </execution>
+            </executions>
          </plugin>
-        </plugins>
-    -->
+    </plugins>
     <pluginManagement>
       <plugins>
         <plugin>
@@ -426,4 +461,123 @@
       </plugins>
     </pluginManagement>
   </build>
+  <profiles>
+    <profile>
+      <id>downloadec2wsdl</id>
+      <activation>
+        <property>
+          <name>downloadec2wsdl</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <version>1.7</version>
+            <executions>
+              <execution>
+                <phase>generate-resources</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target name="download-2012-08-15.ec2-wsdl">
+                    <!-- Create the WSDL directory structure used by codegen -->
+                    <mkdir dir="wsdl" />
+                    <echo message="Downloading 2012-08-15.ec2-wsdl..." />
+                     <get
+                       src="http://s3.amazonaws.com/ec2-downloads/2012-08-15.ec2.wsdl"
+                       dest="${basedir}/wsdl/"
+                       verbose="true"
+                       usetimestamp="true"
+                     />
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>gencodefromwsdl</id>
+      <activation>
+        <property>
+          <name>gencodefromwsdl</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.axis2</groupId>
+            <artifactId>axis2-wsdl2code-maven-plugin</artifactId>
+            <version>1.5.6</version>
+            <executions>
+              <execution>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>wsdl2code</goal>
+                </goals>
+                <configuration>
+                  <wsdlFile>${basedir}/wsdl/2012-08-15.ec2.wsdl</wsdlFile>
+                  <packageName>com.amazon.ec2</packageName>
+                  <generateServerSide>true</generateServerSide>
+                  <generateServicesXml>true</generateServicesXml>
+                  <generateServerSideInterface>true</generateServerSideInterface>
+                  <namespaceToPackages>http://ec2.amazonaws.com/doc/2012-08-15/=com.amazon.ec2</namespaceToPackages>
+                  <outputDirectory>${basedir}</outputDirectory>
+                </configuration>
+              </execution>
+              <execution>
+                <id>generate-aws-ec2-source-client</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>wsdl2code</goal>
+                </goals>
+                <configuration>
+                  <wsdlFile>${basedir}/wsdl/2012-08-15.ec2.wsdl</wsdlFile>
+                  <packageName>com.amazon.ec2.client</packageName>
+                  <namespaceToPackages>http://ec2.amazonaws.com/doc/2012-08-15/=com.amazon.ec2.client</namespaceToPackages>
+                  <outputDirectory>${basedir}</outputDirectory>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>removewsdl</id>
+      <activation>
+        <property>
+          <name>removewsdl</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>1.2.1</version>
+          <executions>
+            <execution>
+              <phase>clean</phase>
+              <goals>
+                <goal>exec</goal>
+              </goals>
+              <configuration>
+                <executable>rm</executable>
+                <arguments>
+                  <argument>-rf</argument>
+                  <argument>${basedir}/wsdl/</argument>
+                  <argument>${basedir}/resources/AmazonEC2.wsdl</argument>
+                </arguments>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

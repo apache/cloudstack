@@ -23,20 +23,22 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.*;
-import com.cloud.dc.ClusterDetailsDao;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.capacity.CapacityManager;
-import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
-import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -45,7 +47,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -63,7 +64,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
     @Inject protected ClusterDetailsDao _clusterDetailsDao;
 	
 	@Override
-	public DeployDestination plan(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
+    public DeployDestination plan(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
 		VirtualMachine vm = vmProfile.getVirtualMachine();
 		ServiceOffering offering = vmProfile.getServiceOffering();
 		String hostTag = null;
@@ -109,7 +110,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
 		if (target == null) {
 			s_logger.warn("Cannot find host with tag " + hostTag + " use capacity from service offering");
 			cpu_requested = offering.getCpu() * offering.getSpeed();
-			ram_requested = offering.getRamSize() * 1024 * 1024;
+			ram_requested = offering.getRamSize() * 1024L * 1024L;
 		} else {
 			cpu_requested = target.getCpus() * target.getSpeed().intValue();
 			ram_requested = target.getTotalMemory();
@@ -143,7 +144,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
 	}
 
 	@Override
-	public boolean canHandle(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid) {
+    public boolean canHandle(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) {
 		return vm.getHypervisorType() == HypervisorType.BareMetal;
 	}
 
@@ -163,7 +164,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
 	}
 
 	@Override
-	public boolean check(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, DeployDestination dest, ExcludeList exclude) {
+    public boolean check(VirtualMachineProfile vm, DeploymentPlan plan, DeployDestination dest, ExcludeList exclude) {
 		// TODO Auto-generated method stub
 		return false;
 	}

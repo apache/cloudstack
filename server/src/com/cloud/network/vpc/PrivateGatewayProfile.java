@@ -57,7 +57,7 @@ public class PrivateGatewayProfile implements PrivateGateway {
     }
 
     @Override
-    public Long getNetworkId() {
+    public long getNetworkId() {
         return vpcGateway.getNetworkId();
     }
 
@@ -100,4 +100,15 @@ public class PrivateGatewayProfile implements PrivateGateway {
     public State getState() {
         return vpcGateway.getState();
     }
+
+    @Override
+    public boolean getSourceNat() {
+        return vpcGateway.getSourceNat();
+    }
+
+    @Override
+    public long getNetworkACLId() {
+        return vpcGateway.getNetworkACLId();
+    }
+
 }

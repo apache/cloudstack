@@ -34,7 +34,7 @@ import com.vmware.vim25.PerfMetricId;
 import com.vmware.vim25.PerfProviderSummary;
 import com.vmware.vim25.PerfQuerySpec;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
+import java.util.Arrays;
 
 public class PerfManagerMO extends BaseMO {
     public PerfManagerMO(VmwareContext context, ManagedObjectReference mor) {

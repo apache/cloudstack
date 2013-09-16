@@ -32,8 +32,8 @@
         <listitem><para>In Actions, click the Edit icon.</para></listitem>
         <listitem><para>Type the desired value and click the Save icon.</para></listitem>
         <listitem><para>Restart the Management Server (as usual with any global configuration change) and also the Usage Server:</para>
-         <programlisting># service cloud-management restart
-# service cloud-usage restart 
+         <programlisting language="Bash"># service cloudstack-management restart
+# service cloudstack-usage restart 
 </programlisting></listitem>
     </orderedlist>
     <para>The following table shows the global configuration settings that control the behavior of the Usage Server.</para>

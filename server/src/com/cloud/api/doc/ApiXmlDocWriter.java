@@ -24,17 +24,34 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import com.cloud.utils.IteratorUtil;
-import com.cloud.utils.ReflectUtil;
-import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
-import com.cloud.alert.AlertManager;
+import com.google.gson.annotations.SerializedName;
+import com.thoughtworks.xstream.XStream;
+
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
@@ -44,10 +61,11 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+
+import com.cloud.alert.AlertManager;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
-import com.thoughtworks.xstream.XStream;
-import org.reflections.Reflections;
+import com.cloud.utils.IteratorUtil;
+import com.cloud.utils.ReflectUtil;
 
 public class ApiXmlDocWriter {
     public static final Logger s_logger = Logger.getLogger(ApiXmlDocWriter.class.getName());
@@ -322,7 +340,7 @@ public class ApiXmlDocWriter {
         }
 
         if (impl == null) {
-            throw new IllegalStateException(String.format("An %1$s annotation is required for class %2$s.", 
+            throw new IllegalStateException(String.format("An %1$s annotation is required for class %2$s.",
                     APICommand.class.getCanonicalName(), clas.getCanonicalName()));
         }
 
@@ -588,9 +606,11 @@ public class ApiXmlDocWriter {
         try {
             ObjectOutputStream out = xs.createObjectOutputStream(new FileWriter(dirName + "/alert_types.xml"), "alerts");
             for (Field f : AlertManager.class.getFields()) {
-                String name = f.getName().substring(11);
-                Alert alert = new Alert(name, f.getInt(null));
-                out.writeObject(alert);
+                if (f.getClass().isAssignableFrom(Number.class)) {
+                    String name = f.getName().substring(11);
+                    Alert alert = new Alert(name, f.getInt(null));
+                    out.writeObject(alert);
+                }
             }
             out.close();
         } catch (IOException e) {

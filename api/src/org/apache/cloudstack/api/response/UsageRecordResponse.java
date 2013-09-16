@@ -78,6 +78,9 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     @SerializedName(ApiConstants.SIZE) @Param(description="resource size")
     private Long size;
 
+    @SerializedName("virtualsize") @Param(description="virtual size of resource")
+    private Long virtualSize;
+
     @SerializedName(ApiConstants.START_DATE) @Param(description="start date of the usage record")
     private String startDate;
 
@@ -195,5 +198,9 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
 
     public void setDefault(Boolean isDefault) {
         this.isDefault = isDefault;
+    }
+
+    public void setVirtualSize(Long virtualSize) {
+        this.virtualSize = virtualSize;
     }
 }

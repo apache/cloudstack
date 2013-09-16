@@ -18,57 +18,100 @@
  */
 package org.apache.cloudstack.storage.datastore;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
-import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.storage.image.datastore.ImageDataStoreManager;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
+
+import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class DataStoreManagerImpl implements DataStoreManager {
     @Inject
-    PrimaryDataStoreProviderManager primaryStorMgr;
+    PrimaryDataStoreProviderManager primaryStoreMgr;
     @Inject
-    ImageDataStoreManager imageDataStoreMgr;
+    ImageStoreProviderManager imageDataStoreMgr;
 
     @Override
     public DataStore getDataStore(long storeId, DataStoreRole role) {
-        if (role == DataStoreRole.Primary) {
-            return primaryStorMgr.getPrimaryDataStore(storeId);
-        } else if (role == DataStoreRole.Image) {
-            return imageDataStoreMgr.getImageDataStore(storeId);
+        try {
+            if (role == DataStoreRole.Primary) {
+                return primaryStoreMgr.getPrimaryDataStore(storeId);
+            } else if (role == DataStoreRole.Image) {
+                return imageDataStoreMgr.getImageStore(storeId);
+            } else if (role == DataStoreRole.ImageCache) {
+                return imageDataStoreMgr.getImageStore(storeId);
+            }
+        } catch (CloudRuntimeException e) {
+            throw e;
         }
         throw new CloudRuntimeException("un recognized type" + role);
     }
-    @Override
-    public DataStore registerDataStore(Map<String, String> params,
-            String providerUuid) {
-        return null;
-    }
+
     @Override
     public DataStore getDataStore(String uuid, DataStoreRole role) {
         if (role == DataStoreRole.Primary) {
-            return primaryStorMgr.getPrimaryDataStore(uuid);
+            return primaryStoreMgr.getPrimaryDataStore(uuid);
         } else if (role == DataStoreRole.Image) {
-            return imageDataStoreMgr.getImageDataStore(uuid);
+            return imageDataStoreMgr.getImageStore(uuid);
         }
         throw new CloudRuntimeException("un recognized type" + role);
     }
+
     @Override
-    public List<DataStore> getImageStores(Scope scope) {
-        return imageDataStoreMgr.getList();
-    }
-    @Override
-    public DataStore getPrimaryDataStore(long storeId) {
-        return primaryStorMgr.getPrimaryDataStore(storeId);
+    public List<DataStore> getImageStoresByScope(ZoneScope scope) {
+        return imageDataStoreMgr.listImageStoresByScope(scope);
     }
 
+    @Override
+    public DataStore getImageStore(long zoneId) {
+        List<DataStore> stores = getImageStoresByScope(new ZoneScope(zoneId));
+        if (stores == null || stores.size() == 0) {
+            return null;
+        }
+        Collections.shuffle(stores);
+        return stores.get(0);
+    }
+
+    @Override
+    public DataStore getPrimaryDataStore(long storeId) {
+        return primaryStoreMgr.getPrimaryDataStore(storeId);
+    }
+
+    @Override
+    public List<DataStore> getImageCacheStores(Scope scope) {
+        return imageDataStoreMgr.listImageCacheStores(scope);
+    }
+
+    @Override
+    public DataStore getImageCacheStore(long zoneId) {
+        List<DataStore> stores = getImageCacheStores(new ZoneScope(zoneId));
+        if (stores == null || stores.size() == 0) {
+            return null;
+        }
+        Collections.shuffle(stores);
+        return stores.get(0);
+    }
+
+    @Override
+    public List<DataStore> listImageStores() {
+        return imageDataStoreMgr.listImageStores();
+    }
+
+    public void setPrimaryStoreMgr(PrimaryDataStoreProviderManager primaryStoreMgr) {
+        this.primaryStoreMgr = primaryStoreMgr;
+    }
+
+    public void setImageDataStoreMgr(ImageStoreProviderManager imageDataStoreMgr) {
+        this.imageDataStoreMgr = imageDataStoreMgr;
+    }
 }

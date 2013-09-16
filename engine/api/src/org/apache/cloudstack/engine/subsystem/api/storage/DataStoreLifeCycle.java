@@ -21,22 +21,20 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 import java.util.Map;
 
 import com.cloud.agent.api.StoragePoolInfo;
-
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 public interface DataStoreLifeCycle {
-    public DataStore initialize(Map<String, Object> dsInfos);
+    DataStore initialize(Map<String, Object> dsInfos);
 
-    public boolean attachCluster(DataStore store, ClusterScope scope);
-    public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo);
-    boolean attachZone(DataStore dataStore, ZoneScope scope);
-    
-    public boolean dettach();
+    boolean attachCluster(DataStore store, ClusterScope scope);
 
-    public boolean unmanaged();
+    boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo);
 
-    public boolean maintain(DataStore store);
+    boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType);
 
-    public boolean cancelMaintain(DataStore store);
+    boolean maintain(DataStore store);
 
-    public boolean deleteDataStore(DataStore store);
+    boolean cancelMaintain(DataStore store);
+
+    boolean deleteDataStore(DataStore store);
 }

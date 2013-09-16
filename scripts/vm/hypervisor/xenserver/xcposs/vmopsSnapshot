@@ -321,24 +321,23 @@ def umount(localDir):
     util.SMlog("Successfully unmounted " + localDir)
     return
 
-def mountSnapshotsDir(secondaryStorageMountPath, relativeDir, dcId, accountId, instanceId, secHostId):
+def mountSnapshotsDir(secondaryStorageMountPath, localMountPointPath, path):
     # The aim is to mount secondaryStorageMountPath on 
     # And create <accountId>/<instanceId> dir on it, if it doesn't exist already.
     # Assuming that secondaryStorageMountPath  exists remotely
 
     # Just mount secondaryStorageMountPath/<relativeDir>/SecondaryStorageHost/ everytime
     # Never unmount.
+    # path is like "snapshots/account/volumeId", we mount secondary_storage:/snapshots
+    relativeDir = path.split("/")[0]
+    restDir = "/".join(path.split("/")[1:])
     snapshotsDir = os.path.join(secondaryStorageMountPath, relativeDir)
 
-    # Mkdir local mount point dir, if it doesn't exist.
-    localMountPointPath = os.path.join(CLOUD_DIR, dcId)
-    localMountPointPath = os.path.join(localMountPointPath, relativeDir, secHostId)
-
     makedirs(localMountPointPath)
-    # if something is not mounted already on localMountPointPath, 
+    # if something is not mounted already on localMountPointPath,
     # mount secondaryStorageMountPath on localMountPath
     if os.path.ismount(localMountPointPath):
-        # There can be more than one secondary storage per zone.
+        # There is more than one secondary storage per zone.
         # And we are mounting each sec storage under a zone-specific directory
         # So two secondary storage snapshot dirs will never get mounted on the same point on the same XenServer.
         util.SMlog("The remote snapshots directory has already been mounted on " + localMountPointPath)
@@ -346,8 +345,7 @@ def mountSnapshotsDir(secondaryStorageMountPath, relativeDir, dcId, accountId, i
         mount(snapshotsDir, localMountPointPath)
 
     # Create accountId/instanceId dir on localMountPointPath, if it doesn't exist
-    backupsDir = os.path.join(localMountPointPath, accountId)
-    backupsDir = os.path.join(backupsDir, instanceId)
+    backupsDir = os.path.join(localMountPointPath, restDir)
     makedirs(backupsDir)
     return backupsDir
 
@@ -374,15 +372,7 @@ def unmountSnapshotsDir(session, args):
 
     return "1"
 
-def getPrimarySRPath(session, primaryStorageSRUuid, isISCSI):
-    sr = session.xenapi.SR.get_by_uuid(primaryStorageSRUuid)
-    srrec = session.xenapi.SR.get_record(sr)
-    srtype = srrec["type"]
-    if srtype == "file":
-        pbd = session.xenapi.SR.get_PBDs(sr)[0]
-        pbdrec = session.xenapi.PBD.get_record(pbd)
-        primarySRPath = pbdrec["device_config"]["location"]
-        return primarySRPath
+def getPrimarySRPath(primaryStorageSRUuid, isISCSI):
     if isISCSI:
         primarySRDir = lvhdutil.VG_PREFIX + primaryStorageSRUuid
         return os.path.join(lvhdutil.VG_LOCATION, primarySRDir)
@@ -482,7 +472,7 @@ def getVhdParent(session, args):
     snapshotUuid              = args['snapshotUuid']
     isISCSI                   = getIsTrueString(args['isISCSI']) 
 
-    primarySRPath = getPrimarySRPath(session, primaryStorageSRUuid, isISCSI)
+    primarySRPath = getPrimarySRPath(primaryStorageSRUuid, isISCSI)
     util.SMlog("primarySRPath: " + primarySRPath)
 
     baseCopyUuid = getParentOfSnapshot(snapshotUuid, primarySRPath, isISCSI)
@@ -493,17 +483,14 @@ def getVhdParent(session, args):
 def backupSnapshot(session, args):
     util.SMlog("Called backupSnapshot with " + str(args))
     primaryStorageSRUuid      = args['primaryStorageSRUuid']
-    dcId                      = args['dcId']
-    accountId                 = args['accountId']
-    volumeId                  = args['volumeId']
     secondaryStorageMountPath = args['secondaryStorageMountPath']
     snapshotUuid              = args['snapshotUuid']
     prevBackupUuid            = args['prevBackupUuid']
     backupUuid                = args['backupUuid']
     isISCSI                   = getIsTrueString(args['isISCSI'])
-    secHostId                 = args['secHostId']
-
-    primarySRPath = getPrimarySRPath(session, primaryStorageSRUuid, isISCSI)
+    path = args['path']
+    localMountPoint = args['localMountPoint']
+    primarySRPath = getPrimarySRPath(primaryStorageSRUuid, isISCSI)
     util.SMlog("primarySRPath: " + primarySRPath)
 
     baseCopyUuid = getParentOfSnapshot(snapshotUuid, primarySRPath, isISCSI)
@@ -515,9 +502,9 @@ def backupSnapshot(session, args):
     # Mount secondary storage mount path on XenServer along the path
     # /var/run/sr-mount/<dcId>/snapshots/ and create <accountId>/<volumeId> dir
     # on it.
-    backupsDir = mountSnapshotsDir(secondaryStorageMountPath, "snapshots", dcId, accountId, volumeId, secHostId)
+    backupsDir = mountSnapshotsDir(secondaryStorageMountPath, localMountPoint, path)
     util.SMlog("Backups dir " + backupsDir)
-
+    prevBackupUuid = prevBackupUuid.split("/")[-1]
     # Check existence of snapshot on primary storage
     isfile(baseCopyPath, isISCSI)
     if prevBackupUuid:
@@ -546,13 +533,12 @@ def backupSnapshot(session, args):
 @echo
 def deleteSnapshotBackup(session, args):
     util.SMlog("Calling deleteSnapshotBackup with " + str(args))
-    dcId                      = args['dcId']
-    accountId                 = args['accountId']
-    volumeId                  = args['volumeId']
     secondaryStorageMountPath = args['secondaryStorageMountPath']
     backupUUID                = args['backupUUID']
+    path = args['path']
+    localMountPoint = args['localMountPoint']
 
-    backupsDir = mountSnapshotsDir(secondaryStorageMountPath, "snapshots", dcId, accountId, volumeId)
+    backupsDir = mountSnapshotsDir(secondaryStorageMountPath, localMountPoint, path)
     # chdir to the backupsDir for convenience
     chdir(backupsDir)
 
@@ -575,6 +561,33 @@ def deleteSnapshotBackup(session, args):
 
     return "1"
    
+@echo
+def revert_memory_snapshot(session, args):
+    util.SMlog("Calling revert_memory_snapshot with " + str(args))
+    vmName = args['vmName']
+    snapshotUUID = args['snapshotUUID']
+    oldVmUuid = args['oldVmUuid']
+    snapshotMemory = args['snapshotMemory']
+    hostUUID = args['hostUUID']
+    try:
+        cmd = '''xe vbd-list vm-uuid=%s | grep 'vdi-uuid' | grep -v 'not in database' | sed -e 's/vdi-uuid ( RO)://g' ''' % oldVmUuid
+        vdiUuids = os.popen(cmd).read().split()
+        cmd2 = '''xe vm-param-get param-name=power-state uuid=''' + oldVmUuid
+        if os.popen(cmd2).read().split()[0] != 'halted':
+            os.system("xe vm-shutdown force=true vm=" + vmName)
+        os.system("xe vm-destroy uuid=" + oldVmUuid)
+        os.system("xe snapshot-revert snapshot-uuid=" + snapshotUUID)
+        if snapshotMemory == 'true':
+            os.system("xe vm-resume vm=" + vmName + " on=" + hostUUID)
+        for vdiUuid in vdiUuids:
+            os.system("xe vdi-destroy uuid=" + vdiUuid)
+    except OSError, (errno, strerror):
+        errMsg = "OSError while reverting vm " + vmName + " to snapshot " + snapshotUUID + " with errno: " + str(errno) + " and strerr: " + strerror
+        util.SMlog(errMsg)
+        raise xs_errors.XenError(errMsg)
+    return "0"
+
 if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"getVhdParent":getVhdParent,  "create_secondary_storage_folder":create_secondary_storage_folder, "delete_secondary_storage_folder":delete_secondary_storage_folder, "post_create_private_template":post_create_private_template, "backupSnapshot": backupSnapshot, "deleteSnapshotBackup": deleteSnapshotBackup, "unmountSnapshotsDir": unmountSnapshotsDir})
+    XenAPIPlugin.dispatch({"getVhdParent":getVhdParent,  "create_secondary_storage_folder":create_secondary_storage_folder, "delete_secondary_storage_folder":delete_secondary_storage_folder, "post_create_private_template":post_create_private_template, "backupSnapshot": backupSnapshot, "deleteSnapshotBackup": deleteSnapshotBackup, "unmountSnapshotsDir": unmountSnapshotsDir, "revert_memory_snapshot":revert_memory_snapshot})
+    
 

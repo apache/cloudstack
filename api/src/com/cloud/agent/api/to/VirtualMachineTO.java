@@ -52,12 +52,13 @@ public class VirtualMachineTO {
     boolean rebootOnCrash;
     boolean enableHA;
     boolean limitCpuUse;
+    boolean enableDynamicallyScaleVm;
     String vncPassword;
     String vncAddr;
     Map<String, String> params;
     String uuid;
 
-    VolumeTO[] disks;
+    DiskTO[] disks;
     NicTO[] nics;
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader, String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
@@ -100,6 +101,14 @@ public class VirtualMachineTO {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public boolean isEnableDynamicallyScaleVm() {
+        return enableDynamicallyScaleVm;
+    }
+
+    public void setEnableDynamicallyScaleVm(boolean enableDynamicallyScaleVm) {
+        this.enableDynamicallyScaleVm = enableDynamicallyScaleVm;
     }
 
     public String getName() {
@@ -206,11 +215,11 @@ public class VirtualMachineTO {
         this.bootupScripts = bootupScripts;
     }
 
-    public VolumeTO[] getDisks() {
+    public DiskTO[] getDisks() {
         return disks;
     }
 
-    public void setDisks(VolumeTO[] disks) {
+    public void setDisks(DiskTO[] disks) {
         this.disks = disks;
     }
 

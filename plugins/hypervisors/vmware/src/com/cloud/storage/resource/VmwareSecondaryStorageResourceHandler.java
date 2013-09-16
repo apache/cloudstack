@@ -18,6 +18,12 @@ package com.cloud.storage.resource;
 
 import java.util.List;
 
+import javax.naming.OperationNotSupportedException;
+
+import com.cloud.agent.api.storage.*;
+import com.cloud.agent.api.to.DataTO;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.resource.SecondaryStorageResourceHandler;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -26,8 +32,6 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.hypervisor.vmware.manager.VmwareHostService;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManager;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManagerImpl;
@@ -41,60 +45,86 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.google.gson.Gson;
 import com.vmware.vim25.ManagedObjectReference;
 
-public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageResourceHandler, VmwareHostService, VmwareStorageMount {
+public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageResourceHandler, VmwareHostService,
+        VmwareStorageMount {
     private static final Logger s_logger = Logger.getLogger(VmwareSecondaryStorageResourceHandler.class);
 
     private final PremiumSecondaryStorageResource _resource;
     private final VmwareStorageManager _storageMgr;
 
     private final Gson _gson;
+    private final StorageSubsystemCommandHandler storageSubsystemHandler;
+    
+    private static ThreadLocal<VmwareContext> currentContext = new ThreadLocal<VmwareContext>();
 
     /*
-	private Map<String, HostMO> _activeHosts = new HashMap<String, HostMO>();
+     * private Map<String, HostMO> _activeHosts = new HashMap<String, HostMO>();
      */
 
     public VmwareSecondaryStorageResourceHandler(PremiumSecondaryStorageResource resource) {
         _resource = resource;
         _storageMgr = new VmwareStorageManagerImpl(this);
         _gson = GsonHelper.getGsonLogger();
+
+        VmwareStorageProcessor storageProcessor = new VmwareStorageProcessor(this, true, this, resource.getTimeout(),
+                null, null, _resource);
+        VmwareStorageSubsystemCommandHandler vmwareStorageSubsystemCommandHandler = new VmwareStorageSubsystemCommandHandler(storageProcessor);
+        vmwareStorageSubsystemCommandHandler.setStorageResource(_resource);
+        vmwareStorageSubsystemCommandHandler.setStorageManager(_storageMgr);
+        storageSubsystemHandler = vmwareStorageSubsystemCommandHandler;
     }
 
     @Override
     public Answer executeRequest(Command cmd) {
-        Answer answer;
-        if (cmd instanceof PrimaryStorageDownloadCommand) {
-            answer = execute((PrimaryStorageDownloadCommand)cmd);
-        } else if(cmd instanceof BackupSnapshotCommand) {
-            answer = execute((BackupSnapshotCommand)cmd);
-        } else if(cmd instanceof CreatePrivateTemplateFromVolumeCommand) {
-            answer = execute((CreatePrivateTemplateFromVolumeCommand)cmd);
-        } else if(cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {
-            answer = execute((CreatePrivateTemplateFromSnapshotCommand)cmd);
-        } else if(cmd instanceof CopyVolumeCommand) {
-            answer = execute((CopyVolumeCommand)cmd);
-        } else if(cmd instanceof CreateVolumeFromSnapshotCommand) {
-            answer = execute((CreateVolumeFromSnapshotCommand)cmd);
-        } else {
-            answer =  _resource.defaultAction(cmd);
-        }
-
-        // special handling to pass-back context info for cleanups
-        if(cmd.getContextParam("execid") != null) {
-            answer.setContextParam("execid", cmd.getContextParam("execid"));
-        }
-
-        if(cmd.getContextParam("checkpoint") != null) {
-            answer.setContextParam("checkpoint", cmd.getContextParam("checkpoint"));
-        }
-
-        if(cmd.getContextParam("checkpoint2") != null) {
-            answer.setContextParam("checkpoint2", cmd.getContextParam("checkpoint2"));
-        }
-
-        return answer;
+    	
+    	try {
+	        Answer answer;
+	        if (cmd instanceof PrimaryStorageDownloadCommand) {
+	            answer = execute((PrimaryStorageDownloadCommand) cmd);
+	        } else if (cmd instanceof BackupSnapshotCommand) {
+	            answer = execute((BackupSnapshotCommand) cmd);
+	        } else if (cmd instanceof CreatePrivateTemplateFromVolumeCommand) {
+	            answer = execute((CreatePrivateTemplateFromVolumeCommand) cmd);
+	        } else if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {
+	            answer = execute((CreatePrivateTemplateFromSnapshotCommand) cmd);
+	        } else if (cmd instanceof CopyVolumeCommand) {
+	            answer = execute((CopyVolumeCommand) cmd);
+	        } else if (cmd instanceof CreateVolumeFromSnapshotCommand) {
+	            answer = execute((CreateVolumeFromSnapshotCommand) cmd);
+	        } else if (cmd instanceof StorageSubSystemCommand) {
+	            answer = storageSubsystemHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
+	        } else if (cmd instanceof CreateEntityDownloadURLCommand) {
+	            answer = execute((CreateEntityDownloadURLCommand)cmd);
+	        } else {
+	            answer = _resource.defaultAction(cmd);
+	        }
+	
+	        // special handling to pass-back context info for cleanups
+	        if (cmd.getContextParam("execid") != null) {
+	            answer.setContextParam("execid", cmd.getContextParam("execid"));
+	        }
+	
+	        if (cmd.getContextParam("checkpoint") != null) {
+	            answer.setContextParam("checkpoint", cmd.getContextParam("checkpoint"));
+	        }
+	
+	        if (cmd.getContextParam("checkpoint2") != null) {
+	            answer.setContextParam("checkpoint2", cmd.getContextParam("checkpoint2"));
+	        }
+	
+	        return answer;
+    	} finally {
+    		recycleServiceContext();
+    	}
+    }
+    
+    protected Answer execute(CreateEntityDownloadURLCommand cmd) {
+        boolean result = _storageMgr.execute(this, cmd);
+        return _resource.defaultAction(cmd);
     }
 
     private Answer execute(PrimaryStorageDownloadCommand cmd) {
@@ -148,13 +178,13 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     @Override
     public VmwareContext getServiceContext(Command cmd) {
         String guid = cmd.getContextParam("guid");
-        if(guid == null || guid.isEmpty()) {
+        if (guid == null || guid.isEmpty()) {
             s_logger.error("Invalid command context parameter guid");
             return null;
         }
 
         String username = cmd.getContextParam("username");
-        if(username == null || username.isEmpty()) {
+        if (username == null || username.isEmpty()) {
             s_logger.error("Invalid command context parameter username");
             return null;
         }
@@ -163,57 +193,66 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
 
         // validate command guid parameter
         String[] tokens = guid.split("@");
-        if(tokens == null || tokens.length != 2) {
+        if (tokens == null || tokens.length != 2) {
             s_logger.error("Invalid content in command context parameter guid");
             return null;
         }
 
         String vCenterAddress = tokens[1];
         String[] hostTokens = tokens[0].split(":");
-        if(hostTokens == null || hostTokens.length != 2) {
+        if (hostTokens == null || hostTokens.length != 2) {
             s_logger.error("Invalid content in command context parameter guid");
             return null;
         }
 
         try {
             _resource.ensureOutgoingRuleForAddress(vCenterAddress);
-            VmwareContext context = null;
-
-            // cached VmwareContext may be timed out in vCenter, give it a chance to reclaim a new context from factory
-            for(int i = 0; i < 2; i++) {
-                context = VmwareSecondaryStorageContextFactory.create(vCenterAddress, username, password);
-                if(!validateContext(context, cmd)) {
-                    invalidateServiceContext(context);
-                }
-            }
-
-            if(context != null) {
+            
+    		VmwareContext context = currentContext.get();
+    		if(context == null) {
+    			s_logger.info("Open new VmwareContext. vCenter: " + vCenterAddress + ", user: " + username 
+    				+ ", password: " + StringUtils.getMaskedPasswordForDisplay(password));
+                context = VmwareSecondaryStorageContextFactory.getContext(vCenterAddress, username, password);
+    		}
+    		
+            if (context != null) {
                 context.registerStockObject("serviceconsole", cmd.getContextParam("serviceconsole"));
                 context.registerStockObject("manageportgroup", cmd.getContextParam("manageportgroup"));
             }
+            currentContext.set(context);
             return context;
-        } catch(Exception e) {
+        } catch (Exception e) {
             s_logger.error("Unexpected exception " + e.toString(), e);
             return null;
         }
     }
+    
+    public void recycleServiceContext() {
+    	if(currentContext.get() != null) {
+    		VmwareContext context = currentContext.get();
+    		currentContext.set(null);
+    		assert(context.getPool() != null);
+    		context.getPool().returnContext(context);
+    	}
+    }
 
     @Override
     public void invalidateServiceContext(VmwareContext context) {
+    	currentContext.set(null);
         VmwareSecondaryStorageContextFactory.invalidate(context);
     }
 
     @Override
     public VmwareHypervisorHost getHyperHost(VmwareContext context, Command cmd) {
         String guid = cmd.getContextParam("guid");
-        assert(guid != null);
+        assert (guid != null);
 
         String[] tokens = guid.split("@");
-        assert(tokens != null && tokens.length == 2);
+        assert (tokens != null && tokens.length == 2);
 
         ManagedObjectReference morHyperHost = new ManagedObjectReference();
         String[] hostTokens = tokens[0].split(":");
-        if(hostTokens == null || hostTokens.length != 2) {
+        if (hostTokens == null || hostTokens.length != 2) {
             s_logger.error("Invalid content in command context parameter guid");
             return null;
         }
@@ -221,40 +260,42 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         morHyperHost.setType(hostTokens[0]);
         morHyperHost.setValue(hostTokens[1]);
 
-        if(morHyperHost.getType().equalsIgnoreCase("HostSystem")) {
-            HostMO hostMo =  new HostMO(context, morHyperHost);
+        if (morHyperHost.getType().equalsIgnoreCase("HostSystem")) {
+            HostMO hostMo = new HostMO(context, morHyperHost);
 
             try {
 
                 ManagedObjectReference mor = hostMo.getHyperHostCluster();
                 ClusterMO clusterMo = new ClusterMO(hostMo.getContext(), mor);
                 List<Pair<ManagedObjectReference, String>> hostsInCluster = clusterMo.getClusterHosts();
-                for(Pair<ManagedObjectReference, String> hostPair : hostsInCluster) {
+                for (Pair<ManagedObjectReference, String> hostPair : hostsInCluster) {
                     HostMO hostIteratorMo = new HostMO(hostMo.getContext(), hostPair.first());
 
-                    VmwareHypervisorHostNetworkSummary netSummary = hostIteratorMo.getHyperHostNetworkSummary(
-                            hostIteratorMo.getHostType() == VmwareHostType.ESXi ? cmd.getContextParam("manageportgroup") : cmd.getContextParam("serviceconsole"));
+                    VmwareHypervisorHostNetworkSummary netSummary = hostIteratorMo
+                            .getHyperHostNetworkSummary(hostIteratorMo.getHostType() == VmwareHostType.ESXi ? cmd
+                                    .getContextParam("manageportgroup") : cmd.getContextParam("serviceconsole"));
                     _resource.ensureOutgoingRuleForAddress(netSummary.getHostIp());
 
                     s_logger.info("Setup firewall rule for host: " + netSummary.getHostIp());
                 }
-            } catch(Throwable e) {
-                s_logger.warn("Unable to retrive host network information due to exception " + e.toString() + ", host: " + hostTokens[0] + "-" + hostTokens[1]);
+            } catch (Throwable e) {
+                s_logger.warn("Unable to retrive host network information due to exception " + e.toString()
+                        + ", host: " + hostTokens[0] + "-" + hostTokens[1]);
             }
 
             return hostMo;
         }
 
-        assert(false);
+        assert (false);
         return new ClusterMO(context, morHyperHost);
     }
 
     @Override
     public String getWorkerName(VmwareContext context, Command cmd, int workerSequence) {
-        assert(cmd.getContextParam("worker") != null);
-        assert(workerSequence < 2);
+        assert (cmd.getContextParam("worker") != null);
+        assert (workerSequence < 2);
 
-        if(workerSequence == 0)
+        if (workerSequence == 0)
             return cmd.getContextParam("worker");
         return cmd.getContextParam("worker2");
     }
@@ -266,40 +307,51 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
 
     private boolean validateContext(VmwareContext context, Command cmd) {
         String guid = cmd.getContextParam("guid");
-        assert(guid != null);
+        assert (guid != null);
 
         String[] tokens = guid.split("@");
-        assert(tokens != null && tokens.length == 2);
+        assert (tokens != null && tokens.length == 2);
 
         ManagedObjectReference morHyperHost = new ManagedObjectReference();
         String[] hostTokens = tokens[0].split(":");
-        assert(hostTokens.length == 2);
+        assert (hostTokens.length == 2);
 
         morHyperHost.setType(hostTokens[0]);
         morHyperHost.setValue(hostTokens[1]);
 
-        if(morHyperHost.getType().equalsIgnoreCase("HostSystem")) {
-            HostMO hostMo =  new HostMO(context, morHyperHost);
+        if (morHyperHost.getType().equalsIgnoreCase("HostSystem")) {
+            HostMO hostMo = new HostMO(context, morHyperHost);
             try {
-                VmwareHypervisorHostNetworkSummary netSummary = hostMo.getHyperHostNetworkSummary(
-                	hostMo.getHostType() == VmwareHostType.ESXi ? cmd.getContextParam("manageportgroup") : cmd.getContextParam("serviceconsole"));
-                assert(netSummary != null);
-                if(netSummary.getHostIp() != null && !netSummary.getHostIp().isEmpty()) {
-                    if(s_logger.isDebugEnabled()) {
-                        s_logger.debug("Context validation succeeded. Validated via host: " + netSummary.getHostIp() + ", guid: " + guid);
+                VmwareHypervisorHostNetworkSummary netSummary = hostMo
+                        .getHyperHostNetworkSummary(hostMo.getHostType() == VmwareHostType.ESXi ? cmd
+                                .getContextParam("manageportgroup") : cmd.getContextParam("serviceconsole"));
+                assert (netSummary != null);
+                if (netSummary.getHostIp() != null && !netSummary.getHostIp().isEmpty()) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Context validation succeeded. Validated via host: " + netSummary.getHostIp()
+                                + ", guid: " + guid);
                     }
                     return true;
                 }
 
                 s_logger.warn("Context validation failed due to invalid host network summary");
                 return false;
-            } catch(Throwable e) {
+            } catch (Throwable e) {
                 s_logger.warn("Context validation failed due to " + VmwareHelper.getExceptionMessage(e));
                 return false;
             }
         }
 
-        assert(false);
+        assert (false);
         return true;
+    }
+
+    public ManagedObjectReference handleDatastoreAndVmdkAttach(Command cmd, String iqn, String storageHost, int storagePort,
+            String initiatorUsername, String initiatorPassword, String targetUsername, String targetPassword) throws Exception {
+        throw new OperationNotSupportedException();
+    }
+
+    public void handleDatastoreAndVmdkDetach(String iqn, String storageHost, int storagePort) throws Exception {
+        throw new OperationNotSupportedException();
     }
 }

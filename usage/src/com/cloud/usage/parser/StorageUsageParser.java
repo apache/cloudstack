@@ -84,13 +84,14 @@ public class StorageUsageParser {
             long storageId = usageStorage.getId();
             int storage_type = usageStorage.getStorageType();
             long size = usageStorage.getSize();
+            Long virtualSize = usageStorage.getVirtualSize();
             long zoneId = usageStorage.getZoneId();
             Long sourceId = usageStorage.getSourceId();
             
             String key = ""+storageId+"Z"+zoneId+"T"+storage_type;
 
          // store the info in the storage map
-            storageMap.put(key, new StorageInfo(zoneId, storageId, storage_type, sourceId, size));
+            storageMap.put(key, new StorageInfo(zoneId, storageId, storage_type, sourceId, size, virtualSize));
             
             Date storageCreateDate = usageStorage.getCreated();
             Date storageDeleteDate = usageStorage.getDeleted();
@@ -116,7 +117,7 @@ public class StorageUsageParser {
             // Only create a usage record if we have a runningTime of bigger than zero.
             if (useTime > 0L) {
                 StorageInfo info = storageMap.get(storageIdKey);
-                createUsageRecord(info.getZoneId(), info.getStorageType(), useTime, startDate, endDate, account, info.getStorageId(), info.getSourceId(), info.getSize());
+                createUsageRecord(info.getZoneId(), info.getStorageType(), useTime, startDate, endDate, account, info.getStorageId(), info.getSourceId(), info.getSize(), info.getVirtualSize());
             }
         }
 
@@ -135,7 +136,7 @@ public class StorageUsageParser {
         usageDataMap.put(key, volUsageInfo);
     }
 
-    private static void createUsageRecord(long zoneId, int type, long runningTime, Date startDate, Date endDate, AccountVO account, long storageId, Long sourceId, long size) {
+    private static void createUsageRecord(long zoneId, int type, long runningTime, Date startDate, Date endDate, AccountVO account, long storageId, Long sourceId, long size, Long virtualSize) {
         // Our smallest increment is hourly for now
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Total running time " + runningTime + "ms");
@@ -163,6 +164,7 @@ public class StorageUsageParser {
             case StorageTypes.ISO: 
                 usage_type = UsageTypes.ISO;
                 usageDesc += "ISO ";
+                virtualSize = size;
                 break;
             case StorageTypes.SNAPSHOT: 
                 usage_type = UsageTypes.SNAPSHOT;
@@ -170,11 +172,11 @@ public class StorageUsageParser {
                 break;                        
         }
         // Create the usage record
-        usageDesc += "Id:"+storageId+" Size:"+size;
+        usageDesc += "Id:"+storageId+" Size:"+size+ "VirtualSize:" + virtualSize;
 
         //ToDo: get zone id
         UsageVO usageRecord = new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", usage_type,
-                new Double(usage), null, null, null, tmplSourceId, storageId, size, startDate, endDate);
+                new Double(usage), null, null, null, tmplSourceId, storageId, size, virtualSize, startDate, endDate);
         m_usageDao.persist(usageRecord);
     }
 
@@ -184,13 +186,19 @@ public class StorageUsageParser {
         private int storageType;
         private Long sourceId;
         private long size;
+        private Long virtualSize;
 
-        public StorageInfo(long zoneId, long storageId, int storageType, Long sourceId, long size) {
+        public StorageInfo(long zoneId, long storageId, int storageType, Long sourceId, long size, Long virtualSize) {
             this.zoneId = zoneId;
             this.storageId = storageId;
             this.storageType = storageType;
             this.sourceId = sourceId;
             this.size = size;
+            this.virtualSize = virtualSize;
+        }
+
+        public Long getVirtualSize() {
+            return virtualSize;
         }
 
         public long getZoneId() {
@@ -209,7 +217,6 @@ public class StorageUsageParser {
             return sourceId;
         }
 
-        
         public long getSize() {
             return size;
         }        

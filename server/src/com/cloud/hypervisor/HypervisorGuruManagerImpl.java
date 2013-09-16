@@ -25,6 +25,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.Pair;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -59,15 +60,12 @@ public class HypervisorGuruManagerImpl extends ManagerBase implements Hypervisor
 
     @Override
     public long getGuruProcessedCommandTargetHost(long hostId, Command cmd) {
-        HostVO hostVo = _hostDao.findById(hostId);
-        HypervisorGuru hvGuru = null;
-        if(hostVo.getType() == Host.Type.Routing) {
-            hvGuru = _hvGurus.get(hostVo.getHypervisorType());
+        for(HypervisorGuru guru : _hvGuruList) {
+            Pair<Boolean, Long> result = guru.getCommandHostDelegation(hostId, cmd);
+            if (result.first()) {
+                return result.second();
+            }
         }
-
-        if(hvGuru != null)
-            return hvGuru.getCommandHostDelegation(hostId, cmd);
-
         return hostId;
     }
 }

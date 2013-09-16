@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.iso;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -25,14 +26,15 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
+import com.cloud.utils.Pair;
 
 @APICommand(name = "extractIso", description="Extracts an ISO", responseObject=ExtractResponse.class)
 public class ExtractIsoCmd extends BaseAsyncCmd {
@@ -111,8 +113,8 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Iso;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Iso;
     }
 
     public Long getInstanceId() {
@@ -122,10 +124,10 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         try {
-            UserContext.current().setEventDetails(getEventDescription());
-            Long uploadId = _templateService.extract(this);
-            if (uploadId != null){
-                ExtractResponse response = _responseGenerator.createExtractResponse(uploadId, id, zoneId, getEntityOwnerId(), mode);
+            CallContext.current().setEventDetails(getEventDescription());
+            String uploadUrl = _templateService.extract(this);
+            if (uploadUrl != null) {
+                ExtractResponse response = _responseGenerator.createExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
                 response.setResponseName(getCommandName());
                 response.setObjectName("iso");
                 this.setResponseObject(response);

@@ -24,12 +24,13 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 
@@ -61,9 +62,14 @@ public class UpdateVMCmd extends BaseCmd{
             description="the ID of the OS type that best represents this VM.")
     private Long osTypeId;
 
-    @Parameter(name=ApiConstants.USER_DATA, type=CommandType.STRING, description="an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Currently only HTTP GET is supported. Using HTTP GET (via querystring), you can send up to 2KB of data after base64 encoding.", length=2048)
+    @Parameter(name=ApiConstants.USER_DATA, type=CommandType.STRING, description="an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Using HTTP GET (via querystring), you can send up to 2KB of data after base64 encoding. Using HTTP POST(via POST body), you can send up to 32K of data after base64 encoding.", length=32768)
     private String userData;
 
+    @Parameter(name=ApiConstants.DISPLAY_VM, type=CommandType.BOOLEAN, description="an optional field, whether to the display the vm to the end user or not.")
+    private Boolean displayVm;
+
+    @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE, type = CommandType.BOOLEAN, description = "true if VM contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+    protected Boolean isDynamicallyScalable;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -89,6 +95,14 @@ public class UpdateVMCmd extends BaseCmd{
         return userData;
     }
 
+    public Boolean getDisplayVm() {
+        return displayVm;
+    }
+
+    public Boolean isDynamicallyScalable() {
+        return isDynamicallyScalable;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -107,6 +121,7 @@ public class UpdateVMCmd extends BaseCmd{
     }
 
     @Override
+
     public long getEntityOwnerId() {
         UserVm userVm = _entityMgr.findById(UserVm.class, getId());
         if (userVm != null) {
@@ -119,7 +134,7 @@ public class UpdateVMCmd extends BaseCmd{
     @Override
     public void execute() throws ResourceUnavailableException,
             InsufficientCapacityException, ServerApiException {
-        UserContext.current().setEventDetails("Vm Id: "+getId());
+        CallContext.current().setEventDetails("Vm Id: "+getId());
         UserVm result = _userVmService.updateVirtualMachine(this);
         if (result != null){
             UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);

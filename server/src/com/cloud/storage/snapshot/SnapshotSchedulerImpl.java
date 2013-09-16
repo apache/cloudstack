@@ -22,25 +22,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.event.ActionEventUtils;
-import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
+import org.apache.cloudstack.context.ServerContexts;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+
 import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
-import com.cloud.user.Account;
-import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobResult;
-import com.cloud.async.AsyncJobVO;
-import com.cloud.async.dao.AsyncJobDao;
-import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
@@ -55,7 +56,7 @@ import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
-
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.TestClock;
 import com.cloud.utils.db.DB;
@@ -68,14 +69,15 @@ import com.cloud.utils.db.SearchCriteria;
 public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotScheduler {
     private static final Logger s_logger = Logger.getLogger(SnapshotSchedulerImpl.class);
 
-    @Inject protected AsyncJobDao             _asyncJobDao;
+    @Inject
+    protected AsyncJobDao _asyncJobDao;
     @Inject protected SnapshotDao             _snapshotDao;
     @Inject protected SnapshotScheduleDao     _snapshotScheduleDao;
     @Inject protected SnapshotPolicyDao       _snapshotPolicyDao;
     @Inject protected AsyncJobManager         _asyncMgr;
     @Inject protected VolumeDao               _volsDao;
     @Inject protected ConfigurationDao 		  _configDao;
-    
+
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;    // 5 seconds
     private int        _snapshotPollInterval;
     private Timer      _testClockTimer;
@@ -141,14 +143,14 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             Long asyncJobId = snapshotSchedule.getAsyncJobId();
             AsyncJobVO asyncJob = _asyncJobDao.findById(asyncJobId);
             switch (asyncJob.getStatus()) {
-            case AsyncJobResult.STATUS_SUCCEEDED:
+            case SUCCEEDED:
                 // The snapshot has been successfully backed up.
                 // The snapshot state has also been cleaned up.
                 // We can schedule the next job for this snapshot.
                 // Remove the existing entry in the snapshot_schedule table.
                 scheduleNextSnapshotJob(snapshotSchedule);
                 break;
-            case AsyncJobResult.STATUS_FAILED:
+            case FAILED:
                 // Check the snapshot status.
                 Long snapshotId = snapshotSchedule.getSnapshotId();
                 if (snapshotId == null) {
@@ -186,7 +188,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 }
 
                 break;
-            case AsyncJobResult.STATUS_IN_PROGRESS:
+            case IN_PROGRESS:
                 // There is no way of knowing from here whether
                 // 1) Another management server is processing this snapshot job
                 // 2) The management server has crashed and this snapshot is lying
@@ -206,10 +208,6 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
 
         List<SnapshotScheduleVO> snapshotsToBeExecuted = _snapshotScheduleDao.getSchedulesToExecute(_currentTimestamp);
         s_logger.debug("Got " + snapshotsToBeExecuted.size() + " snapshots to be executed at " + displayTime);
-
-        // This is done for recurring snapshots, which are executed by the system automatically
-        // Hence set user id to that of system
-        long userId = 1;
 
         for (SnapshotScheduleVO snapshotToBeExecuted : snapshotsToBeExecuted) {
             SnapshotScheduleVO tmpSnapshotScheduleVO = null;
@@ -235,7 +233,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
 
 
                 tmpSnapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);
-                Long eventId = ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
+                Long eventId = ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, volume.getAccountId(),
                         EventTypes.EVENT_SNAPSHOT_CREATE, "creating snapshot for volume Id:" + volumeId, 0);
 
                 Map<String, String> params = new HashMap<String, String>();
@@ -246,13 +244,14 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 params.put("ctxStartEventId", String.valueOf(eventId));
 
                 CreateSnapshotCmd cmd = new CreateSnapshotCmd();
+                ComponentContext.inject(cmd);
                 ApiDispatcher.getInstance().dispatchCreateCmd(cmd, params);
                 params.put("id", ""+cmd.getEntityId());
                 params.put("ctxStartEventId", "1");
 
-                AsyncJobVO job = new AsyncJobVO(User.UID_SYSTEM, volume.getAccountId(), CreateSnapshotCmd.class.getName(),
+                AsyncJobVO job = new AsyncJobVO(UUID.randomUUID().toString(), User.UID_SYSTEM, volume.getAccountId(), CreateSnapshotCmd.class.getName(),
                         ApiGsonHelper.getBuilder().create().toJson(params), cmd.getEntityId(),
-                        cmd.getInstanceType());
+                        cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null);
 
                 long jobId = _asyncMgr.submitAsyncJob(job);
 
@@ -350,7 +349,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             _testTimerTask = new TestClock(this, minutesPerHour, hoursPerDay, daysPerWeek, daysPerMonth, weeksPerMonth, monthsPerYear);
         }
         _currentTimestamp = new Date();
-        
+
         s_logger.info("Snapshot Scheduler is configured.");
 
         return true;
@@ -375,11 +374,14 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             TimerTask timerTask = new TimerTask() {
                 @Override
                 public void run() {
+                    ServerContexts.registerSystemContext();
                     try {
                         Date currentTimestamp = new Date();
                         poll(currentTimestamp);
                     } catch (Throwable t) {
-                        s_logger.warn("Catch throwable in snapshot scheduler " + t.toString(), t);
+                        s_logger.warn("Catch throwable in snapshot scheduler ", t);
+                    } finally {
+                        ServerContexts.unregisterSystemContext();
                     }
                 }
             };

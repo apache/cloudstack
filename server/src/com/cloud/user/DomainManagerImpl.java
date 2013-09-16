@@ -16,21 +16,30 @@
 // under the License.
 package com.cloud.user;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.region.RegionManager;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
+import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
+import com.cloud.configuration.dao.ResourceLimitDao;
+import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -40,6 +49,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectDao;
@@ -49,7 +59,6 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -58,6 +67,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.ReservationContext;
+import com.cloud.vm.ReservationContextImpl;
 
 @Component
 @Local(value = { DomainManager.class, DomainService.class })
@@ -82,6 +93,14 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     private ProjectManager _projectMgr;
     @Inject
     private RegionManager _regionMgr;
+    @Inject
+    private ResourceLimitDao _resourceLimitDao;
+    @Inject
+    private DedicatedResourceDao _dedicatedDao;
+    @Inject
+    private NetworkOrchestrationService _networkMgr;
+    @Inject
+    private NetworkDomainDao _networkDomainDao;
 
     @Override
     public Domain getDomain(long domainId) {
@@ -116,7 +135,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_CREATE, eventDescription = "creating Domain")
     public Domain createDomain(String name, Long parentId, String networkDomain, String domainUUID) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         if (parentId == null) {
             parentId = Long.valueOf(DomainVO.ROOT_DOMAIN);
@@ -167,6 +186,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, domainUUID));
         _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
         txn.commit();
+        CallContext.current().putContextParameter(Domain.class, domain.getUuid());
         return domain;
     }
 
@@ -193,7 +213,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_DELETE, eventDescription = "deleting Domain", async = true)
     public boolean deleteDomain(long domainId, Boolean cleanup) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         DomainVO domain = _domainDao.findById(domainId);
 
@@ -215,33 +235,52 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         domain.setState(Domain.State.Inactive);
         _domainDao.update(domain.getId(), domain);
         boolean rollBackState = false;
+        boolean hasDedicatedResources = false;
 
         try {
             long ownerId = domain.getAccountId();
             if ((cleanup != null) && cleanup.booleanValue()) {
                 if (!cleanupDomain(domain.getId(), ownerId)) {
+                    rollBackState=true;
                     CloudRuntimeException e = new CloudRuntimeException("Failed to clean up domain resources and sub domains, delete failed on domain " + domain.getName() + " (id: " + domain.getId() + ").");
-                    e.addProxyObject(domain, domain.getId(), "domainId");
+                    e.addProxyObject(domain.getUuid(), "domainId");
                     throw e;
                 }
             } else {
+                //don't delete the domain if there are accounts set for cleanup, or non-removed networks exist, or domain has dedicated resources
+                List<Long> networkIds = _networkDomainDao.listNetworkIdsByDomain(domain.getId());
                 List<AccountVO> accountsForCleanup = _accountDao.findCleanupsForRemovedAccounts(domain.getId());
-                if (accountsForCleanup.isEmpty()) {
+                List<DedicatedResourceVO> dedicatedResources = _dedicatedDao.listByDomainId(domain.getId());
+                if (dedicatedResources != null && !dedicatedResources.isEmpty()) {
+                    s_logger.error("There are dedicated resources for the domain " + domain.getId());
+                    hasDedicatedResources = true;
+                }
+                if (accountsForCleanup.isEmpty() && networkIds.isEmpty()&& !hasDedicatedResources) {
                     if (!_domainDao.remove(domain.getId())) {
                         rollBackState = true;
                         CloudRuntimeException e = new CloudRuntimeException("Delete failed on domain " + domain.getName() + " (id: " + domain.getId() + "); Please make sure all users and sub domains have been removed from the domain before deleting");
-                        e.addProxyObject(domain, domain.getId(), "domainId");
+                        e.addProxyObject(domain.getUuid(), "domainId");
                         throw e;
                     }
                 } else {
                     rollBackState = true;
-                    CloudRuntimeException e = new CloudRuntimeException("Can't delete the domain yet because it has " + accountsForCleanup.size() + "accounts that need a cleanup");
-                    e.addProxyObject(domain, domain.getId(), "domainId");
+                    String msg = null;
+                    if (!accountsForCleanup.isEmpty()) {
+                        msg = accountsForCleanup.size() + " accounts to cleanup";
+                    } else if (!networkIds.isEmpty()) {
+                        msg = networkIds.size() + " non-removed networks";
+                    } else if (hasDedicatedResources) {
+                        msg = "dedicated resources.";
+                    }
+                    
+                    CloudRuntimeException e = new CloudRuntimeException("Can't delete the domain yet because it has " + msg);
+                    e.addProxyObject(domain.getUuid(), "domainId");
                     throw e;
                 }
             }
 
             cleanupDomainOfferings(domain.getId());
+            CallContext.current().putContextParameter(Domain.class, domain.getUuid());
             return true;
         } catch (Exception ex) {
             s_logger.error("Exception deleting domain with id " + domain.getId(), ex);
@@ -310,27 +349,69 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         for (AccountVO account : accounts) {
             if (account.getType() != Account.ACCOUNT_TYPE_PROJECT) {
                 s_logger.debug("Deleting account " + account + " as a part of domain id=" + domainId + " cleanup");
-                success = (success && _accountMgr.deleteAccount(account, UserContext.current().getCallerUserId(), UserContext.current().getCaller()));
-                if (!success) {
+                boolean deleteAccount = _accountMgr.deleteAccount(account, CallContext.current().getCallingUserId(), CallContext.current().getCallingAccount());
+                if (!deleteAccount) {
                     s_logger.warn("Failed to cleanup account id=" + account.getId() + " as a part of domain cleanup");
                 }
+                success = (success && deleteAccount);
             } else {
                 ProjectVO project = _projectDao.findByProjectAccountId(account.getId());
                 s_logger.debug("Deleting project " + project + " as a part of domain id=" + domainId + " cleanup");
-                success = (success && _projectMgr.deleteProject(UserContext.current().getCaller(), UserContext.current().getCallerUserId(), project));
-                if (!success) {
+                boolean deleteProject = _projectMgr.deleteProject(CallContext.current().getCallingAccount(), CallContext.current().getCallingUserId(), project);
+                if (!deleteProject) {
                     s_logger.warn("Failed to cleanup project " + project + " as a part of domain cleanup");
                 }
+                success = (success && deleteProject);
             }
+        }
+        
+        //delete the domain shared networks
+        boolean networksDeleted = true;
+        s_logger.debug("Deleting networks for domain id=" + domainId);
+        List<Long> networkIds = _networkDomainDao.listNetworkIdsByDomain(domainId);
+        CallContext ctx = CallContext.current();
+        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(ctx.getCallingUserId()), ctx.getCallingAccount());
+        for (Long networkId : networkIds) {
+            s_logger.debug("Deleting network id=" + networkId + " as a part of domain id=" + domainId + " cleanup");
+            
+            if (!_networkMgr.destroyNetwork(networkId, context)) {
+                s_logger.warn("Unable to destroy network id=" + networkId + " as a part of domain id=" + domainId + " cleanup.");
+                networksDeleted = false;
+            } else {
+                s_logger.debug("Network " + networkId + " successfully deleted as a part of domain id=" + domainId + " cleanup.");
+            }
+        }
+        
+        //don't proceed if networks failed to cleanup. The cleanup will be performed for inactive domain once again
+        if (!networksDeleted) {
+            s_logger.debug("Failed to delete the shared networks as a part of domain id=" + domainId + " clenaup");
+            return false;
         }
 
         // don't remove the domain if there are accounts required cleanup
         boolean deleteDomainSuccess = true;
         List<AccountVO> accountsForCleanup = _accountDao.findCleanupsForRemovedAccounts(domainId);
         if (accountsForCleanup.isEmpty()) {
+            //release dedication if any, before deleting the domain
+            List<DedicatedResourceVO> dedicatedResources = _dedicatedDao.listByDomainId(domainId);
+            if (dedicatedResources != null && !dedicatedResources.isEmpty()) {
+                s_logger.debug("Releasing dedicated resources for domain" + domainId);
+                for (DedicatedResourceVO dr : dedicatedResources){
+                    if (!_dedicatedDao.remove(dr.getId())) {
+                        s_logger.warn("Fail to release dedicated resources for domain " + domainId);
+                        return false;
+                    }
+                }
+            }
+            //delete domain
             deleteDomainSuccess = _domainDao.remove(domainId);
+
+            // Delete resource count and resource limits entries set for this domain (if there are any).
+            _resourceCountDao.removeEntriesByOwner(domainId, ResourceOwnerType.Domain);
+            _resourceLimitDao.removeEntriesByOwner(domainId, ResourceOwnerType.Domain);
         } else {
             s_logger.debug("Can't delete the domain yet because it has " + accountsForCleanup.size() + "accounts that need a cleanup");
+            return false;
         }
 
         return success && deleteDomainSuccess;
@@ -338,7 +419,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
     @Override
     public Pair<List<? extends Domain>, Integer> searchForDomains(ListDomainsCmd cmd) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Long domainId = cmd.getId();
         boolean listAll = cmd.listAll();
         boolean isRecursive = false;
@@ -410,7 +491,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         boolean listAll = cmd.listAll();
         String path = null;
 
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         if (domainId != null) {
             _accountMgr.checkAccess(caller, getDomain(domainId));
         } else {
@@ -471,7 +552,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         DomainVO domain = _domainDao.findById(domainId);
         if (domain == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find domain with specified domain id");
-            ex.addProxyObject(domain, domainId, "domainId");
+            ex.addProxyObject(domainId.toString(), "domainId");
             throw ex;
         } else if (domain.getParent() == null && domainName != null) {
             // check if domain is ROOT domain - and deny to edit it with the new name
@@ -479,7 +560,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         }
 
         // check permissions
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, domain);
 
         // domain name is unique in the cloud
@@ -492,7 +573,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
             if (!domains.isEmpty() && !sameDomain) {
                 InvalidParameterValueException ex = new InvalidParameterValueException("Failed to update specified domain id with name '" + domainName + "' since it already exists in the system");
-                ex.addProxyObject(domain, domainId, "domainId");
+                ex.addProxyObject(domain.getUuid(), "domainId");
                 throw ex;
             }
         }
@@ -525,7 +606,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             }
         }
         _domainDao.update(domainId, domain);
-
+        CallContext.current().putContextParameter(Domain.class, domain.getUuid());
         txn.commit();
 
         return _domainDao.findById(domainId);

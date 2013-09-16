@@ -24,10 +24,11 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteZone", description="Deletes a Zone.", responseObject=SuccessResponse.class)
 public class DeleteZoneCmd extends BaseCmd {
@@ -69,7 +70,7 @@ public class DeleteZoneCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Zone Id: "+getId());
+        CallContext.current().setEventDetails("Zone Id: "+getId());
         boolean result = _configService.deleteZone(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

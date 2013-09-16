@@ -20,10 +20,6 @@ package org.apache.cloudstack.api.command.admin.cluster;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.exception.InvalidParameterValueException;
-import org.apache.cloudstack.api.*;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -85,22 +81,16 @@ public class AddClusterCmd extends BaseCmd {
     @Parameter(name = ApiConstants.VSM_IPADDRESS, type = CommandType.STRING, required = false, description = "the ipaddress of the VSM associated with this cluster")
     private String vsmipaddress;
 
-    @Parameter (name=ApiConstants.CPU_OVERCOMMIT_RATIO, type = CommandType.STRING, required = false , description = "value of the cpu overcommit ratio, defaults to 1")
-    private String  cpuovercommitRatio;
-
-    @Parameter(name = ApiConstants.MEMORY_OVERCOMMIT_RATIO, type = CommandType.STRING, required = false ,description = "value of the default ram overcommit ratio, defaults to 1")
-    private String  memoryovercommitratio;
-
     @Parameter(name = ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC, type = CommandType.STRING, required = false, description = "Type of virtual switch used for guest traffic in the cluster. Allowed values are, vmwaresvs (for VMware standard vSwitch) and vmwaredvs (for VMware distributed vSwitch)")
     private String vSwitchTypeGuestTraffic;
 
     @Parameter(name = ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC, type = CommandType.STRING, required = false, description = "Type of virtual switch used for public traffic in the cluster. Allowed values are, vmwaresvs (for VMware standard vSwitch) and vmwaredvs (for VMware distributed vSwitch)")
     private String vSwitchTypePublicTraffic;
 
-    @Parameter(name = ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC, type = CommandType.STRING, required = false, description = "Name of virtual switch used for guest traffic in the cluster. This would override zone wide traffic label setting.")
+    @Parameter(name = ApiConstants.VSWITCH_NAME_GUEST_TRAFFIC, type = CommandType.STRING, required = false, description = "Name of virtual switch used for guest traffic in the cluster. This would override zone wide traffic label setting.")
     private String vSwitchNameGuestTraffic;
 
-    @Parameter(name = ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC, type = CommandType.STRING, required = false, description = "Name of virtual switch used for public traffic in the cluster.  This would override zone wide traffic label setting.")
+    @Parameter(name = ApiConstants.VSWITCH_NAME_PUBLIC_TRAFFIC, type = CommandType.STRING, required = false, description = "Name of virtual switch used for public traffic in the cluster.  This would override zone wide traffic label setting.")
     private String vSwitchNamePublicTraffic;
 
     public String getVSwitchTypeGuestTraffic() {
@@ -185,26 +175,9 @@ public class AddClusterCmd extends BaseCmd {
         this.allocationState = allocationState;
     }
 
-    public Float getCpuOvercommitRatio (){
-        if(cpuovercommitRatio != null){
-           return Float.parseFloat(cpuovercommitRatio);
-        }
-        return 1.0f;
-    }
-
-    public Float getMemoryOvercommitRaito (){
-        if (memoryovercommitratio != null){
-            return Float.parseFloat(memoryovercommitratio);
-        }
-        return 1.0f;
-    }
-
     @Override
     public void execute(){
         try {
-            if ((getMemoryOvercommitRaito().compareTo(1f) < 0) | (getCpuOvercommitRatio().compareTo(1f) < 0)) {
-                throw new InvalidParameterValueException("Cpu and ram overcommit ratios  should not be less than 1");
-            }
             List<? extends Cluster> result = _resourceService.discoverCluster(this);
             ListResponse<ClusterResponse> response = new ListResponse<ClusterResponse>();
             List<ClusterResponse> clusterResponses = new ArrayList<ClusterResponse>();

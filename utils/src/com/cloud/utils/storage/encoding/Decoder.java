@@ -20,11 +20,11 @@ package com.cloud.utils.storage.encoding;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class Decoder {
     private static Map<String, String> getParameters(URI uri) {

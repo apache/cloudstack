@@ -61,8 +61,29 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     @Column(name="customized")
     private boolean customized;
 
+    @Column(name="customized_iops")
+    private Boolean customizedIops;
+
+    @Column(name="min_iops")
+    private Long minIops;
+
+    @Column(name="max_iops")
+    private Long maxIops;
+
     @Column(name="sort_key")
     int sortKey;
+
+    @Column(name="bytes_read_rate")
+    Long bytesReadRate;
+
+    @Column(name="bytes_write_rate")
+    Long bytesWriteRate;
+
+    @Column(name="iops_read_rate")
+    Long iopsReadRate;
+
+    @Column(name="iops_write_rate")
+    Long iopsWriteRate;
 
     @Column(name="type")
     Type type;
@@ -84,6 +105,9 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
 
     @Column(name="domain_path")
     private String domainPath = null;
+
+    @Column(name="display_offering")
+    boolean displayOffering;
 
 
     public DiskOfferingJoinVO() {
@@ -164,6 +188,38 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
         this.customized = customized;
     }
 
+    public Boolean isCustomizedIops() {
+        return customizedIops;
+    }
+
+    public void setCustomizedIops(Boolean customizedIops) {
+        this.customizedIops = customizedIops;
+    }
+
+    public Long getMinIops() {
+        return minIops;
+    }
+
+    public void setMinIops(Long minIops) {
+        this.minIops = minIops;
+    }
+
+    public Long getMaxIops() {
+        return maxIops;
+    }
+
+    public void setMaxIops(Long maxIops) {
+        this.maxIops = maxIops;
+    }
+
+    public boolean isDisplayOffering() {
+        return displayOffering;
+    }
+
+    public void setDisplayOffering(boolean displayOffering) {
+        this.displayOffering = displayOffering;
+    }
+
     public Date getCreated() {
         return created;
     }
@@ -228,6 +284,36 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
         this.type = type;
     }
 
+    public void setBytesReadRate(Long bytesReadRate) {
+        this.bytesReadRate = bytesReadRate;
+    }
 
+    public Long getBytesReadRate() {
+        return bytesReadRate;
+    }
+
+    public void setBytesWriteRate(Long bytesWriteRate) {
+        this.bytesWriteRate = bytesWriteRate;
+    }
+
+    public Long getBytesWriteRate() {
+        return bytesWriteRate;
+    }
+
+    public void setIopsReadRate(Long iopsReadRate) {
+        this.iopsReadRate = iopsReadRate;
+    }
+
+    public Long getIopsReadRate() {
+        return iopsReadRate;
+    }
+
+    public void setIopsWriteRate(Long iopsWriteRate) {
+        this.iopsWriteRate = iopsWriteRate;
+    }
+
+    public Long getIopsWriteRate() {
+        return iopsWriteRate;
+    }
 
 }

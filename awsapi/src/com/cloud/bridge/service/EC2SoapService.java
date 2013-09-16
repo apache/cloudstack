@@ -568,4 +568,346 @@ public class EC2SoapService implements AmazonEC2SkeletonInterface {
 			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
 			return ec2Service.importVolume(importVolume);
 		}
+		
+
+		@Override
+		public ResetNetworkInterfaceAttributeResponse resetNetworkInterfaceAttribute(
+				ResetNetworkInterfaceAttribute resetNetworkInterfaceAttribute) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.resetNetworkInterfaceAttribute(resetNetworkInterfaceAttribute);
+		}
+
+		@Override
+		public CreateRouteTableResponse createRouteTable(
+				CreateRouteTable createRouteTable) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.createRouteTable(createRouteTable);
+		}
+
+		@Override
+		public CreateNetworkAclEntryResponse createNetworkAclEntry(
+				CreateNetworkAclEntry createNetworkAclEntry) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.createNetworkAclEntry(createNetworkAclEntry);
+		}
+
+		@Override
+		public DescribeVolumeAttributeResponse describeVolumeAttribute(
+				DescribeVolumeAttribute describeVolumeAttribute) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.describeVolumeAttribute(describeVolumeAttribute);
+		}
+
+		@Override
+		public DeleteNetworkInterfaceResponse deleteNetworkInterface(
+				DeleteNetworkInterface deleteNetworkInterface) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.deleteNetworkInterface(deleteNetworkInterface);
+		}
+
+		@Override
+		public CreateInternetGatewayResponse createInternetGateway(
+				CreateInternetGateway createInternetGateway) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.createInternetGateway(createInternetGateway);
+		}
+
+		@Override
+		public DisassociateRouteTableResponse disassociateRouteTable(
+				DisassociateRouteTable disassociateRouteTable) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.disassociateRouteTable(disassociateRouteTable);
+		}
+
+		@Override
+		public ReplaceNetworkAclEntryResponse replaceNetworkAclEntry(
+				ReplaceNetworkAclEntry replaceNetworkAclEntry) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.replaceNetworkAclEntry(replaceNetworkAclEntry);
+		}
+
+		@Override
+		public AuthorizeSecurityGroupEgressResponse authorizeSecurityGroupEgress(
+				AuthorizeSecurityGroupEgress authorizeSecurityGroupEgress) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.authorizeSecurityGroupEgress(authorizeSecurityGroupEgress);
+		}
+
+		@Override
+		public DeleteNetworkAclEntryResponse deleteNetworkAclEntry(
+				DeleteNetworkAclEntry deleteNetworkAclEntry) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.deleteNetworkAclEntry(deleteNetworkAclEntry);
+		}
+
+		@Override
+		public DeleteRouteTableResponse deleteRouteTable(
+				DeleteRouteTable deleteRouteTable) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.deleteRouteTable(deleteRouteTable);
+		}
+
+		@Override
+		public DescribeNetworkInterfaceAttributeResponse describeNetworkInterfaceAttribute(
+				DescribeNetworkInterfaceAttribute describeNetworkInterfaceAttribute) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.describeNetworkInterfaceAttribute(describeNetworkInterfaceAttribute);
+		}
+
+		@Override
+		public CreateReservedInstancesListingResponse createReservedInstancesListing(
+				CreateReservedInstancesListing createReservedInstancesListing) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.createReservedInstancesListing(createReservedInstancesListing);
+		}
+
+		@Override
+		public CreateNetworkAclResponse createNetworkAcl(
+				CreateNetworkAcl createNetworkAcl) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.createNetworkAcl(createNetworkAcl);
+		}
+
+		@Override
+		public ModifyVolumeAttributeResponse modifyVolumeAttribute(
+				ModifyVolumeAttribute modifyVolumeAttribute) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.modifyVolumeAttribute(modifyVolumeAttribute);
+		}
+
+		@Override
+		public ReplaceNetworkAclAssociationResponse replaceNetworkAclAssociation(
+				ReplaceNetworkAclAssociation replaceNetworkAclAssociation) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.replaceNetworkAclAssociation(replaceNetworkAclAssociation);
+		}
+
+		@Override
+		public EnableVgwRoutePropagationResponse enableVgwRoutePropagation(
+				EnableVgwRoutePropagation enableVgwRoutePropagation) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.enableVgwRoutePropagation(enableVgwRoutePropagation);
+		}
+
+		@Override
+		public UnassignPrivateIpAddressesResponse unassignPrivateIpAddresses(
+				UnassignPrivateIpAddresses unassignPrivateIpAddresses) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.unassignPrivateIpAddresses(unassignPrivateIpAddresses);
+		}
+
+		@Override
+		public DeleteVpnConnectionRouteResponse deleteVpnConnectionRoute(
+				DeleteVpnConnectionRoute deleteVpnConnectionRoute) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.deleteVpnConnectionRoute(deleteVpnConnectionRoute);
+		}
+
+		@Override
+		public CancelReservedInstancesListingResponse cancelReservedInstancesListing(
+				CancelReservedInstancesListing cancelReservedInstancesListing) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.cancelReservedInstancesListing(cancelReservedInstancesListing);
+		}
+
+		@Override
+		public DescribeNetworkAclsResponse describeNetworkAcls(
+				DescribeNetworkAcls describeNetworkAcls) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.describeNetworkAcls(describeNetworkAcls);
+		}
+
+		@Override
+		public EnableVolumeIOResponse enableVolumeIO(
+				EnableVolumeIO enableVolumeIO) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.enableVolumeIO(enableVolumeIO);
+		}
+
+		@Override
+		public DescribeInternetGatewaysResponse describeInternetGateways(
+				DescribeInternetGateways describeInternetGateways) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.describeInternetGateways(describeInternetGateways);
+		}
+
+		@Override
+		public DescribeReservedInstancesListingsResponse describeReservedInstancesListings(
+				DescribeReservedInstancesListings describeReservedInstancesListings) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.describeReservedInstancesListings(describeReservedInstancesListings);
+		}
+
+		@Override
+		public DescribeInstanceStatusResponse describeInstanceStatus(
+				DescribeInstanceStatus describeInstanceStatus) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.describeInstanceStatus(describeInstanceStatus);
+		}
+
+		@Override
+		public ModifyNetworkInterfaceAttributeResponse modifyNetworkInterfaceAttribute(
+				ModifyNetworkInterfaceAttribute modifyNetworkInterfaceAttribute) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.modifyNetworkInterfaceAttribute(modifyNetworkInterfaceAttribute);
+		}
+
+		@Override
+		public DisableVgwRoutePropagationResponse disableVgwRoutePropagation(
+				DisableVgwRoutePropagation disableVgwRoutePropagation) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.disableVgwRoutePropagation(disableVgwRoutePropagation);
+		}
+
+		@Override
+		public DescribeVolumeStatusResponse describeVolumeStatus(
+				DescribeVolumeStatus describeVolumeStatus) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.describeVolumeStatus(describeVolumeStatus);
+		}
+
+		@Override
+		public DetachNetworkInterfaceResponse detachNetworkInterface(
+				DetachNetworkInterface detachNetworkInterface) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.detachNetworkInterface(detachNetworkInterface);
+		}
+
+		@Override
+		public DescribeNetworkInterfacesResponse describeNetworkInterfaces(
+				DescribeNetworkInterfaces describeNetworkInterfaces) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.describeNetworkInterfaces(describeNetworkInterfaces);
+		}
+
+		@Override
+		public CancelExportTaskResponse cancelExportTask(
+				CancelExportTask cancelExportTask) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.cancelExportTask(cancelExportTask);
+		}
+
+		@Override
+		public CreateRouteResponse createRoute(CreateRoute createRoute) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.createRoute(createRoute);
+		}
+
+		@Override
+		public DescribeRouteTablesResponse describeRouteTables(
+				DescribeRouteTables describeRouteTables) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.describeRouteTables(describeRouteTables);
+		}
+
+		@Override
+		public DeleteNetworkAclResponse deleteNetworkAcl(
+				DeleteNetworkAcl deleteNetworkAcl) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.deleteNetworkAcl(deleteNetworkAcl);
+		}
+
+		@Override
+		public DeleteRouteResponse deleteRoute(DeleteRoute deleteRoute) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.deleteRoute(deleteRoute);
+		}
+
+		@Override
+		public CreateVpnConnectionRouteResponse createVpnConnectionRoute(
+				CreateVpnConnectionRoute createVpnConnectionRoute) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.createVpnConnectionRoute(createVpnConnectionRoute);
+		}
+
+		@Override
+		public AttachInternetGatewayResponse attachInternetGateway(
+				AttachInternetGateway attachInternetGateway) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.attachInternetGateway(attachInternetGateway);
+		}
+
+		@Override
+		public ReplaceRouteTableAssociationResponse replaceRouteTableAssociation(
+				ReplaceRouteTableAssociation replaceRouteTableAssociation) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.replaceRouteTableAssociation(replaceRouteTableAssociation);
+		}
+
+		@Override
+		public AssociateRouteTableResponse associateRouteTable(
+				AssociateRouteTable associateRouteTable) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.associateRouteTable(associateRouteTable);
+		}
+
+		@Override
+		public DetachInternetGatewayResponse detachInternetGateway(
+				DetachInternetGateway detachInternetGateway) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.detachInternetGateway(detachInternetGateway);
+		}
+
+		@Override
+		public DescribeExportTasksResponse describeExportTasks(
+				DescribeExportTasks describeExportTasks) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.describeExportTasks(describeExportTasks);
+		}
+
+		@Override
+		public CreateInstanceExportTaskResponse createInstanceExportTask(
+				CreateInstanceExportTask createInstanceExportTask) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.createInstanceExportTask(createInstanceExportTask);
+		}
+
+		@Override
+		public AssignPrivateIpAddressesResponse assignPrivateIpAddresses(
+				AssignPrivateIpAddresses assignPrivateIpAddresses) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.assignPrivateIpAddresses(assignPrivateIpAddresses);
+		}
+
+		@Override
+		public ReportInstanceStatusResponse reportInstanceStatus(
+				ReportInstanceStatus reportInstanceStatus) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.reportInstanceStatus(reportInstanceStatus);
+		}
+
+		@Override
+		public DeleteInternetGatewayResponse deleteInternetGateway(
+				DeleteInternetGateway deleteInternetGateway) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.deleteInternetGateway(deleteInternetGateway);
+		}
+
+		@Override
+		public AttachNetworkInterfaceResponse attachNetworkInterface(
+				AttachNetworkInterface attachNetworkInterface) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.attachNetworkInterface(attachNetworkInterface);
+		}
+
+		@Override
+		public CreateNetworkInterfaceResponse createNetworkInterface(
+				CreateNetworkInterface createNetworkInterface) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.createNetworkInterface(createNetworkInterface);
+		}
+
+		@Override
+		public RevokeSecurityGroupEgressResponse revokeSecurityGroupEgress(
+				RevokeSecurityGroupEgress revokeSecurityGroupEgress) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.revokeSecurityGroupEgress(revokeSecurityGroupEgress);
+		}
+
+		@Override
+		public ReplaceRouteResponse replaceRoute(ReplaceRoute replaceRoute) {
+			AmazonEC2SkeletonInterface ec2Service = ServiceProvider.getInstance().getServiceImpl(AmazonEC2SkeletonInterface.class);
+			return ec2Service.replaceRoute(replaceRoute);
+	
+		}
 }

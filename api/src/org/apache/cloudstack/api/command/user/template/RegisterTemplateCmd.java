@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -33,12 +34,12 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "registerTemplate", description="Registers an existing template into the CloudStack cloud. ", responseObject=TemplateResponse.class)
 public class RegisterTemplateCmd extends BaseCmd {
@@ -110,13 +111,15 @@ public class RegisterTemplateCmd extends BaseCmd {
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
             description="Register template for the project")
     private Long projectId;
-    
-    @Parameter(name=ApiConstants.IMAGE_STORE_UUID, type=CommandType.STRING,
-            description="Image store uuid")
-    private String imageStoreUuid;
-    
+
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="Template details in key/value pairs.")
     protected Map details;
+
+    @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE, type = CommandType.BOOLEAN, description = "true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+    protected Boolean isDynamicallyScalable;
+
+    @Parameter(name = ApiConstants.ROUTING, type = CommandType.BOOLEAN, description = "true if the template type is routing i.e., if template is used to deploy router")
+    protected Boolean isRoutingType;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -193,10 +196,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     public String getTemplateTag() {
         return templateTag;
     }
-    
-    public String getImageStoreUuid() {
-        return this.imageStoreUuid;
-    }
+
 
     public Map getDetails() {
         if (details == null || details.isEmpty()) {
@@ -208,6 +208,14 @@ public class RegisterTemplateCmd extends BaseCmd {
         return params;
     }
 
+    public Boolean isDynamicallyScalable() {
+        return isDynamicallyScalable == null ? false : isDynamicallyScalable;
+    }
+
+    public Boolean isRoutingType() {
+        return isRoutingType;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -217,15 +225,15 @@ public class RegisterTemplateCmd extends BaseCmd {
         return s_name;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Template;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Template;
     }
 
     @Override
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
 
         return accountId;
@@ -237,7 +245,7 @@ public class RegisterTemplateCmd extends BaseCmd {
             VirtualMachineTemplate template = _templateService.registerTemplate(this);
             if (template != null){
                 ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-                List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(template.getId(), zoneId, false);
+                List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(template, zoneId, false);
                 response.setResponses(templateResponses);
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);

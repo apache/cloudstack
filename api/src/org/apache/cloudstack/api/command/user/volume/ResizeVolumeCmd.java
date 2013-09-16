@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.volume;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -24,9 +25,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -34,7 +36,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.Project;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 
 @APICommand(name="resizeVolume", description="Resizes a volume", responseObject=VolumeResponse.class)
@@ -90,8 +91,8 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Volume;
+    public ApiCommandJobType getInstanceType() {
+    	return ApiCommandJobType.Volume;
     }
 
     public static String getResultObjectName() {
@@ -133,7 +134,7 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceAllocationException{
-        UserContext.current().setEventDetails("Volume Id: " + getEntityId() + " to size " + getSize() + "G");
+        CallContext.current().setEventDetails("Volume Id: " + getEntityId() + " to size " + getSize() + "G");
     	Volume volume = _volumeService.resizeVolume(this);
     	if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(volume);

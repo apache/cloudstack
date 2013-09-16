@@ -31,6 +31,9 @@ Release:   %{_rel}%{dist}
 %define _maventag %{_ver}
 Release:   %{_rel}%{dist}
 %endif
+
+%{!?python_sitearch: %define python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
+
 Version:   %{_ver}
 License:   ASL 2.0
 Vendor:    Apache CloudStack <dev@cloudstack.apache.org>
@@ -82,7 +85,6 @@ Requires: %{name}-common = %{_ver}
 Requires: %{name}-awsapi = %{_ver} 
 Obsoletes: cloud-client < 4.1.0
 Obsoletes: cloud-client-ui < 4.1.0
-Obsoletes: cloud-daemonize < 4.1.0
 Obsoletes: cloud-server < 4.1.0
 Obsoletes: cloud-test < 4.1.0 
 Provides:  cloud-client
@@ -102,6 +104,7 @@ Obsoletes: cloud-deps < 4.1.0
 Obsoletes: cloud-python < 4.1.0
 Obsoletes: cloud-setup < 4.1.0
 Obsoletes: cloud-cli < 4.1.0
+Obsoletes: cloud-daemonize < 4.1.0
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
@@ -114,11 +117,15 @@ Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: bridge-utils
 Requires: ebtables
+Requires: iptables
+Requires: ethtool
+Requires: vconfig
 Requires: ipset
 Requires: jsvc
 Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
 Requires: perl
+Requires: libvirt-python
 Provides: cloud-agent
 Obsoletes: cloud-agent < 4.1.0
 Obsoletes: cloud-agent-libs < 4.1.0
@@ -133,6 +140,7 @@ Requires: java >= 1.6.0
 Requires: jsvc
 Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
+Group: System Environment/Libraries
 Obsoletes: cloud-usage < 4.1.0
 Provides: cloud-usage 
 %description usage
@@ -142,6 +150,7 @@ The CloudStack usage calculation service
 Summary: Apache CloudStack CLI
 Provides: python-cloudmonkey
 Provides: python-marvin
+Group: System Environment/Libraries
 %description cli
 Apache CloudStack command line interface
 
@@ -150,16 +159,13 @@ Summary: Apache CloudStack AWS API compatibility wrapper
 Requires: %{name}-management = %{_ver}
 Obsoletes: cloud-aws-api < 4.1.0
 Provides: cloud-aws-api
+Group: System Environment/Libraries
 %description awsapi
 Apache Cloudstack AWS API compatibility wrapper
 
-#%package docs
-#Summary: Apache CloudStack documentation
-#%description docs
-#Apache CloudStack documentations
-
 %prep
 echo Doing CloudStack build
+
 %setup -q -n %{name}-%{_maventag}
 
 %build
@@ -169,11 +175,11 @@ echo VERSION=%{_maventag} >> build/replace.properties
 echo PACKAGE=%{name} >> build/replace.properties
 
 if [ "%{_ossnoss}" == "NONOSS" -o "%{_ossnoss}" == "nonoss" ] ; then
-    echo "Packaging nonoss components"
-   mvn -Pawsapi,systemvm -Dnonoss package
+   echo "Executing mvn packaging for NONOSS ..."
+   mvn -Pawsapi,systemvm -Dnonoss package clean install
 else
-    echo "Packaging oss components"
-   mvn -Pawsapi package -Dsystemvm
+   echo "Executing mvn packaging for OSS ..."
+   mvn -Pawsapi package -Dsystemvm clean install
 fi
 
 %install
@@ -193,14 +199,17 @@ mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig
 # Common
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms
-mkdir -p ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/
+mkdir -p ${RPM_BUILD_ROOT}%{python_sitearch}/
 cp -r scripts/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 install -D services/console-proxy/server/dist/systemvm.iso ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms/systemvm.iso
 install -D services/console-proxy/server/dist/systemvm.zip ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms/systemvm.zip
-install python/lib/cloud_utils.py ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloud_utils.py
-cp -r python/lib/cloudutils ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/
-python -m py_compile ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloud_utils.py
-python -m compileall ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloudutils
+install python/lib/cloud_utils.py ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
+cp -r python/lib/cloudutils ${RPM_BUILD_ROOT}%{python_sitearch}/
+python -m py_compile ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
+python -m compileall ${RPM_BUILD_ROOT}%{python_sitearch}/cloudutils
+ 
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
+cp -r plugins/network-elements/cisco-vnmc/scripts/network/cisco/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
 
 # Management
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
@@ -209,6 +218,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/awsapi
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
+mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}-management
 
 # Specific for tomcat
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
@@ -218,6 +228,8 @@ ln -sf /usr/share/tomcat6/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/li
 ln -sf /var/log/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/logs
 ln -sf /var/cache/%{name}/management/temp ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/temp
 ln -sf /var/cache/%{name}/management/work ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/work
+
+/bin/touch ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management/catalina.out
 
 install -D client/target/utilities/bin/cloud-migrate-databases ${RPM_BUILD_ROOT}%{_bindir}/%{name}-migrate-databases
 install -D client/target/utilities/bin/cloud-set-guest-password ${RPM_BUILD_ROOT}%{_bindir}/%{name}-set-guest-password
@@ -236,7 +248,7 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/cl
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
 for name in db.properties log4j-cloud.xml tomcat6-nonssl.conf tomcat6-ssl.conf server-ssl.xml server-nonssl.xml \
-            catalina.policy catalina.properties db-enc.properties classpath.conf tomcat-users.xml web.xml environment.properties ; do
+            catalina.policy catalina.properties classpath.conf tomcat-users.xml web.xml environment.properties ; do
   mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/$name \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
 done
@@ -248,8 +260,7 @@ mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classe
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
 
 install python/bindir/cloud-external-ipallocator.py ${RPM_BUILD_ROOT}%{_bindir}/%{name}-external-ipallocator.py
-install -D client/target/pythonlibs/jasypt-1.9.0.jar ${RPM_BUILD_ROOT}%{_javadir}/jasypt-1.9.0.jar
-install -D client/target/pythonlibs/jasypt-1.8.jar ${RPM_BUILD_ROOT}%{_javadir}/jasypt-1.8.jar
+install -D client/target/pythonlibs/jasypt-1.9.0.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/jasypt-1.9.0.jar
 
 install -D packaging/centos63/cloud-ipallocator.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-ipallocator
 install -D packaging/centos63/cloud-management.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-management
@@ -264,6 +275,7 @@ chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/work
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/temp
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
+chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}-management
 
 # KVM Agent
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent
@@ -283,13 +295,15 @@ cp plugins/hypervisors/kvm/target/dependencies/*  ${RPM_BUILD_ROOT}%{_datadir}/%
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/lib
 install -D usage/target/cloud-usage-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/cloud-usage-%{_maventag}.jar
+install -D usage/target/transformed/db.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage/db.properties
+install -D usage/target/transformed/log4j-cloud_usage.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage/log4j-cloud.xml
 cp usage/target/dependencies/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/lib/
 install -D packaging/centos63/cloud-usage.rc ${RPM_BUILD_ROOT}/%{_sysconfdir}/init.d/%{name}-usage
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/usage/
 
 # CLI
-cp -r cloud-cli/cloudtool ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/
-install cloud-cli/cloudapis/cloud.py ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloudapis.py
+cp -r cloud-cli/cloudtool ${RPM_BUILD_ROOT}%{python_sitearch}/
+install cloud-cli/cloudapis/cloud.py ${RPM_BUILD_ROOT}%{python_sitearch}/cloudapis.py
 
 # AWS API
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi
@@ -298,8 +312,11 @@ cp -r awsapi/target/cloud-awsapi-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/%{n
 install -D awsapi-setup/setup/cloud-setup-bridge ${RPM_BUILD_ROOT}%{_bindir}/cloudstack-setup-bridge
 install -D awsapi-setup/setup/cloudstack-aws-api-register ${RPM_BUILD_ROOT}%{_bindir}/cloudstack-aws-api-register
 cp -r awsapi-setup/db/mysql/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/setup
+cp awsapi/resource/Axis2/axis2.xml ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/conf
+cp awsapi/target/WEB-INF/services/cloud-ec2.aar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/services
 
-for name in applicationContext.xml cloud-bridge.properties commons-logging.properties crypto.properties xes.keystore ec2-service.properties ; do
+
+for name in applicationContext.xml cloud-bridge.properties commons-logging.properties ec2-service.properties ; do
   mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/$name \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
 done
@@ -313,8 +330,26 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classe
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/NOTICE.txt
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/services.xml
 
+#License files from whisker
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-management-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-management-%{version}/LICENSE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-common-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-common-%{version}/LICENSE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-agent-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-agent-%{version}/LICENSE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-usage-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-usage-%{version}/LICENSE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-awsapi-%{version}/NOTICE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-awsapi-%{version}/LICENSE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/LICENSE
+
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
+
+%pre awsapi
+id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
+     -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
 
 %preun management
 /sbin/service cloudstack-management stop || true
@@ -333,6 +368,7 @@ sed -i /"cloud soft nofile"/d /etc/security/limits.conf
 echo "cloud hard nofile 4096" >> /etc/security/limits.conf
 echo "cloud soft nofile 4096" >> /etc/security/limits.conf
 rm -rf %{_localstatedir}/cache/cloud
+rm -rf %{_localstatedir}/cache/cloudstack
 # user harcoded here, also hardcoded on wscript
 
 # save old configs if they exist (for upgrade). Otherwise we may lose them
@@ -366,7 +402,9 @@ fi
 if [ -f "%{_sysconfdir}/cloud.rpmsave/management/db.properties" ]; then
     mv %{_sysconfdir}/%{name}/management/db.properties %{_sysconfdir}/%{name}/management/db.properties.rpmnew
     cp -p %{_sysconfdir}/cloud.rpmsave/management/db.properties %{_sysconfdir}/%{name}/management
-    cp -p %{_sysconfdir}/cloud.rpmsave/management/key %{_sysconfdir}/%{name}/management
+    if [ -f "%{_sysconfdir}/cloud.rpmsave/management/key" ]; then    
+        cp -p %{_sysconfdir}/cloud.rpmsave/management/key %{_sysconfdir}/%{name}/management
+    fi
     # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
     mv %{_sysconfdir}/cloud.rpmsave/management/db.properties %{_sysconfdir}/cloud.rpmsave/management/db.properties.rpmsave
 fi
@@ -374,26 +412,43 @@ fi
 # Choose server.xml and tomcat.conf links based on old config, if exists
 serverxml=%{_sysconfdir}/%{name}/management/server.xml
 oldserverxml=%{_sysconfdir}/cloud.rpmsave/management/server.xml
-if [ -L $oldserverxml ] ; then
-    if stat -c %N $oldserverxml | grep -q server-nonssl ; then
-        if [ -L $serverxml ]; then rm -f $serverxml; fi
-        ln -s %{_sysconfdir}/%{name}/management/server-nonssl.xml $serverxml
-    elif stat -c %N $oldserverxml| grep -q server-ssl ; then
-        if [ -L $serverxml ]; then rm -f $serverxml; fi
+if [ -f $oldserverxml ] || [ -L $oldserverxml ]; then
+    if stat -c %N $oldserverxml| grep -q server-ssl ; then
+        if [ -f $serverxml ] || [ -L $serverxml ]; then rm -f $serverxml; fi
         ln -s %{_sysconfdir}/%{name}/management/server-ssl.xml $serverxml
+        echo Please verify the server.xml in saved folder, and make the required changes manually , saved folder available at $oldserverxml
+    else
+        if [ -f $serverxml ] || [ -L $serverxml ]; then rm -f $serverxml; fi
+        ln -s %{_sysconfdir}/%{name}/management/server-nonssl.xml $serverxml
+        echo Please verify the server.xml in saved folder, and make the required changes manually , saved folder available at $oldserverxml
+
     fi
+else
+    echo "Unable to determine ssl settings for server.xml, please run cloudstack-setup-management manually"
 fi
+
 
 tomcatconf=%{_sysconfdir}/%{name}/management/tomcat6.conf
 oldtomcatconf=%{_sysconfdir}/cloud.rpmsave/management/tomcat6.conf
-if [ -L $oldtomcatconf ] ; then
-    if stat -c %N $oldtomcatconf | grep -q tomcat6-nonssl ; then
-        if [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
-        ln -s %{_sysconfdir}/%{name}/management/tomcat6-nonssl.conf $tomcatconf
-    elif stat -c %N $oldtomcatconf| grep -q tomcat6-ssl ; then
-        if [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
+if [ -f $oldtomcatconf ] || [ -L $oldtomcatconf ] ; then
+    if stat -c %N $oldtomcatconf| grep -q tomcat6-ssl ; then
+        if [ -f $tomcatconf ] || [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
         ln -s %{_sysconfdir}/%{name}/management/tomcat6-ssl.conf $tomcatconf
+        echo Please verify the tomcat6.conf in saved folder, and make the required changes manually , saved folder available at $oldtomcatconf
+    else
+        if [ -f $tomcatconf ] || [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
+        ln -s %{_sysconfdir}/%{name}/management/tomcat6-nonssl.conf $tomcatconf
+        echo Please verify the tomcat6.conf in saved folder, and make the required changes manually , saved folder available at $oldtomcatconf
     fi
+else
+    echo "Unable to determine ssl settings for tomcat.conf, please run cloudstack-setup-management manually"
+fi
+
+%preun agent
+/sbin/service cloudstack-agent stop || true
+if [ "$1" == "0" ] ; then
+    /sbin/chkconfig --del cloudstack-agent > /dev/null 2>&1 || true
+    /sbin/service cloudstack-agent stop > /dev/null 2>&1 || true
 fi
 
 %pre agent
@@ -405,6 +460,10 @@ if [ -d "%{_sysconfdir}/cloud" ] ; then
 fi
 
 %post agent
+if [ "$1" == "1" ] ; then
+    /sbin/chkconfig --add cloudstack-agent > /dev/null 2>&1 || true
+    /sbin/chkconfig --level 345 cloudstack-agent on > /dev/null 2>&1 || true
+fi
 
 # if saved configs from upgrade exist, copy them over
 if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
@@ -412,6 +471,13 @@ if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
     cp -p %{_sysconfdir}/cloud.rpmsave/agent/agent.properties %{_sysconfdir}/%{name}/agent
     # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
     mv %{_sysconfdir}/cloud.rpmsave/agent/agent.properties %{_sysconfdir}/cloud.rpmsave/agent/agent.properties.rpmsave
+fi
+
+%post usage
+if [ -f "%{_sysconfdir}/%{name}/management/db.properties" ]; then
+    echo Replacing db.properties with management server db.properties
+    rm -f %{_sysconfdir}/%{name}/usage/db.properties
+    ln -s %{_sysconfdir}/%{name}/management/db.properties %{_sysconfdir}/%{name}/usage/db.properties
 fi
 
 #%post awsapi
@@ -443,7 +509,6 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.policy
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/classpath.conf
-%config(noreplace) %{_sysconfdir}/%{name}/management/db-enc.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/server-nonssl.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/server-ssl.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat-users.xml
@@ -453,8 +518,6 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/management/cloud-bridge.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/commons-logging.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/ec2-service.properties
-%config(noreplace) %{_sysconfdir}/%{name}/management/crypto.properties
-%config(noreplace) %{_sysconfdir}/%{name}/management/xes.keystore
 %attr(0755,root,root) %{_initrddir}/%{name}-management
 %attr(0755,root,root) %{_bindir}/%{name}-setup-management
 %attr(0755,root,root) %{_bindir}/%{name}-update-xenserver-licenses
@@ -475,56 +538,55 @@ fi
 %{_datadir}/%{name}-management/setup/db/*.sql
 %{_datadir}/%{name}-management/setup/*.sh
 %{_datadir}/%{name}-management/setup/server-setup.xml
-%{_javadir}/jasypt-1.9.0.jar
-%{_javadir}/jasypt-1.8.jar
 %attr(0755,root,root) %{_bindir}/%{name}-external-ipallocator.py
 %attr(0755,root,root) %{_initrddir}/%{name}-ipallocator
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/ipallocator
-%doc LICENSE
-%doc NOTICE
+%dir %attr(0770,root,root) %{_localstatedir}/log/%{name}-management
+%{_defaultdocdir}/%{name}-management-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-management-%{version}/NOTICE
+%attr(0644,cloud,cloud) %{_localstatedir}/log/%{name}/management/catalina.out
 
 %files agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
 %attr(0755,root,root) %{_bindir}/%{name}-ssh
 %attr(0755,root,root) %{_sysconfdir}/init.d/%{name}-agent
+%attr(0755,root,root) %{_datadir}/%{name}-common/scripts/network/cisco
 %config(noreplace) %{_sysconfdir}/%{name}/agent
 %dir %{_localstatedir}/log/%{name}/agent
 %attr(0644,root,root) %{_datadir}/%{name}-agent/lib/*.jar
 %dir %{_datadir}/%{name}-agent/plugins
-%doc LICENSE
-%doc NOTICE
+%{_defaultdocdir}/%{name}-agent-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-agent-%{version}/NOTICE
 
 %files common
-%dir %attr(0755,root,root) %{_libdir}/python2.6/site-packages/cloudutils
+%dir %attr(0755,root,root) %{python_sitearch}/cloudutils
 %dir %attr(0755,root,root) %{_datadir}/%{name}-common/vms
 %attr(0755,root,root) %{_datadir}/%{name}-common/scripts
 %attr(0644, root, root) %{_datadir}/%{name}-common/vms/systemvm.iso
 %attr(0644, root, root) %{_datadir}/%{name}-common/vms/systemvm.zip
-%attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloud_utils.py
-%attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloud_utils.pyc
-%attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudutils/*
-%doc LICENSE
-%doc NOTICE
+%attr(0644,root,root) %{python_sitearch}/cloud_utils.py
+%attr(0644,root,root) %{python_sitearch}/cloud_utils.pyc
+%attr(0644,root,root) %{python_sitearch}/cloudutils/*
+%attr(0644, root, root) %{_datadir}/%{name}-common/lib/jasypt-1.9.0.jar
+%{_defaultdocdir}/%{name}-common-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-common-%{version}/NOTICE
 
 %files usage
 %attr(0755,root,root) %{_sysconfdir}/init.d/%{name}-usage
 %attr(0644,root,root) %{_datadir}/%{name}-usage/*.jar
 %attr(0644,root,root) %{_datadir}/%{name}-usage/lib/*.jar
-%dir /var/log/%{name}/usage
-%dir %{_sysconfdir}/%{name}/usage
-%doc LICENSE
-%doc NOTICE
+%dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/usage
+%attr(0644,root,root) %{_sysconfdir}/%{name}/usage/db.properties
+%attr(0644,root,root) %{_sysconfdir}/%{name}/usage/log4j-cloud.xml
+%{_defaultdocdir}/%{name}-usage-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-usage-%{version}/NOTICE
 
 %files cli
-%attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudapis.py
-%attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudtool/__init__.py
-%attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudtool/utils.py
-%doc LICENSE
-%doc NOTICE
-
-#%files docs
-#%doc LICENSE
-#%doc NOTICE
+%attr(0644,root,root) %{python_sitearch}/cloudapis.py
+%attr(0644,root,root) %{python_sitearch}/cloudtool/__init__.py
+%attr(0644,root,root) %{python_sitearch}/cloudtool/utils.py
+%{_defaultdocdir}/%{name}-cli-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
 
 %files awsapi
 %defattr(0644,cloud,cloud,0755)
@@ -532,8 +594,11 @@ fi
 %attr(0644,root,root) %{_datadir}/%{name}-bridge/setup/*
 %attr(0755,root,root) %{_bindir}/cloudstack-aws-api-register
 %attr(0755,root,root) %{_bindir}/cloudstack-setup-bridge
-%doc LICENSE
-%doc NOTICE
+%attr(0666,cloud,cloud) %{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/crypto.properties
+%attr(0666,cloud,cloud) %{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/xes.keystore
+
+%{_defaultdocdir}/%{name}-awsapi-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-awsapi-%{version}/NOTICE
 
 
 %changelog

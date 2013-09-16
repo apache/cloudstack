@@ -17,21 +17,22 @@
 package org.apache.cloudstack.api.command.admin.router;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "destroyRouter", description = "Destroys a router.", responseObject = DomainRouterResponse.class)
 public class DestroyRouterCmd extends BaseAsyncCmd {
@@ -84,8 +85,8 @@ public class DestroyRouterCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.DomainRouter;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.DomainRouter;
     }
 
     @Override
@@ -95,10 +96,10 @@ public class DestroyRouterCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
-        UserContext ctx = UserContext.current();
+        CallContext ctx = CallContext.current();
         ctx.setEventDetails("Router Id: "+getId());
 
-        VirtualRouter result = _routerService.destroyRouter(getId(), ctx.getCaller(), ctx.getCallerUserId());
+        VirtualRouter result = _routerService.destroyRouter(getId(), ctx.getCallingAccount(), ctx.getCallingUserId());
         if (result != null) {
             DomainRouterResponse response = _responseGenerator.createDomainRouterResponse(result);
             response.setResponseName(getCommandName());

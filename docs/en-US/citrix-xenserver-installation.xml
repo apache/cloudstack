@@ -62,7 +62,7 @@
           support any system that is not up to date with patches.</para>
       </listitem>
       <listitem>
-        <para>All hosts within a cluster must be homogenous. The CPUs must be of the same type,
+        <para>All hosts within a cluster must be homogeneous. The CPUs must be of the same type,
           count, and feature flags.</para>
       </listitem>
       <listitem>
@@ -103,7 +103,10 @@
             >https://www.citrix.com/English/ss/downloads/</ulink>, download the appropriate version
           of XenServer for your &PRODUCT; version (see <xref
             linkend="system-requirements-xenserver-hosts"/>). Install it using the Citrix XenServer
-          Installation Guide.</para>
+        Installation Guide.</para>
+    <note><title>Older Versions of XenServer</title>
+        <para>Note that you can download the most recent release of XenServer without having a Citrix account. If you wish to download older versions, you will need to create an account and look through the download archives.</para>
+    </note>
       </listitem>
       <listitem>
         <para>After installation, perform the following configuration steps, which are described in
@@ -357,6 +360,12 @@ name-label=&quot;e6849e96-86c3-4f2c-8fcc-350cc711be3d&quot;
       through the use of XenServer network name labels. The name labels are placed on physical
       interfaces or bonds and configured in &PRODUCT;. In some simple cases the name labels are not
       required.</para>
+    <para>When configuring networks in a XenServer environment, network traffic labels must be
+      properly configured to ensure that the virtual interfaces are created by &PRODUCT; are bound
+      to the correct physical device. The name-label of the XenServer network must match the
+      XenServer traffic label specified while creating the &PRODUCT; network. This is set by running
+      the following command:</para>
+    <programlisting>xe network-param-set uuid=&lt;network id&gt; name-label=&lt;CloudStack traffic label&gt;</programlisting>
     <section id="xenserver-public-network-config">
       <title>Configuring Public Network with a Dedicated NIC for XenServer (Optional)</title>
       <para>&PRODUCT; supports the use of a second NIC (or bonded pair of NICs, described in <xref
@@ -552,7 +561,7 @@ master-password=[your password]</programlisting>
         <orderedlist>
           <listitem>
             <para>Copy the script from the Management Server in
-              /usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/cloud-setup-bonding.sh to the
+              /usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/cloud-setup-bonding.sh to the
               master host and ensure it is executable.</para>
           </listitem>
           <listitem>
@@ -610,8 +619,8 @@ master-password=[your password]</programlisting>
           <listitem>
             <para>Restart the Management Server and Usage Server. You only need to do this once for
               all clusters.</para>
-            <programlisting># service cloud-management start
-# service cloud-usage start</programlisting>
+            <programlisting># service cloudstack-management start
+# service cloudstack-usage start</programlisting>
           </listitem>
         </orderedlist>
       </listitem>
@@ -676,19 +685,19 @@ vm: b6cf79c8-02ee-050b-922f-49583d9f1a14 (i-2-8-VM)</programlisting>
                 </thead>
                 <tbody>
                   <row>
-                    <entry><para>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py</para></entry>
+                    <entry><para>/usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py</para></entry>
                     <entry><para>/opt/xensource/sm/NFSSR.py</para></entry>
                   </row>
                   <row>
-                    <entry><para>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/setupxenserver.sh</para></entry>
+                    <entry><para>/usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/setupxenserver.sh</para></entry>
                     <entry><para>/opt/xensource/bin/setupxenserver.sh</para></entry>
                   </row>
                   <row>
-                    <entry><para>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/make_migratable.sh</para></entry>
+                    <entry><para>/usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/make_migratable.sh</para></entry>
                     <entry><para>/opt/xensource/bin/make_migratable.sh</para></entry>
                   </row>
                   <row>
-                    <entry><para>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/cloud-clean-vlan.sh</para></entry>
+                    <entry><para>/usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/cloud-clean-vlan.sh</para></entry>
                     <entry><para>/opt/xensource/bin/cloud-clean-vlan.sh</para></entry>
                   </row>
                 </tbody>

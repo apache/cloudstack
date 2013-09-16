@@ -36,6 +36,7 @@
     <xi:include href="create-template-from-snapshot.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="upload-template.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="export-template.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="create-linux-template.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />    
     <xi:include href="create-windows-template.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="import-ami.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="convert-hyperv-vm-to-template.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

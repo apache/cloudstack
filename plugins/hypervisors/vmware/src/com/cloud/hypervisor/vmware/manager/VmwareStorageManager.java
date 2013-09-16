@@ -24,8 +24,7 @@ import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
-import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.storage.*;
 
 public interface VmwareStorageManager {
     Answer execute(VmwareHostService hostService, PrimaryStorageDownloadCommand cmd);
@@ -37,4 +36,6 @@ public interface VmwareStorageManager {
     Answer execute(VmwareHostService hostService, CreateVMSnapshotCommand cmd);
     Answer execute(VmwareHostService hostService, DeleteVMSnapshotCommand cmd);
     Answer execute(VmwareHostService hostService, RevertToVMSnapshotCommand cmd);
+    boolean execute(VmwareHostService hostService, CreateEntityDownloadURLCommand cmd);
+    public void createOva(String path, String name);
 }

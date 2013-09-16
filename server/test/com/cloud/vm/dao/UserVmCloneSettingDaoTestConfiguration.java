@@ -19,6 +19,7 @@ package com.cloud.vm.dao;
 
 import java.io.IOException;
 
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Configuration;
@@ -27,7 +28,6 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 
-import com.cloud.utils.component.SpringComponentScanUtils;
 import com.cloud.vm.dao.UserVmCloneSettingDaoImpl;
 
 @Configuration
@@ -45,7 +45,7 @@ public class UserVmCloneSettingDaoTestConfiguration {
         public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {
             mdr.getClassMetadata().getClassName();
             ComponentScan cs = UserVmCloneSettingDaoTestConfiguration.class.getAnnotation(ComponentScan.class);
-            return SpringComponentScanUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
+            return SpringUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
         }
 
     }

@@ -21,18 +21,22 @@ package com.cloud.hypervisor.kvm.resource;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
+import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
+
+import org.apache.commons.lang.SystemUtils;
+import org.junit.Assume;
 import org.junit.Test;
 
 import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class LibvirtComputingResourceTest {
 
     String _hyperVisorType = "kvm";
     Random _random = new Random();
-
     /**
         This test tests if the Agent can handle a vmSpec coming
         from a <=4.1 management server.
@@ -60,6 +64,7 @@ public class LibvirtComputingResourceTest {
         LibvirtComputingResource lcr = new LibvirtComputingResource();
         VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, speed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
+        to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
 
         LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(_hyperVisorType);
@@ -79,7 +84,7 @@ public class LibvirtComputingResourceTest {
         vmStr += "<serial type='pty'>\n";
         vmStr += "<target port='0'/>\n";
         vmStr += "</serial>\n";
-        vmStr += "<graphics type='vnc' autoport='yes' listen='" + vncAddr + "' />\n";
+        vmStr += "<graphics type='vnc' autoport='yes' listen='" + vncAddr + "' passwd='" + vncPassword + "'/>\n";
         vmStr += "<console type='pty'>\n";
         vmStr += "<target port='0'/>\n";
         vmStr += "</console>\n";
@@ -96,14 +101,13 @@ public class LibvirtComputingResourceTest {
         vmStr += "<boot dev='cdrom'/>\n";
         vmStr += "<boot dev='hd'/>\n";
         vmStr += "</os>\n";
-        vmStr += "<cputune>\n";
-        vmStr += "<shares>" + (cpus * speed) + "</shares>\n";
-        vmStr += "</cputune>\n";
+        //vmStr += "<cputune>\n";
+        //vmStr += "<shares>" + (cpus * speed) + "</shares>\n";
+        //vmStr += "</cputune>\n";
         vmStr += "<on_reboot>restart</on_reboot>\n";
         vmStr += "<on_poweroff>destroy</on_poweroff>\n";
         vmStr += "<on_crash>destroy</on_crash>\n";
         vmStr += "</domain>\n";
-
         assertEquals(vmStr, vm.toString());
     }
 
@@ -135,6 +139,7 @@ public class LibvirtComputingResourceTest {
         LibvirtComputingResource lcr = new LibvirtComputingResource();
         VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
+        to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
 
         LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(_hyperVisorType);
@@ -154,7 +159,7 @@ public class LibvirtComputingResourceTest {
         vmStr += "<serial type='pty'>\n";
         vmStr += "<target port='0'/>\n";
         vmStr += "</serial>\n";
-        vmStr += "<graphics type='vnc' autoport='yes' listen='" + vncAddr + "' />\n";
+        vmStr += "<graphics type='vnc' autoport='yes' listen='" + vncAddr + "' passwd='" + vncPassword + "'/>\n";
         vmStr += "<console type='pty'>\n";
         vmStr += "<target port='0'/>\n";
         vmStr += "</console>\n";
@@ -171,14 +176,23 @@ public class LibvirtComputingResourceTest {
         vmStr += "<boot dev='cdrom'/>\n";
         vmStr += "<boot dev='hd'/>\n";
         vmStr += "</os>\n";
-        vmStr += "<cputune>\n";
-        vmStr += "<shares>" + (cpus * minSpeed) + "</shares>\n";
-        vmStr += "</cputune>\n";
+        //vmStr += "<cputune>\n";
+        //vmStr += "<shares>" + (cpus * minSpeed) + "</shares>\n";
+        //vmStr += "</cputune>\n";
         vmStr += "<on_reboot>restart</on_reboot>\n";
         vmStr += "<on_poweroff>destroy</on_poweroff>\n";
         vmStr += "<on_crash>destroy</on_crash>\n";
         vmStr += "</domain>\n";
 
         assertEquals(vmStr, vm.toString());
+    }
+
+    @Test
+    public void testGetNicStats() {
+        //this test is only working on linux because of the loopback interface name
+        //also the tested code seems to work only on linux
+        Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
+        Pair<Double, Double> stats = LibvirtComputingResource.getNicStats("lo");
+        assertNotNull(stats);
     }
 }

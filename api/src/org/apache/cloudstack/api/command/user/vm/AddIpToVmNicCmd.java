@@ -16,9 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import com.cloud.vm.NicSecondaryIp;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -26,8 +29,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
+import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.event.EventTypes;
@@ -39,7 +42,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 
@@ -68,11 +70,11 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
     }
 
     public String getAccountName() {
-        return UserContext.current().getCaller().getAccountName();
+        return CallContext.current().getCallingAccount().getAccountName();
     }
 
     public long getDomainId() {
-        return UserContext.current().getCaller().getDomainId();
+        return CallContext.current().getCallingAccount().getDomainId();
     }
 
     private long getZoneId() {
@@ -112,7 +114,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         return caller.getAccountId();
     }
 
@@ -144,8 +146,9 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, ResourceAllocationException,
     ConcurrentOperationException, InsufficientCapacityException {
 
-        UserContext.current().setEventDetails("Nic Id: " + getNicId() );
+        CallContext.current().setEventDetails("Nic Id: " + getNicId() );
         String ip;
+        NicSecondaryIp result;
         String secondaryIp = null;
         if ((ip = getIpaddress()) != null) {
             if (!NetUtils.isValidIp(ip)) {
@@ -154,12 +157,13 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
         }
 
         try {
-            secondaryIp =  _networkService.allocateSecondaryGuestIP(_accountService.getAccount(getEntityOwnerId()),  getZoneId(), getNicId(), getNetworkId(), getIpaddress());
+            result =  _networkService.allocateSecondaryGuestIP(_accountService.getAccount(getEntityOwnerId()),  getZoneId(), getNicId(), getNetworkId(), getIpaddress());
         } catch (InsufficientAddressCapacityException e) {
             throw new InvalidParameterValueException("Allocating guest ip for nic failed");
         }
 
-        if (secondaryIp != null) {
+        if (result != null) {
+            secondaryIp = result.getIp4Address();
             if (getNetworkType() == NetworkType.Basic) {
                 // add security group rules for the secondary ip addresses
                 boolean success = false;
@@ -171,7 +175,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
 
             s_logger.info("Associated ip address to NIC : " + secondaryIp);
             NicSecondaryIpResponse response = new NicSecondaryIpResponse();
-            response = _responseGenerator.createSecondaryIPToNicResponse(secondaryIp, getNicId(), getNetworkId());
+            response = _responseGenerator.createSecondaryIPToNicResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
@@ -190,8 +194,8 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.IpAddress;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.IpAddress;
     }
 
 }

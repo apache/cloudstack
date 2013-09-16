@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.AddBaremetalHostCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StopAnswer;

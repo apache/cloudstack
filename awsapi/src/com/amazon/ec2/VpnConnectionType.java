@@ -19,7 +19,7 @@
  * VpnConnectionType.java
  *
  * This file was auto-generated from WSDL
- * by the Apache Axis2 version: 1.5.1  Built on : Oct 19, 2009 (10:59:34 EDT)
+ * by the Apache Axis2 version: 1.5.6  Built on : Aug 30, 2011 (10:01:01 CEST)
  */
             
                 package com.amazon.ec2;
@@ -33,13 +33,13 @@
         implements org.apache.axis2.databinding.ADBBean{
         /* This type was generated from the piece of schema that had
                 name = VpnConnectionType
-                Namespace URI = http://ec2.amazonaws.com/doc/2010-11-15/
+                Namespace URI = http://ec2.amazonaws.com/doc/2012-08-15/
                 Namespace Prefix = ns1
                 */
             
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
-            if(namespace.equals("http://ec2.amazonaws.com/doc/2010-11-15/")){
+            if(namespace.equals("http://ec2.amazonaws.com/doc/2012-08-15/")){
                 return "ns1";
             }
             return org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
@@ -299,6 +299,138 @@
                                }
                             
 
+                        /**
+                        * field for VgwTelemetry
+                        */
+
+                        
+                                    protected com.amazon.ec2.VgwTelemetryType localVgwTelemetry ;
+                                
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localVgwTelemetryTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return com.amazon.ec2.VgwTelemetryType
+                           */
+                           public  com.amazon.ec2.VgwTelemetryType getVgwTelemetry(){
+                               return localVgwTelemetry;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param VgwTelemetry
+                               */
+                               public void setVgwTelemetry(com.amazon.ec2.VgwTelemetryType param){
+                            
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localVgwTelemetryTracker = true;
+                                       } else {
+                                          localVgwTelemetryTracker = false;
+                                              
+                                       }
+                                   
+                                            this.localVgwTelemetry=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for Options
+                        */
+
+                        
+                                    protected com.amazon.ec2.VpnConnectionOptionsResponseType localOptions ;
+                                
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localOptionsTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return com.amazon.ec2.VpnConnectionOptionsResponseType
+                           */
+                           public  com.amazon.ec2.VpnConnectionOptionsResponseType getOptions(){
+                               return localOptions;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param Options
+                               */
+                               public void setOptions(com.amazon.ec2.VpnConnectionOptionsResponseType param){
+                            
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localOptionsTracker = true;
+                                       } else {
+                                          localOptionsTracker = false;
+                                              
+                                       }
+                                   
+                                            this.localOptions=param;
+                                    
+
+                               }
+                            
+
+                        /**
+                        * field for Routes
+                        */
+
+                        
+                                    protected com.amazon.ec2.VpnStaticRoutesSetType localRoutes ;
+                                
+                           /*  This tracker boolean wil be used to detect whether the user called the set method
+                          *   for this attribute. It will be used to determine whether to include this field
+                           *   in the serialized XML
+                           */
+                           protected boolean localRoutesTracker = false ;
+                           
+
+                           /**
+                           * Auto generated getter method
+                           * @return com.amazon.ec2.VpnStaticRoutesSetType
+                           */
+                           public  com.amazon.ec2.VpnStaticRoutesSetType getRoutes(){
+                               return localRoutes;
+                           }
+
+                           
+                        
+                            /**
+                               * Auto generated setter method
+                               * @param param Routes
+                               */
+                               public void setRoutes(com.amazon.ec2.VpnStaticRoutesSetType param){
+                            
+                                       if (param != null){
+                                          //update the setting tracker
+                                          localRoutesTracker = true;
+                                       } else {
+                                          localRoutesTracker = false;
+                                              
+                                       }
+                                   
+                                            this.localRoutes=param;
+                                    
+
+                               }
+                            
+
      /**
      * isReaderMTOMAware
      * @return true if the reader supports MTOM
@@ -382,7 +514,7 @@
                   if (serializeType){
                
 
-                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2010-11-15/");
+                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2012-08-15/");
                    if ((namespacePrefix != null) && (namespacePrefix.trim().length() > 0)){
                        writeAttribute("xsi","http://www.w3.org/2001/XMLSchema-instance","type",
                            namespacePrefix+":VpnConnectionType",
@@ -396,7 +528,7 @@
                
                    }
                
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -430,7 +562,7 @@
                                     
                                    xmlWriter.writeEndElement();
                              
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -464,7 +596,7 @@
                                     
                                    xmlWriter.writeEndElement();
                               if (localCustomerGatewayConfigurationTracker){
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -498,7 +630,7 @@
                                     
                                    xmlWriter.writeEndElement();
                              } if (localTypeTracker){
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -532,7 +664,7 @@
                                     
                                    xmlWriter.writeEndElement();
                              }
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -566,7 +698,7 @@
                                     
                                    xmlWriter.writeEndElement();
                              
-                                    namespace = "http://ec2.amazonaws.com/doc/2010-11-15/";
+                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
                                     if (! namespace.equals("")) {
                                         prefix = xmlWriter.getPrefix(namespace);
 
@@ -603,7 +735,25 @@
                                             if (localTagSet==null){
                                                  throw new org.apache.axis2.databinding.ADBException("tagSet cannot be null!!");
                                             }
-                                           localTagSet.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","tagSet"),
+                                           localTagSet.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","tagSet"),
+                                               factory,xmlWriter);
+                                        } if (localVgwTelemetryTracker){
+                                            if (localVgwTelemetry==null){
+                                                 throw new org.apache.axis2.databinding.ADBException("vgwTelemetry cannot be null!!");
+                                            }
+                                           localVgwTelemetry.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","vgwTelemetry"),
+                                               factory,xmlWriter);
+                                        } if (localOptionsTracker){
+                                            if (localOptions==null){
+                                                 throw new org.apache.axis2.databinding.ADBException("options cannot be null!!");
+                                            }
+                                           localOptions.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","options"),
+                                               factory,xmlWriter);
+                                        } if (localRoutesTracker){
+                                            if (localRoutes==null){
+                                                 throw new org.apache.axis2.databinding.ADBException("routes cannot be null!!");
+                                            }
+                                           localRoutes.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","routes"),
                                                factory,xmlWriter);
                                         }
                     xmlWriter.writeEndElement();
@@ -768,7 +918,7 @@
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
                 
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "vpnConnectionId"));
                                  
                                         if (localVpnConnectionId != null){
@@ -777,7 +927,7 @@
                                            throw new org.apache.axis2.databinding.ADBException("vpnConnectionId cannot be null!!");
                                         }
                                     
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "state"));
                                  
                                         if (localState != null){
@@ -786,7 +936,7 @@
                                            throw new org.apache.axis2.databinding.ADBException("state cannot be null!!");
                                         }
                                      if (localCustomerGatewayConfigurationTracker){
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "customerGatewayConfiguration"));
                                  
                                         if (localCustomerGatewayConfiguration != null){
@@ -795,7 +945,7 @@
                                            throw new org.apache.axis2.databinding.ADBException("customerGatewayConfiguration cannot be null!!");
                                         }
                                     } if (localTypeTracker){
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "type"));
                                  
                                         if (localType != null){
@@ -804,7 +954,7 @@
                                            throw new org.apache.axis2.databinding.ADBException("type cannot be null!!");
                                         }
                                     }
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "customerGatewayId"));
                                  
                                         if (localCustomerGatewayId != null){
@@ -813,7 +963,7 @@
                                            throw new org.apache.axis2.databinding.ADBException("customerGatewayId cannot be null!!");
                                         }
                                     
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "vpnGatewayId"));
                                  
                                         if (localVpnGatewayId != null){
@@ -822,7 +972,7 @@
                                            throw new org.apache.axis2.databinding.ADBException("vpnGatewayId cannot be null!!");
                                         }
                                      if (localTagSetTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "tagSet"));
                             
                             
@@ -830,6 +980,33 @@
                                          throw new org.apache.axis2.databinding.ADBException("tagSet cannot be null!!");
                                     }
                                     elementList.add(localTagSet);
+                                } if (localVgwTelemetryTracker){
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "vgwTelemetry"));
+                            
+                            
+                                    if (localVgwTelemetry==null){
+                                         throw new org.apache.axis2.databinding.ADBException("vgwTelemetry cannot be null!!");
+                                    }
+                                    elementList.add(localVgwTelemetry);
+                                } if (localOptionsTracker){
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "options"));
+                            
+                            
+                                    if (localOptions==null){
+                                         throw new org.apache.axis2.databinding.ADBException("options cannot be null!!");
+                                    }
+                                    elementList.add(localOptions);
+                                } if (localRoutesTracker){
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                                                                      "routes"));
+                            
+                            
+                                    if (localRoutes==null){
+                                         throw new org.apache.axis2.databinding.ADBException("routes cannot be null!!");
+                                    }
+                                    elementList.add(localRoutes);
                                 }
 
                 return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
@@ -909,7 +1086,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","vpnConnectionId").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","vpnConnectionId").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -928,7 +1105,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","state").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","state").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -947,7 +1124,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","customerGatewayConfiguration").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","customerGatewayConfiguration").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -965,7 +1142,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","type").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","type").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -983,7 +1160,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","customerGatewayId").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","customerGatewayId").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -1002,7 +1179,7 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","vpnGatewayId").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","vpnGatewayId").equals(reader.getName())){
                                 
                                     java.lang.String content = reader.getElementText();
                                     
@@ -1021,9 +1198,54 @@
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","tagSet").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","tagSet").equals(reader.getName())){
                                 
                                                 object.setTagSet(com.amazon.ec2.ResourceTagSetType.Factory.parse(reader));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                    else {
+                                        
+                                    }
+                                
+                                    
+                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
+                                
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","vgwTelemetry").equals(reader.getName())){
+                                
+                                                object.setVgwTelemetry(com.amazon.ec2.VgwTelemetryType.Factory.parse(reader));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                    else {
+                                        
+                                    }
+                                
+                                    
+                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
+                                
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","options").equals(reader.getName())){
+                                
+                                                object.setOptions(com.amazon.ec2.VpnConnectionOptionsResponseType.Factory.parse(reader));
+                                              
+                                        reader.next();
+                                    
+                              }  // End of if for expected property start element
+                                
+                                    else {
+                                        
+                                    }
+                                
+                                    
+                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
+                                
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","routes").equals(reader.getName())){
+                                
+                                                object.setRoutes(com.amazon.ec2.VpnStaticRoutesSetType.Factory.parse(reader));
                                               
                                         reader.next();
                                     

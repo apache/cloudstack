@@ -34,6 +34,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
@@ -41,7 +43,6 @@ import javax.net.ssl.X509TrustManager;
 
 import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpConnectionManager;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpMethodBase;
@@ -59,7 +60,15 @@ import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.log4j.Logger;
+
+import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 
 public class NiciraNvpApi {
@@ -73,6 +82,9 @@ public class NiciraNvpApi {
     private String _adminpass;
     
     private HttpClient _client;
+    private String _nvpversion;
+    
+    private Gson _gson;
     
     /* This factory method is protected so we can extend this
      * in the unittests.
@@ -117,6 +129,11 @@ public class NiciraNvpApi {
         } catch (IOException e) {
             s_logger.warn("Failed to register the TrustingProtocolSocketFactory, falling back to default SSLSocketFactory", e);
         }
+        
+        _gson = new GsonBuilder()
+                .registerTypeAdapter(NatRule.class, new NatRuleAdapter())
+                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .create();
         
     }
     
@@ -168,6 +185,12 @@ public class NiciraNvpApi {
         if (pm.getStatusCode() != HttpStatus.SC_OK) {
             s_logger.error("Nicira NVP API login failed : " + pm.getStatusText());
             throw new NiciraNvpApiException("Nicira NVP API login failed " + pm.getStatusText());
+        }
+        
+        // Extract the version for later use
+        if (pm.getResponseHeader("Server") != null) {
+            _nvpversion = pm.getResponseHeader("Server").getValue();
+            s_logger.debug("NVP Controller reports version " + _nvpversion);
         }
         
         // Success; the cookie required for login is kept in _client
@@ -290,8 +313,8 @@ public class NiciraNvpApi {
     	executeUpdateObject(natRule, uri, Collections.<String,String>emptyMap());
     }
     
-    public void deleteLogicalRouterNatRule(String logicalRouterUuid, String natRuleUuid) throws NiciraNvpApiException {
-    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/nat/" + natRuleUuid;
+    public void deleteLogicalRouterNatRule(String logicalRouterUuid, UUID natRuleUuid) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/nat/" + natRuleUuid.toString();
     	
     	executeDeleteObject(uri);
     }
@@ -342,13 +365,11 @@ public class NiciraNvpApi {
         	throw new NiciraNvpApiException("Hostname/credentials are null or empty");
         }
         
-        Gson gson = new Gson();
-        
         PutMethod pm = (PutMethod) createMethod("put", uri);
         pm.setRequestHeader("Content-Type", "application/json");
         try {
             pm.setRequestEntity(new StringRequestEntity(
-                    gson.toJson(newObject),"application/json", null));
+                    _gson.toJson(newObject),"application/json", null));
         } catch (UnsupportedEncodingException e) {
             throw new NiciraNvpApiException("Failed to encode json request body", e);
         }
@@ -371,13 +392,11 @@ public class NiciraNvpApi {
         	throw new NiciraNvpApiException("Hostname/credentials are null or empty");
         }
         
-        Gson gson = new Gson();
-        
         PostMethod pm = (PostMethod) createMethod("post", uri);
         pm.setRequestHeader("Content-Type", "application/json");
         try {
             pm.setRequestEntity(new StringRequestEntity(
-                    gson.toJson(newObject),"application/json", null));
+                    _gson.toJson(newObject),"application/json", null));
         } catch (UnsupportedEncodingException e) {
             throw new NiciraNvpApiException("Failed to encode json request body", e);
         }
@@ -393,7 +412,7 @@ public class NiciraNvpApi {
         
         T result;
         try {
-            result = (T)gson.fromJson(pm.getResponseBodyAsString(), TypeToken.get(newObject.getClass()).getType());
+            result = (T)_gson.fromJson(pm.getResponseBodyAsString(), TypeToken.get(newObject.getClass()).getType());
         } catch (IOException e) {
             throw new NiciraNvpApiException("Failed to decode json response body", e);
         } finally {
@@ -450,10 +469,9 @@ public class NiciraNvpApi {
             throw new NiciraNvpApiException("Failed to retrieve object : " + errorMessage);
         }
             
-        Gson gson = new Gson();
         T returnValue;
         try {
-            returnValue = (T)gson.fromJson(gm.getResponseBodyAsString(), returnObjectType);
+            returnValue = (T)_gson.fromJson(gm.getResponseBodyAsString(), returnObjectType);
         } catch (IOException e) {
             s_logger.error("IOException while retrieving response body",e);
             throw new NiciraNvpApiException(e);
@@ -577,5 +595,28 @@ public class NiciraNvpApi {
         
     }
     
-    
+    public static class NatRuleAdapter implements JsonDeserializer<NatRule> {
+
+        @Override
+        public NatRule deserialize(JsonElement jsonElement, Type type,
+                JsonDeserializationContext context) throws JsonParseException {
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            NatRule natRule = null;
+            
+            if (!jsonObject.has("type")) {
+                throw new JsonParseException("Deserializing as a NatRule, but no type present in the json object");
+            }
+            
+            String natRuleType = jsonObject.get("type").getAsString();
+            if ("SourceNatRule".equals(natRuleType)) {
+                return context.deserialize(jsonElement, SourceNatRule.class);
+            }
+            else if ("DestinationNatRule".equals(natRuleType)) {
+                return context.deserialize(jsonElement, DestinationNatRule.class);
+            }
+            
+            throw new JsonParseException("Failed to deserialize type \"" + natRuleType + "\"");
+        }
+
+    }
 }

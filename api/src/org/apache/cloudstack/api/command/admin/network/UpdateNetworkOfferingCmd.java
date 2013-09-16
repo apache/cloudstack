@@ -57,6 +57,9 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="update state for the network offering")
     private String state;
 
+    @Parameter(name=ApiConstants.MAX_CONNECTIONS, type=CommandType.INTEGER, description="maximum number of concurrent connections supported by the network offering")
+    private Integer maxConnections;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -85,6 +88,9 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
         return sortKey;
     }
 
+    public Integer getMaxconnections() {
+        return maxConnections;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

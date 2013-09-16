@@ -26,9 +26,9 @@
     <para>The root administrator will need to stop and restart the Management Server from time to time.</para>
     <para>For example, after changing a global configuration parameter, a restart is required. If you have multiple Management Server nodes, restart all of them to put the new parameter value into effect consistently throughout the cloud..</para>
     <para>To stop the Management Server, issue the following command at the operating system prompt on the Management Server node:</para>
-    <programlisting># service cloud-management stop</programlisting>
+    <programlisting># service cloudstack-management stop</programlisting>
     <para>To start the Management Server:</para>
-    <programlisting># service cloud-management start</programlisting>
+    <programlisting># service cloudstack-management start</programlisting>
     <para>To stop the Management Server:</para>
-    <programlisting># service cloud-management stop</programlisting>
+    <programlisting># service cloudstack-management stop</programlisting>
 </section>

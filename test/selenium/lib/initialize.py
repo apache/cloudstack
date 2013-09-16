@@ -21,11 +21,26 @@ This will help pass webdriver (Browser instance) across our test cases.
 
 
 from selenium import webdriver
+import sys
 
 DRIVER = None
+MS_ip = None
+
 
 def getOrCreateWebdriver():
     global DRIVER
-    DRIVER = DRIVER or webdriver.Firefox()
+    DRIVER = DRIVER or webdriver.PhantomJS('phantomjs')  # phantomjs executable must be in PATH.
     return DRIVER
+
     
+def getMSip():
+    global MS_ip
+    if len(sys.argv) >= 3:
+            sys.exit("Only One argument is required .. Enter your Management Server IP")
+
+    if len(sys.argv) == 1:
+            sys.exit("Atleast One argument is required .. Enter your Management Server IP")
+
+    for arg in sys.argv[1:]:
+        MS_ip = arg
+        return MS_ip

@@ -74,7 +74,7 @@ class Services:
                     "displaytext": "Tiny Instance",
                     "cpunumber": 1,
                     "cpuspeed": 100,    # in MHz
-                    "memory": 64,       # In MBs
+                    "memory": 128,       # In MBs
                 },
                 "security_group": {
                     "name": 'SSH',
@@ -94,8 +94,6 @@ class Services:
             # CentOS 5.3 (64-bit)
             "sleep": 60,
             "timeout": 10,
-            "mode": 'basic',
-            # Networking mode: Basic or Advanced
         }
 
 
@@ -125,6 +123,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -145,7 +144,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
                             admin=True,
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls._cleanup = [
                         cls.account,
@@ -165,7 +164,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_01_deployVM_InDefaultSecurityGroup(self):
         """Test deploy VM in default security group
         """
@@ -179,8 +178,8 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id
                                 )
         self.debug("Deployed VM with ID: %s" % self.virtual_machine.id)
@@ -223,7 +222,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         # Verify List Routers response for account
         self.debug(
                    "Verify list routers response for account: %s" \
-                   % self.account.account.name
+                   % self.account.name
                    )
         routers = list_routers(
                                self.apiclient,
@@ -244,7 +243,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_02_listSecurityGroups(self):
         """Test list security groups for admin account
         """
@@ -257,8 +256,8 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
 
         sercurity_groups = SecurityGroup.list(
                                               self.apiclient,
-                                              account=self.account.account.name,
-                                              domainid=self.account.account.domainid
+                                              account=self.account.name,
+                                              domainid=self.account.domainid
                                               )
         self.assertEqual(
                          isinstance(sercurity_groups, list),
@@ -279,7 +278,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_03_accessInDefaultSecurityGroup(self):
         """Test access in default security group
         """
@@ -293,8 +292,8 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id
                                 )
         self.debug("Deployed VM with ID: %s" % self.virtual_machine.id)
@@ -337,8 +336,8 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         # Default Security group should not have any ingress rule
         sercurity_groups = SecurityGroup.list(
                                               self.apiclient,
-                                              account=self.account.account.name,
-                                              domainid=self.account.account.domainid
+                                              account=self.account.name,
+                                              domainid=self.account.domainid
                                               )
         self.assertEqual(
                          isinstance(sercurity_groups, list),
@@ -397,6 +396,7 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -416,7 +416,7 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
         cls._cleanup = [
                         cls.account,
                         cls.service_offering
@@ -435,7 +435,7 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_01_authorizeIngressRule(self):
         """Test authorize ingress rule
         """
@@ -450,15 +450,15 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
         security_group = SecurityGroup.create(
                                               self.apiclient,
                                               self.services["security_group"],
-                                              account=self.account.account.name,
-                                              domainid=self.account.account.domainid
+                                              account=self.account.name,
+                                              domainid=self.account.domainid
                                               )
         self.debug("Created security group with ID: %s" % security_group.id)
         # Default Security group should not have any ingress rule
         sercurity_groups = SecurityGroup.list(
                                               self.apiclient,
-                                              account=self.account.account.name,
-                                              domainid=self.account.account.domainid
+                                              account=self.account.name,
+                                              domainid=self.account.domainid
                                               )
         self.assertEqual(
                          isinstance(sercurity_groups, list),
@@ -475,8 +475,8 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
         ingress_rule = security_group.authorize(
                                 self.apiclient,
                                 self.services["security_group"],
-                                account=self.account.account.name,
-                                domainid=self.account.account.domainid
+                                account=self.account.name,
+                                domainid=self.account.domainid
                                 )
         self.assertEqual(
                           isinstance(ingress_rule, dict),
@@ -489,12 +489,12 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     securitygroupids=[security_group.id]
                                 )
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
         # Should be able to SSH VM
         try:
             self.debug("SSH into VM: %s" % self.virtual_machine.id)
@@ -532,6 +532,7 @@ class TestRevokeIngressRule(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -551,7 +552,7 @@ class TestRevokeIngressRule(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
         cls._cleanup = [
                         cls.account,
                         cls.service_offering
@@ -570,7 +571,7 @@ class TestRevokeIngressRule(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_01_revokeIngressRule(self):
         """Test revoke ingress rule
         """
@@ -586,16 +587,16 @@ class TestRevokeIngressRule(cloudstackTestCase):
         security_group = SecurityGroup.create(
                                               self.apiclient,
                                               self.services["security_group"],
-                                              account=self.account.account.name,
-                                              domainid=self.account.account.domainid
+                                              account=self.account.name,
+                                              domainid=self.account.domainid
                                               )
         self.debug("Created security group with ID: %s" % security_group.id)
 
         # Default Security group should not have any ingress rule
         sercurity_groups = SecurityGroup.list(
                                               self.apiclient,
-                                              account=self.account.account.name,
-                                              domainid=self.account.account.domainid
+                                              account=self.account.name,
+                                              domainid=self.account.domainid
                                               )
         self.assertEqual(
                          isinstance(sercurity_groups, list),
@@ -614,8 +615,8 @@ class TestRevokeIngressRule(cloudstackTestCase):
         ingress_rule = security_group.authorize(
                                         self.apiclient,
                                         self.services["security_group"],
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
                                         )
 
         self.assertEqual(
@@ -628,12 +629,12 @@ class TestRevokeIngressRule(cloudstackTestCase):
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     securitygroupids=[security_group.id]
                                 )
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Should be able to SSH VM
         try:
@@ -690,6 +691,7 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -710,12 +712,12 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
         cls.virtual_machine = VirtualMachine.create(
                                     cls.api_client,
                                     cls.services["virtual_machine"],
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                 )
         cls._cleanup = [
@@ -826,6 +828,7 @@ class TestdeployVMWithUserData(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -846,7 +849,7 @@ class TestdeployVMWithUserData(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
         cls._cleanup = [
                         cls.account,
                         cls.service_offering
@@ -865,7 +868,7 @@ class TestdeployVMWithUserData(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_01_deployVMWithUserData(self):
         """Test Deploy VM with User data"""
 
@@ -894,15 +897,15 @@ class TestdeployVMWithUserData(cloudstackTestCase):
         security_group = SecurityGroup.create(
                                               self.apiclient,
                                               self.services["security_group"],
-                                              account=self.account.account.name,
-                                              domainid=self.account.account.domainid
+                                              account=self.account.name,
+                                              domainid=self.account.domainid
                                               )
         self.debug("Created security group with ID: %s" % security_group.id)
         # Default Security group should not have any ingress rule
         sercurity_groups = SecurityGroup.list(
                                               self.apiclient,
-                                              account=self.account.account.name,
-                                              domainid=self.account.account.domainid
+                                              account=self.account.name,
+                                              domainid=self.account.domainid
                                               )
         self.assertEqual(
                          isinstance(sercurity_groups, list),
@@ -919,15 +922,15 @@ class TestdeployVMWithUserData(cloudstackTestCase):
             "Authorize Ingress Rule for Security Group %s for account: %s" \
                 % (
                     security_group.id,
-                    self.account.account.name
+                    self.account.name
                 ))
 
         # Authorize Security group to SSH to VM
         ingress_rule = security_group.authorize(
                                         self.apiclient,
                                         self.services["security_group"],
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
                                         )
         self.assertEqual(
                           isinstance(ingress_rule, dict),
@@ -937,12 +940,12 @@ class TestdeployVMWithUserData(cloudstackTestCase):
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     securitygroupids=[security_group.id]
                                 )
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
         # Should be able to SSH VM
         try:
             self.debug(
@@ -985,6 +988,7 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient, self.services)
         self.zone = get_zone(self.apiclient, self.services)
+        self.services['mode'] = self.zone.networktype
 
         template = get_template(
                             self.apiclient,
@@ -1005,7 +1009,7 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
                             self.services["account"],
                             domainid=self.domain.id
                             )
-        self.services["account"] = self.account.account.name
+        self.services["account"] = self.account.name
         self.cleanup = [
                         self.account,
                         self.service_offering
@@ -1040,7 +1044,7 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_01_delete_security_grp_running_vm(self):
         """Test delete security group with running VM"""
 
@@ -1055,15 +1059,15 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
         security_group = SecurityGroup.create(
                                               self.apiclient,
                                               self.services["security_group"],
-                                              account=self.account.account.name,
-                                              domainid=self.account.account.domainid
+                                              account=self.account.name,
+                                              domainid=self.account.domainid
                                               )
         self.debug("Created security group with ID: %s" % security_group.id)
         # Default Security group should not have any ingress rule
         sercurity_groups = SecurityGroup.list(
                                               self.apiclient,
-                                              account=self.account.account.name,
-                                              domainid=self.account.account.domainid
+                                              account=self.account.name,
+                                              domainid=self.account.domainid
                                               )
         self.assertEqual(
                          isinstance(sercurity_groups, list),
@@ -1080,15 +1084,15 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
             "Authorize Ingress Rule for Security Group %s for account: %s" \
                 % (
                     security_group.id,
-                    self.account.account.name
+                    self.account.name
                 ))
 
         # Authorize Security group to SSH to VM
         ingress_rule = security_group.authorize(
                                         self.apiclient,
                                         self.services["security_group"],
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
                                         )
         self.assertEqual(
                           isinstance(ingress_rule, dict),
@@ -1099,15 +1103,16 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     securitygroupids=[security_group.id]
                                 )
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Deleting Security group should raise exception
-        security_group.delete(self.apiclient)
+        with self.assertRaises(Exception):
+            security_group.delete(self.apiclient)
 
         #sleep to ensure that Security group is deleted properly
         time.sleep(self.services["sleep"])
@@ -1124,7 +1129,7 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
                             )
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_02_delete_security_grp_withoout_running_vm(self):
         """Test delete security group without running VM"""
 
@@ -1139,15 +1144,15 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
         security_group = SecurityGroup.create(
                                               self.apiclient,
                                               self.services["security_group"],
-                                              account=self.account.account.name,
-                                              domainid=self.account.account.domainid
+                                              account=self.account.name,
+                                              domainid=self.account.domainid
                                               )
         self.debug("Created security group with ID: %s" % security_group.id)
         # Default Security group should not have any ingress rule
         sercurity_groups = SecurityGroup.list(
                                               self.apiclient,
-                                              account=self.account.account.name,
-                                              domainid=self.account.account.domainid
+                                              account=self.account.name,
+                                              domainid=self.account.domainid
                                               )
         self.assertEqual(
                          isinstance(sercurity_groups, list),
@@ -1164,14 +1169,14 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
             "Authorize Ingress Rule for Security Group %s for account: %s" \
                 % (
                     security_group.id,
-                    self.account.account.name
+                    self.account.name
                 ))
         # Authorize Security group to SSH to VM
         ingress_rule = security_group.authorize(
                                         self.apiclient,
                                         self.services["security_group"],
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
                                         )
         self.assertEqual(
                           isinstance(ingress_rule, dict),
@@ -1182,12 +1187,12 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     securitygroupids=[security_group.id]
                                 )
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Destroy the VM
         self.virtual_machine.delete(self.apiclient)
@@ -1230,6 +1235,7 @@ class TestIngressRule(cloudstackTestCase):
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient, self.services)
         self.zone = get_zone(self.apiclient, self.services)
+        self.services['mode'] = self.zone.networktype
 
         template = get_template(
                             self.apiclient,
@@ -1250,7 +1256,7 @@ class TestIngressRule(cloudstackTestCase):
                             self.services["account"],
                             domainid=self.domain.id
                             )
-        self.services["account"] = self.account.account.name
+        self.services["account"] = self.account.name
         self.cleanup = [
                         self.account,
                         self.service_offering
@@ -1285,7 +1291,7 @@ class TestIngressRule(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_01_authorizeIngressRule_AfterDeployVM(self):
         """Test delete security group with running VM"""
 
@@ -1300,15 +1306,15 @@ class TestIngressRule(cloudstackTestCase):
         security_group = SecurityGroup.create(
                                               self.apiclient,
                                               self.services["security_group"],
-                                              account=self.account.account.name,
-                                              domainid=self.account.account.domainid
+                                              account=self.account.name,
+                                              domainid=self.account.domainid
                                               )
         self.debug("Created security group with ID: %s" % security_group.id)
         # Default Security group should not have any ingress rule
         sercurity_groups = SecurityGroup.list(
                                               self.apiclient,
-                                              account=self.account.account.name,
-                                              domainid=self.account.account.domainid
+                                              account=self.account.name,
+                                              domainid=self.account.domainid
                                               )
         self.assertEqual(
                          isinstance(sercurity_groups, list),
@@ -1324,15 +1330,15 @@ class TestIngressRule(cloudstackTestCase):
             "Authorize Ingress Rule for Security Group %s for account: %s" \
                 % (
                     security_group.id,
-                    self.account.account.name
+                    self.account.name
                 ))
 
         # Authorize Security group to SSH to VM
         ingress_rule_1 = security_group.authorize(
                                         self.apiclient,
                                         self.services["security_group"],
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
                                         )
         self.assertEqual(
                           isinstance(ingress_rule_1, dict),
@@ -1342,25 +1348,25 @@ class TestIngressRule(cloudstackTestCase):
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     securitygroupids=[security_group.id]
                                 )
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         self.debug(
             "Authorize Ingress Rule for Security Group %s for account: %s" \
                 % (
                     security_group.id,
-                    self.account.account.name
+                    self.account.name
                 ))
         # Authorize Security group to SSH to VM
         ingress_rule_2 = security_group.authorize(
                                         self.apiclient,
                                         self.services["security_group_2"],
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
                                         )
         self.assertEqual(
                           isinstance(ingress_rule_2, dict),
@@ -1397,7 +1403,7 @@ class TestIngressRule(cloudstackTestCase):
                       % (ingress_rule_2["id"], e))
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_02_revokeIngressRule_AfterDeployVM(self):
         """Test Revoke ingress rule after deploy VM"""
 
@@ -1416,16 +1422,16 @@ class TestIngressRule(cloudstackTestCase):
         security_group = SecurityGroup.create(
                                               self.apiclient,
                                               self.services["security_group"],
-                                              account=self.account.account.name,
-                                              domainid=self.account.account.domainid
+                                              account=self.account.name,
+                                              domainid=self.account.domainid
                                               )
         self.debug("Created security group with ID: %s" % security_group.id)
 
         # Default Security group should not have any ingress rule
         sercurity_groups = SecurityGroup.list(
                                               self.apiclient,
-                                              account=self.account.account.name,
-                                              domainid=self.account.account.domainid
+                                              account=self.account.name,
+                                              domainid=self.account.domainid
                                               )
         self.assertEqual(
                          isinstance(sercurity_groups, list),
@@ -1442,15 +1448,15 @@ class TestIngressRule(cloudstackTestCase):
             "Authorize Ingress Rule for Security Group %s for account: %s" \
                 % (
                     security_group.id,
-                    self.account.account.name
+                    self.account.name
                 ))
 
         # Authorize Security group to SSH to VM
         ingress_rule = security_group.authorize(
                                         self.apiclient,
                                         self.services["security_group"],
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
                                         )
         self.assertEqual(
                           isinstance(ingress_rule, dict),
@@ -1460,26 +1466,26 @@ class TestIngressRule(cloudstackTestCase):
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     securitygroupids=[security_group.id]
                                 )
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         self.debug(
             "Authorize Ingress Rule for Security Group %s for account: %s" \
                 % (
                     security_group.id,
-                    self.account.account.name
+                    self.account.name
                 ))
 
         # Authorize Security group to SSH to VM
         ingress_rule_2 = security_group.authorize(
                                         self.apiclient,
                                         self.services["security_group_2"],
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
                                         )
         self.assertEqual(
                           isinstance(ingress_rule_2, dict),
@@ -1523,7 +1529,7 @@ class TestIngressRule(cloudstackTestCase):
             "Revoke Ingress Rule for Security Group %s for account: %s" \
                 % (
                     security_group.id,
-                    self.account.account.name
+                    self.account.name
                 ))
 
         result = security_group.revoke(
@@ -1551,7 +1557,7 @@ class TestIngressRule(cloudstackTestCase):
                       % (icmp_rule["ruleid"], e))
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(tags = ["sg", "eip", "advancedsg"])
     def test_03_stopStartVM_verifyIngressAccess(self):
         """Test Start/Stop VM and Verify ingress rule"""
 
@@ -1568,15 +1574,15 @@ class TestIngressRule(cloudstackTestCase):
         security_group = SecurityGroup.create(
                                               self.apiclient,
                                               self.services["security_group"],
-                                              account=self.account.account.name,
-                                              domainid=self.account.account.domainid
+                                              account=self.account.name,
+                                              domainid=self.account.domainid
                                               )
         self.debug("Created security group with ID: %s" % security_group.id)
         # Default Security group should not have any ingress rule
         sercurity_groups = SecurityGroup.list(
                                               self.apiclient,
-                                              account=self.account.account.name,
-                                              domainid=self.account.account.domainid
+                                              account=self.account.name,
+                                              domainid=self.account.domainid
                                               )
         self.assertEqual(
                          isinstance(sercurity_groups, list),
@@ -1594,15 +1600,15 @@ class TestIngressRule(cloudstackTestCase):
             "Authorize Ingress Rule for Security Group %s for account: %s" \
                 % (
                     security_group.id,
-                    self.account.account.name
+                    self.account.name
                 ))
 
         # Authorize Security group to SSH to VM
         ingress_rule = security_group.authorize(
                                         self.apiclient,
                                         self.services["security_group"],
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
                                         )
         self.assertEqual(
                           isinstance(ingress_rule, dict),
@@ -1613,12 +1619,12 @@ class TestIngressRule(cloudstackTestCase):
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     securitygroupids=[security_group.id]
                                 )
-        self.debug("Deploying VM in account: %s" % self.account.account.name)
+        self.debug("Deploying VM in account: %s" % self.account.name)
 
         # SSH should be allowed on 22 port
         try:

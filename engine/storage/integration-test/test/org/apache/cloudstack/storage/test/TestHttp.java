@@ -22,28 +22,21 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.channels.FileChannel;
-
 import junit.framework.Assert;
 
 import org.apache.commons.httpclient.HttpException;
-import org.apache.cxf.helpers.IOUtils;
-import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
 import org.testng.annotations.Parameters;
 
-@ContextConfiguration(locations="classpath:/storageContext.xml")
+@ContextConfiguration(locations = "classpath:/storageContext.xml")
 public class TestHttp extends AbstractTestNGSpringContextTests {
     @Test
     @Parameters("template-url")
@@ -59,13 +52,13 @@ public class TestHttp extends AbstractTestNGSpringContextTests {
             System.out.println(response.getFirstHeader("Content-Length").getValue());
             File localFile = new File("/tmp/test");
             if (!localFile.exists()) {
-               localFile.createNewFile();
+                localFile.createNewFile();
             }
-            
+
             HttpGet getMethod = new HttpGet(templateUrl);
             response = client.execute(getMethod);
             HttpEntity entity = response.getEntity();
-         
+
             output = new BufferedOutputStream(new FileOutputStream(localFile));
             entity.writeTo(output);
         } catch (HttpException e) {
@@ -83,7 +76,7 @@ public class TestHttp extends AbstractTestNGSpringContextTests {
                 e.printStackTrace();
             }
         }
-        
+
         File f = new File("/tmp/test");
         Assert.assertEquals(f.length(), length);
     }

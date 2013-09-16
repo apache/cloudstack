@@ -73,11 +73,13 @@ public class BaremetalDnsmasqResource extends BaremetalDhcpResourceBase {
 				throw new ConfigurationException("Can not find script prepare_dnsmasq.sh at " + prepareDnsmasq);
 			}
 			scp.put(prepareDnsmasqPath, "/usr/bin/", "0755");
-			
+
+            /*
 			String prepareCmd = String.format("sh /usr/bin/prepare_dnsmasq.sh %1$s %2$s %3$s", _gateway, _dns, _ip);
 			if (!SSHCmdHelper.sshExecuteCmd(sshConnection, prepareCmd)) {
 				throw new ConfigurationException("prepare dnsmasq at " + _ip + " failed");
 			}
+			*/
 			
 			s_logger.debug("Dnsmasq resource configure successfully");
 			return true;

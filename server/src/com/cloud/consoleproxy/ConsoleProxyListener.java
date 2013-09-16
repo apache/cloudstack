@@ -25,7 +25,7 @@ import com.cloud.agent.api.ConsoleAccessAuthenticationCommand;
 import com.cloud.agent.api.ConsoleProxyLoadReportCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.host.Status;
 
 public class ConsoleProxyListener implements Listener {
@@ -64,7 +64,7 @@ public class ConsoleProxyListener implements Listener {
     }
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) {
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) {
         _proxyMgr.onAgentConnect(host, cmd);
     	
     	if (cmd instanceof StartupProxyCommand) {

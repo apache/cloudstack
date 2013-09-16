@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
+import java.util.Collection;
+import java.util.Map;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -84,6 +87,24 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORKRATE, type=CommandType.INTEGER, description="data transfer rate in megabits per second allowed. Supported only for non-System offering and system offerings having \"domainrouter\" systemvmtype")
     private Integer networkRate;
 
+    @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "The deployment planner heuristics used to deploy a VM of this offering. If null, value of global config vm.deployment.planner is used")
+    private String deploymentPlanner;
+
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_DETAILS, type = CommandType.MAP, description = "details for planner, used to store specific parameters")
+    private Map<String, String> details;
+
+    @Parameter(name=ApiConstants.BYTES_READ_RATE, type=CommandType.LONG, required=false, description="bytes read rate of the disk offering")
+    private Long bytesReadRate;
+
+    @Parameter(name=ApiConstants.BYTES_WRITE_RATE, type=CommandType.LONG, required=false, description="bytes write rate of the disk offering")
+    private Long bytesWriteRate;
+
+    @Parameter(name=ApiConstants.IOPS_READ_RATE, type=CommandType.LONG, required=false, description="io requests read rate of the disk offering")
+    private Long iopsReadRate;
+
+    @Parameter(name=ApiConstants.IOPS_WRITE_RATE, type=CommandType.LONG, required=false, description="io requests write rate of the disk offering")
+    private Long iopsWriteRate;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -146,6 +167,36 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public Integer getNetworkRate() {
         return networkRate;
+    }
+
+    public String getDeploymentPlanner() {
+        return deploymentPlanner;
+    }
+
+    public Map<String, String> getDetails() {
+        if (details == null || details.isEmpty()) {
+            return null;
+        }
+
+        Collection<String> paramsCollection = details.values();
+        Map<String, String> params = (Map<String, String>)(paramsCollection.toArray())[0];
+        return params;
+    }
+
+    public Long getBytesReadRate() {
+        return bytesReadRate;
+    }
+
+    public Long getBytesWriteRate() {
+        return bytesWriteRate;
+    }
+
+    public Long getIopsReadRate() {
+        return iopsReadRate;
+    }
+
+    public Long getIopsWriteRate() {
+        return iopsWriteRate;
     }
 
     /////////////////////////////////////////////////////

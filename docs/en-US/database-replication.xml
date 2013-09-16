@@ -37,9 +37,13 @@ server_id=1
         <para>The server_id must be unique with respect to other servers. The recommended way to achieve this is to give the master an ID of 1 and each slave a sequential number greater than 1, so that the servers are numbered 1, 2, 3, etc.</para>
     </listitem>
     <listitem>
-        <para>Restart the MySQL service:</para>
+        <para>Restart the MySQL service. On RHEL/CentOS systems, use:</para>
         <programlisting>
 # service mysqld restart
+        </programlisting>
+        <para>On Debian/Ubuntu systems, use:</para>
+        <programlisting>
+# service mysql restart
         </programlisting>
     </listitem>
     <listitem>
@@ -90,9 +94,13 @@ innodb_lock_wait_timeout=600
         </programlisting>
     </listitem>
     <listitem>
-        <para>Restart MySQL.</para>
+        <para>Restart MySQL. Use "mysqld" on RHEL/CentOS systems:</para>
         <programlisting>
 # service mysqld restart
+        </programlisting>
+        <para>On Ubuntu/Debian systems use "mysql."</para>
+        <programlisting>
+# service mysql restart
         </programlisting>
     </listitem>
     <listitem>
@@ -121,14 +129,14 @@ mysql> start slave;
     <title>Failover</title>
     <para>This will provide for a replicated database that can be used to implement manual failover for the Management Servers. &PRODUCT; failover from one MySQL instance to another is performed by the administrator. In the event of a database failure you should:</para>
     <orderedlist>
-        <listitem><para>Stop the Management Servers (via service cloud-management stop).</para></listitem>
+        <listitem><para>Stop the Management Servers (via service cloudstack-management stop).</para></listitem>
         <listitem><para>Change the replica's configuration to be a master and restart it.</para></listitem>
         <listitem><para>Ensure that the replica's port 3306 is open to the Management Servers.</para></listitem>
-        <listitem><para>Make a change so that the Management Server uses the new database. The simplest process here is to put the IP address of the new database server into each Management Server's /etc/cloud/management/db.properties.</para></listitem>
+        <listitem><para>Make a change so that the Management Server uses the new database. The simplest process here is to put the IP address of the new database server into each Management Server's /etc/cloudstack/management/db.properties.</para></listitem>
         <listitem>
         <para>Restart the Management Servers:</para>
         <programlisting>
-# service cloud-management start
+# service cloudstack-management start
         </programlisting>
         </listitem>
     </orderedlist>

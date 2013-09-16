@@ -19,20 +19,22 @@ package com.cloud.resource;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
-import org.apache.cloudstack.api.command.admin.host.*;
-import org.apache.cloudstack.api.command.admin.storage.*;
-import org.apache.cloudstack.api.command.admin.swift.*;
+import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
+import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
+import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
+import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
@@ -41,22 +43,14 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.Host;
+import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceState.Event;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.S3;
-import com.cloud.storage.Swift;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.component.Manager;
-
-
 import com.cloud.utils.fsm.NoTransitionException;
 
 @Local(value = {ResourceManager.class})
@@ -113,7 +107,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      */
     @Override
     public Cluster updateCluster(Cluster cluster, String clusterType, String hypervisor, String allocationState,
-                                 String managedstate, Float memoryOvercommitRaito, Float cpuOvercommitRatio) {
+                                 String managedstate) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -174,47 +168,12 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
         return null;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.resource.ResourceService#discoverSwift(com.cloud.api.commands.AddSwiftCmd)
-     */
-    @Override
-    public Swift discoverSwift(AddSwiftCmd addSwiftCmd) throws DiscoveryException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.resource.ResourceService#discoverS3(com.cloud.api.commands.AddS3Cmd)
-     */
-    @Override
-    public S3 discoverS3(AddS3Cmd cmd) throws DiscoveryException {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     /* (non-Javadoc)
      * @see com.cloud.resource.ResourceService#getSupportedHypervisorTypes(long, boolean, java.lang.Long)
      */
     @Override
     public List<HypervisorType> getSupportedHypervisorTypes(long zoneId, boolean forVirtualRouter, Long podId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.resource.ResourceService#listSwifts(com.cloud.api.commands.ListSwiftsCmd)
-     */
-    @Override
-    public Pair<List<? extends Swift>, Integer> listSwifts(ListSwiftsCmd cmd) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.resource.ResourceService#listS3s(com.cloud.api.commands.ListS3sCmd)
-     */
-    @Override
-    public List<? extends S3> listS3s(ListS3sCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -457,25 +416,6 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.resource.ResourceManager#listHostsByNameLike(java.lang.String)
-     */
-    @Override
-    public List<HostVO> listHostsByNameLike(String name) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.resource.ResourceManager#findPod(com.cloud.template.VirtualMachineTemplate, com.cloud.service.ServiceOfferingVO, com.cloud.dc.DataCenterVO, long, java.util.Set)
-     */
-    @Override
-    public Pair<HostPodVO, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc,
-            long accountId, Set<Long> avoids) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.resource.ResourceManager#getHostStatistics(long)
      */
     @Override
@@ -607,5 +547,11 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+    @Override
+    public boolean releaseHostReservation(Long hostId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
 }

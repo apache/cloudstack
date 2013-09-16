@@ -24,8 +24,11 @@ import com.cloud.storage.DataStoreProviderApiService;
 import com.cloud.utils.component.Manager;
 
 public interface DataStoreProviderManager extends Manager, DataStoreProviderApiService {
-    public DataStoreProvider getDataStoreProvider(String name);
-    public DataStoreProvider getDefaultPrimaryDataStoreProvider();
-    public List<DataStoreProvider> getDataStoreProviders();
+    DataStoreProvider getDataStoreProvider(String name);
 
+    DataStoreProvider getDefaultPrimaryDataStoreProvider();
+
+    DataStoreProvider getDefaultImageDataStoreProvider();
+
+    DataStoreProvider getDefaultCacheDataStoreProvider();
 }

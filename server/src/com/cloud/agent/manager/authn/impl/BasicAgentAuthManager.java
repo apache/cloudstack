@@ -25,12 +25,13 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.StartupCommandProcessor;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.manager.authn.AgentAuthnException;
 import com.cloud.agent.manager.authn.AgentAuthorizer;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.utils.component.AdapterBase;

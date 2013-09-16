@@ -17,19 +17,22 @@
 package com.cloud.utils.exception;
 
 import java.util.ArrayList;
+import java.util.List;
 
-import com.cloud.utils.AnnotationHelper;
+import com.cloud.utils.Pair;
 import com.cloud.utils.SerialVersionUID;
 
 /**
  * wrap exceptions that you know there's no point in dealing with.
  */
-public class CloudRuntimeException extends RuntimeException {
+public class CloudRuntimeException extends RuntimeException implements ErrorContext {
 
     private static final long serialVersionUID = SerialVersionUID.CloudRuntimeException;
 
-    // This holds a list of uuids and their names. Add uuid:fieldname pairs
-    protected ArrayList<String> idList = new ArrayList<String>();
+    // This holds a list of uuids and their descriptive names.
+    protected ArrayList<ExceptionProxyObject> idList = new ArrayList<ExceptionProxyObject>();
+
+    protected ArrayList<Pair<Class<?>, String>> uuidList = new ArrayList<Pair<Class<?>, String>>();
 
     protected int csErrorCode;
 
@@ -44,38 +47,48 @@ public class CloudRuntimeException extends RuntimeException {
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
 
-    public CloudRuntimeException() {
+    protected CloudRuntimeException() {
         super();
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
 
+    public void addProxyObject(ExceptionProxyObject obj){
+        idList.add(obj);
+    }
+    
     public void addProxyObject(String uuid) {
-        idList.add(uuid);
-        return;
+        idList.add(new ExceptionProxyObject(uuid, null));
     }
 
-    public void addProxyObject(Object voObj, Long id, String idFieldName) {
-        // Get the VO object's table name.
-        String tablename = AnnotationHelper.getTableName(voObj);
-        if (tablename != null) {
-            addProxyObject(tablename, id, idFieldName);
-        }
-        return;
+    public void addProxyObject(String voObjUuid, String description) {
+        ExceptionProxyObject proxy = new ExceptionProxyObject(voObjUuid, description);
+        idList.add(proxy);
     }
 
-    public ArrayList<String> getIdProxyList() {
+    @Override
+    public CloudRuntimeException add(Class<?> entity, String uuid) {
+        uuidList.add(new Pair<Class<?>, String>(entity, uuid));
+        return this;
+    }
+
+    public ArrayList<ExceptionProxyObject> getIdProxyList() {
         return idList;
     }
 
     public void setCSErrorCode(int cserrcode) {
-        this.csErrorCode = cserrcode;
+        csErrorCode = cserrcode;
     }
 
     public int getCSErrorCode() {
-        return this.csErrorCode;
+        return csErrorCode;
     }
 
     public CloudRuntimeException(Throwable t) {
-        super(t);
+        super(t.getMessage(), t);
+    }
+
+    @Override
+    public List<Pair<Class<?>, String>> getEntitiesInError() {
+        return uuidList;
     }
 }

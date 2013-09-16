@@ -21,112 +21,131 @@
     specific language governing permissions and limitations
     under the License.
 -->
-
 <section id="network-service-providers">
-    <title>Network Service Providers</title>
-    <note><para>For the most up-to-date list of supported network service providers, see the &PRODUCT; UI or call listNetworkServiceProviders.</para></note>
-    <para>A service provider (also called a network element) is hardware or virtual appliance that makes a network service possible; for example, a firewall appliance can be installed in the cloud to provide firewall service. On a single network, multiple providers can provide the same network service. For example, a firewall service may be provided by Cisco or Juniper devices in the same physical network.</para>
-    <para>You can have multiple instances of the same service provider in a network (say, more than one Juniper SRX device).</para>
-    <para>If different providers are set up to provide the same service on the network, the administrator can create network offerings so users can specify which network service provider they prefer (along with the other choices offered in network offerings). Otherwise, &PRODUCT; will choose which provider to use whenever the service is called for. </para>
-    <formalpara>
-        <title>Supported Network Service Providers</title>
-        <para>&PRODUCT; ships with an internal list of the supported service providers, and you can choose from this list when creating a network offering.</para>
-    </formalpara>
-    <informaltable>
-        <tgroup cols="6" align="left" colsep="1" rowsep="1">
-            <colspec colnum="1" colname="c1" colwidth="2.4*"/>
-            <colspec colnum="2" colname="c2" colwidth="1.14*"/>
-            <colspec colnum="3" colname="c3" colwidth="1.23*"/>
-            <colspec colnum="4" colname="c4" colwidth="1.0*"/>
-            <colspec colnum="5" colname="c5" colwidth="1.3*"/>
-            <colspec colnum="6" colname="c6" colwidth="1.3*"/>
-            <thead>
-                <row>
-                    <entry></entry>
-                    <entry><para>Virtual Router</para></entry>
-                    <entry><para>Citrix NetScaler</para></entry>
-                    <entry><para>Juniper SRX</para></entry>
-                    <entry><para>F5 BigIP</para></entry>
-                    <entry><para>Host based (KVM/Xen)</para></entry>
-                    
-                </row>
-            </thead>
-            <tbody>
-                <row>
-                    <entry><para>Remote Access VPN</para></entry>
-                    <entry><para>Yes</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>No</para></entry>
-                    
-                </row>
-                <row>
-                    <entry><para>DNS/DHCP/User Data</para></entry>
-                    <entry><para>Yes</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>No</para></entry>
-                    							
-                </row>
-                <row>
-                    <entry><para>Firewall</para></entry>
-                    <entry><para>Yes</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>Yes</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>No</para></entry>
-                    </row>
-                <row>
-                    <entry><para>Load Balancing</para></entry>
-                    <entry><para>Yes</para></entry>
-                    <entry><para>Yes</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>Yes</para></entry>
-                    <entry><para>No</para></entry>
-                 </row>
-                <row>
-                    <entry><para>Elastic IP</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>Yes</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>No</para></entry>
-                   </row>
-                <row>
-                    <entry><para>Elastic LB</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>Yes</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>No</para></entry>
-                   </row>
-                <row>
-                    <entry><para>Source NAT</para></entry>
-                    <entry><para>Yes</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>Yes</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>No</para></entry>
-                    </row>
-                <row>
-                    <entry><para>Static NAT</para></entry>
-                    <entry><para>Yes</para></entry>
-                    <entry><para>Yes</para></entry>
-                    <entry><para>Yes</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>No</para></entry>
-                   </row>
-                <row>
-                    <entry><para>Port Forwarding</para></entry>
-                    <entry><para>Yes</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>Yes</para></entry>
-                    <entry><para>No</para></entry>
-                    <entry><para>No</para></entry>
-                   </row>
-            </tbody>
-        </tgroup>
-    </informaltable>
+  <title>Network Service Providers</title>
+  <note>
+    <para>For the most up-to-date list of supported network service providers, see the &PRODUCT; UI
+      or call listNetworkServiceProviders.</para>
+  </note>
+  <para>A service provider (also called a network element) is hardware or virtual appliance that
+    makes a network service possible; for example, a firewall appliance can be installed in the
+    cloud to provide firewall service. On a single network, multiple providers can provide the same
+    network service. For example, a firewall service may be provided by Cisco or Juniper devices in
+    the same physical network.</para>
+  <para>You can have multiple instances of the same service provider in a network (say, more than
+    one Juniper SRX device).</para>
+  <para>If different providers are set up to provide the same service on the network, the
+    administrator can create network offerings so users can specify which network service provider
+    they prefer (along with the other choices offered in network offerings). Otherwise, &PRODUCT;
+    will choose which provider to use whenever the service is called for. </para>
+  <formalpara>
+    <title>Supported Network Service Providers</title>
+    <para>&PRODUCT; ships with an internal list of the supported service providers, and you can
+      choose from this list when creating a network offering.</para>
+  </formalpara>
+  <informaltable>
+    <tgroup cols="7" align="left" colsep="1" rowsep="1">
+      <colspec colnum="1" colname="c1" colwidth="1.64*"/>
+      <colspec colnum="2" colname="c2" colwidth="1.48*"/>
+      <colspec colnum="3" colname="c3" colwidth="1.11*"/>
+      <colspec colnum="4" colname="c4" colwidth="1.0*"/>
+      <colspec colnum="5" colname="c5" colwidth="1.2*"/>
+      <colspec colnum="6" colname="c6" colwidth="2.45*"/>
+      <colspec colnum="7" colname="c6" colwidth="3.39*"/>
+      <thead>
+        <row>
+          <entry/>
+          <entry><para>Virtual Router</para></entry>
+          <entry><para>Citrix NetScaler</para></entry>
+          <entry><para>Juniper SRX</para></entry>
+          <entry><para>F5 BigIP</para></entry>
+          <entry><para>Host based (KVM/Xen)</para></entry>
+          <entry><para>Cisco VNMC</para></entry>
+        </row>
+      </thead>
+      <tbody>
+        <row>
+          <entry><para>Remote Access VPN</para></entry>
+          <entry><para>Yes</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>No</para></entry>
+        </row>
+        <row>
+          <entry><para>DNS/DHCP/User Data</para></entry>
+          <entry><para>Yes</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>No</para></entry>
+        </row>
+        <row>
+          <entry><para>Firewall</para></entry>
+          <entry><para>Yes</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>Yes</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>No</para></entry>
+          <entry>Yes</entry>
+        </row>
+        <row>
+          <entry><para>Load Balancing</para></entry>
+          <entry><para>Yes</para></entry>
+          <entry><para>Yes</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>Yes</para></entry>
+          <entry><para>No</para></entry>
+          <entry>No</entry>
+        </row>
+        <row>
+          <entry><para>Elastic IP</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>Yes</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>No</para></entry>
+        </row>
+        <row>
+          <entry><para>Elastic LB</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>Yes</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>No</para></entry>
+        </row>
+        <row>
+          <entry><para>Source NAT</para></entry>
+          <entry><para>Yes</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>Yes</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>Yes</para></entry>
+        </row>
+        <row>
+          <entry><para>Static NAT</para></entry>
+          <entry><para>Yes</para></entry>
+          <entry><para>Yes</para></entry>
+          <entry><para>Yes</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>Yes</para></entry>
+        </row>
+        <row>
+          <entry><para>Port Forwarding</para></entry>
+          <entry><para>Yes</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>Yes</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>No</para></entry>
+          <entry><para>Yes</para></entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </informaltable>
 </section>

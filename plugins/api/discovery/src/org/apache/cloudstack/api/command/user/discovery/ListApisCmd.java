@@ -26,11 +26,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.discovery.ApiDiscoveryService;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "listApis", responseObject = ApiDiscoveryResponse.class, description = "lists all available apis on the server, provided by the Api Discovery plugin", since = "4.1.0")
 public class ListApisCmd extends BaseCmd {
@@ -47,7 +48,7 @@ public class ListApisCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException {
         if (_apiDiscoveryService != null) {
-            User user = UserContext.current().getCallerUser();
+            User user = CallContext.current().getCallingUser();
             ListResponse<ApiDiscoveryResponse> response = (ListResponse<ApiDiscoveryResponse>) _apiDiscoveryService.listApis(user, name);
             if (response == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Api Discovery plugin was unable to find an api by that name or process any apis");

@@ -44,10 +44,10 @@ public class MHostDaoImpl extends GenericDaoBase<MHostVO, Long> implements MHost
 		SearchCriteria<MHostVO> sc = NameSearch.create();
 		sc.setParameters("MHostKey", hostKey);
 		return findOneBy(sc);
-		
-	    }finally {
-		txn.close();
-	    }
+        } finally {
+            txn.commit();
+            txn.close();
+        }
 	}
 
     @Override

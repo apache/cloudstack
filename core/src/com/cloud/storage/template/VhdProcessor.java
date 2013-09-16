@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InternalErrorException;
@@ -98,6 +99,33 @@ public class VhdProcessor extends AdapterBase implements Processor {
         info.virtualSize = templateSize;
 
         return info;
+    }
+
+    @Override
+    public Long getVirtualSize(File file) {
+        FileInputStream strm = null;
+        byte[] currentSize = new byte[8];
+        byte[] creatorApp = new byte[4];
+        try {
+            strm = new FileInputStream(file);
+            strm.skip(file.length() - vhd_footer_size + vhd_footer_creator_app_offset);
+            strm.read(creatorApp);
+            strm.skip(vhd_footer_current_size_offset - vhd_footer_creator_ver_offset);
+            strm.read(currentSize);
+        } catch (Exception e) {
+            s_logger.warn("Unable to read vhd file " + file.getAbsolutePath(), e);
+            throw new CloudRuntimeException("Unable to read vhd file " + file.getAbsolutePath() + ": " + e);
+        } finally {
+            if (strm != null) {
+                try {
+                    strm.close();
+                } catch (IOException e) {
+                }
+            }
+        }
+
+        long templateSize = NumbersUtil.bytesToLong(currentSize);
+        return templateSize;
     }
 
     @Override

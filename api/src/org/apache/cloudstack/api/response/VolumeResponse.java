@@ -76,6 +76,14 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     @Param(description = "size of the disk volume")
     private Long size;
 
+    @SerializedName(ApiConstants.MIN_IOPS)
+    @Param(description = "min iops of the disk volume")
+    private Long minIops;
+
+    @SerializedName(ApiConstants.MAX_IOPS)
+    @Param(description = "max iops of the disk volume")
+    private Long maxIops;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date the disk volume was created")
     private Date created;
@@ -105,6 +113,18 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     @SerializedName("storagetype")
     @Param(description = "shared or local storage")
     private String storageType;
+
+    @SerializedName("diskBytesReadRate") @Param(description="bytes read rate of the disk volume")
+    private Long bytesReadRate;
+
+    @SerializedName("diskBytesWriteRate") @Param(description="bytes write rate of the disk volume")
+    private Long bytesWriteRate;
+
+    @SerializedName("diskIopsReadRate") @Param(description="io requests read rate of the disk volume")
+    private Long iopsReadRate;
+
+    @SerializedName("diskIopsWriteRate") @Param(description="io requests write rate of the disk volume")
+    private Long iopsWriteRate;
 
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "Hypervisor the volume belongs to")
@@ -160,6 +180,9 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
 
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with volume", responseObject = ResourceTagResponse.class)
     private Set<ResourceTagResponse> tags;
+
+    @SerializedName(ApiConstants.DISPLAY_VOLUME) @Param(description="an optional field whether to the display the volume to the end user or not.")
+    private Boolean displayVm;
 
     public VolumeResponse(){
         tags = new LinkedHashSet<ResourceTagResponse>();
@@ -226,6 +249,14 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
         this.size = size;
     }
 
+    public void setMinIops(Long minIops) {
+        this.minIops = minIops;
+    }
+
+    public void setMaxIops(Long maxIops) {
+        this.maxIops = maxIops;
+    }
+
     public void setCreated(Date created) {
         this.created = created;
     }
@@ -245,6 +276,38 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
 
     public void setStorageType(String storageType) {
         this.storageType = storageType;
+    }
+
+    public void setBytesReadRate(Long bytesReadRate) {
+        this.bytesReadRate = bytesReadRate;
+    }
+
+    public Long getBytesReadRate() {
+        return bytesReadRate;
+    }
+
+    public void setBytesWriteRate(Long bytesWriteRate) {
+        this.bytesWriteRate = bytesWriteRate;
+    }
+
+    public Long getBytesWriteRate() {
+        return bytesWriteRate;
+    }
+
+    public void setIopsReadRate(Long iopsReadRate) {
+        this.iopsReadRate = iopsReadRate;
+    }
+
+    public Long getIopsReadRate() {
+        return iopsReadRate;
+    }
+
+    public void setIopsWriteRate(Long iopsWriteRate) {
+        this.iopsWriteRate = iopsWriteRate;
+    }
+
+    public Long getIopsWriteRate() {
+        return iopsWriteRate;
     }
 
     public void setHypervisor(String hypervisor) {
@@ -316,4 +379,13 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     public void addTag(ResourceTagResponse tag){
         this.tags.add(tag);
     }
+
+    public Boolean getDisplayVm() {
+        return displayVm;
+    }
+
+    public void setDisplayVm(Boolean displayVm) {
+        this.displayVm = displayVm;
+    }
+
 }

@@ -44,6 +44,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         Destroying("The volume is destroying, and can't be recovered."),  
         UploadOp ("The volume upload operation is in progress or in short the volume is on secondary storage"),
         Uploading("volume is uploading"),
+        Copying("volume is copying from image store to primary, in case it's an uploaded volume"),
         Uploaded("volume is uploaded");
 
         String _description;
@@ -73,9 +74,9 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
             s_fsm.addTransition(Resizing, Event.OperationSucceeded, Ready);
             s_fsm.addTransition(Resizing, Event.OperationFailed, Ready);          
             s_fsm.addTransition(Allocated, Event.UploadRequested, UploadOp);
-            s_fsm.addTransition(Uploaded, Event.CopyRequested, Creating);// CopyRequested for volume from sec to primary storage            
-            s_fsm.addTransition(Creating, Event.CopySucceeded, Ready);
-            s_fsm.addTransition(Creating, Event.CopyFailed, Uploaded);// Copying volume from sec to primary failed.  
+            s_fsm.addTransition(Uploaded, Event.CopyRequested, Copying);            
+            s_fsm.addTransition(Copying, Event.OperationSucceeded, Ready);
+            s_fsm.addTransition(Copying, Event.OperationFailed, Uploaded);
             s_fsm.addTransition(UploadOp, Event.DestroyRequested, Destroy);
             s_fsm.addTransition(Ready, Event.DestroyRequested, Destroy);
             s_fsm.addTransition(Destroy, Event.ExpungingRequested, Expunging);
@@ -92,6 +93,9 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
             s_fsm.addTransition(UploadOp, Event.OperationSucceeded, Uploaded);
             s_fsm.addTransition(UploadOp, Event.OperationFailed, Allocated);
             s_fsm.addTransition(Uploaded, Event.DestroyRequested, Destroy);
+            s_fsm.addTransition(Expunged, Event.ExpungingRequested, Expunged);
+            s_fsm.addTransition(Expunged, Event.OperationSucceeded, Expunged);
+            s_fsm.addTransition(Expunged, Event.OperationFailed, Expunged);
         }
     }
 
@@ -120,6 +124,12 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
      * @return total size of the partition
      */
     Long getSize();
+
+    Long getMinIops();
+
+    Long getMaxIops();
+
+    String get_iScsiName();
 
     /**
      * @return the vm instance id
@@ -152,7 +162,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
 
     Date getCreated();
 
-    long getDiskOfferingId();
+    Long getDiskOfferingId();
 
     String getChainInfo();
 
@@ -173,4 +183,6 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
 	 * @param reserv
 	 */
 	void setReservationId(String reserv);
+	Storage.ImageFormat getFormat();
+	Long getVmSnapshotChainSize();
 }

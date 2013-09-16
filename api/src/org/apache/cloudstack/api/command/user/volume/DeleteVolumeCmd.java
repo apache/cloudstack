@@ -24,12 +24,13 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteVolume", description="Deletes a detached disk volume.", responseObject=SuccessResponse.class)
 public class DeleteVolumeCmd extends BaseCmd {
@@ -79,8 +80,8 @@ public class DeleteVolumeCmd extends BaseCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException {
-        UserContext.current().setEventDetails("Volume Id: "+getId());
-        boolean result = this._volumeService.deleteVolume(id, UserContext.current().getCaller());
+        CallContext.current().setEventDetails("Volume Id: "+getId());
+        boolean result = this._volumeService.deleteVolume(id, CallContext.current().getCallingAccount());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

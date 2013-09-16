@@ -21,8 +21,6 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.utils.Pair;
 import com.vmware.vim25.DatastoreSummary;
 import com.vmware.vim25.FileInfo;
 import com.vmware.vim25.HostDatastoreBrowserSearchResults;
@@ -33,6 +31,9 @@ import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
+
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.utils.Pair;
 
 public class DatastoreMO extends BaseMO {
 	private static final Logger s_logger = Logger.getLogger(DatastoreMO.class);
@@ -48,7 +49,8 @@ public class DatastoreMO extends BaseMO {
 		super(context, morType, morValue);
 	}
 
-	public String getName() throws Exception {
+	@Override
+    public String getName() throws Exception {
 		if(_name == null)
 			_name = (String)_context.getVimClient().getDynamicProperty(_mor, "name");
 
@@ -123,6 +125,23 @@ public class DatastoreMO extends BaseMO {
 
 		_context.getService().makeDirectory(morFileManager, fullPath, morDc, true);
 	}
+	
+	public String getDatastoreRootPath() throws Exception {
+		return String.format("[%s]", getName());
+	}
+	
+	public String getDatastorePath(String relativePathWithoutDatastoreName) throws Exception {
+		return getDatastorePath(relativePathWithoutDatastoreName, false);
+	}
+	
+	public String getDatastorePath(String relativePathWithoutDatastoreName, boolean endWithPathDelimiter) throws Exception {
+		String path = String.format("[%s] %s", getName(), relativePathWithoutDatastoreName);
+		if(endWithPathDelimiter) {
+			if(!path.endsWith("/"))
+				return path + "/";
+		}
+		return path;
+	}
 
 	public boolean deleteFile(String path, ManagedObjectReference morDc, boolean testExistence) throws Exception {
 		String datastoreName = getName();
@@ -131,10 +150,21 @@ public class DatastoreMO extends BaseMO {
 		String fullPath = path;
 		if(!DatastoreFile.isFullDatastorePath(fullPath))
 			fullPath = String.format("[%s] %s", datastoreName, path);
+        DatastoreFile file = new DatastoreFile(fullPath);
+        // Test if file specified is null or empty. We don't need to attempt to delete and return success.
+        if (file.getFileName() == null || file.getFileName().isEmpty()) {
+            return true;
+        }
 
 		try {
-			if(testExistence && !fileExists(fullPath))
-				return true;
+			if(testExistence && !fileExists(fullPath)) {
+                String searchResult = searchFileInSubFolders(file.getFileName(), true);
+                if (searchResult == null) {
+                    return true;
+                } else {
+                    fullPath = searchResult;
+                }
+			}
 		} catch(Exception e) {
 			s_logger.info("Unable to test file existence due to exception " + e.getClass().getName() + ", skip deleting of it");
 			return true;
@@ -286,18 +316,6 @@ public class DatastoreMO extends BaseMO {
 
 		s_logger.info("File " + fileFullPath + " does not exist on datastore");
 		return false;
-
-/*
-		String[] fileNames = listDirContent(dirFile.getPath());
-
-		String fileName = file.getFileName();
-		for(String name : fileNames) {
-			if(name.equalsIgnoreCase(fileName))
-				return true;
-		}
-
-		return false;
-*/
 	}
 
 	public boolean folderExists(String folderParentDatastorePath, String folderName) throws Exception {
@@ -315,4 +333,36 @@ public class DatastoreMO extends BaseMO {
 		s_logger.info("Folder " + folderName + " does not exist on datastore");
 		return false;
 	}
+
+    public String searchFileInSubFolders(String fileName, boolean caseInsensitive) throws Exception {
+        String datastorePath = "[" + getName() + "]";
+        String rootDirectoryFilePath = String.format("%s %s", datastorePath, fileName);
+        if(fileExists(rootDirectoryFilePath)) {
+            return rootDirectoryFilePath;
+        }
+
+        String parentFolderPath = null;
+        String absoluteFileName = null;
+        s_logger.info("Searching file " + fileName + " in " + datastorePath);
+
+        HostDatastoreBrowserMO browserMo = getHostDatastoreBrowserMO();
+        ArrayList<HostDatastoreBrowserSearchResults> results = browserMo.searchDatastoreSubFolders("[" + getName() + "]", fileName, caseInsensitive);
+        if (results != null && results.size() > 1) {
+            s_logger.warn("Multiple files with name " + fileName + " exists in datastore " + datastorePath + ". Trying to choose first file found in search attempt.");
+        }
+        for (HostDatastoreBrowserSearchResults result : results) {
+            List<FileInfo> info = result.getFile();
+            if (info != null && info.size() > 0) {
+                for (FileInfo fi : info) {
+                    absoluteFileName = parentFolderPath = result.getFolderPath();
+                    s_logger.info("Found file " + fileName + " in datastore at " + absoluteFileName);
+                    if(parentFolderPath.endsWith("]"))
+                        absoluteFileName += " ";
+                    absoluteFileName += fi.getPath();
+                    break;
+                }
+            }
+        }
+        return absoluteFileName;
+    }
 }

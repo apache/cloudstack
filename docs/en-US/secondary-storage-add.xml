@@ -39,10 +39,49 @@
     <para>When you create a new zone, the first secondary storage is added as part of that procedure. You can add secondary storage servers at any time to add more servers to an existing zone.</para>
     <warning><para>Be sure there is nothing stored on the server. Adding the server to &PRODUCT; will destroy any existing data.</para></warning>
     <orderedlist>
-        <listitem><para>If you are going to use Swift for cloud-wide secondary storage, you must add the Swift storage to &PRODUCT; before you add the local zone secondary storage servers. See <xref linkend="zone-add" />.</para></listitem>
-        <listitem><para>To prepare for local zone secondary storage, you should have created and mounted an NFS share during Management Server installation. <phrase condition="install">See <xref linkend="prepare-nfs-shares" />.</phrase><phrase condition="admin">See Preparing NFS Shares in the Installation Guide.</phrase></para></listitem>
+        <listitem><para>To prepare for the zone-based Secondary Staging Store, you should have created and mounted an NFS share during Management Server installation. <phrase condition="install">See <xref linkend="prepare-nfs-shares" />.</phrase><phrase condition="admin">See Preparing NFS Shares in the Installation Guide.</phrase></para></listitem>
         <listitem><para>Make sure you prepared the system VM template during Management Server installation. <phrase condition="install">See <xref linkend="prepare-system-vm-template" />.</phrase><phrase condition="admin">See Prepare the System VM Template in the Installation Guide.</phrase></para></listitem>
-        <listitem><para>Now that the secondary storage server for per-zone storage is prepared, add it to &PRODUCT;. Secondary storage is added as part of the procedure for adding a new zone. See <xref linkend="zone-add" />.</para></listitem>
+        <listitem><para>Log in to the &PRODUCT; UI as root administrator.</para></listitem>
+        <listitem><para>In the left navigation bar, click Infrastructure.</para></listitem>
+        <listitem><para>In Secondary Storage, click View All.</para></listitem>
+        <listitem><para>Click Add Secondary Storage.</para></listitem>
+        <listitem><para>Fill in the following fields:</para>
+            <itemizedlist>
+                <listitem><para>Name. Give the storage a descriptive name.</para></listitem>
+                <listitem><para>Provider. Choose S3, Swift, or NFS, then fill in the related fields which appear.
+                    The fields will vary depending on the storage provider; for more information, consult the
+                    provider's documentation (such as the S3 or Swift website).
+                    NFS can be used for zone-based storage, and the others for region-wide storage.</para>
+                    <warning><para>You can use only a single S3 or Swift account per region.</para></warning></listitem>
+                <listitem><para>Create NFS Secondary Staging Store. This box must always be checked.</para>
+                    <warning><para>Even if the UI allows you to uncheck this box, do not do so.
+                        This checkbox and the three fields below it must be filled in.
+                        Even when Swift or S3 is used as the secondary storage provider, an NFS
+                        staging storage in each zone is still required.</para></warning><para/></listitem>
+                <listitem><para>Zone. The zone where the NFS Secondary Staging Store is to be located.</para></listitem>
+                <listitem><para>NFS server. The name of the zone's Secondary Staging Store.</para></listitem>
+                <listitem><para>Path. The path to the zone's Secondary Staging Store.</para></listitem>
+            </itemizedlist>
+        </listitem>
     </orderedlist>
+    </section>
+    <section id="secondary-staging-store">
+        <title>Adding an NFS Secondary Staging Store for Each Zone</title>
+        <para>Every zone must have at least one NFS store provisioned; multiple NFS servers are
+            allowed per zone. To provision an NFS Staging Store for a zone:</para>
+        <orderedlist>
+            <listitem><para>Log in to the &PRODUCT; UI as root administrator.</para></listitem>
+            <listitem><para>In the left navigation bar, click Infrastructure.</para></listitem>
+            <listitem><para>In Secondary Storage, click View All.</para></listitem>
+            <listitem><para>In Select View, choose Secondary Staging Store.</para></listitem>
+            <listitem><para>Click the Add NFS Secondary Staging Store button.</para></listitem>
+            <listitem><para>Fill out the dialog box fields, then click OK:</para>
+                <itemizedlist>
+                    <listitem><para>Zone. The zone where the NFS Secondary Staging Store is to be located.</para></listitem>
+                    <listitem><para>NFS server. The name of the zone's Secondary Staging Store.</para></listitem>
+                    <listitem><para>Path. The path to the zone's Secondary Staging Store.</para></listitem>
+                </itemizedlist>
+            </listitem>
+        </orderedlist>
     </section>
 </section>

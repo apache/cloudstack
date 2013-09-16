@@ -16,19 +16,21 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vpc;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
-import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -69,6 +71,16 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
             required=true, description="the VPC network belongs to")
     private Long vpcId;
 
+    @Parameter(name=ApiConstants.SOURCE_NAT_SUPPORTED, type=CommandType.BOOLEAN, required=false,
+            description="source NAT supported value. Default value false. If 'true' source NAT is enabled on the private gateway" +
+                    " 'false': sourcenat is not supported")
+    private Boolean isSourceNat;
+
+    @Parameter(name=ApiConstants.ACL_ID, type=CommandType.UUID, entityType = NetworkACLResponse.class,
+            required=false, description="the ID of the network ACL")
+    private Long aclId;
+
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -97,6 +109,18 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
         return vpcId;
     }
 
+    public Boolean getIsSourceNat () {
+        if (isSourceNat == null) {
+            return false;
+        }
+        return isSourceNat;
+    }
+
+    public Long getAclId() {
+        return aclId;
+    }
+
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -111,7 +135,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
         PrivateGateway result = null;
         try {
             result = _vpcService.createVpcPrivateGateway(getVpcId(), getPhysicalNetworkId(),
-                    getVlan(), getStartIp(), getGateway(), getNetmask(), getEntityOwnerId());
+                    getVlan(), getStartIp(), getGateway(), getNetmask(), getEntityOwnerId(), getIsSourceNat(), getAclId());
         } catch (InsufficientCapacityException ex){
             s_logger.info(ex);
             s_logger.trace(ex);
@@ -122,8 +146,8 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
         }
 
         if (result != null) {
-            this.setEntityId(result.getId());
-            this.setEntityUuid(result.getUuid());
+            setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create private gateway");
         }
@@ -136,7 +160,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
         if (result != null) {
             PrivateGatewayResponse response = _responseGenerator.createPrivateGatewayResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create private gateway");
         }
@@ -166,7 +190,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
 
     @Override
     public Long getSyncObjId() {
-        Vpc vpc =  _vpcService.getVpc(vpcId);
+        Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
         if (vpc == null) {
             throw new InvalidParameterValueException("Invalid id is specified for the vpc");
         }
@@ -174,7 +198,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.PrivateGateway;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.PrivateGateway;
     }
 }

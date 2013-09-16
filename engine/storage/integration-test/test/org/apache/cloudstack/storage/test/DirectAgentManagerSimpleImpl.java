@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.storage.test;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,29 +35,51 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.Commands;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
+import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
 import com.cloud.host.HostEnvironment;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.vmware.VmwareServerDiscoverer;
 import com.cloud.hypervisor.xen.resource.XcpOssResource;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.fsm.StateMachine2;
 
 public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentManager {
     private static final Logger logger = Logger.getLogger(DirectAgentManagerSimpleImpl.class);
-    private Map<Long, ServerResource> hostResourcesMap = new HashMap<Long, ServerResource>();
+    private final Map<Long, ServerResource> hostResourcesMap = new HashMap<Long, ServerResource>();
     @Inject
     HostDao hostDao;
+    @Inject
+    ClusterDao clusterDao;
+    @Inject
+    ClusterDetailsDao clusterDetailsDao;
+    @Inject
+    HostDao _hostDao;
+    protected StateMachine2<Status, Event, Host> _statusStateMachine = Status.getStateMachine();
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public void rescan() {
     }
 
     @Override
@@ -78,7 +102,15 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
 
     @Override
     public Answer easySend(Long hostId, Command cmd) {
-        // TODO Auto-generated method stub
+        try {
+            return this.send(hostId, cmd);
+        } catch (AgentUnavailableException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (OperationTimedoutException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         return null;
     }
 
@@ -91,37 +123,74 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
         params.put("password", "password");
         params.put("zone", String.valueOf(host.getDataCenterId()));
         params.put("pod", String.valueOf(host.getPodId()));
-        
+
         ServerResource resource = null;
         if (host.getHypervisorType() == HypervisorType.XenServer) {
-             resource = new XcpOssResource();
+            resource = new XcpOssResource();
+            try {
+                resource.configure(host.getName(), params);
+
+            } catch (ConfigurationException e) {
+                logger.debug("Failed to load resource:" + e.toString());
+            }
+        } else if (host.getHypervisorType() == HypervisorType.KVM) {
+            resource = new LibvirtComputingResource();
+            try {
+                params.put("public.network.device", "cloudbr0");
+                params.put("private.network.device", "cloudbr0");
+                resource.configure(host.getName(), params);
+            } catch (ConfigurationException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        } else if (host.getHypervisorType() == HypervisorType.VMware) {
+            ClusterVO cluster = clusterDao.findById(host.getClusterId());
+            String url = clusterDetailsDao.findDetail(cluster.getId(), "url").getValue();
+            URI uri;
+            try {
+                uri = new URI(url);
+                String userName = clusterDetailsDao.findDetail(cluster.getId(), "username").getValue();
+                String password = clusterDetailsDao.findDetail(cluster.getId(), "password").getValue();
+                VmwareServerDiscoverer discover = new VmwareServerDiscoverer();
+
+                Map<? extends ServerResource, Map<String, String>> resources = discover.find(host.getDataCenterId(),
+                        host.getPodId(), host.getClusterId(), uri, userName, password, null);
+                for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
+                    resource = entry.getKey();
+                }
+                if (resource == null) {
+                    throw new CloudRuntimeException("can't find resource");
+                }
+            } catch (DiscoveryException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (URISyntaxException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
-        
-        try {
-            resource.configure(host.getName(), params);
-            hostResourcesMap.put(hostId, resource);
-        } catch (ConfigurationException e) {
-            logger.debug("Failed to load resource:" + e.toString());
-        }
+
+        hostResourcesMap.put(hostId, resource);
         HostEnvironment env = new HostEnvironment();
         SetupCommand cmd = new SetupCommand(env);
         cmd.setNeedSetup(true);
-        
+
         resource.executeRequest(cmd);
     }
 
     @Override
-    public synchronized Answer send(Long hostId, Command cmd) throws AgentUnavailableException, OperationTimedoutException {
+    public synchronized Answer send(Long hostId, Command cmd) throws AgentUnavailableException,
+            OperationTimedoutException {
         ServerResource resource = hostResourcesMap.get(hostId);
         if (resource == null) {
             loadResource(hostId);
             resource = hostResourcesMap.get(hostId);
         }
-        
+
         if (resource == null) {
             return null;
         }
-        
+
         Answer answer = resource.executeRequest(cmd);
         return answer;
     }
@@ -133,7 +202,8 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
     }
 
     @Override
-    public Answer[] send(Long hostId, Commands cmds, int timeout) throws AgentUnavailableException, OperationTimedoutException {
+    public Answer[] send(Long hostId, Commands cmds, int timeout) throws AgentUnavailableException,
+            OperationTimedoutException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -163,51 +233,19 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
     }
 
     @Override
-    public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public Answer sendTo(Long dcId, HypervisorType type, Command cmd) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public void sendToSecStorage(HostVO ssHost, Command cmd, Listener listener) throws AgentUnavailableException {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public Answer sendToSecStorage(HostVO ssHost, Command cmd) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public boolean tapLoadingAgents(Long hostId, TapAgentsAction action) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public AgentAttache handleDirectConnectAgent(HostVO host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public boolean agentStatusTransitTo(HostVO host, Event e, long msId) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public AgentAttache findAttache(long hostId) {
-        // TODO Auto-generated method stub
-        return null;
+        try {
+            return _statusStateMachine.transitTo(host, e, host.getId(), _hostDao);
+        } catch (NoTransitionException e1) {
+            e1.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+        return true;
     }
 
     @Override
@@ -235,15 +273,15 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
     }
 
     @Override
-    public Answer sendToSSVM(Long dcId, Command cmd) {
+    public boolean isAgentAttached(long hostId) {
         // TODO Auto-generated method stub
-        return null;
+        return false;
     }
 
-	@Override
-	public void disconnectWithInvestigation(long hostId, Event event) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public boolean handleDirectConnectAgent(Host host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
 }

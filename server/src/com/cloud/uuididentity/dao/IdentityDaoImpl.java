@@ -21,7 +21,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import javax.ejb.Local;
 
@@ -235,8 +234,9 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
             String.format("UPDATE `%s` SET uuid=? WHERE id=?", tableName)
         );
         
-        pstmtUpdate.setString(1, UUID.randomUUID().toString());
+        pstmtUpdate.setString(1, String.valueOf(id));
         pstmtUpdate.setLong(2, id);
         pstmtUpdate.executeUpdate();
     }
 }
+

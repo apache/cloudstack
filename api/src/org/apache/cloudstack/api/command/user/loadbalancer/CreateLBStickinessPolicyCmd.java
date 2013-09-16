@@ -22,21 +22,24 @@ import java.util.Map;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 
 @APICommand(name = "createLBStickinessPolicy", description = "Creates a Load Balancer stickiness policy ", responseObject = LBStickinessResponse.class, since="3.0.0")
@@ -103,7 +106,7 @@ public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         if (account != null) {
             return account.getId();
         }
@@ -117,7 +120,7 @@ public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
         boolean success = false;
 
         try {
-            UserContext.current().setEventDetails("Rule Id: " + getEntityId());
+            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
             success = _lbService.applyLBStickinessPolicy(this);
             if (success) {
                 // State might be different after the rule is applied, so get new object here
@@ -156,5 +159,18 @@ public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
         return "creating a Load Balancer Stickiness policy: " + getLBStickinessPolicyName();
     }
 
+    @Override
+    public String getSyncObjType() {
+        return BaseAsyncCmd.networkSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        LoadBalancer lb = _lbService.findById(getLbRuleId());
+        if (lb == null) {
+            throw new InvalidParameterValueException("Unable to find load balancer rule " + getLbRuleId() + " to create stickiness rule");
+        }
+        return lb.getNetworkId();
+    }
 }
 

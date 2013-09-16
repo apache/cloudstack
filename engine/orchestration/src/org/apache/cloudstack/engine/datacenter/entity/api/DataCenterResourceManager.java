@@ -28,19 +28,19 @@ import com.cloud.utils.fsm.NoTransitionException;
 
 
 public interface DataCenterResourceManager {
-	
+
 	EngineDataCenterVO loadDataCenter(String dataCenterId);
-	
+
 	void saveDataCenter(EngineDataCenterVO dc);
-	
+
 	void savePod(EngineHostPodVO dc);
-	
+
 	void saveCluster(EngineClusterVO cluster);
-	
+
 	boolean changeState(DataCenterResourceEntity entity, Event event) throws NoTransitionException;
-	
+
 	EngineHostPodVO loadPod(String uuid);
-	
+
 	EngineClusterVO loadCluster(String uuid);
 
 	EngineHostVO loadHost(String uuid);

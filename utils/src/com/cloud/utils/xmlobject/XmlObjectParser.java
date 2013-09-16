@@ -66,14 +66,14 @@ public class XmlObjectParser {
             if (currentValue != null) {
                 currObj.setText(currentValue);
             }
-            
+
             if (stack.isEmpty()) {
                 root = currObj;
             }
-            
+
             //System.out.println(String.format("endElement: namespaceURI:%s, localName:%s, qName:%s", namespaceURI, localName, qName));
         }
-        
+
         @Override
         public void characters(char[] ch, int start, int length) throws SAXException {
             StringBuilder str = new StringBuilder();
@@ -81,7 +81,7 @@ public class XmlObjectParser {
             currentValue = str.toString();
             //System.out.println(String.format("characters: %s", str.toString()));
         }
-        
+
         XmlObject getRoot() {
             return root;
         }
@@ -102,7 +102,7 @@ public class XmlObjectParser {
             throw new CloudRuntimeException(e);
         }
     }
-    
+
     public static XmlObject parseFromString(String xmlString) {
         InputStream stream = new ByteArrayInputStream(xmlString.getBytes());
         XmlObjectParser p = new XmlObjectParser(stream);

@@ -28,15 +28,17 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ProviderResponse;
 import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "createVirtualRouterElement", responseObject=VirtualRouterProviderResponse.class, description="Create a virtual router element.")
 public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
@@ -52,6 +54,9 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name=ApiConstants.NETWORK_SERVICE_PROVIDER_ID, type=CommandType.UUID, entityType = ProviderResponse.class, required=true, description="the network service provider ID of the virtual router element")
     private Long nspId;
+    
+    @Parameter(name=ApiConstants.PROVIDER_TYPE, type=CommandType.UUID, entityType = ProviderResponse.class, description="The provider type. Supported types are VirtualRouter (default) and VPCVirtualRouter")
+    private String providerType;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -61,15 +66,26 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
         this.nspId = nspId;
     }
 
-
-
     public Long getNspId() {
         return nspId;
+    }
+    
+    public VirtualRouterProviderType getProviderType() {
+        if (providerType != null) {
+            if (providerType.equalsIgnoreCase(VirtualRouterProviderType.VirtualRouter.toString())) {
+                return VirtualRouterProviderType.VirtualRouter;
+            } else if (providerType.equalsIgnoreCase(VirtualRouterProviderType.VPCVirtualRouter.toString())) {
+                return VirtualRouterProviderType.VPCVirtualRouter;
+            } else throw new InvalidParameterValueException("Invalid providerType specified");
+        } 
+        return VirtualRouterProviderType.VirtualRouter;
     }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
+
 
     @Override
     public String getCommandName() {
@@ -83,7 +99,7 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Virtual router element Id: "+getEntityId());
+        CallContext.current().setEventDetails("Virtual router element Id: "+getEntityId());
         VirtualRouterProvider result = _service.get(0).getCreatedElement(getEntityId());
         if (result != null) {
             VirtualRouterProviderResponse response = _responseGenerator.createVirtualRouterProviderResponse(result);
@@ -96,7 +112,7 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        VirtualRouterProvider result = _service.get(0).addElement(getNspId(), VirtualRouterProviderType.VirtualRouter);
+        VirtualRouterProvider result = _service.get(0).addElement(getNspId(), getProviderType());
         if (result != null) {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());

@@ -34,22 +34,24 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value=StoragePoolAllocator.class)
+@Local(value = StoragePoolAllocator.class)
 public class UseLocalForRootAllocator extends LocalStoragePoolAllocator implements StoragePoolAllocator {
 
     @Inject
     DataCenterDao _dcDao;
 
     @Override
-    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+    public List<StoragePool> allocateToPool(DiskProfile dskCh,
+            VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid,
+            int returnUpTo) {
         DataCenterVO dc = _dcDao.findById(plan.getDataCenterId());
         if (!dc.isLocalStorageEnabled()) {
             return null;
         }
-        
+
         return super.allocateToPool(dskCh, vmProfile, plan, avoid, returnUpTo);
     }
-    
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);

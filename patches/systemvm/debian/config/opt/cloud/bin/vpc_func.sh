@@ -22,7 +22,7 @@ getEthByIp (){
   local ip=$1
   for dev in `ls -1 /sys/class/net | grep eth`
   do
-    sudo ip addr show dev $dev | grep $ip > /dev/null
+    sudo ip addr show dev $dev | grep $ip\/ > /dev/null
     if [ $? -eq 0 ]
     then
       echo $dev

@@ -40,16 +40,18 @@
       <para>The Configure VPC page is displayed. Locate the tier you want to work with.</para>
     </listitem>
     <listitem>
-      <para>Click the Remove VPC button:</para>
-      <mediaobject>
-        <imageobject>
-          <imagedata fileref="./images/remove-tier.png"/>
-        </imageobject>
-        <textobject>
-          <phrase>remove-tier.png: removing a tier from a vpc.</phrase>
-        </textobject>
-      </mediaobject>
-      <para>Wait for some time for the tier to be removed.</para>
+      <para>Select the tier you want to remove.</para>
+    </listitem>
+    <listitem>
+      <para>In the Network Details tab, click the Delete Network button.
+      <inlinemediaobject><imageobject>
+        <imagedata fileref="./images/del-tier.png"/>
+      </imageobject>
+      <textobject>
+            <phrase>del-tier.png: button to remove a tier</phrase>
+          </textobject>
+      </inlinemediaobject></para>
+      <para>Click Yes to confirm. Wait for some time for the tier to be removed.</para>
     </listitem>
   </orderedlist>
 </section>

@@ -17,6 +17,7 @@
 
 package com.cloud.region.ha;
 
+import com.cloud.network.rules.LoadBalancer;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.*;
 
 import java.util.List;
@@ -32,6 +33,9 @@ public interface GlobalLoadBalancingRulesService {
 
     GlobalLoadBalancerRule updateGlobalLoadBalancerRule(UpdateGlobalLoadBalancerRuleCmd updateGslbCmd);
 
+    boolean revokeAllGslbRulesForAccount(com.cloud.user.Account caller, long accountId)
+            throws com.cloud.exception.ResourceUnavailableException;
+
     /*
      * methods for managing sites participating in global load balancing
      */
@@ -43,5 +47,7 @@ public interface GlobalLoadBalancingRulesService {
     GlobalLoadBalancerRule findById(long gslbRuleId);
 
     List<GlobalLoadBalancerRule> listGlobalLoadBalancerRule(ListGlobalLoadBalancerRuleCmd listGslbCmd);
+
+    List<LoadBalancer> listSiteLoadBalancers(long gslbRuleId);
 
 }

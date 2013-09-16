@@ -55,8 +55,6 @@ public class BaremetalDhcpResourceBase extends ManagerBase implements ServerReso
 	String _password;
 	String _ip;
 	String _zoneId;
-	String _podId;
-	String _gateway;
 	String _dns;
 	
 	@Override
@@ -67,8 +65,6 @@ public class BaremetalDhcpResourceBase extends ManagerBase implements ServerReso
 		_username = (String)params.get("username");
 		_password = (String)params.get("password");
 		_zoneId = (String)params.get("zone");
-		_podId = (String)params.get("pod");
-		_gateway = (String)params.get("gateway");
 		_dns = (String)params.get("dns");
 		
 		if (_guid == null) {
@@ -77,10 +73,6 @@ public class BaremetalDhcpResourceBase extends ManagerBase implements ServerReso
 		
 		if (_zoneId == null) {
 			throw new ConfigurationException("No Zone specified");
-		}
-		
-		if (_podId == null) {
-			throw new ConfigurationException("No Pod specified");
 		}
 		
 		if (_ip == null) {
@@ -93,10 +85,6 @@ public class BaremetalDhcpResourceBase extends ManagerBase implements ServerReso
 		
 		if (_password == null) {
 			throw new ConfigurationException("No password specified");
-		}
-		
-		if (_gateway == null) {
-			throw new ConfigurationException("No gateway specified");
 		}
 		
 		if (_dns == null) {
@@ -131,7 +119,6 @@ public class BaremetalDhcpResourceBase extends ManagerBase implements ServerReso
 		StartupExternalDhcpCommand cmd = new StartupExternalDhcpCommand();
 		cmd.setName(_name);
 		cmd.setDataCenter(_zoneId);
-		cmd.setPod(_podId);
 		cmd.setPrivateIpAddress(_ip);
 		cmd.setStorageIpAddress("");
 		cmd.setVersion("");

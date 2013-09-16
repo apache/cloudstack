@@ -25,7 +25,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
-import org.apache.cloudstack.storage.image.datastore.ImageDataStoreInfo;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreInfo;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
@@ -34,30 +34,35 @@ import com.cloud.storage.Storage.TemplateType;
 public class TemplateEntityImpl implements TemplateEntity {
     protected TemplateInfo templateInfo;
 
+    @Override
+    public State getState() {
+        return templateInfo.getState();
+    }
+
     public TemplateEntityImpl(TemplateInfo templateInfo) {
         this.templateInfo = templateInfo;
     }
 
-    public ImageDataStoreInfo getImageDataStore() {
-        return (ImageDataStoreInfo)templateInfo.getDataStore();
+    public ImageStoreInfo getImageDataStore() {
+        return (ImageStoreInfo) templateInfo.getDataStore();
     }
 
     public long getImageDataStoreId() {
-        return getImageDataStore().getImageDataStoreId();
+        return getImageDataStore().getImageStoreId();
     }
 
     public TemplateInfo getTemplateInfo() {
-        return this.templateInfo;
+        return templateInfo;
     }
 
     @Override
     public String getUuid() {
-        return this.templateInfo.getUuid();
+        return templateInfo.getUuid();
     }
 
     @Override
     public long getId() {
-       return this.templateInfo.getId();
+        return templateInfo.getId();
     }
 
     public String getExternalId() {
@@ -101,6 +106,10 @@ public class TemplateEntityImpl implements TemplateEntity {
         return null;
     }
 
+    @Override
+    public Boolean isDynamicallyScalable() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
 
     @Override
     public void addDetail(String name, String value) {

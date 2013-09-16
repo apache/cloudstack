@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.volume;
 import java.net.URISyntaxException;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -27,15 +28,15 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.dc.DataCenter;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Upload;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "extractVolume", description="Extracts volume", responseObject=ExtractResponse.class)
 public class ExtractVolumeCmd extends BaseAsyncCmd {
@@ -95,8 +96,8 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Volume;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Volume;
     }
 
     public Long getInstanceId() {
@@ -126,33 +127,26 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        try {
-            UserContext.current().setEventDetails("Volume Id: "+getId());
-            Long uploadId = _mgr.extractVolume(this);
-            if (uploadId != null){
-                Upload uploadInfo = _entityMgr.findById(Upload.class, uploadId);
-                ExtractResponse response = new ExtractResponse();
-                response.setResponseName(getCommandName());
-                response.setObjectName("volume");
-                Volume vol = _entityMgr.findById(Volume.class, id);
-                response.setId(vol.getUuid());
-                response.setName(vol.getName());
-                DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
-                response.setZoneId(zone.getUuid());
-                response.setZoneName(zone.getName());
-                response.setMode(mode);
-                response.setUploadId(uploadInfo.getUuid());
-                response.setState(uploadInfo.getUploadState().toString());
-                Account account = _entityMgr.findById(Account.class, getEntityOwnerId());
-                response.setAccountId(account.getUuid());
-                response.setUrl(uploadInfo.getUploadUrl());
-                this.setResponseObject(response);
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract volume");
-            }
-        } catch (URISyntaxException ex) {
-            s_logger.info(ex);
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage());
+        CallContext.current().setEventDetails("Volume Id: " + getId());
+        String uploadUrl = _volumeService.extractVolume(this);
+        if (uploadUrl != null) {
+            ExtractResponse response = new ExtractResponse();
+            response.setResponseName(getCommandName());
+            response.setObjectName("volume");
+            Volume vol = _entityMgr.findById(Volume.class, id);
+            response.setId(vol.getUuid());
+            response.setName(vol.getName());
+            DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
+            response.setZoneId(zone.getUuid());
+            response.setZoneName(zone.getName());
+            response.setMode(mode);
+            response.setState(Upload.Status.DOWNLOAD_URL_CREATED.toString());
+            Account account = _entityMgr.findById(Account.class, getEntityOwnerId());
+            response.setAccountId(account.getUuid());
+            response.setUrl(uploadUrl);
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract volume");
         }
     }
 }

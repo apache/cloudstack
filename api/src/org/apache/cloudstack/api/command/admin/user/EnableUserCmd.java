@@ -25,13 +25,14 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "enableUser", description="Enables a user account", responseObject=UserResponse.class)
 public class EnableUserCmd extends BaseCmd {
@@ -77,7 +78,7 @@ public class EnableUserCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("UserId: "+getId());
+        CallContext.current().setEventDetails("UserId: "+getId());
         UserAccount user = _regionService.enableUser(this);
 
         if (user != null){

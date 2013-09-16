@@ -1,138 +1,122 @@
-
 <!--
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements. See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership. The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License. You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied. See the License for the
-  specific language governing permissions and limitations
-  under the License.
--->
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:context="http://www.springframework.org/schema/context"
-       xmlns:tx="http://www.springframework.org/schema/tx"
-       xmlns:aop="http://www.springframework.org/schema/aop"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-                      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-                      http://www.springframework.org/schema/tx
-                      http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
-                      http://www.springframework.org/schema/aop
-                      http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
-                      http://www.springframework.org/schema/context
-                      http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+                      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
   <!--
     OSS deployment component configuration
   -->
-  <bean id="databaseUpgradeChecker" class="com.cloud.upgrade.DatabaseUpgradeChecker" />
-  <bean id="configurationDaoImpl" class="com.cloud.configuration.dao.ConfigurationDaoImpl" />
+  <bean id="databaseUpgradeChecker" class="com.cloud.upgrade.DatabaseUpgradeChecker"/>
+  <bean id="configurationDaoImpl" class="org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl"/>
 
-  <!-- simulator components -->
-  <bean id="SimulatorSecondaryDiscoverer" class="com.cloud.resource.SimulatorSecondaryDiscoverer">
-    <property name="name" value="SecondaryStorage"/>
-  </bean>
   <bean id="SimulatorDiscoverer" class="com.cloud.resource.SimulatorDiscoverer">
     <property name="name" value="Simulator Agent"/>
   </bean>
+  <bean id="SimulatorSecondaryDiscoverer" class="com.cloud.resource.SimulatorSecondaryDiscoverer">
+  </bean>
   <bean id="SimulatorGuru" class="com.cloud.simulator.SimulatorGuru">
     <property name="name" value="Simulator Guru"/>
+  </bean>
+  <bean id="mockConfigurationDaoImpl" class="com.cloud.simulator.dao.MockConfigurationDaoImpl" />
+  <bean id="mockHostDaoImpl" class="com.cloud.simulator.dao.MockHostDaoImpl" />
+  <bean id="mockSecStorageDaoImpl" class="com.cloud.simulator.dao.MockSecStorageDaoImpl" />
+  <bean id="mockSecurityRulesDaoImpl" class="com.cloud.simulator.dao.MockSecurityRulesDaoImpl" />
+  <bean id="mockStoragePoolDaoImpl" class="com.cloud.simulator.dao.MockStoragePoolDaoImpl" />
+  <bean id="mockVMDaoImpl" class="com.cloud.simulator.dao.MockVMDaoImpl" />
+  <bean id="mockVolumeDaoImpl" class="com.cloud.simulator.dao.MockVolumeDaoImpl" />
+  <bean id="simulatorManagerImpl" class="com.cloud.agent.manager.SimulatorManagerImpl" />
+  <bean id="mockStorageManagerImpl" class="com.cloud.agent.manager.MockStorageManagerImpl" />
+  <bean id="mockVmManagerImpl" class="com.cloud.agent.manager.MockVmManagerImpl" />
+  <bean id="mockNetworkManagerImpl" class="com.cloud.agent.manager.MockNetworkManagerImpl" />
+  <bean id="mockAgentManagerImpl" class="com.cloud.agent.manager.MockAgentManagerImpl" />
+
+  <bean id="SimulatorImageStoreProviderImpl"
+        class="org.apache.cloudstack.storage.datastore.provider.SimulatorImageStoreProviderImpl"/>
+
+  <!--Storage Providers-->
+  <!--<bean id="dataStoreProviderManagerChild" parent="dataStoreProviderManager">-->
+  <bean id="dataStoreProviderManager"
+        class="org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManagerImpl">
+    <property name="providers">
+      <!--Override the cloudstack default image store provider to use simulator defined provider-->
+      <list>
+        <!--Data Store Providers-->
+        <ref bean="cloudStackPrimaryDataStoreProviderImpl"/>
+        <ref bean="SimulatorImageStoreProviderImpl"/>
+      </list>
+    </property>
   </bean>
 
   <!--
     Managers & pluggable adapters configuration under OSS deployment
   -->
-  <bean id="accountManagerImpl" class="com.cloud.user.AccountManagerImpl" >
-    <property name="UserAuthenticators">
+  <bean id="userAuthenticators" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
       <list>
+        <ref bean="SHA256SaltedUserAuthenticator"/>
         <ref bean="MD5UserAuthenticator"/>
-        <ref bean="LDAPUserAuthenticator"/>
+        <ref bean="LdapAuthenticator"/>
+        <ref bean="PlainTextUserAuthenticator"/>
       </list>
     </property>
-    <property name="SecurityCheckers">
+  </bean>
+  <bean id="userPasswordEncoders" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
       <list>
+        <ref bean="SHA256SaltedUserAuthenticator"/>
+        <ref bean="MD5UserAuthenticator"/>
+        <ref bean="LdapAuthenticator"/>
+        <ref bean="PlainTextUserAuthenticator"/>
+      </list>
+    </property>
+  </bean>
+
+
+  <bean id="securityCheckers" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
+      <list>
+	    <ref bean="affinityGroupAccessChecker"/>
         <ref bean="domainChecker"/>
       </list>
     </property>
   </bean>
 
-  <bean id="managementServerImpl" class ="com.cloud.server.ManagementServerImpl">
-    <property name="UserAuthenticators">
-      <list>
-        <ref bean="MD5UserAuthenticator"/>
-        <ref bean="LDAPUserAuthenticator"/>
-      </list>
-    </property>
-    <property name="HostAllocators">
-      <list>
-        <ref bean="FirstFitRouting"/>
-      </list>
-    </property>
-  </bean>
-
-  <bean id="storageManagerImpl" class="com.cloud.storage.StorageManagerImpl">
-    <property name="StoragePoolAllocators">
-      <list>
-        <ref bean="LocalStoragePoolAllocator"/>
-        <ref bean="clusterScopeStoragePoolAllocator"/>
-        <ref bean="zoneWideStoragePoolAllocator"/>
-        <ref bean="garbageCollectingStoragePoolAllocator"/>
-      </list>
-    </property>
-  </bean>
-
-  <bean id="FirstFitPlanner" class="com.cloud.deploy.FirstFitPlanner">
-    <property name="name" value="First Fit"/>
-    <property name="StoragePoolAllocators">
-      <list>
-        <ref bean="LocalStoragePoolAllocator"/>
-        <ref bean="clusterScopeStoragePoolAllocator"/>
-        <ref bean="zoneWideStoragePoolAllocator"/>
-        <ref bean="garbageCollectingStoragePoolAllocator"/>
-      </list>
-    </property>
-    <property name="HostAllocators">
-      <list>
-        <ref bean="FirstFitRouting"/>
-      </list>
-    </property>
-  </bean>
-
-  <bean id="resourceManagerImpl" class="com.cloud.resource.ResourceManagerImpl" >
-    <property name="PodAllocators">
-      <list>
-        <ref bean="UserConcentratedAllocator"/>
-      </list>
-    </property>
-    <property name="Discoverers">
+  <!-- Resource discoverers -->
+  <bean id="resourceDiscoverers" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
       <list>
         <ref bean="SimulatorDiscoverer"/>
-        <ref bean="XcpServerDiscoverer"/>
         <ref bean="SimulatorSecondaryDiscoverer"/>
+        <ref bean="XcpServerDiscoverer"/>
         <ref bean="SecondaryStorageDiscoverer"/>
         <ref bean="KvmServerDiscoverer"/>
         <ref bean="LxcServerDiscoverer"/>
-
-        <!--
-                <ref bean="BareMetalDiscoverer"/>
-        -->
-
         <ref bean="OvmDiscoverer"/>
       </list>
     </property>
   </bean>
 
-  <bean id="highAvailabilityManagerExtImpl" class="com.cloud.ha.HighAvailabilityManagerExtImpl" >
-    <property name="Investigators">
+  <!-- HA adapters -->
+  <bean id="haInvestigators" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
       <list>
         <ref bean="CheckOnAgentInvestigator"/>
         <ref bean="XenServerInvestigator"/>
@@ -140,7 +124,10 @@
         <ref bean="ManagementIPSystemVMInvestigator"/>
       </list>
     </property>
-    <property name="FenceBuilders">
+  </bean>
+
+  <bean id="haFenceBuilders" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
       <list>
         <ref bean="XenServerFencer"/>
         <ref bean="KVMFencer"/>
@@ -149,28 +136,66 @@
     </property>
   </bean>
 
-  <bean id="clusteredVirtualMachineManagerImpl" class="com.cloud.vm.ClusteredVirtualMachineManagerImpl" >
-    <property name="HostAllocators">
+  <!-- Deployment/allocation adapters -->
+  <bean id="deploymentPlanners" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
       <list>
-        <ref bean="FirstFitRouting"/>
-      </list>
-    </property>
-    <property name="Planners">
-      <list>
-        <ref bean="FirstFitPlanner" />
-        <ref bean="UserDispersingPlanner" />
-        <ref bean="UserConcentratedPodPlanner" />
-
-        <!--
-                  <ref bean="BareMetalPlanner" />
-        -->
-
+        <ref bean="FirstFitPlanner"/>
+        <ref bean="UserDispersingPlanner"/>
+        <ref bean="UserConcentratedPodPlanner"/>
       </list>
     </property>
   </bean>
 
-  <bean id="networkManagerImpl" class="com.cloud.network.NetworkManagerImpl" >
-    <property name="NetworkGurus">
+  <bean id="podAllocators" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
+      <list>
+        <ref bean="UserConcentratedAllocator"/>
+      </list>
+    </property>
+  </bean>
+
+  <bean id="hostAllocators" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
+      <list>
+        <ref bean="FirstFitRouting"/>
+      </list>
+    </property>
+  </bean>
+
+  <bean id="storagePoolAllocators" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
+      <list>
+        <ref bean="LocalStoragePoolAllocator"/>
+        <ref bean="clusterScopeStoragePoolAllocator"/>
+        <ref bean="zoneWideStoragePoolAllocator"/>
+        <ref bean="garbageCollectingStoragePoolAllocator"/>
+      </list>
+    </property>
+  </bean>
+
+  <!-- Networking adapters -->
+  <bean id="ipDeployers" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
+      <list>
+        <ref bean="elasticLoadBalancerElement"/>
+        <ref bean="VirtualRouter"/>
+        <ref bean="VpcVirtualRouter"/>
+      </list>
+    </property>
+  </bean>
+
+  <bean id="dhcpProviders" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
+      <list>
+        <ref bean="VirtualRouter"/>
+        <ref bean="VpcVirtualRouter"/>
+      </list>
+    </property>
+  </bean>
+
+  <bean id="networkGurus" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
       <list>
         <ref bean="StorageNetworkGuru"/>
         <ref bean="ExternalGuestNetworkGuru"/>
@@ -183,53 +208,78 @@
         <ref bean="PrivateNetworkGuru"/>
       </list>
     </property>
-    <property name="NetworkElements">
+  </bean>
+
+  <bean id="networkElements" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
       <list>
         <ref bean="VirtualRouter"/>
         <ref bean="Ovs"/>
         <ref bean="SecurityGroupProvider"/>
         <ref bean="VpcVirtualRouter"/>
-        <!--
-                  <ref bean="BareMetalDhcp"/>
-                  <ref bean="BareMetalPxe"/>
-                  <ref bean="BareMetalUserdata"/>
-        -->
-      </list>
-    </property>
-    <property name="IpDeployers">
-      <list>
-        <ref bean="elasticLoadBalancerElement"/>
-        <ref bean="VirtualRouter"/>
-        <ref bean="VpcVirtualRouter"/>
-      </list>
-    </property>
-    <property name="DhcpProviders">
-      <list>
-        <ref bean="VirtualRouter"/>
-        <ref bean="VpcVirtualRouter"/>
-        <!--
-                  <ref bean="BareMetalDhcp"/>
-        -->
+        <ref bean="InternalLbVm"/>
       </list>
     </property>
   </bean>
 
-  <bean id="networkModelImpl" class="com.cloud.network.NetworkModelImpl">
-    <property name="NetworkElements">
+  <!--
+    UCS support components
+  -->
+  <bean id="ucsBladeDaoImpl" class="com.cloud.ucs.database.UcsBladeDaoImpl"/>
+  <bean id="ucsManagerDaoImpl" class="com.cloud.ucs.database.UcsManagerDaoImpl"/>
+
+  <bean id="GlobalLoadBalancingRulesServiceImpl"
+        class="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl"/>
+
+  <!--
+   AffinityGroup Processors
+  -->
+  <bean id="HostAntiAffinityProcessor" class="org.apache.cloudstack.affinity.HostAntiAffinityProcessor">
+    <property name="name" value="HostAntiAffinityProcessor"/>
+    <property name="type" value="host anti-affinity"/>
+  </bean>
+
+  <bean id="affinityProcessors" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
       <list>
-        <ref bean="VirtualRouter"/>
-        <ref bean="Ovs"/>
-        <ref bean="SecurityGroupProvider"/>
-        <ref bean="VpcVirtualRouter"/>
-        <!--
-                  <ref bean="BareMetalDhcp"/>
-                  <ref bean="BareMetalPxe"/>
-                  <ref bean="BareMetalUserdata"/>
-        -->
+          <ref bean="HostAntiAffinityProcessor" />
       </list>
     </property>
   </bean>
 
-  <bean id="GlobalLoadBalancingRulesServiceImpl" class ="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl" />
+  <bean id="DedicatedResourceManagerImpl" class="org.apache.cloudstack.dedicated.DedicatedResourceManagerImpl"/>
+  <bean id="ExplicitDedicationProcessor" class="org.apache.cloudstack.affinity.ExplicitDedicationProcessor">
+    <property name="name" value="ExplicitDedicationProcessor"/>
+    <property name="type" value="ExplicitDedication"/>
+  </bean>
+  <!--
+    RPC/Async/EventBus
+  -->
 
+  <bean id="onwireRegistry" class="org.apache.cloudstack.framework.serializer.OnwireClassRegistry"
+    init-method="scan" >
+    <property name="packages">
+      <list>
+        <value>org.apache.cloudstack.framework</value>
+      </list>
+    </property>
+  </bean>
+  
+  <bean id="messageSerializer" class="org.apache.cloudstack.framework.serializer.JsonMessageSerializer">
+    <property name="onwireClassRegistry" ref="onwireRegistry" />
+  </bean>
+
+  <bean id="transportProvider" class="org.apache.cloudstack.framework.server.ServerTransportProvider"  init-method="initialize">
+    <property name="workerPoolSize" value="5" />
+    <property name="nodeId" value="Node1" />
+    <property name="messageSerializer" ref="messageSerializer" />
+  </bean>
+  
+  <bean id="rpcProvider" class="org.apache.cloudstack.framework.rpc.RpcProviderImpl" init-method="initialize">
+    <constructor-arg ref="transportProvider" />
+    <property name="messageSerializer" ref="messageSerializer" />
+  </bean>
+
+  <bean id="messageBus" class = "org.apache.cloudstack.framework.messagebus.MessageBusBase" />
+  <bean id="configDepot" class = "org.apache.cloudstack.framework.config.ConfigDepotImpl" />
 </beans>

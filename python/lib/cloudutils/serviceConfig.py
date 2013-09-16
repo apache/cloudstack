@@ -94,8 +94,10 @@ class networkConfigBase:
             if not self.netcfg.isNetworkDev(br):
                 logging.debug("%s is not a network device, is it down?"%br)
                 return False
-            if not self.netcfg.isBridge(br):
-                raise CloudInternalException("%s is not a bridge"%br)
+            if self.syscfg.env.bridgeType == "openvswitch" and not self.netcfg.isOvsBridge(br):
+                raise CloudInternalException("%s is not an openvswitch bridge" % br)
+            if self.syscfg.env.bridgeType == "native" and not self.netcfg.isBridge(br):
+                raise CloudInternalException("%s is not a bridge" % br)
             preCfged = True
 
         return preCfged
@@ -153,11 +155,28 @@ class networkConfigUbuntu(serviceCfgBase, networkConfigBase):
             match = re.match("^ *iface %s.*"%dev.name, line)
             if match is not None:
                 dev.method = self.getNetworkMethod(match.group(0))
-                bridgeCfg = "\niface %s inet manual\n \
-                             auto %s\n \
-                             iface %s inet %s\n \
-                             bridge_ports %s\n"%(dev.name, br, br, dev.method, dev.name)
                 cfo = configFileOps(self.netCfgFile, self)
+                if self.syscfg.env.bridgeType == "openvswitch":
+                    bridgeCfg = "\n".join(("",
+                        "iface {device} inet manual",
+                        "  ovs_type OVSPort",
+                        "  ovs_bridge {bridge}",
+                        "",
+                        "auto {bridge}",
+                        "allow-ovs {bridge}",
+                        "iface {bridge} inet {device_method}",
+                        "  ovs_type OVSBridge",
+                        "  ovs_ports {device}",
+                        "")).format(bridge=br, device=dev.name, device_method=dev.method)
+                    cfo.replace_line("^ *auto %s.*" % dev.name,
+                        "allow-{bridge} {device}".format(bridge=br, device=dev.name))
+                elif self.syscfg.env.bridgeType == "native":
+                    bridgeCfg = "\niface %s inet manual\n \
+                                 auto %s\n \
+                                 iface %s inet %s\n \
+                                 bridge_ports %s\n"%(dev.name, br, br, dev.method, dev.name)
+                else:
+                    raise CloudInternalException("Unknown network.bridge.type %s" % self.syscfg.env.bridgeType)
                 cfo.replace_line("^ *iface %s.*"%dev.name, bridgeCfg)
 
     def addDev(self, br, dev):
@@ -193,8 +212,9 @@ class networkConfigUbuntu(serviceCfgBase, networkConfigBase):
                 self.syscfg.svo.stopService("network-manager")
                 self.syscfg.svo.disableService("network-manager")
 
-            if not bash("ifup %s"%self.brName).isSuccess():
-                raise CloudInternalException("Can't start network:%s"%self.brName, bash.getErrMsg(self))
+            ifup_op = bash("ifup %s"%self.brName)
+            if not ifup_op.isSuccess():
+                raise CloudInternalException("Can't start network:%s %s" % (self.brName, ifup_op.getErrMsg()))
 
             self.syscfg.env.nics.append(self.brName)
             self.syscfg.env.nics.append(self.brName)
@@ -222,8 +242,8 @@ class networkConfigRedhat(serviceCfgBase, networkConfigBase):
         networkConfigBase.__init__(self, syscfg)
 
     def writeToCfgFile(self, brName, dev):
-        self.devCfgFile = "/etc/sysconfig/network-scripts/ifcfg-%s"%dev.name
-        self.brCfgFile = "/etc/sysconfig/network-scripts/ifcfg-%s"%brName
+        self.devCfgFile = "/etc/sysconfig/network-scripts/ifcfg-%s" % dev.name
+        self.brCfgFile = "/etc/sysconfig/network-scripts/ifcfg-%s" % brName
 
         isDevExist = os.path.exists(self.devCfgFile)
         isBrExist = os.path.exists(self.brCfgFile)
@@ -241,7 +261,7 @@ class networkConfigRedhat(serviceCfgBase, networkConfigBase):
 
 
     def addBridge(self, brName, dev):
-        bash("ifdown %s"%dev.name)
+        bash("ifdown %s" % dev.name)
 
         if not os.path.exists(self.brCfgFile):
             shutil.copy(self.devCfgFile, self.brCfgFile)
@@ -250,14 +270,34 @@ class networkConfigRedhat(serviceCfgBase, networkConfigBase):
         cfo = configFileOps(self.devCfgFile, self)
         cfo.addEntry("NM_CONTROLLED", "no")
         cfo.addEntry("ONBOOT", "yes")
-        cfo.addEntry("BRIDGE", brName)
+        if self.syscfg.env.bridgeType == "openvswitch":
+            if cfo.getEntry("IPADDR"):
+                cfo.rmEntry("IPADDR", cfo.getEntry("IPADDR"))
+            cfo.addEntry("DEVICETYPE", "ovs")
+            cfo.addEntry("TYPE", "OVSPort")
+            cfo.addEntry("OVS_BRIDGE", brName)
+        elif self.syscfg.env.bridgeType == "native":
+            cfo.addEntry("BRIDGE", brName)
+        else:
+            raise CloudInternalException("Unknown network.bridge.type %s" % self.syscfg.env.bridgeType)
         cfo.save()
 
         cfo = configFileOps(self.brCfgFile, self)
         cfo.addEntry("NM_CONTROLLED", "no")
         cfo.addEntry("ONBOOT", "yes")
         cfo.addEntry("DEVICE", brName)
-        cfo.addEntry("TYPE", "Bridge")
+        if self.syscfg.env.bridgeType == "openvswitch":
+            if cfo.getEntry("HWADDR"):
+                cfo.rmEntry("HWADDR", cfo.getEntry("HWADDR"))
+            if cfo.getEntry("UUID"):
+                cfo.rmEntry("UUID", cfo.getEntry("UUID"))
+            cfo.addEntry("STP", "yes")
+            cfo.addEntry("DEVICETYPE", "ovs")
+            cfo.addEntry("TYPE", "OVSBridge")
+        elif self.syscfg.env.bridgeType == "native":
+            cfo.addEntry("TYPE", "Bridge")
+        else:
+            raise CloudInternalException("Unknown network.bridge.type %s" % self.syscfg.env.bridgeType)
         cfo.save()
 
     def config(self):

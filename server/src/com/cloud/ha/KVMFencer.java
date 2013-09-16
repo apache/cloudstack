@@ -17,7 +17,6 @@
 package com.cloud.ha;
 
 import java.util.List;
-
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -31,13 +30,14 @@ import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 
 @Local(value=FenceBuilder.class)
 public class KVMFencer extends AdapterBase implements FenceBuilder {
@@ -70,7 +70,7 @@ public class KVMFencer extends AdapterBase implements FenceBuilder {
 	    }
 
 	@Override
-	public Boolean fenceOff(VMInstanceVO vm, HostVO host) {
+    public Boolean fenceOff(VirtualMachine vm, Host host) {
 		if (host.getHypervisorType() != HypervisorType.KVM) {
 			s_logger.debug("Don't know how to fence non kvm hosts " + host.getHypervisorType());
 			return null;

@@ -26,12 +26,13 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteUser", description="Deletes a user for an account", responseObject=SuccessResponse.class)
 public class DeleteUserCmd extends BaseCmd {
@@ -76,7 +77,7 @@ public class DeleteUserCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("UserId: "+getId());
+        CallContext.current().setEventDetails("UserId: "+getId());
         boolean result = _regionService.deleteUser(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

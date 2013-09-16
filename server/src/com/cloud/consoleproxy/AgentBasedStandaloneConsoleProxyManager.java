@@ -57,7 +57,7 @@ AgentBasedConsoleProxyManager {
 			if (allocatedHost == null) {
 				/*Is there a consoleproxy agent running in the same pod?*/
 				for (HostVO hv : hosts) {
-					if (hv.getType() == Host.Type.ConsoleProxy && hv.getPodId() == host.getPodId()) {
+					if (hv.getType() == Host.Type.ConsoleProxy && hv.getPodId().equals(host.getPodId())) {
 						allocatedHost = hv;
 						break;
 					}

@@ -22,8 +22,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
-import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 
 import org.apache.log4j.Logger;
 
@@ -78,6 +78,7 @@ public class NioClient extends NioConnection {
 
         	Link.doHandshake(sch, sslEngine, true);
         	s_logger.info("SSL: Handshake done");
+            s_logger.info("Connected to " + _host + ":" + _port);
         } catch (Exception e) {
         	_selector.close();
         	throw new IOException("SSL: Fail to init SSL! " + e);

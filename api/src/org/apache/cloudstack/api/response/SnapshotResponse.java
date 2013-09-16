@@ -93,6 +93,10 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     @Param(description = "the state of the snapshot. BackedUp means that snapshot is ready to be used; Creating - the snapshot is being allocated on the primary storage; BackingUp - the snapshot is being backed up on secondary storage")
     private Snapshot.State state;
 
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "id of the availability zone")
+    private String zoneId;
+
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with snapshot", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
@@ -173,6 +177,10 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
         this.projectName = projectName;
     }
 
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
+    }
+ 
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
     }

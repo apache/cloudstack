@@ -30,11 +30,12 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "registerIso", responseObject=TemplateResponse.class, description="Registers an existing ISO into the CloudStack Cloud.")
 public class RegisterIsoCmd extends BaseCmd {
@@ -88,10 +89,13 @@ public class RegisterIsoCmd extends BaseCmd {
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
             description="Register iso for the project")
     private Long projectId;
-    
+
     @Parameter(name=ApiConstants.IMAGE_STORE_UUID, type=CommandType.STRING,
             description="Image store uuid")
     private String imageStoreUuid;
+
+    @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE, type = CommandType.BOOLEAN, description = "true if iso contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+    protected Boolean isDynamicallyScalable;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -144,9 +148,13 @@ public class RegisterIsoCmd extends BaseCmd {
     public String getChecksum() {
         return checksum;
     }
-    
+
     public String getImageStoreUuid() {
         return this.imageStoreUuid;
+    }
+
+    public Boolean isDynamicallyScalable() {
+        return isDynamicallyScalable ==  null ? false : isDynamicallyScalable;
     }
 
     /////////////////////////////////////////////////////
@@ -162,7 +170,7 @@ public class RegisterIsoCmd extends BaseCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
 
         return accountId;
@@ -173,7 +181,7 @@ public class RegisterIsoCmd extends BaseCmd {
         VirtualMachineTemplate template = _templateService.registerIso(this);
         if (template != null) {
             ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-            List<TemplateResponse> templateResponses = _responseGenerator.createIsoResponses(template.getId(), zoneId, false);
+            List<TemplateResponse> templateResponses = _responseGenerator.createIsoResponses(template, zoneId, false);
             response.setResponses(templateResponses);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);

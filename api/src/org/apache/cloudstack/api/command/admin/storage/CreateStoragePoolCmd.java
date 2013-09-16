@@ -71,14 +71,30 @@ public class CreateStoragePoolCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
             required=true, description="the Zone ID for the storage pool")
     private Long zoneId;
-    
+
     @Parameter(name=ApiConstants.PROVIDER, type=CommandType.STRING,
             required=false, description="the storage provider name")
     private String storageProviderName;
-    
+
     @Parameter(name=ApiConstants.SCOPE, type=CommandType.STRING,
             required=false, description="the scope of the storage: cluster or zone")
     private String scope;
+
+    @Parameter(name=ApiConstants.MANAGED, type=CommandType.BOOLEAN,
+            required=false, description="whether the storage should be managed by CloudStack")
+    private Boolean managed;
+
+    @Parameter(name=ApiConstants.CAPACITY_IOPS, type=CommandType.LONG,
+            required=false, description="IOPS CloudStack can provision from this storage pool")
+    private Long capacityIops;
+
+    @Parameter(name=ApiConstants.CAPACITY_BYTES, type=CommandType.LONG,
+            required=false, description="bytes CloudStack can provision from this storage pool")
+    private Long capacityBytes;
+
+    @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, required=false,
+            description="hypervisor type of the hosts in zone that will be attached to this storage pool. KVM, VMware supported as of now.")
+    private String hypervisor;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -111,18 +127,30 @@ public class CreateStoragePoolCmd extends BaseCmd {
     public Long getZoneId() {
         return zoneId;
     }
-    
+
     public String getStorageProviderName() {
         return this.storageProviderName;
     }
-    
+
     public String getScope() {
-       return this.scope;
+        return this.scope;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    public Boolean isManaged() {
+    	return managed;
+    }
+
+    public Long getCapacityIops() {
+        return capacityIops;
+    }
+
+    public Long getCapacityBytes() {
+        return capacityBytes;
+    }
+
+    public String getHypervisor() {
+        return hypervisor;
+    }
 
     @Override
     public String getCommandName() {
@@ -154,6 +182,8 @@ public class CreateStoragePoolCmd extends BaseCmd {
         } catch (UnknownHostException ex3) {
             s_logger.warn("Exception: ", ex3);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex3.getMessage());
+        } catch (Exception ex4) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex4.getMessage());
         }
     }
 }

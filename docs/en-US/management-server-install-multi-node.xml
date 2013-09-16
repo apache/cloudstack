@@ -35,10 +35,8 @@ linkend="sect-source-buildrpm"/> or <xref linkend="sect-source-builddebs"/> as
       <para>This step is required only for installations where XenServer is installed on the hypervisor hosts.</para>
       <para>Download vhd-util from <ulink
           url="http://download.cloud.com.s3.amazonaws.com/tools/vhd-util">vhd-util</ulink></para>
-      <para>If the Management Server is RHEL or CentOS, copy vhd-util to
-        /usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver.</para>
-      <para>If the Management Server is Ubuntu, copy vhd-util to
-        /usr/lib/cloud/common/scripts/vm/hypervisor/xenserver/vhd-util.</para>
+      <para>Copy vhd-util to
+        /usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver.</para>
     </listitem>
     <listitem>
       <para> Ensure that necessary services are started and set to start on boot.
@@ -53,12 +51,12 @@ linkend="sect-source-buildrpm"/> or <xref linkend="sect-source-builddebs"/> as
       <para>Configure the database client. Note the absence of the --deploy-as argument in this
         case. (For more details about the arguments to this command, see <xref
           linkend="management-server-install-db-external"/>.) </para>
-      <programlisting><prompt>#</prompt> cloud-setup-databases cloud:<replaceable>dbpassword</replaceable>@<replaceable>dbhost</replaceable> -e <replaceable>encryption_type</replaceable> -m <replaceable>management_server_key</replaceable> -k <replaceable>database_key</replaceable> -i <replaceable>management_server_ip</replaceable>
+      <programlisting><prompt>#</prompt> cloudstack-setup-databases cloud:<replaceable>dbpassword</replaceable>@<replaceable>dbhost</replaceable> -e <replaceable>encryption_type</replaceable> -m <replaceable>management_server_key</replaceable> -k <replaceable>database_key</replaceable> -i <replaceable>management_server_ip</replaceable>
       </programlisting>
     </listitem>
     <listitem>
       <para>Configure the OS and start the Management Server:</para>
-      <programlisting><prompt>#</prompt> cloud-setup-management</programlisting>
+      <programlisting><prompt>#</prompt> cloudstack-setup-management</programlisting>
       <para>The Management Server on this node should now be running.</para>
     </listitem>
     <listitem>

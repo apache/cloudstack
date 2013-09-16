@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.volume;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -28,7 +29,6 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 
 
 @APICommand(name = "listVolumes", description="Lists all volumes.", responseObject=VolumeResponse.class)
@@ -67,6 +67,7 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
             description="the ID of the availability zone")
     private Long zoneId;
 
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -100,6 +101,7 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
         return zoneId;
     }
 
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -110,8 +112,8 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Volume;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Volume;
     }
 
     @Override

@@ -17,7 +17,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloud-tools</artifactId>
-    <version>4.2.0-SNAPSHOT</version>
+    <version>4.3.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <dependencies>
@@ -136,6 +136,39 @@
             <argument>../marvin/marvin/deployDataCenter.py</argument>
             <argument>-i</argument>
             <argument>devcloud.cfg</argument>
+          </arguments>
+        </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>quickcloud</id>
+      <activation>
+        <property>
+          <name>deployquick</name>
+        </property>
+      </activation>
+      <build> 
+        <plugins>
+          <plugin>
+         <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <executions>
+          <execution>
+            <phase>integration-test</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <executable>python</executable>
+          <arguments>
+            <argument>../marvin/marvin/deployDataCenter.py</argument>
+            <argument>-i</argument>
+            <argument>quickcloud.cfg</argument>
           </arguments>
         </configuration>
           </plugin>

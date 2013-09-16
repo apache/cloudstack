@@ -46,20 +46,20 @@ public class DataCenterResourceManagerImpl implements DataCenterResourceManager 
 
 	@Inject
 	EngineClusterDao _clusterDao;
-	
+
 	@Inject
 	EngineHostDao _hostDao;
-	
-	
+
+
     protected StateMachine2<State, Event, DataCenterResourceEntity> _stateMachine = DataCenterResourceEntity.State.s_fsm;
 
 	@Override
 	public EngineDataCenterVO loadDataCenter(String dataCenterId) {
-    	EngineDataCenterVO dataCenterVO = _dataCenterDao.findByUuid(dataCenterId);
-    	if(dataCenterVO == null){
-    		throw new InvalidParameterValueException("Zone does not exist");
-    	}
-    	return dataCenterVO;
+	EngineDataCenterVO dataCenterVO = _dataCenterDao.findByUuid(dataCenterId);
+	if(dataCenterVO == null){
+		throw new InvalidParameterValueException("Zone does not exist");
+	}
+	return dataCenterVO;
 	}
 
 	@Override
@@ -70,7 +70,7 @@ public class DataCenterResourceManagerImpl implements DataCenterResourceManager 
 
 	@Override
 	public boolean changeState(DataCenterResourceEntity entity, Event event) throws NoTransitionException {
-		
+
 		if(entity instanceof ZoneEntity){
 			return _stateMachine.transitTo(entity, event, null, _dataCenterDao);
 		}else if(entity instanceof PodEntity){
@@ -87,18 +87,18 @@ public class DataCenterResourceManagerImpl implements DataCenterResourceManager 
 	@Override
 	public EngineHostPodVO loadPod(String uuid) {
 		EngineHostPodVO pod = _podDao.findByUuid(uuid);
-    	if(pod == null){
-    		throw new InvalidParameterValueException("Pod does not exist");
-    	}
+	if(pod == null){
+		throw new InvalidParameterValueException("Pod does not exist");
+	}
 		return pod;
 	}
 
 	@Override
 	public EngineClusterVO loadCluster(String uuid) {
 		EngineClusterVO cluster = _clusterDao.findByUuid(uuid);
-    	if(cluster == null){
-    		throw new InvalidParameterValueException("Pod does not exist");
-    	}
+	if(cluster == null){
+		throw new InvalidParameterValueException("Pod does not exist");
+	}
 		return cluster;
 	}
 
@@ -109,21 +109,21 @@ public class DataCenterResourceManagerImpl implements DataCenterResourceManager 
 
 	@Override
 	public void saveCluster(EngineClusterVO cluster) {
-		_clusterDao.persist(cluster);		
+		_clusterDao.persist(cluster);
 	}
 
 	@Override
 	public EngineHostVO loadHost(String uuid) {
 		EngineHostVO host = _hostDao.findByUuid(uuid);
-    	if(host == null){
-    		throw new InvalidParameterValueException("Host does not exist");
-    	}
+	if(host == null){
+		throw new InvalidParameterValueException("Host does not exist");
+	}
 		return host;
 	}
 
 	@Override
 	public void saveHost(EngineHostVO hostVO) {
-		_hostDao.persist(hostVO);		
+		_hostDao.persist(hostVO);
 	}
 
 }

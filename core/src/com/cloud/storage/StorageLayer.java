@@ -39,6 +39,8 @@ public interface StorageLayer extends Manager {
      */
     long getSize(String path);
 
+    File createUniqDir();
+
     /**
      * Is this path a directory?
      * @param path path to check.

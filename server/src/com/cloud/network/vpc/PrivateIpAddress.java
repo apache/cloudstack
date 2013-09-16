@@ -25,6 +25,7 @@ public class PrivateIpAddress implements PrivateIp{
     String ipAddress;
     String macAddress;
     long networkId;
+    boolean sourceNat;
     
     /**
      * @param privateIp
@@ -42,6 +43,7 @@ public class PrivateIpAddress implements PrivateIp{
         this.netmask = netmask;
         this.macAddress = macAddress;
         this.networkId = privateIp.getNetworkId();
+        this.sourceNat = privateIp.getSourceNat();
     }
 
     @Override
@@ -72,5 +74,10 @@ public class PrivateIpAddress implements PrivateIp{
     @Override
     public long getNetworkId() {
         return networkId;
+    }
+
+    @Override
+    public boolean getSourceNat() {
+        return sourceNat;
     }
 }

@@ -17,15 +17,18 @@
 package com.cloud.api.query.dao;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -68,11 +71,18 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
                 : ServiceOffering.StorageType.shared.toString());
         offeringResponse.setOfferHa(offering.isOfferHA());
         offeringResponse.setLimitCpuUse(offering.isLimitCpuUse());
+        offeringResponse.setVolatileVm(offering.getVolatileVm());
         offeringResponse.setTags(offering.getTags());
         offeringResponse.setDomain(offering.getDomainName());
         offeringResponse.setDomainId(offering.getDomainUuid());
         offeringResponse.setNetworkRate(offering.getRateMbps());
         offeringResponse.setHostTag(offering.getHostTag());
+        offeringResponse.setDeploymentPlanner(offering.getDeploymentPlanner());
+        offeringResponse.setBytesReadRate(offering.getBytesReadRate());
+        offeringResponse.setBytesWriteRate(offering.getBytesWriteRate());
+        offeringResponse.setIopsReadRate(offering.getIopsReadRate());
+        offeringResponse.setIopsWriteRate(offering.getIopsWriteRate());
+        offeringResponse.setDetails(ApiDBUtils.getServiceOfferingDetails(offering.getId()));
         offeringResponse.setObjectName("serviceoffering");
 
         return offeringResponse;

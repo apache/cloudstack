@@ -20,15 +20,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.storage.Snapshot;
 import com.cloud.utils.Pair;
 
@@ -59,6 +60,10 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
             description="the ID of the disk volume")
     private Long volumeId;
 
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "list snapshots by zone id")
+    private Long zoneId;
+
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -83,6 +88,10 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
         return volumeId;
     }
 
+    public Long getZoneId() {
+        return zoneId;
+    }    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -92,8 +101,8 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
         return s_name;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Snapshot;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Snapshot;
     }
 
     @Override

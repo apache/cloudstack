@@ -76,6 +76,9 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName("networkofferingdisplaytext") @Param(description="display text of the network offering the network is created from")
     private String networkOfferingDisplayText;
 
+    @SerializedName("networkofferingconservemode") @Param(description="true if network offering is ip conserve mode enabled")
+    private Boolean networkOfferingConserveMode;
+    
     @SerializedName("networkofferingavailability") @Param(description="availability of the network offering the network is created from")
     private String networkOfferingAvailability;
 
@@ -159,7 +162,22 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     
     @SerializedName(ApiConstants.IP6_CIDR) @Param(description="the cidr of IPv6 network")
     private String ip6Cidr;
-    
+
+    @SerializedName(ApiConstants.DISPLAY_NETWORK) @Param(description="an optional field, whether to the display the network to the end user or not.")
+    private Boolean displayNetwork;
+
+    @SerializedName(ApiConstants.ACL_ID) @Param(description="ACL Id associated with the VPC network")
+    private String aclId;
+
+
+    public Boolean getDisplayNetwork() {
+        return displayNetwork;
+    }
+
+    public void setDisplayNetwork(Boolean displayNetwork) {
+        this.displayNetwork = displayNetwork;
+    }
+
     public void setId(String id) {
         this.id = id;
     }
@@ -232,7 +250,11 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     public void setNetworkOfferingDisplayText(String networkOfferingDisplayText) {
         this.networkOfferingDisplayText = networkOfferingDisplayText;
     }
-
+    
+    public void setNetworkOfferingConserveMode(Boolean networkOfferingConserveMode) {
+        this.networkOfferingConserveMode = networkOfferingConserveMode;
+    }
+        
     public void setDisplaytext(String displaytext) {
         this.displaytext = displaytext;
     }
@@ -334,4 +356,12 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 	public void setIp6Cidr(String ip6Cidr) {
 		this.ip6Cidr = ip6Cidr;
 	}
+
+    public String getAclId() {
+        return aclId;
+    }
+
+    public void setAclId(String aclId) {
+        this.aclId = aclId;
+    }
 }

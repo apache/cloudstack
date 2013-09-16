@@ -315,9 +315,10 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
         List<StorageNetworkIpRangeVO> ranges = _sNwIpRangeDao.listByPodId(podId);
         for (StorageNetworkIpRangeVO r : ranges) {
             try {
-                r = _sNwIpRangeDao.acquireInLockTable(r.getId());
+                Long rangeId = r.getId();
+                r = _sNwIpRangeDao.acquireInLockTable(rangeId);
                 if (r == null) {
-                    String msg = "Unable to acquire lock on storage network ip range id=" + r.getId() + ", delete failed";
+                    String msg = "Unable to acquire lock on storage network ip range id=" + rangeId + ", delete failed";
                     s_logger.warn(msg);
                     throw new CloudRuntimeException(msg);
                 }

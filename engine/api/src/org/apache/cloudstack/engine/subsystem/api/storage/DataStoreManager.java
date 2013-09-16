@@ -19,13 +19,22 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import java.util.List;
-import java.util.Map;
-
+import com.cloud.storage.DataStoreRole;
 
 public interface DataStoreManager {
-    public DataStore getDataStore(long storeId, DataStoreRole role);
-    public DataStore getPrimaryDataStore(long storeId);
-    public DataStore getDataStore(String uuid, DataStoreRole role);
-    public List<DataStore> getImageStores(Scope scope);
-    public DataStore registerDataStore(Map<String, String> params, String providerUuid);
+    DataStore getDataStore(long storeId, DataStoreRole role);
+
+    DataStore getPrimaryDataStore(long storeId);
+
+    DataStore getDataStore(String uuid, DataStoreRole role);
+
+    List<DataStore> getImageStoresByScope(ZoneScope scope);
+
+    DataStore getImageStore(long zoneId);
+
+    List<DataStore> getImageCacheStores(Scope scope);
+
+    DataStore getImageCacheStore(long zoneId);
+
+    List<DataStore> listImageStores();
 }

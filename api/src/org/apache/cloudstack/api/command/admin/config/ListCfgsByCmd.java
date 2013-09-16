@@ -23,11 +23,11 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.ConfigurationResponse;
-import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.*;
+import org.apache.cloudstack.config.Configuration;
+
 import org.apache.log4j.Logger;
 
-import com.cloud.configuration.Configuration;
 import com.cloud.utils.Pair;
 
 @APICommand(name = "listConfigurations", description = "Lists all configurations.", responseObject = ConfigurationResponse.class)
@@ -46,6 +46,19 @@ public class ListCfgsByCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "lists configuration by name")
     private String configName;
 
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class, description="the ID of the Zone to update the parameter value for corresponding zone")
+    private Long zone_id;
+
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType=ClusterResponse.class, description="the ID of the Cluster to update the parameter value for corresponding cluster")
+    private Long cluster_id;
+
+    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.UUID, entityType=StoragePoolResponse.class, description="the ID of the Storage pool to update the parameter value for corresponding storage pool")
+    private Long storagepool_id;
+
+    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.UUID, entityType=AccountResponse.class, description="the ID of the Account to update the parameter value for corresponding account")
+    private Long account_id;
+
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -58,14 +71,34 @@ public class ListCfgsByCmd extends BaseListCmd {
         return configName;
     }
 
+    public Long getZoneId() {
+        return zone_id;
+    }
+
+    public Long getClusterId() {
+        return cluster_id;
+    }
+
+    public Long getStoragepoolId() {
+        return storagepool_id;
+    }
+
+    public Long getAccountId() {
+        return account_id;
+    }
+
     @Override
     public Long getPageSizeVal() {
-        Long pageSizeVal = 500L;
-        Integer pageSize = getPageSize();
-        if (pageSize != null) {
-            pageSizeVal = pageSize.longValue();
+        Long defaultPageSize = 500L;
+        Integer pageSizeInt = getPageSize();
+        if (pageSizeInt != null) {
+            if (pageSizeInt.longValue() == PAGESIZE_UNLIMITED) {
+                defaultPageSize = null;
+            } else {
+                defaultPageSize = pageSizeInt.longValue();
+            }
         }
-        return pageSizeVal;
+        return defaultPageSize;
     }
 
     // ///////////////////////////////////////////////////
@@ -85,6 +118,18 @@ public class ListCfgsByCmd extends BaseListCmd {
         for (Configuration cfg : result.first()) {
             ConfigurationResponse cfgResponse = _responseGenerator.createConfigurationResponse(cfg);
             cfgResponse.setObjectName("configuration");
+            if(getZoneId() != null) {
+                cfgResponse.setScope("zone");
+            }
+            if(getClusterId() != null) {
+                cfgResponse.setScope("cluster");
+            }
+            if(getStoragepoolId() != null) {
+                cfgResponse.setScope("storagepool");
+            }
+            if(getAccountId() != null) {
+                cfgResponse.setScope("account");
+            }
             configResponses.add(cfgResponse);
         }
 

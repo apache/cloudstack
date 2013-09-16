@@ -27,8 +27,9 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.HostVO;
@@ -129,6 +130,7 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
         params.put("max.template.iso.size", _configDao.getValue(Config.MaxTemplateAndIsoSize.toString()));
         params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));
         params.put(Config.XenMaxNics.toString().toLowerCase(), _configDao.getValue(Config.XenMaxNics.toString()));
+        params.put(Config.XenHeartBeatInterval.toString().toLowerCase(), _configDao.getValue(Config.XenHeartBeatInterval.toString()));
         return params;
 
     }

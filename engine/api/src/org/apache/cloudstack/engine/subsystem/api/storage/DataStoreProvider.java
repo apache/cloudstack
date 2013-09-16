@@ -21,17 +21,28 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 import java.util.Map;
 import java.util.Set;
 
-
 public interface DataStoreProvider {
-    public static enum DataStoreProviderType {
-        PRIMARY,
-        IMAGE
+    // constants for provider names
+    static final String NFS_IMAGE = "NFS";
+    static final String S3_IMAGE = "S3";
+    static final String SWIFT_IMAGE = "Swift";
+    static final String SAMPLE_IMAGE = "Sample";
+
+    static final String DEFAULT_PRIMARY = "DefaultPrimary";
+
+    static enum DataStoreProviderType {
+        PRIMARY, IMAGE, ImageCache
     }
-    public DataStoreLifeCycle getDataStoreLifeCycle();
-    public DataStoreDriver getDataStoreDriver();
-    public HypervisorHostListener getHostListener();
-    public String getName();
-    public boolean configure(Map<String, Object> params);
-    public Set<DataStoreProviderType> getTypes();
-    
+
+    DataStoreLifeCycle getDataStoreLifeCycle();
+
+    DataStoreDriver getDataStoreDriver();
+
+    HypervisorHostListener getHostListener();
+
+    String getName();
+
+    boolean configure(Map<String, Object> params);
+
+    Set<DataStoreProviderType> getTypes();
 }

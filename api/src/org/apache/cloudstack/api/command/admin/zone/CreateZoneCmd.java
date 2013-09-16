@@ -24,11 +24,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "createZone", description="Creates a Zone.", responseObject=ZoneResponse.class)
 public class CreateZoneCmd extends BaseCmd {
@@ -163,7 +164,7 @@ public class CreateZoneCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Zone Name: "+getZoneName());
+        CallContext.current().setEventDetails("Zone Name: "+getZoneName());
         DataCenter result = _configService.createZone(this);
         if (result != null){
             ZoneResponse response = _responseGenerator.createZoneResponse(result,false);

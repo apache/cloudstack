@@ -38,13 +38,14 @@ import org.springframework.stereotype.Component;
 import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 @Component
 @Local(value={AlertManager.class})

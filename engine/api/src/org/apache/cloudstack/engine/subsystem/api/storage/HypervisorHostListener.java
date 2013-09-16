@@ -20,5 +20,6 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 public interface HypervisorHostListener {
     boolean hostConnect(long hostId, long poolId);
+
     boolean hostDisconnected(long hostId, long poolId);
 }

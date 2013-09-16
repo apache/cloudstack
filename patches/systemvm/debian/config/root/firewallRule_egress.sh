@@ -82,15 +82,14 @@ fw_entry_for_egress() {
       [ "$eport" == "-1" ] && typecode="$sport"
       [ "$sport" == "-1" ] && typecode="any"
       sudo iptables -A FW_EGRESS_RULES -p $prot -s $lcidr --icmp-type $typecode \
-                     -j ACCEPT
+                     -j $target
       result=$?
     elif [ "$prot" == "all" ]
     then
-	    sudo iptables -A FW_EGRESS_RULES -p $prot -s $lcidr -j ACCEPT
+	    sudo iptables -A FW_EGRESS_RULES -p $prot -s $lcidr -j $target
 	    result=$?
     else
-	    sudo iptables -A FW_EGRESS_RULES -p $prot -s $lcidr \
-	     	    $DPORT -j ACCEPT
+	    sudo iptables -A FW_EGRESS_RULES -p $prot -s $lcidr  $DPORT -j $target
 	    result=$?
     fi
   
@@ -109,14 +108,18 @@ rules=""
 rules_list=""
 ip=""
 dev=""
+pflag=0
 shift
 shift
-while getopts 'a:' OPTION
+while getopts 'a:P:' OPTION
 do
   case $OPTION in
   a)	aflag=1
 		rules="$OPTARG"
 		;;
+  P)   pflag=1
+       pvalue="$OPTARG"
+       ;;
   ?)	usage
                 unlock_exit 2 $lock $locked
 		;;
@@ -142,6 +145,13 @@ fi
 
 success=0
 
+if [ "$pvalue" == "0" -o "$pvalue" == "2" ]
+  then
+     target="ACCEPT"
+  else
+     target="DROP"
+  fi
+
 fw_egress_chain
 for r in $rules_list
 do
@@ -162,6 +172,12 @@ then
   fw_egress_backup_restore
 else
   logger -t cloud "deleting backup for guest network"
+    if [ "$pvalue" == "1" -o "$pvalue" == "2" ]
+       then
+       #Adding default policy rule
+       sudo iptables -A FW_EGRESS_RULES  -j ACCEPT
+    fi
+
 fi
 
 fw_egress_remove_backup

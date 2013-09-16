@@ -20,6 +20,7 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -35,7 +36,6 @@ import com.cloud.agent.manager.SimulatorManager;
 import com.cloud.agent.manager.SimulatorManager.AgentType;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
-import com.cloud.storage.resource.SecondaryStorageResource;
 import com.cloud.vm.SecondaryStorageVm;
 
 
@@ -50,7 +50,7 @@ public class AgentStorageResource extends AgentResourceBase implements Secondary
     }
 
     public AgentStorageResource() {
-        setType(Host.Type.SecondaryStorage);
+        setType(Type.SecondaryStorageVM);
     }
 
     @Override
@@ -109,7 +109,7 @@ public class AgentStorageResource extends AgentResourceBase implements Secondary
     }
 
     @Override
-    public String getRootDir(ssCommand cmd) {
+    public String getRootDir(String url) {
         // TODO Auto-generated method stub
         return null;
     }

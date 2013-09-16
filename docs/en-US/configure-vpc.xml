@@ -26,6 +26,7 @@
   <xi:include href="configure-acl.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="add-gateway-vpc.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="add-vm-to-tier.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="add-vm-tier-sharednw.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="acquire-new-ip-for-vpc.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="release-ip-for-vpc.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="enable-disable-static-nat-vpc.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>

@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.autoscale;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -28,7 +29,6 @@ import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.ConditionResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
@@ -142,8 +142,8 @@ public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.AutoScalePolicy;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.AutoScalePolicy;
     }
 
     @Override

@@ -22,25 +22,66 @@
     under the License.
 -->
 <section id="network-offerings">
-    <title>Network Offerings</title>
-    <note><para>For the most up-to-date list of supported network services, see the &PRODUCT; UI or call listNetworkServices.</para></note>
-    <para>A network offering is a named set of network services, such as:</para>
-    <itemizedlist>
-        <listitem><para>DHCP</para></listitem>
-        <listitem><para>DNS</para></listitem>
-        <listitem><para>Source NAT</para></listitem>
-        <listitem><para>Static NAT</para></listitem>
-        <listitem><para>Port Forwarding</para></listitem>
-        <listitem><para>Load Balancing</para></listitem>
-        <listitem><para>Firewall</para></listitem>
-        <listitem><para>VPN</para></listitem>
-        <listitem><para>Optional) Name one of several available providers to use for a given service, such as Juniper for the firewall</para></listitem>
-        <listitem><para>(Optional) Network tag to specify which physical network to use</para></listitem>
-    </itemizedlist>
-    <para>When creating a new VM, the user chooses one of the available network offerings, and that determines which network services the VM can use.</para>
-    <para>The &PRODUCT; administrator can create any number of custom network offerings, in addition to the default network offerings provided by &PRODUCT;. By creating multiple custom network offerings, you can set up your cloud to offer different classes of service on a single multi-tenant physical network.  For example, while the underlying physical wiring may be the same for two tenants, tenant A may only need simple firewall protection for their website, while tenant B may be running a web server farm and require a scalable firewall solution, load balancing solution, and alternate networks for accessing the database backend.</para>
-    <note><para>If you create load balancing rules while using a network service offering that includes an external load balancer device such as NetScaler, and later change the network service offering to one that uses the &PRODUCT; virtual router, you must create a firewall rule on the virtual router for each of your existing load balancing rules so that they continue to function.</para></note>
-    <para>When creating a new virtual network, the &PRODUCT; administrator chooses which network offering to enable for that network. Each virtual network is associated with one network offering. A virtual network can be upgraded or downgraded by changing its associated network offering.  If you do this, be sure to reprogram the physical network to match.</para>
-    <para>&PRODUCT; also has internal network offerings for use by &PRODUCT; system VMs. These network offerings are not visible to users but can be modified by administrators.</para>
-    <xi:include href="creating-network-offerings.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <title>Network Offerings</title>
+  <note>
+    <para>For the most up-to-date list of supported network services, see the &PRODUCT; UI or call
+      listNetworkServices.</para>
+  </note>
+  <para>A network offering is a named set of network services, such as:</para>
+  <itemizedlist>
+    <listitem>
+      <para>DHCP</para>
+    </listitem>
+    <listitem>
+      <para>DNS</para>
+    </listitem>
+    <listitem>
+      <para>Source NAT</para>
+    </listitem>
+    <listitem>
+      <para>Static NAT</para>
+    </listitem>
+    <listitem>
+      <para>Port Forwarding</para>
+    </listitem>
+    <listitem>
+      <para>Load Balancing</para>
+    </listitem>
+    <listitem>
+      <para>Firewall</para>
+    </listitem>
+    <listitem>
+      <para>VPN</para>
+    </listitem>
+    <listitem>
+      <para>(Optional) Name one of several available providers to use for a given service, such as
+        Juniper for the firewall</para>
+    </listitem>
+    <listitem>
+      <para>(Optional) Network tag to specify which physical network to use</para>
+    </listitem>
+  </itemizedlist>
+  <para>When creating a new VM, the user chooses one of the available network offerings, and that
+    determines which network services the VM can use.</para>
+  <para>The &PRODUCT; administrator can create any number of custom network offerings, in addition
+    to the default network offerings provided by &PRODUCT;. By creating multiple custom network
+    offerings, you can set up your cloud to offer different classes of service on a single
+    multi-tenant physical network. For example, while the underlying physical wiring may be the same
+    for two tenants, tenant A may only need simple firewall protection for their website, while
+    tenant B may be running a web server farm and require a scalable firewall solution, load
+    balancing solution, and alternate networks for accessing the database backend.</para>
+  <note>
+    <para>If you create load balancing rules while using a network service offering that includes an
+      external load balancer device such as NetScaler, and later change the network service offering
+      to one that uses the &PRODUCT; virtual router, you must create a firewall rule on the virtual
+      router for each of your existing load balancing rules so that they continue to
+      function.</para>
+  </note>
+  <para>When creating a new virtual network, the &PRODUCT; administrator chooses which network
+    offering to enable for that network. Each virtual network is associated with one network
+    offering. A virtual network can be upgraded or downgraded by changing its associated network
+    offering. If you do this, be sure to reprogram the physical network to match.</para>
+  <para>&PRODUCT; also has internal network offerings for use by &PRODUCT; system VMs. These network
+    offerings are not visible to users but can be modified by administrators.</para>
+  <xi:include href="creating-network-offerings.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 </section>

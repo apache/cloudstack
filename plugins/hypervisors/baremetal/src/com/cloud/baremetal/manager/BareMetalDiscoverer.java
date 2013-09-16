@@ -34,13 +34,14 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.baremetal.networkservice.BareMetalResourceBase;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -92,10 +93,11 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
 	public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags)
 			throws DiscoveryException {
 	    
+		/* Enable this after we decide to use addBaremetalHostCmd instead of addHostCmd
 	    String discoverName = _params.get(ApiConstants.BAREMETAL_DISCOVER_NAME);
 	    if (!this.getClass().getName().equals(discoverName)) {
 	        return null;
-	    }
+	    } */
 	    
 		Map<BareMetalResourceBase, Map<String, String>> resources = new HashMap<BareMetalResourceBase, Map<String, String>>();
 		Map<String, String> details = new HashMap<String, String>();

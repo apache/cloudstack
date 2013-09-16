@@ -27,12 +27,15 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -45,9 +48,9 @@ import com.cloud.agent.api.RevertToVMSnapshotAnswer;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.agent.api.to.VolumeTO;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -60,19 +63,21 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.UserContext;
-import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
@@ -119,7 +124,11 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     @Inject VirtualMachineManager _itMgr;
     @Inject DataStoreManager dataStoreMgr;
     @Inject ConfigurationDao _configDao;
+    @Inject HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
+    @Inject DiskOfferingDao _diskOfferingDao;
+    @Inject ServiceOfferingDao _serviceOfferingDao;
     int _vmSnapshotMax;
+    int _wait;
     StateMachine2<VMSnapshot.State, VMSnapshot.Event, VMSnapshot> _vmSnapshottateMachine ;
 
     @Override
@@ -131,6 +140,9 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         }
 
         _vmSnapshotMax = NumbersUtil.parseInt(_configDao.getValue("vmsnapshot.max"), VMSNAPSHOTMAX);
+        
+        String value = _configDao.getValue("vmsnapshot.create.wait");
+        _wait = NumbersUtil.parseInt(value, 1800);
 
         _vmSnapshottateMachine   = VMSnapshot.State.getStateMachine();
         return true;
@@ -198,7 +210,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         }
 
         if (state == null) {
-            VMSnapshot.State[] status = { VMSnapshot.State.Ready, VMSnapshot.State.Creating, VMSnapshot.State.Allocated, 
+            VMSnapshot.State[] status = { VMSnapshot.State.Ready, VMSnapshot.State.Creating, VMSnapshot.State.Allocated,
                     VMSnapshot.State.Error, VMSnapshot.State.Expunging, VMSnapshot.State.Reverting };
             sc.setParameters("status", (Object[]) status);
         } else {
@@ -226,11 +238,11 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     }
 
     protected Account getCaller(){
-        return UserContext.current().getCaller();
+        return CallContext.current().getCallingAccount();
     }
     
     @Override
-    public VMSnapshot allocVMSnapshot(Long vmId, String vsDisplayName, String vsDescription, Boolean snapshotMemory) 
+    public VMSnapshot allocVMSnapshot(Long vmId, String vsDisplayName, String vsDescription, Boolean snapshotMemory)
             throws ResourceAllocationException {
 
         Account caller = getCaller();
@@ -240,7 +252,11 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         if (userVmVo == null) {
             throw new InvalidParameterValueException("Creating VM snapshot failed due to VM:" + vmId + " is a system VM or does not exist");
         }
-        
+
+        // check hypervisor capabilities
+        if(!_hypervisorCapabilitiesDao.isVmSnapshotEnabled(userVmVo.getHypervisorType(), "default"))
+            throw new InvalidParameterValueException("VM snapshot is not enabled for hypervisor type: " + userVmVo.getHypervisorType());
+
         // parameter length check
         if(vsDisplayName != null && vsDisplayName.length()>255)
             throw new InvalidParameterValueException("Creating VM snapshot failed due to length of VM snapshot vsDisplayName should not exceed 255");
@@ -254,7 +270,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             vsDisplayName = vmSnapshotName;
         }
         if(_vmSnapshotDao.findByName(vmId,vsDisplayName) != null){
-            throw new InvalidParameterValueException("Creating VM snapshot failed due to VM snapshot with name" + vsDisplayName + "  already exists"); 
+            throw new InvalidParameterValueException("Creating VM snapshot failed due to VM snapshot with name" + vsDisplayName + "  already exists");
         }
         
         // check VM state
@@ -311,7 +327,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         } catch (Exception e) {
             String msg = e.getMessage();
             s_logger.error("Create vm snapshot record failed for vm: " + vmId + " due to: " + msg);
-        }  
+        }
         return null;
     }
 
@@ -341,8 +357,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     }
 
     protected VMSnapshot createVmSnapshotInternal(UserVmVO userVm, VMSnapshotVO vmSnapshot, Long hostId) {
-        try { 
-            CreateVMSnapshotAnswer answer = null;
+        CreateVMSnapshotAnswer answer = null;
+        try {
             GuestOSVO guestOS = _guestOSDao.findById(userVm.getGuestOSId());
             
             // prepare snapshotVolumeTos
@@ -361,6 +377,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 vmSnapshot.setParent(current.getId());
 
             CreateVMSnapshotCommand ccmd = new CreateVMSnapshotCommand(userVm.getInstanceName(),target ,volumeTOs, guestOS.getDisplayName(),userVm.getState());
+            ccmd.setWait(_wait);
             
             answer = (CreateVMSnapshotAnswer) sendToPool(hostId, ccmd);
             if (answer != null && answer.getResult()) {
@@ -392,15 +409,43 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 s_logger.warn("Create vm snapshot " + vmSnapshot.getName() + " failed for vm: " + userVm.getInstanceName());
                 _vmSnapshotDao.remove(vmSnapshot.getId());
             }
+            if(vmSnapshot.getState() == VMSnapshot.State.Ready && answer != null){
+                for (VolumeTO volumeTo : answer.getVolumeTOs()){
+                    publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_CREATE,vmSnapshot,userVm,volumeTo);
+                }
+            }
         }
     }
 
+    private void publishUsageEvent(String type, VMSnapshot vmSnapshot, UserVm userVm, VolumeTO volumeTo){
+        VolumeVO volume = _volumeDao.findById(volumeTo.getId());
+        Long diskOfferingId = volume.getDiskOfferingId();
+        Long offeringId = null;
+        if (diskOfferingId != null) {
+            DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
+            if (offering != null
+                    && (offering.getType() == DiskOfferingVO.Type.Disk)) {
+                offeringId = offering.getId();
+            }
+        }
+        UsageEventUtils.publishUsageEvent(
+                type,
+                vmSnapshot.getAccountId(),
+                userVm.getDataCenterId(),
+                userVm.getId(),
+                vmSnapshot.getName(),
+                offeringId,     
+                volume.getId(), // save volume's id into templateId field
+                volumeTo.getChainSize(),
+                VMSnapshot.class.getName(), vmSnapshot.getUuid());       
+    }
+    
     protected List<VolumeTO> getVolumeTOList(Long vmId) {
         List<VolumeTO> volumeTOs = new ArrayList<VolumeTO>();
         List<VolumeVO> volumeVos = _volumeDao.findByInstance(vmId);
         
         for (VolumeVO volume : volumeVos) {
-            StoragePool pool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
+            StoragePool pool = (StoragePool)dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
             VolumeTO volumeTO = new VolumeTO(volume, pool);
             volumeTOs.add(volumeTO);
         }
@@ -476,7 +521,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             _vmSnapshotDao.persist(child);
         }
         
-        // update current snapshot 
+        // update current snapshot
         VMSnapshotVO current = _vmSnapshotDao.findCurrentSnapshotByVmId(vmSnapshot.getVmId());
         if(current != null && current.getId() == vmSnapshot.getId() && vmSnapshot.getParent() != null){
             VMSnapshotVO parent = _vmSnapshotDao.findById(vmSnapshot.getParent());
@@ -521,6 +566,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             if (volume.getPath() != null) {
                 VolumeVO volumeVO = _volumeDao.findById(volume.getId());
                 volumeVO.setPath(volume.getPath());
+                volumeVO.setVmSnapshotChainSize(volume.getChainSize());
                 _volumeDao.persist(volumeVO);
             }
         }
@@ -538,7 +584,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     
     @Override
     public boolean hasActiveVMSnapshotTasks(Long vmId){
-        List<VMSnapshotVO> activeVMSnapshots = _vmSnapshotDao.listByInstanceId(vmId, 
+        List<VMSnapshotVO> activeVMSnapshots = _vmSnapshotDao.listByInstanceId(vmId,
                 VMSnapshot.State.Creating, VMSnapshot.State.Expunging,VMSnapshot.State.Reverting,VMSnapshot.State.Allocated);
         return activeVMSnapshots.size() > 0;
     }
@@ -579,7 +625,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     @DB
     protected boolean deleteSnapshotInternal(VMSnapshotVO vmSnapshot) {
         UserVmVO userVm = _userVMDao.findById(vmSnapshot.getVmId());
-        
+        DeleteVMSnapshotAnswer answer = null;
         try {
             vmSnapshotStateTransitTo(vmSnapshot,VMSnapshot.Event.ExpungeRequested);
             Long hostId = pickRunningHost(vmSnapshot.getVmId());
@@ -590,12 +636,12 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             // prepare DeleteVMSnapshotCommand
             String vmInstanceName = userVm.getInstanceName();
             VMSnapshotTO parent = getSnapshotWithParents(vmSnapshot).getParent();
-            VMSnapshotTO vmSnapshotTO = new VMSnapshotTO(vmSnapshot.getId(), vmSnapshot.getName(), vmSnapshot.getType(), 
+            VMSnapshotTO vmSnapshotTO = new VMSnapshotTO(vmSnapshot.getId(), vmSnapshot.getName(), vmSnapshot.getType(),
                     vmSnapshot.getCreated().getTime(), vmSnapshot.getDescription(), vmSnapshot.getCurrent(), parent);
             GuestOSVO guestOS = _guestOSDao.findById(userVm.getGuestOSId());
             DeleteVMSnapshotCommand deleteSnapshotCommand = new DeleteVMSnapshotCommand(vmInstanceName, vmSnapshotTO, volumeTOs,guestOS.getDisplayName());
             
-            DeleteVMSnapshotAnswer answer = (DeleteVMSnapshotAnswer) sendToPool(hostId, deleteSnapshotCommand);
+            answer = (DeleteVMSnapshotAnswer) sendToPool(hostId, deleteSnapshotCommand);
            
             if (answer != null && answer.getResult()) {
                 processAnswer(vmSnapshot, userVm, answer, hostId);
@@ -609,6 +655,12 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             String msg = "Delete vm snapshot " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " failed due to " + e.getMessage();
             s_logger.error(msg , e);
             throw new CloudRuntimeException(e.getMessage());
+        } finally{
+            if(answer != null && answer.getResult()){
+                for (VolumeTO volumeTo : answer.getVolumeTOs()){
+                    publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_DELETE,vmSnapshot,userVm,volumeTo);
+                }
+            }
         }
     }
 
@@ -652,16 +704,14 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                     "VM Snapshot reverting failed due to vm snapshot is not in the state of Created.");
         }
 
-        UserVO callerUser = _userDao.findById(UserContext.current().getCallerUserId());
-        
         UserVmVO vm = null;
         Long hostId = null;
-        Account owner = _accountDao.findById(vmSnapshotVo.getAccountId());
         
         // start or stop VM first, if revert from stopped state to running state, or from running to stopped
         if(userVm.getState() == VirtualMachine.State.Stopped && vmSnapshotVo.getType() == VMSnapshot.Type.DiskAndMemory){
             try {
-        	    vm = _itMgr.advanceStart(userVm, new HashMap<VirtualMachineProfile.Param, Object>(), callerUser, owner);
+                _itMgr.advanceStart(userVm.getUuid(), new HashMap<VirtualMachineProfile.Param, Object>());
+                vm = _userVMDao.findById(userVm.getId());
         	    hostId = vm.getHostId();
         	} catch (Exception e) {
         	    s_logger.error("Start VM " + userVm.getInstanceName() + " before reverting failed due to " + e.getMessage());
@@ -670,10 +720,10 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         }else {
             if(userVm.getState() == VirtualMachine.State.Running && vmSnapshotVo.getType() == VMSnapshot.Type.Disk){
                 try {
-    			    _itMgr.advanceStop(userVm, true, callerUser, owner);
+                    _itMgr.advanceStop(userVm.getUuid(), true);
                 } catch (Exception e) {
                     s_logger.error("Stop VM " + userVm.getInstanceName() + " before reverting failed due to " + e.getMessage());
-    			    throw new CloudRuntimeException(e.getMessage());
+                    throw new CloudRuntimeException(e.getMessage());
                 }
             }
             hostId = pickRunningHost(userVm.getId());
@@ -704,7 +754,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             String vmInstanceName = userVm.getInstanceName();
             VMSnapshotTO parent = getSnapshotWithParents(snapshot).getParent();
             VMSnapshotTO vmSnapshotTO = new VMSnapshotTO(snapshot.getId(), snapshot.getName(), snapshot.getType(), 
-            		snapshot.getCreated().getTime(), snapshot.getDescription(), snapshot.getCurrent(), parent);
+                    snapshot.getCreated().getTime(), snapshot.getDescription(), snapshot.getCurrent(), parent);
             
             GuestOSVO guestOS = _guestOSDao.findById(userVm.getGuestOSId());
             RevertToVMSnapshotCommand revertToSnapshotCommand = new RevertToVMSnapshotCommand(vmInstanceName, vmSnapshotTO, volumeTOs, guestOS.getDisplayName());
@@ -734,7 +784,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             String errMsg = "revert vm: " + userVm.getInstanceName() + " to snapshot " + vmSnapshotVo.getName() + " failed due to " + e.getMessage();
             s_logger.error(errMsg);
             throw new CloudRuntimeException(e.getMessage());
-        } 
+        }
         return userVm;
     }
 

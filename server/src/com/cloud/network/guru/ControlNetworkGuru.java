@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -24,8 +24,9 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -106,10 +107,10 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     }
 
     @Override
-    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
     InsufficientAddressCapacityException {
 
-        if(vm.getHypervisorType() == HypervisorType.VMware && vm.getType() != VirtualMachine.Type.DomainRouter) {
+        if(vm.getHypervisorType() == HypervisorType.VMware && !isRouterVm(vm)) {
             NicProfile nicProf = new NicProfile(Nic.ReservationStrategy.Create, null, null, null, null);
             String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
             nicProf.setMacAddress(mac);
@@ -124,15 +125,15 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     }
 
     @Override
-    public void deallocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
+    public void deallocate(Network config, NicProfile nic, VirtualMachineProfile vm) {
     }
 
     @Override
-    public void reserve(NicProfile nic, Network config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
+    public void reserve(NicProfile nic, Network config, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
     InsufficientAddressCapacityException {
         assert nic.getTrafficType() == TrafficType.Control;
 
-        if (dest.getHost().getHypervisorType() == HypervisorType.VMware && vm.getType() == VirtualMachine.Type.DomainRouter) {
+        if (dest.getHost().getHypervisorType() == HypervisorType.VMware && isRouterVm(vm)) {
             if(dest.getDataCenter().getNetworkType() != NetworkType.Basic) {
                 super.reserve(nic, config, vm, dest, context);
 
@@ -163,10 +164,10 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     }
 
     @Override
-    public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
+    public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
         assert nic.getTrafficType() == TrafficType.Control;
 
-        if (vm.getHypervisorType() == HypervisorType.VMware && vm.getType() == VirtualMachine.Type.DomainRouter) {
+        if (vm.getHypervisorType() == HypervisorType.VMware && isRouterVm(vm)) {
             long dcId = vm.getVirtualMachine().getDataCenterId();
             DataCenterVO dcVo = _dcDao.findById(dcId);
             if(dcVo.getNetworkType() != NetworkType.Basic) {
@@ -192,6 +193,10 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         }
 
         return true;
+    }
+
+    protected boolean isRouterVm(VirtualMachineProfile vm) {
+        return vm.getType() == VirtualMachine.Type.DomainRouter || vm.getType() == VirtualMachine.Type.InternalLoadBalancerVm;
     }
 
     @Override
@@ -227,7 +232,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     }
 
     @Override
-    public boolean trash(Network config, NetworkOffering offering, Account owner) {
+    public boolean trash(Network config, NetworkOffering offering) {
         return true;
     }
 

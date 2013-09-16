@@ -1,0 +1,136 @@
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ http://www.apache.org/licenses/LICENSE-2.0.
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<chapter id="choosing-a-hypervisor">
+    <title>Choosing a Hypervisor: Supported Features</title>
+    <para>&PRODUCT; supports many popular hypervisors. Your cloud can consist entirely of hosts running a single hypervisor, or you can use multiple hypervisors. Each cluster of hosts must run the same hypervisor.</para>
+    <para>You might already have an installed base of nodes running a particular hypervisor, in which case, your choice of hypervisor has already been made. If you are starting from scratch, you need to decide what hypervisor software best suits your needs. A discussion of the relative advantages of each hypervisor is outside the scope of our documentation. However, it will help you to know which features of each hypervisor are supported by &PRODUCT;. The following table provides this information.</para>
+    <informaltable frame="all">
+    <!--    <title>Hypervisor supported features</title> -->
+    <tgroup cols="6" align="left" colsep="1" rowsep="1">
+        <colspec colnum="1" colname="c1" colwidth="2*"/>
+        <colspec colnum="2" colname="c2" colwidth="1*"/>
+        <colspec colnum="3" colname="c3" colwidth="1*"/>
+        <colspec colnum="4" colname="c4" colwidth="1*"/>
+        <colspec colnum="5" colname="c5" colwidth="1*"/>
+        <colspec colnum="6" colname="c6" colwidth="1*"/>
+        <thead>
+        <row>
+            <entry><para>Feature</para></entry>
+            <entry><para>XenServer 6.0.2</para></entry>
+            <entry><para>vSphere 4.1/5.0</para></entry>
+            <entry><para>KVM - RHEL 6.2</para></entry>
+            <entry><para>OVM 2.3</para></entry>
+            <entry><para>Bare Metal</para></entry>
+        </row>
+        </thead>
+        <tbody>
+        <row>
+            <entry><para>Network Throttling</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>No</para></entry>
+            <entry><para>No</para></entry>
+            <entry><para>N/A</para></entry>
+        </row>
+        <row>
+            <entry><para>Security groups in zones that use basic networking</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>No</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>No</para></entry>
+            <entry><para>No</para></entry>
+        </row>
+        <row>
+            <entry><para>iSCSI</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>N/A</para></entry>
+        </row>
+        <row>
+            <entry><para>FibreChannel</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>No</para></entry>
+            <entry><para>N/A</para></entry>
+        </row>
+        <row>
+            <entry><para>Local Disk</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>No</para></entry>
+            <entry><para>Yes</para></entry>
+        </row>
+        <row>
+            <entry><para>HA</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>Yes (Native)</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>N/A</para></entry>
+        </row>
+        <row>
+            <entry><para>Snapshots of local disk</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>No</para></entry>
+            <entry><para>N/A</para></entry>
+        </row>
+        <row>
+            <entry><para>Local disk as data disk</para></entry>
+            <entry><para>No</para></entry>
+            <entry><para>No</para></entry>
+            <entry><para>No</para></entry>
+            <entry><para>No</para></entry>
+            <entry><para>N/A</para></entry>
+        </row>
+        <row>
+            <entry><para>Work load balancing</para></entry>
+            <entry><para>No</para></entry>
+            <entry><para>DRS</para></entry>
+            <entry><para>No</para></entry>
+            <entry><para>No</para></entry>
+            <entry><para>N/A</para></entry>
+        </row>
+        <row>
+            <entry><para>Manual live migration of VMs from host to host</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>N/A</para></entry>
+        </row>
+        <row>
+            <entry><para>Conserve management traffic IP address by using link local network to communicate with virtual router</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>No</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>Yes</para></entry>
+            <entry><para>N/A</para></entry>
+        </row>
+        </tbody>
+    </tgroup>
+    </informaltable>
+</chapter>

@@ -19,6 +19,7 @@ package org.apache.cloudstack.ratelimit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -29,19 +30,19 @@ import net.sf.ehcache.CacheManager;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.APIChecker;
-import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import org.apache.cloudstack.api.command.admin.ratelimit.ResetApiLimitCmd;
 import org.apache.cloudstack.api.command.user.ratelimit.GetApiLimitCmd;
 import org.apache.cloudstack.api.response.ApiLimitResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.RequestLimitException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.component.AdapterBase;
+
 import org.springframework.stereotype.Component;
 
 @Component

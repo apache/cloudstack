@@ -24,6 +24,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -33,7 +35,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.user.Account;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "updateNetwork", description="Updates a network", responseObject=NetworkResponse.class)
 public class UpdateNetworkCmd extends BaseAsyncCmd {
@@ -66,6 +67,9 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.GUEST_VM_CIDR, type=CommandType.STRING, description="CIDR for Guest VMs,Cloudstack allocates IPs to Guest VMs only from this CIDR")
     private String guestVmCidr;
+
+    @Parameter(name=ApiConstants.DISPLAY_NETWORK, type=CommandType.BOOLEAN, description="an optional field, whether to the display the network to the end user or not.")
+    private Boolean displayNetwork;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -101,6 +105,10 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     private String getGuestVmCidr() {
         return guestVmCidr;
     }
+
+    public Boolean getDisplayNetwork() {
+        return displayNetwork;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -122,7 +130,7 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException{
-        User callerUser = _accountService.getActiveUser(UserContext.current().getCallerUserId());
+        User callerUser = _accountService.getActiveUser(CallContext.current().getCallingUserId());
         Account callerAccount = _accountService.getActiveAccountById(callerUser.getAccountId());
         Network network = _networkService.getNetwork(id);
         if (network == null) {
@@ -130,7 +138,7 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
         }
 
         Network result = _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount,
-                    callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr(), getGuestVmCidr());
+                    callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr(), getGuestVmCidr(), getDisplayNetwork());
         
 
         if (result != null) {
@@ -150,5 +158,15 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     @Override
     public String getEventType() {
         return EventTypes.EVENT_NETWORK_UPDATE;
+    }
+
+    @Override
+    public String getSyncObjType() {
+        return BaseAsyncCmd.networkSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        return id;
     }
 }

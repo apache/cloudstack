@@ -17,19 +17,19 @@
 
 package org.apache.cloudstack.api.command.user.region.ha.gslb;
 
+import com.cloud.event.EventTypes;
+import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
-import org.apache.cloudstack.api.Parameter;
+import com.cloud.user.Account;
+import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = "updateGlobalLoadBalancerRule", description = "update global load balancer rules.", responseObject = LoadBalancerResponse.class)
-public class UpdateGlobalLoadBalancerRuleCmd extends BaseListTaggedResourcesCmd {
+@APICommand(name = "updateGlobalLoadBalancerRule", description = "update global load balancer rules.", responseObject=GlobalLoadBalancerResponse.class)
+public class UpdateGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(GlobalLoadBalancerResponse.class.getName());
 
     private static final String s_name = "updategloballoadbalancerruleresponse";
@@ -89,8 +89,34 @@ public class UpdateGlobalLoadBalancerRuleCmd extends BaseListTaggedResourcesCmd 
     }
 
     @Override
-    public void execute() {
-        _gslbService.updateGlobalLoadBalancerRule(this);
+    public long getEntityOwnerId() {
+        GlobalLoadBalancerRule lb = _entityMgr.findById(GlobalLoadBalancerRule.class, getId());
+        if (lb != null) {
+            return lb.getAccountId();
+        }
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
+    @Override
+    public void execute() {
+        org.apache.cloudstack.context.CallContext.current().setEventDetails("Global Load balancer Id: "+getId());
+        GlobalLoadBalancerRule gslbRule = _gslbService.updateGlobalLoadBalancerRule(this);
+        if (gslbRule != null) {
+            GlobalLoadBalancerResponse response = _responseGenerator.createGlobalLoadBalancerResponse(gslbRule);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update global load balancer rule");
+        }
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_GLOBAL_LOAD_BALANCER_UPDATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "updating global load balancer rule";
+    }
 }

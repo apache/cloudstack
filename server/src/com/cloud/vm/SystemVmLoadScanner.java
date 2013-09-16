@@ -22,10 +22,11 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.context.ServerContexts;
+
 import com.cloud.utils.Pair;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.db.Transaction;
 
 //
 // TODO: simple load scanner, to minimize code changes required in console proxy manager and SSVM, we still leave most of work at handler
@@ -67,13 +68,13 @@ public class SystemVmLoadScanner<T> {
 
             @Override
             public void run() {
-                Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+                ServerContexts.registerSystemContext();
                 try {
                     reallyRun();
                 } catch (Throwable e) {
                     s_logger.warn("Unexpected exception " + e.getMessage(), e);
                 } finally {
-                    txn.close();
+                    ServerContexts.unregisterSystemContext();
                 }
             }
 

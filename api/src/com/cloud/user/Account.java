@@ -22,6 +22,7 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
+
 public interface Account extends ControlledEntity, InternalIdentity, Identity {
     public enum Type {
         Normal,
@@ -64,4 +65,7 @@ public interface Account extends ControlledEntity, InternalIdentity, Identity {
     public Long getDefaultZoneId();
     
     public String getUuid();
+    
+    boolean isDefault();
+    
 }

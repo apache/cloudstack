@@ -35,6 +35,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.diskProtocol;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.nicModel;
 
@@ -64,32 +65,71 @@ public class LibvirtDomainXMLParser {
             NodeList disks = devices.getElementsByTagName("disk");
             for (int i = 0; i < disks.getLength(); i++) {
                 Element disk = (Element) disks.item(i);
-                String diskFmtType = getAttrValue("driver", "type", disk);
-                String diskFile = getAttrValue("source", "file", disk);
-                String diskDev = getAttrValue("source", "dev", disk);
-
-                String diskLabel = getAttrValue("target", "dev", disk);
-                String bus = getAttrValue("target", "bus", disk);
                 String type = disk.getAttribute("type");
-                String device = disk.getAttribute("device");
-
                 DiskDef def = new DiskDef();
-                if (type.equalsIgnoreCase("file")) {
-                    if (device.equalsIgnoreCase("disk")) {
-                        DiskDef.diskFmtType fmt = null;
-                        if (diskFmtType != null) {
-                            fmt = DiskDef.diskFmtType.valueOf(diskFmtType
-                                    .toUpperCase());
+                if (type.equalsIgnoreCase("network")) {
+                    String diskFmtType = getAttrValue("driver", "type", disk);
+                    String diskPath = getAttrValue("source", "name", disk);
+                    String protocol = getAttrValue("source", "protocol", disk);
+                    String authUserName = getAttrValue("auth", "username", disk);
+                    String poolUuid = getAttrValue("secret", "uuid", disk);
+                    String host = getAttrValue("host", "name", disk);
+                    int port = Integer.parseInt(getAttrValue("host", "port", disk));
+                    String diskLabel = getAttrValue("target", "dev", disk);
+                    String bus = getAttrValue("target", "bus", disk);
+                    def.defNetworkBasedDisk(diskPath, host, port, authUserName, poolUuid, diskLabel,
+                                            DiskDef.diskBus.valueOf(bus.toUpperCase()), DiskDef.diskProtocol.valueOf(protocol.toUpperCase()));
+                } else {
+                    String diskFmtType = getAttrValue("driver", "type", disk);
+                    String diskFile = getAttrValue("source", "file", disk);
+                    String diskDev = getAttrValue("source", "dev", disk);
+
+                    String diskLabel = getAttrValue("target", "dev", disk);
+                    String bus = getAttrValue("target", "bus", disk);
+                    String device = disk.getAttribute("device");
+
+                    if (type.equalsIgnoreCase("file")) {
+                        if (device.equalsIgnoreCase("disk")) {
+                            DiskDef.diskFmtType fmt = null;
+                            if (diskFmtType != null) {
+                                fmt = DiskDef.diskFmtType.valueOf(diskFmtType
+                                        .toUpperCase());
+                            }
+                            def.defFileBasedDisk(diskFile, diskLabel,
+                                    DiskDef.diskBus.valueOf(bus.toUpperCase()), fmt);
+                        } else if (device.equalsIgnoreCase("cdrom")) {
+                            def.defISODisk(diskFile);
                         }
-                        def.defFileBasedDisk(diskFile, diskLabel,
-                                DiskDef.diskBus.valueOf(bus.toUpperCase()), fmt);
-                    } else if (device.equalsIgnoreCase("cdrom")) {
-                        def.defISODisk(diskFile);
+                    } else if (type.equalsIgnoreCase("block")) {
+                        def.defBlockBasedDisk(diskDev, diskLabel,
+                                DiskDef.diskBus.valueOf(bus.toUpperCase()));
                     }
-                } else if (type.equalsIgnoreCase("block")) {
-                    def.defBlockBasedDisk(diskDev, diskLabel,
-                            DiskDef.diskBus.valueOf(bus.toUpperCase()));
                 }
+
+                NodeList iotune = disk.getElementsByTagName("iotune");
+                if ((iotune != null) && (iotune.getLength() !=0)) {
+                    String bytesReadRateStr = getTagValue("read_bytes_sec", (Element)iotune.item(0));
+                    if (bytesReadRateStr != null) {
+                        Long bytesReadRate = Long.parseLong(bytesReadRateStr);
+                        def.setBytesReadRate(bytesReadRate);
+                    }
+                    String bytesWriteRateStr = getTagValue("write_bytes_sec", (Element)iotune.item(0));
+                    if (bytesWriteRateStr != null) {
+                        Long bytesWriteRate = Long.parseLong(bytesWriteRateStr);
+                        def.setBytesWriteRate(bytesWriteRate);
+                    }
+                    String iopsReadRateStr = getTagValue("read_iops_sec", (Element)iotune.item(0));
+                    if (iopsReadRateStr != null) {
+                        Long iopsReadRate = Long.parseLong(iopsReadRateStr);
+                        def.setIopsReadRate(iopsReadRate);
+                    }
+                    String iopsWriteRateStr = getTagValue("write_iops_sec", (Element)iotune.item(0));
+                    if (iopsWriteRateStr != null) {
+                        Long iopsWriteRate = Long.parseLong(iopsWriteRateStr);
+                        def.setIopsWriteRate(iopsWriteRate);
+                    }
+                }
+
                 diskDefs.add(def);
             }
 
@@ -102,15 +142,25 @@ public class LibvirtDomainXMLParser {
                 String dev = getAttrValue("target", "dev", nic);
                 String model = getAttrValue("model", "type", nic);
                 InterfaceDef def = new InterfaceDef();
-
+                NodeList bandwidth = nic.getElementsByTagName("bandwidth");
+                Integer networkRateKBps = 0;
+                if ((bandwidth != null) && (bandwidth.getLength() !=0)) {
+                    Integer inbound = Integer.valueOf(getAttrValue("inbound", "average", (Element)bandwidth.item(0)));
+                    Integer outbound = Integer.valueOf(getAttrValue("outbound", "average", (Element)bandwidth.item(0)));
+                    if (inbound == outbound)
+                        networkRateKBps = inbound;
+                }
                 if (type.equalsIgnoreCase("network")) {
                     String network = getAttrValue("source", "network", nic);
                     def.defPrivateNet(network, dev, mac,
-                            nicModel.valueOf(model.toUpperCase()));
+                            nicModel.valueOf(model.toUpperCase()), networkRateKBps);
                 } else if (type.equalsIgnoreCase("bridge")) {
                     String bridge = getAttrValue("source", "bridge", nic);
                     def.defBridgeNet(bridge, dev, mac,
-                            nicModel.valueOf(model.toUpperCase()));
+                            nicModel.valueOf(model.toUpperCase()), networkRateKBps);
+                } else if (type.equalsIgnoreCase("ethernet"))  {
+                    String scriptPath = getAttrValue("script", "path", nic);
+                    def.defEthernet(dev, mac, nicModel.valueOf(model.toUpperCase()), scriptPath, networkRateKBps);
                 }
                 interfaces.add(def);
             }

@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.utils;
 
-import static java.util.Arrays.asList;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -25,8 +23,6 @@ import java.util.regex.Pattern;
 
 import org.owasp.esapi.StringUtilities;
 
-// StringUtils exists in Apache Commons Lang, but rather than import the entire JAR to our system, for now
-// just implement the method needed
 public class StringUtils {
     private static final char[] hexChar = {
         '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'
@@ -50,14 +46,35 @@ public class StringUtils {
 
     public static String join(final String delimiter,
             final Object... components) {
-        return join(asList(components), delimiter);
+        return org.apache.commons.lang.StringUtils.join(components, delimiter);
+    }
+
+    public static boolean isNotBlank(String str) {
+        if (str != null && str.trim().length() > 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public static String cleanupTags(String tags) {
+        if (tags != null) {
+            String[] tokens = tags.split(",");
+            StringBuilder t = new StringBuilder();
+            for (int i = 0; i < tokens.length; i++) {
+                t.append(tokens[i].trim()).append(",");
+            }
+            t.delete(t.length() - 1, t.length());
+            tags = t.toString();
+        }
+
+        return tags;
     }
 
     /**
      * @param tags
      * @return List of tags
      */
-
     public static List<String> csvTagsToList(String tags) {
         List<String> tagsList = new ArrayList<String>();
 
@@ -87,10 +104,10 @@ public class StringUtils {
                     tags += ",";
                 }
             }
-        } 
+        }
 
         return tags;
-    }        
+    }
 
     public static String getExceptionStackInfo(Throwable e) {
         StringBuffer sb = new StringBuffer();
@@ -127,28 +144,32 @@ public class StringUtils {
     }
 
     public static String getMaskedPasswordForDisplay(String password) {
-        if(password == null || password.isEmpty())
+        if(password == null || password.isEmpty()) {
             return "*";
+        }
 
         StringBuffer sb = new StringBuffer();
         sb.append(password.charAt(0));
-        for(int i = 1; i < password.length(); i++)
+        for(int i = 1; i < password.length(); i++) {
             sb.append("*");
+        }
 
         return sb.toString();
     }
 
     // removes a password request param and it's value
-    private static final Pattern REGEX_PASSWORD_QUERYSTRING = Pattern.compile("&?password=.*?(?=[&'\"])");
+    private static final Pattern REGEX_PASSWORD_QUERYSTRING = Pattern.compile("&?(password|accesskey|secretkey)=.*?(?=[&'\"])");
 
-    // removes a password property from a response json object
-    private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"password\":\".*?\",?");
+    // removes a password/accesskey/ property from a response json object
+    private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"(password|accesskey|secretkey)\":\".*?\",?");
 
     // Responsible for stripping sensitive content from request and response strings
     public static String cleanString(String stringToClean){
         String cleanResult = "";
-        cleanResult = REGEX_PASSWORD_QUERYSTRING.matcher(stringToClean).replaceAll("");
-        cleanResult = REGEX_PASSWORD_JSON.matcher(cleanResult).replaceAll("");
+        if (stringToClean != null) {
+            cleanResult = REGEX_PASSWORD_QUERYSTRING.matcher(stringToClean).replaceAll("");
+            cleanResult = REGEX_PASSWORD_JSON.matcher(cleanResult).replaceAll("");
+        }
         return cleanResult;
     }
 

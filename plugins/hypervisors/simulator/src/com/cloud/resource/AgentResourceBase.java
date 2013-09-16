@@ -16,21 +16,6 @@
 // under the License.
 package com.cloud.resource;
 
-import java.io.File;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -46,6 +31,19 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.simulator.MockHost;
 import com.cloud.utils.component.ComponentContext;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 
 public class AgentResourceBase implements ServerResource {
@@ -121,6 +119,7 @@ public class AgentResourceBase implements ServerResource {
         hostGuid = (String)params.get("guid");
 
         _simMgr = ComponentContext.inject(SimulatorManagerImpl.class);
+        _simMgr.configure(name, params);
 
         agentHost = getAgentMgr().getHost(hostGuid);
         return true;

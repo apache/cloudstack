@@ -24,7 +24,11 @@ import java.util.Map;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.ApiConstants;
@@ -43,14 +47,13 @@ import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScalePolicyCmd
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiDispatcher;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEvent;
@@ -80,14 +83,13 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.JoinBuilder;
@@ -96,14 +98,13 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
-@Component
 @Local(value = { AutoScaleService.class, AutoScaleManager.class })
 public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScaleManager, AutoScaleService {
     private static final Logger s_logger = Logger.getLogger(AutoScaleManagerImpl.class);
 
+    @Inject
+    EntityManager _entityMgr;
     @Inject
     AccountDao _accountDao;
     @Inject
@@ -265,7 +266,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         long autoscaleUserId = vmProfile.getAutoScaleUserId();
         int destroyVmGraceperiod = vmProfile.getDestroyVmGraceperiod();
 
-        VirtualMachineTemplate template = _templateMgr.getTemplate(templateId);
+        VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
         // Make sure a valid template ID was specified
         if (template == null) {
             throw new InvalidParameterValueException("Unable to use the given template.");
@@ -306,20 +307,20 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     public AutoScaleVmProfile createAutoScaleVmProfile(CreateAutoScaleVmProfileCmd cmd) {
 
         Account owner = _accountDao.findById(cmd.getAccountId());
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, owner);
 
         long zoneId = cmd.getZoneId();
         long serviceOfferingId = cmd.getServiceOfferingId();
-        Long autoscaleUserId = cmd.getAutoscaleUserId();
+        long autoscaleUserId = cmd.getAutoscaleUserId();
 
-        DataCenter zone = _configMgr.getZone(zoneId);
+        DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
 
         if (zone == null) {
             throw new InvalidParameterValueException("Unable to find zone by id");
         }
 
-        ServiceOffering serviceOffering = _configMgr.getServiceOffering(serviceOfferingId);
+        ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
         if (serviceOffering == null) {
             throw new InvalidParameterValueException("Unable to find service offering by id");
         }
@@ -335,10 +336,6 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
          * will be throwing an error.
          */
         ApiDispatcher.processParameters(new DeployVMCmd(), deployParams);
-
-        if (autoscaleUserId == null) {
-            autoscaleUserId = UserContext.current().getCallerUserId();
-        }
 
         AutoScaleVmProfileVO profileVO = new AutoScaleVmProfileVO(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getServiceOfferingId(), cmd.getTemplateId(), cmd.getOtherDeployParams(),
                 cmd.getCounterParamList(), cmd.getDestroyVmGraceperiod(), autoscaleUserId);
@@ -358,7 +355,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         Integer destroyVmGraceperiod = cmd.getDestroyVmGraceperiod();
 
-        AutoScaleVmProfileVO vmProfile = getEntityInDatabase(UserContext.current().getCaller(), "Auto Scale Vm Profile", profileId, _autoScaleVmProfileDao);
+        AutoScaleVmProfileVO vmProfile = getEntityInDatabase(CallContext.current().getCallingAccount(), "Auto Scale Vm Profile", profileId, _autoScaleVmProfileDao);
 
         if (templateId != null) {
             vmProfile.setTemplateId(templateId);
@@ -393,7 +390,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMPROFILE_DELETE, eventDescription = "deleting autoscale vm profile")
     public boolean deleteAutoScaleVmProfile(long id) {
         /* Check if entity is in database */
-        getEntityInDatabase(UserContext.current().getCaller(), "AutoScale Vm Profile", id, _autoScaleVmProfileDao);
+        getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Profile", id, _autoScaleVmProfileDao);
         if (_autoScaleVmGroupDao.isProfileInUse(id)) {
             throw new InvalidParameterValueException("Cannot delete AutoScale Vm Profile when it is in use by one more vm groups");
         }
@@ -459,7 +456,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
             ControlledEntity[] sameOwnerEntities = conditions.toArray(new ControlledEntity[conditions.size() + 1]);
             sameOwnerEntities[sameOwnerEntities.length - 1] = autoScalePolicyVO;
-            _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, sameOwnerEntities);
+            _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, sameOwnerEntities);
 
             if (conditionIds.size() != conditions.size()) {
                 // TODO report the condition id which could not be found
@@ -516,7 +513,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEPOLICY_DELETE, eventDescription = "deleting autoscale policy")
     public boolean deleteAutoScalePolicy(long id) {
         /* Check if entity is in database */
-        getEntityInDatabase(UserContext.current().getCaller(), "AutoScale Policy", id, _autoScalePolicyDao);
+        getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Policy", id, _autoScalePolicyDao);
 
         if (_autoScaleVmGroupPolicyMapDao.isAutoScalePolicyInUse(id)) {
             throw new InvalidParameterValueException("Cannot delete AutoScale Policy when it is in use by one or more AutoScale Vm Groups");
@@ -543,7 +540,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
     public void checkCallerAccess(String accountName, Long domainId)
     {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountDao.findActiveAccount(accountName, domainId);
         if (owner == null) {
             List<String> idList = new ArrayList<String>();
@@ -573,7 +570,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             boolean listAll = cmd.listAll();
             long startIndex = cmd.getStartIndex();
             long pageSizeVal = cmd.getPageSizeVal();
-            Account caller = UserContext.current().getCaller();
+            Account caller = CallContext.current().getCallingAccount();
 
             Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
                     ListProjectResourcesCriteria>(domainId, isRecursive, null);
@@ -654,7 +651,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         Integer duration = cmd.getDuration();
         Integer quietTime = cmd.getQuietTime();
         List<Long> conditionIds = cmd.getConditionIds();
-        AutoScalePolicyVO policy = getEntityInDatabase(UserContext.current().getCaller(), "Auto Scale Policy", policyId, _autoScalePolicyDao);
+        AutoScalePolicyVO policy = getEntityInDatabase(CallContext.current().getCallingAccount(), "Auto Scale Policy", policyId, _autoScalePolicyDao);
 
         if (duration != null) {
             policy.setDuration(duration);
@@ -697,7 +694,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             interval = NetUtils.DEFAULT_AUTOSCALE_POLICY_INTERVAL_TIME;
         }
 
-        LoadBalancerVO loadBalancer = getEntityInDatabase(UserContext.current().getCaller(), ApiConstants.LBID, cmd.getLbRuleId(), _lbDao);
+        LoadBalancerVO loadBalancer = getEntityInDatabase(CallContext.current().getCallingAccount(), ApiConstants.LBID, cmd.getLbRuleId(), _lbDao);
 
         Long zoneId = _ipAddressDao.findById(loadBalancer.getSourceIpAddressId()).getDataCenterId();
 
@@ -749,7 +746,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMGROUP_DELETE, eventDescription = "deleting autoscale vm group")
     public boolean deleteAutoScaleVmGroup(long id) {
-        AutoScaleVmGroupVO autoScaleVmGroupVO = getEntityInDatabase(UserContext.current().getCaller(), "AutoScale Vm Group", id, _autoScaleVmGroupDao);
+        AutoScaleVmGroupVO autoScaleVmGroupVO = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", id, _autoScaleVmGroupDao);
 
         if (autoScaleVmGroupVO.getState().equals(AutoScaleVmGroup.State_New)) {
             /* This condition is for handling failures during creation command */
@@ -880,15 +877,15 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             getAutoScalePolicies("scaledownpolicyid", currentScaleDownPolicyIds, counters, interval, false);
             policyIds.addAll(currentScaleDownPolicyIds);
         }
-        AutoScaleVmProfileVO profileVO = getEntityInDatabase(UserContext.current().getCaller(), ApiConstants.VMPROFILE_ID, vmGroup.getProfileId(), _autoScaleVmProfileDao);
+        AutoScaleVmProfileVO profileVO = getEntityInDatabase(CallContext.current().getCallingAccount(), ApiConstants.VMPROFILE_ID, vmGroup.getProfileId(), _autoScaleVmProfileDao);
 
-        LoadBalancerVO loadBalancer = getEntityInDatabase(UserContext.current().getCaller(), ApiConstants.LBID, vmGroup.getLoadBalancerId(), _lbDao);
+        LoadBalancerVO loadBalancer = getEntityInDatabase(CallContext.current().getCallingAccount(), ApiConstants.LBID, vmGroup.getLoadBalancerId(), _lbDao);
         validateAutoScaleCounters(loadBalancer.getNetworkId(), counters, profileVO.getCounterParams());
 
         ControlledEntity[] sameOwnerEntities = policies.toArray(new ControlledEntity[policies.size() + 2]);
         sameOwnerEntities[sameOwnerEntities.length - 2] = loadBalancer;
         sameOwnerEntities[sameOwnerEntities.length - 1] = profileVO;
-        _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, sameOwnerEntities);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, sameOwnerEntities);
 
         final Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -917,7 +914,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         List<Long> scaleUpPolicyIds = cmd.getScaleUpPolicyIds();
         List<Long> scaleDownPolicyIds = cmd.getScaleDownPolicyIds();
 
-        AutoScaleVmGroupVO vmGroupVO = getEntityInDatabase(UserContext.current().getCaller(), "AutoScale Vm Group", vmGroupId, _autoScaleVmGroupDao);
+        AutoScaleVmGroupVO vmGroupVO = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", vmGroupId, _autoScaleVmGroupDao);
 
         if (!vmGroupVO.getState().equals(AutoScaleVmGroup.State_Disabled)) {
             throw new InvalidParameterValueException("An AutoScale Vm Group can be updated only when it is in disabled state");
@@ -947,7 +944,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMGROUP_ENABLE, eventDescription = "enabling autoscale vm group")
     public AutoScaleVmGroup enableAutoScaleVmGroup(Long id) {
-        AutoScaleVmGroupVO vmGroup = getEntityInDatabase(UserContext.current().getCaller(), "AutoScale Vm Group", id, _autoScaleVmGroupDao);
+        AutoScaleVmGroupVO vmGroup = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", id, _autoScaleVmGroupDao);
         boolean success = false;
         if (!vmGroup.getState().equals(AutoScaleVmGroup.State_Disabled)) {
             throw new InvalidParameterValueException("Only a AutoScale Vm Group which is in Disabled state can be enabled.");
@@ -974,7 +971,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMGROUP_DISABLE, eventDescription = "disabling autoscale vm group")
     @DB
     public AutoScaleVmGroup disableAutoScaleVmGroup(Long id) {
-        AutoScaleVmGroupVO vmGroup = getEntityInDatabase(UserContext.current().getCaller(), "AutoScale Vm Group", id, _autoScaleVmGroupDao);
+        AutoScaleVmGroupVO vmGroup = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", id, _autoScaleVmGroupDao);
         boolean success = false;
         if (!vmGroup.getState().equals(AutoScaleVmGroup.State_Enabled)) {
             throw new InvalidParameterValueException("Only a AutoScale Vm Group which is in Enabled state can be disabled.");
@@ -1016,7 +1013,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         s_logger.debug("Adding Counter " + name);
         counter = _counterDao.persist(new CounterVO(src, name, cmd.getValue()));
 
-        UserContext.current().setEventDetails(" Id: " + counter.getId() + " Name: " + name);
+        CallContext.current().setEventDetails(" Id: " + counter.getId() + " Name: " + name);
         return counter;
     }
 
@@ -1046,7 +1043,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         condition = _conditionDao.persist(new ConditionVO(cid, threshold, cmd.getEntityOwnerId(), cmd.getDomainId(), op));
         s_logger.info("Successfully created condition with Id: " + condition.getId());
 
-        UserContext.current().setEventDetails(" Id: " + condition.getId());
+        CallContext.current().setEventDetails(" Id: " + condition.getId());
         return condition;
     }
 
@@ -1128,7 +1125,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     @ActionEvent(eventType = EventTypes.EVENT_CONDITION_DELETE, eventDescription = "condition")
     public boolean deleteCondition(long conditionId) throws ResourceInUseException {
         /* Check if entity is in database */
-        ConditionVO condition = getEntityInDatabase(UserContext.current().getCaller(), "Condition", conditionId, _conditionDao);
+        ConditionVO condition = getEntityInDatabase(CallContext.current().getCallingAccount(), "Condition", conditionId, _conditionDao);
         if (condition == null) {
             throw new InvalidParameterValueException("Unable to find Condition");
         }

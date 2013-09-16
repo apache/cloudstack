@@ -27,8 +27,9 @@ import javax.naming.ConfigurationException;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.usage.dao.UsageJobDao;
 import com.cloud.utils.db.Transaction;
 

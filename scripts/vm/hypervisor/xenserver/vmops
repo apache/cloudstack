@@ -48,7 +48,7 @@ def add_to_VCPUs_params_live(session, args):
     value = args['value']
     vmname = args['vmname']
     try:
-        cmd = ["bash", "/opt/xensource/bin/Add-To-VCPUs-Params-Live.sh", vmname, key, value]
+        cmd = ["bash", "/opt/xensource/bin/add_to_vcpus_params_live.sh", vmname, key, value]
         txt = util.pread2(cmd)
     except:
         return 'false'
@@ -73,34 +73,7 @@ def setup_iscsi(session, args):
        txt = ''
    return txt
  
-@echo
-def getvncport(session, args):
-    domid = args['domID']
-    hvm = args['hvm']
-    version = args['version']
-    if hvm == 'true':
-        path1 = "/local/domain/" + domid + "/qemu-pid"
-        path2 = "/local/domain/" + domid + "/console/vnc-port"
-    else:
-        if version[:3] == '6.0':
-            path1 = "/local/domain/" + domid + "/vncterm-pid"
-            path2 = "/local/domain/" + domid + "/console/vnc-port"
-        else:
-            path1 = "/local/domain/" + domid + "/serial/0/vncterm-pid"
-            path2 = "/local/domain/" + domid + "/serial/0/vnc-port"
-    try:
-        cmd = ["xenstore-read", path1]
-        pid = util.pread2(cmd)
-        pid = pid.strip()
-        cmd = ["ps", pid]
-        util.pread2(cmd)
-        cmd = ["xenstore-read", path2]
-        vncport = util.pread2(cmd)
-        vncport = vncport.strip()
-        return vncport
-    except:
-        return ''
-   
+
 @echo
 def getgateway(session, args):
     mgmt_ip = args['mgmtIP']
@@ -168,55 +141,6 @@ def pingxenserver(session, args):
     txt = 'success'
     return txt
 
-@echo
-def vm_data(session, args):
-    router_ip = args.pop('routerIP')
-    vm_ip = args.pop('vmIP')
-
-    util.SMlog("    adding vmdata for VM with IP: " + vm_ip + " to router with IP: " + router_ip)
-
-    for pair in args:
-        pairList = pair.split(',')
-        vmDataFolder = pairList[0]
-        vmDataFile = pairList[1]
-        vmDataValue = args[pair]
-        cmd = ["/bin/bash", "/opt/xensource/bin/vm_data.sh", "-r", router_ip, "-v", vm_ip, "-F", vmDataFolder, "-f", vmDataFile]
-        
-        fd = None
-        tmp_path = None
-        
-        try:
-            fd,tmp_path = tempfile.mkstemp()
-            tmpfile = open(tmp_path, 'w')
-
-            if vmDataFolder == "userdata" and vmDataValue != "none":
-                vmDataValue = base64.urlsafe_b64decode(vmDataValue)
-                
-            if vmDataValue != "none":
-                tmpfile.write(vmDataValue)
-                
-            tmpfile.close()
-            cmd.append("-d")
-            cmd.append(tmp_path)
-        except:
-             util.SMlog("  vmdata failed to write tempfile "  )
-             os.close(fd)
-             os.remove(tmp_path)
-             return ''
-
-        try:
-            txt = util.pread2(cmd)
-            txt = 'success'
-        except:
-            util.SMlog("    vmdata failed with folder: " + vmDataFolder + " and file: " + vmDataFile)
-            txt = ''
-
-        if (fd != None):
-            os.close(fd)
-            os.remove(tmp_path)
-
-    return txt
-
 def pingtest(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
@@ -279,7 +203,7 @@ def setLinkLocalIP(session, args):
         except:
             return 'can not cat network.conf'
 
-        if result.lower() == "bridge":
+        if result.lower().strip() == "bridge":
             try:
                 cmd = ["brctl", "addbr", brName]
                 txt = util.pread2(cmd)
@@ -355,7 +279,47 @@ def setLoadBalancerRule(session, args):
         txt = '' 
 
     return txt
-    
+@echo
+def configdnsmasq(session, args):
+    routerip = args['routerip']
+    args = args['args']
+    target   = "root@"+routerip
+    try:
+       util.pread2(['ssh','-p','3922','-q','-o','StrictHostKeyChecking=no','-i','/root/.ssh/id_rsa.cloud',target,'/root/dnsmasq.sh',args])
+       txt='success'
+    except:
+       util.SMlog("failed to config dnsmasq server")
+       txt=''
+    return txt
+
+@echo
+def createipAlias(session, args):
+    args = args['args']
+    cmd = args.split(' ')
+    cmd.insert(0, "/opt/xensource/bin/createipAlias.sh")
+    cmd.insert(0, "bin/bash")
+    try:
+       txt=util.pread2(cmd)
+       txt='success'
+    except:
+       util.SMlog("failed to create ip alias on router vm")
+       txt=''
+    return txt
+
+@echo
+def deleteipAlias(session, args):
+    args = args['args']
+    cmd = args.split(' ')
+    cmd.insert(0, "/opt/xensource/bin/deleteipAlias.sh")
+    cmd.insert(0, "bin/bash")
+    try:
+       txt=util.pread2(cmd)
+       txt='success'
+    except:
+       util.SMlog("failed to create ip alias on router vm")
+       txt=''
+    return txt
+
 @echo
 def createFile(session, args):
     file_path = args['filepath']
@@ -446,6 +410,11 @@ def can_bridge_firewall(session, args):
     try:
         util.pread2(['ebtables', '-V'])
         util.pread2(['ipset', '-V'])
+        cmd = ['cat', '/etc/xensource/network.conf']
+        result = util.pread2(cmd)
+        if result.lower().strip() != "bridge":
+            return 'false'
+
     except:
         return 'false'
 
@@ -501,6 +470,7 @@ def default_ebtables_rules():
         util.pread2(['ebtables', '-N',  'DEFAULT_EBTABLES'])
         util.pread2(['ebtables', '-A', 'FORWARD', '-j'  'DEFAULT_EBTABLES'])
         util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv4', '--ip-dst', '255.255.255.255', '--ip-proto', 'udp', '--ip-dport', '67', '-j', 'ACCEPT'])
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv4', '--ip-dst', '255.255.255.255', '--ip-proto', 'udp', '--ip-dport', '68', '-j', 'ACCEPT'])
         util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'ARP', '--arp-op', 'Request', '-j', 'ACCEPT'])
         util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'ARP', '--arp-op', 'Reply', '-j', 'ACCEPT'])
         # deny mac broadcast and multicast
@@ -708,7 +678,11 @@ def default_ebtables_antispoof_rules(vm_chain, vifs, vm_ip, vm_mac):
     try:
         for vif in vifs:
             # only allow source mac that belongs to the vm
-	    util.pread2(['ebtables', '-A', vm_chain, '-i', vif, '-s', '!', vm_mac,  '-j', 'DROP'])
+            try:
+                util.pread2(['ebtables', '-t', 'nat', '-I', 'PREROUTING', '-i', vif, '-s', '!' , vm_mac, '-j', 'DROP'])
+            except:
+                util.pread2(['ebtables', '-A', vm_chain, '-i', vif, '-s', '!', vm_mac,  '-j', 'DROP'])
+
             # do not allow fake dhcp responses
             util.pread2(['ebtables', '-A', vm_chain, '-i', vif, '-p', 'IPv4', '--ip-proto', 'udp', '--ip-dport', '68', '-j', 'DROP'])
             # do not allow snooping of dhcp requests
@@ -1098,12 +1072,12 @@ def network_rules_for_rebooted_vm(session, vmName):
 
     #change antispoof rule in vmchain
     try:
-        delcmd = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-in | sed 's/-A/-D/'"
-        delcmd2 = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-out | sed 's/-A/-D/'"
-        inscmd = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' | sed 's/-A/-I/'"
-        inscmd2 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' | sed 's/-A/-I/'"
-        inscmd3 = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' | sed 's/-A/-I/'"
-        inscmd4 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' | sed 's/-A/-I/'"
+        delcmd = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-in | sed 's/!--set/! --set/' | sed 's/-A/-D/'"
+        delcmd2 = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-out | sed 's/!--set/! --set/'| sed 's/-A/-D/'"
+        inscmd = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' | sed 's/!--set/! --set/'"
+        inscmd2 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' | sed 's/!--set/! --set/'"
+        inscmd3 = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' | sed 's/!--set/! --set/'"
+        inscmd4 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/'  | sed 's/!--set/! --set/'"
         
         ipts = []
         for cmd in [delcmd, delcmd2, inscmd, inscmd2, inscmd3, inscmd4]:
@@ -1662,9 +1636,9 @@ def bumpUpPriority(session, args):
 
 if __name__ == "__main__":
      XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, 
-                            "getvncport": getvncport, "getgateway": getgateway, "preparemigration": preparemigration, 
+                            "getgateway": getgateway, "preparemigration": preparemigration, 
                             "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  
-                            "vm_data": vm_data, "savePassword": savePassword, 
+                            "savePassword": savePassword, 
                             "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "routerProxy": routerProxy, 
                             "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, 
                             "network_rules":network_rules, 
@@ -1672,6 +1646,9 @@ if __name__ == "__main__":
                             "destroy_network_rules_for_vm":destroy_network_rules_for_vm, 
                             "default_network_rules_systemvm":default_network_rules_systemvm, 
                             "network_rules_vmSecondaryIp":network_rules_vmSecondaryIp,
+                            "createipAlias":createipAlias,
+                            "configdnsmasq":configdnsmasq,
+                            "deleteipAlias":deleteipAlias,
                             "get_rule_logs_for_vms":get_rule_logs_for_vms, 
 			    "add_to_VCPUs_params_live":add_to_VCPUs_params_live,
                             "setLinkLocalIP":setLinkLocalIP,

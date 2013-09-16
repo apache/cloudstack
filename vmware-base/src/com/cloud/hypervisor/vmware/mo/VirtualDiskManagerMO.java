@@ -26,6 +26,10 @@ import com.vmware.vim25.VirtualDiskSpec;
 public class VirtualDiskManagerMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(VirtualDiskManagerMO.class);
 
+    public VirtualDiskManagerMO(VmwareContext context) {
+            super(context, context.getServiceContent().getVirtualDiskManager());
+    }
+
 	public VirtualDiskManagerMO(VmwareContext context, ManagedObjectReference morDiskMgr) {
 		super(context, morDiskMgr);
 	}

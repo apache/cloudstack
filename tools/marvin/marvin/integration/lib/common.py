@@ -18,8 +18,6 @@
 """
 
 #Import Local Modules
-import marvin
-from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.remoteSSHClient import remoteSSHClient
 from utils import *
@@ -28,6 +26,15 @@ from base import *
 #Import System modules
 import time
 
+
+def is_config_suitable(apiclient, name, value):
+    """
+    Ensure if the deployment has the expected `value` for the global setting `name'
+    @return: true if value is set, else false
+    """
+    configs = Configurations.list(apiclient, name=name)
+    assert(configs is not None and isinstance(configs, list) and len(configs) > 0)
+    return configs[0].value == value
 
 def wait_for_cleanup(apiclient, configs=None):
     """Sleeps till the cleanup configs passed"""
@@ -52,6 +59,40 @@ def wait_for_cleanup(apiclient, configs=None):
         time.sleep(int(config_desc.value))
     return
 
+def add_netscaler(apiclient, zoneid, NSservice):
+    """ Adds Netscaler device and enables NS provider"""
+
+    cmd = listPhysicalNetworks.listPhysicalNetworksCmd()
+    cmd.zoneid = zoneid
+    physical_networks = apiclient.listPhysicalNetworks(cmd)
+    if isinstance(physical_networks, list):
+       physical_network = physical_networks[0]
+
+    cmd = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
+    cmd.name = 'Netscaler'
+    cmd.physicalnetworkid=physical_network.id
+    nw_service_providers = apiclient.listNetworkServiceProviders(cmd)
+
+    if isinstance(nw_service_providers, list):
+        netscaler_provider = nw_service_providers[0]
+    else:
+        cmd1 = addNetworkServiceProvider.addNetworkServiceProviderCmd()
+        cmd1.name = 'Netscaler'
+        cmd1.physicalnetworkid = physical_network.id
+        netscaler_provider = apiclient.addNetworkServiceProvider(cmd1)
+
+    netscaler = NetScaler.add(
+                    apiclient,
+                    NSservice,
+                    physicalnetworkid=physical_network.id
+                    )
+    if netscaler_provider.state != 'Enabled':
+      cmd = updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
+      cmd.id = netscaler_provider.id
+      cmd.state =  'Enabled'
+      response = apiclient.updateNetworkServiceProvider(cmd)
+
+    return netscaler
 
 def get_domain(apiclient, services=None):
     "Returns a default domain"
@@ -133,6 +174,8 @@ def get_template(apiclient, zoneid, ostype, services=None):
         assert len(list_templates) > 0, "received empty response on template of type %s"%ostype
         for template in list_templates:
             if template.ostypeid == ostypeid:
+                return template
+            elif template.isready:
                 return template
 
     raise Exception("Exception: Failed to find template with OSTypeID: %s" %
@@ -227,6 +270,25 @@ def wait_for_ssvms(apiclient, zoneid, podid, interval=60):
                 break
     return
 
+def get_builtin_template_info(apiclient, zoneid):
+    """Returns hypervisor specific infor for templates"""
+
+    list_template_response = Template.list(
+                                    apiclient,
+                                    templatefilter='featured',
+                                    zoneid=zoneid,
+                                    )
+
+    for b_template in list_template_response:
+            if b_template.templatetype == 'BUILTIN':
+                break
+
+    extract_response = Template.extract(apiclient,
+                                            b_template.id,
+                                            'HTTP_DOWNLOAD',
+                                            zoneid)
+
+    return extract_response.url, b_template.hypervisor, b_template.format
 
 def download_builtin_templates(apiclient, zoneid, hypervisor, host,
                                                 linklocalip, interval=60):
@@ -567,3 +629,95 @@ def list_vpc_offerings(apiclient, **kwargs):
     cmd = listVPCOfferings.listVPCOfferingsCmd()
     [setattr(cmd, k, v) for k, v in kwargs.items()]
     return(apiclient.listVPCOfferings(cmd))
+
+def update_resource_count(apiclient, domainid, accountid=None,
+                          projectid=None, rtype=None):
+        """updates the resource count
+            0     - VM
+            1     - Public IP
+            2     - Volume
+            3     - Snapshot
+            4     - Template
+            5     - Projects
+            6     - Network
+            7     - VPC
+            8     - CPUs
+            9     - RAM
+            10    - Primary (shared) storage (Volumes)
+            11    - Secondary storage (Snapshots, Templates & ISOs)
+        """
+
+        Resources.updateCount(apiclient,
+                              domainid=domainid,
+                              account=accountid if accountid else None,
+                              projectid=projectid if projectid else None,
+                              resourcetype=rtype if rtype else None
+                              )
+        return
+
+def find_suitable_host(apiclient, vm):
+        """Returns a suitable host for VM migration"""
+
+        hosts = Host.list(apiclient,
+                          virtualmachineid=vm.id,
+                          listall=True)
+
+        if isinstance(hosts, list):
+            assert len(hosts) > 0, "List host should return valid response"
+        else:
+            raise Exception("Exception: List host should return valid response")
+        return hosts[0]
+
+def get_resource_type(resource_id):
+        """Returns resource type"""
+
+        lookup = {  0: "VM",
+                    1: "Public IP",
+                    2: "Volume",
+                    3: "Snapshot",
+                    4: "Template",
+                    5: "Projects",
+                    6: "Network",
+                    7: "VPC",
+                    8: "CPUs",
+                    9: "RAM",
+                    10: "Primary (shared) storage (Volumes)",
+                    11: "Secondary storage (Snapshots, Templates & ISOs)"
+                 }
+
+        return lookup[resource_id]
+
+def get_portable_ip_range_services(config):
+    """ Reads config values related to portable ip and fills up
+    services accordingly"""
+
+    services = {}
+    attributeError = False
+
+    if config.portableIpRange.startip:
+        services["startip"] = config.portableIpRange.startip
+    else:
+        attributeError = True
+
+    if config.portableIpRange.endip:
+        services["endip"] = config.portableIpRange.endip
+    else:
+        attributeError = True
+
+    if config.portableIpRange.netmask:
+        services["netmask"] = config.portableIpRange.netmask
+    else:
+        attributeError = True
+
+    if config.portableIpRange.gateway:
+        services["gateway"] = config.portableIpRange.gateway
+    else:
+        attributeError = True
+
+    if config.portableIpRange.vlan:
+        services["vlan"] = config.portableIpRange.vlan
+
+    if attributeError:
+        services = None
+
+    return services

@@ -23,14 +23,18 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.projects.Project;
+import com.cloud.user.Account;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -42,6 +46,10 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
 
     @Inject
     private ConfigurationDao  _configDao;
+    @Inject
+    private AccountJoinDao _accountJoinDao;
+    @Inject
+    private AccountDao _accountDao;
 
     private final SearchBuilder<ProjectJoinVO> prjSearch;
 
@@ -82,7 +90,12 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
                 response.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
         }
-
+        
+        //set resource limit/count information for the project (by getting the info of the project's account)
+        Account account = _accountDao.findByIdIncludingRemoved(proj.getProjectAccountId());
+        AccountJoinVO accountJn = ApiDBUtils.newAccountView(account);
+        _accountJoinDao.setResourceLimits(accountJn, false, response);
+        
         response.setObjectName("project");
         return response;
     }

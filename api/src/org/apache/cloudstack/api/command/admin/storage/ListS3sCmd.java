@@ -18,23 +18,18 @@
  */
 package org.apache.cloudstack.api.command.admin.storage;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.S3Response;
-
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.storage.S3;
 
-@APICommand(name = "listS3s", description = "Lists S3s", responseObject = S3Response.class, since = "4.0.0")
+@APICommand(name = "listS3s", description = "Lists S3s", responseObject = ImageStoreResponse.class, since = "4.0.0")
 public class ListS3sCmd extends BaseListCmd {
 
     private static final String COMMAND_NAME = "lists3sresponse";
@@ -44,28 +39,11 @@ public class ListS3sCmd extends BaseListCmd {
             ServerApiException, ConcurrentOperationException, ResourceAllocationException,
             NetworkRuleConflictException {
 
-        final List<? extends S3> result = _resourceService.listS3s(this);
-        final ListResponse<S3Response> response = new ListResponse<S3Response>();
-        final List<S3Response> s3Responses = new ArrayList<S3Response>();
-
-        if (result != null) {
-
-            for (S3 s3 : result) {
-
-                S3Response s3Response = _responseGenerator.createS3Response(s3);
-                s3Response.setResponseName(this.getCommandName());
-                s3Response.setObjectName("s3");
-                s3Responses.add(s3Response);
-
-            }
-
-        }
-
-        response.setResponses(s3Responses);
-        response.setResponseName(this.getCommandName());
-
+        ListImageStoresCmd cmd = new ListImageStoresCmd();
+        cmd.setProvider("S3");
+        ListResponse<ImageStoreResponse> response = _queryService.searchForImageStores(cmd);
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
-
     }
 
     @Override

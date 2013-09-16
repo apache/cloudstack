@@ -18,18 +18,18 @@
 
 # Version @VERSION@
 #
-# A plugin for executing script needed by cloud  stack
-from __future__ import with_statement
-
+# A plugin for executing script needed by CloudStack
 from copy import copy
 from datetime import datetime
 from httplib import *
 from string import join
+from string import split
 
 import os
 import sys
 import time
-import hashlib
+import md5 as md5mod
+import sha
 import base64
 import hmac
 import traceback
@@ -45,30 +45,62 @@ NULL = 'null'
 
 
 def to_none(value):
-    return value if value is not None and value.strip() != NULL else None
+
+    if value is None:
+        return None
+    if isinstance(value, basestring) and value.strip().lower() == NULL:
+        return None
+    return value
 
 
 def to_bool(value):
-    return True if to_none(value) in ['true', 'True', None] else False
+
+    if to_none(value) is None:
+        return False
+    if isinstance(value, basestring) and value.strip().lower() == 'true':
+        return True
+    if isinstance(value, int) and value:
+        return True
+    return False
 
 
 def to_integer(value, default):
-    return int(value) if to_none(value) is not None else default
+
+    if to_none(value) is None or not isinstance(value, int):
+        return default
+    return int(value)
 
 
 def optional_str_value(value, default):
-    return value if is_not_blank(value) else default
+
+    if is_not_blank(value):
+        return value
+    return default
+
+
+def is_blank(value):
+
+    return not is_not_blank(value)
 
 
 def is_not_blank(value):
-    return True if to_none(value) is not None and value.strip != '' else False
+
+    if to_none(value) is None or not isinstance(value, basestring):
+        return True
+    if value.strip == '':
+        return False
+    return True
 
 
 def get_optional_key(map, key, default=''):
-    return map[key] if key in map else default
+
+    if key in map:
+        return map[key]
+    return default
 
 
 def log(message):
+
     util.SMlog('#### VMOPS %s ####' % message)
 
 
@@ -77,7 +109,7 @@ def echo(fn):
         name = fn.__name__
         log("enter %s ####" % name)
         res = fn(*v, **k)
-        log("exit %s with result %s" % name, res)
+        log("exit %s with result %s" % (name, res))
         return res
     return wrapped
 
@@ -94,8 +126,8 @@ def retry(max_attempts, fn):
 
     attempts = 1
     while attempts <= max_attempts:
-        log("Attempting execution {0}/{1} of {2}".
-            format(attempts, max_attempts, fn.__name__))
+        log("Attempting execution " + str(attempts) + "/" + str(
+            max_attempts) + " of " + fn.__name__)
         try:
             return fn()
         except:
@@ -106,15 +138,21 @@ def retry(max_attempts, fn):
 
 def compute_md5(filename, buffer_size=8192):
 
-    hasher = hashlib.md5()
+    hasher = md5mod.md5()
 
-    with open(filename, 'rb') as file:
+    file = open(filename, 'rb')
+    try:
+
         data = file.read(buffer_size)
         while data != "":
             hasher.update(data)
             data = file.read(buffer_size)
 
-    return base64.encodestring(hasher.digest())[:-1]
+        return base64.encodestring(hasher.digest())[:-1]
+
+    finally:
+
+        file.close()
 
 
 class S3Client(object):
@@ -146,10 +184,14 @@ class S3Client(object):
             max_error_retry, self.DEFAULT_MAX_ERROR_RETRY)
 
     def build_canocialized_resource(self, bucket, key):
+        if not key.startswith("/"):
+            uri = bucket + "/" + key
+        else:
+            uri = bucket + key
 
-        return '/{bucket}/{key}'.format(bucket=bucket, key=key)
+        return "/" + uri
 
-    def noop_send_body():
+    def noop_send_body(connection):
         pass
 
     def noop_read(response):
@@ -164,28 +206,38 @@ class S3Client(object):
 
         uri = self.build_canocialized_resource(bucket, key)
         signature, request_date = self.sign_request(method, uri, headers)
-        headers['Authorization'] = "AWS {0}:{1}".format(
-            self.access_key, signature)
+        headers['Authorization'] = "AWS " + self.access_key + ":" + signature
         headers['Date'] = request_date
 
-        connection = HTTPSConnection(self.end_point) \
-            if self.https_flag else HTTPConnection(self.end_point)
-        connection.timeout = self.socket_timeout
-
         def perform_request():
+            connection = None
+            if self.https_flag:
+                connection = HTTPSConnection(self.end_point)
+            else:
+                connection = HTTPConnection(self.end_point)
 
-            connection.request(method, uri, fn_send_body(), headers)
-            response = connection.getresponse()
-            log("Sent {0} request to {1} {2} with headers {3}.  \
-                Got response status {4}: {5}".
-                format(method, self.end_point, uri, headers,
-                response.status, response.reason))
-            return fn_read(response)
+            try:
+                connection.timeout = self.socket_timeout
+                connection.putrequest(method, uri)
 
-        try:
-            return retry(self.max_error_retry, perform_request)
-        finally:
-            connection.close()
+                for k, v in headers.items():
+                    connection.putheader(k, v)
+                connection.endheaders()
+
+                fn_send_body(connection)
+
+                response = connection.getresponse()
+                log("Sent " + method + " request to " + self.end_point +
+                    uri + " with headers " + str(headers) +
+                    ".  Received response status " + str(response.status) +
+                    ": " + response.reason)
+
+                return fn_read(response)
+
+            finally:
+                connection.close()
+
+        return retry(self.max_error_retry, perform_request)
 
     '''
     See http://bit.ly/MMC5de for more information regarding the creation of
@@ -205,20 +257,33 @@ class S3Client(object):
 
         signature = base64.encodestring(
             hmac.new(self.secret_key, string_to_sign.encode('utf8'),
-                     hashlib.sha1).digest())[:-1]
+                     sha).digest())[:-1]
 
         return signature, request_date
 
     def put(self, bucket, key, src_filename):
 
+        if not os.path.isfile(src_filename):
+            raise Exception(
+                "Attempt to put " + src_filename + " that does not exist.")
+
         headers = {
             self.HEADER_CONTENT_MD5: compute_md5(src_filename),
             self.HEADER_CONTENT_TYPE: 'application/octet-stream',
-            self.HEADER_CONTENT_LENGTH: os.stat(src_filename).st_size,
+            self.HEADER_CONTENT_LENGTH: str(os.stat(src_filename).st_size),
         }
 
-        def send_body():
-            return open(src_filename, 'rb')
+        def send_body(connection):
+            src_file = open(src_filename, 'rb')
+            try:
+                while True:
+                    block = src_file.read(8192)
+                    if not block:
+                        break
+                    connection.send(block)
+
+            except:
+                src_file.close()
 
         self.do_operation('PUT', bucket, key, headers, send_body)
 
@@ -226,12 +291,18 @@ class S3Client(object):
 
         def read(response):
 
-            with open(target_filename, 'wb') as file:
+            file = open(target_filename, 'wb')
+
+            try:
+
                 while True:
                     block = response.read(8192)
                     if not block:
                         break
-                        file.write(block)
+                    file.write(block)
+            except:
+
+                file.close()
 
         return self.do_operation('GET', bucket, key, fn_read=read)
 
@@ -246,7 +317,7 @@ def parseArguments(args):
     # the com.cloud.utils.S3Utils#ClientOptions interface
     client = S3Client(
         args['accessKey'], args['secretKey'], args['endPoint'],
-        args['isHttps'], args['connectionTimeout'], args['socketTimeout'])
+        args['https'], args['connectionTimeout'], args['socketTimeout'])
 
     operation = args['operation']
     bucket = args['bucket']
@@ -283,13 +354,13 @@ def s3(session, args):
             client.delete(bucket, key, filename)
         else:
             raise RuntimeError(
-                "S3 plugin does not support operation {0}.".format(operation))
+                "S3 plugin does not support operation " + operation)
 
         return 'true'
 
     except:
-        log("Operation {0} on file {1} from/in bucket {2} key {3}.".format(
-            operation, filename, bucket, key))
+        log("Operation " + operation + " on file " + filename +
+            " from/in bucket " + bucket + " key " + key)
         log(traceback.format_exc())
         return 'false'
 

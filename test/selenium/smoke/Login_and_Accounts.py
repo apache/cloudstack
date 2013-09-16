@@ -34,11 +34,12 @@ class login(unittest.TestCase):
     
     def setUp(self):
 
+        MS_URL = initialize.getMSip()
         self.driver = initialize.getOrCreateWebdriver()
-        self.base_url = "http://10.223.49.206:8080/" # Your management Server IP goes here
+        self.base_url = "http://"+ MS_URL +":8080/" # Your management Server IP goes here
         self.verificationErrors = []
 
-         
+
     def test_login(self):
         
         # Here we will clear the test box for Username and Password and fill them with actual login data.

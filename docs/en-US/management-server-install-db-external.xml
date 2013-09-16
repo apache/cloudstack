@@ -132,7 +132,7 @@ bind-address = 0.0.0.0</programlisting>
              server node IP. If not specified, the local IP address will be used.</para>
         </listitem>
       </itemizedlist>
-      <programlisting language="Bash">cloud-setup-databases cloud:&lt;dbpassword&gt;@&lt;ip address mysql server&gt; \
+      <programlisting language="Bash">cloudstack-setup-databases cloud:&lt;dbpassword&gt;@&lt;ip address mysql server&gt; \
 --deploy-as=root:&lt;password&gt; \
 -e &lt;encryption_type&gt; \
 -m &lt;management_server_key&gt; \

@@ -17,14 +17,13 @@
 """ P1 tests for Snapshots
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin.integration.lib.utils import is_snapshot_on_nfs
 
 
 class Services:
@@ -88,12 +87,6 @@ class Services:
                                     "publicport": 22,
                                     "protocol": 'TCP',
                                 },
-                         "mgmt_server": {
-                                    "ipaddress": '192.168.100.21',
-                                    "username": "root",
-                                    "password": "password",
-                                    "port": 22,
-                                },
                         "recurring_snapshot": {
                                     "intervaltype": 'HOURLY',
                                     # Frequency of snapshots
@@ -108,243 +101,23 @@ class Services:
                                     "ostype": "CentOS 5.3 (64-bit)",
                                     "templatefilter": 'self',
                                 },
-                        "diskdevice": "/dev/xvda",
-                        "diskname": "TestDiskServ",
-                        "size": 1,  # GBs
-
-                        "mount_dir": "/mnt/tmp",
-                        "sub_dir": "test",
-                        "sub_lvl_dir1": "test1",
-                        "sub_lvl_dir2": "test2",
-                        "random_data": "random.data",
+                        "volume": {
+                                   "diskname": "APP Data Volume",
+                                   "size": 1,   # in GBs
+                                   "diskdevice": ['/dev/xvdb', '/dev/sdb', '/dev/hdb', '/dev/vdb' ],   # Data Disk
+                        },
+                        "paths": {
+                                    "mount_dir": "/mnt/tmp",
+                                    "sub_dir": "test",
+                                    "sub_lvl_dir1": "test1",
+                                    "sub_lvl_dir2": "test2",
+                                    "random_data": "random.data",
+                        },
                         "ostype": "CentOS 5.3 (64-bit)",
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
-                        "mode": 'advanced',     # Networking mode: Advanced, Basic
                     }
-
-
-class TestSnapshotRootDisk(cloudstackTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.api_client = super(TestSnapshotRootDisk, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
-        # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-
-        template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
-        cls.services["domainid"] = cls.domain.id
-        cls.services["server_without_disk"]["zoneid"] = cls.zone.id
-        cls.services["templates"]["ostypeid"] = template.ostypeid
-        cls.services["zoneid"] = cls.zone.id
-
-        # Create VMs, NAT Rules etc
-        cls.account = Account.create(
-                            cls.api_client,
-                            cls.services["account"],
-                            domainid=cls.domain.id
-                            )
-
-        cls.services["account"] = cls.account.account.name
-
-        cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
-        cls.virtual_machine = cls.virtual_machine_with_disk = \
-                    VirtualMachine.create(
-                                cls.api_client,
-                                cls.services["server_without_disk"],
-                                templateid=template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
-                                serviceofferingid=cls.service_offering.id,
-                                mode=cls.services["mode"]
-                                )
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.account,
-                        ]
-        return
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-        self.dbclient = self.testClient.getDbConnection()
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            #Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "smoke"])
-    def test_01_snapshot_root_disk(self):
-        """Test Snapshot Root Disk
-        """
-
-        # Validate the following
-        # 1. listSnapshots should list the snapshot that was created.
-        # 2. verify that secondary storage NFS share contains
-        #    the reqd volume under
-        #    /secondary/snapshots//$account_id/$volumeid/$snapshot_uuid
-        # 3. verify backup_snap_id was non null in the `snapshots` table
-
-        volumes = list_volumes(
-                            self.apiclient,
-                            virtualmachineid=self.virtual_machine_with_disk.id,
-                            type='ROOT',
-                            listall=True
-                            )
-
-        snapshot = Snapshot.create(
-                                   self.apiclient,
-                                   volumes[0].id,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid
-                                   )
-        self.debug("Snapshot created: ID - %s" % snapshot.id)
-
-        snapshots = list_snapshots(
-                                  self.apiclient,
-                                  id=snapshot.id
-                                  )
-        self.assertEqual(
-                            isinstance(snapshots, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-
-        self.assertNotEqual(
-                            snapshots,
-                            None,
-                            "Check if result exists in list item call"
-                            )
-        self.assertEqual(
-                            snapshots[0].id,
-                            snapshot.id,
-                            "Check resource id in list resources call"
-                        )
-        self.debug(
-            "select backup_snap_id, account_id, volume_id from snapshots where uuid = '%s';" \
-            % str(snapshot.id)
-            )
-        qresultset = self.dbclient.execute(
-                        "select backup_snap_id, account_id, volume_id from snapshots where uuid = '%s';" \
-                        % str(snapshot.id)
-                        )
-        self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
-
-        qresult = qresultset[0]
-
-        snapshot_uuid = qresult[0]      # backup_snap_id = snapshot UUID
-        account_id = qresult[1]
-        volume_id = qresult[2]
-
-        self.assertNotEqual(
-                            str(snapshot_uuid),
-                            'NULL',
-                            "Check if backup_snap_id is not null"
-                        )
-        
-        # Get the Secondary Storage details from  list Hosts
-        hosts = list_hosts(
-                                 self.apiclient,
-                                 type='SecondaryStorage',
-                                 zoneid=self.zone.id
-                                 )
-        self.assertEqual(
-                            isinstance(hosts, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        uuids = []
-        for host in hosts:
-            # hosts[0].name = "nfs://192.168.100.21/export/test"
-            parse_url = (host.name).split('/')
-            # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
-
-            # Split IP address and export path from name
-            sec_storage_ip = parse_url[2]
-            # Sec Storage IP: 192.168.100.21
-
-            export_path = '/'.join(parse_url[3:])
-            # Export path: export/test
-
-            try:
-                # Login to VM to check snapshot present on sec disk
-                ssh_client = self.virtual_machine_with_disk.get_ssh_client()
-
-                cmds = [
-                    "mkdir -p %s" % self.services["mount_dir"],
-                    "mount %s/%s %s" % (
-                                         sec_storage_ip,
-                                         export_path,
-                                         self.services["mount_dir"]
-                                         ),
-                    "ls %s/snapshots/%s/%s" % (
-                                               self.services["mount_dir"],
-                                               account_id,
-                                               volume_id
-                                               ),
-                    ]
-
-                for c in cmds:
-                    self.debug(c)
-                    result = ssh_client.execute(c)
-                    self.debug(result)
-
-            except Exception:
-                self.fail("SSH failed for Virtual machine: %s" %
-                                self.virtual_machine_with_disk.ipaddress)
-
-            uuids.append(result)
-            # Unmount the Sec Storage
-            cmds = [
-                    "umount %s" % (self.services["mount_dir"]),
-                    ]
-            try:
-                for c in cmds:
-                    self.debug(c)
-                    result = ssh_client.execute(c)
-                    self.debug(result)
-
-            except Exception as e:
-                self.fail("SSH failed for Virtual machine: %s" %
-                                self.virtual_machine_with_disk.ipaddress)
-        
-        res = str(uuids)
-        # Check snapshot UUID in secondary storage and database
-        self.assertEqual(
-                        res.count(snapshot_uuid),
-                        1,
-                        "Check snapshot UUID in secondary storage and database"
-                        )
-        return
 
 
 class TestSnapshots(cloudstackTestCase):
@@ -356,23 +129,24 @@ class TestSnapshots(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
                                     cls.services["disk_offering"]
                                     )
-        template = get_template(
+        cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
         
         cls.services["domainid"] = cls.domain.id
-        cls.services["server_with_disk"]["zoneid"] = cls.zone.id
+        cls.services["volume"]["zoneid"] = cls.services["server_with_disk"]["zoneid"] = cls.zone.id
         cls.services["server_with_disk"]["diskoffering"] = cls.disk_offering.id
 
         cls.services["server_without_disk"]["zoneid"] = cls.zone.id
 
-        cls.services["templates"]["ostypeid"] = template.ostypeid
+        cls.services["templates"]["ostypeid"] = cls.template.ostypeid
         cls.services["zoneid"] = cls.zone.id
         cls.services["diskoffering"] = cls.disk_offering.id
 
@@ -383,7 +157,7 @@ class TestSnapshots(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -393,22 +167,13 @@ class TestSnapshots(cloudstackTestCase):
                     VirtualMachine.create(
                                 cls.api_client,
                                 cls.services["server_with_disk"],
-                                templateid=template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
+                                templateid=cls.template.id,
+                                accountid=cls.account.name,
+                                domainid=cls.account.domainid,
                                 serviceofferingid=cls.service_offering.id,
                                 mode=cls.services["mode"]
                                 )
-        cls.virtual_machine_without_disk = \
-                    VirtualMachine.create(
-                                    cls.api_client,
-                                    cls.services["server_without_disk"],
-                                    templateid=template.id,
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
-                                    serviceofferingid=cls.service_offering.id,
-                                    mode=cls.services["mode"]
-                                    )
+
         cls._cleanup = [
                         cls.service_offering,
                         cls.disk_offering,
@@ -461,8 +226,8 @@ class TestSnapshots(cloudstackTestCase):
         snapshot = Snapshot.create(
                                    self.apiclient,
                                    volume[0].id,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid
+                                   account=self.account.name,
+                                   domainid=self.account.domainid
                                    )
         snapshots = list_snapshots(
                                   self.apiclient,
@@ -483,263 +248,202 @@ class TestSnapshots(cloudstackTestCase):
                             snapshot.id,
                             "Check resource id in list resources call"
                         )
-        self.debug(
-            "select backup_snap_id, account_id, volume_id from snapshots where uuid = '%s';" \
-            % str(snapshot.id)
-            )
-        qresultset = self.dbclient.execute(
-                        "select backup_snap_id, account_id, volume_id from snapshots where uuid = '%s';" \
-                        % str(snapshot.id)
-                        )
-        self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
-
-        qresult = qresultset[0]
-        snapshot_uuid = qresult[0]      # backup_snap_id = snapshot UUID
-        account_id = qresult[1]
-        volume_id = qresult[2]
-
-        self.assertNotEqual(
-                            str(snapshot_uuid),
-                            'NULL',
-                            "Check if backup_snap_id is not null"
-                        )
-
-        # Get the Secondary Storage details from  list Hosts
-        hosts = list_hosts(
-                                 self.apiclient,
-                                 type='SecondaryStorage',
-                                 zoneid=self.zone.id
-                                 )
-        self.assertEqual(
-                            isinstance(hosts, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        uuids = []
-        for host in hosts:
-            # hosts[0].name = "nfs://192.168.100.21/export"
-            parse_url = (host.name).split('/')
-            # parse_url = ['nfs:', '', '192.168.100.21', 'export']
-
-            # Split IP address and export path from name
-            sec_storage_ip = parse_url[2]
-            # Sec Storage IP: 192.168.100.21
-
-            export_path = '/'.join(parse_url[3:])
-            # Export path: export
-
-            try:
-                # Login to VM to check snapshot present on sec disk
-                ssh_client = self.virtual_machine_with_disk.get_ssh_client()
-
-                cmds = [
-                    "mkdir -p %s" % self.services["mount_dir"],
-                    "mount %s/%s %s" % (
-                                         sec_storage_ip,
-                                         export_path,
-                                         self.services["mount_dir"]
-                                         ),
-                    "ls %s/snapshots/%s/%s" % (
-                                               self.services["mount_dir"],
-                                               account_id,
-                                               volume_id
-                                               ),
-                ]
-                for c in cmds:
-                    self.debug(c)
-                    result = ssh_client.execute(c)
-                    self.debug(result)
-
-            except Exception as e:
-                self.fail("SSH failed for VM with IP: %s" %
-                                self.virtual_machine_with_disk.ipaddress)
-
-            uuids.append(result)
-            # Unmount the Sec Storage
-            cmds = [
-                    "umount %s" % (self.services["mount_dir"]),
-                    ]
-            try:
-                for c in cmds:
-                    self.debug(c)
-                    ssh_client.execute(c)
-
-            except Exception as e:
-                self.fail("SSH failed for VM with IP: %s" %
-                                self.virtual_machine_with_disk.ipaddress)
-
-        res = str(uuids)
-        # Check snapshot UUID in secondary storage and database
-        self.assertEqual(
-                        res.count(snapshot_uuid),
-                        1,
-                        "Check snapshot UUID in secondary storage and database"
-                        )
+        self.assertTrue(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config, self.zone.id, snapshot.id))
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "smoke", "xen"])
-    def test_03_volume_from_snapshot(self):
-        """Create volumes from snapshots
+    @attr(tags = ["advanced", "advancedns", "basic", "sg"])
+    def test_01_volume_from_snapshot(self):
+        """Test Creating snapshot from volume having spaces in name(KVM)
         """
-        #1. Login to machine; create temp/test directories on data volume
-        #2. Snapshot the Volume
-        #3. Create another Volume from snapshot
-        #4. Mount/Attach volume to another server
-        #5. Compare data
-        random_data_0 = random_gen(100)
-        random_data_1 = random_gen(100)
+        # Validate the following
+        #1. Create a virtual machine and data volume
+        #2. Attach data volume to VM
+        #3. Login to machine; create temp/test directories on data volume
+        #4. Snapshot the Volume
+        #5. Create another Volume from snapshot
+        #6. Mount/Attach volume to another server
+        #7. Compare data
+
+        random_data_0 = random_gen(size=100)
+        random_data_1 = random_gen(size=100)
+
+        volume = Volume.create(
+                               self.apiclient,
+                               self.services["volume"],
+                               zoneid=self.zone.id,
+                               account=self.account.name,
+                               domainid=self.account.domainid,
+                               diskofferingid=self.disk_offering.id
+                               )
+        self.debug("Created volume with ID: %s" % volume.id)
+        self.virtual_machine.attach_volume(
+                                           self.apiclient,
+                                           volume
+                                           )
+        self.debug("Attach volume: %s to VM: %s" %
+                                (volume.id, self.virtual_machine.id))
+
 
         try:
             ssh_client = self.virtual_machine.get_ssh_client()
+        except Exception as e:
+            self.fail("SSH failed for VM: %s" %
+                      self.virtual_machine.ipaddress)
 
-            #Format partition using ext3
-            format_volume_to_ext3(
+        self.debug("Formatting volume: %s to ext3" % volume.id)
+        #Format partition using ext3
+        format_volume_to_ext3(
                               ssh_client,
-                              self.services["diskdevice"]
+                              self.services["volume"]["diskdevice"]
                               )
-            cmds = [
-                    "mkdir -p %s" % self.services["mount_dir"],
+        cmds = [
+                    "mkdir -p %s" % self.services["paths"]["mount_dir"],
                     "mount %s1 %s" % (
-                                      self.services["diskdevice"],
-                                      self.services["mount_dir"]
+                                      self.services["volume"]["diskdevice"],
+                                      self.services["paths"]["mount_dir"]
                                       ),
                     "mkdir -p %s/%s/{%s,%s} " % (
-                                                self.services["mount_dir"],
-                                                self.services["sub_dir"],
-                                                self.services["sub_lvl_dir1"],
-                                                self.services["sub_lvl_dir2"]
-                                            ),
+                                    self.services["paths"]["mount_dir"],
+                                    self.services["paths"]["sub_dir"],
+                                    self.services["paths"]["sub_lvl_dir1"],
+                                    self.services["paths"]["sub_lvl_dir2"]
+                                    ),
                     "echo %s > %s/%s/%s/%s" % (
-                                                random_data_0,
-                                                self.services["mount_dir"],
-                                                self.services["sub_dir"],
-                                                self.services["sub_lvl_dir1"],
-                                                self.services["random_data"]
-                                            ),
+                                    random_data_0,
+                                    self.services["paths"]["mount_dir"],
+                                    self.services["paths"]["sub_dir"],
+                                    self.services["paths"]["sub_lvl_dir1"],
+                                    self.services["paths"]["random_data"]
+                                    ),
                     "echo %s > %s/%s/%s/%s" % (
-                                                random_data_1,
-                                                self.services["mount_dir"],
-                                                self.services["sub_dir"],
-                                                self.services["sub_lvl_dir2"],
-                                                self.services["random_data"]
-                                            ),
+                                    random_data_1,
+                                    self.services["paths"]["mount_dir"],
+                                    self.services["paths"]["sub_dir"],
+                                    self.services["paths"]["sub_lvl_dir2"],
+                                    self.services["paths"]["random_data"]
+                                    ),
                 ]
-            for c in cmds:
-                self.debug(c)
-                ssh_client.execute(c)
+        for c in cmds:
+            self.debug("Command: %s" % c)
+            ssh_client.execute(c)
 
-        except Exception as e:
-            self.fail("SSH failed for VM with IP: %s" %
-                                self.virtual_machine.ipaddress)
         # Unmount the Sec Storage
         cmds = [
-                    "umount %s" % (self.services["mount_dir"]),
+                    "umount %s" % (self.services["paths"]["mount_dir"]),
                 ]
+        for c in cmds:
+            self.debug("Command: %s" % c)
+            ssh_client.execute(c)
 
-        try:
-            for c in cmds:
-                self.debug(c)
-                ssh_client.execute(c)
-
-        except Exception as e:
-            self.fail("SSH failed for VM with IP: %s" %
-                                self.virtual_machine.ipaddress)
-
-        list_volume_response = list_volumes(
+        list_volume_response = Volume.list(
                                     self.apiclient,
                                     virtualmachineid=self.virtual_machine.id,
                                     type='DATADISK',
                                     listall=True
                                     )
 
+        self.assertEqual(
+                         isinstance(list_volume_response, list),
+                         True,
+                         "Check list volume response for valid data"
+                         )
         volume_response = list_volume_response[0]
         #Create snapshot from attached volume
         snapshot = Snapshot.create(
                                    self.apiclient,
                                    volume_response.id,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid
+                                   account=self.account.name,
+                                   domainid=self.account.domainid
                                    )
-        self.debug("Created Snapshot from volume: %s" % volume_response.id)
-
+        self.debug("Created snapshot: %s" % snapshot.id)
         #Create volume from snapshot
-        self.debug("Creating volume from snapshot: %s" % snapshot.id)
-        volume = Volume.create_from_snapshot(
+        volume_from_snapshot = Volume.create_from_snapshot(
                                         self.apiclient,
                                         snapshot.id,
-                                        self.services,
-                                        account=self.account.account.name,
-                                        domainid=self.account.account.domainid
+                                        self.services["volume"],
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
                                         )
-
-        volumes = list_volumes(
+        self.debug("Created Volume: %s from Snapshot: %s" % (
+                                            volume_from_snapshot.id,
+                                            snapshot.id))
+        volumes = Volume.list(
                                 self.apiclient,
-                                id=volume.id
+                                id=volume_from_snapshot.id
                                 )
         self.assertEqual(
                             isinstance(volumes, list),
                             True,
                             "Check list response returns a valid list"
                         )
+
         self.assertNotEqual(
                             len(volumes),
                             None,
                             "Check Volume list Length"
                       )
-
         self.assertEqual(
                         volumes[0].id,
-                        volume.id,
+                        volume_from_snapshot.id,
                         "Check Volume in the List Volumes"
                     )
         #Attaching volume to new VM
-        new_virtual_machine = self.virtual_machine_without_disk
+        new_virtual_machine = VirtualMachine.create(
+                                    self.apiclient,
+                                    self.services["server_without_disk"],
+                                    templateid=self.template.id,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
+                                    serviceofferingid=self.service_offering.id,
+                                    mode=self.services["mode"]
+                                )
+        self.debug("Deployed new VM for account: %s" % self.account.name)
         self.cleanup.append(new_virtual_machine)
 
-        cmd = attachVolume.attachVolumeCmd()
-        cmd.id = volume.id
-        cmd.virtualmachineid = new_virtual_machine.id
-        self.apiclient.attachVolume(cmd)
+        self.debug("Attaching volume: %s to VM: %s" % (
+                                            volume_from_snapshot.id,
+                                            new_virtual_machine.id
+                                            ))
+
+        new_virtual_machine.attach_volume(
+                                           self.apiclient,
+                                           volume_from_snapshot
+                                           )
 
         try:
             #Login to VM to verify test directories and files
             ssh = new_virtual_machine.get_ssh_client()
 
             cmds = [
-                    "mkdir -p %s" % self.services["mount_dir"],
+                    "mkdir -p %s" % self.services["paths"]["mount_dir"],
                     "mount %s1 %s" % (
-                                      self.services["diskdevice"],
-                                      self.services["mount_dir"]
+                                      self.services["volume"]["diskdevice"],
+                                      self.services["paths"]["mount_dir"]
                                       ),
                ]
 
             for c in cmds:
-                self.debug(c)
-                result = ssh.execute(c)
-                self.debug(result)
+                self.debug("Command: %s" % c)
+                ssh.execute(c)
 
-            returned_data_0 = ssh.execute("cat %s/%s/%s/%s" % (
-                                                self.services["mount_dir"],
-                                                self.services["sub_dir"],
-                                                self.services["sub_lvl_dir1"],
-                                                self.services["random_data"]
-                                    ))
-            returned_data_1 = ssh.execute("cat %s/%s/%s/%s" % (
-                                                self.services["mount_dir"],
-                                                self.services["sub_dir"],
-                                                self.services["sub_lvl_dir2"],
-                                                self.services["random_data"]
-                                    ))
-
+            returned_data_0 = ssh.execute(
+                            "cat %s/%s/%s/%s" % (
+                                    self.services["paths"]["mount_dir"],
+                                    self.services["paths"]["sub_dir"],
+                                    self.services["paths"]["sub_lvl_dir1"],
+                                    self.services["paths"]["random_data"]
+                            ))
+            returned_data_1 = ssh.execute(
+                            "cat %s/%s/%s/%s" % (
+                                    self.services["paths"]["mount_dir"],
+                                    self.services["paths"]["sub_dir"],
+                                    self.services["paths"]["sub_lvl_dir2"],
+                                    self.services["paths"]["random_data"]
+                            ))
         except Exception as e:
-            self.fail("SSH failed for VM with IP: %s" %
-                                self.new_virtual_machine.ipaddress)
-
+            self.fail("SSH access failed for VM: %s" %
+                                new_virtual_machine.ipaddress)
         #Verify returned data
         self.assertEqual(
                 random_data_0,
@@ -753,15 +457,11 @@ class TestSnapshots(cloudstackTestCase):
                 )
         # Unmount the Sec Storage
         cmds = [
-                    "umount %s" % (self.services["mount_dir"]),
+                    "umount %s" % (self.services["paths"]["mount_dir"]),
                 ]
-        try:
-            for c in cmds:
-                ssh_client.execute(c)
-
-        except Exception as e:
-            self.fail("SSH failed for VM with IP: %s" %
-                                self.new_virtual_machine.ipaddress)
+        for c in cmds:
+            self.debug("Command: %s" % c)
+            ssh_client.execute(c)
         return
 
     @attr(speed = "slow")
@@ -773,6 +473,7 @@ class TestSnapshots(cloudstackTestCase):
         #1. Snapshot the Volume
         #2. Delete the snapshot
         #3. Verify snapshot is removed by calling List Snapshots API
+        #4. Verify snapshot was removed from image store
 
         volumes = list_volumes(
                                self.apiclient,
@@ -788,210 +489,145 @@ class TestSnapshots(cloudstackTestCase):
         snapshot = Snapshot.create(
                                    self.apiclient,
                                    volumes[0].id,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid
+                                   account=self.account.name,
+                                   domainid=self.account.domainid
                                    )
         snapshot.delete(self.apiclient)
-
         snapshots = list_snapshots(
                                    self.apiclient,
                                    id=snapshot.id
                                    )
-
         self.assertEqual(
                          snapshots,
                          None,
                          "Check if result exists in list item call"
                          )
+        self.assertFalse(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config, self.zone.id, snapshot.id))
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "smoke"])
-    def test_05_recurring_snapshot_root_disk(self):
-        """Test Recurring Snapshot Root Disk
+    @attr(tags = ["advanced", "advancedns", "basic", "sg"])
+    def test_03_snapshot_detachedDisk(self):
+        """Test snapshot from detached disk
         """
-        #1. Create snapshot policy for root disk
-        #2. ListSnapshot policy should return newly created policy
-        #3. Verify only most recent number (maxsnaps) snapshots retailed
+        # Validate the following
+        # 1. login in VM  and write some data on data disk(use fdisk to
+        #    partition datadisk,fdisk /dev/sdb, and make filesystem using
+        #    mkfs.ext3)
+        # 2. Detach the data disk and write some data on data disk
+        # 3. perform the snapshot on the detached volume
+        # 4. listvolumes with VM id shouldn't show the detached volume
+        # 5. listSnapshots should list the snapshot that was created
+        # 6. verify backup_snap_id was non null in the `snapshots` table
 
-        volume = list_volumes(
-                        self.apiclient,
-                        virtualmachineid=self.virtual_machine_with_disk.id,
-                        type='ROOT',
-                        listall=True
-                        )
+        volumes = list_volumes(
+                               self.apiclient,
+                               virtualmachineid=self.virtual_machine.id,
+                               type='DATADISK',
+                               listall=True
+                               )
         self.assertEqual(
-                            isinstance(volume, list),
+                            isinstance(volumes, list),
                             True,
                             "Check list response returns a valid list"
                         )
-        recurring_snapshot = SnapshotPolicy.create(
-                                           self.apiclient,
-                                           volume[0].id,
-                                           self.services["recurring_snapshot"]
-                                        )
-        self.cleanup.append(recurring_snapshot)
+        volume = volumes[0]
+        random_data_0 = random_gen(size=100)
+        random_data_1 = random_gen(size=100)
+        try:
+            ssh_client = self.virtual_machine.get_ssh_client()
 
-        #ListSnapshotPolicy should return newly created policy
-        list_snapshots_policy = list_snapshot_policy(
-                                                     self.apiclient,
-                                                     id=recurring_snapshot.id,
-                                                     volumeid=volume[0].id
-                                                     )
-        self.assertEqual(
-                            isinstance(list_snapshots_policy, list),
-                            True,
-                            "Check list response returns a valid list"
+            #Format partition using ext3
+            format_volume_to_ext3(
+                              ssh_client,
+                              self.services["volume"]["diskdevice"]
+                              )
+            cmds = [
+                    "mkdir -p %s" % self.services["paths"]["mount_dir"],
+                    "mount %s1 %s" % (
+                                      self.services["volume"]["diskdevice"],
+                                      self.services["paths"]["mount_dir"]
+                                      ),
+                    "pushd %s" % self.services["paths"]["mount_dir"],
+                    "mkdir -p %s/{%s,%s} " % (
+                                                self.services["paths"]["sub_dir"],
+                                                self.services["paths"]["sub_lvl_dir1"],
+                                                self.services["paths"]["sub_lvl_dir2"]
+                                            ),
+                    "echo %s > %s/%s/%s" % (
+                                               random_data_0,
+                                                self.services["paths"]["sub_dir"],
+                                                self.services["paths"]["sub_lvl_dir1"],
+                                                self.services["paths"]["random_data"]
+                                            ),
+                    "echo %s > %s/%s/%s" % (
+                                                random_data_1,
+                                                self.services["paths"]["sub_dir"],
+                                                self.services["paths"]["sub_lvl_dir2"],
+                                                self.services["paths"]["random_data"]
+                                            ),
+                    "sync",
+                ]
+            for c in cmds:
+                self.debug(ssh_client.execute(c))
+
+            #detach volume from VM
+            cmd = detachVolume.detachVolumeCmd()
+            cmd.id = volume.id
+            self.apiclient.detachVolume(cmd)
+
+            #Create snapshot from detached volume
+            snapshot = Snapshot.create(self.apiclient, volume.id)
+            self.cleanup.append(snapshot)
+
+            volumes = list_volumes(
+                               self.apiclient,
+                               virtualmachineid=self.virtual_machine.id,
+                               type='DATADISK',
+                               listall=True
+                               )
+
+            self.assertEqual(
+                            volumes,
+                            None,
+                            "Check Volume is detached"
+                      )
+
+            # Verify the snapshot was created or not
+            snapshots = list_snapshots(
+                                   self.apiclient,
+                                   id=snapshot.id
+                                   )
+            self.assertNotEqual(
+                            snapshots,
+                            None,
+                            "Check if result exists in list snapshots call"
+                            )
+            self.assertEqual(
+                            snapshots[0].id,
+                            snapshot.id,
+                            "Check snapshot id in list resources call"
+                        )
+        except Exception as e:
+            self.fail("SSH failed for VM with IP: %s - %s" %
+                                (self.virtual_machine.ssh_ip, e))
+
+        qresultset = self.dbclient.execute(
+                        "select id from snapshots where uuid = '%s';" \
+                        % snapshot.id
                         )
         self.assertNotEqual(
-                            list_snapshots_policy,
-                            None,
-                            "Check if result exists in list item call"
+                            len(qresultset),
+                            0,
+                            "Check DB Query result set"
                             )
-        snapshots_policy = list_snapshots_policy[0]
-        self.assertEqual(
-                        snapshots_policy.id,
-                        recurring_snapshot.id,
-                        "Check recurring snapshot id in list resources call"
-                        )
-        self.assertEqual(
-                        snapshots_policy.maxsnaps,
-                        self.services["recurring_snapshot"]["maxsnaps"],
-                        "Check interval type in list resources call"
-                        )
-        # Sleep for (maxsnaps+1) hours to verify
-        # only maxsnaps snapshots are retained
-        time.sleep(
-            (self.services["recurring_snapshot"]["maxsnaps"]) * 3600
-            )
 
-        timeout = self.services["timeout"]
-        while True: 
-            snapshots = list_snapshots(
-                        self.apiclient,
-                        volumeid=volume[0].id,
-                        intervaltype=\
-                        self.services["recurring_snapshot"]["intervaltype"],
-                        snapshottype='RECURRING',
-                        listall=True
-                        )
-                
-            if isinstance(snapshots, list):
-                break
-                    
-            elif timeout == 0:
-                raise Exception("List snapshots API call failed.")
-
-            time.sleep(1)
-            timeout = timeout - 1
-
-        self.assertEqual(
-                            isinstance(snapshots, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-
-        self.assertEqual(
-                         len(snapshots),
-                         self.services["recurring_snapshot"]["maxsnaps"],
-                         "Check maximum number of recurring snapshots retained"
-                        )
-        return
-
-    @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "smoke"])
-    def test_06_recurring_snapshot_data_disk(self):
-        """Test Recurring Snapshot data Disk
-        """
-        #1. Create snapshot policy for data disk
-        #2. ListSnapshot policy should return newly created policy
-        #3. Verify only most recent number (maxsnaps) snapshots retailed
-
-        volume = list_volumes(
-                        self.apiclient,
-                        virtualmachineid=self.virtual_machine_with_disk.id,
-                        type='DATADISK',
-                        listall=True
-                        )
-
-        self.assertEqual(
-                            isinstance(volume, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-
-        recurring_snapshot = SnapshotPolicy.create(
-                                    self.apiclient,
-                                    volume[0].id,
-                                    self.services["recurring_snapshot"]
-                                )
-        self.cleanup.append(recurring_snapshot)
-        #ListSnapshotPolicy should return newly created policy
-        list_snapshots_policy = list_snapshot_policy(
-                                                     self.apiclient,
-                                                     id=recurring_snapshot.id,
-                                                     volumeid=volume[0].id
-                                                     )
-
-        self.assertEqual(
-                            isinstance(list_snapshots_policy, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-
+        qresult = qresultset[0]
         self.assertNotEqual(
-                            list_snapshots_policy,
-                            None,
-                            "Check if result exists in list item call"
-                            )
-        snapshots_policy = list_snapshots_policy[0]
-        self.assertEqual(
-                        snapshots_policy.id,
-                        recurring_snapshot.id,
-                        "Check recurring snapshot id in list resources call"
+                            str(qresult[0]),
+                            'NULL',
+                            "Check if backup_snap_id is not null"
                         )
-        self.assertEqual(
-                            snapshots_policy.maxsnaps,
-                            self.services["recurring_snapshot"]["maxsnaps"],
-                            "Check interval type in list resources call"
-                        )
-
-        # Sleep for (maxsnaps) hours to verify only maxsnaps snapshots are
-        # retained
-        time.sleep(
-            (self.services["recurring_snapshot"]["maxsnaps"]) * 3600
-            )
-        
-        timeout = self.services["timeout"]
-        while True: 
-            snapshots = list_snapshots(
-                            self.apiclient,
-                            volumeid=volume[0].id,
-                            intervaltype=\
-                            self.services["recurring_snapshot"]["intervaltype"],
-                            snapshottype='RECURRING',
-                            listall=True
-                            )
-                
-            if isinstance(snapshots, list):
-                break
-                    
-            elif timeout == 0:
-                raise Exception("List snapshots API call failed.")
-
-            time.sleep(1)
-            timeout = timeout - 1
-
-        self.assertEqual(
-                            isinstance(snapshots, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        self.assertEqual(
-                         len(snapshots),
-                         self.services["recurring_snapshot"]["maxsnaps"],
-                         "Check maximum number of recurring snapshots retained"
-                         )
         return
 
     @attr(speed = "slow")
@@ -1007,38 +643,38 @@ class TestSnapshots(cloudstackTestCase):
         #5. Login to newly created virtual machine
         #6. Compare data
 
-        random_data_0 = random_gen(100)
-        random_data_1 = random_gen(100)
+        random_data_0 = random_gen(size=100)
+        random_data_1 = random_gen(size=100)
 
         try:
             #Login to virtual machine
             ssh_client = self.virtual_machine.get_ssh_client()
 
             cmds = [
-                    "mkdir -p %s" % self.services["mount_dir"],
+                    "mkdir -p %s" % self.services["paths"]["mount_dir"],
                     "mount %s1 %s" % (
-                                      self.services["rootdisk"],
-                                      self.services["mount_dir"]
+                                      self.services["volume"]["diskdevice"],
+                                      self.services["paths"]["mount_dir"]
                                       ),
                     "mkdir -p %s/%s/{%s,%s} " % (
-                                                self.services["mount_dir"],
-                                                self.services["sub_dir"],
-                                                self.services["sub_lvl_dir1"],
-                                                self.services["sub_lvl_dir2"]
+                                                self.services["paths"]["mount_dir"],
+                                                self.services["paths"]["sub_dir"],
+                                                self.services["paths"]["sub_lvl_dir1"],
+                                                self.services["paths"]["sub_lvl_dir2"]
                                             ),
                     "echo %s > %s/%s/%s/%s" % (
                                                 random_data_0,
-                                                self.services["mount_dir"],
-                                                self.services["sub_dir"],
-                                                self.services["sub_lvl_dir1"],
-                                                self.services["random_data"]
+                                                self.services["paths"]["mount_dir"],
+                                                self.services["paths"]["sub_dir"],
+                                                self.services["paths"]["sub_lvl_dir1"],
+                                                self.services["paths"]["random_data"]
                                             ),
                     "echo %s > %s/%s/%s/%s" % (
                                                 random_data_1,
-                                                self.services["mount_dir"],
-                                                self.services["sub_dir"],
-                                                self.services["sub_lvl_dir2"],
-                                                self.services["random_data"]
+                                                self.services["paths"]["mount_dir"],
+                                                self.services["paths"]["sub_dir"],
+                                                self.services["paths"]["sub_lvl_dir2"],
+                                                self.services["paths"]["random_data"]
                                         ),
 		             "sync",
                 ]
@@ -1054,7 +690,7 @@ class TestSnapshots(cloudstackTestCase):
 
         # Unmount the Volume
         cmds = [
-                    "umount %s" % (self.services["mount_dir"]),
+                    "umount %s" % (self.services["paths"]["mount_dir"]),
                 ]
         for c in cmds:
             self.debug(c)
@@ -1078,8 +714,8 @@ class TestSnapshots(cloudstackTestCase):
         snapshot = Snapshot.create(
                                    self.apiclient,
                                    volume.id,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid
+                                   account=self.account.name,
+                                   domainid=self.account.domainid
                                    )
 
         self.debug("Snapshot created from volume ID: %s" % volume.id)
@@ -1117,8 +753,8 @@ class TestSnapshots(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["server_without_disk"],
                                     templateid=template.id,
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     mode=self.services["mode"]
                                     )
@@ -1129,10 +765,10 @@ class TestSnapshots(cloudstackTestCase):
             ssh = new_virtual_machine.get_ssh_client()
 
             cmds = [
-                    "mkdir -p %s" % self.services["mount_dir"],
+                    "mkdir -p %s" % self.services["paths"]["mount_dir"],
                     "mount %s1 %s" % (
-                                      self.services["rootdisk"],
-                                      self.services["mount_dir"]
+                                      self.services["volume"]["diskdevice"],
+                                      self.services["paths"]["mount_dir"]
                                       )
                ]
 
@@ -1140,17 +776,17 @@ class TestSnapshots(cloudstackTestCase):
                 ssh.execute(c)
 
             returned_data_0 = ssh.execute("cat %s/%s/%s/%s" % (
-                                                self.services["mount_dir"],
-                                                self.services["sub_dir"],
-                                                self.services["sub_lvl_dir1"],
-                                                self.services["random_data"]
+                                                self.services["paths"]["mount_dir"],
+                                                self.services["paths"]["sub_dir"],
+                                                self.services["paths"]["sub_lvl_dir1"],
+                                                self.services["paths"]["random_data"]
                                     ))
             self.debug(returned_data_0)
             returned_data_1 = ssh.execute("cat %s/%s/%s/%s" % (
-                                                self.services["mount_dir"],
-                                                self.services["sub_dir"],
-                                                self.services["sub_lvl_dir2"],
-                                                self.services["random_data"]
+                                                self.services["paths"]["mount_dir"],
+                                                self.services["paths"]["sub_dir"],
+                                                self.services["paths"]["sub_lvl_dir2"],
+                                                self.services["paths"]["random_data"]
                                     ))
             self.debug(returned_data_1)
         except Exception as e:
@@ -1169,7 +805,7 @@ class TestSnapshots(cloudstackTestCase):
                 )
         # Unmount the volume
         cmds = [
-                    "umount %s" % (self.services["mount_dir"]),
+                    "umount %s" % (self.services["paths"]["mount_dir"]),
                 ]
         try:
             for c in cmds:
@@ -1181,15 +817,17 @@ class TestSnapshots(cloudstackTestCase):
                                     new_virtual_machine.ipaddress)
         return
 
-class TestCreateVMsnapshotTemplate(cloudstackTestCase):
+
+class TestCreateVMSnapshotTemplate(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestCreateVMsnapshotTemplate, cls).getClsTestClient().getApiClient()
+        cls.api_client = super(TestCreateVMSnapshotTemplate, cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         cls.template = get_template(
                             cls.api_client,
@@ -1207,7 +845,7 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -1267,8 +905,8 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
-                                accountid=self.account.account.name,
-                                domainid=self.account.account.domainid,
+                                accountid=self.account.name,
+                                domainid=self.account.domainid,
                                 serviceofferingid=self.service_offering.id
                                 )
         self.debug("Created VM with ID: %s" % self.virtual_machine.id)
@@ -1307,22 +945,7 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                         )
         self.debug("select backup_snap_id, account_id, volume_id from snapshots where uuid = '%s';" \
                         % snapshot.id)
-        # Verify backup_snap_id is not NULL
-        qresultset = self.dbclient.execute(
-                        "select backup_snap_id, account_id, volume_id from snapshots where uuid = '%s';" \
-                        % snapshot.id
-                        )
-        self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
-
-        qresult = qresultset[0]
-
-        snapshot_uuid = qresult[0]      # backup_snap_id = snapshot UUID
-        account_id = qresult[1]
-        volume_id = qresult[2]
+        snapshot_uuid = snapshot.id
 
         # Generate template from the snapshot
         template = Template.create_from_snapshot(
@@ -1357,8 +980,8 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["server"],
                                     templateid=template.id,
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id
                                     )
         self.debug("Created VM with ID: %s from template: %s" % (
@@ -1371,8 +994,8 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
         virtual_machines = list_virtual_machines(
                                 self.apiclient,
                                 id=new_virtual_machine.id,
-                                account=self.account.account.name,
-                                domainid=self.account.account.domainid
+                                account=self.account.name,
+                                domainid=self.account.domainid
                                 )
         self.assertEqual(
                             isinstance(virtual_machines, list),
@@ -1390,982 +1013,7 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                         'Running',
                         "Check list VM response for Running state"
                     )
-        # Get the Secondary Storage details from  list Hosts
-        hosts = list_hosts(
-                                 self.apiclient,
-                                 type='SecondaryStorage',
-                                 zoneid=self.zone.id
-                                 )
-        self.assertEqual(
-                            isinstance(hosts, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        uuids = []
-        for host in hosts:
-            # hosts[0].name = "nfs://192.168.100.21/export/test"
-            parse_url = (host.name).split('/')
-            # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
-
-            # Stripping end ':' from storage type
-            storage_type = parse_url[0][:-1]
-            # Split IP address and export path from name
-            sec_storage_ip = parse_url[2]
-            # Sec Storage IP: 192.168.100.21
-            if sec_storage_ip[-1] != ":":
-                sec_storage_ip = sec_storage_ip + ":"
-
-            export_path = '/'.join(parse_url[3:])
-            # Export path: export/test
-
-            # Sleep to ensure that snapshot is reflected in sec storage
-            time.sleep(self.services["sleep"])
-            try:
-                # Login to VM to check snapshot present on sec disk
-                ssh_client = remoteSSHClient(
-                                    self.services["mgmt_server"]["ipaddress"],
-                                    self.services["mgmt_server"]["port"],
-                                    self.services["mgmt_server"]["username"],
-                                    self.services["mgmt_server"]["password"],
-                                    )
-
-                cmds = [
-                    "mkdir -p %s" % self.services["mount_dir"],
-                    "mount -t %s %s/%s %s" % (
-                                         storage_type,
-                                         sec_storage_ip,
-                                         export_path,
-                                         self.services["mount_dir"]
-                                         ),
-                    "ls %s/snapshots/%s/%s" % (
-                                               self.services["mount_dir"],
-                                               account_id,
-                                               volume_id
-                                               ),
-                ]
-                for c in cmds:
-                    self.debug("command: %s" % c)
-                    result = ssh_client.execute(c)
-                    self.debug("Result: %s" % result)
-
-            except Exception as e:
-                self.fail("SSH failed for Management server: %s - %s" %
-                                (self.services["mgmt_server"]["ipaddress"], e))
-            uuids.append(result)
-            # Unmount the Sec Storage
-            cmds = [
-                    "umount %s" % (self.services["mount_dir"]),
-                    ]
-            try:
-                for c in cmds:
-                    self.debug("command: %s" % c)
-                    result = ssh_client.execute(c)
-                    self.debug("Result: %s" % result)
-
-            except Exception as e:
-                self.fail("SSH failed for Management server: %s - %s" %
-                                (self.services["mgmt_server"]["ipaddress"], e))
-
-        res = str(uuids)
-        self.assertEqual(
-                        res.count(snapshot_uuid),
-                        1,
-                        "Check snapshot UUID in secondary storage and database"
-                        )
-
-        return
-
-
-class TestAccountSnapshotClean(cloudstackTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.api_client = super(TestAccountSnapshotClean, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
-        # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-
-        template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
-        cls.services["server"]["zoneid"] = cls.zone.id
-
-        cls.services["template"] = template.id
-
-        # Create VMs, NAT Rules etc
-        cls.account = Account.create(
-                            cls.api_client,
-                            cls.services["account"],
-                            domainid=cls.domain.id
-                            )
-
-        cls.services["account"] = cls.account.account.name
-
-        cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
-        cls.virtual_machine = VirtualMachine.create(
-                                cls.api_client,
-                                cls.services["server"],
-                                templateid=template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
-                                serviceofferingid=cls.service_offering.id
-                                )
-        # Get the Root disk of VM
-        volumes = list_volumes(
-                            cls.api_client,
-                            virtualmachineid=cls.virtual_machine.id,
-                            type='ROOT',
-                            listall=True
-                            )
-        volume = volumes[0]
-
-        # Create a snapshot from the ROOTDISK
-        cls.snapshot = Snapshot.create(cls.api_client, volumes[0].id)
-
-        cls._cleanup = [
-                        cls.service_offering,
-                        ]
-        return
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-        self.dbclient = self.testClient.getDbConnection()
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            #Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns"])
-    def test_02_accountSnapshotClean(self):
-        """Test snapshot cleanup after account deletion
-        """
-        # Validate the following
-        # 1. listAccounts API should list out the newly created account
-        # 2. listVirtualMachines() command should return the deployed VM.
-        #    State of this VM should be "Running"
-        # 3. a)listSnapshots should list the snapshot that was created.
-        #    b)verify that secondary storage NFS share contains the reqd volume
-        #      under /secondary/snapshots/$accountid/$volumeid/$snapshot_uuid
-        # 4. a)listAccounts should not list account that is deleted
-        #    b) snapshot image($snapshot_uuid) should be deleted from the
-        #       /secondary/snapshots/$accountid/$volumeid/
-
-        accounts = list_accounts(
-                                 self.apiclient,
-                                 id=self.account.account.id
-                                 )
-        self.assertEqual(
-                            isinstance(accounts, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        self.assertNotEqual(
-                             len(accounts),
-                             0,
-                             "Check list Accounts response"
-                             )
-
-        # VM should be in 'Running' state
-        virtual_machines = list_virtual_machines(
-                                self.apiclient,
-                                id=self.virtual_machine.id
-                                )
-        self.assertEqual(
-                            isinstance(virtual_machines, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        self.assertNotEqual(
-                             len(virtual_machines),
-                             0,
-                             "Check list virtual machines response"
-                             )
-        for virtual_machine in virtual_machines:
-            self.debug("VM ID: %s, VM state: %s" % (
-                                            virtual_machine.id,
-                                            virtual_machine.state
-                                            ))
-            self.assertEqual(
-                        virtual_machine.state,
-                        'Running',
-                        "Check list VM response for Running state"
-                    )
-
-        # Verify the snapshot was created or not
-        snapshots = list_snapshots(
-                                   self.apiclient,
-                                   id=self.snapshot.id
-                                   )
-        self.assertEqual(
-                            isinstance(snapshots, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        self.assertNotEqual(
-                            snapshots,
-                            None,
-                            "Check if result exists in list snapshots call"
-                            )
-        self.assertEqual(
-                            snapshots[0].id,
-                            self.snapshot.id,
-                            "Check snapshot id in list resources call"
-                        )
-
-        # Fetch values from database
-        qresultset = self.dbclient.execute(
-                        "select backup_snap_id, account_id, volume_id from snapshots where uuid = '%s';" \
-                        % self.snapshot.id
-                        )
-        self.assertEqual(
-                            isinstance(qresultset, list),
-                            True,
-                            "Check DB response returns a valid list"
-                        )
-        self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
-
-        qresult = qresultset[0]
-        snapshot_uuid = qresult[0]      # backup_snap_id = snapshot UUID
-        account_id = qresult[1]
-        volume_id = qresult[2]
-
-        # Get the Secondary Storage details from  list Hosts
-        hosts = list_hosts(
-                                 self.apiclient,
-                                 type='SecondaryStorage',
-                                 zoneid=self.zone.id
-                            )
-        self.assertEqual(
-                            isinstance(hosts, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        uuids = []
-        for host in hosts:
-            # hosts[0].name = "nfs://192.168.100.21/export/test"
-            parse_url = (host.name).split('/')
-            # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
-
-            # Stripping end ':' from storage type
-            storage_type = parse_url[0][:-1]
-            # Split IP address and export path from name
-            sec_storage_ip = parse_url[2]
-            # Sec Storage IP: 192.168.100.21
-
-            if sec_storage_ip[-1] != ":":
-                sec_storage_ip = sec_storage_ip + ":"
-
-            export_path = '/'.join(parse_url[3:])
-            # Export path: export/test
-
-            # Sleep to ensure that snapshot is reflected in sec storage
-            time.sleep(self.services["sleep"])
-            try:
-                # Login to Secondary storage VM to check snapshot present on sec disk
-                ssh_client = remoteSSHClient(
-                                    self.services["mgmt_server"]["ipaddress"],
-                                    self.services["mgmt_server"]["port"],
-                                    self.services["mgmt_server"]["username"],
-                                    self.services["mgmt_server"]["password"],
-                                    )
-
-                cmds = [
-                    "mkdir -p %s" % self.services["mount_dir"],
-                    "mount -t %s %s/%s %s" % (
-                                         storage_type,
-                                         sec_storage_ip,
-                                         export_path,
-                                         self.services["mount_dir"]
-                                         ),
-                    "ls %s/snapshots/%s/%s" % (
-                                               self.services["mount_dir"],
-                                               account_id,
-                                               volume_id
-                                               ),
-                ]
-
-                for c in cmds:
-                    self.debug("command: %s" % c)
-                    result = ssh_client.execute(c)
-                    self.debug("Result: %s" % result)
-
-                uuids.append(result)
-
-                # Unmount the Sec Storage
-                cmds = [
-                    "umount %s" % (self.services["mount_dir"]),
-                    ]
-                for c in cmds:
-                    result = ssh_client.execute(c)
-            except Exception as e:
-                self.fail("SSH failed for management server: %s - %s" %
-                                (self.services["mgmt_server"]["ipaddress"], e))
-
-        res = str(uuids)
-        self.assertEqual(
-                        res.count(snapshot_uuid),
-                        1,
-                        "Check snapshot UUID in secondary storage and database"
-                        )
-
-        self.debug("Deleting account: %s" % self.account.account.name)
-        # Delete account
-        self.account.delete(self.apiclient)
-
-        interval = list_configurations(
-                                    self.apiclient,
-                                    name='account.cleanup.interval'
-                                    )
-        self.assertEqual(
-                            isinstance(interval, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        self.debug("account.cleanup.interval: %s" % interval[0].value)
-
-        # Wait for account cleanup interval
-        time.sleep(int(interval[0].value) * 2)
-
-        accounts = list_accounts(
-                                 self.apiclient,
-                                 id=self.account.account.id
-                                 )
-
-        self.assertEqual(
-            accounts,
-            None,
-            "List accounts should return empty list after account deletion"
-            )
-
-        uuids = []
-        for host in hosts:
-            # hosts[0].name = "nfs://192.168.100.21/export/test"
-            parse_url = (host.name).split('/')
-            # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
-
-            # Stripping end ':' from storage type
-            storage_type = parse_url[0][:-1]
-            # Split IP address and export path from name
-            sec_storage_ip = parse_url[2]
-            # Sec Storage IP: 192.168.100.21
-
-            if sec_storage_ip[-1] != ":":
-                sec_storage_ip = sec_storage_ip + ":"
-
-            export_path = '/'.join(parse_url[3:])
-            # Export path: export/test
-
-            try:
-                cmds = [
-                        "mount -t %s %s/%s %s" % (
-                                         storage_type,
-                                         sec_storage_ip,
-                                         export_path,
-                                         self.services["mount_dir"]
-                                         ),
-                        "ls %s/snapshots/%s/%s" % (
-                                               self.services["mount_dir"],
-                                               account_id,
-                                               volume_id
-                                               ),
-                        ]
-
-                for c in cmds:
-                    self.debug("command: %s" % c)
-                    result = ssh_client.execute(c)
-                    self.debug("Result: %s" % result)
-
-                uuids.append(result)
-                # Unmount the Sec Storage
-                cmds = [
-                    "umount %s" % (self.services["mount_dir"]),
-                    ]
-                for c in cmds:
-                    self.debug("command: %s" % c)
-                    result = ssh_client.execute(c)
-                    self.debug("Result: %s" % result)
-
-            except Exception as e:
-                self.fail("SSH failed for management server: %s - %s" %
-                                (self.services["mgmt_server"]["ipaddress"], e))
-
-        res = str(uuids)
-        self.assertNotEqual(
-                        res.count(snapshot_uuid),
-                        1,
-                        "Check snapshot UUID in secondary storage and database"
-                        )
-        return
-
-
-class TestSnapshotDetachedDisk(cloudstackTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.api_client = super(TestSnapshotDetachedDisk, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
-        # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-
-        cls.disk_offering = DiskOffering.create(
-                                    cls.api_client,
-                                    cls.services["disk_offering"]
-                                    )
-        template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
-        cls.services["server"]["zoneid"] = cls.zone.id
-        cls.services["server"]["diskoffering"] = cls.disk_offering.id
-
-        cls.services["template"] = template.id
-
-        # Create VMs, NAT Rules etc
-        cls.account = Account.create(
-                            cls.api_client,
-                            cls.services["account"],
-                            domainid=cls.domain.id
-                            )
-
-        cls.services["account"] = cls.account.account.name
-
-        cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
-        cls.virtual_machine = VirtualMachine.create(
-                                cls.api_client,
-                                cls.services["server"],
-                                templateid=template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
-                                serviceofferingid=cls.service_offering.id,
-                                mode=cls.services["mode"]
-                                )
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.disk_offering,
-                        cls.account,
-                        ]
-        return
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-        self.dbclient = self.testClient.getDbConnection()
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            #Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "xen"])
-    def test_03_snapshot_detachedDisk(self):
-        """Test snapshot from detached disk
-        """
-        # Validate the following
-        # 1. login in VM  and write some data on data disk(use fdisk to
-        #    partition datadisk,fdisk /dev/sdb, and make filesystem using
-        #    mkfs.ext3)
-        # 2. Detach the data disk and write some data on data disk
-        # 3. perform the snapshot on the detached volume
-        # 4. listvolumes with VM id shouldn't show the detached volume
-        # 5. listSnapshots should list the snapshot that was created
-        # 6. verify that secondary storage NFS share contains the reqd volume
-        #    under /secondary/snapshots/$accountid/$volumeid/$snapshot_uuid
-        # 7. verify backup_snap_id was non null in the `snapshots` table
-
-        volumes = list_volumes(
-                               self.apiclient,
-                               virtualmachineid=self.virtual_machine.id,
-                               type='DATADISK',
-                               listall=True
-                               )
-        self.assertEqual(
-                            isinstance(volumes, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        volume = volumes[0]
-        random_data_0 = random_gen(100)
-        random_data_1 = random_gen(100)
-        try:
-            ssh_client = self.virtual_machine.get_ssh_client()
-
-            #Format partition using ext3
-            format_volume_to_ext3(
-                              ssh_client,
-                              self.services["diskdevice"]
-                              )
-            cmds = [
-                    "mkdir -p %s" % self.services["mount_dir"],
-                    "mount %s1 %s" % (
-                                      self.services["diskdevice"],
-                                      self.services["mount_dir"]
-                                      ),
-                    "pushd %s" % self.services["mount_dir"],
-                    "mkdir -p %s/{%s,%s} " % (
-                                                self.services["sub_dir"],
-                                                self.services["sub_lvl_dir1"],
-                                                self.services["sub_lvl_dir2"]
-                                            ),
-                    "echo %s > %s/%s/%s" % (
-                                               random_data_0,
-                                                self.services["sub_dir"],
-                                                self.services["sub_lvl_dir1"],
-                                                self.services["random_data"]
-                                            ),
-                    "echo %s > %s/%s/%s" % (
-                                                random_data_1,
-                                                self.services["sub_dir"],
-                                                self.services["sub_lvl_dir2"],
-                                                self.services["random_data"]
-                                            ),
-                    "sync",
-                ]
-            for c in cmds:
-                self.debug(ssh_client.execute(c))
-
-            #detach volume from VM
-            cmd = detachVolume.detachVolumeCmd()
-            cmd.id = volume.id
-            self.apiclient.detachVolume(cmd)
-
-            #Create snapshot from detached volume
-            snapshot = Snapshot.create(self.apiclient, volume.id)
-            self.cleanup.append(snapshot)
-
-            volumes = list_volumes(
-                               self.apiclient,
-                               virtualmachineid=self.virtual_machine.id,
-                               type='DATADISK',
-                               listall=True
-                               )
-
-            self.assertEqual(
-                            volumes,
-                            None,
-                            "Check Volume is detached"
-                      )
-
-            # Verify the snapshot was created or not
-            snapshots = list_snapshots(
-                                   self.apiclient,
-                                   id=snapshot.id
-                                   )
-            self.assertNotEqual(
-                            snapshots,
-                            None,
-                            "Check if result exists in list snapshots call"
-                            )
-            self.assertEqual(
-                            snapshots[0].id,
-                            snapshot.id,
-                            "Check snapshot id in list resources call"
-                        )
-        except Exception as e:
-            self.fail("SSH failed for VM with IP: %s - %s" %
-                                (self.virtual_machine.ipaddress, e))
-
-        # Fetch values from database
-        qresultset = self.dbclient.execute(
-                        "select backup_snap_id, account_id, volume_id from snapshots where uuid = '%s';" \
-                        % snapshot.id
-                        )
-        self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
-
-        qresult = qresultset[0]
-        snapshot_uuid = qresult[0]      # backup_snap_id = snapshot UUID
-        account_id = qresult[1]
-        volume_id = qresult[2]
-
-        self.assertNotEqual(
-                            str(qresult[0]),
-                            'NULL',
-                            "Check if backup_snap_id is not null"
-                        )
-
-        # Get the Secondary Storage details from  list Hosts
-        hosts = list_hosts(
-                                 self.apiclient,
-                                 type='SecondaryStorage',
-                                 zoneid=self.zone.id
-                                 )
-        self.assertEqual(
-                            isinstance(hosts, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        uuids = []
-        for host in hosts:
-            # hosts[0].name = "nfs://192.168.100.21/export/test"
-            parse_url = (host.name).split('/')
-            # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
-
-            # Stripping end ':' from storage type
-            storage_type = parse_url[0][:-1]
-
-            # Split IP address and export path from name
-            sec_storage_ip = parse_url[2]
-            # Sec Storage IP: 192.168.100.21
-
-            if sec_storage_ip[-1] != ":":
-                sec_storage_ip = sec_storage_ip + ":"
-
-            export_path = '/'.join(parse_url[3:])
-            # Export path: export/test
-
-            # Sleep to ensure that snapshot is reflected in sec storage
-            time.sleep(self.services["sleep"])
-            try:
-                # Login to Management server to check snapshot present on
-                # sec disk
-                ssh_client = remoteSSHClient(
-                                    self.services["mgmt_server"]["ipaddress"],
-                                    self.services["mgmt_server"]["port"],
-                                    self.services["mgmt_server"]["username"],
-                                    self.services["mgmt_server"]["password"],
-                                    )
-
-                cmds = [
-                    "mkdir -p %s" % self.services["mount_dir"],
-                    "mount -t %s %s/%s %s" % (
-                                         storage_type,
-                                         sec_storage_ip,
-                                         export_path,
-                                         self.services["mount_dir"]
-                                         ),
-                    "ls %s/snapshots/%s/%s" % (
-                                               self.services["mount_dir"],
-                                               account_id,
-                                               volume_id
-                                               ),
-                        ]
-
-                for c in cmds:
-                    result = ssh_client.execute(c)
-
-                uuids.append(result)
-                # Unmount the Sec Storage
-                cmds = [
-                        "umount %s" % (self.services["mount_dir"]),
-                        ]
-                for c in cmds:
-                    result = ssh_client.execute(c)
-            except Exception as e:
-                self.fail("SSH failed for management server: %s - %s" %
-                                (self.services["mgmt_server"]["ipaddress"], e))
-
-        res = str(uuids)
-        self.assertEqual(
-                        res.count(snapshot_uuid),
-                        1,
-                        "Check snapshot UUID in secondary storage and database"
-                        )
-        return
-
-
-class TestSnapshotLimit(cloudstackTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.api_client = super(TestSnapshotLimit, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
-        # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
-
-        template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
-        cls.services["server"]["zoneid"] = cls.zone.id
-
-        cls.services["template"] = template.id
-
-        # Create VMs, NAT Rules etc
-        cls.account = Account.create(
-                            cls.api_client,
-                            cls.services["account"],
-                            domainid=cls.domain.id
-                            )
-
-        cls.services["account"] = cls.account.account.name
-
-        cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
-        cls.virtual_machine = VirtualMachine.create(
-                                cls.api_client,
-                                cls.services["server"],
-                                templateid=template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
-                                serviceofferingid=cls.service_offering.id
-                                )
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.account,
-                        ]
-        return
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-        self.dbclient = self.testClient.getDbConnection()
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            #Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns"])
-    def test_04_snapshot_limit(self):
-        """Test snapshot limit in snapshot policies
-        """
-        # Validate the following
-        # 1. Perform hourly recurring snapshot on the root disk of VM and keep
-        #    the maxsnapshots as 1
-        # 2. listSnapshots should list the snapshot that was created
-        #    snapshot folder in secondary storage should contain only one
-        #    snapshot image(/secondary/snapshots/$accountid/$volumeid/)
-
-        # Get the Root disk of VM
-        volumes = list_volumes(
-                            self.apiclient,
-                            virtualmachineid=self.virtual_machine.id,
-                            type='ROOT',
-                            listall=True
-                            )
-        self.assertEqual(
-                            isinstance(volumes, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        volume = volumes[0]
-
-        # Create a snapshot policy
-        recurring_snapshot = SnapshotPolicy.create(
-                                           self.apiclient,
-                                           volume.id,
-                                           self.services["recurring_snapshot"]
-                                        )
-        self.cleanup.append(recurring_snapshot)
-
-        snapshot_policy = list_snapshot_policy(
-                                        self.apiclient,
-                                        id=recurring_snapshot.id,
-                                        volumeid=volume.id
-                                        )
-        self.assertEqual(
-                            isinstance(snapshot_policy, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-
-        self.assertNotEqual(
-                            snapshot_policy,
-                            None,
-                            "Check if result exists in list item call"
-                            )
-
-        self.assertEqual(
-                        snapshot_policy[0].id,
-                        recurring_snapshot.id,
-                        "Check recurring snapshot id in list resources call"
-                        )
-        self.assertEqual(
-                        snapshot_policy[0].maxsnaps,
-                        self.services["recurring_snapshot"]["maxsnaps"],
-                        "Check interval type in list resources call"
-                        )
-        # Sleep for (maxsnaps+1) hours to verify
-        # only maxsnaps snapshots are retained
-        time.sleep(
-            (self.services["recurring_snapshot"]["maxsnaps"]) * 3600
-            )
-
-        # Verify the snapshot was created or not
-        snapshots = list_snapshots(
-                        self.apiclient,
-                        volumeid=volume.id,
-                        intervaltype=\
-                        self.services["recurring_snapshot"]["intervaltype"],
-                        snapshottype='RECURRING',
-                        listall=True
-                        )
-
-        self.assertEqual(
-                            isinstance(snapshots, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        self.assertEqual(
-                         len(snapshots),
-                         self.services["recurring_snapshot"]["maxsnaps"],
-                         "Check maximum number of recurring snapshots retained"
-                        )
-        snapshot = snapshots[0]
-        # Sleep to ensure that snapshot is reflected in sec storage
-        time.sleep(self.services["sleep"])
-
-        # Fetch values from database
-        qresultset = self.dbclient.execute(
-                        "select backup_snap_id, account_id, volume_id from snapshots where uuid = '%s';" \
-                        % snapshot.id
-                        )
-        self.assertEqual(
-                            isinstance(qresultset, list),
-                            True,
-                            "Check DBQuery returns a valid list"
-                        )
-        self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
-
-        qresult = qresultset[0]
-        snapshot_uuid = qresult[0]      # backup_snap_id = snapshot UUID
-        account_id = qresult[1]
-        volume_id = qresult[2]
-
-        # Get the Secondary Storage details from  list Hosts
-        hosts = list_hosts(
-                                 self.apiclient,
-                                 type='SecondaryStorage',
-                                 zoneid=self.zone.id
-                                 )
-        self.assertEqual(
-                            isinstance(hosts, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        uuids = []
-        for host in hosts:
-            # hosts[0].name = "nfs://192.168.100.21/export/test"
-            parse_url = (host.name).split('/')
-            # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
-
-            # Stripping end ':' from storage type
-            storage_type = parse_url[0][:-1]
-            # Split IP address and export path from name
-            sec_storage_ip = parse_url[2]
-            # Sec Storage IP: 192.168.100.21
-
-            if sec_storage_ip[-1] != ":":
-                sec_storage_ip = sec_storage_ip + ":"
-
-            export_path = '/'.join(parse_url[3:])
-            # Export path: export/test
-            try:
-                # Login to VM to check snapshot present on sec disk
-                ssh_client = remoteSSHClient(
-                                    self.services["mgmt_server"]["ipaddress"],
-                                    self.services["mgmt_server"]["port"],
-                                    self.services["mgmt_server"]["username"],
-                                    self.services["mgmt_server"]["password"],
-                                    )
-
-                cmds = [
-                    "mkdir -p %s" % self.services["mount_dir"],
-                    "mount -t %s %s/%s %s" % (
-                                         storage_type,
-                                         sec_storage_ip,
-                                         export_path,
-                                         self.services["mount_dir"]
-                                         ),
-                    "ls %s/snapshots/%s/%s" % (
-                                               self.services["mount_dir"],
-                                               account_id,
-                                               volume_id
-                                               ),
-                ]
-
-                for c in cmds:
-                    result = ssh_client.execute(c)
-
-                uuids.append(result)
-
-                # Unmount the Sec Storage
-                cmds = [
-                    "umount %s" % (self.services["mount_dir"]),
-                    ]
-                for c in cmds:
-                    result = ssh_client.execute(c)
-            except Exception as e:
-                raise Exception(
-                        "SSH access failed for management server: %s - %s" %
-                                    (self.services["mgmt_server"]["ipaddress"], e))
-
-        res = str(uuids)
-        self.assertEqual(
-                        res.count(snapshot_uuid),
-                        1,
-                        "Check snapshot UUID in secondary storage and database"
-                        )
+        self.assertTrue(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config, self.zone.id, snapshot_uuid))
         return
 
 
@@ -2378,6 +1026,7 @@ class TestSnapshotEvents(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
                             cls.api_client,
@@ -2395,7 +1044,7 @@ class TestSnapshotEvents(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -2405,8 +1054,8 @@ class TestSnapshotEvents(cloudstackTestCase):
                                 cls.api_client,
                                 cls.services["server"],
                                 templateid=template.id,
-                                accountid=cls.account.account.name,
-                                domainid=cls.account.account.domainid,
+                                accountid=cls.account.name,
+                                domainid=cls.account.domainid,
                                 serviceofferingid=cls.service_offering.id
                                 )
 
@@ -2492,8 +1141,8 @@ class TestSnapshotEvents(cloudstackTestCase):
         time.sleep(self.services["sleep"])
         events = list_events(
                              self.apiclient,
-                             account=self.account.account.name,
-                             domainid=self.account.account.domainid,
+                             account=self.account.name,
+                             domainid=self.account.domainid,
                              type='SNAPSHOT.DELETE'
                              )
         self.assertEqual(

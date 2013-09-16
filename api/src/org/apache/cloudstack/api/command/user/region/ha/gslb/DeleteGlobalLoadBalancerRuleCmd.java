@@ -17,15 +17,16 @@
 
 package org.apache.cloudstack.api.command.user.region.ha.gslb;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
+
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -77,23 +78,29 @@ public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_LOAD_BALANCER_DELETE;
+        return EventTypes.EVENT_GLOBAL_LOAD_BALANCER_DELETE;
     }
 
     @Override
     public String getEventDescription() {
-        return  "deleting global load balancer: " + getGlobalLoadBalancerId();
+        return  "deleting global load balancer rule: " + getGlobalLoadBalancerId();
     }
 
     @Override
     public void execute(){
-        _gslbService.deleteGlobalLoadBalancerRule(this);
-        UserContext.current().setEventDetails("Deleting global Load balancer Id: " + getGlobalLoadBalancerId());
+        CallContext.current().setEventDetails("Deleting global Load balancer rule Id: " + getGlobalLoadBalancerId());
+        boolean result = _gslbService.deleteGlobalLoadBalancerRule(this);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Global Load Balancer rule.");
+        }
     }
 
     @Override
     public String getSyncObjType() {
-        return BaseAsyncCmd.networkSyncObject;
+        return BaseAsyncCmd.gslbSyncObject;
     }
 
     @Override
@@ -102,7 +109,7 @@ public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.GlobalLoadBalancerRule;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.GlobalLoadBalancerRule;
     }
 }

@@ -24,5 +24,5 @@
 
 <section id="change-database-config">
     <title>Changing the Database Configuration</title>
-    <para>The &PRODUCT; Management Server stores database configuration information (e.g., hostname, port, credentials) in the file <filename>/etc/cloud/management/db.properties</filename>. To effect a change, edit this file on each Management Server, then restart the Management Server.</para> 
+    <para>The &PRODUCT; Management Server stores database configuration information (e.g., hostname, port, credentials) in the file <filename>/etc/cloudstack/management/db.properties</filename>. To effect a change, edit this file on each Management Server, then restart the Management Server.</para> 
 </section>

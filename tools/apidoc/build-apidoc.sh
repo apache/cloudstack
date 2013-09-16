@@ -19,7 +19,7 @@
 
 # cloud-build-api-doc.sh -- builds api documentation.
 #set -x
-set -u
+#set -u
 TARGETJARDIR="$1"
 shift
 DEPSDIR="$1"
@@ -47,16 +47,7 @@ fi
 
 CP=$PATHSEP/
 
-for file in $TARGETJARDIR/*.jar
-do
-  CP=${CP}$PATHSEP$file
-done
-
-for file in $DEPSDIR/*.jar; do
-  CP=${CP}$PATHSEP$file
-done
-
-java -cp $CP com.cloud.api.doc.ApiXmlDocWriter -d "$DISTDIR" $*
+java -cp $CP$PATHSEP$TARGETJARDIR/*$PATHSEP$DEPSDIR/* com.cloud.api.doc.ApiXmlDocWriter -d "$DISTDIR" $*
 
 if [ $? -ne 0 ]
 then

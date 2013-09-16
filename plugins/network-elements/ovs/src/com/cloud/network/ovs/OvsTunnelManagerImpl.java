@@ -30,12 +30,13 @@ import javax.persistence.EntityExistsException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
@@ -44,6 +45,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
@@ -239,9 +241,12 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 		int key = 0;
 		try {
 			//The GRE key is actually in the host part of the URI
-			String keyStr = network.getBroadcastUri().getHost();
-    		// The key is most certainly and int.
-    		// So we feel quite safe in converting it into a string			
+            // this is not true for lswitch/NiciraNvp!
+            String keyStr = BroadcastDomainType.getValue(network.getBroadcastUri());
+		// The key is most certainly and int if network is a vlan.
+            // !! not in the case of lswitch/pvlan/(possibly)vswitch
+            // So we now feel quite safe in converting it into a string
+            // by calling the appropriate BroadcastDomainType method
     		key = Integer.valueOf(keyStr);
     		return key;
 		} catch (NumberFormatException e) {
@@ -383,7 +388,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 
     @Override
     public void VmCheckAndCreateTunnel(
-    		VirtualMachineProfile<? extends VirtualMachine> vm,
+    		VirtualMachineProfile vm,
     		Network nw, DeployDestination dest) {
         CheckAndCreateTunnel(vm.getVirtualMachine(), nw, dest);    
     }

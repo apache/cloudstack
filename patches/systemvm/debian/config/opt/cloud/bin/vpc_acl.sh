@@ -102,6 +102,7 @@ acl_entry_for_guest_network() {
   local sport=$(echo $rule | cut -d: -f3)
   local eport=$(echo $rule | cut -d: -f4)
   local cidrs=$(echo $rule | cut -d: -f5 | sed 's/-/ /g')
+  local action=$(echo $rule | cut -d: -f6)
   if [ "$sport" == "0" -a "$eport" == "0" ]
   then
       DPORT=""
@@ -123,21 +124,21 @@ acl_entry_for_guest_network() {
       if [ "$ttype" == "Ingress" ]
       then
         sudo iptables -I ACL_INBOUND_$dev -p $prot -s $lcidr  \
-                    --icmp-type $typecode  -j ACCEPT
+                    --icmp-type $typecode  -j $action
       else
         let egress++
         sudo iptables -t mangle -I ACL_OUTBOUND_$dev -p $prot -d $lcidr  \
-                    --icmp-type $typecode  -j ACCEPT
+                    --icmp-type $typecode  -j $action
       fi
     else
       if [ "$ttype" == "Ingress" ]
       then
         sudo iptables -I ACL_INBOUND_$dev -p $prot -s $lcidr \
-                    $DPORT -j ACCEPT
+                    $DPORT -j $action
       else
         let egress++
         sudo iptables -t mangle -I ACL_OUTBOUND_$dev -p $prot -d $lcidr \
-                    $DPORT -j ACCEPT
+                    $DPORT -j $action
       fi
     fi
     result=$?
@@ -195,7 +196,7 @@ fi
 # protocal:sport:eport:cidr
 #-a tcp:80:80:0.0.0.0/0::tcp:220:220:0.0.0.0/0:,172.16.92.44:tcp:222:222:192.168.10.0/24-75.57.23.0/22-88.100.33.1/32
 #    if any entry is reverted , entry will be in the format <ip>:reverted:0:0:0
-# example : 172.16.92.44:tcp:80:80:0.0.0.0/0:,172.16.92.44:tcp:220:220:0.0.0.0/0:,200.1.1.2:reverted:0:0:0 
+# example : 172.16.92.44:tcp:80:80:0.0.0.0/0:ACCEPT:,172.16.92.44:tcp:220:220:0.0.0.0/0:DROP,200.1.1.2:reverted:0:0:0
 
 success=0
 

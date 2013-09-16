@@ -24,7 +24,7 @@
 
 <section id="user-data-and-meta-data">
     <title>User Data and Meta Data</title>
-    <para>&PRODUCT; provides API access to attach user data to a deployed VM. Deployed VMs also have access to instance metadata via the virtual router.</para>
+    <para>&PRODUCT; provides API access to attach up to 32KB of user data to a deployed VM. Deployed VMs also have access to instance metadata via the virtual router.</para>
     <para>User data can be accessed once the IP address of the virtual router is known. Once the IP address is known, use the following steps to access the user data:</para>
     <orderedlist>
         <listitem><para>Run the following command to find the virtual router.</para>

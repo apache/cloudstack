@@ -321,18 +321,17 @@ def umount(localDir):
     util.SMlog("Successfully unmounted " + localDir)
     return
 
-def mountSnapshotsDir(secondaryStorageMountPath, relativeDir, dcId, accountId, instanceId, secHostId):
+def mountSnapshotsDir(secondaryStorageMountPath, localMountPointPath, path):
     # The aim is to mount secondaryStorageMountPath on 
     # And create <accountId>/<instanceId> dir on it, if it doesn't exist already.
     # Assuming that secondaryStorageMountPath  exists remotely
 
     # Just mount secondaryStorageMountPath/<relativeDir>/SecondaryStorageHost/ everytime
     # Never unmount.
+    # path is like "snapshots/account/volumeId", we mount secondary_storage:/snapshots
+    relativeDir = path.split("/")[0]
+    restDir = "/".join(path.split("/")[1:])
     snapshotsDir = os.path.join(secondaryStorageMountPath, relativeDir)
-
-    # Mkdir local mount point dir, if it doesn't exist.
-    localMountPointPath = os.path.join(CLOUD_DIR, dcId)
-    localMountPointPath = os.path.join(localMountPointPath, relativeDir, secHostId)
 
     makedirs(localMountPointPath)
     # if something is not mounted already on localMountPointPath,
@@ -346,8 +345,7 @@ def mountSnapshotsDir(secondaryStorageMountPath, relativeDir, dcId, accountId, i
         mount(snapshotsDir, localMountPointPath)
 
     # Create accountId/instanceId dir on localMountPointPath, if it doesn't exist
-    backupsDir = os.path.join(localMountPointPath, accountId)
-    backupsDir = os.path.join(backupsDir, instanceId)
+    backupsDir = os.path.join(localMountPointPath, restDir)
     makedirs(backupsDir)
     return backupsDir
 
@@ -485,16 +483,13 @@ def getVhdParent(session, args):
 def backupSnapshot(session, args):
     util.SMlog("Called backupSnapshot with " + str(args))
     primaryStorageSRUuid      = args['primaryStorageSRUuid']
-    dcId                      = args['dcId']
-    accountId                 = args['accountId']
-    volumeId                  = args['volumeId']
     secondaryStorageMountPath = args['secondaryStorageMountPath']
     snapshotUuid              = args['snapshotUuid']
     prevBackupUuid            = args['prevBackupUuid']
     backupUuid                = args['backupUuid']
     isISCSI                   = getIsTrueString(args['isISCSI'])
-    secHostId                 = args['secHostId']
-
+    path = args['path']
+    localMountPoint = args['localMountPoint']
     primarySRPath = getPrimarySRPath(primaryStorageSRUuid, isISCSI)
     util.SMlog("primarySRPath: " + primarySRPath)
 
@@ -507,9 +502,9 @@ def backupSnapshot(session, args):
     # Mount secondary storage mount path on XenServer along the path
     # /var/run/sr-mount/<dcId>/snapshots/ and create <accountId>/<volumeId> dir
     # on it.
-    backupsDir = mountSnapshotsDir(secondaryStorageMountPath, "snapshots", dcId, accountId, volumeId, secHostId)
+    backupsDir = mountSnapshotsDir(secondaryStorageMountPath, localMountPoint, path)
     util.SMlog("Backups dir " + backupsDir)
-
+    prevBackupUuid = prevBackupUuid.split("/")[-1]
     # Check existence of snapshot on primary storage
     isfile(baseCopyPath, isISCSI)
     if prevBackupUuid:
@@ -538,13 +533,12 @@ def backupSnapshot(session, args):
 @echo
 def deleteSnapshotBackup(session, args):
     util.SMlog("Calling deleteSnapshotBackup with " + str(args))
-    dcId                      = args['dcId']
-    accountId                 = args['accountId']
-    volumeId                  = args['volumeId']
     secondaryStorageMountPath = args['secondaryStorageMountPath']
     backupUUID                = args['backupUUID']
+    path = args['path']
+    localMountPoint = args['localMountPoint']
 
-    backupsDir = mountSnapshotsDir(secondaryStorageMountPath, "snapshots", dcId, accountId, volumeId)
+    backupsDir = mountSnapshotsDir(secondaryStorageMountPath, localMountPoint, path)
     # chdir to the backupsDir for convenience
     chdir(backupsDir)
 

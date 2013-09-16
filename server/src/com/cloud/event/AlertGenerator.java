@@ -31,8 +31,10 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.text.SimpleDateFormat;
 
 @Component
 public class AlertGenerator {
@@ -83,6 +85,12 @@ public class AlertGenerator {
         } else {
             eventDescription.put("podId", null);
         }
+        eventDescription.put("subject", subject);
+        eventDescription.put("body", body);
+
+        String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").format(new Date());
+        eventDescription.put("eventDateTime", eventDate);
+
         event.setDescription(eventDescription);
 
         try {

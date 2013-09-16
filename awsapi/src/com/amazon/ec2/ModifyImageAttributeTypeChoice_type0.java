@@ -19,7 +19,7 @@
  * ModifyImageAttributeTypeChoice_type0.java
  *
  * This file was auto-generated from WSDL
- * by the Apache Axis2 version: 1.5.1  Built on : Oct 19, 2009 (10:59:34 EDT)
+ * by the Apache Axis2 version: 1.5.6  Built on : Aug 30, 2011 (10:01:01 CEST)
  */
             
                 package com.amazon.ec2;
@@ -33,13 +33,13 @@
         implements org.apache.axis2.databinding.ADBBean{
         /* This type was generated from the piece of schema that had
                 name = ModifyImageAttributeTypeChoice_type0
-                Namespace URI = http://ec2.amazonaws.com/doc/2010-11-15/
+                Namespace URI = http://ec2.amazonaws.com/doc/2012-08-15/
                 Namespace Prefix = ns1
                 */
             
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
-            if(namespace.equals("http://ec2.amazonaws.com/doc/2010-11-15/")){
+            if(namespace.equals("http://ec2.amazonaws.com/doc/2012-08-15/")){
                 return "ns1";
             }
             return org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
@@ -260,7 +260,7 @@
                   if (serializeType){
                
 
-                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2010-11-15/");
+                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2012-08-15/");
                    if ((namespacePrefix != null) && (namespacePrefix.trim().length() > 0)){
                        writeAttribute("xsi","http://www.w3.org/2001/XMLSchema-instance","type",
                            namespacePrefix+":ModifyImageAttributeTypeChoice_type0",
@@ -277,19 +277,19 @@
                                             if (localLaunchPermission==null){
                                                  throw new org.apache.axis2.databinding.ADBException("launchPermission cannot be null!!");
                                             }
-                                           localLaunchPermission.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","launchPermission"),
+                                           localLaunchPermission.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","launchPermission"),
                                                factory,xmlWriter);
                                         } if (localProductCodesTracker){
                                             if (localProductCodes==null){
                                                  throw new org.apache.axis2.databinding.ADBException("productCodes cannot be null!!");
                                             }
-                                           localProductCodes.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","productCodes"),
+                                           localProductCodes.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","productCodes"),
                                                factory,xmlWriter);
                                         } if (localDescriptionTracker){
                                             if (localDescription==null){
                                                  throw new org.apache.axis2.databinding.ADBException("description cannot be null!!");
                                             }
-                                           localDescription.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","description"),
+                                           localDescription.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","description"),
                                                factory,xmlWriter);
                                         }
 
@@ -452,7 +452,7 @@
                  java.util.ArrayList attribList = new java.util.ArrayList();
 
                  if (localLaunchPermissionTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "launchPermission"));
                             
                             
@@ -461,7 +461,7 @@
                                     }
                                     elementList.add(localLaunchPermission);
                                 } if (localProductCodesTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "productCodes"));
                             
                             
@@ -470,7 +470,7 @@
                                     }
                                     elementList.add(localProductCodes);
                                 } if (localDescriptionTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/",
+                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
                                                                       "description"));
                             
                             
@@ -525,7 +525,7 @@
                 
 
                  
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","launchPermission").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","launchPermission").equals(reader.getName())){
                                 
                                                 object.setLaunchPermission(com.amazon.ec2.LaunchPermissionOperationType.Factory.parse(reader));
                                               
@@ -535,7 +535,7 @@
                                 
                                         else
                                     
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","productCodes").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","productCodes").equals(reader.getName())){
                                 
                                                 object.setProductCodes(com.amazon.ec2.ProductCodeListType.Factory.parse(reader));
                                               
@@ -545,7 +545,7 @@
                                 
                                         else
                                     
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2010-11-15/","description").equals(reader.getName())){
+                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","description").equals(reader.getName())){
                                 
                                                 object.setDescription(com.amazon.ec2.AttributeValueType.Factory.parse(reader));
                                               

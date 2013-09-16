@@ -82,22 +82,22 @@ public class TemplatePrimaryDataStoreVO implements StateObject<ObjectInDataStore
 
     @Column(name = "marked_for_gc")
     boolean markedForGC;
-    
+
     @Column(name = "state")
     @Enumerated(EnumType.STRING)
     ObjectInDataStoreStateMachine.State state;
 
-    @Column(name="update_count", updatable = true, nullable=false)
+    @Column(name = "update_count", updatable = true, nullable = false)
     protected long updatedCount;
-    
+
     public long getUpdatedCount() {
         return this.updatedCount;
     }
-    
+
     public void incrUpdatedCount() {
         this.updatedCount++;
     }
-    
+
     public void decrUpdatedCount() {
         this.updatedCount--;
     }
@@ -171,8 +171,9 @@ public class TemplatePrimaryDataStoreVO implements StateObject<ObjectInDataStore
         this.markedForGC = false;
     }
 
-    public TemplatePrimaryDataStoreVO(long poolId, long templateId, Date lastUpdated, int downloadPercent, Status downloadState, String localDownloadPath, String errorString, String jobId,
-            String installPath, long templateSize) {
+    public TemplatePrimaryDataStoreVO(long poolId, long templateId, Date lastUpdated, int downloadPercent,
+            Status downloadState, String localDownloadPath, String errorString, String jobId, String installPath,
+            long templateSize) {
         super();
         this.poolId = poolId;
         this.templateId = templateId;
@@ -244,7 +245,8 @@ public class TemplatePrimaryDataStoreVO implements StateObject<ObjectInDataStore
 
     @Override
     public String toString() {
-        return new StringBuilder("TmplPool[").append(id).append("-").append(templateId).append("-").append("poolId").append("-").append(installPath).append("]").toString();
+        return new StringBuilder("TmplPool[").append(id).append("-").append(templateId).append("-").append("poolId")
+                .append("-").append(installPath).append("]").toString();
     }
 
     @Override

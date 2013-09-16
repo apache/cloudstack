@@ -16,6 +16,10 @@
 // under the License.
 package com.cloud.agent.manager;
 
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeAnswer;
@@ -26,7 +30,6 @@ import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
@@ -39,10 +42,7 @@ import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
-import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
-import com.cloud.agent.api.storage.DownloadCommand;
-import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
@@ -72,9 +72,10 @@ public interface MockStorageManager extends Manager {
 	public GetStorageStatsAnswer GetStorageStats(GetStorageStatsCommand cmd);
 	public Answer ManageSnapshot(ManageSnapshotCommand cmd);
 	public Answer BackupSnapshot(BackupSnapshotCommand cmd, SimulatorInfo info);
-	public Answer DeleteSnapshotBackup(DeleteSnapshotBackupCommand cmd);
+	//public Answer DeleteSnapshotBackup(DeleteSnapshotBackupCommand cmd);
 	public Answer CreateVolumeFromSnapshot(CreateVolumeFromSnapshotCommand cmd);
-	public Answer DeleteTemplate(DeleteTemplateCommand cmd);
+	//public Answer DeleteTemplate(DeleteTemplateCommand cmd);
+	public Answer Delete(DeleteCommand cmd);
 	public Answer SecStorageVMSetup(SecStorageVMSetupCommand cmd);
 
 	public void preinstallTemplates(String url, long zoneId);

@@ -93,8 +93,6 @@ class Services:
                         "bootable": True,
                         "passwordenabled": True,
                         "ostype": "CentOS 5.3 (64-bit)",
-                        "mode": 'advanced',
-                        # Networking mode: Advanced, basic
                         "sleep": 30,
                         "timeout": 10,
                      }
@@ -126,6 +124,7 @@ class TestCreateTemplate(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
                                     cls.services["disk_offering"]
@@ -149,7 +148,7 @@ class TestCreateTemplate(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -160,8 +159,8 @@ class TestCreateTemplate(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                     )
@@ -236,8 +235,8 @@ class TestCreateTemplate(cloudstackTestCase):
                                 self.apiclient,
                                 self.services["template_1"],
                                 self.volume.id,
-                                account=self.account.account.name,
-                                domainid=self.account.account.domainid
+                                account=self.account.name,
+                                domainid=self.account.domainid
                                 )
         self.cleanup.append(template)
 
@@ -293,13 +292,12 @@ class TestTemplates(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         #populate second zone id for iso copy
         cmd = listZones.listZonesCmd()
-        zones = cls.api_client.listZones(cmd)
-        if not isinstance(zones, list):
+        cls.zones = cls.api_client.listZones(cmd)
+        if not isinstance(cls.zones, list):
             raise Exception("Failed to find zones.")
-        if len(zones) >= 2:
-            cls.services["destzoneid"] = zones[1].id
 
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
@@ -333,7 +331,7 @@ class TestTemplates(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.account.name
+        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -344,8 +342,8 @@ class TestTemplates(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                     )
@@ -394,15 +392,15 @@ class TestTemplates(cloudstackTestCase):
                                          cls.api_client,
                                          cls.services["template_1"],
                                          cls.volume.id,
-                                         account=cls.account.account.name,
-                                         domainid=cls.account.account.domainid
+                                         account=cls.account.name,
+                                         domainid=cls.account.domainid
                                          )
         cls.template_2 = Template.create(
                                          cls.api_client,
                                          cls.services["template_2"],
                                          cls.volume.id,
-                                         account=cls.account.account.name,
-                                         domainid=cls.account.account.domainid
+                                         account=cls.account.name,
+                                         domainid=cls.account.domainid
                                          )
         cls._cleanup = [
                         cls.service_offering,
@@ -475,8 +473,8 @@ class TestTemplates(cloudstackTestCase):
                                     templatefilter=\
                                     self.services["templatefilter"],
                                     id=self.template_1.id,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
                                     )
             if isinstance(list_template_response, list):
                 break
@@ -541,8 +539,8 @@ class TestTemplates(cloudstackTestCase):
                                     templatefilter=\
                                     self.services["templatefilter"],
                                     id=self.template_1.id,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
                                     )
         # Verify template is deleted properly using ListTemplates
         self.assertEqual(
@@ -627,8 +625,8 @@ class TestTemplates(cloudstackTestCase):
                                     self.apiclient,
                                     templatefilter='featured',
                                     id=self.template_2.id,
-                                    account=self.account.account.name,
-                                    domainid=self.account.account.domainid
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
                                     )
         self.assertEqual(
                             isinstance(list_template_response, list),
@@ -663,6 +661,11 @@ class TestTemplates(cloudstackTestCase):
         # Validate the following
         # 1. copy template should be successful and
         #    secondary storage should contain new copied template.
+
+        if len(self.zones) <= 1:
+            self.skipTest("Not enough zones available to perform copy template")
+
+        self.services["destzoneid"] = filter(lambda z: z.id != self.services["sourcezoneid"], self.zones)[0].id
 
         self.debug("Copy template from Zone: %s to %s" % (
                                             self.services["sourcezoneid"],
@@ -752,8 +755,8 @@ class TestTemplates(cloudstackTestCase):
         list_template_response = list_templates(
                                     self.apiclient,
                                     templatefilter='featured',
-                                    account=self.user.account.name,
-                                    domainid=self.user.account.domainid
+                                    account=self.user.name,
+                                    domainid=self.user.domainid
                                     )
         self.assertEqual(
                             isinstance(list_template_response, list),
@@ -784,8 +787,8 @@ class TestTemplates(cloudstackTestCase):
         list_template_response = list_templates(
                                     self.apiclient,
                                     templatefilter='featured',
-                                    account=self.user.account.name,
-                                    domainid=self.user.account.domainid
+                                    account=self.user.name,
+                                    domainid=self.user.domainid
                                     )
         self.assertEqual(
                             isinstance(list_template_response, list),

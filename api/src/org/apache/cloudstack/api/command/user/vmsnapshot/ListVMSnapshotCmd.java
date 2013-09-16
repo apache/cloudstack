@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.VMSnapshotResponse;
 
 import com.cloud.vm.snapshot.VMSnapshot;
 
-@APICommand(name="listVMSnapshot", description = "List virtual machine snapshot by conditions", responseObject = VMSnapshotResponse.class)
+@APICommand(name="listVMSnapshot", description = "List virtual machine snapshot by conditions", responseObject = VMSnapshotResponse.class, since="4.2.0")
 public class ListVMSnapshotCmd extends BaseListTaggedResourcesCmd {
 
     private static final String s_name = "listvmsnapshotresponse";

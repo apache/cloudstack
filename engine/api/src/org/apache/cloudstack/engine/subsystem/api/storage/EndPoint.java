@@ -22,7 +22,13 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 
 public interface EndPoint {
-    public long getId();
-	public Answer sendMessage(Command cmd);
-	public void sendMessageAsync(Command cmd, AsyncCompletionCallback<Answer> callback);
+    long getId();
+
+    String getHostAddr();
+
+    String getPublicAddr();
+
+    Answer sendMessage(Command cmd);
+
+    void sendMessageAsync(Command cmd, AsyncCompletionCallback<Answer> callback);
 }

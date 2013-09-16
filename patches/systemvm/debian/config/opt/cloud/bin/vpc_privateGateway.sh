@@ -91,7 +91,7 @@ fi
 
 if [ "$Dflag" == "1" ]
 then
-  remove_sat  $publicIp
+  remove_snat  $publicIp
   unlock_exit $? $lock $locked
 fi
 

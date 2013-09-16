@@ -22,7 +22,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * ComputeGuru understands everything about the hypervisor.
- * 
+ *
  */
 public interface ComputeGuru {
     String getVersion();

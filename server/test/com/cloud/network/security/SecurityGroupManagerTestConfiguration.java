@@ -19,6 +19,10 @@ package com.cloud.network.security;
 
 import java.io.IOException;
 
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
+import org.apache.cloudstack.test.utils.SpringUtils;
+
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -32,7 +36,6 @@ import org.springframework.core.type.filter.TypeFilter;
 import com.cloud.agent.AgentManager;
 import com.cloud.api.query.dao.SecurityGroupJoinDaoImpl;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
-import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.dc.dao.DataCenterDaoImpl;
 import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
@@ -46,7 +49,6 @@ import com.cloud.event.dao.UsageEventDaoImpl;
 import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.host.dao.HostDetailsDaoImpl;
 import com.cloud.host.dao.HostTagsDaoImpl;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.security.SecurityGroupManagerTestConfiguration.Library;
 import com.cloud.network.security.dao.SecurityGroupDaoImpl;
@@ -60,7 +62,6 @@ import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDaoImpl;
-import com.cloud.utils.component.SpringComponentScanUtils;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDaoImpl;
@@ -110,7 +111,7 @@ public class SecurityGroupManagerTestConfiguration {
         return Mockito.mock(NetworkModel.class);
     }
 
-    @Bean 
+    @Bean
     public AgentManager agentManager() {
         return Mockito.mock(AgentManager.class);
     }
@@ -126,8 +127,8 @@ public class SecurityGroupManagerTestConfiguration {
     }
 
     @Bean
-    public NetworkManager networkManager(){
-        return Mockito.mock(NetworkManager.class);
+    public NetworkOrchestrationService networkManager(){
+        return Mockito.mock(NetworkOrchestrationService.class);
     }
 
     @Bean
@@ -151,7 +152,7 @@ public class SecurityGroupManagerTestConfiguration {
         public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {
             mdr.getClassMetadata().getClassName();
             ComponentScan cs = SecurityGroupManagerTestConfiguration.class.getAnnotation(ComponentScan.class);
-            return SpringComponentScanUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
+            return SpringUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
         }
 
     }

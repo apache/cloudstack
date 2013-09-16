@@ -37,6 +37,7 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkSetupInfo;
@@ -46,6 +47,7 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
@@ -261,15 +263,6 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
      */
     @Override
     public List<NetworkVO> listAllNetworksInAllZonesByType(GuestType type) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkModel#getGlobalGuestDomainSuffix()
-     */
-    @Override
-    public String getGlobalGuestDomainSuffix() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -578,15 +571,6 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkModel#getDefaultNetworkDomain()
-     */
-    @Override
-    public String getDefaultNetworkDomain() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.network.NetworkModel#getNtwkOffDistinctProviders(long)
      */
     @Override
@@ -852,15 +836,53 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
 	}
 
     @Override
-    public Nic getPlaceholderNic(Network network, Long podId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public boolean isProviderEnabledInZone(long zoneId, String provider) {
         // TODO Auto-generated method stub
         return false;
     }
 
+    @Override
+    public Nic getPlaceholderNicForRouter(Network network, Long podId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public IpAddress getPublicIpAddress(String ipAddress, long zoneId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<String> getUsedIpsInNetwork(Network network) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Map<Detail, String> getNtwkOffDetails(long offId) {
+        return null;
+    }
+    
+    @Override
+    public IsolationType[] listNetworkIsolationMethods() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Nic getNicInNetworkIncludingRemoved(long vmId, long networkId) {
+        return null;
+    }
+
+    @Override
+    public boolean getExecuteInSeqNtwkElmtCmd() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean isNetworkReadyForGc(long networkId) {
+        return true;
+    }
 }

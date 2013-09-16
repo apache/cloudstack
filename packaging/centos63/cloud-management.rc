@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-# cloud-management      This shell script takes care of starting and stopping Tomcat
+# cloudstack-management      This shell script takes care of starting and stopping Tomcat
 #
 # chkconfig: - 80 20
 #
@@ -56,13 +56,13 @@ stop() {
 			let count="${count}+1"
 		done
 		if [ "$(ps --pid $pid | grep -c $pid)" -eq "0" ]; then
-			log_success_msg "Stopping cloud-management:"
+			log_success_msg "Stopping ${NAME}:"
 		else
-			log_failure_msg "Stopping cloud-management:"
+			log_failure_msg "Stopping ${NAME}:"
 		fi
 	else
-		echo "Cannot find PID file of Cloud-management"
-		log_failure_msg "Stopping cloud-management:"
+		echo "Cannot find PID file of ${NAME}"
+		log_failure_msg "Stopping ${NAME}:"
 	fi
 }
 

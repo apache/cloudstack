@@ -92,7 +92,7 @@ KfEEuzcCUIxtJYTahJ1pvlFkQ8anpuxjSEDp8x/18bq3
         <para>After you save the SSH keypair file, you must create an instance by using the template that you created at <xref linkend="create-ssh-template"/>. Ensure that you use the same SSH key name that you created at <xref linkend="create-ssh-keypair"/>.</para>
         <note><para>You cannot create the instance by using the GUI at this time and associate the instance with the newly created SSH keypair.</para></note>
         <para>A sample curl command to create a new instance is:</para>
-        <programlisting>curl --globoff http://localhost:&lt;port numbet&gt;/?command=deployVirtualMachine\&amp;zoneId=1\&amp;serviceOfferingId=18727021-7556-4110-9322-d625b52e0813\&amp;templateId=e899c18a-ce13-4bbf-98a9-625c5026e0b5\&amp;securitygroupids=ff03f02f-9e3b-48f8-834d-91b822da40c5\&amp;account=admin\&amp;domainid=1\&amp;keypair=keypair-doc</programlisting>
+        <programlisting>curl --globoff http://localhost:&lt;port number&gt;/?command=deployVirtualMachine\&amp;zoneId=1\&amp;serviceOfferingId=18727021-7556-4110-9322-d625b52e0813\&amp;templateId=e899c18a-ce13-4bbf-98a9-625c5026e0b5\&amp;securitygroupids=ff03f02f-9e3b-48f8-834d-91b822da40c5\&amp;account=admin\&amp;domainid=1\&amp;keypair=keypair-doc</programlisting>
         <para>Substitute the template, service offering and security group IDs (if you are using the security group feature) that are in your cloud environment.</para>
         </section>
         <section id="logging-in-ssh">

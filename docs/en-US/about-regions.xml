@@ -44,6 +44,7 @@
     </imageobject>
     <textobject><phrase>region-overview.png: Nested structure of a region.</phrase></textobject>
   </mediaobject>
-  <para>Regions are visible to the end user. When a user starts a guest VM, the user must select a region for their guest.
-      Users might also be required to copy their private templates to additional regions to enable creation of guest VMs using their templates in those regions.</para>
+  <para>Regions are visible to the end user.  When a user starts a guest VM on a particular &PRODUCT; Management Server,
+    the user is implicitly selecting that region for their guest.
+    Users might also be required to copy their private templates to additional regions to enable creation of guest VMs using their templates in those regions.</para>
   </section>

@@ -21,18 +21,19 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 
 @APICommand(name = "listIsos", description="Lists all available ISO files.", responseObject=TemplateResponse.class)
@@ -116,7 +117,7 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
     }
 
     public boolean listInReadyState() {
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         // It is account specific if account is admin type and domainId and accountName are not null
         boolean isAccountSpecific = (account == null || isAdmin(account.getType())) && (getAccountName() != null) && (getDomainId() != null);
         // Show only those that are downloaded.
@@ -142,22 +143,13 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
         return s_name;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Iso;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Iso;
     }
 
     @Override
     public void execute(){
-        Set<Pair<Long, Long>> isoZonePairSet = _mgr.listIsos(this);
-        ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-        List<TemplateResponse> templateResponses = new ArrayList<TemplateResponse>();
-
-        for (Pair<Long, Long> iso : isoZonePairSet) {
-            List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
-            responses = _responseGenerator.createIsoResponses(iso.first(), iso.second(), listInReadyState());
-            templateResponses.addAll(responses);
-        }
-        response.setResponses(templateResponses);
+        ListResponse<TemplateResponse> response = _queryService.listIsos(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

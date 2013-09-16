@@ -13,3 +13,6 @@ do
    logger -t cloud "Stopping $svc"
    service $svc stop
 done
+
+date > /var/cache/cloud/boot_up_done
+logger -t cloud "Boot up process done"

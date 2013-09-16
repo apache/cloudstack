@@ -24,7 +24,7 @@ public class StringUtilsTest {
     @Test
     public void testCleanPasswordFromJsonObjectAtEnd() {
         String input = "{\"foo\":\"bar\",\"password\":\"test\"}";
-        //TODO: It would be nice to clean up the regex in question to not 
+        //TODO: It would be nice to clean up the regex in question to not
         //have to return the trailing comma in the expected string below
         String expected = "{\"foo\":\"bar\",}";
         String result = StringUtils.cleanString(input);
@@ -78,7 +78,7 @@ public class StringUtilsTest {
         String result = StringUtils.cleanString(input);
         assertEquals(result, expected);
     }
-    
+
     @Test
     public void testCleanPasswordFromRequestStringMatchedAtEndSingleQuote() {
         String input = "'username=foo&password=bar'";
@@ -103,4 +103,109 @@ public class StringUtilsTest {
         assertEquals(result, expected);
     }
 
+    @Test
+    public void testJoin() {
+        assertEquals("a-b-c", StringUtils.join("-", "a", "b", "c"));
+        assertEquals("", StringUtils.join("-"));
+    }
+
+    @Test
+    public void testCleanSecretkeyFromJsonObjectAtEnd() {
+        String input = "{\"foo\":\"bar\",\"secretkey\":\"test\"}";
+        // TODO: It would be nice to clean up the regex in question to not
+        // have to return the trailing comma in the expected string below
+        String expected = "{\"foo\":\"bar\",}";
+        String result = StringUtils.cleanString(input);
+        assertEquals(result, expected);
+    }
+
+    @Test
+    public void testCleanSecretkeyFromJsonObjectInMiddle() {
+        String input = "{\"foo\":\"bar\",\"secretkey\":\"test\",\"test\":\"blah\"}";
+        String expected = "{\"foo\":\"bar\",\"test\":\"blah\"}";
+        String result = StringUtils.cleanString(input);
+        assertEquals(result, expected);
+    }
+
+    @Test
+    public void testCleanSecretkeyFromJsonObjectAlone() {
+        String input = "{\"secretkey\":\"test\"}";
+        String expected = "{}";
+        String result = StringUtils.cleanString(input);
+        assertEquals(result, expected);
+    }
+
+    @Test
+    public void testCleanSecretkeyFromJsonObjectAtStart() {
+        String input = "{\"secretkey\":\"test\",\"test\":\"blah\"}";
+        String expected = "{\"test\":\"blah\"}";
+        String result = StringUtils.cleanString(input);
+        assertEquals(result, expected);
+    }
+
+    @Test
+    public void testCleanSecretkeyFromJsonObjectWithMultiplePasswords() {
+        String input = "{\"description\":\"foo\"}],\"secretkey\":\"bar\",\"nic\":[{\"secretkey\":\"bar2\",\"id\":\"1\"}]}";
+        String expected = "{\"description\":\"foo\"}],\"nic\":[{\"id\":\"1\"}]}";
+        String result = StringUtils.cleanString(input);
+        assertEquals(result, expected);
+    }
+
+    @Test
+    public void testCleanAccesskeyFromJsonObjectAtEnd() {
+        String input = "{\"foo\":\"bar\",\"accesskey\":\"test\"}";
+        // TODO: It would be nice to clean up the regex in question to not
+        // have to return the trailing comma in the expected string below
+        String expected = "{\"foo\":\"bar\",}";
+        String result = StringUtils.cleanString(input);
+        assertEquals(result, expected);
+    }
+
+    @Test
+    public void testCleanAccesskeyFromJsonObjectInMiddle() {
+        String input = "{\"foo\":\"bar\",\"accesskey\":\"test\",\"test\":\"blah\"}";
+        String expected = "{\"foo\":\"bar\",\"test\":\"blah\"}";
+        String result = StringUtils.cleanString(input);
+        assertEquals(result, expected);
+    }
+
+    @Test
+    public void testCleanAccesskeyFromJsonObjectAlone() {
+        String input = "{\"accesskey\":\"test\"}";
+        String expected = "{}";
+        String result = StringUtils.cleanString(input);
+        assertEquals(result, expected);
+    }
+
+    @Test
+    public void testCleanAccesskeyFromJsonObjectAtStart() {
+        String input = "{\"accesskey\":\"test\",\"test\":\"blah\"}";
+        String expected = "{\"test\":\"blah\"}";
+        String result = StringUtils.cleanString(input);
+        assertEquals(result, expected);
+    }
+
+    @Test
+    public void testCleanAccesskeyFromJsonObjectWithMultiplePasswords() {
+        String input = "{\"description\":\"foo\"}],\"accesskey\":\"bar\",\"nic\":[{\"accesskey\":\"bar2\",\"id\":\"1\"}]}";
+        String expected = "{\"description\":\"foo\"}],\"nic\":[{\"id\":\"1\"}]}";
+        String result = StringUtils.cleanString(input);
+        assertEquals(result, expected);
+    }
+
+    @Test
+    public void testCleanAccesskeyFromRequestString() {
+        String input = "username=foo&accesskey=bar&url=foobar";
+        String expected = "username=foo&url=foobar";
+        String result = StringUtils.cleanString(input);
+        assertEquals(result, expected);
+    }
+
+    @Test
+    public void testCleanSecretkeyFromRequestString() {
+        String input = "username=foo&secretkey=bar&url=foobar";
+        String expected = "username=foo&url=foobar";
+        String result = StringUtils.cleanString(input);
+        assertEquals(result, expected);
+    }
 }

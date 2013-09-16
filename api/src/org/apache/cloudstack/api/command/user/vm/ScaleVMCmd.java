@@ -16,18 +16,24 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import com.cloud.event.EventTypes;
 import com.cloud.exception.*;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
+
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
+import java.util.List;
 
-@APICommand(name = "scaleVirtualMachine", description="Scales the virtual machine to a new service offering.", responseObject=UserVmResponse.class)
-public class ScaleVMCmd extends BaseCmd {
+
+@APICommand(name = "scaleVirtualMachine", description="Scales the virtual machine to a new service offering.", responseObject=SuccessResponse.class)
+public class ScaleVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ScaleVMCmd.class.getName());
     private static final String s_name = "scalevirtualmachineresponse";
 
@@ -81,9 +87,18 @@ public class ScaleVMCmd extends BaseCmd {
     }
 
     @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VM_UPGRADE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "upgrading vm: " + getId() + " to service offering: " + getServiceOfferingId();
+    }
+
+    @Override
     public void execute(){
-        //UserContext.current().setEventDetails("Vm Id: "+getId());
-        UserVm result = null;
+        UserVm result;
         try {
             result = _userVmService.upgradeVirtualMachine(this);
         } catch (ResourceUnavailableException ex) {
@@ -100,7 +115,8 @@ public class ScaleVMCmd extends BaseCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
         if (result != null){
-            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
+            List<UserVmResponse> responseList = _responseGenerator.createUserVmResponse("virtualmachine", result);
+            UserVmResponse response = responseList.get(0);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {

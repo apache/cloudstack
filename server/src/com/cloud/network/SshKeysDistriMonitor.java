@@ -18,6 +18,8 @@ package com.cloud.network;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -28,10 +30,9 @@ import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.manager.Commands;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -69,7 +70,7 @@ public class SshKeysDistriMonitor implements Listener {
 	    }
 	    
 	    @Override
-	    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+	    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
 	    	if (cmd instanceof StartupRoutingCommand) {
 	    		if (((StartupRoutingCommand) cmd).getHypervisorType() == HypervisorType.KVM ||
                     ((StartupRoutingCommand) cmd).getHypervisorType() == HypervisorType.XenServer ||

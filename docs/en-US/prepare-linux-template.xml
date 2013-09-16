@@ -1,0 +1,190 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<section id="prepare-linux-template">
+	    <title>System preparation for Linux</title>
+     <para>The following steps will prepare a basic Linux installation for templating.</para>
+     
+     <orderedlist>
+     <listitem>
+         <para><emphasis role="bold">Installation</emphasis></para>
+         <para>It is good practice to name your VM something generic during installation, this will ensure components such as LVM do not appear unique to a machine. It is recommended that the name of "localhost" is used for installation.</para>
+         <warning><para>For CentOS, it is necessary to take unique identification out of the interface configuration file, for this edit /etc/sysconfig/network-scripts/ifcfg-eth0 and change the content to  the following.</para>
+         <programlisting>
+         DEVICE=eth0
+         TYPE=Ethernet
+         BOOTPROTO=dhcp
+         ONBOOT=yes
+         </programlisting>
+         </warning>
+         <para>The next steps updates the packages on the Template Master.</para>
+        <itemizedlist>
+            <listitem>
+                <para>Ubuntu</para>
+                <programlisting>
+                sudo -i
+                apt-get update
+                apt-get upgrade -y
+                apt-get install -y acpid ntp
+                reboot
+                </programlisting>
+            </listitem>
+            <listitem>
+                <para>CentOS</para>
+                <programlisting>
+                ifup eth0
+                yum update -y
+                reboot
+                </programlisting>
+            </listitem>
+         </itemizedlist>
+     </listitem>
+     <listitem>    
+         <para><emphasis role="bold">Password management</emphasis></para>
+         <note><para>If preferred, custom users (such as ones created during the Ubuntu installation) should be removed. First ensure the root user account is enabled by giving it a password and then login as root to continue.</para>
+         <programlisting>
+         sudo passwd root
+         logout
+         </programlisting>
+         <para>As root, remove any custom user accounts created during the installation process.</para>
+         <programlisting>
+         deluser myuser --remove-home
+         </programlisting>
+         </note>
+         <para>See <xref linkend="add-password-management-to-templates"/> for instructions to setup the password management script, this will allow &PRODUCT; to change your root password from the web interface.</para>
+     </listitem>
+     <listitem>    
+         <para><emphasis role="bold">Hostname Management</emphasis></para>
+         <para>CentOS configures the hostname by default on boot. Unfortunately Ubuntu does not have this functionality, for Ubuntu installations use the following steps.</para>
+         <itemizedlist>
+             <listitem>
+                 <para>Ubuntu</para>
+                 <para>The hostname of a Templated VM is set by a custom script in /etc/dhcp/dhclient-exit-hooks.d, this script first checks if the current hostname is localhost, if true, it will get the host-name, domain-name and fixed-ip from the DHCP lease file and use those values to set the hostname and append the /etc/hosts file for local hostname resolution. Once this script, or a user has changed the hostname from localhost, it will no longer adjust system files regardless of it's new hostname. The script also recreates openssh-server keys, which should have been deleted before templating (shown below). Save the following script to /etc/dhcp/dhclient-exit-hooks.d/sethostname, and adjust the permissions.
+                 </para>
+                 <programlisting>
+                 #!/bin/sh
+                 # dhclient change hostname script for Ubuntu
+                 oldhostname=$(hostname -s)
+                 if [ $oldhostname = 'localhost' ]
+                 then
+                  sleep 10 # Wait for configuration to be written to disk
+                  hostname=$(cat /var/lib/dhcp/dhclient.eth0.leases  |  awk ' /host-name/ { host = $3 }  END { printf host } ' | sed 's/[";]//g' )
+                  fqdn="$hostname.$(cat /var/lib/dhcp/dhclient.eth0.leases  |  awk ' /domain-name/ { domain = $3 }  END { printf domain } ' | sed 's/[";]//g')"
+                  ip=$(cat /var/lib/dhcp/dhclient.eth0.leases  |  awk ' /fixed-address/ { lease = $2 }  END { printf lease } ' | sed 's/[";]//g')
+                  echo "cloudstack-hostname: Hostname _localhost_ detected. Changing hostname and adding hosts."
+                  echo " Hostname: $hostname \n FQDN: $fqdn \n IP: $ip"
+                  # Update /etc/hosts
+                  awk -v i="$ip" -v f="$fqdn" -v h="$hostname" "/^127/{x=1} !/^127/ &amp;&amp; x { x=0; print i,f,h; } { print $0; }" /etc/hosts > /etc/hosts.dhcp.tmp
+                  mv /etc/hosts /etc/hosts.dhcp.bak
+                  mv /etc/hosts.dhcp.tmp /etc/hosts
+                  # Rename Host
+                  echo $hostname > /etc/hostname
+                  hostname $hostname
+                  # Recreate SSH2
+                  dpkg-reconfig openssh-server
+                 fi
+                 ### End of Script ###
+        
+                 chmod 774  /etc/dhcp/dhclient-exit-hooks.d/sethostname
+                 </programlisting>
+             </listitem>
+         </itemizedlist>
+         
+        <warning><para>The following steps should be run when you are ready to template your Template Master. If the Template Master is rebooted during these steps you will have to run all the steps again. At the end of this process the Template Master should be shutdown and the template created in order to create and deploy the final template.</para></warning>
+     </listitem>
+     <listitem>      
+        <para><emphasis role="bold">Remove the udev persistent device rules</emphasis></para>
+        <para>This step removes information unique to your Template Master such as network MAC addresses, lease files and CD block devices, the files are automatically generated on next boot.</para>
+            <itemizedlist>
+            <listitem>
+                <para>Ubuntu</para>
+                <programlisting>
+                rm -f /etc/udev/rules.d/70*
+                rm -f /var/lib/dhcp/dhclient.*
+                </programlisting>
+            </listitem>
+            <listitem>
+                <para>CentOS</para>
+                <programlisting>
+                rm -f /etc/udev/rules.d/70*
+                rm -f /var/lib/dhclient/*
+                </programlisting>
+            </listitem>
+         </itemizedlist>
+     </listitem>
+     <listitem>
+         <para><emphasis role="bold">Remove SSH Keys</emphasis></para>
+         <para>This step is to ensure all your Templated VMs do not have the same SSH keys, which would decrease the security of the machines dramatically.</para>
+         <programlisting>
+         rm -f /etc/ssh/*key*
+         </programlisting>
+     </listitem>
+     <listitem>   
+         <para><emphasis role="bold">Cleaning log files</emphasis></para>
+         <para>It is good practice to remove old logs from the Template Master.</para>
+         <programlisting>
+         cat /dev/null > /var/log/audit/audit.log 2>/dev/null
+         cat /dev/null > /var/log/wtmp 2>/dev/null
+         logrotate -f /etc/logrotate.conf 2>/dev/null
+         rm -f /var/log/*-* /var/log/*.gz 2>/dev/null
+         </programlisting>
+     </listitem>
+     <listitem>   
+         <para><emphasis role="bold">Setting hostname</emphasis></para>
+         <para>In order for the Ubuntu DHCP script to function and the CentOS dhclient to set the VM hostname they both require the Template Master's hostname to be "localhost", run the following commands to change the hostname.</para>
+         <programlisting>
+         hostname localhost
+         echo "localhost" > /etc/hostname
+         </programlisting>
+     </listitem>
+     <listitem>    
+         <para><emphasis role="bold">Set user password to expire</emphasis></para>
+         <para>This step forces the user to change the password of the VM after the template has been deployed.</para>
+         <programlisting>
+         passwd --expire root
+         </programlisting>
+     </listitem>
+     <listitem>    
+         <para><emphasis role="bold">Clearing User History</emphasis></para>
+         <para>The next step clears the bash commands you have just run.</para>
+         <programlisting>
+         history -c
+         unset HISTFILE
+         </programlisting>
+      </listitem>
+      <listitem>   
+         <para><emphasis role="bold">Shutdown the VM</emphasis></para>
+         <para>Your now ready to shutdown your Template Master and create a template!</para>
+         <programlisting>
+         halt -p
+         </programlisting>
+      </listitem>
+      <listitem>
+          <para><emphasis role="bold">Create the template!</emphasis></para>
+          <para>You are now ready to create the template, for more information see <xref linkend="create-template-from-existing-vm"/>.</para>
+      </listitem>
+      </orderedlist>  
+         <note><para>Templated VMs for both Ubuntu and CentOS may require a reboot after provisioning in order to pickup the hostname.</para></note>
+         
+     
+</section>

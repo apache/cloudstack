@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import com.cloud.exception.CloudException;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.ExceptionProxyObject;
 
 @SuppressWarnings("serial")
 public class ServerApiException extends CloudRuntimeException {
@@ -45,7 +46,7 @@ public class ServerApiException extends CloudRuntimeException {
         _description = description;
         if (cause instanceof CloudRuntimeException) {
             CloudRuntimeException rt = (CloudRuntimeException) cause;
-            ArrayList<String> idList = rt.getIdProxyList();
+            ArrayList<ExceptionProxyObject> idList = rt.getIdProxyList();
             if (idList != null) {
                 for (int i = 0; i < idList.size(); i++) {
                     addProxyObject(idList.get(i));

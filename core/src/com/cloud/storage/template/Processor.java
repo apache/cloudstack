@@ -20,6 +20,8 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.component.Adapter;
 
+import java.io.File;
+
 /**
  * Generic interface to process different types of image formats
  * for templates downloaded and for conversion from one format
@@ -45,4 +47,7 @@ public interface Processor extends Adapter {
         public String filename;
         public boolean isCorrupted;
     }
+
+    Long getVirtualSize(File file);
+
 }

@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.snapshot;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -24,13 +25,13 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "deleteSnapshot", description="Deletes a snapshot of a disk volume.", responseObject=SuccessResponse.class)
 public class DeleteSnapshotCmd extends BaseAsyncCmd {
@@ -82,8 +83,8 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
         return  "deleting snapshot: " + getId();
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Snapshot;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Snapshot;
     }
 
     public Long getInstanceId() {
@@ -92,7 +93,7 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Snapshot Id: "+getId());
+        CallContext.current().setEventDetails("Snapshot Id: "+getId());
         boolean result = _snapshotService.deleteSnapshot(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

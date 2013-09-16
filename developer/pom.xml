@@ -13,34 +13,31 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>cloud-developer</artifactId>
-  <name>Apache CloudStack Developer Tools</name>
+  <name>Apache CloudStack Developer Mode</name>
   <packaging>pom</packaging>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.2.0-SNAPSHOT</version>
+    <version>4.3.0-SNAPSHOT</version>
   </parent>
   <dependencies>
     <!-- specify the dependent jdbc driver here -->
     <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
-      <version>${cs.mysql.version}</version>
+	  <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>commons-dbcp</groupId>
       <artifactId>commons-dbcp</artifactId>
-      <version>${cs.dbcp.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-pool</groupId>
       <artifactId>commons-pool</artifactId>
-      <version>${cs.pool.version}</version>
     </dependency>
     <dependency>
       <groupId>org.jasypt</groupId>
       <artifactId>jasypt</artifactId>
-      <version>${cs.jasypt.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -52,15 +49,8 @@
       <artifactId>cloud-server</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-plugin-hypervisor-simulator</artifactId>
-      <version>${project.version}</version>
-      <scope>compile</scope>
-    </dependency>
   </dependencies>
   <build>
-    <defaultGoal>install</defaultGoal>
     <plugins>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -156,6 +146,7 @@
                 <argument>${basedir}/target/db/cloudbridge_offering_alter.sql</argument>
                 <!-- Seed the database -->
                 <argument>${basedir}/developer-prefill.sql</argument>
+                <argument>${basedir}/developer-prefill.sql.override</argument>
                 <!-- Do database upgrade-->
                 <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
                 <argument>--database=cloud,usage,awsapi</argument>

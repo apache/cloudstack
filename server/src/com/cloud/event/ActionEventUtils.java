@@ -17,6 +17,21 @@
 
 package com.cloud.event;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventBusException;
+
 import com.cloud.event.dao.EventDao;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
@@ -25,18 +40,7 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.ComponentContext;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.Map;
-
-@Component
 public class ActionEventUtils {
     private static final Logger s_logger = Logger.getLogger(ActionEventUtils.class);
 
@@ -44,6 +48,12 @@ public class ActionEventUtils {
     private static AccountDao _accountDao;
     protected static UserDao _userDao;
     protected static EventBus _eventBus = null;
+
+    public static final String EventDetails = "event_details";
+    public static final String EventId = "event_id";
+    public static final String EntityType = "entity_type";
+    public static final String EntityUuid = "entity_uuid";
+    public static final String EntityDetails = "entity_details";
 
     @Inject EventDao eventDao;
     @Inject AccountDao accountDao;
@@ -62,7 +72,7 @@ public class ActionEventUtils {
     public static Long onActionEvent(Long userId, Long accountId, Long domainId, String type, String description) {
 
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(),
-                type, com.cloud.event.Event.State.Completed);
+                type, com.cloud.event.Event.State.Completed, description);
 
         Event event = persistActionEvent(userId, accountId, domainId, null, type, Event.State.Completed,
                 description, null);
@@ -77,7 +87,7 @@ public class ActionEventUtils {
                                               long startEventId) {
 
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type,
-                com.cloud.event.Event.State.Scheduled);
+                com.cloud.event.Event.State.Scheduled, description);
 
         Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Scheduled,
                 description, startEventId);
@@ -92,7 +102,7 @@ public class ActionEventUtils {
                                             long startEventId) {
 
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type,
-                com.cloud.event.Event.State.Started);
+                com.cloud.event.Event.State.Started, description);
 
         Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Started,
                 description, startEventId);
@@ -103,7 +113,7 @@ public class ActionEventUtils {
                                               String description, long startEventId) {
 
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type,
-                com.cloud.event.Event.State.Completed);
+                com.cloud.event.Event.State.Completed, description);
 
         Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Completed,
                 description, startEventId);
@@ -114,7 +124,7 @@ public class ActionEventUtils {
     public static Long onCreatedActionEvent(Long userId, Long accountId, String level, String type, String description) {
 
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type,
-                com.cloud.event.Event.State.Created);
+                com.cloud.event.Event.State.Created, description);
 
         Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Created, description, null);
 
@@ -145,11 +155,20 @@ public class ActionEventUtils {
     }
 
     private static void publishOnEventBus(long userId, long accountId, String eventCategory,
-                                          String eventType, Event.State state) {
+                                          String eventType, Event.State state, String description) {
         try {
             _eventBus = ComponentContext.getComponent(EventBus.class);
         } catch(NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
+        }
+
+        // get the entity details for which ActionEvent is generated
+        String entityType = null;
+        String entityUuid = null;
+        CallContext context = CallContext.current();
+        if (context != null) {
+            entityType = (String)context.getContextParameter(EntityType);
+            entityUuid = (String)context.getContextParameter(EntityUuid);
         }
 
         org.apache.cloudstack.framework.events.Event event = new org.apache.cloudstack.framework.events.Event(
@@ -161,10 +180,22 @@ public class ActionEventUtils {
         Map<String, String> eventDescription = new HashMap<String, String>();
         Account account = _accountDao.findById(accountId);
         User user = _userDao.findById(userId);
+        // if account has been deleted, this might be called during cleanup of resources and results in null pointer
+        if (account == null)
+            return;
+        if (user == null)
+            return;
         eventDescription.put("user", user.getUuid());
         eventDescription.put("account", account.getUuid());
         eventDescription.put("event", eventType);
         eventDescription.put("status", state.toString());
+        eventDescription.put("entity", entityType);
+        eventDescription.put("entityuuid", entityUuid);
+        eventDescription.put("description", description);
+
+        String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").format(new Date());
+        eventDescription.put("eventDateTime", eventDate);
+
         event.setDescription(eventDescription);
 
         try {
@@ -176,6 +207,10 @@ public class ActionEventUtils {
 
     private static long getDomainId(long accountId){
         AccountVO account = _accountDao.findByIdIncludingRemoved(accountId);
+        if (account == null) {
+            s_logger.error("Failed to find account(including removed ones) by id '" + accountId + "'");
+            return 0;
+        }
         return account.getDomainId();
     }
 }

@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.State;
+import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.utils.net.NetUtils;
 
 /**
@@ -52,6 +53,9 @@ public class FirewallRuleTO implements InternalIdentity {
     private Integer icmpType;
     private Integer icmpCode;
     private FirewallRule.TrafficType trafficType;
+    private String guestCidr;
+    private boolean defaultEgressPolicy;
+    private FirewallRule.FirewallRuleType type;
 
     protected FirewallRuleTO() {
     }
@@ -105,8 +109,22 @@ public class FirewallRuleTO implements InternalIdentity {
         this.trafficType = trafficType;
     }
 
+    public FirewallRuleTO(FirewallRule rule, String srcVlanTag, String srcIp, FirewallRule.Purpose purpose, FirewallRule.TrafficType trafficType, boolean defaultEgressPolicy) {
+        this(rule.getId(),srcVlanTag, srcIp, rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getState()==State.Revoke, rule.getState()==State.Active, purpose,rule.getSourceCidrList(),rule.getIcmpType(),rule.getIcmpCode());
+        this.trafficType = trafficType;
+        this.defaultEgressPolicy = defaultEgressPolicy;
+    }
+
     public FirewallRuleTO(FirewallRule rule, String srcVlanTag, String srcIp, FirewallRule.Purpose purpose, boolean revokeState, boolean alreadyAdded) {
         this(rule.getId(),srcVlanTag, srcIp, rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(), revokeState, alreadyAdded, purpose,rule.getSourceCidrList(),rule.getIcmpType(),rule.getIcmpCode());
+    }
+
+    public FirewallRuleTO(FirewallRule rule, String guestVlanTag, FirewallRule.TrafficType trafficType, String guestCidr, boolean defaultEgressPolicy, FirewallRule.FirewallRuleType type) {
+        this(rule.getId(), guestVlanTag, null, rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getState()==State.Revoke, rule.getState()==State.Active, rule.getPurpose(), rule.getSourceCidrList(), rule.getIcmpType(), rule.getIcmpCode());
+        this.trafficType = trafficType;
+        this.defaultEgressPolicy = defaultEgressPolicy;
+        this.guestCidr = guestCidr;
+        this.type = type;
     }
 
     public FirewallRule.TrafficType getTrafficType(){
@@ -164,4 +182,15 @@ public class FirewallRuleTO implements InternalIdentity {
         return purpose;
     }
 
+    public boolean isDefaultEgressPolicy() {
+        return defaultEgressPolicy;
+    }
+
+    public String getGuestCidr() {
+        return guestCidr;
+    }
+
+    public FirewallRule.FirewallRuleType getType() {
+        return type;
+    }
 }

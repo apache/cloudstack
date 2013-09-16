@@ -80,10 +80,13 @@ public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Lo
         userResponse.setUsername(usr.getUsername());
         userResponse.setApiKey(usr.getApiKey());
         userResponse.setSecretKey(usr.getSecretKey());
+        userResponse.setIsDefault(usr.isDefault());
 
         // set async job
-        userResponse.setJobId(usr.getJobUuid());
-        userResponse.setJobStatus(usr.getJobStatus());
+        if (usr.getJobId() != null) {
+            userResponse.setJobId(usr.getJobUuid());
+            userResponse.setJobStatus(usr.getJobStatus());
+        }
 
         userResponse.setObjectName("user");
 

@@ -18,7 +18,10 @@ package com.cloud.bridge.service;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.codec.binary.Base64;
@@ -48,7 +51,9 @@ import com.cloud.bridge.service.core.ec2.EC2DescribeInstances;
 import com.cloud.bridge.service.core.ec2.EC2DescribeInstancesResponse;
 import com.cloud.bridge.service.core.ec2.EC2DescribeKeyPairs;
 import com.cloud.bridge.service.core.ec2.EC2DescribeKeyPairsResponse;
+import com.cloud.bridge.service.core.ec2.EC2ImageFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2ImageLaunchPermission;
+import com.cloud.bridge.service.core.ec2.EC2ModifyInstanceAttribute;
 import com.cloud.bridge.service.core.ec2.EC2ResourceTag;
 import com.cloud.bridge.service.core.ec2.EC2DescribeSecurityGroups;
 import com.cloud.bridge.service.core.ec2.EC2DescribeSecurityGroupsResponse;
@@ -92,7 +97,6 @@ import com.cloud.bridge.service.core.ec2.EC2Volume;
 import com.cloud.bridge.service.core.ec2.EC2VolumeFilterSet;
 import com.cloud.bridge.service.exception.EC2ServiceException;
 import com.cloud.bridge.service.exception.EC2ServiceException.ClientError;
-import com.cloud.bridge.service.exception.EC2ServiceException.ServerError;
 import com.cloud.bridge.util.EC2RestAuth;
 
 
@@ -118,8 +122,9 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	public AuthorizeSecurityGroupIngressResponse authorizeSecurityGroupIngress(AuthorizeSecurityGroupIngress authorizeSecurityGroupIngress) {
         AuthorizeSecurityGroupIngressType sgit = authorizeSecurityGroupIngress.getAuthorizeSecurityGroupIngress();        
         IpPermissionSetType ipPerms = sgit.getIpPermissions();
-        
-        EC2AuthorizeRevokeSecurityGroup request = toSecurityGroup( sgit.getGroupName(), ipPerms.getItem());
+
+        EC2AuthorizeRevokeSecurityGroup request = toSecurityGroup(
+                sgit.getAuthorizeSecurityGroupIngressTypeChoice_type0().getGroupName(), ipPerms.getItem());
 		return toAuthorizeSecurityGroupIngressResponse( engine.authorizeSecurityGroup( request ));
 	}
 
@@ -128,8 +133,9 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	{
         RevokeSecurityGroupIngressType sgit = revokeSecurityGroupIngress.getRevokeSecurityGroupIngress();        
         IpPermissionSetType ipPerms = sgit.getIpPermissions();
-        
-        EC2AuthorizeRevokeSecurityGroup request = toSecurityGroup( sgit.getGroupName(), ipPerms.getItem());
+
+        EC2AuthorizeRevokeSecurityGroup request = toSecurityGroup(
+                sgit.getRevokeSecurityGroupIngressTypeChoice_type0().getGroupName(), ipPerms.getItem());
 		return toRevokeSecurityGroupIngressResponse( engine.revokeSecurityGroup( request ));
 	}
 
@@ -210,87 +216,103 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 
     public CreateTagsResponse createTags(CreateTags createTags) {
         EC2Tags request = new EC2Tags();
+        ArrayList<String> resourceIdList = new ArrayList<String>();
+        Map<String, String> resourceTagList = new HashMap<String, String>();
+
         CreateTagsType ctt = createTags.getCreateTags();
 
         ResourceIdSetType resourceIds = ctt.getResourcesSet();
         ResourceTagSetType resourceTags = ctt.getTagSet();
-        request = toResourceTypeAndIds(resourceIds);
-        //add resource tag's to the request
-        if (resourceTags != null) {
-            ResourceTagSetItemType[] items = resourceTags.getItem();
-            if (items != null) {
-                for( int i=0; i < items.length; i++ ) {
-                    EC2TagKeyValue param1 = new EC2TagKeyValue();
-                    param1.setKey(items[i].getKey());
-                    param1.setValue(items[i].getValue());
-                    request.addResourceTag(param1);
-                }
-            }
+
+        ResourceIdSetItemType[] resourceIdItems = resourceIds.getItem();
+        if (resourceIdItems != null) {
+            for( int i=0; i < resourceIdItems.length; i++ )
+               resourceIdList.add(resourceIdItems[i].getResourceId());
         }
+        request = toResourceTypeAndIds(request, resourceIdList);
+
+        //add resource tag's to the request
+        ResourceTagSetItemType[] resourceTagItems = resourceTags.getItem();
+        if (resourceTagItems != null) {
+            for( int i=0; i < resourceTagItems.length; i++ )
+               resourceTagList.put(resourceTagItems[i].getKey(), resourceTagItems[i].getValue());
+        }
+        request = toResourceTag(request, resourceTagList);
+
         return toCreateTagsResponse( engine.modifyTags( request, "create"));
     }
 
     public DeleteTagsResponse deleteTags(DeleteTags deleteTags) {
         EC2Tags request = new EC2Tags();
+        ArrayList<String> resourceIdList = new ArrayList<String>();
+        Map<String, String> resourceTagList = new HashMap<String, String>();
+
         DeleteTagsType dtt = deleteTags.getDeleteTags();
 
         ResourceIdSetType resourceIds = dtt.getResourcesSet();
         DeleteTagsSetType resourceTags = dtt.getTagSet();
-        request = toResourceTypeAndIds(resourceIds);
-        //add resource tag's to the request
-        if (resourceTags != null) {
-            DeleteTagsSetItemType[] items = resourceTags.getItem();
-            if (items != null) {
-                for( int i=0; i < items.length; i++ ) {
-                    EC2TagKeyValue param1 = new EC2TagKeyValue();
-                    param1.setKey(items[i].getKey());
-                    if (items[i].getValue() != null)
-                        param1.setValue(items[i].getValue());
-                    request.addResourceTag(param1);
-                }
-            }
+
+        ResourceIdSetItemType[] resourceIdItems = resourceIds.getItem();
+
+        if (resourceIdItems != null) {
+            for( int i=0; i < resourceIdItems.length; i++ )
+               resourceIdList.add(resourceIdItems[i].getResourceId());
         }
+        request = toResourceTypeAndIds(request, resourceIdList);
+
+        //add resource tag's to the request
+        DeleteTagsSetItemType[] resourceTagItems = resourceTags.getItem();
+        if (resourceTagItems != null) {
+            for( int i=0; i < resourceTagItems.length; i++ )
+               resourceTagList.put(resourceTagItems[i].getKey(), resourceTagItems[i].getValue());
+        }
+        request = toResourceTag(request, resourceTagList);
+
         return toDeleteTagsResponse( engine.modifyTags( request, "delete"));
     }
 
-    private EC2Tags toResourceTypeAndIds(ResourceIdSetType resourceIds) {
-        EC2Tags request = new EC2Tags();
-        //add resource-type and resource-id's to the request
-        if (resourceIds != null) {
-            ResourceIdSetItemType[] items = resourceIds.getItem();
-            List<String> resourceTypeList = new ArrayList<String>();
-            if (items != null) {
-                for( int i=0; i < items.length; i++ ) {
-                    if (!items[i].getResourceId().contains(":") || items[i].getResourceId().split(":").length != 2) {
-                        throw new EC2ServiceException( ClientError.InvalidResourceId_Format,
-                                "Invalid Format. ResourceId format is resource-type:resource-uuid");
-                    }
-                    String resourceType = items[i].getResourceId().split(":")[0];
-                    if (resourceTypeList.isEmpty())
-                        resourceTypeList.add(resourceType);
-                    else {
-                        Boolean existsInList = false;
-                        for (String addedResourceType : resourceTypeList) {
-                            if (addedResourceType.equalsIgnoreCase(resourceType)) {
-                                existsInList = true;
-                                break;
-                            }
-                        }
-                        if (!existsInList)
-                            resourceTypeList.add(resourceType);
-                    }
-                }
-                for (String resourceType : resourceTypeList){
-                    EC2TagTypeId param1 = new EC2TagTypeId();
-                    param1.setResourceType(resourceType);
-                    for( int i=0; i < items.length; i++ ) {
-                        String[] resourceTag = items[i].getResourceId().split(":");
-                        if (resourceType.equals(resourceTag[0]))
-                            param1.addResourceId(resourceTag[1]);
-                    }
-                    request.addResourceType(param1);
-                }
+    public static EC2Tags toResourceTypeAndIds( EC2Tags request, ArrayList<String> resourceIdList ) {
+        List<String> resourceTypeList = new ArrayList<String>();
+        for (String resourceId : resourceIdList) {
+            if (!resourceId.contains(":") || resourceId.split(":").length != 2) {
+                throw new EC2ServiceException( ClientError.InvalidParameterValue,
+                        "Invalid usage. ResourceId format is resource-type:resource-uuid");
             }
+            String resourceType = resourceId.split(":")[0];
+            if (resourceTypeList.isEmpty())
+                resourceTypeList.add(resourceType);
+            else {
+                Boolean existsInList = false;
+                for (String addedResourceType : resourceTypeList) {
+                    if (addedResourceType.equalsIgnoreCase(resourceType)) {
+                        existsInList = true;
+                        break;
+                    }
+                }
+                if (!existsInList)
+                   resourceTypeList.add(resourceType);
+            }
+        }
+        for (String resourceType : resourceTypeList) {
+            EC2TagTypeId param1 = new EC2TagTypeId();
+            param1.setResourceType(resourceType);
+            for (String resourceId : resourceIdList) {
+                String[] resourceTag = resourceId.split(":");
+                if (resourceType.equals(resourceTag[0]))
+                   param1.addResourceId(resourceTag[1]);
+            }
+            request.addResourceType(param1);
+        }
+        return request;
+    }
+
+    public static EC2Tags toResourceTag( EC2Tags request, Map<String, String> resourceTagList ) {
+        Set<String> resourceTagKeySet = resourceTagList.keySet();
+        for (String resourceTagKey : resourceTagKeySet) {
+            EC2TagKeyValue param1 = new EC2TagKeyValue();
+            param1.setKey(resourceTagKey);
+            param1.setValue(resourceTagList.get(resourceTagKey));
+            request.addResourceTag(param1);
         }
         return request;
     }
@@ -336,7 +358,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             request.setFilterSet( toAvailabiltyZonesFilterSet(fst));
         }
 
-		return toDescribeAvailabilityZonesResponse( engine.handleRequest( request ));
+		return toDescribeAvailabilityZonesResponse( engine.describeAvailabilityZones( request ));
 	}
 
 	/**
@@ -388,7 +410,10 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 			    for( int i=0; i < items3.length; i++ ) request.addOwnersSet( items3[i].getOwner());
 		    }
 		}    
-
+        FilterSetType fst = dit.getFilterSet();
+        if ( fst != null) {
+            request.setFilterSet(toImageFilterSet(fst));
+        }
 		return toDescribeImagesResponse( engine.describeImages( request ));
 	}
 
@@ -399,11 +424,11 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	    EmptyElementType instanceType = diag.getInstanceType();
 		
 	    // -> toEC2DescribeInstances
-	    if (null != instanceType) {
-		    request.addInstanceId( diat.getInstanceId());
+           if (null != instanceType) {
+                   request.addInstanceId( diat.getInstanceId());
 		    return toDescribeInstanceAttributeResponse( engine.describeInstances( request ));
 	    }
-	    throw new EC2ServiceException( ClientError.Unsupported, "Unsupported - only instanceType supported");
+           throw new EC2ServiceException( ClientError.Unsupported, "Unsupported - only instanceType supported");
 	}
 
 	
@@ -455,8 +480,8 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
     @Override
     public ReleaseAddressResponse releaseAddress(ReleaseAddress releaseAddress) {
     	EC2ReleaseAddress request = new EC2ReleaseAddress();
-    	
-    	request.setPublicIp(releaseAddress.getReleaseAddress().getPublicIp());
+
+        request.setPublicIp(releaseAddress.getReleaseAddress().getReleaseAddressTypeChoice_type0().getPublicIp());
     	
         return toReleaseAddressResponse( engine.releaseAddress( request ) );
     }
@@ -464,10 +489,12 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
     @Override
     public AssociateAddressResponse associateAddress(AssociateAddress associateAddress) {
     	EC2AssociateAddress request = new EC2AssociateAddress();
-    	
-    	request.setPublicIp(associateAddress.getAssociateAddress().getPublicIp());
-    	request.setInstanceId(associateAddress.getAssociateAddress().getInstanceId());
-    	
+	
+        request.setPublicIp( associateAddress.getAssociateAddress().
+                getAssociateAddressTypeChoice_type0().getPublicIp());
+        request.setInstanceId(associateAddress.getAssociateAddress().
+                getAssociateAddressTypeChoice_type1().getInstanceId());
+
         return toAssociateAddressResponse( engine.associateAddress( request ) );
     }
 
@@ -526,7 +553,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             request = toSnapshotFilterSet( request, fst, timeFilters );
 		}
 
-		return toDescribeSnapshotsResponse(engine.handleRequest(request));
+        return toDescribeSnapshotsResponse(engine.describeSnapshots(request));
 	}
 
     public DescribeTagsResponse describeTags(DescribeTags decsribeTags) {
@@ -565,7 +592,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             request = toVolumeFilterSet( request, fst, timeFilters );
 		}
 		
-		return toDescribeVolumesResponse( engine.handleRequest( request ));
+        return toDescribeVolumesResponse( engine.describeVolumes( request ), engine);
 	}
 	
 	public DetachVolumeResponse detachVolume(DetachVolume detachVolume) {
@@ -605,6 +632,26 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		}
 		throw new EC2ServiceException( ClientError.Unsupported, "Unsupported - can only modify image description or launchPermission");
 	}	
+
+    public ModifyInstanceAttributeResponse modifyInstanceAttribute(ModifyInstanceAttribute modifyInstanceAttribute) {
+        EC2ModifyInstanceAttribute request = new EC2ModifyInstanceAttribute();
+
+        ModifyInstanceAttributeType modifyInstanceAttribute2 = modifyInstanceAttribute.getModifyInstanceAttribute();
+        ModifyInstanceAttributeTypeChoice_type0 mia = modifyInstanceAttribute2.getModifyInstanceAttributeTypeChoice_type0();
+
+        request.setInstanceId(modifyInstanceAttribute2.getInstanceId());
+
+        // we only support instanceType and userData
+        if (mia.getInstanceType() != null) {
+            request.setInstanceType(mia.getInstanceType().getValue());
+        } else if (mia.getUserData() != null) {
+            request.setUserData(mia.getUserData().getValue());
+        } else {
+            throw new EC2ServiceException( ClientError.MissingParamter,
+                    "Missing required parameter - InstanceType/UserData should be provided");
+        }
+        return toModifyInstanceAttributeResponse(engine.modifyInstanceAttribute(request));
+    }
 
     private void setAccountOrGroupList(LaunchPermissionItemType[] items, EC2ModifyImageAttribute request, String operation){
         EC2ImageLaunchPermission launchPermission = new EC2ImageLaunchPermission();
@@ -751,7 +798,12 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		if (null != gst) {
 			GroupItemType[] items = gst.getItem();
 			if (null != items) {
-				for( int i=0; i < items.length; i++ ) request.addGroupName(items[i].getGroupId());
+                for( int i=0; i < items.length; i++ ) {
+                    if ( items[i].getGroupName() != null) // either SG-name or SG-id can be provided
+                        request.addSecuritGroupName( items[i].getGroupName());
+                    else
+                        request.addSecuritGroupId( items[i].getGroupId());
+                }
 		    }
 		}
 		return toRunInstancesResponse( engine.runInstances( request ), engine);
@@ -835,26 +887,20 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		response.setUnmonitorInstancesResponse( param1 );
 		return response;
 	}
-	
-	
-	public static DescribeImageAttributeResponse toDescribeImageAttributeResponse(EC2DescribeImagesResponse engineResponse) {
-		DescribeImageAttributeResponse response = new DescribeImageAttributeResponse();
-		DescribeImageAttributeResponseType param1 = new DescribeImageAttributeResponseType();
-		
-		EC2Image[] imageSet = engineResponse.getImageSet();
-		if ( 0 < imageSet.length ) {
-		     DescribeImageAttributeResponseTypeChoice_type0 param2 = new DescribeImageAttributeResponseTypeChoice_type0();
-		     NullableAttributeValueType param3 = new NullableAttributeValueType();
-		     param3.setValue( imageSet[0].getDescription());
-		     param2.setDescription( param3 );
-		     param1.setDescribeImageAttributeResponseTypeChoice_type0( param2 );
-		     param1.setImageId( imageSet[0].getId());	
-		}
-		
-		param1.setRequestId( UUID.randomUUID().toString());
-        response.setDescribeImageAttributeResponse( param1 );
-		return response;
-	}
+
+    /**
+     * @param modifyInstanceAttribute
+     * @return	
+     */
+    public static ModifyInstanceAttributeResponse toModifyInstanceAttributeResponse(Boolean status) {
+        ModifyInstanceAttributeResponse miat = new ModifyInstanceAttributeResponse();
+
+        ModifyInstanceAttributeResponseType param = new ModifyInstanceAttributeResponseType();
+        param.set_return(status);
+        param.setRequestId(UUID.randomUUID().toString());
+        miat.setModifyInstanceAttributeResponse(param);
+        return miat;
+    }
 	
 	public static DescribeImageAttributeResponse toDescribeImageAttributeResponse(EC2ImageAttributes engineResponse) {
        DescribeImageAttributeResponse response = new DescribeImageAttributeResponse();
@@ -929,28 +975,27 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		    DescribeImagesResponseItemType param3 = new DescribeImagesResponseItemType();
 		    param3.setImageId( images[i].getId());
 		    param3.setImageLocation( "" );
-		    param3.setImageState( (images[i].getIsReady() ? "available" : "unavailable" ));
+            param3.setImageState( images[i].getState());
 		    param3.setImageOwnerId(ownerId);    
 		    param3.setIsPublic( images[i].getIsPublic());
 
 		    ProductCodesSetType param4 = new ProductCodesSetType();
 	        ProductCodesSetItemType param5 = new ProductCodesSetItemType();
 	        param5.setProductCode( "" );
+            param5.setType("");
             param4.addItem( param5 );		    
 		    param3.setProductCodes( param4 );
 		    
 		    String description = images[i].getDescription();
 		    param3.setDescription( (null == description ? "" : description));
-		    
-		         if (null == description) param3.setArchitecture( "" );
-			else if (-1 != description.indexOf( "x86_64" )) param3.setArchitecture( "x86_64" );
-			else if (-1 != description.indexOf( "i386"   )) param3.setArchitecture( "i386" );
-			else param3.setArchitecture( "" );
-		         
-			param3.setImageType( "machine" );
+
+            param3.setArchitecture( images[i].getArchitecture());
+
+            param3.setImageType( images[i].getImageType());
 		    param3.setKernelId( "" );
 		    param3.setRamdiskId( "" );
 		    param3.setPlatform( "" );
+            param3.setHypervisor( images[i].getHypervisor());
 		    
 		    StateReasonType param6 = new StateReasonType();
 	        param6.setCode( "" );
@@ -1268,8 +1313,29 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
         return tfs;
     }
 
+    private EC2ImageFilterSet toImageFilterSet( FilterSetType fst ) {
+        EC2ImageFilterSet ifs = new EC2ImageFilterSet();
+
+        FilterType[] items = fst.getItem();
+        if (items != null) {
+            for (FilterType item : items) {
+                EC2Filter oneFilter = new EC2Filter();
+                String filterName = item.getName();
+                oneFilter.setName( filterName );
+
+                ValueSetType vft = item.getValueSet();
+                ValueType[] valueItems = vft.getItem();
+                for (ValueType valueItem : valueItems) {
+                    oneFilter.addValueEncoded( valueItem.getValue());
+                }
+                ifs.addFilter( oneFilter );
+            }
+        }
+        return ifs;
+    }
+
 	// toMethods
-	public static DescribeVolumesResponse toDescribeVolumesResponse( EC2DescribeVolumesResponse engineResponse ) 
+	public static DescribeVolumesResponse toDescribeVolumesResponse( EC2DescribeVolumesResponse engineResponse, EC2Engine engine ) 
 	{
 	    DescribeVolumesResponse      response = new DescribeVolumesResponse();
 	    DescribeVolumesResponseType    param1 = new DescribeVolumesResponseType();
@@ -1286,6 +1352,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        param3.setSnapshotId(snapId);
 	        param3.setAvailabilityZone( vol.getZoneName());
 	        param3.setStatus( vol.getState());
+	        param3.setVolumeType("standard");
 	        
         	// -> CloudStack seems to have issues with timestamp formats so just in case
 	        Calendar cal = EC2RestAuth.parseDateString(vol.getCreated());
@@ -1300,8 +1367,8 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        	AttachmentSetItemResponseType param5 = new AttachmentSetItemResponseType();
 	        	param5.setVolumeId(vol.getId().toString());
 	        	param5.setInstanceId(vol.getInstanceId().toString());
-	        	String devicePath = engine.cloudDeviceIdToDevicePath( vol.getHypervisor(), vol.getDeviceId());
-	        	param5.setDevice( devicePath );
+                String devicePath = engine.cloudDeviceIdToDevicePath( vol.getHypervisor(), vol.getDeviceId());
+                param5.setDevice( devicePath );
                 param5.setStatus(vol.getAttachmentState());
                 if (vol.getAttached() == null) {
                     param5.setAttachTime( cal );
@@ -1371,11 +1438,13 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             if (null == groups || 0 == groups.length) {
                 GroupItemType param5 = new GroupItemType();
                 param5.setGroupId("");
+                param5.setGroupName("");
                 param4.addItem( param5 );
             } else {
                 for (EC2SecurityGroup group : groups) {
                     GroupItemType param5 = new GroupItemType();
                     param5.setGroupId(group.getId());
+                    param5.setGroupName("");
                     param4.addItem( param5 );
                 }
             }
@@ -1402,6 +1471,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        ProductCodesSetType param9 = new ProductCodesSetType();
 	        ProductCodesSetItemType param10 = new ProductCodesSetItemType();
 	        param10.setProductCode( "" );
+            param10.setType("");
             param9.addItem( param10 );
 	        param7.setProductCodes( param9 );
 	        
@@ -1438,7 +1508,13 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             param7.setRootDeviceType( "" );
         	String devicePath = engine.cloudDeviceIdToDevicePath( inst.getHypervisor(), inst.getRootDeviceId());
             param7.setRootDeviceName( devicePath );
-            
+
+            GroupSetType param14 = new GroupSetType();
+            GroupItemType param15 = new GroupItemType(); // VPC security group
+            param15.setGroupName("");
+            param15.setGroupName("");
+            param14.addItem(param15);
+            param7.setGroupSet(param14);
 
             param7.setInstanceLifecycle( "" );
             param7.setSpotInstanceRequestId( "" );
@@ -1486,6 +1562,8 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
     	AllocateAddressResponseType param1 = new AllocateAddressResponseType();
     	
     	param1.setPublicIp(ec2Address.getIpAddress());
+        param1.setDomain("standard");
+        param1.setAllocationId("");
     	param1.setRequestId(UUID.randomUUID().toString());
     	response.setAllocateAddressResponse(param1);
     	return response;
@@ -1505,7 +1583,8 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
     public static AssociateAddressResponse toAssociateAddressResponse(final boolean result) {
     	AssociateAddressResponse response = new AssociateAddressResponse();
     	AssociateAddressResponseType param1 = new AssociateAddressResponseType();
-    	
+
+        param1.setAssociationId("");
     	param1.setRequestId(UUID.randomUUID().toString());
     	param1.set_return(result);
     	
@@ -1705,6 +1784,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        ProductCodesSetType param9 = new ProductCodesSetType();
 	        ProductCodesSetItemType param10 = new ProductCodesSetItemType();
 	        param10.setProductCode( "" );
+            param10.setType("");
             param9.addItem( param10 );
 	        param7.setProductCodes( param9 );
 	        
@@ -1753,7 +1833,14 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             param19.setValue("");
             param18.addItem( param19 );
             param7.setTagSet( param18 );          
-            
+
+            GroupSetType param14 = new GroupSetType();
+            GroupItemType param15 = new GroupItemType();
+            param15.setGroupId("");
+            param15.setGroupName("");
+            param14.addItem(param15);
+            param7.setGroupSet(param14);
+
             String hypervisor = inst.getHypervisor();
             param7.setHypervisor((null != hypervisor ? hypervisor : ""));
 	        param6.addItem( param7 );
@@ -1834,7 +1921,10 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		param1.setVolumeId( engineResponse.getId().toString());
         Long volSize = new Long( engineResponse.getSize());
         param1.setSize( volSize.toString());  
-        param1.setSnapshotId( "" );
+        if (engineResponse.getSnapshotId() != null)
+            param1.setSnapshotId( engineResponse.getSnapshotId() );
+        else
+            param1.setSnapshotId( "" );
         param1.setAvailabilityZone( engineResponse.getZoneName());
 		if ( null != engineResponse.getState())
 		     param1.setStatus( engineResponse.getState());
@@ -1848,6 +1938,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
         }
 		param1.setCreateTime( cal );
 
+        param1.setVolumeType("standard");
 		param1.setRequestId( UUID.randomUUID().toString());
         response.setCreateVolumeResponse( param1 );
 		return response;
@@ -1981,6 +2072,8 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 			param3.setGroupName(group.getName());
 			String desc = group.getDescription();
 			param3.setGroupDescription((null != desc ? desc : ""));
+            param3.setGroupId(group.getId());
+            param3.setVpcId("");
 
 			IpPermissionSetType param4 = new IpPermissionSetType();
 			EC2IpPermission[] perms = group.getIpPermissionSet();
@@ -2034,6 +2127,8 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 				param4.addItem(param5);
 			}
 			param3.setIpPermissions(param4);
+            EC2TagKeyValue[] tags = group.getResourceTags();
+            param3.setTagSet(setResourceTags(tags));
 			param2.addItem(param3);
 		}
 		param1.setSecurityGroupInfo(param2);
@@ -2042,11 +2137,16 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		return response;
 	}
 	
-	public static CreateSecurityGroupResponse toCreateSecurityGroupResponse( boolean success ) {
+
+    public static CreateSecurityGroupResponse toCreateSecurityGroupResponse( EC2SecurityGroup sg ) {
 		CreateSecurityGroupResponse response = new CreateSecurityGroupResponse();
 		CreateSecurityGroupResponseType param1 = new CreateSecurityGroupResponseType();
 
-		param1.set_return(success);
+        param1.setGroupId( sg.getId() );
+        if ( sg.getId() != null )
+            param1.set_return(true);
+        else
+            param1.set_return(false);
 		param1.setRequestId( UUID.randomUUID().toString());
 		response.setCreateSecurityGroupResponse( param1 );
 		return response;
@@ -2461,10 +2561,6 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	public ImportVolumeResponse importVolume(ImportVolume importVolume) {
 		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
 	}
-	
-	public ModifyInstanceAttributeResponse modifyInstanceAttribute(ModifyInstanceAttribute modifyInstanceAttribute) {
-		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
-	}
 
 	public ModifySnapshotAttributeResponse modifySnapshotAttribute(ModifySnapshotAttribute modifySnapshotAttribute) {
 		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
@@ -2484,5 +2580,296 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 
 	public ResetSnapshotAttributeResponse resetSnapshotAttribute(ResetSnapshotAttribute resetSnapshotAttribute) {
 		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
+	}
+	
+
+	public ResetNetworkInterfaceAttributeResponse resetNetworkInterfaceAttribute(
+			ResetNetworkInterfaceAttribute resetNetworkInterfaceAttribute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CreateRouteTableResponse createRouteTable(
+			CreateRouteTable createRouteTable) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CreateNetworkAclEntryResponse createNetworkAclEntry(
+			CreateNetworkAclEntry createNetworkAclEntry) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeVolumeAttributeResponse describeVolumeAttribute(
+			DescribeVolumeAttribute describeVolumeAttribute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DeleteNetworkInterfaceResponse deleteNetworkInterface(
+			DeleteNetworkInterface deleteNetworkInterface) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CreateInternetGatewayResponse createInternetGateway(
+			CreateInternetGateway createInternetGateway) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DisassociateRouteTableResponse disassociateRouteTable(
+			DisassociateRouteTable disassociateRouteTable) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public ReplaceNetworkAclEntryResponse replaceNetworkAclEntry(
+			ReplaceNetworkAclEntry replaceNetworkAclEntry) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public AuthorizeSecurityGroupEgressResponse authorizeSecurityGroupEgress(
+			AuthorizeSecurityGroupEgress authorizeSecurityGroupEgress) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DeleteNetworkAclEntryResponse deleteNetworkAclEntry(
+			DeleteNetworkAclEntry deleteNetworkAclEntry) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DeleteRouteTableResponse deleteRouteTable(
+			DeleteRouteTable deleteRouteTable) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeNetworkInterfaceAttributeResponse describeNetworkInterfaceAttribute(
+			DescribeNetworkInterfaceAttribute describeNetworkInterfaceAttribute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CreateReservedInstancesListingResponse createReservedInstancesListing(
+			CreateReservedInstancesListing createReservedInstancesListing) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CreateNetworkAclResponse createNetworkAcl(
+			CreateNetworkAcl createNetworkAcl) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public ModifyVolumeAttributeResponse modifyVolumeAttribute(
+			ModifyVolumeAttribute modifyVolumeAttribute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public ReplaceNetworkAclAssociationResponse replaceNetworkAclAssociation(
+			ReplaceNetworkAclAssociation replaceNetworkAclAssociation) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public EnableVgwRoutePropagationResponse enableVgwRoutePropagation(
+			EnableVgwRoutePropagation enableVgwRoutePropagation) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public UnassignPrivateIpAddressesResponse unassignPrivateIpAddresses(
+			UnassignPrivateIpAddresses unassignPrivateIpAddresses) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DeleteVpnConnectionRouteResponse deleteVpnConnectionRoute(
+			DeleteVpnConnectionRoute deleteVpnConnectionRoute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CancelReservedInstancesListingResponse cancelReservedInstancesListing(
+			CancelReservedInstancesListing cancelReservedInstancesListing) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeNetworkAclsResponse describeNetworkAcls(
+			DescribeNetworkAcls describeNetworkAcls) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public EnableVolumeIOResponse enableVolumeIO(EnableVolumeIO enableVolumeIO) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeInternetGatewaysResponse describeInternetGateways(
+			DescribeInternetGateways describeInternetGateways) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeReservedInstancesListingsResponse describeReservedInstancesListings(
+			DescribeReservedInstancesListings describeReservedInstancesListings) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeInstanceStatusResponse describeInstanceStatus(
+			DescribeInstanceStatus describeInstanceStatus) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public ModifyNetworkInterfaceAttributeResponse modifyNetworkInterfaceAttribute(
+			ModifyNetworkInterfaceAttribute modifyNetworkInterfaceAttribute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DisableVgwRoutePropagationResponse disableVgwRoutePropagation(
+			DisableVgwRoutePropagation disableVgwRoutePropagation) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeVolumeStatusResponse describeVolumeStatus(
+			DescribeVolumeStatus describeVolumeStatus) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DetachNetworkInterfaceResponse detachNetworkInterface(
+			DetachNetworkInterface detachNetworkInterface) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeNetworkInterfacesResponse describeNetworkInterfaces(
+			DescribeNetworkInterfaces describeNetworkInterfaces) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CancelExportTaskResponse cancelExportTask(
+			CancelExportTask cancelExportTask) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CreateRouteResponse createRoute(CreateRoute createRoute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeRouteTablesResponse describeRouteTables(
+			DescribeRouteTables describeRouteTables) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DeleteNetworkAclResponse deleteNetworkAcl(
+			DeleteNetworkAcl deleteNetworkAcl) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DeleteRouteResponse deleteRoute(DeleteRoute deleteRoute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CreateVpnConnectionRouteResponse createVpnConnectionRoute(
+			CreateVpnConnectionRoute createVpnConnectionRoute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public AttachInternetGatewayResponse attachInternetGateway(
+			AttachInternetGateway attachInternetGateway) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public ReplaceRouteTableAssociationResponse replaceRouteTableAssociation(
+			ReplaceRouteTableAssociation replaceRouteTableAssociation) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public AssociateRouteTableResponse associateRouteTable(
+			AssociateRouteTable associateRouteTable) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DetachInternetGatewayResponse detachInternetGateway(
+			DetachInternetGateway detachInternetGateway) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DescribeExportTasksResponse describeExportTasks(
+			DescribeExportTasks describeExportTasks) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CreateInstanceExportTaskResponse createInstanceExportTask(
+			CreateInstanceExportTask createInstanceExportTask) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public AssignPrivateIpAddressesResponse assignPrivateIpAddresses(
+			AssignPrivateIpAddresses assignPrivateIpAddresses) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public ReportInstanceStatusResponse reportInstanceStatus(
+			ReportInstanceStatus reportInstanceStatus) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public DeleteInternetGatewayResponse deleteInternetGateway(
+			DeleteInternetGateway deleteInternetGateway) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public AttachNetworkInterfaceResponse attachNetworkInterface(
+			AttachNetworkInterface attachNetworkInterface) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public CreateNetworkInterfaceResponse createNetworkInterface(
+			CreateNetworkInterface createNetworkInterface) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public RevokeSecurityGroupEgressResponse revokeSecurityGroupEgress(
+			RevokeSecurityGroupEgress revokeSecurityGroupEgress) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
+	}
+
+	public ReplaceRouteResponse replaceRoute(ReplaceRoute replaceRoute) {
+		throw new EC2ServiceException(ClientError.Unsupported,
+				"This operation is not available");
 	}
 }

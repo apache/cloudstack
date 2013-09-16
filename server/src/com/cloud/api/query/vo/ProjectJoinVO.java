@@ -49,7 +49,6 @@ public class ProjectJoinVO extends BaseViewVO implements InternalIdentity, Ident
     @Column(name="display_text")
     String displayText;
 
-
     @Column(name="owner")
     String owner;
 
@@ -108,6 +107,10 @@ public class ProjectJoinVO extends BaseViewVO implements InternalIdentity, Ident
 
     @Column(name="tag_customer")
     private String tagCustomer;
+    
+    @Column(name="project_account_id")
+    private long projectAccountId;
+    
 
     public ProjectJoinVO() {
     }
@@ -301,4 +304,7 @@ public class ProjectJoinVO extends BaseViewVO implements InternalIdentity, Ident
         this.accountId = accountId;
     }
 
+    public long getProjectAccountId() {
+        return projectAccountId;
+    }
 }

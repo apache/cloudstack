@@ -26,11 +26,12 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "updateZone", description="Updates a Zone.", responseObject=ZoneResponse.class)
 public class UpdateZoneCmd extends BaseCmd {
@@ -175,7 +176,7 @@ public class UpdateZoneCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Zone Id: "+getId());
+        CallContext.current().setEventDetails("Zone Id: "+getId());
         DataCenter result = _configService.editZone(this);
         if (result != null) {
             ZoneResponse response = _responseGenerator.createZoneResponse(result, false);

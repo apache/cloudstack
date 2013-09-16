@@ -22,15 +22,15 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
 
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.api.SerializationContext;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
-import com.cloud.async.AsyncJob;
-import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.response.AsyncJobResponse;
-import org.springframework.stereotype.Component;
-
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -40,7 +40,7 @@ import com.cloud.utils.db.SearchCriteria;
 public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> implements AsyncJobJoinDao {
     public static final Logger s_logger = Logger.getLogger(AsyncJobJoinDaoImpl.class);
 
-    private SearchBuilder<AsyncJobJoinVO> jobIdSearch;
+    private final SearchBuilder<AsyncJobJoinVO> jobIdSearch;
 
     protected AsyncJobJoinDaoImpl() {
 
@@ -49,7 +49,7 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         jobIdSearch.and("id", jobIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         jobIdSearch.done();
 
-        this._count = "select count(distinct id) from async_job_view WHERE ";
+        _count = "select count(distinct id) from async_job_view WHERE ";
     }
 
 

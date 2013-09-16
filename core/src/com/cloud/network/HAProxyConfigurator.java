@@ -33,7 +33,6 @@ import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.LoadBalancerTO.DestinationTO;
 import com.cloud.agent.api.to.LoadBalancerTO.StickinessPolicyTO;
-import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.utils.net.NetUtils;
 
@@ -41,6 +40,7 @@ import com.cloud.utils.net.NetUtils;
 public class HAProxyConfigurator implements LoadBalancerConfigurator {
 
     private static final Logger s_logger = Logger.getLogger(HAProxyConfigurator.class);
+    private static final String blankLine = "\t ";
     private static String[] globalSection = { "global",
             "\tlog 127.0.0.1:3914   local0 warning", 
             "\tmaxconn 4096",
@@ -86,9 +86,9 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         List<String> result = new ArrayList<String>();
 
         result.addAll(Arrays.asList(globalSection));
-        result.add(getBlankLine());
+        result.add(blankLine);
         result.addAll(Arrays.asList(defaultsSection));
-        result.add(getBlankLine());
+        result.add(blankLine);
 
         if (pools.isEmpty()) {
             // haproxy cannot handle empty listen / frontend or backend, so add
@@ -96,7 +96,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             // on port 9
             result.addAll(Arrays.asList(defaultListen));
         }
-        result.add(getBlankLine());
+        result.add(blankLine);
 
         for (Map.Entry<String, List<PortForwardingRuleTO>> e : pools.entrySet()) {
             List<String> poolRules = getRulesForPool(e.getKey(), e.getValue());
@@ -143,7 +143,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                     .append(rule.getDstPortRange()[0]).append(" check");
             result.add(sb.toString());
         }
-        result.add(getBlankLine());
+        result.add(blankLine);
         return result;
     }
  
@@ -507,12 +507,8 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             result.add(sb.toString());
         }
         
-        result.add(getBlankLine());
+        result.add(blankLine);
         return result;
-    }
-
-    private String getBlankLine() {
-        return new String("\t ");
     }
 
     private String generateStatsRule(LoadBalancerConfigCommand lbCmd,
@@ -532,9 +528,10 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
     @Override
     public String[] generateConfiguration(LoadBalancerConfigCommand lbCmd)   {
         List<String> result = new ArrayList<String>();
-
-        result.addAll(Arrays.asList(globalSection));
-        result.add(getBlankLine());
+        List <String> gSection =  Arrays.asList(globalSection);
+        gSection.set(2,"\tmaxconn " + lbCmd.maxconn);
+        result.addAll(gSection);
+        result.add(blankLine);
         result.addAll(Arrays.asList(defaultsSection));
         if (!lbCmd.lbStatsVisibility.equals("disabled")) {
             /* new rule : listen admin_page guestip/link-local:8081 */
@@ -568,7 +565,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             }
 
         }
-        result.add(getBlankLine());
+        result.add(blankLine);
         boolean has_listener = false;
         for (LoadBalancerTO lbTO : lbCmd.getLoadBalancers()) {
             if ( lbTO.isRevoked() ) {
@@ -578,7 +575,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             result.addAll(poolRules);
             has_listener = true;
         }
-        result.add(getBlankLine());
+        result.add(blankLine);
         if ( !has_listener) {
             // haproxy cannot handle empty listen / frontend or backend, so add
             // a dummy listener

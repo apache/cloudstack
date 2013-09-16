@@ -16,26 +16,27 @@
 // under the License.
 package org.apache.cloudstack.api.command.test;
 
+import java.util.Arrays;
+
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.ListResponse;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.resource.ResourceService;
-
-import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class AddHostCmdTest extends TestCase {
 
@@ -46,6 +47,7 @@ public class AddHostCmdTest extends TestCase {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    @Override
     @Before
     public void setUp() {
         resourceService = Mockito.mock(ResourceService.class);
@@ -125,14 +127,12 @@ public class AddHostCmdTest extends TestCase {
 
         HostResponse responseHost = new HostResponse();
         responseHost.setName("Test");
-        Mockito.when(resourceService.discoverHosts(addHostCmd)).thenReturn(
-                Arrays.asList(mockArray));
-        Mockito.when(responseGenerator.createHostResponse(host)).thenReturn(
-                responseHost);
+        Mockito.doReturn(Arrays.asList(mockArray)).when(resourceService).discoverHosts(addHostCmd);
+        Mockito.when(responseGenerator.createHostResponse(host)).thenReturn(responseHost);
         addHostCmd.execute();
         Mockito.verify(responseGenerator).createHostResponse(host);
-        ListResponse<HostResponse> actualResponse = ((ListResponse<HostResponse>) addHostCmd
-                .getResponseObject());
+        @SuppressWarnings("unchecked")
+        ListResponse<HostResponse> actualResponse = ((ListResponse<HostResponse>)addHostCmd.getResponseObject());
         Assert.assertEquals(responseHost, actualResponse.getResponses().get(0));
         Assert.assertEquals("addhostresponse", actualResponse.getResponseName());
 
@@ -144,8 +144,7 @@ public class AddHostCmdTest extends TestCase {
         addHostCmd._resourceService = resourceService;
 
         try {
-            Mockito.when(resourceService.discoverHosts(addHostCmd)).thenThrow(
-                    DiscoveryException.class);
+            Mockito.when(resourceService.discoverHosts(addHostCmd)).thenThrow(DiscoveryException.class);
         } catch (InvalidParameterValueException e) {
             e.printStackTrace();
         } catch (IllegalArgumentException e) {

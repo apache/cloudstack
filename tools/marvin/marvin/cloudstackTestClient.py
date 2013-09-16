@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,24 +18,41 @@
 import cloudstackConnection
 import asyncJobMgr
 import dbConnection
-from cloudstackAPI import * 
+from cloudstackAPI import *
 import random
 import string
 import hashlib
 
+
 class cloudstackTestClient(object):
-    def __init__(self, mgtSvr=None, port=8096, apiKey = None, securityKey = None, asyncTimeout=3600,
+    def __init__(self, mgtSvr=None, port=8096, user=None, passwd=None,
+                 apiKey=None, securityKey=None, asyncTimeout=3600,
                  defaultWorkerThreads=10, logging=None):
-        self.connection = cloudstackConnection.cloudConnection(mgtSvr, port, apiKey, securityKey, asyncTimeout, logging)
-        self.apiClient = cloudstackAPIClient.CloudStackAPIClient(self.connection)
+        self.connection = \
+            cloudstackConnection.cloudConnection(mgtSvr, port, user, passwd,
+                                                 apiKey, securityKey,
+                                                 asyncTimeout, logging)
+        self.apiClient =\
+            cloudstackAPIClient.CloudStackAPIClient(self.connection)
         self.dbConnection = None
         self.asyncJobMgr = None
         self.ssh = None
+        self.id = None
         self.defaultWorkerThreads = defaultWorkerThreads
-        
-    def dbConfigure(self, host="localhost", port=3306, user='cloud', passwd='cloud', db='cloud'):
-        self.dbConnection = dbConnection.dbConnection(host, port, user, passwd, db)
-    
+
+    @property
+    def identifier(self):
+        return self.id
+
+    @identifier.setter
+    def identifier(self, id):
+        self.id = id
+
+    def dbConfigure(self, host="localhost", port=3306, user='cloud',
+                    passwd='cloud', db='cloud'):
+        self.dbConnection = dbConnection.dbConnection(host, port, user, passwd,
+                                                      db)
+
     def isAdminContext(self):
         """
         A user is a regular user if he fails to listDomains;
@@ -48,20 +65,23 @@ class cloudstackTestClient(object):
             listdomres = self.apiClient.listDomains(listdom)
             rootdom = listdomres[0].name
             if rootdom == 'ROOT':
-                return 1 #admin
+                return 1  # admin
             else:
-                return 2 #domain-admin
+                return 2  # domain-admin
         except:
-            return 0 #user
-    
+            return 0  # user
+
     def random_gen(self, size=6, chars=string.ascii_uppercase + string.digits):
         """Generate Random Strings of variable length"""
-        return ''.join(random.choice(chars) for x in range(size))
+        randomstr = ''.join(random.choice(chars) for x in range(size))
+        if self.identifier:
+            return ''.join([self.identifier, '-', randomstr])
+        return randomstr
 
     def createUserApiClient(self, UserName, DomainName, acctType=0):
         if not self.isAdminContext():
             return self.apiClient
-        
+
         listDomain = listDomains.listDomainsCmd()
         listDomain.listall = True
         listDomain.name = DomainName
@@ -73,11 +93,7 @@ class cloudstackTestClient(object):
             cdomain.name = DomainName
             domain = self.apiClient.createDomain(cdomain)
             domId = domain.id
-            
-        mdf = hashlib.md5()
-        mdf.update("password")
-        mdf_pass = mdf.hexdigest()
-        
+
         cmd = listAccounts.listAccountsCmd()
         cmd.name = UserName
         cmd.domainid = domId
@@ -88,53 +104,64 @@ class cloudstackTestClient(object):
             createAcctCmd = createAccount.createAccountCmd()
             createAcctCmd.accounttype = acctType
             createAcctCmd.domainid = domId
-            createAcctCmd.email = "test-" + self.random_gen() + "@cloudstack.org"
+            createAcctCmd.email = "test-" + self.random_gen()\
+                + "@cloudstack.org"
             createAcctCmd.firstname = UserName
             createAcctCmd.lastname = UserName
-            createAcctCmd.password = mdf_pass
+            createAcctCmd.password = 'password'
             createAcctCmd.username = UserName
             acct = self.apiClient.createAccount(createAcctCmd)
             acctId = acct.id
-        
-        listuser = listUsers.listUsersCmd() 
+
+        listuser = listUsers.listUsersCmd()
         listuser.username = UserName
-        
+
         listuserRes = self.apiClient.listUsers(listuser)
         userId = listuserRes[0].id
         apiKey = listuserRes[0].apikey
         securityKey = listuserRes[0].secretkey
-     
+
         if apiKey is None:
             registerUser = registerUserKeys.registerUserKeysCmd()
             registerUser.id = userId
             registerUserRes = self.apiClient.registerUserKeys(registerUser)
             apiKey = registerUserRes.apikey
             securityKey = registerUserRes.secretkey
-        
-        newUserConnection = cloudstackConnection.cloudConnection(self.connection.mgtSvr, self.connection.port, apiKey, securityKey, self.connection.asyncTimeout, self.connection.logging)
-        self.userApiClient = cloudstackAPIClient.CloudStackAPIClient(newUserConnection)
+
+        newUserConnection =\
+            cloudstackConnection.cloudConnection(self.connection.mgtSvr,
+                                                 self.connection.port,
+                                                 self.connection.user,
+                                                 self.connection.passwd,
+                                                 apiKey, securityKey,
+                                                 self.connection.asyncTimeout,
+                                                 self.connection.logging)
+        self.userApiClient =\
+            cloudstackAPIClient.CloudStackAPIClient(newUserConnection)
         self.userApiClient.connection = newUserConnection
+        self.userApiClient.hypervisor = self.apiClient.hypervisor
         return self.userApiClient
-        
+
     def close(self):
         if self.connection is not None:
             self.connection.close()
-        
+
     def getDbConnection(self):
         return self.dbConnection
 
     def executeSql(self, sql=None):
         if sql is None or self.dbConnection is None:
             return None
-        
+
         return self.dbConnection.execute()
-    
+
     def executeSqlFromFile(self, sqlFile=None):
         if sqlFile is None or self.dbConnection is None:
             return None
         return self.dbConnection.executeSqlFromFile(sqlFile)
-    
+
     def getApiClient(self):
+        self.apiClient.id = self.identifier
         return self.apiClient
 
     def getUserApiClient(self, account, domain, type=0):
@@ -148,21 +175,27 @@ class cloudstackTestClient(object):
             return self.userApiClient
         return None
 
-
-    '''FixME, httplib has issue if more than one thread submitted'''
     def submitCmdsAndWait(self, cmds, workers=1):
+        '''FixME, httplib has issue if more than one thread submitted'''
         if self.asyncJobMgr is None:
-            self.asyncJobMgr = asyncJobMgr.asyncJobMgr(self.apiClient, self.dbConnection)
+            self.asyncJobMgr = asyncJobMgr.asyncJobMgr(self.apiClient,
+                                                       self.dbConnection)
         return self.asyncJobMgr.submitCmdsAndWait(cmds, workers)
-    
-    '''submit one job and execute the same job ntimes, with nums_threads of threads'''
+
     def submitJob(self, job, ntimes=1, nums_threads=10, interval=1):
+        '''
+        submit one job and execute the same job ntimes, with nums_threads
+        of threads
+        '''
         if self.asyncJobMgr is None:
-            self.asyncJobMgr = asyncJobMgr.asyncJobMgr(self.apiClient, self.dbConnection)
-        self.asyncJobMgr.submitJobExecuteNtimes(job, ntimes, nums_threads, interval)
-        
-    '''submit n jobs, execute them with nums_threads of threads'''    
+            self.asyncJobMgr = asyncJobMgr.asyncJobMgr(self.apiClient,
+                                                       self.dbConnection)
+        self.asyncJobMgr.submitJobExecuteNtimes(job, ntimes, nums_threads,
+                                                interval)
+
     def submitJobs(self, jobs, nums_threads=10, interval=1):
+        '''submit n jobs, execute them with nums_threads of threads'''
         if self.asyncJobMgr is None:
-            self.asyncJobMgr = asyncJobMgr.asyncJobMgr(self.apiClient, self.dbConnection)
+            self.asyncJobMgr = asyncJobMgr.asyncJobMgr(self.apiClient,
+                                                       self.dbConnection)
         self.asyncJobMgr.submitJobs(jobs, nums_threads, interval)

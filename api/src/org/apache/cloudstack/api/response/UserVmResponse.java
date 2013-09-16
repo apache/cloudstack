@@ -17,10 +17,10 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -34,351 +34,624 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 @EntityReference(value={VirtualMachine.class, UserVm.class, VirtualRouter.class})
 public class UserVmResponse extends BaseResponse implements ControlledEntityResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the ID of the virtual machine")
-    private String id;
+	@SerializedName(ApiConstants.ID) @Param(description="the ID of the virtual machine")
+	private String id;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="the name of the virtual machine")
-    private String name;
+	@SerializedName(ApiConstants.NAME) @Param(description="the name of the virtual machine")
+	private String name;
 
-    @SerializedName("displayname") @Param(description="user generated name. The name of the virtual machine is returned if no displayname exists.")
-    private String displayName;
+	@SerializedName("displayname") @Param(description="user generated name. The name of the virtual machine is returned if no displayname exists.")
+	private String displayName;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account associated with the virtual machine")
-    private String accountName;
+	@SerializedName(ApiConstants.ACCOUNT) @Param(description="the account associated with the virtual machine")
+	private String accountName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vm")
-    private String projectId;
+	@SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vm")
+	private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vm")
-    private String projectName;
+	@SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vm")
+	private String projectName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the domain in which the virtual machine exists")
-    private String domainId;
+	@SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the domain in which the virtual machine exists")
+	private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the name of the domain in which the virtual machine exists")
-    private String domainName;
+	@SerializedName(ApiConstants.DOMAIN) @Param(description="the name of the domain in which the virtual machine exists")
+	private String domainName;
 
-    @SerializedName(ApiConstants.CREATED) @Param(description="the date when this virtual machine was created")
-    private Date created;
+	@SerializedName(ApiConstants.CREATED) @Param(description="the date when this virtual machine was created")
+	private Date created;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="the state of the virtual machine")
-    private String state;
+	@SerializedName(ApiConstants.STATE) @Param(description="the state of the virtual machine")
+	private String state;
 
-    @SerializedName(ApiConstants.HA_ENABLE) @Param(description="true if high-availability is enabled, false otherwise")
-    private Boolean haEnable;
+	@SerializedName(ApiConstants.HA_ENABLE) @Param(description="true if high-availability is enabled, false otherwise")
+	private Boolean haEnable;
 
-    @SerializedName(ApiConstants.GROUP_ID) @Param(description="the group ID of the virtual machine")
-    private String groupId;
+	@SerializedName(ApiConstants.GROUP_ID) @Param(description="the group ID of the virtual machine")
+	private String groupId;
 
-    @SerializedName(ApiConstants.GROUP) @Param(description="the group name of the virtual machine")
-    private String group;
+	@SerializedName(ApiConstants.GROUP) @Param(description="the group name of the virtual machine")
+	private String group;
 
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the ID of the availablility zone for the virtual machine")
-    private String zoneId;
+	@SerializedName(ApiConstants.ZONE_ID) @Param(description="the ID of the availablility zone for the virtual machine")
+	private String zoneId;
 
-    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the availability zone for the virtual machine")
-    private String zoneName;
+	@SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the availability zone for the virtual machine")
+	private String zoneName;
 
-    @SerializedName(ApiConstants.HOST_ID) @Param(description="the ID of the host for the virtual machine")
-    private String hostId;
+	@SerializedName(ApiConstants.HOST_ID) @Param(description="the ID of the host for the virtual machine")
+	private String hostId;
 
-    @SerializedName("hostname") @Param(description="the name of the host for the virtual machine")
-    private String hostName;
+	@SerializedName("hostname") @Param(description="the name of the host for the virtual machine")
+	private String hostName;
 
-    @SerializedName(ApiConstants.TEMPLATE_ID) @Param(description="the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file.")
-    private String templateId;
+	@SerializedName(ApiConstants.TEMPLATE_ID) @Param(description="the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file.")
+	private String templateId;
 
-    @SerializedName("templatename") @Param(description="the name of the template for the virtual machine")
-    private String templateName;
+	@SerializedName("templatename") @Param(description="the name of the template for the virtual machine")
+	private String templateName;
 
-    @SerializedName("templatedisplaytext") @Param(description=" an alternate display text of the template for the virtual machine")
-    private String templateDisplayText;
+	@SerializedName("templatedisplaytext") @Param(description=" an alternate display text of the template for the virtual machine")
+	private String templateDisplayText;
 
-    @SerializedName(ApiConstants.PASSWORD_ENABLED) @Param(description="true if the password rest feature is enabled, false otherwise")
-    private Boolean passwordEnabled;
+	@SerializedName(ApiConstants.PASSWORD_ENABLED) @Param(description="true if the password rest feature is enabled, false otherwise")
+	private Boolean passwordEnabled;
 
-    @SerializedName("isoid") @Param(description="the ID of the ISO attached to the virtual machine")
-    private String isoId;
+	@SerializedName("isoid") @Param(description="the ID of the ISO attached to the virtual machine")
+	private String isoId;
 
-    @SerializedName("isoname") @Param(description="the name of the ISO attached to the virtual machine")
-    private String isoName;
+	@SerializedName("isoname") @Param(description="the name of the ISO attached to the virtual machine")
+	private String isoName;
 
-    @SerializedName("isodisplaytext") @Param(description="an alternate display text of the ISO attached to the virtual machine")
-    private String isoDisplayText;
+	@SerializedName("isodisplaytext") @Param(description="an alternate display text of the ISO attached to the virtual machine")
+	private String isoDisplayText;
 
-    @SerializedName(ApiConstants.SERVICE_OFFERING_ID) @Param(description="the ID of the service offering of the virtual machine")
-    private String serviceOfferingId;
+	@SerializedName(ApiConstants.SERVICE_OFFERING_ID) @Param(description="the ID of the service offering of the virtual machine")
+	private String serviceOfferingId;
 
-    @SerializedName("serviceofferingname") @Param(description="the name of the service offering of the virtual machine")
-    private String serviceOfferingName;
+	@SerializedName("serviceofferingname") @Param(description="the name of the service offering of the virtual machine")
+	private String serviceOfferingName;
 
-    @SerializedName("forvirtualnetwork") @Param(description="the virtual network for the service offering")
-    private Boolean forVirtualNetwork;
+	@SerializedName("forvirtualnetwork") @Param(description="the virtual network for the service offering")
+	private Boolean forVirtualNetwork;
 
-    @SerializedName(ApiConstants.CPU_NUMBER) @Param(description="the number of cpu this virtual machine is running with")
-    private Integer cpuNumber;
+	@SerializedName(ApiConstants.CPU_NUMBER) @Param(description="the number of cpu this virtual machine is running with")
+	private Integer cpuNumber;
 
-    @SerializedName(ApiConstants.CPU_SPEED) @Param(description="the speed of each cpu")
-    private Integer cpuSpeed;
+	@SerializedName(ApiConstants.CPU_SPEED) @Param(description="the speed of each cpu")
+	private Integer cpuSpeed;
 
-    @SerializedName(ApiConstants.MEMORY) @Param(description="the memory allocated for the virtual machine")
-    private Integer memory;
+	@SerializedName(ApiConstants.MEMORY) @Param(description="the memory allocated for the virtual machine")
+	private Integer memory;
 
-    @SerializedName("cpuused") @Param(description="the amount of the vm's CPU currently used")
-    private String cpuUsed;
+	@SerializedName("cpuused") @Param(description="the amount of the vm's CPU currently used")
+	private String cpuUsed;
 
-    @SerializedName("networkkbsread") @Param(description="the incoming network traffic on the vm")
-    private Long networkKbsRead;
+	@SerializedName("networkkbsread") @Param(description="the incoming network traffic on the vm")
+	private Long networkKbsRead;
 
-    @SerializedName("networkkbswrite") @Param(description="the outgoing network traffic on the host")
-    private Long networkKbsWrite;
+	@SerializedName("networkkbswrite") @Param(description="the outgoing network traffic on the host")
+	private Long networkKbsWrite;
 
-    @SerializedName("guestosid") @Param(description="Os type ID of the virtual machine")
-    private String guestOsId;
+	@SerializedName("diskkbsread") @Param(description="the read (bytes) of disk on the vm")
+	private Long diskKbsRead;
 
-    @SerializedName("rootdeviceid") @Param(description="device ID of the root volume")
-    private Long rootDeviceId;
+	@SerializedName("diskkbswrite") @Param(description="the write (bytes) of disk on the vm")
+	private Long diskKbsWrite;
 
-    @SerializedName("rootdevicetype") @Param(description="device type of the root volume")
-    private String rootDeviceType;
+	@SerializedName("diskioread") @Param(description="the read (io) of disk on the vm")
+	private Long diskIORead;
 
-    @SerializedName("securitygroup") @Param(description="list of security groups associated with the virtual machine", responseObject = SecurityGroupResponse.class)
-    private Set<SecurityGroupResponse> securityGroupList;
+	@SerializedName("diskiowrite") @Param(description="the write (io) of disk on the vm")
+	private Long diskIOWrite;
 
-    @SerializedName(ApiConstants.PASSWORD) @Param(description="the password (if exists) of the virtual machine")
-    private String password;
+	@SerializedName("guestosid") @Param(description="Os type ID of the virtual machine")
+	private String guestOsId;
 
-    @SerializedName("nic")  @Param(description="the list of nics associated with vm", responseObject = NicResponse.class)
-    private Set<NicResponse> nics;
+	@SerializedName("rootdeviceid") @Param(description="device ID of the root volume")
+	private Long rootDeviceId;
 
-    @SerializedName("hypervisor") @Param(description="the hypervisor on which the template runs")
-    private String hypervisor;
+	@SerializedName("rootdevicetype") @Param(description="device type of the root volume")
+	private String rootDeviceType;
 
-    @SerializedName(ApiConstants.PUBLIC_IP_ID) @Param(description="public IP address id associated with vm via Static nat rule")
-    private String publicIpId;
+	@SerializedName("securitygroup") @Param(description="list of security groups associated with the virtual machine", responseObject = SecurityGroupResponse.class)
+	private Set<SecurityGroupResponse> securityGroupList;
 
-    @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="public IP address id associated with vm via Static nat rule")
-    private String publicIp;
+	@SerializedName(ApiConstants.PASSWORD) @Param(description="the password (if exists) of the virtual machine")
+	private String password;
 
-    @SerializedName(ApiConstants.INSTANCE_NAME) @Param(description="instance name of the user vm; this parameter is returned to the ROOT admin only", since="3.0.1")
-    private String instanceName;
+	@SerializedName("nic")  @Param(description="the list of nics associated with vm", responseObject = NicResponse.class)
+	private Set<NicResponse> nics;
 
-    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with vm", responseObject = ResourceTagResponse.class)
-    private Set<ResourceTagResponse> tags;
+	@SerializedName("hypervisor") @Param(description="the hypervisor on which the template runs")
+	private String hypervisor;
 
-    @SerializedName(ApiConstants.SSH_KEYPAIR) @Param(description="ssh key-pair")
-    private String keyPairName;
+	@SerializedName(ApiConstants.PUBLIC_IP_ID) @Param(description="public IP address id associated with vm via Static nat rule")
+	private String publicIpId;
 
-    public UserVmResponse(){
-        securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
-        nics = new LinkedHashSet<NicResponse>();
-        tags = new LinkedHashSet<ResourceTagResponse>();
-    }
+	@SerializedName(ApiConstants.PUBLIC_IP) @Param(description="public IP address id associated with vm via Static nat rule")
+	private String publicIp;
 
-    public void setHypervisor(String hypervisor) {
-        this.hypervisor = hypervisor;
-    }
+	@SerializedName(ApiConstants.INSTANCE_NAME) @Param(description="instance name of the user vm; this parameter is returned to the ROOT admin only", since="3.0.1")
+	private String instanceName;
 
-    public void setId(String id) {
-        this.id = id;
-    }
+	@SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with vm", responseObject = ResourceTagResponse.class)
+	private Set<ResourceTagResponse> tags;
 
-    public String getId() {
-        return this.id;
-    }
+	@SerializedName(ApiConstants.SSH_KEYPAIR) @Param(description="ssh key-pair")
+	private String keyPairName;
 
+	@SerializedName("affinitygroup")
+	@Param(description = "list of affinity groups associated with the virtual machine", responseObject = AffinityGroupResponse.class)
+	private Set<AffinityGroupResponse> affinityGroupList;
 
+	@SerializedName(ApiConstants.DISPLAY_VM) @Param(description="an optional field whether to the display the vm to the end user or not.")
+	private Boolean displayVm;
 
-    @Override
-    public String getObjectId() {
-        return this.getId();
-    }
+	@SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE) @Param(description="true if vm contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory.")
+	private Boolean isDynamicallyScalable;
+	@SerializedName(ApiConstants.SERVICE_STATE) @Param(description="State of the Service from LB rule")
+	private String serviceState;
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	public UserVmResponse(){
+		securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
+		nics = new LinkedHashSet<NicResponse>();
+		tags = new LinkedHashSet<ResourceTagResponse>();
+		affinityGroupList = new LinkedHashSet<AffinityGroupResponse>();
+	}
 
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
-    }
+	public void setHypervisor(String hypervisor) {
+		this.hypervisor = hypervisor;
+	}
 
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
-    }
+	public void setId(String id) {
+		this.id = id;
+	}
 
-    @Override
-    public void setDomainId(String domainId) {
-        this.domainId = domainId;
-    }
+	public String getId() {
+		return this.id;
+	}
 
-    public void setDomainName(String domainName) {
-        this.domainName = domainName;
-    }
+	public Boolean getDisplayVm() {
+		return displayVm;
+	}
 
-    public void setCreated(Date created) {
-        this.created = created;
-    }
+	public void setDisplayVm(Boolean displayVm) {
+		this.displayVm = displayVm;
+	}
 
-    public void setState(String state) {
-        this.state = state;
-    }
+	@Override
+	public String getObjectId() {
+		return this.getId();
+	}
 
-    public void setHaEnable(Boolean haEnable) {
-        this.haEnable = haEnable;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public void setGroupId(String groupId) {
-        this.groupId = groupId;
-    }
+	public String getDisplayName() {
+		return displayName;
+	}
 
-    public void setGroup(String group) {
-        this.group = group;
-    }
+	public String getAccountName() {
+		return accountName;
+	}
 
-    public void setZoneId(String zoneId) {
-        this.zoneId = zoneId;
-    }
+	public String getProjectId() {
+		return projectId;
+	}
 
-    public void setZoneName(String zoneName) {
-        this.zoneName = zoneName;
-    }
+	public String getProjectName() {
+		return projectName;
+	}
 
-    public void setHostId(String hostId) {
-        this.hostId = hostId;
-    }
+	public String getDomainId() {
+		return domainId;
+	}
 
-    public void setHostName(String hostName) {
-        this.hostName = hostName;
-    }
+	public String getDomainName() {
+		return domainName;
+	}
 
-    public void setTemplateId(String templateId) {
-        this.templateId = templateId;
-    }
+	public Date getCreated() {
+		return created;
+	}
 
-    public void setTemplateName(String templateName) {
-        this.templateName = templateName;
-    }
+	public String getState() {
+		return state;
+	}
 
-    public void setTemplateDisplayText(String templateDisplayText) {
-        this.templateDisplayText = templateDisplayText;
-    }
+	public Boolean getHaEnable() {
+		return haEnable;
+	}
 
-    public void setPasswordEnabled(Boolean passwordEnabled) {
-        this.passwordEnabled = passwordEnabled;
-    }
+	public String getGroupId() {
+		return groupId;
+	}
 
-    public void setIsoId(String isoId) {
-        this.isoId = isoId;
-    }
+	public String getGroup() {
+		return group;
+	}
 
-    public void setIsoName(String isoName) {
-        this.isoName = isoName;
-    }
+	public String getZoneId() {
+		return zoneId;
+	}
 
-    public void setIsoDisplayText(String isoDisplayText) {
-        this.isoDisplayText = isoDisplayText;
-    }
+	public String getZoneName() {
+		return zoneName;
+	}
 
-    public void setServiceOfferingId(String serviceOfferingId) {
-        this.serviceOfferingId = serviceOfferingId;
-    }
+	public String getHostId() {
+		return hostId;
+	}
 
-    public void setServiceOfferingName(String serviceOfferingName) {
-        this.serviceOfferingName = serviceOfferingName;
-    }
+	public String getHostName() {
+		return hostName;
+	}
 
-    public void setCpuNumber(Integer cpuNumber) {
-        this.cpuNumber = cpuNumber;
-    }
+	public String getTemplateId() {
+		return templateId;
+	}
 
-    public void setCpuSpeed(Integer cpuSpeed) {
-        this.cpuSpeed = cpuSpeed;
-    }
+	public String getTemplateName() {
+		return templateName;
+	}
 
-    public void setMemory(Integer memory) {
-        this.memory = memory;
-    }
+	public String getTemplateDisplayText() {
+		return templateDisplayText;
+	}
 
-    public void setCpuUsed(String cpuUsed) {
-        this.cpuUsed = cpuUsed;
-    }
+	public Boolean getPasswordEnabled() {
+		return passwordEnabled;
+	}
 
-    public void setNetworkKbsRead(Long networkKbsRead) {
-        this.networkKbsRead = networkKbsRead;
-    }
+	public String getIsoId() {
+		return isoId;
+	}
 
-    public void setNetworkKbsWrite(Long networkKbsWrite) {
-        this.networkKbsWrite = networkKbsWrite;
-    }
+	public String getIsoName() {
+		return isoName;
+	}
 
-    public void setGuestOsId(String guestOsId) {
-        this.guestOsId = guestOsId;
-    }
+	public String getIsoDisplayText() {
+		return isoDisplayText;
+	}
 
-    public void setRootDeviceId(Long rootDeviceId) {
-        this.rootDeviceId = rootDeviceId;
-    }
+	public String getServiceOfferingId() {
+		return serviceOfferingId;
+	}
 
-    public void setRootDeviceType(String rootDeviceType) {
-        this.rootDeviceType = rootDeviceType;
-    }
+	public String getServiceOfferingName() {
+		return serviceOfferingName;
+	}
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
+	public Boolean getForVirtualNetwork() {
+		return forVirtualNetwork;
+	}
 
-    public void setForVirtualNetwork(Boolean forVirtualNetwork) {
-        this.forVirtualNetwork = forVirtualNetwork;
-    }
+	public Integer getCpuNumber() {
+		return cpuNumber;
+	}
 
-    public void setNics(Set<NicResponse> nics) {
-        this.nics = nics;
-    }
+	public Integer getCpuSpeed() {
+		return cpuSpeed;
+	}
 
-    public void addNic(NicResponse nic) {
-        this.nics.add(nic);
-    }
+	public Integer getMemory() {
+		return memory;
+	}
 
-    public void setSecurityGroupList(Set<SecurityGroupResponse> securityGroups) {
-        this.securityGroupList = securityGroups;
-    }
+	public String getCpuUsed() {
+		return cpuUsed;
+	}
 
-    public void addSecurityGroup(SecurityGroupResponse securityGroup){
-        this.securityGroupList.add(securityGroup);
-    }
+	public Long getNetworkKbsRead() {
+		return networkKbsRead;
+	}
 
-    @Override
-    public void setProjectId(String projectId) {
-        this.projectId = projectId;
-    }
+	public Long getNetworkKbsWrite() {
+		return networkKbsWrite;
+	}
 
-    @Override
-    public void setProjectName(String projectName) {
-        this.projectName = projectName;
-    }
+	public Long getDiskKbsRead() {
+		return diskKbsRead;
+	}
 
-    public void setPublicIpId(String publicIpId) {
-        this.publicIpId = publicIpId;
-    }
+	public Long getDiskKbsWrite() {
+		return diskKbsWrite;
+	}
 
-    public void setPublicIp(String publicIp) {
-        this.publicIp = publicIp;
-    }
+	public Long getDiskIORead() {
+		return diskIORead;
+	}
 
-    public void setInstanceName(String instanceName) {
-        this.instanceName = instanceName;
-    }
+	public Long getDiskIOWrite() {
+		return diskIOWrite;
+	}
 
-    public void setTags(Set<ResourceTagResponse> tags) {
-        this.tags = tags;
-    }
+	public String getGuestOsId() {
+		return guestOsId;
+	}
 
-    public void addTag(ResourceTagResponse tag){
-        this.tags.add(tag);
-    }
+	public Long getRootDeviceId() {
+		return rootDeviceId;
+	}
 
-    public void setKeyPairName(String keyPairName) {
-        this.keyPairName = keyPairName;
-    }
+	public String getRootDeviceType() {
+		return rootDeviceType;
+	}
+
+	public Set<SecurityGroupResponse> getSecurityGroupList() {
+		return securityGroupList;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public Set<NicResponse> getNics() {
+		return nics;
+	}
+
+	public String getHypervisor() {
+		return hypervisor;
+	}
+
+	public String getPublicIpId() {
+		return publicIpId;
+	}
+
+	public String getPublicIp() {
+		return publicIp;
+	}
+
+	public String getInstanceName() {
+		return instanceName;
+	}
+
+	public Set<ResourceTagResponse> getTags() {
+		return tags;
+	}
+
+	public String getKeyPairName() {
+		return keyPairName;
+	}
+
+	public Set<AffinityGroupResponse> getAffinityGroupList() {
+		return affinityGroupList;
+	}
+
+	public Boolean getIsDynamicallyScalable() {
+		return isDynamicallyScalable;
+	}
+
+	public String getServiceState() {
+		return serviceState;
+	}
+
+	public void setIsDynamicallyScalable(Boolean isDynamicallyScalable) {
+		this.isDynamicallyScalable = isDynamicallyScalable;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public void setDisplayName(String displayName) {
+		this.displayName = displayName;
+	}
+
+	@Override
+	public void setAccountName(String accountName) {
+		this.accountName = accountName;
+	}
+
+	@Override
+	public void setDomainId(String domainId) {
+		this.domainId = domainId;
+	}
+
+	@Override
+	public void setDomainName(String domainName) {
+		this.domainName = domainName;
+	}
+
+	public void setCreated(Date created) {
+		this.created = created;
+	}
+
+	public void setState(String state) {
+		this.state = state;
+	}
+
+	public void setHaEnable(Boolean haEnable) {
+		this.haEnable = haEnable;
+	}
+
+	public void setGroupId(String groupId) {
+		this.groupId = groupId;
+	}
+
+	public void setGroup(String group) {
+		this.group = group;
+	}
+
+	public void setZoneId(String zoneId) {
+		this.zoneId = zoneId;
+	}
+
+	public void setZoneName(String zoneName) {
+		this.zoneName = zoneName;
+	}
+
+	public void setHostId(String hostId) {
+		this.hostId = hostId;
+	}
+
+	public void setHostName(String hostName) {
+		this.hostName = hostName;
+	}
+
+	public void setTemplateId(String templateId) {
+		this.templateId = templateId;
+	}
+
+	public void setTemplateName(String templateName) {
+		this.templateName = templateName;
+	}
+
+	public void setTemplateDisplayText(String templateDisplayText) {
+		this.templateDisplayText = templateDisplayText;
+	}
+
+	public void setPasswordEnabled(Boolean passwordEnabled) {
+		this.passwordEnabled = passwordEnabled;
+	}
+
+	public void setIsoId(String isoId) {
+		this.isoId = isoId;
+	}
+
+	public void setIsoName(String isoName) {
+		this.isoName = isoName;
+	}
+
+	public void setIsoDisplayText(String isoDisplayText) {
+		this.isoDisplayText = isoDisplayText;
+	}
+
+	public void setDiskKbsRead(Long diskKbsRead) {
+		this.diskKbsRead = diskKbsRead;
+	}
+
+	public void setDiskKbsWrite(Long diskKbsWrite) {
+		this.diskKbsWrite = diskKbsWrite;
+	}
+
+	public void setDiskIORead(Long diskIORead) {
+		this.diskIORead = diskIORead;
+	}
+
+	public void setDiskIOWrite(Long diskIOWrite) {
+		this.diskIOWrite = diskIOWrite;
+	}
+
+	public void setServiceOfferingId(String serviceOfferingId) {
+		this.serviceOfferingId = serviceOfferingId;
+	}
+
+	public void setServiceOfferingName(String serviceOfferingName) {
+		this.serviceOfferingName = serviceOfferingName;
+	}
+
+	public void setCpuNumber(Integer cpuNumber) {
+		this.cpuNumber = cpuNumber;
+	}
+
+	public void setCpuSpeed(Integer cpuSpeed) {
+		this.cpuSpeed = cpuSpeed;
+	}
+
+	public void setMemory(Integer memory) {
+		this.memory = memory;
+	}
+
+	public void setCpuUsed(String cpuUsed) {
+		this.cpuUsed = cpuUsed;
+	}
+
+	public void setNetworkKbsRead(Long networkKbsRead) {
+		this.networkKbsRead = networkKbsRead;
+	}
+
+	public void setNetworkKbsWrite(Long networkKbsWrite) {
+		this.networkKbsWrite = networkKbsWrite;
+	}
+
+	public void setGuestOsId(String guestOsId) {
+		this.guestOsId = guestOsId;
+	}
+
+	public void setRootDeviceId(Long rootDeviceId) {
+		this.rootDeviceId = rootDeviceId;
+	}
+
+	public void setRootDeviceType(String rootDeviceType) {
+		this.rootDeviceType = rootDeviceType;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public void setForVirtualNetwork(Boolean forVirtualNetwork) {
+		this.forVirtualNetwork = forVirtualNetwork;
+	}
+
+	public void setNics(Set<NicResponse> nics) {
+		this.nics = nics;
+	}
+
+	public void addNic(NicResponse nic) {
+		this.nics.add(nic);
+	}
+
+	public void setSecurityGroupList(Set<SecurityGroupResponse> securityGroups) {
+		this.securityGroupList = securityGroups;
+	}
+
+	public void addSecurityGroup(SecurityGroupResponse securityGroup){
+		this.securityGroupList.add(securityGroup);
+	}
+
+	@Override
+	public void setProjectId(String projectId) {
+		this.projectId = projectId;
+	}
+
+	@Override
+	public void setProjectName(String projectName) {
+		this.projectName = projectName;
+	}
+
+	public void setPublicIpId(String publicIpId) {
+		this.publicIpId = publicIpId;
+	}
+
+	public void setPublicIp(String publicIp) {
+		this.publicIp = publicIp;
+	}
+
+	public void setInstanceName(String instanceName) {
+		this.instanceName = instanceName;
+	}
+
+	public void setTags(Set<ResourceTagResponse> tags) {
+		this.tags = tags;
+	}
+
+	public void addTag(ResourceTagResponse tag){
+		this.tags.add(tag);
+	}
+
+	public void setKeyPairName(String keyPairName) {
+		this.keyPairName = keyPairName;
+	}
+
+	public void setAffinityGroupList(Set<AffinityGroupResponse> affinityGroups) {
+		this.affinityGroupList = affinityGroups;
+	}
+
+	public void addAffinityGroup(AffinityGroupResponse affinityGroup) {
+		this.affinityGroupList.add(affinityGroup);
+	}
+
+	public void setDynamicallyScalable(boolean isDynamicallyScalable) {
+		this.isDynamicallyScalable = isDynamicallyScalable;
+	}
+
+	public void setServiceState(String state) {
+		this.serviceState = state;
+	}
 
 }

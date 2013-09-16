@@ -18,5 +18,5 @@
 # The CloudStack management server needs sudo permissions
 # without a password.
 
-@MSUSER ALL =NOPASSWD : ALL
+@MSUSER@ ALL =NOPASSWD : ALL
 

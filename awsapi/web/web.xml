@@ -22,16 +22,17 @@
 <!DOCTYPE web-app PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN" "http://java.sun.com/dtd/web-app_2_3.dtd">
 
 <web-app>
-
-	<listener>
-  	  <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
-	</listener>
+    <display-name>CloudBridge</display-name>
+    
     <context-param>    
         <param-name>contextConfigLocation</param-name>    
         <param-value>classpath:applicationContext.xml</param-value>    
     </context-param>
     
-    <display-name>CloudBridge</display-name>
+    <listener>
+        <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    </listener>
+
     <servlet>
         <servlet-name>EC2MainServlet</servlet-name>
         <display-name>EC2 Main Servlet</display-name>

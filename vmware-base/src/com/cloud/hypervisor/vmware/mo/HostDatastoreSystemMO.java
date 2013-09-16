@@ -26,14 +26,16 @@ import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DatastoreInfo;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.HostNasVolumeSpec;
+import com.vmware.vim25.HostScsiDisk;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.NasDatastoreInfo;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.ObjectSpec;
 import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
-import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
+import com.vmware.vim25.VmfsDatastoreCreateSpec;
+import com.vmware.vim25.VmfsDatastoreOption;
 
 public class HostDatastoreSystemMO extends BaseMO {
 
@@ -94,6 +96,25 @@ public class HostDatastoreSystemMO extends BaseMO {
 		return null;
 	}
 
+    public ManagedObjectReference findDatastoreByName(String datastoreName) throws Exception {
+        assert(datastoreName != null);
+
+        List<ManagedObjectReference> datastores = getDatastores();
+
+        if (datastores != null) {
+            for (ManagedObjectReference morDatastore : datastores) {
+                DatastoreInfo info = getDatastoreInfo(morDatastore);
+
+                if (info != null) {
+                    if (info.getName().equals(datastoreName))
+                        return morDatastore;
+                }
+            }
+        }
+
+        return null;
+    }
+
 	// TODO this is a hacking helper method, when we can pass down storage pool info along with volume
 	// we should be able to find the datastore by name
 	public ManagedObjectReference findDatastoreByExportPath(String exportPath) throws Exception {
@@ -120,6 +141,22 @@ public class HostDatastoreSystemMO extends BaseMO {
 		}
 
 		return null;
+	}
+
+	public List<HostScsiDisk> queryAvailableDisksForVmfs() throws Exception {
+		return _context.getService().queryAvailableDisksForVmfs(_mor, null);
+	}
+
+	public ManagedObjectReference createVmfsDatastore(String datastoreName, HostScsiDisk hostScsiDisk) throws Exception {
+		// just grab the first instance of VmfsDatastoreOption
+		VmfsDatastoreOption vmfsDatastoreOption = _context.getService().queryVmfsDatastoreCreateOptions(_mor, hostScsiDisk.getDevicePath(), 5).get(0);
+
+		VmfsDatastoreCreateSpec vmfsDatastoreCreateSpec = (VmfsDatastoreCreateSpec)vmfsDatastoreOption.getSpec();
+
+		// set the name of the datastore to be created
+		vmfsDatastoreCreateSpec.getVmfs().setVolumeName(datastoreName);
+
+		return _context.getService().createVmfsDatastore(_mor, vmfsDatastoreCreateSpec);
 	}
 
 	public boolean deleteDatastore(String name) throws Exception {

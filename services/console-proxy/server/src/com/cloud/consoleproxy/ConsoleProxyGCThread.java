@@ -64,6 +64,7 @@ public class ConsoleProxyGCThread extends Thread {
     public void run() {
         
         boolean bReportLoad = false;
+        long lastReportTick = System.currentTimeMillis();
         while (true) {
             cleanupLogging();
             bReportLoad = false;
@@ -95,10 +96,12 @@ public class ConsoleProxyGCThread extends Thread {
                 client.closeClient();
             }
             
-            if(bReportLoad) {
+            if(bReportLoad || System.currentTimeMillis() - lastReportTick > 5000) {
                 // report load changes
                 String loadInfo = new ConsoleProxyClientStatsCollector(connMap).getStatsReport(); 
                 ConsoleProxy.reportLoadInfo(loadInfo);
+                lastReportTick = System.currentTimeMillis();
+                
                 if(s_logger.isDebugEnabled())
                     s_logger.debug("Report load change : " + loadInfo);
             }

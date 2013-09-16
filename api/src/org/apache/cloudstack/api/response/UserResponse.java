@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
@@ -74,6 +75,9 @@ public class UserResponse extends BaseResponse {
 
     @SerializedName("iscallerchilddomain") @Param(description="the boolean value representing if the updating target is in caller's child domain")
     private boolean isCallerChildDomain;
+    
+    @SerializedName(ApiConstants.IS_DEFAULT) @Param(description="true if user is default, false otherwise", since="4.2.0")
+    private Boolean isDefault;
 
     @Override
     public String getObjectId() {
@@ -205,5 +209,9 @@ public class UserResponse extends BaseResponse {
 
     public void setIsCallerChildDomain(boolean isCallerChildDomain) {
         this.isCallerChildDomain = isCallerChildDomain;
+    }
+    
+    public void setIsDefault(Boolean isDefault) {
+        this.isDefault = isDefault;
     }
 }

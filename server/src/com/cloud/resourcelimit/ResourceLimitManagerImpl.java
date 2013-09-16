@@ -30,6 +30,11 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -42,10 +47,10 @@ import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.ResourceLimitVO;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
-import com.cloud.dao.EntityManager;
+import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -53,6 +58,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.projects.Project;
@@ -73,12 +79,12 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -94,7 +100,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
+import java.util.Arrays;
 
 @Component
 @Local(value = { ResourceLimitService.class })
@@ -140,9 +146,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     @Inject
     private ServiceOfferingDao _serviceOfferingDao;
     @Inject
-    private VMTemplateHostDao _vmTemplateHostDao;
+    private TemplateDataStoreDao _vmTemplateStoreDao;
+    @Inject
+    private VlanDao _vlanDao;
 
-    protected GenericSearchBuilder<VMTemplateHostVO, SumCount> templateSizeSearch;
+    protected GenericSearchBuilder<TemplateDataStoreVO, SumCount> templateSizeSearch;
 
     protected SearchBuilder<ResourceCountVO> ResourceCountSearch;
     ScheduledExecutorService _rcExecutor;
@@ -172,7 +180,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         ResourceCountSearch.and("domainId", ResourceCountSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         ResourceCountSearch.done();
 
-        templateSizeSearch = _vmTemplateHostDao.createSearchBuilder(SumCount.class);
+        templateSizeSearch = _vmTemplateStoreDao.createSearchBuilder(SumCount.class);
         templateSizeSearch.select("sum", Func.SUM, templateSizeSearch.entity().getSize());
         templateSizeSearch.and("downloadState", templateSizeSearch.entity().getDownloadState(), Op.EQ);
         templateSizeSearch.and("destroyed", templateSizeSearch.entity().getDestroyed(), Op.EQ);
@@ -198,7 +206,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             projectResourceLimitMap.put(Resource.ResourceType.memory, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectMemory.key())));
             projectResourceLimitMap.put(Resource.ResourceType.primary_storage, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectPrimaryStorage.key())));
             projectResourceLimitMap.put(Resource.ResourceType.secondary_storage, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectSecondaryStorage.key())));
-    
+
             accountResourceLimitMap.put(Resource.ResourceType.public_ip, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountPublicIPs.key())));
             accountResourceLimitMap.put(Resource.ResourceType.snapshot, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountSnapshots.key())));
             accountResourceLimitMap.put(Resource.ResourceType.template, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountTemplates.key())));
@@ -225,6 +233,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             s_logger.trace("Not incrementing resource count for system accounts, returning");
             return;
         }
+
         long numToIncrement = (delta.length == 0) ? 1 : delta[0].longValue();
 
         if (!updateResourceCountForAccount(accountId, type, true, numToIncrement)) {
@@ -416,7 +425,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public List<ResourceLimitVO> searchForLimits(Long id, Long accountId, Long domainId, Integer type, Long startIndex, Long pageSizeVal) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         List<ResourceLimitVO> limits = new ArrayList<ResourceLimitVO>();
         boolean isAccount = true;
 
@@ -560,7 +569,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public ResourceLimitVO updateResourceLimit(Long accountId, Long domainId, Integer typeId, Long max) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         if (max == null) {
             max = new Long(Resource.RESOURCE_UNLIMITED);
@@ -582,7 +591,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
 
         //Convert max storage size from GiB to bytes
-        if (resourceType == ResourceType.primary_storage || resourceType == ResourceType.secondary_storage) {
+        if ((resourceType == ResourceType.primary_storage || resourceType == ResourceType.secondary_storage) && max >= 0) {
             max = max * ResourceType.bytesToGiB;
         }
 
@@ -658,7 +667,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public List<ResourceCountVO> recalculateResourceCount(Long accountId, Long domainId, Integer typeId) throws InvalidParameterValueException, CloudRuntimeException, PermissionDeniedException {
-        Account callerAccount = UserContext.current().getCaller();
+        Account callerAccount = CallContext.current().getCallingAccount();
         long count = 0;
         List<ResourceCountVO> counts = new ArrayList<ResourceCountVO>();
         List<ResourceType> resourceTypes = new ArrayList<ResourceType>();
@@ -803,18 +812,20 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         _resourceCountDao.lockRows(sc, null, true);
 
         ResourceCountVO accountRC = _resourceCountDao.findByOwnerAndType(accountId, ResourceOwnerType.Account, type);
-        long oldCount = accountRC.getCount();
+        long oldCount = 0;
+        if (accountRC != null)
+            oldCount = accountRC.getCount();
 
         if (type == Resource.ResourceType.user_vm) {
             newCount = _userVmDao.countAllocatedVMsForAccount(accountId);
         } else if (type == Resource.ResourceType.volume) {
             newCount = _volumeDao.countAllocatedVolumesForAccount(accountId);
-            long virtualRouterCount = _vmDao.countAllocatedVirtualRoutersForAccount(accountId);
+            long virtualRouterCount = _vmDao.findIdsOfAllocatedVirtualRoutersForAccount(accountId).size();
             newCount = newCount - virtualRouterCount; // don't count the volumes of virtual router
         } else if (type == Resource.ResourceType.snapshot) {
             newCount = _snapshotDao.countSnapshotsForAccount(accountId);
         } else if (type == Resource.ResourceType.public_ip) {
-            newCount = _ipAddressDao.countAllocatedIPsForAccount(accountId);
+            newCount = calculatePublicIpForAccount(accountId);
         } else if (type == Resource.ResourceType.template) {
             newCount = _vmTemplateDao.countTemplatesForAccount(accountId);
         } else if (type == Resource.ResourceType.project) {
@@ -828,7 +839,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         } else if (type == Resource.ResourceType.memory) {
             newCount = calculateMemoryForAccount(accountId);
         } else if (type == Resource.ResourceType.primary_storage) {
-            newCount = _volumeDao.primaryStorageUsedForAccount(accountId);
+            List<Long> virtualRouters = _vmDao.findIdsOfAllocatedVirtualRoutersForAccount(accountId);
+            newCount = _volumeDao.primaryStorageUsedForAccount(accountId, virtualRouters);
         } else if (type == Resource.ResourceType.secondary_storage) {
             newCount = calculateSecondaryStorageForAccount(accountId);
         } else {
@@ -898,12 +910,28 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         sc.setParameters("downloadState", Status.DOWNLOADED);
         sc.setParameters("destroyed", false);
         sc.setJoinParameters("templates", "accountId", accountId);
-        List<SumCount> templates = _vmTemplateHostDao.customSearch(sc, null);
+        List<SumCount> templates = _vmTemplateStoreDao.customSearch(sc, null);
         if (templates != null) {
             totalTemplatesSize = templates.get(0).sum;
         }
 
         return totalVolumesSize + totalSnapshotsSize + totalTemplatesSize;
+    }
+
+    private long calculatePublicIpForAccount(long accountId) {
+        Long dedicatedCount = 0L;
+        Long allocatedCount = 0L;
+
+        List<VlanVO> dedicatedVlans = _vlanDao.listDedicatedVlans(accountId);
+        for (VlanVO dedicatedVlan : dedicatedVlans) {
+            List<IPAddressVO> ips = _ipAddressDao.listByVlanId(dedicatedVlan.getId());
+            dedicatedCount += new Long(ips.size());
+        }
+        allocatedCount = _ipAddressDao.countAllocatedIPsForAccount(accountId);
+        if (dedicatedCount > allocatedCount)
+            return dedicatedCount;
+        else
+            return allocatedCount;
     }
 
     @Override

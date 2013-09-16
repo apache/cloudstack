@@ -16,13 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-import org.apache.cloudstack.api.response.CreateCmdResponse;
-
-import com.cloud.async.AsyncJob;
 import com.cloud.exception.ResourceAllocationException;
 
 public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
-    @Parameter(name = "id", type = CommandType.LONG)
     private Long id;
 
     private String uuid;
@@ -43,15 +39,6 @@ public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
 
     public void setEntityUuid(String uuid) {
         this.uuid = uuid;
-    }
-
-    public String getResponse(long jobId, String objectUuid) {
-        CreateCmdResponse response = new CreateCmdResponse();
-        AsyncJob job = _entityMgr.findById(AsyncJob.class, jobId);
-        response.setJobId(job.getUuid());
-        response.setId(objectUuid);
-        response.setResponseName(getCommandName());
-        return _responseGenerator.toSerializedString(response, getResponseType());
     }
 
     public String getCreateEventType() {

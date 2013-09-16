@@ -128,6 +128,9 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="limit_cpu_use", updatable=true, nullable=true)
     private boolean limitCpuUse;
 
+    @Column(name="display_vm", updatable=true, nullable=false)
+    protected boolean displayVm = true;
+
     @Column(name="last_host_id", updatable=true, nullable=true)
     private Long lastHostId;
 
@@ -329,7 +332,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     private String keypairName;
 
     @Column(name="job_id")
-    private long jobId;
+    private Long jobId;
 
     @Column(name="job_uuid")
     private String jobUuid;
@@ -368,6 +371,18 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="tag_customer")
     private String tagCustomer;
 
+    @Column(name = "affinity_group_id")
+    private long affinityGroupId;
+
+    @Column(name = "affinity_group_uuid")
+    private String affinityGroupUuid;
+
+    @Column(name = "affinity_group_name")
+    private String affinityGroupName;
+
+    @Column(name = "affinity_group_description")
+    private String affinityGroupDescription;
+
     transient String password;
 
     @Transient
@@ -375,6 +390,9 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name="uuid")
     private String uuid;
+
+    @Column(name="dynamically_scalable")
+    private boolean isDynamicallyScalable;
 
     public UserVmJoinVO() {
     }
@@ -765,6 +783,13 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
         limitCpuUse = value;
     }
 
+    public boolean isDisplayVm() {
+        return displayVm;
+    }
+
+    public void setDisplayVm(boolean displayVm) {
+        this.displayVm = displayVm;
+    }
 
     public String getDataCenterUuid() {
         return dataCenterUuid;
@@ -1583,14 +1608,14 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
 
 
-    public long getJobId() {
+    public Long getJobId() {
         return jobId;
     }
 
 
 
 
-    public void setJobId(long jobId) {
+    public void setJobId(Long jobId) {
         this.jobId = jobId;
     }
 
@@ -1628,7 +1653,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Override
     public String toString() {
         if (toString == null) {
-            toString = new StringBuilder("VM[").append(id).append("|").append(hostName).append("]").toString();
+            toString = new StringBuilder("VM[").append(id).append("|").append(name).append("]").toString();
         }
         return toString;
     }
@@ -1671,4 +1696,37 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 	public void setIp6Cidr(String ip6Cidr) {
 		this.ip6Cidr = ip6Cidr;
 	}
+
+
+    public long getAffinityGroupId() {
+        return affinityGroupId;
+    }
+
+
+
+    public String getAffinityGroupUuid() {
+        return affinityGroupUuid;
+    }
+
+
+
+    public String getAffinityGroupName() {
+        return affinityGroupName;
+    }
+
+
+
+    public String getAffinityGroupDescription() {
+        return affinityGroupDescription;
+    }
+
+    public Boolean isDynamicallyScalable() {
+        return isDynamicallyScalable;
+    }
+
+    public void setDynamicallyScalable(boolean isDynamicallyScalable) {
+        this.isDynamicallyScalable = isDynamicallyScalable;
+    }
+
+
 }

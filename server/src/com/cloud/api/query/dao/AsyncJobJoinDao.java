@@ -16,12 +16,10 @@
 // under the License.
 package com.cloud.api.query.dao;
 
-import java.util.List;
-
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
 
 import com.cloud.api.query.vo.AsyncJobJoinVO;
-import com.cloud.async.AsyncJob;
 import com.cloud.utils.db.GenericDao;
 
 public interface AsyncJobJoinDao extends GenericDao<AsyncJobJoinVO, Long> {

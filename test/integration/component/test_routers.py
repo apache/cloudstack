@@ -24,7 +24,6 @@ from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
 
 #Import System modules
 import time
@@ -41,7 +40,7 @@ class Services:
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
                                     "cpuspeed": 100,    # in MHz
-                                    "memory": 64,       # In MBs
+                                    "memory": 128,       # In MBs
                                     },
                         "virtual_machine":
                                     {
@@ -91,7 +90,6 @@ class Services:
                                     },
                          "ostype": 'CentOS 5.3 (64-bit)',
                          # Used for Get_Template : CentOS 5.3 (64 bit)
-                         "mode": 'advanced',    # Networking mode: Advanced, basic
                         }
 
 
@@ -105,6 +103,7 @@ class TestRouterServices(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -127,19 +126,19 @@ class TestRouterServices(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     templateid=cls.template.id,
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls.vm_2 = VirtualMachine.create(
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     templateid=cls.template.id,
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
-        cls.cleanup = [
+        cls._cleanup = [
                        cls.account,
                        cls.service_offering
                        ]
@@ -150,7 +149,7 @@ class TestRouterServices(cloudstackTestCase):
         try:
             cls.api_client = super(TestRouterServices, cls).getClsTestClient().getApiClient()
             #Clean up, terminate the created templates
-            cleanup_resources(cls.api_client, cls.cleanup)
+            cleanup_resources(cls.api_client, cls._cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -158,14 +157,14 @@ class TestRouterServices(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            cleanup_resources(self.apiclient, self._cleanup)
+            cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self._cleanup = []
+        self.cleanup = []
         return
 
     @attr(tags = ["advanced"])
@@ -189,8 +188,8 @@ class TestRouterServices(cloudstackTestCase):
 
         routers = list_routers(
                                self.apiclient,
-                               account=self.account.account.name,
-                               domainid=self.account.account.domainid,
+                               account=self.account.name,
+                               domainid=self.account.domainid,
                                )
 
         self.assertEqual(
@@ -204,20 +203,22 @@ class TestRouterServices(cloudstackTestCase):
                              "Check list router response"
                              )
         for router in routers:
-            self.assertEqual(
-                        router.state,
-                        'Running',
-                        "Check list router response for router state"
-                    )
             self.debug("Router ID: %s & Router state: %s" % (
                                                              router.id,
                                                              router.state
                                                              ))
+            self.assertEqual(
+                        router.state,
+                        'Running',
+                        "Router state is not running but is  %s" % router.state
+                    )
+
         # Network state associated with account should be 'Implemented'
         networks = list_networks(
                                  self.apiclient,
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid,
+                                 account=self.account.name,
+                                 domainid=self.account.domainid,
+                                 type = 'Isolated'
                                  )
         self.assertEqual(
                         isinstance(networks, list),
@@ -231,20 +232,21 @@ class TestRouterServices(cloudstackTestCase):
                              "Check list networks response"
                              )
         for network in networks:
+            self.debug("Network ID: %s & Network state: %s" % (
+                                                             network.id,
+                                                             network.state
+                                                             ))
             self.assertIn(
                         network.state,
                         ['Implemented', 'Allocated'],
                         "Check list network response for network state"
                     )
-            self.debug("Network ID: %s & Network state: %s" % (
-                                                             network.id,
-                                                             network.state
-                                                             ))
+
         # VM state associated with account should be 'Running'
         virtual_machines = list_virtual_machines(
                                 self.apiclient,
-                                account=self.account.account.name,
-                                domainid=self.account.account.domainid
+                                account=self.account.name,
+                                domainid=self.account.domainid
                                 )
 
         self.assertEqual(
@@ -271,8 +273,9 @@ class TestRouterServices(cloudstackTestCase):
         # Check status of DNS, DHCP, FIrewall, LB VPN processes
         networks = list_networks(
                                  self.apiclient,
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid,
+                                 account=self.account.name,
+                                 domainid=self.account.domainid,
+                                 type = 'Isolated'
                                  )
         self.assertEqual(
                         isinstance(networks, list),
@@ -332,8 +335,8 @@ class TestRouterServices(cloudstackTestCase):
 
         routers = list_routers(
                                self.apiclient,
-                               account=self.account.account.name,
-                               domainid=self.account.account.domainid,
+                               account=self.account.name,
+                               domainid=self.account.domainid,
                                )
 
         self.assertEqual(
@@ -348,20 +351,22 @@ class TestRouterServices(cloudstackTestCase):
                              )
         # Router associated with account should be in running state
         for router in routers:
+            self.debug("Router ID: %s & Router state: %s" % (
+                                                             router.id,
+                                                             router.state
+                                                             ))
             self.assertEqual(
                         router.state,
                         'Running',
                         "Check list router response for router state"
                     )
-            self.debug("Router ID: %s & Router state: %s" % (
-                                                             router.id,
-                                                             router.state
-                                                             ))
+
         # Network state associated with account should be 'Implemented'
         networks = list_networks(
                                  self.apiclient,
-                                 account=self.account.account.name,
-                                 domainid=self.account.account.domainid,
+                                 account=self.account.name,
+                                 domainid=self.account.domainid,
+                                 type = 'Isolated'
                                  )
         self.assertEqual(
                         isinstance(networks, list),
@@ -375,20 +380,21 @@ class TestRouterServices(cloudstackTestCase):
                              )
         # Check if network in 'Implemented' state
         for network in networks:
+            self.debug("Network ID: %s & Network state: %s" % (
+                                                             network.id,
+                                                             network.state
+                                                             ))
             self.assertIn(
                         network.state,
                         ['Implemented', 'Allocated'],
                         "Check list network response for network state"
                     )
-            self.debug("Network ID: %s & Network state: %s" % (
-                                                             network.id,
-                                                             network.state
-                                                             ))
+
         # VM state associated with account should be 'Running'
         virtual_machines = list_virtual_machines(
                                 self.apiclient,
-                                account=self.account.account.name,
-                                domainid=self.account.account.domainid,
+                                account=self.account.name,
+                                domainid=self.account.domainid,
                                 )
 
         self.assertEqual(
@@ -402,15 +408,16 @@ class TestRouterServices(cloudstackTestCase):
                              "Check list virtual machines response"
                              )
         for virtual_machine in virtual_machines:
+            self.debug("VM ID: %s & VM state: %s" % (
+                                                     virtual_machine.id,
+                                                     virtual_machine.state
+                                                    ))
             self.assertEqual(
                         virtual_machine.state,
                         'Running',
                         "Check list VM response for Running state"
                     )
-            self.debug("VM ID: %s & VM state: %s" % (
-                                                     virtual_machine.id,
-                                                     virtual_machine.state
-                                                    ))
+
             # Stop virtual machine
             cmd = stopVirtualMachine.stopVirtualMachineCmd()
             cmd.id = virtual_machine.id
@@ -445,8 +452,8 @@ class TestRouterServices(cloudstackTestCase):
 
         routers = list_routers(
                                self.apiclient,
-                               account=self.account.account.name,
-                               domainid=self.account.account.domainid,
+                               account=self.account.name,
+                               domainid=self.account.domainid,
                                )
 
         self.assertEqual(
@@ -460,17 +467,18 @@ class TestRouterServices(cloudstackTestCase):
                              "Check list router response"
                              )
         for router in routers:
+            self.debug("Router ID: %s & Router state: %s" % (
+                                                             router.id,
+                                                             router.state
+                                                             ))
             self.assertEqual(
                         router.state,
                         'Stopped',
                         "Check list router response for router state"
                     )
-            self.debug("Router ID: %s & Router state: %s" % (
-                                                             router.id,
-                                                             router.state
-                                                             ))
+
         # Cleanup Vm_2 - Not required for further tests
-        self._cleanup.append(self.vm_2)
+        self.cleanup.append(self.vm_2)
         return
 
     @attr(tags = ["advanced"])
@@ -484,12 +492,41 @@ class TestRouterServices(cloudstackTestCase):
         # 4. listRouters should report router to have come back to "Running" state
         # 5. All other VMs in the account should remain in "Stopped" state
 
+
+        #stop all pre-existing virtual machines if they are in 'Running' state
+        virtual_machines = list_virtual_machines(
+                                self.apiclient,
+                                account=self.account.name,
+                                domainid=self.account.domainid,
+                                )
+
+        self.assertEqual(
+                        isinstance(virtual_machines, list),
+                        True,
+                        "Check for list virtual machines response return valid data"
+                        )
+        self.assertNotEqual(
+                             len(virtual_machines),
+                             0,
+                             "Check list virtual machines response"
+                             )
+        for virtual_machine in virtual_machines:
+            self.debug("VM ID: %s & VM state: %s" % (
+                                                     virtual_machine.id,
+                                                     virtual_machine.state
+                                                    ))
+            if virtual_machine.state == 'Running':
+                # Stop virtual machine
+                cmd = stopVirtualMachine.stopVirtualMachineCmd()
+                cmd.id = virtual_machine.id
+                self.apiclient.stopVirtualMachine(cmd)
+
         vm = VirtualMachine.create(
                                     self.apiclient,
                                     self.services["virtual_machine"],
                                     templateid=self.template.id,
-                                    accountid=self.account.account.name,
-                                    domainid=self.account.account.domainid,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id
                                     )
         self.debug("Deployed a VM with ID: %s" % vm.id)
@@ -497,8 +534,8 @@ class TestRouterServices(cloudstackTestCase):
         virtual_machines = list_virtual_machines(
                                 self.apiclient,
                                 id=vm.id,
-                                account=self.account.account.name,
-                                domainid=self.account.account.domainid,
+                                account=self.account.name,
+                                domainid=self.account.domainid,
                                 )
 
         self.assertEqual(
@@ -522,8 +559,8 @@ class TestRouterServices(cloudstackTestCase):
 
         routers = list_routers(
                                self.apiclient,
-                               account=self.account.account.name,
-                               domainid=self.account.account.domainid,
+                               account=self.account.name,
+                               domainid=self.account.domainid,
                                )
 
         self.assertEqual(
@@ -540,22 +577,23 @@ class TestRouterServices(cloudstackTestCase):
         # Routers associated with account should be 'Running' after deployment
         # of VM
         for router in routers:
+            self.debug("Router ID: %s & Router state: %s" % (
+                                                             router.id,
+                                                             router.state
+                                                             ))
             self.assertEqual(
                         router.state,
                         'Running',
                         "Check list router response for router state"
                     )
-            self.debug("Router ID: %s & Router state: %s" % (
-                                                             router.id,
-                                                             router.state
-                                                             ))
+
 
         # All other VMs (VM_1) should be in 'Stopped'
         virtual_machines = list_virtual_machines(
                                 self.apiclient,
                                 id=self.vm_1.id,
-                                account=self.account.account.name,
-                                domainid=self.account.account.domainid,
+                                account=self.account.name,
+                                domainid=self.account.domainid,
                                 )
 
         self.assertEqual(
@@ -570,15 +608,16 @@ class TestRouterServices(cloudstackTestCase):
                              "Check list virtual machines response"
                              )
         for virtual_machine in virtual_machines:
+            self.debug("VM ID: %s & VM state: %s" % (
+                                                     virtual_machine.id,
+                                                     virtual_machine.state
+                                                    ))
             self.assertEqual(
                         virtual_machine.state,
                         'Stopped',
                         "Check list VM response for Stopped state"
                     )
-            self.debug("VM ID: %s & VM state: %s" % (
-                                                     virtual_machine.id,
-                                                     virtual_machine.state
-                                                    ))
+
         return
 
 
@@ -592,6 +631,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -614,11 +654,11 @@ class TestRouterStopCreatePF(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
-        cls.cleanup = [
+        cls._cleanup = [
                        cls.account,
                        cls.service_offering
                        ]
@@ -629,7 +669,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
         try:
             cls.api_client = super(TestRouterStopCreatePF, cls).getClsTestClient().getApiClient()
             # Clean up, terminate the created resources
-            cleanup_resources(cls.api_client, cls.cleanup)
+            cleanup_resources(cls.api_client, cls._cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -638,14 +678,14 @@ class TestRouterStopCreatePF(cloudstackTestCase):
     def tearDown(self):
         try:
             # Clean up, terminate the created resources
-            cleanup_resources(self.apiclient, self._cleanup)
+            cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self._cleanup = []
+        self.cleanup = []
         return
 
     @attr(tags = ["advanced", "advancedns"])
@@ -667,8 +707,8 @@ class TestRouterStopCreatePF(cloudstackTestCase):
         # Get router details associated for that account
         routers = list_routers(
                                self.apiclient,
-                               account=self.account.account.name,
-                               domainid=self.account.account.domainid,
+                               account=self.account.name,
+                               domainid=self.account.domainid,
                                )
 
         self.assertEqual(
@@ -692,8 +732,8 @@ class TestRouterStopCreatePF(cloudstackTestCase):
 
         routers = list_routers(
                                self.apiclient,
-                               account=self.account.account.name,
-                               domainid=self.account.account.domainid,
+                               account=self.account.name,
+                               domainid=self.account.domainid,
                                )
         self.assertEqual(
                         isinstance(routers, list),
@@ -710,8 +750,8 @@ class TestRouterStopCreatePF(cloudstackTestCase):
 
         public_ips = list_publicIP(
                                    self.apiclient,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid,
+                                   account=self.account.name,
+                                   domainid=self.account.domainid,
                                    zoneid=self.zone.id
                                    )
         self.assertEqual(
@@ -748,8 +788,8 @@ class TestRouterStopCreatePF(cloudstackTestCase):
 
         routers = list_routers(
                                self.apiclient,
-                               account=self.account.account.name,
-                               domainid=self.account.account.domainid,
+                               account=self.account.name,
+                               domainid=self.account.domainid,
                                zoneid=self.zone.id
                                )
         self.assertEqual(
@@ -803,6 +843,7 @@ class TestRouterStopCreateLB(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -825,11 +866,11 @@ class TestRouterStopCreateLB(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
-        cls.cleanup = [
+        cls._cleanup = [
                        cls.account,
                        cls.service_offering
                        ]
@@ -840,7 +881,7 @@ class TestRouterStopCreateLB(cloudstackTestCase):
         try:
             cls.api_client = super(TestRouterStopCreateLB, cls).getClsTestClient().getApiClient()
             #Clean up, terminate the created resources
-            cleanup_resources(cls.api_client, cls.cleanup)
+            cleanup_resources(cls.api_client, cls._cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -848,14 +889,14 @@ class TestRouterStopCreateLB(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            cleanup_resources(self.apiclient, self._cleanup)
+            cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self._cleanup = []
+        self.cleanup = []
         return
 
     @attr(tags = ["advanced", "advancedns"])
@@ -872,8 +913,8 @@ class TestRouterStopCreateLB(cloudstackTestCase):
         # Get router details associated for that account
         routers = list_routers(
                                self.apiclient,
-                               account=self.account.account.name,
-                               domainid=self.account.account.domainid,
+                               account=self.account.name,
+                               domainid=self.account.domainid,
                                )
 
         self.assertEqual(
@@ -898,8 +939,8 @@ class TestRouterStopCreateLB(cloudstackTestCase):
 
         routers = list_routers(
                                self.apiclient,
-                               account=self.account.account.name,
-                               domainid=self.account.account.domainid,
+                               account=self.account.name,
+                               domainid=self.account.domainid,
                                )
         self.assertEqual(
                         isinstance(routers, list),
@@ -916,8 +957,8 @@ class TestRouterStopCreateLB(cloudstackTestCase):
 
         public_ips = list_publicIP(
                                    self.apiclient,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid
+                                   account=self.account.name,
+                                   domainid=self.account.domainid
                                    )
         self.assertEqual(
                         isinstance(public_ips, list),
@@ -941,7 +982,7 @@ class TestRouterStopCreateLB(cloudstackTestCase):
                                           self.apiclient,
                                           self.services["lbrule"],
                                           public_ip.id,
-                                          accountid=self.account.account.name
+                                          accountid=self.account.name
                                           )
         self.debug("Assigning VM %s to LB rule: %s" % (
                                                        self.vm_1.id,
@@ -956,8 +997,8 @@ class TestRouterStopCreateLB(cloudstackTestCase):
 
         routers = list_routers(
                                self.apiclient,
-                               account=self.account.account.name,
-                               domainid=self.account.account.domainid,
+                               account=self.account.name,
+                               domainid=self.account.domainid,
                                )
         self.assertEqual(
                         isinstance(routers, list),
@@ -1014,6 +1055,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        cls.services['mode'] = cls.zone.networktype
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1035,11 +1077,11 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                                     cls.api_client,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
-                                    accountid=cls.account.account.name,
-                                    domainid=cls.account.account.domainid,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
-        cls.cleanup = [
+        cls._cleanup = [
                        cls.account,
                        cls.service_offering
                        ]
@@ -1050,7 +1092,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         try:
             cls.api_client = super(TestRouterStopCreateFW, cls).getClsTestClient().getApiClient()
             #Clean up, terminate the created templates
-            cleanup_resources(cls.api_client, cls.cleanup)
+            cleanup_resources(cls.api_client, cls._cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -1058,14 +1100,14 @@ class TestRouterStopCreateFW(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            cleanup_resources(self.apiclient, self._cleanup)
+            cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self._cleanup = []
+        self.cleanup = []
         return
 
     @attr(tags = ["advanced", "advancedns"])
@@ -1081,8 +1123,8 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         # Get the router details associated with account
         routers = list_routers(
                                self.apiclient,
-                               account=self.account.account.name,
-                               domainid=self.account.account.domainid,
+                               account=self.account.name,
+                               domainid=self.account.domainid,
                                )
 
         self.assertEqual(
@@ -1107,8 +1149,8 @@ class TestRouterStopCreateFW(cloudstackTestCase):
 
         routers = list_routers(
                                self.apiclient,
-                               account=self.account.account.name,
-                               domainid=self.account.account.domainid,
+                               account=self.account.name,
+                               domainid=self.account.domainid,
                                )
         self.assertEqual(
                         isinstance(routers, list),
@@ -1125,8 +1167,8 @@ class TestRouterStopCreateFW(cloudstackTestCase):
 
         public_ips = list_publicIP(
                                    self.apiclient,
-                                   account=self.account.account.name,
-                                   domainid=self.account.account.domainid
+                                   account=self.account.name,
+                                   domainid=self.account.domainid
                                    )
         self.assertEqual(
                         isinstance(public_ips, list),
@@ -1154,8 +1196,8 @@ class TestRouterStopCreateFW(cloudstackTestCase):
 
         routers = list_routers(
                                self.apiclient,
-                               account=self.account.account.name,
-                               domainid=self.account.account.domainid,
+                               account=self.account.name,
+                               domainid=self.account.domainid,
                                )
         self.assertEqual(
                         isinstance(routers, list),
@@ -1208,20 +1250,24 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                         )
         host = hosts[0]
         # For DNS and DHCP check 'dnsmasq' process status
-        result = get_process_status(
-                                host.ipaddress,
-                                self.services['host']["publicport"],
-                                self.services['host']["username"],
-                                self.services['host']["password"],
-                                router.linklocalip,
-                                'iptables -t nat -L'
-                                )
-        self.debug("iptables -t nat -L: %s" % result)
-        self.debug("Public IP: %s" % public_ip.ipaddress)
-        res = str(result)
-        self.assertEqual(
-                            res.count(str(public_ip.ipaddress)),
-                            1,
-                            "Check public IP address"
-                        )
+        try:
+            host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
+            result = get_process_status(
+                host.ipaddress,
+                22,
+                host.user,
+                host.passwd,
+                router.linklocalip,
+                'iptables -t nat -L'
+            )
+            self.debug("iptables -t nat -L: %s" % result)
+            self.debug("Public IP: %s" % public_ip.ipaddress)
+            res = str(result)
+            self.assertEqual(
+                res.count(str(public_ip.ipaddress)),
+                1,
+                "Check public IP address"
+            )
+        except KeyError:
+            self.skipTest("Provide a marvin config file with host credentials to run %s" % self._testMethodName)
         return

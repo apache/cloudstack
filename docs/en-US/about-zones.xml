@@ -32,6 +32,7 @@
     <para>A zone consists of:</para>
     <itemizedlist>
         <listitem><para>One or more pods. Each pod contains one or more clusters of hosts and one or more primary storage servers.</para></listitem>
+        <listitem><para>A zone may contain one or more primary storage servers, which are shared by all the pods in the zone.</para></listitem>
         <listitem><para>Secondary storage, which is shared by all the pods in the zone.</para></listitem>
     </itemizedlist>
     <mediaobject>
@@ -45,12 +46,29 @@
     <para>Hosts in the same zone are directly accessible to each other without having to go through a firewall. Hosts in different zones can access each other through statically configured VPN tunnels.</para>
     <para>For each zone, the administrator must decide the following.</para>
     <itemizedlist>
-        <listitem><para>How many pods to place in a zone.</para></listitem>
+        <listitem><para>How many pods to place in each zone.</para></listitem>
         <listitem><para>How many clusters to place in each pod.</para></listitem>
         <listitem><para>How many hosts to place in each cluster.</para></listitem>
-        <listitem><para>How many primary storage servers to place in each cluster and total capacity for the storage servers.</para></listitem>
+        <listitem><para>(Optional) How many primary storage servers to place in each zone and total capacity for these storage servers.</para></listitem>
+        <listitem><para>How many primary storage servers to place in each cluster and total capacity for these storage servers.</para></listitem>
         <listitem><para>How much secondary storage to deploy in a zone.</para></listitem>
     </itemizedlist>
     <para>When you add a new zone using the &PRODUCT; UI, you will be prompted to configure the zone’s physical network
         and add the first pod, cluster, host, primary storage, and secondary storage.</para>
+    <para>In order to support zone-wide functions for VMware, &PRODUCT; is aware of VMware Datacenters and can map each Datacenter to a
+        &PRODUCT; zone. To enable features like storage live migration and zone-wide
+        primary storage for VMware hosts, &PRODUCT; has to make sure that a zone
+        contains only a single VMware Datacenter. Therefore, when you are creating a new
+        &PRODUCT; zone, you can select a VMware Datacenter for the zone. If you
+        are provisioning multiple VMware Datacenters, each one will be set up as a single zone
+        in &PRODUCT;. </para>
+    <note>
+        <para>If you are upgrading from a previous &PRODUCT; version, and your existing
+            deployment contains a zone with clusters from multiple VMware Datacenters, that zone
+            will not be forcibly migrated to the new model. It will continue to function as
+            before. However, any new zone-wide operations, such as zone-wide primary storage
+            and live storage migration, will
+            not be available in that zone.</para>
+    </note>
+    <para/>
 </section>

@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.exception.InvalidParameterValueException;
 
 public abstract class BaseListCmd extends BaseCmd {
@@ -54,7 +53,7 @@ public abstract class BaseListCmd extends BaseCmd {
     }
 
     public Integer getPageSize() {
-        if (pageSize != null && MAX_PAGESIZE != null && pageSize.longValue() > MAX_PAGESIZE.longValue()) {
+        if (pageSize != null && MAX_PAGESIZE.longValue() != PAGESIZE_UNLIMITED && pageSize.longValue() > MAX_PAGESIZE.longValue()) {
             throw new InvalidParameterValueException("Page size can't exceed max allowed page size value: " + MAX_PAGESIZE.longValue());
         }
 
@@ -85,12 +84,12 @@ public abstract class BaseListCmd extends BaseCmd {
         Long defaultPageSize = MAX_PAGESIZE;
         Integer pageSizeInt = getPageSize();
         if (pageSizeInt != null) {
-            if (pageSizeInt.longValue() == PAGESIZE_UNLIMITED) {
-                defaultPageSize = null;
-            } else {
-                defaultPageSize = pageSizeInt.longValue();
-            }
+            defaultPageSize = pageSizeInt.longValue();
         }
+        if (defaultPageSize.longValue() == PAGESIZE_UNLIMITED) {
+            defaultPageSize = null;
+        }
+        
         return defaultPageSize;
     }
 
@@ -109,7 +108,7 @@ public abstract class BaseListCmd extends BaseCmd {
         return startIndex;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.None;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.None;
     }
 }

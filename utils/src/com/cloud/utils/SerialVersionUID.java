@@ -61,4 +61,6 @@ public interface SerialVersionUID {
     public static final long CloudExecutionException = Base | 0x27;
     public static final long CallFailedException = Base | 0x28;
     public static final long UnableDeleteHostException = Base | 0x29;
+    public static final long AffinityConflictException = Base | 0x2a;
+    public static final long JobCancellationException = Base | 0x2b;
 }

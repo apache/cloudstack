@@ -36,9 +36,8 @@ public interface PrimaryDataStore extends DataStore, PrimaryDataStoreInfo {
     boolean exists(DataObject data);
 
     TemplateInfo getTemplate(long templateId);
-    
-    SnapshotInfo getSnapshot(long snapshotId);
 
+    SnapshotInfo getSnapshot(long snapshotId);
 
     DiskFormat getDefaultDiskType();
 }

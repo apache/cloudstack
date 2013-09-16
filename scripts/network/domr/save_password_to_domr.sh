@@ -29,7 +29,7 @@ replace_in_file_on_domr() {
   local filename=$1
   local keyname=$2
   local value=$3
-  $VIA_SSH "sed -i /$keyname/d $filename; \
+  $VIA_SSH "sed -i /$keyname=/d $filename; \
   		 	echo "$keyname=$value" >> $filename "
   		 	
   # $VIA_SSH "sed -e /$keyname/d $filename > $filename.new; \

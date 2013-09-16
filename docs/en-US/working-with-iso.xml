@@ -29,4 +29,5 @@
 	<para>ISO images may be stored in the system and made available with a privacy level similar to templates. ISO images are classified as either bootable or not bootable. A bootable ISO image is one that contains an OS image. &PRODUCT; allows a user to boot a guest VM off of an ISO image. Users can also attach ISO images to guest VMs. For example, this enables installing PV drivers into Windows.  ISO images are not hypervisor-specific.</para>
     <xi:include href="add-iso.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="attach-iso-to-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="update-iso-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>

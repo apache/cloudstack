@@ -21,8 +21,10 @@ import com.cloud.api.ApiResponseGsonHelper;
 import com.cloud.api.ApiServer;
 import com.cloud.utils.encoding.URLEncoder;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.ExceptionProxyObject;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ResponseObject;
@@ -215,22 +217,27 @@ public class ApiResponseSerializer {
                                 subObj.setObjectName(serializedName.value());
                             }
                             serializeResponseObjXML(sb, subObj);
-                        } else {
-                            // Only exception reponses carry a list of uuid
-                            // strings.
+                        } else if (value instanceof ExceptionProxyObject) {
+                            // Only exception reponses carry a list of
+                            // ExceptionProxyObject objects.
+                            ExceptionProxyObject idProxy = (ExceptionProxyObject) value;
                             // If this is the first IdentityProxy field
                             // encountered, put in a uuidList tag.
                             if (!usedUuidList) {
-                                sb.append("<").append(serializedName.value()).append(">");
+                                sb.append("<" + serializedName.value() + ">");
                                 usedUuidList = true;
                             }
-                            sb.append("<uuid>").append(value).append("</uuid>");
-                            // We have removed uuid property field due to removal of IdentityProxy class.
+                            sb.append("<" + "uuid" + ">" + idProxy.getUuid() + "</" + "uuid" + ">");
+                            // Append the new descriptive property also.
+                            String idFieldName = idProxy.getDescription();
+                            if (idFieldName != null) {
+                                sb.append("<" + "uuidProperty" + ">" + idFieldName + "</" + "uuidProperty" + ">");
+                            }
                         }
                     }
                     if (usedUuidList) {
-                    	// close the uuidList.
-                    	sb.append("</").append(serializedName.value()).append(">");
+                        // close the uuidList.
+                        sb.append("</").append(serializedName.value()).append(">");
                     }
                 } else if (fieldValue instanceof Date) {
                     sb.append("<").append(serializedName.value()).append(">").append(BaseCmd.getDateString((Date) fieldValue)).

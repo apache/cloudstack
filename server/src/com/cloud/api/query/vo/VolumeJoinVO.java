@@ -58,6 +58,12 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "size")
     long size;
 
+    @Column(name = "min_iops")
+    Long minIops;
+
+    @Column(name = "max_iops")
+    Long maxIops;
+
     @Column(name = "state")
     @Enumerated(value = EnumType.STRING)
     private Volume.State state;
@@ -138,11 +144,11 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Enumerated(value=EnumType.STRING)
     protected VirtualMachine.Type vmType;
 
-    @Column (name="volume_host_size")
-    private long volumeHostSize;
+    @Column(name = "volume_store_size")
+    private long volumeStoreSize;
 
-    @Column(name="volume_host_created")
-    private Date volumeHostCreated;
+    @Column(name = "created_on_store")
+    private Date createdOnStore;
 
     @Column(name="format")
     private Storage.ImageFormat format;
@@ -181,6 +187,18 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="use_local_storage")
     private boolean useLocalStorage;
 
+    @Column(name="bytes_read_rate")
+    Long bytesReadRate;
+
+    @Column(name="bytes_write_rate")
+    Long bytesWriteRate;
+
+    @Column(name="iops_read_rate")
+    Long iopsReadRate;
+
+    @Column(name="iops_write_rate")
+    Long iopsWriteRate;
+
     @Column(name="pool_id")
     private long poolId;
 
@@ -203,7 +221,7 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     private Storage.TemplateType templateType;
 
     @Column(name="job_id")
-    private long jobId;
+    private Long jobId;
 
     @Column(name="job_uuid")
     private String jobUuid;
@@ -242,6 +260,9 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="tag_customer")
     private String tagCustomer;
 
+
+    @Column(name="display_volume", updatable=true, nullable=false)
+    protected boolean displayVolume;
 
 
     public VolumeJoinVO() {
@@ -322,12 +343,25 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
         this.size = size;
     }
 
+    public Long getMinIops() {
+        return minIops;
+    }
 
+    public void setMinIops(Long minIops) {
+        this.minIops = minIops;
+    }
+
+    public Long getMaxIops() {
+        return maxIops;
+    }
+
+    public void setMaxIops(Long maxIops) {
+        this.maxIops = maxIops;
+    }
 
     public Volume.State getState() {
         return state;
     }
-
 
 
     public void setState(Volume.State state) {
@@ -384,6 +418,13 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
 
+    public boolean isDisplayVolume() {
+        return displayVolume;
+    }
+
+    public void setDisplayVolume(boolean displayVolume) {
+        this.displayVolume = displayVolume;
+    }
 
     @Override
     public String getAccountUuid() {
@@ -584,31 +625,21 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
         this.vmType = vmType;
     }
 
-
-
-    public long getVolumeHostSize() {
-        return volumeHostSize;
+    public long getVolumeStoreSize() {
+        return volumeStoreSize;
     }
 
-
-
-    public void setVolumeHostSize(long volumeHostSize) {
-        this.volumeHostSize = volumeHostSize;
+    public void setVolumeStoreSize(long volumeStoreSize) {
+        this.volumeStoreSize = volumeStoreSize;
     }
 
-
-
-    public Date getVolumeHostCreated() {
-        return volumeHostCreated;
+    public Date getCreatedOnStore() {
+        return createdOnStore;
     }
 
-
-
-    public void setVolumeHostCreated(Date volumeHostCreated) {
-        this.volumeHostCreated = volumeHostCreated;
+    public void setCreatedOnStore(Date createdOnStore) {
+        this.createdOnStore = createdOnStore;
     }
-
-
 
     public Storage.ImageFormat getFormat() {
         return format;
@@ -729,6 +760,37 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
 
+    public void setBytesReadRate(Long bytesReadRate) {
+        this.bytesReadRate = bytesReadRate;
+    }
+
+    public Long getBytesReadRate() {
+        return bytesReadRate;
+    }
+
+    public void setBytesWriteRate(Long bytesWriteRate) {
+        this.bytesWriteRate = bytesWriteRate;
+    }
+
+    public Long getBytesWriteRate() {
+        return bytesWriteRate;
+    }
+
+    public void setIopsReadRate(Long iopsReadRate) {
+        this.iopsReadRate = iopsReadRate;
+    }
+
+    public Long getIopsReadRate() {
+        return iopsReadRate;
+    }
+
+    public void setIopsWriteRate(Long iopsWriteRate) {
+        this.iopsWriteRate = iopsWriteRate;
+    }
+
+    public Long getIopsWriteRate() {
+        return iopsWriteRate;
+    }
 
     public long getPoolId() {
         return poolId;
@@ -814,13 +876,13 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
 
 
 
-    public long getJobId() {
+    public Long getJobId() {
         return jobId;
     }
 
 
 
-    public void setJobId(long jobId) {
+    public void setJobId(Long jobId) {
         this.jobId = jobId;
     }
 

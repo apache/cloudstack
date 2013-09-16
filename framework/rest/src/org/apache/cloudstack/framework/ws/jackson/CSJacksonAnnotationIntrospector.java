@@ -44,7 +44,7 @@ public class CSJacksonAnnotationIntrospector extends NopAnnotationIntrospector {
     public Object findSerializer(Annotated a) {
         AnnotatedElement ae = a.getAnnotated();
         Url an = ae.getAnnotation(Url.class);
-        if (an == null) { 
+        if (an == null) {
             return null;
         }
 

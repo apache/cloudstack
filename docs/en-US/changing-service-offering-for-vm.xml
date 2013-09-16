@@ -22,33 +22,169 @@
 	under the License.
 -->
 <section id="changing-service-offering-for-vm">
-	<title>Changing the Service Offering for a VM</title>
-		<para>To upgrade or downgrade the level of compute resources available to a virtual machine, you can change the VM's compute offering.</para>
-		<orderedlist>
-			<listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
-			<listitem><para>In the left navigation, click Instances.</para></listitem>
-			<listitem><para>Choose the VM that you want to work with.</para></listitem>
-			<listitem><para>Click the Stop button to stop the VM.<inlinemediaobject>
-					<imageobject>
-						<imagedata fileref="./images/stop-instance-icon.png"/>
-					</imageobject>
-					<textobject>
-						<phrase>StopButton.png: button to stop a VM</phrase>
-					</textobject>
-				</inlinemediaobject>
-				</para></listitem>
-			<listitem><para>Click the Change Service button.<inlinemediaobject>
-					<imageobject>
-						<imagedata fileref="./images/change-service-icon.png"/>
-					</imageobject>
-					<textobject>
-						<phrase>ChangeServiceButton.png: button to change the service of a
-							VM</phrase>
-					</textobject>
-				</inlinemediaobject></para>
-				<para>The Change service dialog box is displayed.</para></listitem>
-			<listitem><para>Select the offering you want to apply to the selected VM.</para></listitem>
-			<listitem><para>Click OK.</para></listitem>
-		</orderedlist>
-	</section>
+  <title>Changing the Service Offering for a VM</title>
+  <para>To upgrade or downgrade the level of compute resources available to a virtual machine, you
+    can change the VM's compute offering.</para>
+  <orderedlist>
+    <listitem>
+      <para>Log in to the &PRODUCT; UI as a user or admin.</para>
+    </listitem>
+    <listitem>
+      <para>In the left navigation, click Instances.</para>
+    </listitem>
+    <listitem>
+      <para>Choose the VM that you want to work with.</para>
+    </listitem>
+    <listitem>
+      <para>(Skip this step if you have enabled dynamic VM scaling; see <xref
+          linkend="change-cpu-ram-for-vm"/>.)</para>
+      <para>Click the Stop button to stop the VM. <inlinemediaobject>
+          <imageobject>
+            <imagedata fileref="./images/stop-instance-icon.png"/>
+          </imageobject>
+          <textobject>
+            <phrase>StopButton.png: button to stop a VM</phrase>
+          </textobject>
+        </inlinemediaobject>
+      </para>
+    </listitem>
+    <listitem>
+      <para>Click the Change Service button.<inlinemediaobject>
+          <imageobject>
+            <imagedata fileref="./images/change-service-icon.png"/>
+          </imageobject>
+          <textobject>
+            <phrase>ChangeServiceButton.png: button to change the service of a VM</phrase>
+          </textobject>
+        </inlinemediaobject></para>
+      <para>The Change service dialog box is displayed.</para>
+    </listitem>
+    <listitem>
+      <para>Select the offering you want to apply to the selected VM.</para>
+    </listitem>
+    <listitem>
+      <para>Click OK.</para>
+    </listitem>
+  </orderedlist>
+  <section id="change-cpu-ram-for-vm">
+    <!-- CS-17394 -->
+    <title>CPU and Memory Scaling for Running VMs</title>
+    <para>(Supported on VMware and XenServer)</para>
+    <para>It is not always possible to accurately predict the CPU and RAM requirements when you
+      first deploy a VM. You might need to increase these resources at any time during the life of a
+      VM. You can dynamically modify CPU and RAM levels to scale up these resources for a running VM
+      without incurring any downtime.</para>
+    <para>Dynamic CPU and RAM scaling can be used in the following cases:</para>
+    <itemizedlist>
+      <listitem>
+        <para>User VMs on hosts running VMware and XenServer.</para>
+      </listitem>
+      <listitem>
+        <para>System VMs on VMware.</para>
+      </listitem>
+      <listitem>
+        <para>VMware Tools or XenServer Tools must be installed on the virtual machine.</para>
+      </listitem>
+      <listitem>
+        <para>The new requested CPU and RAM values must be within the constraints allowed by the
+          hypervisor and the VM operating system.</para>
+      </listitem>
+      <listitem>
+        <para>New VMs that are created after the installation of &PRODUCT; 4.2 can use the dynamic
+          scaling feature. If you are upgrading from a previous version of &PRODUCT;, your existing
+          VMs created with previous versions will not have the dynamic scaling capability unless you
+          update them using the following procedure.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+  <section id="update-vms">
+    <title>Updating Existing VMs</title>
+    <para>If you are upgrading from a previous version of &PRODUCT;, and you want your existing VMs
+      created with previous versions to have the dynamic scaling capability, update the VMs using
+      the following steps:</para>
+    <orderedlist>
+      <listitem>
+        <para>Make sure the zone-level setting enable.dynamic.scale.vm is set to true. In the left
+          navigation bar of the &PRODUCT; UI, click Infrastructure, then click Zones, click the zone
+          you want, and click the Settings tab.</para>
+      </listitem>
+      <listitem>
+        <para>Install Xen tools (for XenServer hosts) or VMware Tools (for VMware hosts) on each VM
+          if they are not already installed.</para>
+      </listitem>
+      <listitem>
+        <para>Stop the VM.</para>
+      </listitem>
+      <listitem>
+        <para>Click the Edit button.</para>
+      </listitem>
+      <listitem>
+        <para>Click the Dynamically Scalable checkbox.</para>
+      </listitem>
+      <listitem>
+        <para>Click Apply.</para>
+      </listitem>
+      <listitem>
+        <para>Restart the VM.</para>
+      </listitem>
+    </orderedlist>
+  </section>
+  <section id="configure-dynamic-scaling">
+    <title>Configuring Dynamic CPU and RAM Scaling</title>
+    <para>To configure this feature, use the following new global configuration variables:</para>
+    <itemizedlist>
+      <listitem>
+        <para>enable.dynamic.scale.vm: Set to True to enable the feature. By default, the feature is
+          turned off.</para>
+      </listitem>
+      <listitem>
+        <para>scale.retry: How many times to attempt the scaling operation. Default = 2.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+  <section id="dynamic-scaling-howto">
+    <title>How to Dynamically Scale CPU and RAM</title>
+    <para>To modify the CPU and/or RAM capacity of a virtual machine, you need to change the compute
+      offering of the VM to a new compute offering that has the desired CPU and RAM values. You can
+      use the same steps described above in <xref linkend="changing-service-offering-for-vm"/>, but
+      skip the step where you stop the virtual machine. Of course, you might have to create a new
+      compute offering first.</para>
+    <para>When you submit a dynamic scaling request, the resources will be scaled up on the current
+      host if possible. If the host does not have enough resources, the VM will be live migrated to
+      another host in the same cluster. If there is no host in the cluster that can fulfill the
+      requested level of CPU and RAM, the scaling operation will fail. The VM will continue to run
+      as it was before.</para>
+  </section>
+  <section id="dynamic-scaling-limitations">
+    <title>Limitations</title>
+    <itemizedlist>
+      <listitem>
+        <para>You can not do dynamic scaling for system VMs on XenServer.</para>
+      </listitem>
+      <listitem>
+        <para>&PRODUCT; will not check to be sure that the new CPU and RAM levels are compatible
+          with the OS running on the VM.</para>
+      </listitem>
+      <listitem>
+        <para>When scaling memory or CPU for a Linux VM on VMware, you might need to run scripts in
+          addition to the other steps mentioned above. For more information, see <ulink
+            url="http://kb.vmware.com/selfservice/microsites/search.do?language=en_US&amp;cmd=displayKC&amp;externalId=1012764"
+            >Hot adding memory in Linux (1012764)</ulink> in the VMware Knowledge Base.</para>
+      </listitem>
+      <listitem>
+        <para>(VMware) If resources are not available on the current host, scaling up will fail on
+          VMware because of a known issue where &PRODUCT; and vCenter calculate the available
+          capacity differently. For more information, see <ulink
+            url="https://issues.apache.org/jira/browse/CLOUDSTACK-1809"
+            >https://issues.apache.org/jira/browse/CLOUDSTACK-1809</ulink>.</para>
+      </listitem>
+      <listitem>
+        <para>On VMs running Linux 64-bit and Windows 7 32-bit operating systems, if the VM is
+          initially assigned a RAM of less than 3 GB, it can be dynamically scaled up to 3 GB, but
+          not more. This is due to a known issue with these operating systems, which will freeze if
+          an attempt is made to dynamically scale from less than 3 GB to more than 3 GB. </para>
+      </listitem>
+    </itemizedlist>
+  </section>
+</section>
 

@@ -18,14 +18,16 @@
 package com.cloud.usage;
 
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.usage.UsageManagerTestConfiguration.Library;
 import com.cloud.usage.dao.*;
 import com.cloud.usage.parser.*;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.user.dao.UserStatisticsDaoImpl;
-import com.cloud.utils.component.SpringComponentScanUtils;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
+import org.apache.cloudstack.test.utils.SpringUtils;
+
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -52,6 +54,7 @@ import java.io.IOException;
         UsagePortForwardingRuleDaoImpl.class,
         UsageNetworkOfferingDaoImpl.class,
         UsageVPNUserDaoImpl.class,
+        UsageVmDiskDaoImpl.class,
         UsageSecurityGroupDaoImpl.class,
         ConfigurationDaoImpl.class,
         UsageManagerImpl.class,
@@ -63,6 +66,7 @@ import java.io.IOException;
         PortForwardingUsageParser.class,
         SecurityGroupUsageParser.class,
         StorageUsageParser.class,
+        VmDiskUsageParser.class,
         VolumeUsageParser.class,
         VPNUserUsageParser.class,
         UserStatisticsDaoImpl.class},
@@ -87,7 +91,7 @@ public class UsageManagerTestConfiguration {
         public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {
             mdr.getClassMetadata().getClassName();
             ComponentScan cs = UsageManagerTestConfiguration.class.getAnnotation(ComponentScan.class);
-            return SpringComponentScanUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
+            return SpringUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
         }
 
     }

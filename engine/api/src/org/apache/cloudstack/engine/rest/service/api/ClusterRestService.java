@@ -30,11 +30,7 @@ import javax.ws.rs.QueryParam;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.ClusterEntity;
 import org.apache.cloudstack.engine.service.api.ProvisioningService;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
-@Component
-@Service("ClusterRestService")
 @Produces("application/json")
 public class ClusterRestService {
 //    @Inject
@@ -73,12 +69,12 @@ public class ClusterRestService {
 
     @PUT @Path("/cluster/create")
     public ClusterEntity create(
-            @QueryParam("xid") String xid, 
+            @QueryParam("xid") String xid,
             @QueryParam("display-name") String displayName) {
         return null;
     }
 
-    @PUT @Path("/cluster/{clusterid}/update") 
+    @PUT @Path("/cluster/{clusterid}/update")
     public ClusterEntity update(
             @QueryParam("display-name") String displayName) {
         return null;

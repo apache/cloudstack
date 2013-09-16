@@ -19,8 +19,10 @@ package org.apache.cloudstack.api.command.admin.host;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -33,10 +35,10 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 
 @APICommand(name = "listHosts", description="Lists hosts.", responseObject=HostResponse.class)
 public class ListHostsCmd extends BaseListCmd {
@@ -72,7 +74,7 @@ public class ListHostsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
             description="the Zone ID for the host")
     private Long zoneId;
-
+    
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class,
             required=false, description="lists hosts in the same cluster as this VM and flag hosts with enough CPU/RAm to host this VM")
     private Long virtualMachineId;
@@ -121,7 +123,7 @@ public class ListHostsCmd extends BaseListCmd {
     public Long getZoneId() {
         return zoneId;
     }
-
+    
     public Long getVirtualMachineId() {
         return virtualMachineId;
     }
@@ -158,8 +160,8 @@ public class ListHostsCmd extends BaseListCmd {
         return s_name;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Host;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Host;
     }
 
     @Override
@@ -169,11 +171,10 @@ public class ListHostsCmd extends BaseListCmd {
             response = _queryService.searchForServers(this);
         } else {
             Pair<List<? extends Host>,Integer> result;
-            List<? extends Host> hostsWithCapacity = new ArrayList<Host>();
-
-            Pair<Pair<List<? extends Host>,Integer>, List<? extends Host>> hostsForMigration = _mgr.listHostsForMigrationOfVM(getVirtualMachineId(), this.getStartIndex(), this.getPageSizeVal());
+            Ternary<Pair<List<? extends Host>,Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigration =
+                    _mgr.listHostsForMigrationOfVM(getVirtualMachineId(), this.getStartIndex(), this.getPageSizeVal());
             result = hostsForMigration.first();
-            hostsWithCapacity = hostsForMigration.second();
+            List<? extends Host> hostsWithCapacity = hostsForMigration.second();
 
             response = new ListResponse<HostResponse>();
             List<HostResponse> hostResponses = new ArrayList<HostResponse>();
@@ -192,6 +193,5 @@ public class ListHostsCmd extends BaseListCmd {
         }
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
-
     }
 }

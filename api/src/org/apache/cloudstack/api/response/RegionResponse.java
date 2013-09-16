@@ -35,6 +35,12 @@ public class RegionResponse extends BaseResponse {
     @SerializedName(ApiConstants.END_POINT) @Param(description="the end point of the region")
     private String endPoint;
 
+    @SerializedName("gslbserviceenabled") @Param(description="true if GSLB service is enabled in the region, false otherwise")
+    private boolean gslbServiceEnabled;
+
+    @SerializedName("portableipserviceenabled") @Param(description="true if security groups support is enabled, false otherwise")
+    private boolean portableipServiceEnabled;
+
 	public Integer getId() {
 		return id;
 	}
@@ -59,4 +65,11 @@ public class RegionResponse extends BaseResponse {
 		this.endPoint = endPoint;
 	}
 
-  }
+    public void setGslbServiceEnabled(boolean gslbServiceEnabled) {
+        this.gslbServiceEnabled = gslbServiceEnabled;
+    }
+
+    public void setPortableipServiceEnabled(boolean portableipServiceEnabled) {
+        this.portableipServiceEnabled = portableipServiceEnabled;
+    }
+}

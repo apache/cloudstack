@@ -72,16 +72,13 @@ public class EC2RegisterImage {
 		if (null != param) {
             if (!param.contains(":") || param.split(":").length < 4) {
                 throw new EC2ServiceException(  ClientError.InvalidParameterValue, "Supported format for " +
-                    "'architecture' is format:zonename:ostypename:hypervisor" );
+                        "parameter 'architecture' is format:zonename:ostypename:hypervisor" );
             }
             String parts[] = param.split( ":" );
             format = parts[0];
             zoneName = parts[1];
             osTypeName = parts[2];
             hypervisor = parts[3];
-        }
-        else {
-            throw new EC2ServiceException(ClientError.Unsupported, "Missing Parameter -" + " architecture");
         }
 	}
 	

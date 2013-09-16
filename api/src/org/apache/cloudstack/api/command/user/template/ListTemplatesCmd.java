@@ -21,18 +21,20 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 
 @APICommand(name = "listTemplates", description="List all public, private, and privileged templates.", responseObject=TemplateResponse.class)
@@ -55,7 +57,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the template name")
     private String templateName;
 
-    @Parameter(name=ApiConstants.TEMPLATE_FILTER, type=CommandType.STRING, required=true, description="possible values are \"featured\", \"self\", \"selfexecutable\",\"sharedexecutable\",\"executable\", and \"community\". " + 
+    @Parameter(name=ApiConstants.TEMPLATE_FILTER, type=CommandType.STRING, required=true, description="possible values are \"featured\", \"self\", \"selfexecutable\",\"sharedexecutable\",\"executable\", and \"community\". " +
                                                                                         "* featured : templates that have been marked as featured and public. " +
                                                                                         "* self : templates that have been registered or created by the calling user. " +
                                                                                         "* selfexecutable : same as self, but only returns templates that can be used to deploy a new VM. " +
@@ -94,7 +96,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
 
     public boolean listInReadyState() {
 
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         // It is account specific if account is admin type and domainId and accountName are not null
         boolean isAccountSpecific = (account == null || isAdmin(account.getType())) && (getAccountName() != null) && (getDomainId() != null);
         // Show only those that are downloaded.
@@ -113,24 +115,13 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
         return s_name;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Template;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Template;
     }
 
     @Override
     public void execute(){
-        Set<Pair<Long, Long>> templateZonePairSet = _mgr.listTemplates(this);
-
-        ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-        List<TemplateResponse> templateResponses = new ArrayList<TemplateResponse>();
-
-        for (Pair<Long, Long> template : templateZonePairSet) {
-            List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
-            responses = _responseGenerator.createTemplateResponses(template.first().longValue(), template.second(), listInReadyState());
-            templateResponses.addAll(responses);
-        }
-
-        response.setResponses(templateResponses);
+        ListResponse<TemplateResponse> response = _queryService.listTemplates(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

@@ -112,11 +112,8 @@ UPDATE `cloud`.`configuration` set component='NetworkManager' where name='router
 UPDATE `cloud`.`configuration` set component='NetworkManager' where name='router.ram.size';
 UPDATE `cloud`.`configuration` set component='NetworkManager' where name='router.stats.interval';
 UPDATE `cloud`.`configuration` set component='NetworkManager' where name='router.template.id';
-UPDATE `cloud`.`configuration` set category='Advanced ' where name='capacity.skipcounting.hours';
-UPDATE `cloud`.`configuration` set category='Advanced ' where name='use.local.storage';
-UPDATE `cloud`.`configuration` set category='Hidden ' where name='router.ram.size';
-UPDATE `cloud`.`configuration` set category='Hidden ' where name='secondary.storage.vm';
-UPDATE `cloud`.`configuration` set category='Hidden ' where name='security.hash.key';
+UPDATE `cloud`.`configuration` set category='Advanced' where name='capacity.skipcounting.hours';
+UPDATE `cloud`.`configuration` set category='Advanced' where name='use.local.storage';
 UPDATE `cloud`.`configuration` set description = 'Percentage (as a value between 0 and 1) of local storage utilization above which alerts will be sent about low local storage available.' where name = 'cluster.localStorage.capacity.notificationthreshold';
 
 DELETE FROM `cloud`.`configuration` WHERE name='direct.agent.pool.size';
@@ -134,7 +131,7 @@ ALTER TABLE `cloud`.`account` ADD COLUMN `default_zone_id` bigint unsigned;
 ALTER TABLE `cloud`.`account` ADD CONSTRAINT `fk_account__default_zone_id` FOREIGN KEY `fk_account__default_zone_id`(`default_zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
 
 
-DELETE FROM `cloud`.`storage_pool_host_ref` WHERE pool_id IN (SELECT id FROM storage_pool WHERE removed IS NOT NULL);
+DELETE FROM `cloud`.`storage_pool_host_ref` WHERE pool_id IN (SELECT id FROM `cloud`.`storage_pool` WHERE removed IS NOT NULL);
 
 DROP TABLE IF EXISTS `cloud`.`cluster_vsm_map`;
 DROP TABLE IF EXISTS `cloud`.`virtual_supervisor_module`;
@@ -179,14 +176,14 @@ CREATE TABLE `cloud`.`port_profile` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-DELETE FROM `cloud`.`storage_pool_host_ref` WHERE pool_id IN (SELECT id FROM storage_pool WHERE removed IS NOT NULL);
+DELETE FROM `cloud`.`storage_pool_host_ref` WHERE pool_id IN (SELECT id FROM `cloud`.`storage_pool` WHERE removed IS NOT NULL);
 
 ALTER TABLE `cloud`.`service_offering` MODIFY `nw_rate` smallint(5) unsigned DEFAULT '200' COMMENT 'network rate throttle mbits/s';
 
 
 
 -- RBD Primary Storage pool support (commit: 406fd95d87bfcdbb282d65589ab1fb6e9fd0018a)
-ALTER TABLE `storage_pool` ADD `user_info` VARCHAR( 255 ) NULL COMMENT 'Authorization information for the storage pool. Used by network filesystems' AFTER `host_address`;
+ALTER TABLE `cloud`.`storage_pool` ADD `user_info` VARCHAR( 255 ) NULL COMMENT 'Authorization information for the storage pool. Used by network filesystems' AFTER `host_address`;
 
 -- Resource tags (commit: 62d45b9670520a1ee8b520509393d4258c689b50)
 CREATE TABLE `cloud`.`resource_tags` (
@@ -232,9 +229,9 @@ CREATE TABLE `cloud`.`nicira_nvp_nic_map` (
 -- Remove the unique constraint on physical_network_id, provider_name from physical_network_service_providers
 -- Because the name of this contraint is not set we need this roundabout way
 -- The key is also used by the foreign key constraint so drop and recreate that one
-ALTER TABLE physical_network_service_providers DROP FOREIGN KEY fk_pnetwork_service_providers__physical_network_id;
+ALTER TABLE `cloud`.`physical_network_service_providers` DROP FOREIGN KEY fk_pnetwork_service_providers__physical_network_id;
 
-SET @constraintname = (select CONCAT(CONCAT('DROP INDEX ', A.CONSTRAINT_NAME), ' ON physical_network_service_providers' )
+SET @constraintname = (select CONCAT(CONCAT('DROP INDEX ', A.CONSTRAINT_NAME), ' ON cloud.physical_network_service_providers' )
 from information_schema.key_column_usage A
 JOIN information_schema.key_column_usage B ON B.table_name = 'physical_network_service_providers' AND B.COLUMN_NAME = 'provider_name' AND A.COLUMN_NAME ='physical_network_id' AND B.CONSTRAINT_NAME=A.CONSTRAINT_NAME
 where A.table_name = 'physical_network_service_providers' LIMIT 1);
@@ -243,7 +240,7 @@ PREPARE stmt1 FROM @constraintname;
 EXECUTE stmt1; 
 DEALLOCATE PREPARE stmt1; 
 
-AlTER TABLE physical_network_service_providers ADD CONSTRAINT `fk_pnetwork_service_providers__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE;
+AlTER TABLE `cloud`.`physical_network_service_providers` ADD CONSTRAINT `fk_pnetwork_service_providers__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE;
 UPDATE `cloud`.`configuration` SET description='In second, timeout for creating volume from snapshot' WHERE name='create.volume.from.snapshot.wait';
 
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `is_local_storage_enabled` tinyint NOT NULL DEFAULT 0 COMMENT 'Is local storage offering enabled for this data center; 1: enabled, 0: not';

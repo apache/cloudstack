@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.element;
@@ -25,9 +25,11 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.response.ExternalFirewallResponse;
-import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.response.ExternalFirewallResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddExternalFirewallCmd;
@@ -41,7 +43,6 @@ import com.cloud.api.commands.ListSrxFirewallsCmd;
 import com.cloud.api.response.SrxFirewallResponse;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -69,6 +70,7 @@ import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.dao.ExternalFirewallDeviceDao;
 import com.cloud.network.dao.ExternalFirewallDeviceVO;
+import com.cloud.network.dao.ExternalFirewallDeviceVO.FirewallDeviceState;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkExternalFirewallDao;
 import com.cloud.network.dao.NetworkExternalFirewallVO;
@@ -76,7 +78,6 @@ import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.network.dao.ExternalFirewallDeviceVO.FirewallDeviceState;
 import com.cloud.network.resource.JuniperSrxResource;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
@@ -84,14 +85,14 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = {NetworkElement.class, FirewallServiceProvider.class, 
-        PortForwardingServiceProvider.class, IpDeployer.class, 
+@Local(value = {NetworkElement.class, FirewallServiceProvider.class,
+        PortForwardingServiceProvider.class, IpDeployer.class,
         SourceNatServiceProvider.class, RemoteAccessVPNServiceProvider.class})
 public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceManagerImpl implements SourceNatServiceProvider, FirewallServiceProvider,
 PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer, JuniperSRXFirewallElementService, StaticNatServiceProvider {
@@ -126,10 +127,14 @@ PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer, Junip
     HostDetailsDao _hostDetailDao;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    EntityManager _entityMgr;
 
     private boolean canHandle(Network network, Service service) {
-        DataCenter zone = _configMgr.getZone(network.getDataCenterId());
-        if ((zone.getNetworkType() == NetworkType.Advanced && network.getGuestType() != Network.GuestType.Isolated) || (zone.getNetworkType() == NetworkType.Basic && network.getGuestType() != Network.GuestType.Shared)) {
+        DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
+        if ((zone.getNetworkType() == NetworkType.Advanced && !(network.getGuestType() == Network.GuestType.Isolated ||
+                network.getGuestType() == Network.GuestType.Shared )) ||
+                (zone.getNetworkType() == NetworkType.Basic && network.getGuestType() != Network.GuestType.Shared)) {
             s_logger.trace("Element " + getProvider().getName() + "is not handling network type = " + network.getGuestType());
             return false;
         }
@@ -152,7 +157,7 @@ PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer, Junip
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException,
     InsufficientNetworkCapacityException {
-        DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+        DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
 
         // don't have to implement network is Basic zone
         if (zone.getNetworkType() == NetworkType.Basic) {
@@ -175,19 +180,19 @@ PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer, Junip
     }
 
     @Override
-    public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+    public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
     InsufficientNetworkCapacityException, ResourceUnavailableException {
         return true;
     }
 
     @Override
-    public boolean release(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) {
+    public boolean release(Network config, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) {
         return true;
     }
 
     @Override
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ResourceUnavailableException, ConcurrentOperationException {
-        DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+        DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
 
         // don't have to implement network is Basic zone
         if (zone.getNetworkType() == NetworkType.Basic) {
@@ -272,9 +277,10 @@ PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer, Junip
         // Set capabilities for Firewall service
         Map<Capability, String> firewallCapabilities = new HashMap<Capability, String>();
         firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
+        firewallCapabilities.put(Capability.SupportedEgressProtocols, "tcp,udp,icmp,all");
         firewallCapabilities.put(Capability.MultipleIps, "true");
         firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
-        firewallCapabilities.put(Capability.SupportedTrafficDirection, "ingress");
+        firewallCapabilities.put(Capability.SupportedTrafficDirection, "ingress, egress");
         capabilities.put(Service.Firewall, firewallCapabilities);
 
         // Disabling VPN for Juniper in Acton as it 1) Was never tested 2) probably just doesn't work

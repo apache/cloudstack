@@ -39,9 +39,10 @@
     </itemizedlist>
     </section>
     <section id="adding-primary-storage">
-    <title>Adding Primary Stroage</title>
+    <title>Adding Primary Storage</title>
     <para>When you create a new zone, the first primary storage is added as part of that procedure. You can add primary storage servers at any time, such as when adding a new cluster or adding more servers to an existing cluster.</para>
-    <warning><para>Be sure there is nothing stored on the server. Adding the server to &PRODUCT; will destroy any existing data.</para></warning>
+    <warning><para>When using preallocated storage for primary storage, be sure there is nothing on the storage (ex. you have an empty SAN volume or an empty NFS share). Adding the storage to &PRODUCT; will destroy any existing data.</para></warning>
+    <note><para>Primary storage can also be added at the zone level through the &PRODUCT; API (adding zone-level primary storage is not yet supported through the &PRODUCT; UI).</para><para>Once primary storage has been added at the zone level, it can be managed through the &PRODUCT; UI.</para></note>
     <orderedlist>
         <listitem><para>Log in to the &PRODUCT; UI (see <xref linkend="log-in" />).</para></listitem>
         <listitem><para>In the left navigation, choose Infrastructure. In Zones, click View More, then click the zone in which you want to add the primary storage.</para></listitem>
@@ -51,8 +52,9 @@
         <listitem>
         <para>Provide the following information in the dialog. The information required varies depending on your choice in Protocol.</para>
         <itemizedlist>
-            <listitem><para><emphasis role="bold">Pod.</emphasis> The pod for the storage device.</para></listitem>
-            <listitem><para><emphasis role="bold">Cluster.</emphasis> The cluster for the storage device.</para></listitem>
+            <listitem><para><emphasis role="bold">Scope.</emphasis> Indicate whether the storage is available to all hosts in the zone or only to hosts in a single cluster.</para></listitem>
+            <listitem><para><emphasis role="bold">Pod.</emphasis> (Visible only if you choose Cluster in the Scope field.) The pod for the storage device.</para></listitem>
+            <listitem><para><emphasis role="bold">Cluster.</emphasis> (Visible only if you choose Cluster in the Scope field.) The cluster for the storage device.</para></listitem>
             <listitem><para><emphasis role="bold">Name.</emphasis> The name of the storage device.</para></listitem>
             <listitem><para><emphasis role="bold">Protocol.</emphasis> For XenServer, choose either NFS, iSCSI, or PreSetup.  For KVM, choose NFS or SharedMountPoint.  For vSphere choose either VMFS (iSCSI or FiberChannel) or NFS.</para></listitem>
             <listitem><para><emphasis role="bold">Server (for NFS, iSCSI, or PreSetup).</emphasis> The IP address or DNS name of the storage device.</para></listitem>
@@ -69,6 +71,93 @@
         </listitem>
         <listitem><para>Click OK.</para></listitem>
     </orderedlist>
-
+    </section>
+    <section>
+    <title>Configuring a Storage Plug-in</title>
+    <note>
+        <para>Primary storage that is based on a custom plug-in (ex. SolidFire) must be added through the &PRODUCT; API (described later in this section). There is no support at this time through the &PRODUCT; UI to add this type of primary storage (although most of its features are available through the &PRODUCT; UI).</para>
+    </note>
+    <note>
+        <para>At this time, a custom storage plug-in, such as the SolidFire storage plug-in, can only be leveraged for data disks (through Disk Offerings).</para>
+    </note>
+    <note>
+        <para>The SolidFire storage plug-in for &PRODUCT; is part of the standard &PRODUCT; install. There is no additional work required to add this component.</para>
+    </note>
+    <para>Adding primary storage that is based on the SolidFire plug-in enables &PRODUCT; to provide hard quality-of-service (QoS) guarantees.</para>
+    <para>When used with Disk Offerings, an administrator is able to build an environment in which a data disk that a user creates leads to the dynamic creation of a SolidFire volume, which has guaranteed performance. Such a SolidFire volume is associated with one (and only ever one) &PRODUCT; volume, so performance of the &PRODUCT; volume does not vary depending on how heavily other tenants are using the system.</para>
+    <para>The createStoragePool API has been augmented to support plugable storage providers. The following is a list of parameters to use when adding storage to &PRODUCT; that is based on the SolidFire plug-in:</para>
+    <itemizedlist>
+        <listitem>
+            <para>command=createStoragePool</para>
+        </listitem>
+        <listitem>
+            <para>scope=zone</para>
+        </listitem>
+        <listitem>
+            <para>zoneId=[your zone id]</para>
+        </listitem>
+        <listitem>
+            <para>name=[name for primary storage]</para>
+        </listitem>
+        <listitem>
+            <para>hypervisor=Any</para>
+        </listitem>
+        <listitem>
+            <para>provider=SolidFire</para>
+        </listitem>
+        <listitem>
+            <para>capacityIops=[whole number of IOPS from the SAN to give to &PRODUCT;]</para>
+        </listitem>
+        <listitem>
+            <para>capacityBytes=[whole number of bytes from the SAN to give to &PRODUCT;]</para>
+        </listitem>
+    </itemizedlist>
+    <para>The url parameter is somewhat unique in that its value can contain additional key/value pairs.</para>
+    <itemizedlist>
+        <para>url=[key/value pairs detailed below (values are URL encoded; for example, '=' is represented as '%3D')]</para>
+        <listitem>
+            <para>MVIP%3D[Management Virtual IP Address] (can be suffixed with :[port number])</para>
+        </listitem>
+        <listitem>
+            <para>SVIP%3D[Storage Virtual IP Address] (can be suffixed with :[port number])</para>
+        </listitem>
+        <listitem>
+            <para>clusterAdminUsername%3D[cluster admin's username]</para>
+        </listitem>
+        <listitem>
+            <para>clusterAdminPassword%3D[cluster admin's password]</para>
+        </listitem>
+        <listitem>
+            <para>clusterDefaultMinIops%3D[Min IOPS (whole number) to set for a volume; used if Min IOPS is not specified by administrator or user]</para>
+        </listitem>
+        <listitem>
+            <para>clusterDefaultMaxIops%3D[Max IOPS (whole number) to set for a volume; used if Max IOPS is not specified by administrator or user]</para>
+        </listitem>
+        <listitem>
+            <para>clusterDefaultBurstIopsPercentOfMaxIops%3D[Burst IOPS is determined by (Min IOPS * clusterDefaultBurstIopsPercentOfMaxIops parameter) (can be a decimal value)]
+            </para>
+        </listitem>
+    </itemizedlist>
+        <para>Example URL to add primary storage to &PRODUCT; based on the SolidFire plug-in (note that URL encoding is used with the value of the url key, so '%3A' equals ':','%3B' equals '&amp;' and '%3D' equals '='):</para>
+    <para>
+        http://127.0.0.1:8080/client/api?command=createStoragePool
+        &amp;scope=zone
+        &amp;zoneId=cf4e6ddf-8ae7-4194-8270-d46733a52b55
+        &amp;name=SolidFire_121258566
+        &amp;url=MVIP%3D192.168.138.180%3A443
+        %3BSVIP%3D192.168.56.7
+        %3BclusterAdminUsername%3Dadmin
+        %3BclusterAdminPassword%3Dpassword
+        %3BclusterDefaultMinIops%3D200
+        %3BclusterDefaultMaxIops%3D300
+        %3BclusterDefaultBurstIopsPercentOfMaxIop%3D2.5
+        &amp;provider=SolidFire
+        &amp;tags=SolidFire_SAN_1
+        &amp;capacityIops=4000000
+        &amp;capacityBytes=2251799813685248
+        &amp;hypervisor=Any
+        &amp;response=json
+        &amp;apiKey=VrrkiZQWFFgSdA6k3DYtoKLcrgQJjZXoSWzicHXt8rYd9Bl47p8L39p0p8vfDpiljtlcMLn_jatMSqCWv5Cs-Q&amp;signature=wqf8KzcPpY2JmT1Sxk%2F%2BWbgX3l8%3D
+    </para>
     </section>
 </section>

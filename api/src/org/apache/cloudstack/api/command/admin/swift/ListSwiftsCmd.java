@@ -16,23 +16,18 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.swift;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.SwiftResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.storage.Swift;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
-@APICommand(name = "listSwifts", description = "List Swift.", responseObject = HostResponse.class, since="3.0.0")
+@APICommand(name = "listSwifts", description = "List Swift.", responseObject = ImageStoreResponse.class, since="3.0.0")
 public class ListSwiftsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSwiftsCmd.class.getName());
     private static final String s_name = "listswiftsresponse";
@@ -65,19 +60,10 @@ public class ListSwiftsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        Pair<List<? extends Swift>, Integer> result = _resourceService.listSwifts(this);
-        ListResponse<SwiftResponse> response = new ListResponse<SwiftResponse>();
-        List<SwiftResponse> swiftResponses = new ArrayList<SwiftResponse>();
 
-        if (result != null) {
-            for (Swift swift : result.first()) {
-                SwiftResponse swiftResponse = _responseGenerator.createSwiftResponse(swift);
-                swiftResponse.setResponseName(getCommandName());
-                swiftResponse.setObjectName("swift");
-                swiftResponses.add(swiftResponse);
-            }
-        }
-        response.setResponses(swiftResponses, result.second());
+        ListImageStoresCmd cmd = new ListImageStoresCmd();
+        cmd.setProvider("Swift");
+        ListResponse<ImageStoreResponse> response = _queryService.searchForImageStores(cmd);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

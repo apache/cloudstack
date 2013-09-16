@@ -17,18 +17,19 @@
 package org.apache.cloudstack.api.command.admin.systemvm;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SystemVmResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "destroySystemVm", responseObject=SystemVmResponse.class, description="Destroyes a system virtual machine.")
@@ -56,7 +57,7 @@ public class DestroySystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         if (account != null) {
             return account.getId();
         }
@@ -81,8 +82,8 @@ public class DestroySystemVmCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.SystemVm;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.SystemVm;
     }
 
     @Override
@@ -92,7 +93,7 @@ public class DestroySystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Vm Id: "+getId());
+        CallContext.current().setEventDetails("Vm Id: "+getId());
         VirtualMachine instance = _mgr.destroySystemVM(this);
         if (instance != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(instance);

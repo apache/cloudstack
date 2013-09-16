@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -26,12 +25,15 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 
 public interface PrimaryDataStoreInfo extends StoragePool {
-	public boolean isHypervisorSupported(HypervisorType hypervisor);
-	public boolean isLocalStorageSupported();
-	public boolean isVolumeDiskTypeSupported(DiskFormat diskType);
+    boolean isHypervisorSupported(HypervisorType hypervisor);
 
-	public String getUuid();
+    boolean isLocalStorageSupported();
 
-	public StoragePoolType getPoolType();
-	public PrimaryDataStoreLifeCycle getLifeCycle();
+    boolean isVolumeDiskTypeSupported(DiskFormat diskType);
+
+    String getUuid();
+
+    StoragePoolType getPoolType();
+
+    PrimaryDataStoreLifeCycle getLifeCycle();
 }

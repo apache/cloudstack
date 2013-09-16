@@ -16,7 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -25,17 +28,16 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.cloudstack.api.response.StaticRouteResponse;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.StaticRoute;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcGateway;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "createStaticRoute", description="Creates a static route", responseObject=StaticRouteResponse.class)
 public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
@@ -92,7 +94,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
         boolean success = false;
         StaticRoute route = _entityMgr.findById(StaticRoute.class, getEntityId());
         try {
-            UserContext.current().setEventDetails("Static route Id: " + getEntityId());
+            CallContext.current().setEventDetails("Static route Id: " + getEntityId());
             success = _vpcService.applyStaticRoutes(route.getVpcId());
 
             // State is different after the route is applied, so get new object here
@@ -118,11 +120,11 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
 
     @Override
     public long getEntityOwnerId() {
-         VpcGateway gateway =  _vpcService.getVpcGateway(gatewayId);
+        VpcGateway gateway = _entityMgr.findById(VpcGateway.class, gatewayId);
          if (gateway == null) {
              throw new InvalidParameterValueException("Invalid gateway id is specified");
          }
-         return _vpcService.getVpc(gateway.getVpcId()).getAccountId();
+        return _entityMgr.findById(Vpc.class, gateway.getVpcId()).getAccountId();
     }
 
     @Override
@@ -132,7 +134,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
 
     @Override
     public Long getSyncObjId() {
-        VpcGateway gateway =  _vpcService.getVpcGateway(gatewayId);
+        VpcGateway gateway = _entityMgr.findById(VpcGateway.class, gatewayId);
         if (gateway == null) {
             throw new InvalidParameterValueException("Invalid id is specified for the gateway");
         }
@@ -140,7 +142,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.StaticRoute;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.StaticRoute;
     }
 }

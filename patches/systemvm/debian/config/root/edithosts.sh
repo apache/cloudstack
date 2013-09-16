@@ -19,12 +19,6 @@
 
  
 # edithosts.sh -- edit the dhcphosts file on the routing domain
-# $mac : the mac address
-# $ip : the associated ip address
-# $host : the hostname
-# $4 : default router
-# $5 : nameserver on default nic
-# $6 : comma separated static routes
 
 usage() {
   printf "Usage: %s: -m <MAC address> -4 <IPv4 address> -6 <IPv6 address> -h <hostname> -d <default router> -n <name server address> -s <Routes> -u <DUID> [-N]\n" $(basename $0) >&2
@@ -75,7 +69,9 @@ HOSTS=/etc/hosts
 source /root/func.sh
 
 lock="biglock"
-locked=$(getLockFile $lock)
+#default timeout value is 30 mins as DhcpEntryCommand is not synchronized on agent side any more,
+#and multiple commands can be sent to the same VR at a time
+locked=$(getLockFile $lock 1800)
 if [ "$locked" != "1" ]
 then
     exit 1
@@ -83,6 +79,9 @@ fi
 
 grep "redundant_router=1" /var/cache/cloud/cmdline > /dev/null
 no_redundant=$?
+
+command -v dhcp_release > /dev/null 2>&1
+no_dhcp_release=$?
 
 wait_for_dnsmasq () {
   local _pid=$(pidof dnsmasq)
@@ -97,7 +96,20 @@ wait_for_dnsmasq () {
   return 1
 }
 
-logger -t cloud "edithosts: update $1 $2 $3 to hosts"
+if [ $ipv6 ]
+then
+    no_dhcp_release=1
+fi
+
+if [ $no_dhcp_release -eq 0 ]
+then
+  #release previous dhcp lease if present
+  logger -t cloud "edithosts: releasing $ipv4"
+  dhcp_release eth0 $ipv4 $(grep "$ipv4 " $DHCP_LEASES | awk '{print $2}') > /dev/null 2>&1
+  logger -t cloud "edithosts: released $ipv4"
+fi
+
+logger -t cloud "edithosts: update $mac $ipv4 $ipv6 $host to hosts"
 
 [ ! -f $DHCP_HOSTS ] && touch $DHCP_HOSTS
 [ ! -f $DHCP_OPTS ] && touch $DHCP_OPTS
@@ -111,9 +123,11 @@ then
 fi
 if [ $ipv6 ]
 then
-  sed -i  /$ipv6,/d $DHCP_HOSTS
+  #searching with [$ipv6], matching other ip so using $ipv6],
+  sed -i  /$ipv6],/d $DHCP_HOSTS
 fi
-sed -i  /$host,/d $DHCP_HOSTS
+# don't want to do this in the future, we can have same VM with multiple nics/entries
+#sed -i  /$host,/d $DHCP_HOSTS
 
 
 #put in the new entry
@@ -191,7 +205,7 @@ then
   fi
   [ "$routes" != "" ] && echo "$tag,121,$routes" >> $DHCP_OPTS
   #delete entry we just put in because we need a tag
-  sed -i  /$ipv4/d $DHCP_HOSTS 
+  sed -i  /$ipv4,/d $DHCP_HOSTS
   #put it back with a tag
   echo "$mac,set:$tag,$ipv4,$host,infinite" >>$DHCP_HOSTS
 fi
@@ -200,7 +214,13 @@ fi
 pid=$(pidof dnsmasq)
 if [ "$pid" != "" ]
 then
-  service dnsmasq restart
+  # use SIGHUP to avoid service outage if dhcp_release is available.
+  if [ $no_dhcp_release -eq 0 ]
+  then
+    kill -HUP $pid
+  else
+    service dnsmasq restart
+  fi
 else
   if [ $no_redundant -eq 1 ]
   then

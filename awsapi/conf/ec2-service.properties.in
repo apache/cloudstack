@@ -18,7 +18,7 @@
 managementServer=127.0.0.1
 cloudAPIPort=8080
 cloudstackVersion=2.2.0
-WSDLVersion=2010-11-15
+WSDLVersion=2012-08-15
 keystore=xes.keystore
 keystorePass=apache
 

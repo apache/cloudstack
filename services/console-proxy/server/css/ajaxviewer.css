@@ -91,12 +91,12 @@ body {
     position: absolute;
     top:32;
     width: 260;
-    height: 65;
+    height: 95;
     display: block;
     display: none;
     border-top: 1px solid black;
-    background-image:url(/resource/images/back.gif); 
-    background-repeat:repeat-x repeat-y; 
+    background-image:url(/resource/images/back.gif);
+    background-repeat:repeat-x repeat-y;
 }
 
 #toolbar ul li ul li {

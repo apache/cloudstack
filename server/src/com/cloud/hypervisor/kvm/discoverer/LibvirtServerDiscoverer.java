@@ -23,11 +23,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -39,7 +40,6 @@ import com.cloud.agent.api.ShutdownCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
@@ -62,20 +62,26 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 
-public abstract class LibvirtServerDiscoverer extends DiscovererBase implements Discoverer,
-Listener, ResourceStateAdapter {
+public abstract class LibvirtServerDiscoverer extends DiscovererBase implements Discoverer, Listener,
+        ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(LibvirtServerDiscoverer.class);
     private String _hostIp;
-    private final int _waitTime = 5; /*wait for 5 minutes*/
+    private final int _waitTime = 5; /* wait for 5 minutes */
     private String _kvmPrivateNic;
     private String _kvmPublicNic;
     private String _kvmGuestNic;
-    @Inject HostDao _hostDao = null;
-    @Inject ClusterDao _clusterDao;
-    @Inject ResourceManager _resourceMgr;
-    @Inject AgentManager _agentMgr;
-    @Inject ConfigurationDao _configDao;
-    @Inject NetworkModel _networkMgr;
+    @Inject
+    HostDao _hostDao = null;
+    @Inject
+    ClusterDao _clusterDao;
+    @Inject
+    ResourceManager _resourceMgr;
+    @Inject
+    AgentManager _agentMgr;
+    @Inject
+    ConfigurationDao _configDao;
+    @Inject
+    NetworkModel _networkMgr;
 
     public abstract Hypervisor.HypervisorType getHypervisorType();
 
@@ -92,14 +98,13 @@ Listener, ResourceStateAdapter {
     }
 
     @Override
-    public AgentControlAnswer processControlCommand(long agentId,
-            AgentControlCommand cmd) {
+    public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) {
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) {
     }
 
     @Override
@@ -127,14 +132,13 @@ Listener, ResourceStateAdapter {
     }
 
     @Override
-    public Map<? extends ServerResource, Map<String, String>> find(long dcId,
-            Long podId, Long clusterId, URI uri, String username,
-            String password, List<String> hostTags) throws DiscoveryException {
+    public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI uri,
+            String username, String password, List<String> hostTags) throws DiscoveryException {
 
         ClusterVO cluster = _clusterDao.findById(clusterId);
-        if(cluster == null || cluster.getHypervisorType() != getHypervisorType()) {
-            if(s_logger.isInfoEnabled())
-                s_logger.info("invalid cluster id or cluster is not for " + getHypervisorType() + " hypervisors"); 
+        if (cluster == null || cluster.getHypervisorType() != getHypervisorType()) {
+            if (s_logger.isInfoEnabled())
+                s_logger.info("invalid cluster id or cluster is not for " + getHypervisorType() + " hypervisors");
             return null;
         }
 
@@ -153,11 +157,16 @@ Listener, ResourceStateAdapter {
             InetAddress ia = InetAddress.getByName(hostname);
             agentIp = ia.getHostAddress();
             String guid = UUID.nameUUIDFromBytes(agentIp.getBytes()).toString();
-            String guidWithTail = guid + "-LibvirtComputingResource";/*tail added by agent.java*/
+            String guidWithTail = guid + "-LibvirtComputingResource";/*
+                                                                      * tail
+                                                                      * added by
+                                                                      * agent
+                                                                      * .java
+                                                                      */
             if (_resourceMgr.findHostByGuid(guidWithTail) != null) {
                 s_logger.debug("Skipping " + agentIp + " because " + guidWithTail + " is already in the database.");
                 return null;
-            }       
+            }
 
             sshConnection = new com.trilead.ssh2.Connection(agentIp, 22);
 
@@ -172,7 +181,7 @@ Listener, ResourceStateAdapter {
                 return null;
             }
 
-            List <PhysicalNetworkSetupInfo> netInfos = _networkMgr.getPhysicalNetworkInfo(dcId, getHypervisorType());
+            List<PhysicalNetworkSetupInfo> netInfos = _networkMgr.getPhysicalNetworkInfo(dcId, getHypervisorType());
             String kvmPrivateNic = null;
             String kvmPublicNic = null;
             String kvmGuestNic = null;
@@ -193,7 +202,7 @@ Listener, ResourceStateAdapter {
                 kvmPrivateNic = _kvmPrivateNic;
                 kvmPublicNic = _kvmPublicNic;
                 kvmGuestNic = _kvmGuestNic;
-            } 
+            }
 
             if (kvmPublicNic == null) {
                 kvmPublicNic = (kvmGuestNic != null) ? kvmGuestNic : kvmPrivateNic;
@@ -207,7 +216,8 @@ Listener, ResourceStateAdapter {
                 kvmGuestNic = (kvmPublicNic != null) ? kvmPublicNic : kvmPrivateNic;
             }
 
-            String parameters = " -m " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
+            String parameters = " -m " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid
+                    + " -a";
 
             parameters += " --pubNic=" + kvmPublicNic;
             parameters += " --prvNic=" + kvmPrivateNic;
@@ -220,8 +230,8 @@ Listener, ResourceStateAdapter {
 
             params.put("zone", Long.toString(dcId));
             params.put("pod", Long.toString(podId));
-            params.put("cluster",  Long.toString(clusterId));
-            params.put("guid", guid); 
+            params.put("cluster", Long.toString(clusterId));
+            params.put("guid", guid);
             params.put("agentIp", agentIp);
             kvmResource.configure("kvm agent", params);
             resources.put(kvmResource, details);
@@ -238,16 +248,16 @@ Listener, ResourceStateAdapter {
                 _clusterDao.update(clusterId, cluster);
             }
 
-            //save user name and password
+            // save user name and password
             _hostDao.loadDetails(connectedHost);
             Map<String, String> hostDetails = connectedHost.getDetails();
             hostDetails.put("password", password);
             hostDetails.put("username", username);
             _hostDao.saveDetails(connectedHost);
             return resources;
-        } catch (DiscoveredWithErrorException e){ 
+        } catch (DiscoveredWithErrorException e) {
             throw e;
-        }catch (Exception e) {
+        } catch (Exception e) {
             String msg = " can't setup agent, due to " + e.toString() + " - " + e.getMessage();
             s_logger.warn(msg);
         } finally {
@@ -259,7 +269,7 @@ Listener, ResourceStateAdapter {
     }
 
     private HostVO waitForHostConnect(long dcId, long podId, long clusterId, String guid) {
-        for (int i = 0; i < _waitTime *2; i++) {
+        for (int i = 0; i < _waitTime * 2; i++) {
             List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, clusterId, podId, dcId);
             for (HostVO host : hosts) {
                 if (host.getGuid().equalsIgnoreCase(guid)) {
@@ -283,7 +293,8 @@ Listener, ResourceStateAdapter {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-//        _setupAgentPath = Script.findScript(getPatchPath(), "setup_agent.sh");
+        // _setupAgentPath = Script.findScript(getPatchPath(),
+        // "setup_agent.sh");
         _kvmPrivateNic = _configDao.getValue(Config.KvmPrivateNetwork.key());
         if (_kvmPrivateNic == null) {
             _kvmPrivateNic = "cloudbr0";
@@ -312,15 +323,14 @@ Listener, ResourceStateAdapter {
     }
 
     @Override
-    public void postDiscovery(List<HostVO> hosts, long msId)
-            throws DiscoveryException {
+    public void postDiscovery(List<HostVO> hosts, long msId) throws DiscoveryException {
         // TODO Auto-generated method stub
     }
 
     @Override
     public boolean matchHypervisor(String hypervisor) {
         // for backwards compatibility, if not supplied, always let to try it
-        if(hypervisor == null)
+        if (hypervisor == null)
             return true;
 
         return getHypervisorType().toString().equalsIgnoreCase(hypervisor);
@@ -340,6 +350,11 @@ Listener, ResourceStateAdapter {
 
         /* KVM requires host are the same in cluster */
         ClusterVO clusterVO = _clusterDao.findById(host.getClusterId());
+        if (clusterVO == null) {
+            s_logger.debug("cannot find cluster: " + host.getClusterId());
+            throw new IllegalArgumentException("cannot add host, due to can't find cluster: " + host.getClusterId());
+        }
+
         List<HostVO> hostsInCluster = _resourceMgr.listAllHostsInCluster(clusterVO.getId());
         if (!hostsInCluster.isEmpty()) {
             HostVO oneHost = hostsInCluster.get(0);
@@ -347,8 +362,9 @@ Listener, ResourceStateAdapter {
             String hostOsInCluster = oneHost.getDetail("Host.OS");
             String hostOs = ssCmd.getHostDetails().get("Host.OS");
             if (!hostOsInCluster.equalsIgnoreCase(hostOs)) {
-                throw new IllegalArgumentException("Can't add host: " + firstCmd.getPrivateIpAddress() + " with hostOS: " + hostOs + " into a cluster,"
-                        + "in which there are " + hostOsInCluster + " hosts added");
+                throw new IllegalArgumentException("Can't add host: " + firstCmd.getPrivateIpAddress()
+                        + " with hostOS: " + hostOs + " into a cluster," + "in which there are " + hostOsInCluster
+                        + " hosts added");
             }
         }
 
@@ -358,17 +374,17 @@ Listener, ResourceStateAdapter {
     }
 
     @Override
-    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
-            List<String> hostTags) {
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource,
+            Map<String, String> details, List<String> hostTags) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
-        if (host.getType() != Host.Type.Routing || 
-            (host.getHypervisorType() != HypervisorType.KVM &&
-             host.getHypervisorType() != HypervisorType.LXC)) {
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage)
+            throws UnableDeleteHostException {
+        if (host.getType() != Host.Type.Routing
+                || (host.getHypervisorType() != HypervisorType.KVM && host.getHypervisorType() != HypervisorType.LXC)) {
             return null;
         }
 

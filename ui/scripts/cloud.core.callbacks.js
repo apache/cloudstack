@@ -14,8 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-$.urlParam = function(name){ var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href); if (!results) { return 0; } return results[1] || 0;}
- 
+$.urlParam = function(name) {
+    var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href);
+    if (!results) {
+        return 0;
+    }
+    return results[1] || 0;
+}
+
 /*
 This file is meant to help with implementing single signon integration.  If you are using the
 cloud.com default UI, there is no need to touch this file.
@@ -23,17 +29,18 @@ cloud.com default UI, there is no need to touch this file.
 
 /*
 This callback function is called when either the session has timed out for the user,
-the session ID has been changed (i.e. another user logging into the UI via a different tab), 
+the session ID has been changed (i.e. another user logging into the UI via a different tab),
 or it's the first time the user has come to this page.
 */
+
 function onLogoutCallback() {
-  g_loginResponse = null; //clear single signon variable g_loginResponse
-	
-	
-	return true;  // return true means the login page will show 	
-	/*
+    g_loginResponse = null; //clear single signon variable g_loginResponse
+
+
+    return true; // return true means the login page will show
+    /*
 	window.location.replace("http://www.google.com"); //redirect to a different location
-  return false;	//return false means it will stay in the location window.location.replace() sets it to (i.e. "http://www.google.com") 
+  return false;	//return false means it will stay in the location window.location.replace() sets it to (i.e. "http://www.google.com")
 	*/
 }
 
@@ -50,42 +57,27 @@ Below is a sample login attempt
 */
 
 var clientApiUrl = "/client/api";
-var clientConsoleUrl   = "/client/console";
+var clientConsoleUrl = "/client/console";
 
-$(document).ready(function() {		
-  /*
-	condition 1: If window.location.href contains parameter 'loginUrl', save the parameter's value to a cookie, then reload the page without any URL parameter.
-	(After the page is reloaded without any URL parameter, it will fall in condition 2.) 
-	*/
-	if ($.urlParam('loginUrl') != 0) {	 
-		$.cookie('loginUrl', $.urlParam('loginUrl'), { expires: 1});
-		document.location.href = window.location.href.substring(0, window.location.href.indexOf('?'));	
-	}
-	
-	/* 
-	condition 2: If window.location.href does not contain parameter 'loginUrl' but cookie 'loginUrl' exists, 
-	save the cookie's value to g_regionUrlParam (a global variable for switching regions), 
-	then call login API to set g_loginResponse (a global variable for single-sign-on).
-	*/
-	else if($.cookie('loginUrl') != null) {	  
-	  g_regionUrlParam = '?loginUrl=' + $.cookie('loginUrl');		
-		$.ajax({
-			url: unescape(clientApiUrl + "?" + $.cookie('loginUrl')),
-			dataType: "json",
-			async: false,
-			success: function(json) {
-				g_loginResponse = json.loginresponse;				
-			},
-			error: function() {
-				onLogoutCallback();
-				// This means the login failed.  You should redirect to your login page.
-			},
-			beforeSend: function(XMLHttpRequest) {
-				return true;
-			}
-		});
-	}
-	
+$(document).ready(function() {
+
+    var url = $.urlParam("loginUrl");
+    if (url != undefined && url != null && url.length > 0) {
+        url = unescape(clientApiUrl + "?" + url);
+        $.ajax({
+            url: url,
+            dataType: "json",
+            async: false,
+            success: function(json) {
+                g_loginResponse = json.loginresponse;
+            },
+            error: function() {
+                onLogoutCallback();
+                // This means the login failed.  You should redirect to your login page.
+            },
+            beforeSend: function(XMLHttpRequest) {
+                return true;
+            }
+        });
+    }
 });
-
-

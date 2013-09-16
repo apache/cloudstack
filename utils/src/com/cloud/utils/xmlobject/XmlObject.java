@@ -19,6 +19,7 @@ package com.cloud.utils.xmlobject;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -26,51 +27,49 @@ import java.util.Map;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-import edu.emory.mathcs.backport.java.util.Collections;
-
 public class XmlObject {
-    private Map<String, Object> elements = new HashMap<String, Object>();
+    private final Map<String, Object> elements = new HashMap<String, Object>();
     private String text;
     private String tag;
-    
+
     XmlObject() {
     }
-    
+
     public XmlObject(String tag) {
         this.tag = tag;
     }
-    
+
     public XmlObject putElement(String key, Object e) {
         if (e == null) {
             throw new IllegalArgumentException(String.format("element[%s] can not be null", key));
         }
         Object old = elements.get(key);
         if (old == null) {
-            System.out.println(String.format("no %s, add new", key));
+            //System.out.println(String.format("no %s, add new", key));
             elements.put(key, e);
         } else {
             if (old instanceof List) {
-                System.out.println(String.format("already list %s, add", key));
+                //System.out.println(String.format("already list %s, add", key));
                 ((List)old).add(e);
             } else {
-                System.out.println(String.format("not list list %s, add list", key));
+                //System.out.println(String.format("not list list %s, add list", key));
                 List lst = new ArrayList();
                 lst.add(old);
                 lst.add(e);
                 elements.put(key, lst);
             }
         }
-        
+
         return this;
     }
-    
+
     private Object recurGet(XmlObject obj, Iterator<String> it) {
         String key = it.next();
         Object e = obj.elements.get(key);
         if (e == null) {
             return null;
         }
-        
+
         if (!it.hasNext()) {
             return e;
         } else {
@@ -80,14 +79,14 @@ public class XmlObject {
             return recurGet((XmlObject) e, it);
         }
     }
-    
+
     public <T> T get(String elementStr) {
         String[] strs = elementStr.split("\\.");
         List<String> lst = new ArrayList<String>(strs.length);
         Collections.addAll(lst, strs);
         return (T)recurGet(this, lst.iterator());
     }
-    
+
     public <T> List<T> getAsList(String elementStr) {
         Object e = get(elementStr);
         if (e instanceof List) {
@@ -97,7 +96,7 @@ public class XmlObject {
         lst.add(e);
         return lst;
     }
-    
+
     public String getText() {
         return text;
     }
@@ -115,7 +114,7 @@ public class XmlObject {
         this.tag = tag;
         return this;
     }
-    
+
     public String dump() {
         StringBuilder sb = new StringBuilder();
         sb.append("<").append(tag);
@@ -133,11 +132,11 @@ public class XmlObject {
                 throw new CloudRuntimeException(String.format("unsupported element type[tag:%s, class: %s], only allowed type of [String, List<XmlObject>, Object]", key, val.getClass().getName()));
             }
         }
-        
+
         if (!children.isEmpty() && text != null) {
             throw new CloudRuntimeException(String.format("element %s cannot have both text[%s] and child elements", tag, text));
         }
-        
+
         if (!children.isEmpty()) {
             sb.append(">");
             for (XmlObject x : children) {
@@ -155,7 +154,7 @@ public class XmlObject {
         }
         return sb.toString();
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("<" + tag);
@@ -167,7 +166,7 @@ public class XmlObject {
             }
             sb.append(String.format(" %s=\"%s\"", key, value.toString()));
         }
-        
+
         if (text == null || "".equals(text.trim())) {
             sb.append(" />");
         } else {
@@ -175,7 +174,7 @@ public class XmlObject {
         }
         return sb.toString();
     }
-    
+
     public <T> T evaluateObject(T obj) {
         Class<?> clazz = obj.getClass();
         try {

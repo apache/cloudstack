@@ -35,6 +35,7 @@ do
   CP=${CP}:$file
 done
 keyvalues=
+LOGHOME=/var/log/cloud/
 
 CMDLINE=$(cat /var/cache/cloud/cmdline)
 
@@ -60,4 +61,4 @@ then
   maxmem=$eightypcnt
 fi
 
-java -Djavax.net.ssl.trustStore=./certs/realhostip.keystore -mx${maxmem}m -cp $CP com.cloud.agent.AgentShell $keyvalues $@
+java -Djavax.net.ssl.trustStore=./certs/realhostip.keystore -Dlog.home=$LOGHOME -mx${maxmem}m -cp $CP com.cloud.agent.AgentShell $keyvalues $@

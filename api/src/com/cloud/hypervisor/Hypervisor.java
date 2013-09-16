@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor;
 
+import com.cloud.storage.Storage.ImageFormat;
+
 public class Hypervisor {
 
     public static enum HypervisorType {
@@ -61,6 +63,26 @@ public class Hypervisor {
                 return HypervisorType.Any;
             } else {
                 return HypervisorType.None;
+            }
+        }
+
+        /**
+         * This method really needs to be part of the properties of the hypervisor type itself.
+         * 
+         * @param hyperType
+         * @return
+         */
+        public static ImageFormat getSupportedImageFormat(HypervisorType hyperType) {
+            if (hyperType == HypervisorType.XenServer) {
+                return ImageFormat.VHD;
+            } else if (hyperType == HypervisorType.KVM) {
+                return ImageFormat.QCOW2;
+            } else if (hyperType == HypervisorType.VMware) {
+                return ImageFormat.OVA;
+            } else if (hyperType == HypervisorType.Ovm) {
+                return ImageFormat.RAW;
+            } else {
+                return null;
             }
         }
     }

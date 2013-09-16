@@ -90,11 +90,11 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public void deallocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
+    public void deallocate(Network config, NicProfile nic, VirtualMachineProfile vm) {
     }
     
     @Override
-    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         TrafficType trafficType = config.getTrafficType();
         assert trafficType == TrafficType.Management || trafficType == TrafficType.Storage: "Well, I can't take care of this config now can I? " + config; 
@@ -112,7 +112,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public void reserve(NicProfile nic, Network config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
+    public void reserve(NicProfile nic, Network config, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         Pod pod = dest.getPod();
         
@@ -144,7 +144,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     }
     
     @Override
-    public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
+    public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
         _dcDao.releasePrivateIpAddress(nic.getId(), nic.getReservationId());
         
         nic.deallocate();
@@ -166,7 +166,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     }
     
     @Override
-    public boolean trash(Network config, NetworkOffering offering, Account owner) {
+    public boolean trash(Network config, NetworkOffering offering) {
         return true;
     }
 }

@@ -18,6 +18,7 @@ package com.cloud.storage.snapshot;
 
 import java.util.List;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 import com.cloud.agent.api.Answer;
@@ -33,8 +34,8 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.fsm.NoTransitionException;
 
 /**
- * 
- * 
+ *
+ *
  */
 public interface SnapshotManager {
 
@@ -50,25 +51,24 @@ public interface SnapshotManager {
      * For each of the volumes in the account, (which can span across multiple zones and multiple secondary storages), delete
      * the dir on the secondary storage which contains the backed up snapshots for that volume. This is called during
      * deleteAccount.
-     * 
+     *
      * @param accountId
      *            The account which is to be deleted.
      */
     boolean deleteSnapshotDirsForAccount(long accountId);
-  
-    void downloadSnapshotsFromSwift(SnapshotVO ss);
-
-    void downloadSnapshotsFromS3(SnapshotVO snapshot);
 
     String getSecondaryStorageURL(SnapshotVO snapshot);
 
-    void deleteSnapshotsDirForVolume(String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId);
+   //void deleteSnapshotsDirForVolume(String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId);
 
 	boolean canOperateOnVolume(Volume volume);
 
 	Answer sendToPool(Volume vol, Command cmd);
 
-	SnapshotVO getParentSnapshot(VolumeInfo volume, Snapshot snapshot);
+	SnapshotVO getParentSnapshot(VolumeInfo volume);
 
 	Snapshot backupSnapshot(Long snapshotId);
+
+	SnapshotInfo takeSnapshot(VolumeInfo volume)
+			throws ResourceAllocationException;
 }

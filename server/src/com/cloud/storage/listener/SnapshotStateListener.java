@@ -34,6 +34,8 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.component.ComponentContext;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -79,6 +81,10 @@ public class SnapshotStateListener implements StateListener<State, Event, Snapsh
         eventDescription.put("id", vo.getUuid());
         eventDescription.put("old-state", oldState.name());
         eventDescription.put("new-state", newState.name());
+
+        String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        eventDescription.put("eventDateTime", eventDate);
+
         eventMsg.setDescription(eventDescription);
         try {
             _eventBus.publish(eventMsg);

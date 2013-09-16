@@ -107,7 +107,7 @@ public abstract class NioConnection implements Runnable {
     		try {
     			init();
     		} catch (ConnectException e) {
-    			s_logger.error("Unable to connect to remote");
+                s_logger.warn("Unable to connect to remote: is there a server running on port " + _port);
     			return;
     		} catch (IOException e) {
     			s_logger.error("Unable to initialize the threads.", e);

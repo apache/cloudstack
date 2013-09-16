@@ -28,7 +28,7 @@
     <bookinfo id="cloudstack_plugin_niciranvp">
     <title>&PRODUCT; Plugin Guide for the Nicira NVP Plugin</title>
     <productname>Apache CloudStack</productname>
-    <productnumber>4.0.0-incubating</productnumber>
+    <productnumber>4.2.0</productnumber>
     <edition>1</edition>
     <pubsnumber></pubsnumber>
     <abstract>
@@ -48,6 +48,7 @@
     </bookinfo>
     <xi:include href="plugin-niciranvp-about.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="plugin-niciranvp-usage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="plugin-niciranvp-vpc.xml" xmlns:xi="http://www.w3.org/2001/XInclude"></xi:include>
     <xi:include href="plugin-niciranvp-troubleshooting.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="plugin-niciranvp-revisions.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </book>

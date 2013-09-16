@@ -42,7 +42,7 @@ public class RestartVPCCmd extends BaseAsyncCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VpcResponse.class,
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VpcResponse.class, required=true,
             description="the id of the VPC")
     private Long id;
 
@@ -105,5 +105,15 @@ public class RestartVPCCmd extends BaseAsyncCmd{
     @Override
     public String getEventDescription() {
         return "restarting VPC id=" + getId();
+    }
+
+    @Override
+    public String getSyncObjType() {
+        return BaseAsyncCmd.vpcSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        return getId();
     }
 }

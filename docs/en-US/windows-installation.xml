@@ -22,9 +22,8 @@
     under the License.
 -->
 <section id="windows-installation">
-	<title>Windows OS Installation</title>
-  <para>Download the installer, CloudInstanceManager.msi, from 
-    <ulink url="http://cloudstack.org/download.html">Download page</ulink> 
-    and run the installer in the newly created Windows VM.
-  </para>
+  <title>Windows OS Installation</title>
+  <para>Download the installer, CloudInstanceManager.msi, from <ulink
+      url="http://cloudstack.org/download.html">Download page</ulink> and run the installer in the
+    newly created Windows VM. </para>
 </section>

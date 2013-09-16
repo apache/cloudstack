@@ -28,10 +28,13 @@ public class EC2Image {
 	private String  name;
 	private String  description;
 	private String  osTypeId;
-	private boolean isPublic;
-	private boolean isReady;
+    private Boolean isPublic;
+    private String  state;
 	private String 	accountName;
-	private String 	domainId;
+    private String 	domainId;
+    private String  hypervisor;
+    private String  architecture;
+    private String  imageType;
     private List<EC2TagKeyValue>    tagsSet;
 	
 	public EC2Image() {
@@ -40,9 +43,12 @@ public class EC2Image {
 		description = null;
 		osTypeId    = null;
 		isPublic    = false;
-		isReady     = false;
+        state     =   null;
 		accountName	= null;
-		domainId 	= null;
+        domainId 	= null;
+        hypervisor  = null;
+        architecture = null;
+        imageType    = "machine";
 		tagsSet    = new ArrayList<EC2TagKeyValue>();
 	}
 	
@@ -78,21 +84,21 @@ public class EC2Image {
 		return this.osTypeId;
 	}
 
-	public void setIsPublic( boolean isPublic ) {
-		this.isPublic = isPublic;
-	}
-	
-	public boolean getIsPublic() {
-		return this.isPublic;
-	}
+    public void setIsPublic( Boolean isPublic ) {
+        this.isPublic = isPublic;
+    }
 
-	public void setIsReady( boolean isReady ) {
-		this.isReady = isReady;
-	}
-	
-	public boolean getIsReady() {
-		return this.isReady;
-	}
+    public Boolean getIsPublic() {
+        return this.isPublic;
+    }
+
+    public void setState( String state ) {
+        this.state = state;
+    }
+
+    public String getState() {
+        return this.state;
+    }
 
 	public String getAccountName() {
 		return accountName;
@@ -110,6 +116,25 @@ public class EC2Image {
 		this.domainId = domainId;
 	}
 
+    public String getHypervisor() {
+        return hypervisor;
+    }
+
+    public void setHypervisor(String hypervisor) {
+        this.hypervisor = hypervisor;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
+    }
+
+    public String getImageType() {
+        return imageType;
+    }
 
     public void addResourceTag( EC2TagKeyValue param ) {
         tagsSet.add( param );

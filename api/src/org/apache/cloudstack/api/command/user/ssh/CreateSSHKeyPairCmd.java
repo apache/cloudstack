@@ -23,10 +23,11 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SSHKeyPairResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.user.SSHKeyPair;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "createSSHKeyPair", description="Create a new keypair and returns the private key", responseObject=SSHKeyPairResponse.class)
 public class CreateSSHKeyPairCmd extends BaseCmd {
@@ -81,7 +82,7 @@ public class CreateSSHKeyPairCmd extends BaseCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
 
         return accountId;

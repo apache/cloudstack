@@ -54,12 +54,6 @@ public class UpdateClusterCmd extends BaseCmd {
     @Parameter(name=ApiConstants.MANAGED_STATE, type=CommandType.STRING, description="whether this cluster is managed by cloudstack")
     private String managedState;
 
-    @Parameter(name=ApiConstants.CPU_OVERCOMMIT_RATIO, type = CommandType.STRING, description = "Value of cpu overcommit ratio")
-    private String cpuovercommitratio;
-
-    @Parameter(name=ApiConstants.MEMORY_OVERCOMMIT_RATIO, type = CommandType.STRING, description = "Value of ram overcommit ratio")
-    private String memoryovercommitratio;
-
 
     public String getClusterName() {
         return clusterName;
@@ -107,33 +101,14 @@ public class UpdateClusterCmd extends BaseCmd {
         this.managedState = managedstate;
     }
 
-    public Float getCpuOvercommitRatio (){
-        if(cpuovercommitratio != null){
-            return Float.parseFloat(cpuovercommitratio);
-        }
-        return 1.0f;
-    }
-
-    public Float getMemoryOvercommitRaito (){
-        if (memoryovercommitratio != null){
-            return Float.parseFloat(memoryovercommitratio);
-        }
-        return 1.0f;
-    }
-
     @Override
     public void execute(){
         Cluster cluster = _resourceService.getCluster(getId());
         if (cluster == null) {
             throw new InvalidParameterValueException("Unable to find the cluster by id=" + getId());
         }
-
-        if ((getMemoryOvercommitRaito().compareTo(1f) < 0) | (getCpuOvercommitRatio().compareTo(1f) < 0)) {
-            throw new InvalidParameterValueException("Cpu and ram overcommit ratios  should be greater than one");
-        }
-
-        Cluster result = _resourceService.updateCluster(cluster, getClusterType(), getHypervisor(), getAllocationState(), getManagedstate(), getMemoryOvercommitRaito(), getCpuOvercommitRatio());
-        if (result != null) {
+       Cluster result = _resourceService.updateCluster(cluster, getClusterType(), getHypervisor(), getAllocationState(), getManagedstate());
+       if (result != null) {
                 ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster, false);
                 clusterResponse.setResponseName(getCommandName());
                 this.setResponseObject(clusterResponse);

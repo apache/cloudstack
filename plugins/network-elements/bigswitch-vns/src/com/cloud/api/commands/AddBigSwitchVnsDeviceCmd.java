@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.api.response.BigSwitchVnsDeviceResponse;
 import com.cloud.exception.ConcurrentOperationException;
@@ -34,7 +35,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.BigSwitchVnsDeviceVO;
 import com.cloud.network.element.BigSwitchVnsElementService;
-import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "addBigSwitchVnsDevice", responseObject=BigSwitchVnsDeviceResponse.class, description="Adds a BigSwitch VNS device", since = "4.1.0")
@@ -96,7 +96,7 @@ public class AddBigSwitchVnsDeviceCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCaller().getId();
+        return CallContext.current().getCallingAccount().getId();
     }
 
     @Override

@@ -80,6 +80,17 @@ public class NetconfHelper {
     }
 
     public void addPortProfile(String name, PortProfileType type, BindingType binding,
+            SwitchPortMode mode, int vlanid, String vdc, String espName) throws CloudRuntimeException {
+        String command = VsmCommand.getAddPortProfile(name, type, binding, mode, vlanid, vdc, espName);
+        if (command != null) {
+            command = command.concat(SSH_NETCONF_TERMINATOR);
+            parseOkReply(sendAndReceive(command));
+        } else {
+            throw new CloudRuntimeException("Error generating rpc request for adding port profile.");
+        }
+    }
+
+    public void addPortProfile(String name, PortProfileType type, BindingType binding,
             SwitchPortMode mode, int vlanid) throws CloudRuntimeException {
         String command = VsmCommand.getAddPortProfile(name, type, binding, mode, vlanid);
         if (command != null) {
@@ -157,6 +168,17 @@ public class NetconfHelper {
             parseOkReply(sendAndReceive(command));
         } else {
             throw new CloudRuntimeException("Error generating rpc request for removing policy map.");
+        }
+    }
+
+    public void addVServiceNode(String vlanId, String ipAddr)
+            throws CloudRuntimeException {
+        String command = VsmCommand.getVServiceNode(vlanId, ipAddr);
+        if (command != null) {
+            command = command.concat(SSH_NETCONF_TERMINATOR);
+            parseOkReply(sendAndReceive(command));
+        } else {
+            throw new CloudRuntimeException("Error generating rpc request for adding vservice node for vlan " + vlanId);
         }
     }
 

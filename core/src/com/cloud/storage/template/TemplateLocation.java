@@ -24,9 +24,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Properties;
 
+import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.Processor.FormatInfo;
@@ -35,17 +35,17 @@ import com.cloud.utils.NumbersUtil;
 public class TemplateLocation {
     private static final Logger s_logger = Logger.getLogger(TemplateLocation.class);
     public final static String Filename = "template.properties";
-    
+
     StorageLayer _storage;
     String _templatePath;
     boolean _isCorrupted;
     ResourceType _resourceType = ResourceType.TEMPLATE;
-    
+
     File _file;
     Properties _props;
-    
+
     ArrayList<FormatInfo> _formats;
-    
+
     public TemplateLocation(StorageLayer storage, String templatePath) {
         _storage = storage;
         _templatePath = templatePath;
@@ -63,16 +63,16 @@ public class TemplateLocation {
         }
         _isCorrupted = false;
     }
-    
+
     public boolean create(long id, boolean isPublic, String uniqueName) throws IOException {
         boolean result = load();
         _props.setProperty("id", Long.toString(id));
         _props.setProperty("public", Boolean.toString(isPublic));
         _props.setProperty("uniquename", uniqueName);
-        
+
         return result;
     }
-    
+
     public boolean purge() {
         boolean purged = true;
         String[] files = _storage.listFiles(_templatePath);
@@ -85,10 +85,10 @@ public class TemplateLocation {
                 s_logger.debug((r ? "R" : "Unable to r") + "emove " + file);
             }
         }
-        
+
         return purged;
     }
-    
+
     public boolean load() throws IOException {
         FileInputStream strm = null;
         try {
@@ -102,7 +102,7 @@ public class TemplateLocation {
                 }
             }
         }
-        
+
         for (ImageFormat format : ImageFormat.values()) {
             String ext = _props.getProperty(format.getFileExtension());
             if (ext != null) {
@@ -115,22 +115,22 @@ public class TemplateLocation {
                 info.size = NumbersUtil.parseLong(_props.getProperty(format.getFileExtension() + ".size"), -1);
                 _props.setProperty("physicalSize", Long.toString(info.size));
                 info.virtualSize = NumbersUtil.parseLong(_props.getProperty(format.getFileExtension() + ".virtualsize"), -1);
-                _formats.add(info);               
-                
+                _formats.add(info);
+
                 if (!checkFormatValidity(info)) {
                     _isCorrupted = true;
                     s_logger.warn("Cleaning up inconsistent information for " + format);
-                } 
+                }
             }
         }
-        
+
         if (_props.getProperty("uniquename") == null || _props.getProperty("virtualsize") == null) {
             return false;
         }
-        
+
         return (_formats.size() > 0);
     }
-    
+
     public boolean save() {
         for (FormatInfo info : _formats) {
             _props.setProperty(info.format.getFileExtension(), "true");
@@ -152,60 +152,64 @@ public class TemplateLocation {
                 } catch (IOException e) {
                 }
             }
-        }        
+        }
         return true;
     }
-    
-    public TemplateInfo getTemplateInfo() {
-        TemplateInfo tmplInfo = new TemplateInfo();       
+
+    public TemplateProp getTemplateInfo() {
+        TemplateProp tmplInfo = new TemplateProp();
         tmplInfo.id = Long.parseLong(_props.getProperty("id"));
-        tmplInfo.installPath = _templatePath + File.separator + _props.getProperty("filename");
+        tmplInfo.installPath = _templatePath  + _props.getProperty("filename"); // _templatePath endsWith /
         if (_resourceType == ResourceType.VOLUME){
-        	tmplInfo.installPath = tmplInfo.installPath.substring(tmplInfo.installPath.indexOf("volumes"));	
+        	tmplInfo.installPath = tmplInfo.installPath.substring(tmplInfo.installPath.indexOf("volumes"));
         }else {
         	tmplInfo.installPath = tmplInfo.installPath.substring(tmplInfo.installPath.indexOf("template"));
         }
         tmplInfo.isCorrupted = _isCorrupted;
         tmplInfo.isPublic = Boolean.parseBoolean(_props.getProperty("public"));
         tmplInfo.templateName = _props.getProperty("uniquename");
-        tmplInfo.size = Long.parseLong(_props.getProperty("virtualsize"));
-        tmplInfo.physicalSize = Long.parseLong(_props.getProperty("physicalSize"));
-        
+        if (_props.getProperty("virtualsize") != null) {
+            tmplInfo.size = Long.parseLong(_props.getProperty("virtualsize"));
+        }
+        if (_props.getProperty("size") != null) {
+            tmplInfo.physicalSize = Long.parseLong(_props.getProperty("size"));
+        }
+
         return tmplInfo;
     }
-    
-   
+
+
     public FormatInfo getFormat(ImageFormat format) {
         for (FormatInfo info : _formats) {
             if (info.format == format) {
                 return info;
             }
         }
-        
+
         return null;
     }
-    
+
     public boolean addFormat(FormatInfo newInfo) {
         deleteFormat(newInfo.format);
-        
+
         if (!checkFormatValidity(newInfo)) {
             s_logger.warn("Format is invalid ");
             return false;
         }
-        
+
         _props.setProperty("virtualsize", Long.toString(newInfo.virtualSize));
         _formats.add(newInfo);
         return true;
     }
-    
+
     public void updateVirtualSize(long virtualSize) {
         _props.setProperty("virtualsize", Long.toString(virtualSize));
     }
-    
+
     protected boolean checkFormatValidity(FormatInfo info) {
         return (info.format != null && info.size > 0 && info.virtualSize > 0 && info.filename != null);
     }
-    
+
     protected FormatInfo deleteFormat(ImageFormat format) {
         Iterator<FormatInfo> it = _formats.iterator();
         while (it.hasNext()) {
@@ -219,7 +223,7 @@ public class TemplateLocation {
                 return info;
             }
         }
-        
+
         return null;
     }
 }

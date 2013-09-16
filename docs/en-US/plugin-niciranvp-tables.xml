@@ -23,29 +23,84 @@
 <section id="Database-tables">
     <title>Database tables</title>
     <para>The following tables are added to the cloud database for the Nicira NVP Plugin</para>
-    <itemizedlist>
-        <listitem><para>nicira_nvp_nic_map, contains a mapping from nic to logical switch port</para></listitem>
-        <listitem>
-            <itemizedlist>
-                <listitem><para>id</para></listitem>
-                <listitem><para>logicalswitch, uuid of the logical switch this port is connected to</para></listitem>
-                <listitem><para>logicalswitchport, uuid of the logical switch port for this nic</para></listitem>
-                <listitem><para>nic, the CloudStack uuid for this nic, reference to the nics table</para></listitem>
-            </itemizedlist>
-        </listitem>    
-    </itemizedlist>
-    <itemizedlist>
-        <listitem><para>external_nicira_nvp_devices, contains all configured devices</para></listitem>
-        <listitem>
-            <itemizedlist>
-                <listitem><para>id</para></listitem>
-                <listitem><para>uuid</para></listitem>
-                <listitem><para>physical_network_id, the physical network this device is configured on</para></listitem>
-                <listitem><para>provider_name, set to "NiciraNvp"</para></listitem>
-                <listitem><para>device_name, display name for this device</para></listitem>
-                <listitem><para>host_id, reference to the host table with the device configuration</para></listitem>
-            </itemizedlist>
-        </listitem>    
-    </itemizedlist>
-    
+    <table>
+        <title>nicira_nvp_nic_map</title>
+        <tgroup cols="2">
+            <tbody>
+                <row>
+                    <entry>id</entry>
+                    <entry>auto incrementing id</entry>
+                </row>
+                <row>
+                    <entry>logicalswitch</entry>
+                    <entry>uuid of the logical switch this port is connected to</entry>
+                </row>
+                <row>
+                    <entry>logicalswitchport</entry>
+                    <entry>uuid of the logical switch port for this nic</entry>
+                </row>
+                <row>
+                    <entry>nic</entry>
+                    <entry>the &PRODUCT; uuid for this nic, reference to the nics table</entry>
+                </row>
+            </tbody>
+        </tgroup>
+    </table>
+
+    <table>
+        <title>external_nicira_nvp_devices</title>
+        <tgroup cols="2">
+            <tbody>
+                <row>
+                    <entry>id</entry>
+                    <entry>auto incrementing id</entry>
+                </row>
+                <row>
+                    <entry>uuid</entry>
+                    <entry>UUID identifying this device</entry>
+                </row>
+                <row>
+                    <entry>physical_network_id</entry>
+                    <entry>the physical network this device is configured on</entry>
+                </row>
+                <row>
+                    <entry>provider_name</entry>
+                    <entry>NiciraNVP</entry>
+                </row>
+                <row>
+                    <entry>device_name</entry>
+                    <entry>display name for this device</entry>
+                </row>
+                <row>
+                    <entry>host_id</entry>
+                    <entry>reference to the host table with the device configuration</entry>
+                </row>
+            </tbody>
+        </tgroup>
+    </table>
+
+    <table>
+        <title>nicira_nvp_router_map</title>
+        <tgroup cols="2">
+            <tbody>
+                <row>
+                    <entry>id</entry>
+                    <entry>auto incrementing id</entry>
+                </row>
+                <row>
+                    <entry>logicalrouter_uuid</entry>
+                    <entry>uuid of the logical router</entry>
+                </row>
+                <row>
+                    <entry>network_id</entry>
+                    <entry>id of the network this router is linked to</entry>
+                </row>
+            </tbody>
+        </tgroup>
+    </table>
+
+    <note>
+        <para>nicira_nvp_router_map is only available in &PRODUCT; 4.1 and above</para>
+    </note>
+
 </section>

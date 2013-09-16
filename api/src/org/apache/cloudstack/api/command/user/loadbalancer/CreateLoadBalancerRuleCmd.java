@@ -19,8 +19,10 @@ package org.apache.cloudstack.api.command.user.loadbalancer;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -29,9 +31,10 @@ import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.event.EventTypes;
@@ -44,7 +47,6 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.net.NetUtils;
 
 @APICommand(name = "createLoadBalancerRule", description="Creates a load balancer rule", responseObject=LoadBalancerResponse.class)
@@ -148,7 +150,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     }
 
 
-    public Long getNetworkId() {
+    public long getNetworkId() {
         if (networkId != null) {
             return networkId;
         }
@@ -162,7 +164,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
         }
 
         if (zoneId != null) {
-            DataCenter zone = _configService.getZone(zoneId);
+            DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
             if (zone.getNetworkType() == NetworkType.Advanced) {
                 List<? extends Network> networks = _networkService.getIsolatedNetworksOwnedByAccountInZone(getZoneId(), _accountService.getAccount(getEntityOwnerId()));
                 if (networks.size() == 0) {
@@ -237,14 +239,14 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     @Override
     public void execute() throws ResourceAllocationException, ResourceUnavailableException {
 
-        UserContext callerContext = UserContext.current();
+        CallContext callerContext = CallContext.current();
         boolean success = true;
         LoadBalancer rule = null;
         try {
-            UserContext.current().setEventDetails("Rule Id: " + getEntityId());
+            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
 
             if (getOpenFirewall()) {
-                success = success && _firewallService.applyIngressFirewallRules(getSourceIpAddressId(), callerContext.getCaller());
+                success = success && _firewallService.applyIngressFirewallRules(getSourceIpAddressId(), callerContext.getCallingAccount());
             }
 
             // State might be different after the rule is applied, so get new object here
@@ -278,7 +280,9 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
             throw new InvalidParameterValueException("Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");
         }
         try {
-            LoadBalancer result = _lbService.createLoadBalancerRule(this, getOpenFirewall());
+            LoadBalancer result = _lbService.createPublicLoadBalancerRule(getXid(), getName(), getDescription(), 
+                    getSourcePortStart(), getSourcePortEnd(), getDefaultPortStart(), getDefaultPortEnd(), getSourceIpAddressId(), getProtocol(), getAlgorithm(),
+                    getNetworkId(), getEntityOwnerId(), getOpenFirewall());
             this.setEntityId(result.getId());
             this.setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException e) {
@@ -312,7 +316,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
             if (account != null) {
                 return account.getId();
             } else {
-                throw new InvalidParameterValueException("Unable to find account " + account + " in domain id=" + domainId);
+                throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain id=" + domainId);
             }
         } else {
             throw new InvalidParameterValueException("Can't define IP owner. Either specify account/domainId or publicIpId");
@@ -325,7 +329,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
         if (domainId != null) {
             return domainId;
         }
-        return UserContext.current().getCaller().getDomainId();
+        return CallContext.current().getCallingAccount().getDomainId();
     }
 
     public int getDefaultPortStart() {
@@ -374,9 +378,18 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.FirewallRule;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.FirewallRule;
     }
 
+    @Override
+    public String getSyncObjType() {
+        return BaseAsyncCmd.networkSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        return getNetworkId();
+    }
 }
 

@@ -16,11 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 
 /**
  * queryAsyncJobResult API command.
@@ -33,7 +31,7 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     public static final String snapshotHostSyncObject = "snapshothost";
     public static final String gslbSyncObject = "globalserverloadbalacner";
 
-    private AsyncJob job;
+    private Object job;
 
     @Parameter(name = "starteventid", type = CommandType.LONG)
     private Long startEventId;
@@ -56,16 +54,8 @@ public abstract class BaseAsyncCmd extends BaseCmd {
      */
     public abstract String getEventDescription();
 
-    public ResponseObject getResponse(long jobId) {
-        AsyncJobResponse response = new AsyncJobResponse();
 
-        AsyncJob job = _entityMgr.findById(AsyncJob.class, jobId);
-        response.setJobId(job.getUuid());
-        response.setResponseName(getCommandName());
-        return response;
-    }
-
-    public void setJob(AsyncJob job) {
+    public void setJob(Object job) {
         this.job = job;
     }
 
@@ -88,8 +78,8 @@ public abstract class BaseAsyncCmd extends BaseCmd {
         return null;
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.None;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.None;
     }
 
     public String getSyncObjType() {
@@ -100,7 +90,7 @@ public abstract class BaseAsyncCmd extends BaseCmd {
         return null;
     }
 
-    public AsyncJob getJob() {
+    public Object getJob() {
         return job;
     }
 
@@ -109,8 +99,8 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     }
 
     protected long saveStartedEvent(String eventType, String description, Long startEventId) {
-        UserContext ctx = UserContext.current();
-        Long userId = ctx.getCallerUserId();
+        CallContext ctx = CallContext.current();
+        Long userId = ctx.getCallingUserId();
         userId = (userId == null) ? User.UID_SYSTEM : userId;
         Long startEvent = startEventId;
         if (startEvent == null) {
@@ -124,8 +114,8 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     }
 
     protected long saveCompletedEvent(String level, String eventType, String description, Long startEventId) {
-        UserContext ctx = UserContext.current();
-        Long userId = ctx.getCallerUserId();
+        CallContext ctx = CallContext.current();
+        Long userId = ctx.getCallingUserId();
         userId = (userId == null) ? User.UID_SYSTEM : userId;
         Long startEvent = startEventId;
         if (startEvent == null) {

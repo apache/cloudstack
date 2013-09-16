@@ -58,15 +58,15 @@ public class VmwareTrafficLabel implements TrafficLabel {
     }
 
     private void _parseLabel(String networkLabel, VirtualSwitchType defVswitchType) {
+        // Set defaults for label in case of distributed vSwitch
+        if (defVswitchType.equals(VirtualSwitchType.VMwareDistributedVirtualSwitch)) {
+            _vSwitchName = DEFAULT_DVSWITCH_NAME;
+            _vSwitchType = VirtualSwitchType.VMwareDistributedVirtualSwitch;
+        } else if (defVswitchType.equals(VirtualSwitchType.NexusDistributedVirtualSwitch)) {
+            _vSwitchName = DEFAULT_NDVSWITCH_NAME;
+            _vSwitchType = VirtualSwitchType.NexusDistributedVirtualSwitch;
+        }
         if (networkLabel == null || networkLabel.isEmpty()) {
-            // Set defaults for label in case of distributed vSwitch
-            if (defVswitchType.equals(VirtualSwitchType.VMwareDistributedVirtualSwitch)) {
-                _vSwitchName = DEFAULT_DVSWITCH_NAME;
-                _vSwitchType = VirtualSwitchType.VMwareDistributedVirtualSwitch;
-            } else if (defVswitchType.equals(VirtualSwitchType.NexusDistributedVirtualSwitch)) {
-                _vSwitchName = DEFAULT_NDVSWITCH_NAME;
-                _vSwitchType = VirtualSwitchType.NexusDistributedVirtualSwitch;
-            }
             return;
         }
         String[] tokens = networkLabel.split(",");
@@ -74,7 +74,10 @@ public class VmwareTrafficLabel implements TrafficLabel {
             _vSwitchName = tokens[VMWARE_LABEL_FIELD_INDEX_NAME].trim();
         }
         if (tokens.length > VMWARE_LABEL_FIELD_INDEX_VLANID) {
-            _vlanId = tokens[VMWARE_LABEL_FIELD_INDEX_VLANID].trim();
+            String vlanToken = tokens[VMWARE_LABEL_FIELD_INDEX_VLANID].trim();
+            if (!vlanToken.isEmpty()) {
+                _vlanId = vlanToken;
+            }
         }
         if (tokens.length > VMWARE_LABEL_FIELD_INDEX_VSWITCH_TYPE) {
             _vSwitchType = VirtualSwitchType.getType(tokens[VMWARE_LABEL_FIELD_INDEX_VSWITCH_TYPE].trim());

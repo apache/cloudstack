@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+<!ENTITY % xinclude SYSTEM "http://www.docbook.org/xml/4.4/xinclude.mod">
+%xinclude;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ http://www.apache.org/licenses/LICENSE-2.0.
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+<section id="Prerequisites">
+    <title>Prerequisites</title>
+
+    <para>In order to use the MidoNet plugin, the compute hosts must be running the MidoNet Agent, and the MidoNet API server must be available. Please consult the MidoNet User Guide for more information. The following section describes the &PRODUCT; side setup.</para>
+
+    <orderedlist>
+      <listitem>
+      <para>&PRODUCT; needs to have at least one physical network with the isolation method set to "MIDO". This network should be enabled for the Guest and Public traffic types.</para>
+    </listitem>
+
+<listitem>
+    <para>Next, we need to set the following &PRODUCT; settings under "Global Settings" in the UI:</para>
+
+<table frame='all'><title>&PRODUCT; settings</title>
+<tgroup cols='3' align='left' colsep='1' rowsep='1'>
+<thead>
+<row>
+  <entry>Setting Name</entry>
+  <entry>Description</entry>
+  <entry>Example</entry>
+</row>
+</thead>
+<tbody>
+<row>
+  <entry>midonet.apiserver.address</entry>
+  <entry>Specify the address at which the Midonet API server can be contacted</entry>
+  <entry>http://192.168.1.144:8081/midolmanj-mgmt</entry>
+</row>
+<row>
+  <entry>midonet.providerrouter.id</entry>
+  <entry>Specifies the UUID of the Midonet provider router</entry>
+  <entry>d7c5e6a3-e2f4-426b-b728-b7ce6a0448e5</entry>
+</row>
+</tbody>
+</tgroup>
+</table>
+</listitem>
+
+<listitem>
+  <para>
+  We also want MidoNet to take care of public traffic, so in <emphasis>componentContext.xml</emphasis> we need to replace this line:
+
+  <programlisting><![CDATA[<bean id="PublicNetworkGuru" class="com.cloud.network.guru.PublicNetworkGuru">]]>
+  </programlisting>
+
+  With this:
+
+  <programlisting><![CDATA[<bean id="PublicNetworkGuru" class="com.cloud.network.guru.MidoNetPublicNetworkGuru">]]>
+  </programlisting>
+</para>
+</listitem>
+</orderedlist>
+
+    <note>
+	    <para>
+	    On the compute host, MidoNet takes advantage of per-traffic type VIF driver support in &PRODUCT; KVM.
+		</para>
+		<para>
+	    In agent.properties, we set the following to make MidoNet take care of Guest and Public traffic:
+
+<programlisting>libvirt.vif.driver.Guest=com.cloud.network.resource.MidoNetVifDriver
+libvirt.vif.driver.Public=com.cloud.network.resource.MidoNetVifDriver</programlisting>
+
+		This is explained further in MidoNet User Guide.
+	    </para>
+	</note>
+
+</section>

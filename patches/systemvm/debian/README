@@ -1,3 +1,8 @@
+####################################################
+ Note there is a new systemvm build script based on
+ Veewee(Vagrant) under tools/appliance.
+####################################################
+
 1. The buildsystemvm.sh script builds a 32-bit system vm disk based on the Debian Squeeze distro. This system vm can boot on any hypervisor thanks to the pvops support in the kernel. It is fully automated
 2. The files under config/ are the specific tweaks to the default Debian configuration that are required for CloudStack operation.
 3. The variables at the top of the buildsystemvm.sh script can be customized:

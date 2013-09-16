@@ -25,8 +25,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.vm.dao.NicDao;
+import com.cloud.network.vpc.NetworkACLItemDao;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.domain.Domain;
@@ -54,7 +59,6 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
-import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -117,6 +121,11 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     StaticRouteDao _staticRouteDao;
     @Inject
     VMSnapshotDao _vmSnapshotDao;
+    @Inject
+    NicDao _nicDao;
+    @Inject
+    NetworkACLItemDao _networkACLItemDao;
+
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -133,7 +142,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         _daoMap.put(TaggedResourceType.PublicIpAddress, _publicIpDao);
         _daoMap.put(TaggedResourceType.Project, _projectDao);
         _daoMap.put(TaggedResourceType.Vpc, _vpcDao);
-        _daoMap.put(TaggedResourceType.NetworkACL, _firewallDao);
+        _daoMap.put(TaggedResourceType.Nic, _nicDao);
+        _daoMap.put(TaggedResourceType.NetworkACL, _networkACLItemDao);
         _daoMap.put(TaggedResourceType.StaticRoute, _staticRouteDao);
         _daoMap.put(TaggedResourceType.VMSnapshot, _vmSnapshotDao);
         _daoMap.put(TaggedResourceType.RemoteAccessVpn, _vpnDao);
@@ -151,7 +161,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         return true;
     }
 
-    private Long getResourceId(String resourceId, TaggedResourceType resourceType) {   
+    @Override
+    public Long getResourceId(String resourceId, TaggedResourceType resourceType) {
         GenericDao<?, Long> dao = _daoMap.get(resourceType);
         if (dao == null) {
             throw new CloudRuntimeException("Dao is not loaded for the resource type " + resourceType);
@@ -239,7 +250,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     @ActionEvent(eventType = EventTypes.EVENT_TAGS_CREATE, eventDescription = "creating resource tags")
     public List<ResourceTag> createTags(List<String> resourceIds, TaggedResourceType resourceType, 
             Map<String, String> tags, String customer) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         
         List<ResourceTag> resourceTags = new ArrayList<ResourceTag>(tags.size());
         
@@ -288,34 +299,34 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         
         return resourceTags;
     }
-    
+
     @Override
     public String getUuid(String resourceId, TaggedResourceType resourceType) {
         GenericDao<?, Long> dao = _daoMap.get(resourceType);
         Class<?> claz = DbUtil.getEntityBeanType(dao);
-        
+
        String identiyUUId = null;
-       
+
        while (claz != null && claz != Object.class) {
            try {
                String tableName = DbUtil.getTableName(claz);
                if (tableName == null) {
                    throw new InvalidParameterValueException("Unable to find resource of type " + resourceType + " in the database");
                }
-               
+
                claz = claz.getSuperclass();
                if (claz == Object.class) {
                    identiyUUId = _identityDao.getIdentityUuid(tableName, resourceId);
-               } 
+               }
            } catch (Exception ex) {
                //do nothing here, it might mean uuid field is missing and we have to search further
            }
        }
-       
+
        if (identiyUUId == null) {
            return resourceId;
        }
-       
+
        return identiyUUId;
     }
 
@@ -323,7 +334,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_TAGS_DELETE, eventDescription = "deleting resource tags")
     public boolean deleteTags(List<String> resourceIds, TaggedResourceType resourceType, Map<String, String> tags) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
         
         SearchBuilder<ResourceTagVO> sb = _resourceTagDao.createSearchBuilder();
         sb.and().op("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.IN);

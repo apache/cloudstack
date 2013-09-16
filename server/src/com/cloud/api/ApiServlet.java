@@ -31,18 +31,21 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
-import com.cloud.user.UserContext;
+import com.cloud.user.User;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.db.EntityManager;
 
 @Component("apiServlet")
 @SuppressWarnings("serial")
@@ -52,15 +55,17 @@ public class ApiServlet extends HttpServlet {
 
     @Inject ApiServerService _apiServer;
     @Inject AccountService _accountMgr;
+    @Inject
+    EntityManager _entityMgr;
 
     public ApiServlet() {
     }
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-    	SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());       	
+        SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());
     }
-    
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         processRequest(req, resp);
@@ -72,13 +77,14 @@ public class ApiServlet extends HttpServlet {
     }
 
     private void utf8Fixup(HttpServletRequest req, Map<String, Object[]> params) {
-        if (req.getQueryString() == null)
+        if (req.getQueryString() == null) {
             return;
+        }
 
         String[] paramsInQueryString = req.getQueryString().split("&");
         if (paramsInQueryString != null) {
             for (String param : paramsInQueryString) {
-                String[] paramTokens = param.split("=");
+                String[] paramTokens = param.split("=", 2);
                 if (paramTokens != null && paramTokens.length == 2) {
                     String name = paramTokens[0];
                     String value = paramTokens[1];
@@ -118,8 +124,8 @@ public class ApiServlet extends HttpServlet {
         // logging the request start and end in management log for easy debugging
         String reqStr = "";
         if (s_logger.isDebugEnabled()) {
-            reqStr = auditTrailSb.toString() + " " + req.getQueryString();
-            s_logger.debug("===START=== " + StringUtils.cleanString(reqStr));
+            reqStr = auditTrailSb.toString() + " " + StringUtils.cleanString(req.getQueryString());
+            s_logger.debug("===START=== " + reqStr);
         }
 
         try {
@@ -235,7 +241,6 @@ public class ApiServlet extends HttpServlet {
             // Initialize an empty context and we will update it after we have verified the request below,
             // we no longer rely on web-session here, verifyRequest will populate user/account information
             // if a API key exists
-            UserContext.registerContext(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, false);
             Long userId = null;
 
             if (!isNew) {
@@ -266,7 +271,8 @@ public class ApiServlet extends HttpServlet {
                         writeResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType);
                         return;
                     }
-                    UserContext.updateContext(userId, (Account) accountObj, session.getId());
+                    User user = _entityMgr.findById(User.class, userId);
+                    CallContext.register(user, (Account)accountObj);
                 } else {
                     // Invalidate the session to ensure we won't allow a request across management server
                     // restarts if the userId was serialized to the stored session
@@ -280,6 +286,8 @@ public class ApiServlet extends HttpServlet {
                     writeResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType);
                     return;
                 }
+            } else {
+                CallContext.register(_accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
             }
 
             if (_apiServer.verifyRequest(params, userId)) {
@@ -296,11 +304,13 @@ public class ApiServlet extends HttpServlet {
                  * key mechanism updateUserContext(params, session != null ? session.getId() : null);
                  */
 
-                auditTrailSb.insert(0, "(userId=" + UserContext.current().getCallerUserId() + " accountId="
-                        + UserContext.current().getCaller().getId() + " sessionId=" + (session != null ? session.getId() : null) + ")");
+                auditTrailSb.insert(0, "(userId=" + CallContext.current().getCallingUserId() + " accountId="
+                        + CallContext.current().getCallingAccount().getId() + " sessionId=" + (session != null ? session.getId() : null) + ")");
 
-                    String response = _apiServer.handleRequest(params, responseType, auditTrailSb);
-                    writeResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType);
+                // Add the HTTP method (GET/POST/PUT/DELETE) as well into the params map.
+                params.put("httpmethod", new String[] { req.getMethod() });
+                String response = _apiServer.handleRequest(params, responseType, auditTrailSb);
+                writeResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType);
             } else {
                 if (session != null) {
                     try {
@@ -316,19 +326,19 @@ public class ApiServlet extends HttpServlet {
             }
         } catch (ServerApiException se) {
             String serializedResponseText = _apiServer.getSerializedApiError(se, params, responseType);
-                resp.setHeader("X-Description", se.getDescription());
+            resp.setHeader("X-Description", se.getDescription());
             writeResponse(resp, serializedResponseText, se.getErrorCode().getHttpCode(), responseType);
-                auditTrailSb.append(" " + se.getErrorCode() + " " + se.getDescription());
+            auditTrailSb.append(" " + se.getErrorCode() + " " + se.getDescription());
         } catch (Exception ex) {
-                s_logger.error("unknown exception writing api response", ex);
-                auditTrailSb.append(" unknown exception writing api response");
+            s_logger.error("unknown exception writing api response", ex);
+            auditTrailSb.append(" unknown exception writing api response");
         } finally {
             s_accessLogger.info(auditTrailSb.toString());
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("===END=== " + StringUtils.cleanString(reqStr));
+                s_logger.debug("===END=== " + reqStr);
             }
             // cleanup user context to prevent from being peeked in other request context
-            UserContext.unregisterContext();
+            CallContext.unregister();
         }
     }
 

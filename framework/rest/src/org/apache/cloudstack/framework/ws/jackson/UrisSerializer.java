@@ -57,9 +57,9 @@ public class UrisSerializer extends JsonSerializer<List<? extends Object>> {
             jgen.writeObject(id);
             jgen.writeFieldName("uri");
             jgen.writeString(buildUri(_annotation.clazz(), _annotation.method(), id));
-            jgen.writeEndObject();            
+            jgen.writeEndObject();
         }
-        jgen.writeEndObject();            
+        jgen.writeEndObject();
     }
 
     protected String buildUri(Class<?> clazz, String method, Object id) {

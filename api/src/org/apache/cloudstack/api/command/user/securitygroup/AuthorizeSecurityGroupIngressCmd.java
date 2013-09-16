@@ -23,22 +23,23 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.ProjectAccountResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.security.SecurityRule;
-import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.NetUtils;
 
@@ -80,7 +81,7 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the security group. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, description="an optional project of the security group", entityType=ProjectAccountResponse.class)
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, description="an optional project of the security group", entityType=ProjectResponse.class)
     private Long projectId;
 
     @Parameter(name=ApiConstants.SECURITY_GROUP_ID, type=CommandType.UUID, description="The ID of the security group. Mutually exclusive with securityGroupName parameter", entityType=SecurityGroupResponse.class)
@@ -165,7 +166,7 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
 
         return accountId;
@@ -207,13 +208,6 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        if(cidrList != null){
-            for(String cidr : cidrList ){
-                if (!NetUtils.isValidCIDR(cidr)){
-                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR,  cidr + " is an Invalid CIDR ");
-                }
-            }
-        }
         List<? extends SecurityRule> ingressRules = _securityGroupService.authorizeSecurityGroupIngress(this);
         if (ingressRules != null && !ingressRules.isEmpty()) {
             SecurityGroupResponse response = _responseGenerator.createSecurityGroupResponseFromSecurityGroupRule(ingressRules);
@@ -224,8 +218,8 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.SecurityGroup;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.SecurityGroup;
     }
 
     @Override

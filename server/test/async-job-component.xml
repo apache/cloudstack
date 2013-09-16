@@ -74,6 +74,7 @@ under the License.
             <param name="cache.time.to.live">300</param>
         </dao>
         <dao name="UserStats" class="com.cloud.user.dao.UserStatisticsDaoImpl"/>
+        <dao name="VmDiskStats" class="com.cloud.user.dao.VmDiskStatisticsDaoImpl"/>
         <dao name="Disk Template" class="com.cloud.storage.dao.DiskTemplateDaoImpl">
             <param name="cache.size">50</param>
             <param name="cache.time.to.live">-1</param>

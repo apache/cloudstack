@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -26,7 +28,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
 import org.apache.cloudstack.api.response.Site2SiteVpnConnectionResponse;
 import org.apache.cloudstack.api.response.Site2SiteVpnGatewayResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -77,7 +78,7 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Vpc vpc = _vpcService.getVpc(getVpnGateway().getVpcId());
+        Vpc vpc = _entityMgr.findById(Vpc.class, getVpnGateway().getVpcId());
         return vpc.getAccountId();
     }
 
@@ -96,8 +97,8 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
         try {
             Site2SiteVpnConnection conn = _s2sVpnService.createVpnConnection(this);
             if (conn != null) {
-                this.setEntityId(conn.getId());
-                this.setEntityUuid(conn.getUuid());
+                setEntityId(conn.getId());
+                setEntityUuid(conn.getUuid());
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create site to site vpn connection");
             }
@@ -111,11 +112,11 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute(){
         try {
-            Site2SiteVpnConnection result = _s2sVpnService.startVpnConnection(this.getEntityId());
+            Site2SiteVpnConnection result = _s2sVpnService.startVpnConnection(getEntityId());
             if (result != null) {
                 Site2SiteVpnConnectionResponse response = _responseGenerator.createSite2SiteVpnConnectionResponse(result);
                 response.setResponseName(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create site to site vpn connection");
             }

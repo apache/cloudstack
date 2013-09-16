@@ -38,8 +38,9 @@ make_migratable.sh=..,0755,/opt/xensource/bin
 setup_iscsi.sh=..,0755,/opt/xensource/bin
 cloud-setup-bonding.sh=..,0755,/opt/xensource/bin
 pingtest.sh=../../..,0755,/opt/xensource/bin
+createipAlias.sh=..,0755,/opt/xensource/bin
+deleteipAlias.sh=..,0755,/opt/xensource/bin
 dhcp_entry.sh=../../../../network/domr/,0755,/opt/xensource/bin
-vm_data.sh=../../../../network/domr/,0755,/opt/xensource/bin
 save_password_to_domr.sh=../../../../network/domr/,0755,/opt/xensource/bin
 call_firewall.sh=../../../../network/domr/,0755,/opt/xensource/bin
 call_loadbalancer.sh=../../../../network/domr/,0755,/opt/xensource/bin
@@ -63,4 +64,5 @@ bumpUpPriority.sh=../../../../network/domr/,0755,/opt/xensource/bin
 swift=..,0755,/opt/xensource/bin
 swiftxen=..,0755,/etc/xapi.d/plugins
 s3xen=..,0755,/etc/xapi.d/plugins
+add_to_vcpus_params_live.sh=..,0755,/opt/xensource/bin
 

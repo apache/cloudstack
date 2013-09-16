@@ -30,28 +30,28 @@ public class ScopeTest {
         ZoneScope zoneScope = new ZoneScope(1L);
         ZoneScope zoneScope2 = new ZoneScope(1L);
         Assert.assertTrue(zoneScope.isSameScope(zoneScope2));
-        
+
         ZoneScope zoneScope3 = new ZoneScope(2L);
         Assert.assertFalse(zoneScope.isSameScope(zoneScope3));
     }
-    
+
     @Test
     public void testClusterScope() {
         ClusterScope clusterScope = new ClusterScope(1L, 1L, 1L);
         ClusterScope clusterScope2 = new ClusterScope(1L, 1L, 1L);
-        
+
         Assert.assertTrue(clusterScope.isSameScope(clusterScope2));
-        
+
         ClusterScope clusterScope3 = new ClusterScope(2L, 2L, 1L);
         Assert.assertFalse(clusterScope.isSameScope(clusterScope3));
     }
-    
+
     @Test
     public void testHostScope() {
-        HostScope hostScope = new HostScope(1L);
-        HostScope hostScope2 = new HostScope(1L);
-        HostScope hostScope3 = new HostScope(2L);
-        
+        HostScope hostScope = new HostScope(1L, 1L, 1L);
+        HostScope hostScope2 = new HostScope(1L, 1L, 1L);
+        HostScope hostScope3 = new HostScope(2L, 1L, 1L);
+
         Assert.assertTrue(hostScope.isSameScope(hostScope2));
         Assert.assertFalse(hostScope.isSameScope(hostScope3));
     }

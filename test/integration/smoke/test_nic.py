@@ -79,9 +79,33 @@ class Services:
                     "PortForwarding": 'VirtualRouter',
                 },
             },
+            "network_offering_shared": {
+                "name": 'Test Network offering shared',
+                "displaytext": 'Test Network offering Shared',
+                "guestiptype": 'Shared',
+                "supportedservices": 'Dhcp,Dns,UserData',
+                "traffictype": 'GUEST',
+                "specifyVlan" : "True",
+                "specifyIpRanges" : "True",
+                "serviceProviderList" : {
+                    "Dhcp": 'VirtualRouter',
+                    "Dns": 'VirtualRouter',
+                    "UserData": 'VirtualRouter',
+                },
+            },
             "network": {
                 "name": "Test Network",
                 "displaytext": "Test Network",
+                "acltype": "Account",
+            },
+            "network2": {
+                "name": "Test Network Shared",
+                "displaytext": "Test Network Shared",
+                "vlan" :1201,
+                "gateway" :"172.16.15.1",
+                "netmask" :"255.255.255.0",
+                "startip" :"172.16.15.21",
+                "endip" :"172.16.15.41",
                 "acltype": "Account",
             },
             # ISO settings for Attach/Detach ISO tests
@@ -98,9 +122,6 @@ class Services:
                 "name": "Cent OS Template",
                 "passwordenabled": True,
             },
-            "diskdevice": '/dev/xvdd',
-            # Disk device where ISO is attached to instance
-            "mount_dir": "/mnt/tmp",
             "sleep": 60,
             "timeout": 10,
             #Migrate VM to hostid
@@ -108,7 +129,7 @@ class Services:
             # CentOS 5.3 (64-bit)
         }
 
-class TestDeployVM(cloudstackTestCase):
+class TestNic(cloudstackTestCase):
 
     def setUp(self):
         self.cleanup = []
@@ -131,9 +152,8 @@ class TestDeployVM(cloudstackTestCase):
             zone = get_zone(self.apiclient, self.services)
             self.services['mode'] = zone.networktype
 
-            if self.services['mode'] != 'Advanced':
-                self.debug("Cannot run this test with a basic zone, please use advanced!")
-                return
+            if zone.networktype != 'Advanced':
+                self.skipTest("Cannot run this test with a basic zone, please use advanced!")
 
             #if local storage is enabled, alter the offerings to use localstorage
             #this step is needed for devcloud
@@ -176,35 +196,49 @@ class TestDeployVM(cloudstackTestCase):
             self.network_offering.update(self.apiclient, state='Enabled') # Enable Network offering
             self.services["network"]["networkoffering"] = self.network_offering.id
 
+            self.network_offering_shared = NetworkOffering.create(
+                                        self.apiclient,
+                                        self.services["network_offering_shared"],
+                                        )
+            self.cleanup.insert(0, self.network_offering_shared)
+            self.network_offering_shared.update(self.apiclient, state='Enabled') # Enable Network offering
+            self.services["network2"]["networkoffering"] = self.network_offering_shared.id
+
             ################
             ### Test Network
             self.test_network = Network.create(
                                                  self.apiclient,
                                                  self.services["network"],
-                                                 self.account.account.name,
-                                                 self.account.account.domainid,
+                                                 self.account.name,
+                                                 self.account.domainid,
                                                  )
             self.cleanup.insert(0, self.test_network)
+            self.test_network2 = Network.create(
+                                                 self.apiclient,
+                                                 self.services["network2"],
+                                                 self.account.name,
+                                                 self.account.domainid,
+                                                 zoneid=self.services["network"]["zoneid"]
+                                                 )
+            self.cleanup.insert(0, self.test_network2)
         except Exception as ex:
             self.debug("Exception during NIC test SETUP!: " + str(ex))
-            self.assertEqual(True, False, "Exception during NIC test SETUP!: " + str(ex))
 
     @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
     def test_01_nic(self):
-        if self.services['mode'] != 'Advanced':
-            self.debug("Cannot run this test with a basic zone, please use advanced!")
-            return
+        """Test to add and update added nic to a virtual machine"""
+
         try:
             self.virtual_machine = VirtualMachine.create(
                                         self.apiclient,
                                         self.services["small"],
-                                        accountid=self.account.account.name,
-                                        domainid=self.account.account.domainid,
+                                        accountid=self.account.name,
+                                        domainid=self.account.domainid,
                                         serviceofferingid=self.service_offering.id,
-                                        mode=self.services['mode']
+                                        mode=self.services['mode'],
+                                        networkids=[self.test_network.id]
                                     )
             self.cleanup.insert(0, self.virtual_machine)
-
             list_vm_response = list_virtual_machines(
                                                      self.apiclient,
                                                      id=self.virtual_machine.id
@@ -256,7 +290,7 @@ class TestDeployVM(cloudstackTestCase):
             existing_nic_id = vm_response.nic[0].id
 
             # 1. add a nic
-            add_response = self.virtual_machine.add_nic(self.apiclient, self.test_network.id)
+            add_response = self.virtual_machine.add_nic(self.apiclient, self.test_network2.id)
 
             time.sleep(5)
             # now go get the vm list?
@@ -308,8 +342,9 @@ class TestDeployVM(cloudstackTestCase):
                 sawException = True
 
             self.assertEqual(sawException, True, "Make sure we cannot delete the default NIC")
-
-            self.virtual_machine.remove_nic(self.apiclient, existing_nic_id)
+            self.virtual_machine.update_default_nic(self.apiclient, existing_nic_id)
+            time.sleep(5)
+            self.virtual_machine.remove_nic(self.apiclient, new_nic_id)
             time.sleep(5)
 
             list_vm_response = list_virtual_machines(

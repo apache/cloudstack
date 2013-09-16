@@ -505,7 +505,7 @@ public class DatabaseConfig {
             stmt.setLong(14, 1238425896);
 
             boolean nfs = false;
-            if (url.startsWith("nfs")) {
+            if (url.startsWith("nfs") || url.startsWith("cifs")) {
                 nfs = true;
             }
             if (nfs) {
@@ -792,14 +792,14 @@ public class DatabaseConfig {
         }
 
         // If a netmask was provided, check that the startIP, endIP, and gateway all belong to the same subnet
-        if (netmask != null && netmask != "") {
+        if (netmask != null && !netmask.equals("")) {
             if (endIP != null) {
                 if (!IPRangeConfig.sameSubnet(startIP, endIP, netmask)) {
                     printError("Start and end IPs for the public IP range must be in the same subnet, as per the provided netmask.");
                 }
             }
 
-            if (gateway != null && gateway != "") {
+            if (gateway != null && !gateway.equals("")) {
                 if (!IPRangeConfig.sameSubnet(startIP, gateway, netmask)) {
                     printError("The start IP for the public IP range must be in the same subnet as the gateway, as per the provided netmask.");
                 }
@@ -918,6 +918,20 @@ public class DatabaseConfig {
         }
 
         ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
+
+        Long bytesReadRate = Long.parseLong(_currentObjectParams.get("bytesReadRate"));
+        if ((bytesReadRate != null) && (bytesReadRate > 0))
+            serviceOffering.setBytesReadRate(bytesReadRate);
+        Long bytesWriteRate = Long.parseLong(_currentObjectParams.get("bytesWriteRate"));
+        if ((bytesWriteRate != null) && (bytesWriteRate > 0))
+            serviceOffering.setBytesWriteRate(bytesWriteRate);
+        Long iopsReadRate = Long.parseLong(_currentObjectParams.get("iopsReadRate"));
+        if ((iopsReadRate != null) && (iopsReadRate > 0))
+            serviceOffering.setIopsReadRate(iopsReadRate);
+        Long iopsWriteRate = Long.parseLong(_currentObjectParams.get("iopsWriteRate"));
+        if ((iopsWriteRate != null) && (iopsWriteRate > 0))
+            serviceOffering.setIopsWriteRate(iopsWriteRate);
+
         ServiceOfferingDaoImpl dao = ComponentContext.inject(ServiceOfferingDaoImpl.class);
         try {
             dao.persist(serviceOffering);
@@ -965,8 +979,22 @@ public class DatabaseConfig {
             newTags.delete(newTags.length() - 1, newTags.length());
             tags = newTags.toString();
         }
-        DiskOfferingVO diskOffering = new DiskOfferingVO(domainId, name, displayText, diskSpace , tags, false);
+        DiskOfferingVO diskOffering = new DiskOfferingVO(domainId, name, displayText, diskSpace, tags, false, null, null, null);
         diskOffering.setUseLocalStorage(local);
+
+        Long bytesReadRate = Long.parseLong(_currentObjectParams.get("bytesReadRate"));
+        if (bytesReadRate != null && (bytesReadRate > 0))
+            diskOffering.setBytesReadRate(bytesReadRate);
+        Long bytesWriteRate = Long.parseLong(_currentObjectParams.get("bytesWriteRate"));
+        if (bytesWriteRate != null && (bytesWriteRate > 0))
+            diskOffering.setBytesWriteRate(bytesWriteRate);
+        Long iopsReadRate = Long.parseLong(_currentObjectParams.get("iopsReadRate"));
+        if (iopsReadRate != null && (iopsReadRate > 0))
+            diskOffering.setIopsReadRate(iopsReadRate);
+        Long iopsWriteRate = Long.parseLong(_currentObjectParams.get("iopsWriteRate"));
+        if (iopsWriteRate != null && (iopsWriteRate > 0))
+            diskOffering.setIopsWriteRate(iopsWriteRate);
+
         DiskOfferingDaoImpl offering = ComponentContext.inject(DiskOfferingDaoImpl.class);
         try {
             offering.persist(diskOffering);

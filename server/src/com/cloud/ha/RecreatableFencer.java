@@ -21,15 +21,15 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.host.HostVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+
+import com.cloud.host.Host;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 
 @Component
@@ -44,7 +44,7 @@ public class RecreatableFencer extends AdapterBase implements FenceBuilder {
     }
 
     @Override
-    public Boolean fenceOff(VMInstanceVO vm, HostVO host) {
+    public Boolean fenceOff(VirtualMachine vm, Host host) {
         VirtualMachine.Type type = vm.getType();
         if (type != VirtualMachine.Type.ConsoleProxy && type != VirtualMachine.Type.DomainRouter && type != VirtualMachine.Type.SecondaryStorageVm) {
             if (s_logger.isDebugEnabled()) {

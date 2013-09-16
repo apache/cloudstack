@@ -1,0 +1,103 @@
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<configConfMos 
+  cookie="%cookie%" 
+  inHierarchical="false">
+    <inConfigs>
+
+      <pair key="%natruledn%">
+        <policyRule
+          descr="%descr%"
+          dn="%natruledn%"
+          name="%natrulename%"
+          order="%order%"
+          status="created"/>
+      </pair>
+
+      <pair key="%natruledn%/nat-action">
+        <natpolicyNatAction
+          actionType="static"
+          destTranslatedIpPool=""
+          destTranslatedPortPool=""
+          dn="%natruledn%/nat-action"
+          id="0"
+          isBidirectionalEnabled="yes"
+          isDnsEnabled="yes"
+          isNoProxyArpEnabled="no"
+          isRoundRobinIpEnabled="no"
+          srcTranslatedIpPatPool=""
+          srcTranslatedIpPool="%ippoolname%"
+          srcTranslatedPortPool=""
+          status="created"/>
+      </pair>
+
+      <pair key="%natruledn%/rule-cond-2">
+        <policyRuleCondition
+          dn="%natruledn%/rule-cond-2"
+          id="2"
+          order="unspecified"
+          status="created"/>
+      </pair>
+      <pair key="%natruledn%/rule-cond-2/nw-expr2">
+        <policyNetworkExpression
+          dn="%natruledn%/rule-cond-2/nw-expr2" 
+          id="2"
+          opr="range"
+          status="created"/>
+      </pair>
+      <pair key="%natruledn%/rule-cond-2/nw-expr2/nw-attr-qual">
+        <policyNwAttrQualifier
+          attrEp="source"
+          dn="%natruledn%/rule-cond-2/nw-expr2/nw-attr-qual"
+          status="created"/>
+      </pair>
+      <pair key="%natruledn%/rule-cond-2/nw-expr2/nw-ip-2">
+        <policyIPAddress
+          dataType="string"
+          descr=""
+          dn="%natruledn%/rule-cond-2/nw-expr2/nw-ip-2"
+          id="2"
+          name=""
+          placement="begin"
+          status="created"
+          value="%srcstartip%"/>
+      </pair>
+      <pair key="%natruledn%/rule-cond-2/nw-expr2/nw-ip-3">
+        <policyIPAddress
+          dataType="string"
+          descr=""
+          dn="%natruledn%/rule-cond-2/nw-expr2/nw-ip-3"
+          id="3"
+          name=""
+          placement="end"
+          status="created"
+          value="%srcendip%"/>
+      </pair>
+
+    </inConfigs>
+</configConfMos>
+
+<!--
+    natruledn="org-root/org-TestTenant3/org-Tenant3-VDC/natpol-Source-NAT-For-Tenant3/rule-Source-NAT-Policy-Rule"
+    natrulename="Source-NAT-Policy-Rule"
+    descr="Source NAT Policy Rule for Tenant3"
+    ippoolname=value
+    srcstartip=value
+    srcendip=value
+--!>

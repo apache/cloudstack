@@ -56,7 +56,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @Local(value ={OCFS2Manager.class})
 public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, ResourceListener {
     private static final Logger s_logger = Logger.getLogger(OCFS2ManagerImpl.class);
-    
+
     @Inject ClusterDetailsDao _clusterDetailsDao;
     @Inject AgentManager _agentMgr;
     @Inject HostDao _hostDao;
@@ -64,7 +64,7 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
     @Inject ResourceManager _resourceMgr;
     @Inject StoragePoolHostDao _poolHostDao;
     @Inject PrimaryDataStoreDao _poolDao;
-    
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         return true;
@@ -96,8 +96,8 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
         }
         return lst;
     }
-    
-    
+
+
     private boolean prepareNodes(String clusterName, List<HostVO> hosts) {
         PrepareOCFS2NodesCommand cmd = new PrepareOCFS2NodesCommand(clusterName, marshalNodes(hosts));
         for (HostVO h : hosts) {
@@ -111,36 +111,36 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
     private String getClusterName(Long clusterId) {
         ClusterVO cluster = _clusterDao.findById(clusterId);
         if (cluster == null) {
             throw new CloudRuntimeException("Cannot get cluster for id " + clusterId);
         }
-        
-		String clusterName = "OvmCluster" + cluster.getId();      
+
+		String clusterName = "OvmCluster" + cluster.getId();
         return clusterName;
     }
-    
+
     @Override
     public boolean prepareNodes(List<HostVO> hosts, StoragePool pool) {
         if (pool.getPoolType() != StoragePoolType.OCFS2) {
             throw new CloudRuntimeException("None OCFS2 storage pool is getting into OCFS2 manager!");
         }
-        
+
         return prepareNodes(getClusterName(pool.getClusterId()), hosts);
     }
 
     @Override
-    public boolean prepareNodes(Long clusterId) {    
+    public boolean prepareNodes(Long clusterId) {
         ClusterVO cluster = _clusterDao.findById(clusterId);
         if (cluster == null) {
             throw new CloudRuntimeException("Cannot find cluster for ID " + clusterId);
         }
-        
+
         SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
         sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, clusterId);
         sc.addAnd(sc.getEntity().getPodId(), Op.EQ, cluster.getPodId());
@@ -151,36 +151,36 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
             s_logger.debug("There is no host in cluster " + clusterId + ", no need to prepare OCFS2 nodes");
             return true;
         }
-        
+
         return prepareNodes(getClusterName(clusterId), hosts);
     }
 
     @Override
     public void processDiscoverEventBefore(Long dcid, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     public void processDiscoverEventAfter(Map<? extends ServerResource, Map<String, String>> resources) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
-    public void processDeleteHostEventBefore(HostVO host) {
+    public void processDeleteHostEventBefore(Host host) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
-    public void processDeletHostEventAfter(HostVO host) {
+    public void processDeletHostEventAfter(Host host) {
         String errMsg = String.format("Prepare OCFS2 nodes failed after delete host %1$s (zone:%2$s, pod:%3$s, cluster:%4$s", host.getId(), host.getDataCenterId(), host.getPodId(), host.getClusterId());
-        
+
         if (host.getHypervisorType() != HypervisorType.Ovm) {
             return;
         }
-        
+
         boolean hasOcfs2 = false;
         List<StoragePoolHostVO> poolRefs = _poolHostDao.listByHostId(host.getId());
         for (StoragePoolHostVO poolRef : poolRefs) {
@@ -205,24 +205,24 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
     @Override
     public void processCancelMaintenaceEventBefore(Long hostId) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     public void processCancelMaintenaceEventAfter(Long hostId) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     public void processPrepareMaintenaceEventBefore(Long hostId) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     public void processPrepareMaintenaceEventAfter(Long hostId) {
         // TODO Auto-generated method stub
-        
+
     }
 }

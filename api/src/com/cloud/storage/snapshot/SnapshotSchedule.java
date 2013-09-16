@@ -16,12 +16,12 @@
 // under the License.
 package com.cloud.storage.snapshot;
 
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.Date;
 
-public interface SnapshotSchedule {
-    long getId();
-
-    String getUuid();
+public interface SnapshotSchedule extends InternalIdentity, Identity {
 
     Long getVolumeId();
 
@@ -38,10 +38,9 @@ public interface SnapshotSchedule {
 
     Long getAsyncJobId();
 
-    void setAsyncJobId(long asyncJobId);
+    void setAsyncJobId(Long asyncJobId);
 
     Long getSnapshotId();
 
     void setSnapshotId(Long snapshotId);
-
 }

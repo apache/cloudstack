@@ -11,25 +11,22 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.ha;
 
-import java.util.Map;
-
 import javax.ejb.Local;
-import javax.naming.ConfigurationException;
 
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 
 @Local(value=FenceBuilder.class)
 public class VmwareFencer extends AdapterBase implements FenceBuilder {
 
     @Override
-    public Boolean fenceOff(VMInstanceVO vm, HostVO host) {
+    public Boolean fenceOff(VirtualMachine vm, Host host) {
     	return null;
     }
 	

@@ -25,7 +25,7 @@
 <section id="building-documentation">
     <title>Building &PRODUCT; Documentation</title>
     <para>To build a specific guide, go to the source tree of the documentation in /docs and identify the guide you want to build.</para>
-    <para>Currenlty there are four guides plus the release notes, all defined in publican configuration files:</para>
+    <para>Currently there are four guides plus the release notes, all defined in publican configuration files:</para>
     <programlisting>
         publican-adminguide.cfg
         publican-devguide.cfg

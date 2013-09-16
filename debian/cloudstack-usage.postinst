@@ -27,9 +27,15 @@ case "$1" in
             cp -a /etc/cloud/management/db.properties /etc/cloudstack/usage/db.properties
         fi
 
+        # Replacing db.properties with management server db.properties
+        if [ -f "/etc/cloudstack/management/db.properties" ]; then
+            rm -rf /etc/cloudstack/usage/db.properties
+            ln -s /etc/cloudstack/management/db.properties /etc/cloudstack/usage/db.properties
+        fi
+
         # We also retain the log4j configuration
-        if [ -f "/etc/cloud/usage/log4j-cloud_usage.xml" ]; then
-            cp -a /etc/cloud/usage/log4j-cloud_usage.xml /etc/cloudstack/usage/log4j-cloud_usage.xml
+        if [ -f "/etc/cloud/usage/log4j-cloud.xml" ]; then
+            cp -a /etc/cloud/usage/log4j-cloud.xml /etc/cloudstack/usage/log4j-cloud.xml
         fi
         ;;
 esac

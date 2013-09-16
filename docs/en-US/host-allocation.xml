@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
@@ -23,10 +23,101 @@
 -->
 
 <section id="host-allocation">
-    <title>Host Allocation</title>
-    <para>The system automatically picks the most appropriate host to run each virtual machine. End users may specify the zone in which the virtual machine will be created. End users do not have control over which host will run the virtual machine instance.</para>
-    <para>&PRODUCT; administrators can specify that certain hosts should have a preference for particular types of guest instances. For example, an administrator could state that a host should have a preference to run Windows guests. The default host allocator will attempt to place guests of that OS type on such hosts first. If no such host is available, the allocator will place the instance wherever there is sufficient physical capacity.</para>
-    <para>Both vertical and horizontal allocation is allowed. Vertical allocation consumes all the resources of a given host before allocating any guests on a second host. This reduces power consumption in the cloud. Horizontal allocation places a guest on each host in a round-robin fashion. This may yield better performance to the guests in some cases. &PRODUCT; also allows an element of CPU over-provisioning as configured by the administrator. Over-provisioning allows the administrator to commit more CPU cycles to the allocated guests than are actually available from the hardware.</para>
-    <para>&PRODUCT; also provides a pluggable interface for adding new allocators. These custom allocators can provide any policy the administrator desires.</para>
-    <xi:include href="over-provisioning-service-offering-limits.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <title>Assigning VMs to Hosts</title>
+    <para>At any point in time, each virtual machine instance is running on a single host.
+        How does &PRODUCT; determine which host to place a VM on? There are several ways:</para>
+    <itemizedlist>
+        <listitem><para>Automatic default host allocation. &PRODUCT; can automatically pick
+            the most appropriate host to run each virtual machine.</para></listitem>
+        <listitem><para>Instance type preferences. &PRODUCT; administrators can specify that certain hosts should have a preference for particular types of guest instances.
+            For example, an administrator could state that a host should have a preference to run Windows guests.
+            The default host allocator will attempt to place guests of that OS type on such hosts first.
+            If no such host is available, the allocator will place the instance wherever there is sufficient physical capacity.</para></listitem>
+        <listitem><para>Vertical and horizontal allocation.
+            Vertical allocation consumes all the resources of a given host before allocating any guests on a second host.
+            This reduces power consumption in the cloud. Horizontal allocation places a guest on each host in a round-robin fashion.
+            This may yield better performance to the guests in some cases.</para></listitem>
+        <listitem><para>End user preferences.
+            Users can not control exactly which host will run a given VM instance,
+            but they can specify a zone for the VM.
+            &PRODUCT; is then restricted to allocating the VM only to one of the hosts in that zone.</para></listitem>
+        <listitem><para>Host tags. The administrator can assign tags to hosts. These tags can be used to
+            specify which host a VM should use.
+            The &PRODUCT; administrator decides whether to define host tags, then create a service offering using those tags and offer it to the user.
+        </para></listitem>
+        <listitem><para>Affinity groups.
+            By defining affinity groups and assigning VMs to them, the user or administrator can
+            influence (but not dictate) which VMs should run on separate hosts.
+            This feature is to let users specify that certain VMs won't be on the same host.</para></listitem>
+        <listitem><para>&PRODUCT; also provides a pluggable interface for adding new allocators.
+            These custom allocators can provide any policy the administrator desires.</para></listitem>
+    </itemizedlist>
+    <section id="affinity-groups">
+        <title>Affinity Groups</title>
+        <para>By defining affinity groups and assigning VMs to them, the user or administrator can
+            influence (but not dictate) which VMs should run on separate hosts.
+            This feature is to let users specify that VMs with the same “host anti-affinity” type won’t be on the same host.
+            This serves to increase fault tolerance.
+            If a host fails, another VM offering the same service (for example, hosting the user's website) is still up and running on another host.</para>
+        <para>The scope of an affinity group is per user account.</para>
+        <formalpara><title>Creating a New Affinity Group</title>
+            <para>To add an affinity group:</para></formalpara>
+        <orderedlist>
+            <listitem><para>Log in to the &PRODUCT; UI as an administrator or user.</para></listitem>
+            <listitem><para>In the left navigation bar, click Affinity Groups.</para></listitem>
+            <listitem><para>Click Add affinity group. In the dialog box, fill in the following fields:</para>
+                <itemizedlist>
+                    <listitem><para>Name. Give the group a name.</para></listitem>
+                    <listitem><para>Description. Any desired text to tell more about the purpose of the group.</para></listitem>
+                    <listitem><para>Type. The only supported type shipped with &PRODUCT; is Host Anti-Affinity.
+                        This indicates that the VMs in this group should avoid being placed on the same VM with each other.
+                        If you see other types in this list, it means that your installation of &PRODUCT; has been extended
+                        with customized affinity group plugins.</para></listitem>
+                </itemizedlist>
+            </listitem>
+        </orderedlist>
+        <formalpara><title>Assign a New VM to an Affinity Group</title>
+            <para>To assign a new VM to an affinity group:</para></formalpara>
+        <itemizedlist>
+            <listitem><para>Create the VM as usual, as described in <xref linkend="creating-vms"/>.
+                In the Add Instance wizard, there is a new Affinity tab where you can select the affinity group.</para></listitem>
+        </itemizedlist>
+        <formalpara><title>Change Affinity Group for an Existing VM</title>
+            <para>To assign an existing VM to an affinity group:</para></formalpara>
+        <orderedlist>
+            <listitem><para>Log in to the &PRODUCT; UI as an administrator or user.</para></listitem>
+            <listitem><para>In the left navigation bar, click Instances.</para></listitem>
+            <listitem><para>Click the name of the VM you want to work with.</para></listitem>
+            <listitem><para>Stop the VM by clicking the Stop button.</para></listitem>
+            <listitem><para>Click the Change Affinity button. <inlinemediaobject>
+                <imageobject>
+                    <imagedata fileref="./images/change-affinity-button.png"/>
+                </imageobject>
+                <textobject>
+                    <phrase>change-affinity-button.png: button to assign an affinity group
+                        to a virtual machine</phrase>
+                </textobject>
+            </inlinemediaobject>
+            </para></listitem>
+        </orderedlist>
+        <formalpara><title>View Members of an Affinity Group</title>
+            <para>To see which VMs are currently assigned to a particular affinity group:</para></formalpara>
+        <orderedlist>
+            <listitem><para>In the left navigation bar, click Affinity Groups.</para></listitem>
+            <listitem><para>Click the name of the group you are interested in.</para></listitem>
+            <listitem><para>Click View Instances. The members of the group are listed.</para>
+                <para>From here, you can click the name of any VM in the list to access all its details and controls.</para></listitem>
+        </orderedlist>
+        <formalpara><title>Delete an Affinity Group</title>
+            <para>To delete an affinity group:</para></formalpara>
+        <orderedlist>
+            <listitem><para>In the left navigation bar, click Affinity Groups.</para></listitem>
+            <listitem><para>Click the name of the group you are interested in.</para></listitem>
+            <listitem><para>Click Delete.</para>
+                <para>Any VM that is a member of the affinity group will be disassociated from the group.
+                    The former group members will continue to run normally on the current hosts, but if the
+                    VM is restarted, it will no longer follow the host allocation rules from its former
+                    affinity group.</para></listitem>
+        </orderedlist>
+    </section>
 </section>    

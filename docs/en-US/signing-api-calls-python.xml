@@ -1,0 +1,101 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="signing-api-calls-python">
+    <title>How to sign an API call with Python</title>
+    <para>To illustrate the procedure used to sign API calls we present a step by step interactive session
+          using Python.</para>
+    
+    <para>First import the required modules:</para>
+    <programlisting>
+
+ <![CDATA[
+$python
+Python 2.7.3 (default, Nov 17 2012, 19:54:34) 
+[GCC 4.2.1 Compatible Apple Clang 4.1 ((tags/Apple/clang-421.11.66))] on darwin
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import urllib2
+>>> import urllib
+>>> import hashlib
+>>> import hmac
+>>> import base64
+ ]]>
+    </programlisting>
+   
+    <para>Define the endpoint of the Cloud, the command that you want to execute and the keys of the user.</para>
+    <programlisting>
+ <![CDATA[
+
+>>> baseurl='http://localhost:8080/client/api?'
+>>> request={}
+>>> request['command']='listUsers'
+>>> request['response']='json'
+>>> request['apikey']='plgWJfZK4gyS3mOMTVmjUVg-X-jlWlnfaUJ9GAbBbf9EdM-kAYMmAiLqzzq1ElZLYq_u38zCm0bewzGUdP66mg'
+>>> secretkey='VDaACYb0LV9eNjTetIOElcVQkvJck_J_QljX_FcHRj87ZKiy0z0ty0ZsYBkoXkY9b7eq1EhwJaw7FF3akA3KBQ'
+  ]]>
+    </programlisting>
+    <para>Build the request string:</para>
+    <programlisting>
+ <![CDATA[
+>>> request_str='&'.join(['='.join([k,urllib.quote_plus(request[k])]) for k in request.keys()])
+>>> request_str
+'apikey=plgWJfZK4gyS3mOMTVmjUVg-X-jlWlnfaUJ9GAbBbf9EdM-kAYMmAiLqzzq1ElZLYq_u38zCm0bewzGUdP66mg&command=listUsers&response=json'
+  ]]>
+    </programlisting>
+
+    <para>Compute the signature with hmac, do a 64 bit encoding and a url encoding: </para>
+    <programlisting>
+  <![CDATA[
+>>> sig_str='&'.join(['='.join([k.lower(),urllib.quote_plus(request[k].lower().replace('+','%20'))])for k in sorted(request.iterkeys())]) 
+>>> sig_str
+'apikey=plgwjfzk4gys3momtvmjuvg-x-jlwlnfauj9gabbbf9edm-kaymmailqzzq1elzlyq_u38zcm0bewzgudp66mg&command=listusers&response=json'
+>>> sig=hmac.new(secretkey,sig_str,hashlib.sha1)
+>>> sig
+<hmac.HMAC instance at 0x10d91d680>
+>>> sig=hmac.new(secretkey,sig_str,hashlib.sha1).digest()
+>>> sig
+'M:]\x0e\xaf\xfb\x8f\xf2y\xf1p\x91\x1e\x89\x8a\xa1\x05\xc4A\xdb'
+>>> sig=base64.encodestring(hmac.new(secretkey,sig_str,hashlib.sha1).digest())
+>>> sig
+'TTpdDq/7j/J58XCRHomKoQXEQds=\n'
+>>> sig=base64.encodestring(hmac.new(secretkey,sig_str,hashlib.sha1).digest()).strip()
+>>> sig
+'TTpdDq/7j/J58XCRHomKoQXEQds='
+>>> sig=urllib.quote_plus(base64.encodestring(hmac.new(secretkey,sig_str,hashlib.sha1).digest()).strip())
+  ]]>
+    </programlisting>
+
+    <para>Finally, build the entire string and do an http GET:</para>
+    <programlisting>
+  <![CDATA[
+>>> req=baseurl+request_str+'&signature='+sig
+>>> req
+'http://localhost:8080/client/api?apikey=plgWJfZK4gyS3mOMTVmjUVg-X-jlWlnfaUJ9GAbBbf9EdM-kAYMmAiLqzzq1ElZLYq_u38zCm0bewzGUdP66mg&command=listUsers&response=json&signature=TTpdDq%2F7j%2FJ58XCRHomKoQXEQds%3D'
+>>> res=urllib2.urlopen(req)
+>>> res.read()
+'{ "listusersresponse" : { "count":3 ,"user" : [  {"id":"7ed6d5da-93b2-4545-a502-23d20b48ef2a","username":"admin","firstname":"admin","lastname":"cloud","created":"2012-07-05T12:18:27-0700","state":"enabled","account":"admin","accounttype":1,"domainid":"8a111e58-e155-4482-93ce-84efff3c7c77","domain":"ROOT","apikey":"plgWJfZK4gyS3mOMTVmjUVg-X-jlWlnfaUJ9GAbBbf9EdM-kAYMmAiLqzzq1ElZLYq_u38zCm0bewzGUdP66mg","secretkey":"VDaACYb0LV9eNjTetIOElcVQkvJck_J_QljX_FcHRj87ZKiy0z0ty0ZsYBkoXkY9b7eq1EhwJaw7FF3akA3KBQ","accountid":"7548ac03-af1d-4c1c-9064-2f3e2c0eda0d"}, {"id":"1fea6418-5576-4989-a21e-4790787bbee3","username":"runseb","firstname":"foobar","lastname":"goa","email":"joe@smith.com","created":"2013-04-10T16:52:06-0700","state":"enabled","account":"admin","accounttype":1,"domainid":"8a111e58-e155-4482-93ce-84efff3c7c77","domain":"ROOT","apikey":"Xhsb3MewjJQaXXMszRcLvQI9_NPy_UcbDj1QXikkVbDC9MDSPwWdtZ1bUY1H7JBEYTtDDLY3yuchCeW778GkBA","secretkey":"gIsgmi8C5YwxMHjX5o51pSe0kqs6JnKriw0jJBLceY5bgnfzKjL4aM6ctJX-i1ddQIHJLbLJDK9MRzsKk6xZ_w","accountid":"7548ac03-af1d-4c1c-9064-2f3e2c0eda0d"}, {"id":"52f65396-183c-4473-883f-a37e7bb93967","username":"toto","firstname":"john","lastname":"smith","email":"john@smith.com","created":"2013-04-23T04:27:22-0700","state":"enabled","account":"admin","accounttype":1,"domainid":"8a111e58-e155-4482-93ce-84efff3c7c77","domain":"ROOT","apikey":"THaA6fFWS_OmvU8od201omxFC8yKNL_Hc5ZCS77LFCJsRzSx48JyZucbUul6XYbEg-ZyXMl_wuEpECzK-wKnow","secretkey":"O5ywpqJorAsEBKR_5jEvrtGHfWL1Y_j1E4Z_iCr8OKCYcsPIOdVcfzjJQ8YqK0a5EzSpoRrjOFiLsG0hQrYnDA","accountid":"7548ac03-af1d-4c1c-9064-2f3e2c0eda0d"} ] } }'
+  ]]>
+    </programlisting>
+    
+ </section>

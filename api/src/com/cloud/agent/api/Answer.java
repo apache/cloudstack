@@ -23,6 +23,7 @@ public class Answer extends Command {
     protected String details;
 
     protected Answer() {
+        this(null);
     }
 
     public Answer(Command command) {

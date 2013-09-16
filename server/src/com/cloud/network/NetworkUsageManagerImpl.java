@@ -45,7 +45,6 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupTrafficMonitorCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.EventTypes;
@@ -73,11 +72,13 @@ import org.apache.cloudstack.api.command.admin.usage.AddTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficMonitorsCmd;
 import org.apache.cloudstack.api.response.TrafficMonitorResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.usage.UsageIPAddressVO;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.NumbersUtil;
@@ -188,20 +189,14 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
     @Override
     public boolean deleteTrafficMonitor(DeleteTrafficMonitorCmd cmd) {
         long hostId = cmd.getId();
-        User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
         HostVO trafficMonitor = _hostDao.findById(hostId);
         if (trafficMonitor == null) {
             throw new InvalidParameterValueException("Could not find an traffic monitor with ID: " + hostId);
         }
 
-		try {
-			if (_resourceMgr.maintain(hostId) && _resourceMgr.deleteHost(hostId, false, false)) {
-				return true;
-            } else {
-                return false;
-            }
-        } catch (AgentUnavailableException e) {
-            s_logger.debug(e);
+        if (_resourceMgr.deleteHost(hostId, false, false)) {
+            return true;
+        } else {
             return false;
         }
     }
@@ -481,7 +476,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
         }
 
         @Override
-        public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) {
+        public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) {
             if (cmd instanceof StartupTrafficMonitorCommand) {
                 long agentId = agent.getId();
                 s_logger.debug("Sending RecurringNetworkUsageCommand to " + agentId);
@@ -528,13 +523,20 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
         return host;
     }
 
-	@Override
+    @Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
-		if(host.getType() != Host.Type.TrafficMonitor){
-	    return null;
-    }
+        if(host.getType() != Host.Type.TrafficMonitor){
+            return null;
+        }
 
-		return new DeleteHostAnswer(true);
+        long hostId = host.getId();
+        _agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.Remove);
+        _detailsDao.deleteDetails(hostId);
+        host.setGuid(null);
+        _hostDao.update(hostId, host);
+        _hostDao.remove(hostId);
+        return new DeleteHostAnswer(false);
+
     }
 
 }

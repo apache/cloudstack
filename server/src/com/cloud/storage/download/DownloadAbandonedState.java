@@ -16,7 +16,9 @@
 // under the License.
 package com.cloud.storage.download;
 
-import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
+
+import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 
 public class DownloadAbandonedState extends DownloadInactiveState {
@@ -34,7 +36,8 @@ public class DownloadAbandonedState extends DownloadInactiveState {
 	public void onEntry(String prevState, DownloadEvent event, Object evtObj) {
 		super.onEntry(prevState, event, evtObj);
 		if (!prevState.equalsIgnoreCase(getName())){
-			getDownloadListener().updateDatabase(Status.ABANDONED, "Download canceled");
+			DownloadAnswer answer = new DownloadAnswer("Download canceled", Status.ABANDONED);
+			getDownloadListener().callback(answer);
 			getDownloadListener().cancelStatusTask();
 			getDownloadListener().cancelTimeoutTask();
 			getDownloadListener().sendCommand(RequestType.ABORT);

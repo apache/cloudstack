@@ -34,7 +34,7 @@ import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
-import edu.emory.mathcs.backport.java.util.Arrays;
+import java.util.Arrays;
 
 public class DatacenterMO extends BaseMO {
 
@@ -487,5 +487,10 @@ public class DatacenterMO extends BaseMO {
         networkFolderMor = _context.getVimClient().getMoRefProp(_mor, "networkFolder");
         dvSwitchMor = _context.getVimClient().getDecendentMoRef(networkFolderMor, "VmwareDistributedVirtualSwitch", dvSwitchName);
         return dvSwitchMor;
+    }
+
+    public boolean ensureCustomFieldDef(String fieldName) throws Exception {
+        CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(_context, _context.getServiceContent().getCustomFieldsManager());
+        return cfmMo.ensureCustomFieldDef("Datacenter", fieldName) > 0;
     }
 }

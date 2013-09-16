@@ -38,11 +38,11 @@ public class UpdateVPCCmd extends BaseAsyncCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VpcResponse.class,
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VpcResponse.class, required=true,
             description="the id of the VPC")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the VPC")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the VPC", required=true)
     private String vpcName;
 
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the VPC")
@@ -104,5 +104,15 @@ public class UpdateVPCCmd extends BaseAsyncCmd{
     @Override
     public String getEventDescription() {
         return "updating VPC id=" + getId();
+    }
+
+    @Override
+    public String getSyncObjType() {
+        return BaseAsyncCmd.vpcSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        return getId();
     }
 }

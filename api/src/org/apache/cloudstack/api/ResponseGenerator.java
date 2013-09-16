@@ -16,14 +16,19 @@
 // under the License.
 package org.apache.cloudstack.api;
 
+
 import java.text.DecimalFormat;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
@@ -41,16 +46,22 @@ import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
+import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
+import org.apache.cloudstack.api.response.GuestVlanRangeResponse;
+import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
+import org.apache.cloudstack.api.response.IsolationMethodResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
-import org.apache.cloudstack.api.response.LDAPConfigResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
+import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
@@ -58,6 +69,8 @@ import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.PortableIpRangeResponse;
+import org.apache.cloudstack.api.response.PortableIpResponse;
 import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
@@ -68,7 +81,6 @@ import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
 import org.apache.cloudstack.api.response.ResourceCountResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.response.S3Response;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.ServiceResponse;
@@ -81,7 +93,6 @@ import org.apache.cloudstack.api.response.SnapshotScheduleResponse;
 import org.apache.cloudstack.api.response.StaticRouteResponse;
 import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.SwiftResponse;
 import org.apache.cloudstack.api.response.SystemVmInstanceResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
@@ -99,12 +110,14 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
+import org.apache.cloudstack.region.PortableIp;
+import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.usage.Usage;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
-import com.cloud.configuration.Configuration;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.dc.DataCenter;
@@ -115,9 +128,25 @@ import com.cloud.domain.Domain;
 import com.cloud.event.Event;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.HypervisorCapabilities;
-import com.cloud.network.*;
+import com.cloud.network.GuestVlan;
+import com.cloud.network.IpAddress;
+import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
-import com.cloud.network.as.*;
+import com.cloud.network.Networks.IsolationType;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PhysicalNetworkTrafficType;
+import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.Site2SiteCustomerGateway;
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.network.VirtualRouterProvider;
+import com.cloud.network.VpnUser;
+import com.cloud.network.as.AutoScalePolicy;
+import com.cloud.network.as.AutoScaleVmGroup;
+import com.cloud.network.as.AutoScaleVmProfile;
+import com.cloud.network.as.Condition;
+import com.cloud.network.as.Counter;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.HealthCheckPolicy;
@@ -127,6 +156,8 @@ import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityRule;
+import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
@@ -140,7 +171,11 @@ import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.server.ResourceTag;
-import com.cloud.storage.*;
+import com.cloud.storage.GuestOS;
+import com.cloud.storage.ImageStore;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.Volume;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.storage.snapshot.SnapshotSchedule;
 import com.cloud.template.VirtualMachineTemplate;
@@ -148,20 +183,12 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.net.Ip;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
-import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.api.ApiConstants.HostDetails;
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
-import org.apache.cloudstack.api.response.*;
-import org.apache.cloudstack.region.Region;
-
-import java.text.DecimalFormat;
-import java.util.EnumSet;
-import java.util.List;
+import com.cloud.vm.snapshot.VMSnapshot;
 
 public interface ResponseGenerator {
     UserResponse createUserResponse(UserAccount user);
@@ -196,9 +223,15 @@ public interface ResponseGenerator {
 
     HostResponse createHostResponse(Host host);
 
+    HostForMigrationResponse createHostForMigrationResponse(Host host);
+
+    HostForMigrationResponse createHostForMigrationResponse(Host host, EnumSet<HostDetails> details);
+
     VlanIpRangeResponse createVlanIpRangeResponse(Vlan vlan);
 
     IPAddressResponse createIPAddressResponse(IpAddress ipAddress);
+
+    GuestVlanRangeResponse createDedicatedGuestVlanRangeResponse(GuestVlan result);
 
     GlobalLoadBalancerResponse createGlobalLoadBalancerResponse(GlobalLoadBalancerRule globalLoadBalancerRule);
 
@@ -223,6 +256,8 @@ public interface ResponseGenerator {
 
     StoragePoolResponse createStoragePoolResponse(StoragePool pool);
 
+    StoragePoolResponse createStoragePoolForMigrationResponse(StoragePool pool);
+
     ClusterResponse createClusterResponse(Cluster cluster, Boolean showCapacities);
 
     FirewallRuleResponse createPortForwardingRuleResponse(PortForwardingRule fwRule);
@@ -241,7 +276,7 @@ public interface ResponseGenerator {
 
     Host findHostById(Long hostId);
 
-    List<TemplateResponse> createTemplateResponses(long templateId, long zoneId, boolean readyOnly);
+    //List<TemplateResponse> createTemplateResponses(long templateId, long zoneId, boolean readyOnly);
 
     VpnUsersResponse createVpnUserResponse(VpnUser user);
 
@@ -257,17 +292,19 @@ public interface ResponseGenerator {
 
     SecurityGroupResponse createSecurityGroupResponse(SecurityGroup group);
 
-    ExtractResponse createExtractResponse(Long uploadId, Long id, Long zoneId, Long accountId, String mode);
+    ExtractResponse createExtractResponse(Long uploadId, Long id, Long zoneId, Long accountId, String mode, String url);
+
+    ExtractResponse createExtractResponse(Long id, Long zoneId, Long accountId, String mode, String url);
 
     String toSerializedString(CreateCmdResponse response, String responseType);
-
-    AsyncJobResponse createAsyncJobResponse(AsyncJob job);
 
     EventResponse createEventResponse(Event event);
 
     //List<EventResponse> createEventResponse(EventJoinVO... events);
 
-    TemplateResponse createIsoResponse(VirtualMachineTemplate result);
+    TemplateResponse createTemplateUpdateResponse(VirtualMachineTemplate result);
+
+    List<TemplateResponse> createTemplateResponses(VirtualMachineTemplate result, Long zoneId, boolean readyOnly);
 
     List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format);
 
@@ -287,12 +324,12 @@ public interface ResponseGenerator {
 
     Long getSecurityGroupId(String groupName, long accountId);
 
-    List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly);
+    List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, Long zoneId, boolean readyOnly);
+
+    // List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly);
+    //List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, long zoneId, boolean readyOnly);
 
     ProjectResponse createProjectResponse(Project project);
-
-
-    List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, long zoneId, boolean readyOnly);
 
     List<TemplateResponse> createTemplateResponses(long templateId, Long vmId);
 
@@ -306,10 +343,6 @@ public interface ResponseGenerator {
 
     SystemVmInstanceResponse createSystemVmInstanceResponse(VirtualMachine systemVM);
 
-    SwiftResponse createSwiftResponse(Swift swift);
-
-    S3Response createS3Response(S3 result);
-
     PhysicalNetworkResponse createPhysicalNetworkResponse(PhysicalNetwork result);
 
     ServiceResponse createNetworkServiceResponse(Service service);
@@ -320,11 +353,11 @@ public interface ResponseGenerator {
 
     VirtualRouterProviderResponse createVirtualRouterProviderResponse(VirtualRouterProvider result);
 
-    LDAPConfigResponse createLDAPConfigResponse(String hostname, Integer port, Boolean useSSL, String queryFilter, String baseSearch, String dn);
-
     StorageNetworkIpRangeResponse createStorageNetworkIpRangeResponse(StorageNetworkIpRange result);
 
     RegionResponse createRegionResponse(Region region);
+
+    ImageStoreResponse createImageStoreResponse(ImageStore os);
 
     /**
      * @param resourceTag
@@ -350,10 +383,16 @@ public interface ResponseGenerator {
     VpcResponse createVpcResponse(Vpc vpc);
 
     /**
+     * @param networkACLItem
+     * @return
+     */
+    NetworkACLItemResponse createNetworkACLItemResponse(NetworkACLItem networkACLItem);
+
+    /**
      * @param networkACL
      * @return
      */
-    NetworkACLResponse createNetworkACLResponse(FirewallRule networkACL);
+    NetworkACLResponse createNetworkACLResponse(NetworkACL networkACL);
 
     /**
      * @param result
@@ -384,12 +423,27 @@ public interface ResponseGenerator {
     GuestOSResponse createGuestOSResponse(GuestOS os);
 
     SnapshotScheduleResponse createSnapshotScheduleResponse(SnapshotSchedule sched);
-    
+
     UsageRecordResponse createUsageResponse(Usage usageRecord);
 
     TrafficMonitorResponse createTrafficMonitorResponse(Host trafficMonitor);
     VMSnapshotResponse createVMSnapshotResponse(VMSnapshot vmSnapshot);
-    NicSecondaryIpResponse createSecondaryIPToNicResponse(String ip,
-            Long nicId, Long networkId);
+
+    NicSecondaryIpResponse createSecondaryIPToNicResponse(NicSecondaryIp result);
     public NicResponse createNicResponse(Nic result);
+
+    ApplicationLoadBalancerResponse createLoadBalancerContainerReponse(ApplicationLoadBalancerRule lb, Map<Ip, UserVm> lbInstances);
+
+    AffinityGroupResponse createAffinityGroupResponse(AffinityGroup group);
+
+    Long getAffinityGroupId(String name, long entityOwnerId);
+
+    PortableIpRangeResponse createPortableIPRangeResponse(PortableIpRange range);
+
+    PortableIpResponse createPortableIPResponse(PortableIp portableIp);
+
+    InternalLoadBalancerElementResponse createInternalLbElementResponse(VirtualRouterProvider result);
+
+    IsolationMethodResponse createIsolationMethodResponse(IsolationType method);
+
 }

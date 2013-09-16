@@ -146,10 +146,6 @@ public class SshHelper {
 			}
 			sess = conn.openSession();
 			
-			// There is a bug in Trilead library, wait a second before
-			// starting a shell and executing commands, from http://spci.st.ewi.tudelft.nl/chiron/xref/nl/tudelft/swerl/util/SSHConnection.html
-			Thread.sleep(1000);
-			
 			sess.execCommand(command);
 			
 			InputStream stdout = sess.getStdout();

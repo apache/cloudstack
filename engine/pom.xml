@@ -24,28 +24,32 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.2.0-SNAPSHOT</version>
+    <version>4.3.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <build>
     <defaultGoal>install</defaultGoal>
-    <sourceDirectory>src</sourceDirectory>
-    <testSourceDirectory>test</testSourceDirectory>
   </build>
   <modules>
     <module>api</module>
-    <module>compute</module>
     <module>orchestration</module>
     <module>storage</module>
     <module>storage/volume</module>
     <module>storage/image</module>
-    <module>storage/imagemotion</module>
-    <module>storage/backup</module>
+    <module>storage/datamotion</module>
+    <module>storage/cache</module>
     <module>storage/snapshot</module>
-    <module>storage/integration-test</module>
     <module>components-api</module>
     <module>schema</module>
     <module>network</module>
     <module>service</module>
   </modules>
+  <profiles>
+  <profile>
+      <id>integration-test</id>
+      <modules>
+        <module>storage/integration-test</module>
+      </modules>
+  </profile>
+  </profiles>
 </project>

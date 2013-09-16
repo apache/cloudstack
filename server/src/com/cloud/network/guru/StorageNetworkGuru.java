@@ -103,7 +103,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 	}
 
 	@Override
-	public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm)
+	public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm)
 	        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
 		assert network.getTrafficType() == TrafficType.Storage : "Well, I can't take care of this config now can I? " + network; 
 		if (!_sNwMgr.isStorageIpRangeAvailable(network.getDataCenterId())) {
@@ -114,7 +114,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 	}
 
 	@Override
-	public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
+	public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
 	        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
 		if (!_sNwMgr.isStorageIpRangeAvailable(dest.getDataCenter().getId())) {
 			super.reserve(nic, network, vm, dest, context);
@@ -146,7 +146,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 	}
 
 	@Override
-	public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
+	public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
 	    Network nw = _nwDao.findById(nic.getNetworkId());
 		if (!_sNwMgr.isStorageIpRangeAvailable(nw.getDataCenterId())) {
 			return super.release(nic, vm, reservationId);
@@ -159,7 +159,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 	}
 
 	@Override
-	public void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
+	public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
 		// TODO Auto-generated method stub
 
 	}
@@ -177,7 +177,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 	}
 
 	@Override
-	public boolean trash(Network network, NetworkOffering offering, Account owner) {
+	public boolean trash(Network network, NetworkOffering offering) {
 		// TODO Auto-generated method stub
 		return false;
 	}

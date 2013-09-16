@@ -150,8 +150,11 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     @SerializedName("scriptsversion") @Param(description="the version of scripts")
     private String scriptsVersion;
 
-    @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the network belongs to")
+    @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the router belongs to")
     private String vpcId;
+    
+    @SerializedName(ApiConstants.ROLE) @Param(description="role of the domain router")
+    private String role;
 
     @SerializedName("nic")  @Param(description="the list of nics associated with the router",
             responseObject = NicResponse.class, since="4.0")
@@ -161,14 +164,10 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
         nics = new LinkedHashSet<NicResponse>();
     }
 
-
-
     @Override
     public String getObjectId() {
         return this.getId();
     }
-
-
 
     public String getId() {
         return id;
@@ -361,4 +360,8 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
 	public void setIp6Dns2(String ip6Dns2) {
 		this.ip6Dns2 = ip6Dns2;
 	}
+	
+	public void setRole(String role) {
+        this.role = role;
+    }
 }

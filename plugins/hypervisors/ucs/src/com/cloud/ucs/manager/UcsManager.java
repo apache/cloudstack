@@ -14,22 +14,32 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-// 
+//
 package com.cloud.ucs.manager;
 
+import org.apache.cloudstack.api.AddUcsManagerCmd;
+import org.apache.cloudstack.api.AssociateUcsProfileToBladeCmd;
+import org.apache.cloudstack.api.ListUcsBladeCmd;
+import org.apache.cloudstack.api.ListUcsManagerCmd;
+import org.apache.cloudstack.api.ListUcsProfileCmd;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.UcsBladeResponse;
+import org.apache.cloudstack.api.response.UcsManagerResponse;
+import org.apache.cloudstack.api.response.UcsProfileResponse;
 
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
 
 public interface UcsManager extends Manager, PluggableService {
     UcsManagerResponse addUcsManager(AddUcsManagerCmd cmd);
-    
+
     ListResponse<UcsProfileResponse> listUcsProfiles(ListUcsProfileCmd cmd);
-    
+
     ListResponse<UcsManagerResponse> listUcsManager(ListUcsManagerCmd cmd);
 
     UcsBladeResponse associateProfileToBlade(AssociateUcsProfileToBladeCmd cmd);
-    
+
     ListResponse<UcsBladeResponse> listUcsBlades(ListUcsBladeCmd cmd);
+    
+    void deleteUcsManager(Long id);
 }

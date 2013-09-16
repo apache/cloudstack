@@ -32,6 +32,8 @@ public class CloudStackDiskOffering {
 	private String created;
 	@SerializedName(ApiConstants.IS_CUSTOMIZED)
 	private boolean isCustomized;
+    @SerializedName(ApiConstants.TAGS)
+    private String tags;
 
 	/**
 	 * 
@@ -80,4 +82,11 @@ public class CloudStackDiskOffering {
 	public boolean isCustomized() {
 		return isCustomized;
 	}
+
+    /**
+     * @return the tags
+     */
+    public String getTags() {
+        return tags;
+    }
 }

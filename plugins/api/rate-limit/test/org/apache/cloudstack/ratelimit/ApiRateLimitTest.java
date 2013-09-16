@@ -24,13 +24,14 @@ import java.util.concurrent.Executors;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.response.ApiLimitResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl;
+
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.RequestLimitException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;

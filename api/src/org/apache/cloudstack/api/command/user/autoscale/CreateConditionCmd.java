@@ -18,6 +18,7 @@
 package org.apache.cloudstack.api.command.user.autoscale;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -26,13 +27,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ConditionResponse;
 import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.as.Condition;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "createCondition", description = "Creates a condition", responseObject = ConditionResponse.class)
 public class CreateConditionCmd extends BaseAsyncCreateCmd {
@@ -105,7 +106,7 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
 
     public String getAccountName() {
         if (accountName == null) {
-            return UserContext.current().getCaller().getAccountName();
+            return CallContext.current().getCallingAccount().getAccountName();
         }
 
         return accountName;
@@ -113,7 +114,7 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
 
     public Long getDomainId() {
         if (domainId == null) {
-            return UserContext.current().getCaller().getDomainId();
+            return CallContext.current().getCallingAccount().getDomainId();
         }
         return domainId;
     }
@@ -123,8 +124,8 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Condition;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Condition;
     }
 
     @Override
@@ -141,7 +142,7 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, null, true);
         if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+            return CallContext.current().getCallingAccount().getId();
         }
 
         return accountId;

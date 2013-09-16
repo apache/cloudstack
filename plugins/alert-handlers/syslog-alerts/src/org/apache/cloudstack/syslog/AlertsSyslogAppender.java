@@ -217,7 +217,7 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
             message.append("unknown" + MESSAGE_DELIMITER_STRING);
         }
 
-        if (alertType > 0) {
+        if (alertType >= 0) {
             message.append("alertType").append(_keyValueDelimiter).append(" ").append(alertsMap.get(alertType))
                 .append(MESSAGE_DELIMITER_STRING);
             if (dataCenterId != 0) {

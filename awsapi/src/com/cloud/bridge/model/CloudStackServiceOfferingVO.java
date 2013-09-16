@@ -30,7 +30,10 @@ public class CloudStackServiceOfferingVO {
     @Id
     @Column(name="id")
     private String id;
-    
+
+    @Column(name="uuid")
+    private String uuid;
+
     @Column(name="name")
     private String name;
     
@@ -61,7 +64,9 @@ public class CloudStackServiceOfferingVO {
     public void setDomainId(String domainId) {
         this.domainId = domainId;
     }
-    
 
+    public String getUuid() {
+        return uuid;
+    }
 
 }

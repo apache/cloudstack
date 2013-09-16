@@ -18,6 +18,7 @@ package com.cloud.usage;
 
 import java.net.InetAddress;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -34,11 +35,13 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.usage.UsageTypes;
+
 import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
@@ -52,7 +55,9 @@ import com.cloud.usage.dao.UsagePortForwardingRuleDao;
 import com.cloud.usage.dao.UsageSecurityGroupDao;
 import com.cloud.usage.dao.UsageStorageDao;
 import com.cloud.usage.dao.UsageVMInstanceDao;
+import com.cloud.usage.dao.UsageVMSnapshotDao;
 import com.cloud.usage.dao.UsageVPNUserDao;
+import com.cloud.usage.dao.UsageVmDiskDao;
 import com.cloud.usage.dao.UsageVolumeDao;
 import com.cloud.usage.parser.IPAddressUsageParser;
 import com.cloud.usage.parser.LoadBalancerUsageParser;
@@ -62,15 +67,17 @@ import com.cloud.usage.parser.PortForwardingUsageParser;
 import com.cloud.usage.parser.SecurityGroupUsageParser;
 import com.cloud.usage.parser.StorageUsageParser;
 import com.cloud.usage.parser.VMInstanceUsageParser;
+import com.cloud.usage.parser.VMSnapshotUsageParser;
 import com.cloud.usage.parser.VPNUserUsageParser;
+import com.cloud.usage.parser.VmDiskUsageParser;
 import com.cloud.usage.parser.VolumeUsageParser;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
-
-
+import com.cloud.user.dao.VmDiskStatisticsDao;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -78,7 +85,6 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 @Local(value={UsageManager.class})
@@ -108,10 +114,13 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     @Inject private UsageVPNUserDao m_usageVPNUserDao;
     @Inject private UsageSecurityGroupDao m_usageSecurityGroupDao;
     @Inject private UsageJobDao m_usageJobDao;
+    @Inject private VmDiskStatisticsDao m_vmDiskStatsDao;
+    @Inject private UsageVmDiskDao m_usageVmDiskDao;
     @Inject protected AlertManager _alertMgr;
     @Inject protected UsageEventDao _usageEventDao;
     @Inject ConfigurationDao _configDao;
-
+    @Inject private UsageVMSnapshotDao m_usageVMSnapshotDao;
+    
     private String m_version = null;
     private final Calendar m_jobExecTime = Calendar.getInstance();
     private int m_aggregationDuration = 0;
@@ -120,6 +129,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     int m_pid = 0;
     TimeZone m_usageTimezone = TimeZone.getTimeZone("GMT");;
     private final GlobalLock m_heartbeatLock = GlobalLock.getInternLock("usage.job.heartbeat.check");
+    private List<UsageNetworkVO> usageNetworks = new ArrayList<UsageNetworkVO>();
+    private List<UsageVmDiskVO> usageVmDisks = new ArrayList<UsageVmDiskVO>();
 
     private final ScheduledExecutorService m_executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-Job"));
     private final ScheduledExecutorService m_heartbeatExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-HB"));
@@ -229,7 +240,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
 
         // use the configured exec time and aggregation duration for scheduling the job
-        m_scheduledFuture = m_executor.scheduleAtFixedRate(this, m_jobExecTime.getTimeInMillis() - System.currentTimeMillis(), m_aggregationDuration * 60 * 1000, TimeUnit.MILLISECONDS);
+        m_scheduledFuture = m_executor.scheduleAtFixedRate(this, m_jobExecTime.getTimeInMillis()  - System.currentTimeMillis(), m_aggregationDuration * 60 * 1000, TimeUnit.MILLISECONDS);
 
         m_heartbeat = m_heartbeatExecutor.scheduleAtFixedRate(new Heartbeat(), /* start in 15 seconds...*/15*1000, /* check database every minute*/60*1000, TimeUnit.MILLISECONDS);
         
@@ -388,6 +399,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             List<AccountVO> accounts = null;
             List<UserStatisticsVO> userStats = null;
             Map<String, UsageNetworkVO> networkStats = null;
+            List<VmDiskStatisticsVO> vmDiskStats = null;
+            Map<String, UsageVmDiskVO> vmDiskUsages = null;
             Transaction userTxn = Transaction.open(Transaction.CLOUD_DB);
             try {
                 Long limit = Long.valueOf(500);
@@ -478,6 +491,46 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     }
                     offset = new Long(offset.longValue() + limit.longValue());
                 } while ((userStats != null) && !userStats.isEmpty());
+
+                // reset offset
+                offset = Long.valueOf(0);
+
+                // get all the vm network stats to create usage_vm_network records for the vm network usage
+                Long lastVmDiskStatsId = m_usageDao.getLastVmDiskStatsId();
+                if (lastVmDiskStatsId == null) {
+                       lastVmDiskStatsId = Long.valueOf(0);
+                }
+                SearchCriteria<VmDiskStatisticsVO> sc4 = m_vmDiskStatsDao.createSearchCriteria();
+                sc4.addAnd("id", SearchCriteria.Op.LTEQ, lastVmDiskStatsId);
+                do {
+                    Filter filter = new Filter(VmDiskStatisticsVO.class, "id", true, offset, limit);
+
+                    vmDiskStats = m_vmDiskStatsDao.search(sc4, filter);
+
+                    if ((vmDiskStats != null) && !vmDiskStats.isEmpty()) {
+                        // now copy the accounts to cloud_usage db
+                        m_usageDao.updateVmDiskStats(vmDiskStats);
+                    }
+                    offset = new Long(offset.longValue() + limit.longValue());
+                } while ((vmDiskStats != null) && !vmDiskStats.isEmpty());
+
+                // reset offset
+                offset = Long.valueOf(0);
+
+                sc4 = m_vmDiskStatsDao.createSearchCriteria();
+                sc4.addAnd("id", SearchCriteria.Op.GT, lastVmDiskStatsId);
+                do {
+                    Filter filter = new Filter(VmDiskStatisticsVO.class, "id", true, offset, limit);
+
+                    vmDiskStats = m_vmDiskStatsDao.search(sc4, filter);
+
+                    if ((vmDiskStats != null) && !vmDiskStats.isEmpty()) {
+                        // now copy the accounts to cloud_usage db
+                        m_usageDao.saveVmDiskStats(vmDiskStats);
+                    }
+                    offset = new Long(offset.longValue() + limit.longValue());
+                } while ((vmDiskStats != null) && !vmDiskStats.isEmpty());
+
             } finally {
                 userTxn.close();
             }
@@ -548,18 +601,67 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
                 // loop over the user stats, create delta entries in the usage_network helper table
                 int numAcctsProcessed = 0;
+                usageNetworks.clear();
                 for (String key : aggregatedStats.keySet()) {
                     UsageNetworkVO currentNetworkStats = null;
                     if (networkStats != null) {
                         currentNetworkStats = networkStats.get(key);
                     }
-                    
+
                     createNetworkHelperEntry(aggregatedStats.get(key), currentNetworkStats, endDateMillis);
                     numAcctsProcessed++;
-                }                                
-                                                                            
+                }
+                m_usageNetworkDao.saveUsageNetworks(usageNetworks);
+
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("created network stats helper entries for " + numAcctsProcessed + " accts");
+                }
+
+                // get vm disk stats in order to compute vm disk usage
+                vmDiskUsages = m_usageVmDiskDao.getRecentVmDiskStats();
+
+                // Keep track of user stats for an account, across all of its public IPs
+                Map<String, VmDiskStatisticsVO> aggregatedDiskStats = new HashMap<String, VmDiskStatisticsVO>();
+                startIndex = 0;
+                do {
+                       vmDiskStats = m_vmDiskStatsDao.listActiveAndRecentlyDeleted(recentlyDeletedDate, startIndex, 500);
+
+                    if (vmDiskUsages != null) {
+                        for (VmDiskStatisticsVO vmDiskStat : vmDiskStats) {
+                            if(vmDiskStat.getVmId() != null){
+                                String hostKey = vmDiskStat.getDataCenterId() + "-" + vmDiskStat.getAccountId()+"-Vm-" + vmDiskStat.getVmId()+"-Disk-" + vmDiskStat.getVolumeId();
+                                VmDiskStatisticsVO hostAggregatedStat = aggregatedDiskStats.get(hostKey);
+                                if (hostAggregatedStat == null) {
+                                    hostAggregatedStat = new VmDiskStatisticsVO(vmDiskStat.getAccountId(), vmDiskStat.getDataCenterId(), vmDiskStat.getVmId(),vmDiskStat.getVolumeId());
+                                }
+
+                                hostAggregatedStat.setAggIORead(hostAggregatedStat.getAggIORead() + vmDiskStat.getAggIORead());
+                                hostAggregatedStat.setAggIOWrite(hostAggregatedStat.getAggIOWrite() + vmDiskStat.getAggIOWrite());
+                                hostAggregatedStat.setAggBytesRead(hostAggregatedStat.getAggBytesRead() + vmDiskStat.getAggBytesRead());
+                                hostAggregatedStat.setAggBytesWrite(hostAggregatedStat.getAggBytesWrite() + vmDiskStat.getAggBytesWrite());
+                                aggregatedDiskStats.put(hostKey, hostAggregatedStat);
+                            }
+                        }
+                    }
+                    startIndex += 500;
+                } while ((userStats != null) && !userStats.isEmpty());
+
+                // loop over the user stats, create delta entries in the usage_disk helper table
+                numAcctsProcessed = 0;
+                usageVmDisks.clear();
+                for (String key : aggregatedDiskStats.keySet()) {
+                       UsageVmDiskVO currentVmDiskStats = null;
+                    if (vmDiskStats != null) {
+                        currentVmDiskStats = vmDiskUsages.get(key);
+                    }
+
+                    createVmDiskHelperEntry(aggregatedDiskStats.get(key), currentVmDiskStats, endDateMillis);
+                    numAcctsProcessed++;
+                }
+                m_usageVmDiskDao.saveUsageVmDisks(usageVmDisks);
+
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("created vm disk stats helper entries for " + numAcctsProcessed + " accts");
                 }
 
                 // commit the helper records, then start a new transaction
@@ -698,6 +800,13 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             }
         }
 
+        parsed = VmDiskUsageParser.parse(account, currentStartDate, currentEndDate);
+        if (s_logger.isDebugEnabled()) {
+            if (!parsed) {
+                s_logger.debug("vm disk usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
+            }
+        }
+
         parsed = VolumeUsageParser.parse(account, currentStartDate, currentEndDate);
         if (s_logger.isDebugEnabled()) {
             if (!parsed) {
@@ -752,6 +861,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 s_logger.debug("VPN user usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
             }
         }
+        parsed = VMSnapshotUsageParser.parse(account, currentStartDate, currentEndDate);
+        if (s_logger.isDebugEnabled()) {
+            if (!parsed) {
+                s_logger.debug("VM Snapshot usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
+            }
+        }
         return parsed;
     }
 
@@ -779,6 +894,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             createVPNUserEvent(event);
         } else if (isSecurityGroupEvent(eventType)) {
             createSecurityGroupEvent(event);
+        } else if (isVmSnapshotEvent(eventType)){
+            createVMSnapshotEvent(event);
         }
     }
 
@@ -846,7 +963,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         return (eventType.equals(EventTypes.EVENT_SECURITY_GROUP_ASSIGN) ||
                 eventType.equals(EventTypes.EVENT_SECURITY_GROUP_REMOVE));
     }
-    
+
+    private boolean isVmSnapshotEvent(String eventType){
+        if (eventType == null) return false;
+        return (eventType.equals(EventTypes.EVENT_VM_SNAPSHOT_CREATE) ||
+                eventType.equals(EventTypes.EVENT_VM_SNAPSHOT_DELETE));
+    }
     private void createVMHelperEvent(UsageEventVO event) {
 
         // One record for handling VM.START and VM.STOP
@@ -883,8 +1005,21 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 usageInstances = m_usageInstanceDao.search(sc, null);
                 if (usageInstances == null || (usageInstances.size() == 0)) {
                     s_logger.error("Cannot find allocated vm entry for a vm running with id: " + vmId);
+                } else if (usageInstances.size() == 1) {
+                    UsageVMInstanceVO usageInstance = usageInstances.get(0);
+                    if(usageInstance.getSerivceOfferingId() != soId){
+                        //Service Offering changed after Vm creation
+                        //End current Allocated usage and create new Allocated Vm entry with new soId
+                        usageInstance.setEndDate(event.getCreateDate());
+                        m_usageInstanceDao.update(usageInstance);
+                        usageInstance.setServiceOfferingId(soId);
+                        usageInstance.setStartDate(event.getCreateDate());
+                        usageInstance.setEndDate(null);
+                        m_usageInstanceDao.persist(usageInstance);
+                    }
                 }
-                
+
+
                 Long templateId = event.getTemplateId();
                 String hypervisorType = event.getResourceType();
 
@@ -962,6 +1097,51 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             UsageVMInstanceVO usageInstanceNew = new UsageVMInstanceVO(UsageTypes.ALLOCATED_VM, zoneId, event.getAccountId(), vmId, vmName,
                     soId, templateId, hypervisorType, event.getCreateDate(), null);
             m_usageInstanceDao.persist(usageInstanceNew);
+        } else if (EventTypes.EVENT_VM_DYNAMIC_SCALE.equals(event.getType())) {
+            // Ending the running vm event
+            SearchCriteria<UsageVMInstanceVO> sc = m_usageInstanceDao.createSearchCriteria();
+            sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, Long.valueOf(vmId));
+            sc.addAnd("endDate", SearchCriteria.Op.NULL);
+            sc.addAnd("usageType", SearchCriteria.Op.EQ, UsageTypes.RUNNING_VM);
+            List<UsageVMInstanceVO> usageInstances = m_usageInstanceDao.search(sc, null);
+            if (usageInstances != null) {
+                if (usageInstances.size() > 1) {
+                    s_logger.warn("found multiple entries for a vm running with id: " + vmId + ", ending them all...");
+                }
+                for (UsageVMInstanceVO usageInstance : usageInstances) {
+                    usageInstance.setEndDate(event.getCreateDate());
+                    m_usageInstanceDao.update(usageInstance);
+                }
+            }
+
+            sc = m_usageInstanceDao.createSearchCriteria();
+            sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, Long.valueOf(vmId));
+            sc.addAnd("endDate", SearchCriteria.Op.NULL);
+            sc.addAnd("usageType", SearchCriteria.Op.EQ, UsageTypes.ALLOCATED_VM);
+            usageInstances = m_usageInstanceDao.search(sc, null);
+            if (usageInstances == null || (usageInstances.size() == 0)) {
+                s_logger.error("Cannot find allocated vm entry for a vm running with id: " + vmId);
+            } else if (usageInstances.size() == 1) {
+                UsageVMInstanceVO usageInstance = usageInstances.get(0);
+                if(usageInstance.getSerivceOfferingId() != soId){
+                    //Service Offering changed after Vm creation
+                    //End current Allocated usage and create new Allocated Vm entry with new soId
+                    usageInstance.setEndDate(event.getCreateDate());
+                    m_usageInstanceDao.update(usageInstance);
+                    usageInstance.setServiceOfferingId(soId);
+                    usageInstance.setStartDate(event.getCreateDate());
+                    usageInstance.setEndDate(null);
+                    m_usageInstanceDao.persist(usageInstance);
+                }
+            }
+
+            Long templateId = event.getTemplateId();
+            String hypervisorType = event.getResourceType();
+
+            // add this VM to the usage helper table with new service offering Id
+            UsageVMInstanceVO usageInstanceNew = new UsageVMInstanceVO(UsageTypes.RUNNING_VM, zoneId, event.getAccountId(), vmId, vmName,
+                    soId, templateId, hypervisorType, event.getCreateDate(), null);
+            m_usageInstanceDao.persist(usageInstanceNew);
         }
     }
 
@@ -1000,7 +1180,60 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             s_logger.debug("creating networkHelperEntry... accountId: " + userStat.getAccountId() + " in zone: " + userStat.getDataCenterId() + "; abr: " + userStat.getAggBytesReceived() + "; abs: " + userStat.getAggBytesSent() +
                     "; curABS: " + currentAccountedBytesSent + "; curABR: " + currentAccountedBytesReceived + "; ubs: " + bytesSent + "; ubr: " + bytesReceived);
         }
-        m_usageNetworkDao.persist(usageNetworkVO);
+        usageNetworks.add(usageNetworkVO);
+    }
+
+    private void createVmDiskHelperEntry(VmDiskStatisticsVO vmDiskStat, UsageVmDiskVO usageVmDiskStat, long timestamp) {
+        long currentAccountedIORead = 0L;
+        long currentAccountedIOWrite = 0L;
+        long currentAccountedBytesRead = 0L;
+        long currentAccountedBytesWrite = 0L;
+        if (usageVmDiskStat != null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("getting current accounted bytes for... accountId: " + usageVmDiskStat.getAccountId() + " in zone: " + vmDiskStat.getDataCenterId() + "; aiw: " + vmDiskStat.getAggIOWrite() +
+                        "; air: " + usageVmDiskStat.getAggIORead() + "; abw: " + vmDiskStat.getAggBytesWrite() + "; abr: " + usageVmDiskStat.getAggBytesRead());
+            }
+            currentAccountedIORead = usageVmDiskStat.getAggIORead();
+            currentAccountedIOWrite = usageVmDiskStat.getAggIOWrite();
+            currentAccountedBytesRead = usageVmDiskStat.getAggBytesRead();
+            currentAccountedBytesWrite = usageVmDiskStat.getAggBytesWrite();
+        }
+        long ioRead = vmDiskStat.getAggIORead()  - currentAccountedIORead;
+        long ioWrite = vmDiskStat.getAggIOWrite() - currentAccountedIOWrite;
+        long bytesRead = vmDiskStat.getAggBytesRead()  - currentAccountedBytesRead;
+        long bytesWrite = vmDiskStat.getAggBytesWrite() - currentAccountedBytesWrite;
+
+        if (ioRead < 0) {
+            s_logger.warn("Calculated negative value for io read: " + ioRead + ", vm disk stats say: " + vmDiskStat.getAggIORead() + ", previous vm disk usage was: " + currentAccountedIORead);
+            ioRead = 0;
+        }
+        if (ioWrite < 0) {
+            s_logger.warn("Calculated negative value for io write: " + ioWrite + ", vm disk stats say: " + vmDiskStat.getAggIOWrite() + ", previous vm disk usage was: " + currentAccountedIOWrite);
+            ioWrite = 0;
+        }
+        if (bytesRead < 0) {
+            s_logger.warn("Calculated negative value for bytes read: " + bytesRead + ", vm disk stats say: " + vmDiskStat.getAggBytesRead() + ", previous vm disk usage was: " + currentAccountedBytesRead);
+            bytesRead = 0;
+        }
+        if (bytesWrite < 0) {
+            s_logger.warn("Calculated negative value for bytes write: " + bytesWrite + ", vm disk stats say: " + vmDiskStat.getAggBytesWrite() + ", previous vm disk usage was: " + currentAccountedBytesWrite);
+            bytesWrite = 0;
+        }
+
+        long vmId = 0;
+
+        if(vmDiskStat.getVmId() != null){
+               vmId = vmDiskStat.getVmId();
+        }
+
+        UsageVmDiskVO usageVmDiskVO = new UsageVmDiskVO(vmDiskStat.getAccountId(), vmDiskStat.getDataCenterId(), vmId, vmDiskStat.getVolumeId(), ioRead, ioWrite,
+                       vmDiskStat.getAggIORead(), vmDiskStat.getAggIOWrite(), bytesRead, bytesWrite, vmDiskStat.getAggBytesRead(), vmDiskStat.getAggBytesWrite(), timestamp);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("creating vmDiskHelperEntry... accountId: " + vmDiskStat.getAccountId() + " in zone: " + vmDiskStat.getDataCenterId() + "; aiw: " + vmDiskStat.getAggIOWrite() + "; air: " + vmDiskStat.getAggIORead() +
+                    "; curAIR: " + currentAccountedIORead + "; curAIW: " + currentAccountedIOWrite + "; uir: " + ioRead + "; uiw: " + ioWrite + "; abw: " + vmDiskStat.getAggBytesWrite() + "; abr: " + vmDiskStat.getAggBytesRead() +
+                    "; curABR: " + currentAccountedBytesRead + "; curABW: " + currentAccountedBytesWrite + "; ubr: " + bytesRead + "; ubw: " + bytesWrite);
+        }
+        usageVmDisks.add(usageVmDiskVO);
     }
 
     private void createIPHelperEvent(UsageEventVO event) {
@@ -1126,7 +1359,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             }
             Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
             UsageStorageVO storageVO = new UsageStorageVO(templateId, zoneId, event.getAccountId(), acct.getDomainId(), StorageTypes.TEMPLATE, event.getTemplateId(),
-                                        templateSize, event.getCreateDate(), null);
+                                        templateSize, event.getVirtualSize(), event.getCreateDate(), null);
             m_usageStorageDao.persist(storageVO);
         } else if (EventTypes.EVENT_TEMPLATE_DELETE.equals(event.getType())) {
             List<UsageStorageVO> storageVOs;
@@ -1168,7 +1401,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
              }
             Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
             UsageStorageVO storageVO = new UsageStorageVO( isoId, zoneId, event.getAccountId(), acct.getDomainId(), StorageTypes.ISO, null,
-                    isoSize, event.getCreateDate(), null);
+                    isoSize, isoSize, event.getCreateDate(), null);
             m_usageStorageDao.persist(storageVO);
         } else if (EventTypes.EVENT_ISO_DELETE.equals(event.getType())) {
             List<UsageStorageVO> storageVOs;
@@ -1298,6 +1531,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
         long vmId = event.getResourceId();
         long networkOfferingId = event.getOfferingId();
+        long nicId = 0;
+        try{
+            nicId = Long.parseLong(event.getResourceName());
+        }catch (Exception e) {
+            s_logger.warn("failed to get nic id from resource name, resource name is: " + event.getResourceName());
+        }
 
         if (EventTypes.EVENT_NETWORK_OFFERING_CREATE.equals(event.getType()) || EventTypes.EVENT_NETWORK_OFFERING_ASSIGN.equals(event.getType())) {
             if (s_logger.isDebugEnabled()) {
@@ -1306,12 +1545,13 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             zoneId = event.getZoneId();
             Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
             boolean isDefault = (event.getSize() == 1) ? true : false ;
-            UsageNetworkOfferingVO networkOffering = new UsageNetworkOfferingVO(zoneId, event.getAccountId(), acct.getDomainId(), vmId, networkOfferingId, isDefault, event.getCreateDate(), null);
+            UsageNetworkOfferingVO networkOffering = new UsageNetworkOfferingVO(zoneId, event.getAccountId(), acct.getDomainId(), vmId, networkOfferingId, nicId, isDefault, event.getCreateDate(), null);
             m_usageNetworkOfferingDao.persist(networkOffering);
         } else if (EventTypes.EVENT_NETWORK_OFFERING_DELETE.equals(event.getType()) || EventTypes.EVENT_NETWORK_OFFERING_REMOVE.equals(event.getType())) {
             SearchCriteria<UsageNetworkOfferingVO> sc = m_usageNetworkOfferingDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
             sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, vmId);
+            sc.addAnd("nicId", SearchCriteria.Op.EQ, nicId);
             sc.addAnd("networkOfferingId", SearchCriteria.Op.EQ, networkOfferingId);
             sc.addAnd("deleted", SearchCriteria.Op.NULL);
             List<UsageNetworkOfferingVO> noVOs = m_usageNetworkOfferingDao.search(sc, null);
@@ -1395,7 +1635,22 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             }
         }
     }
-    
+
+    private void createVMSnapshotEvent(UsageEventVO event){
+        Long vmId = event.getResourceId();
+        Long volumeId = event.getTemplateId();
+        Long offeringId = event.getOfferingId();
+        Long zoneId = event.getZoneId();
+        Long accountId = event.getAccountId();
+        long size = event.getSize();
+        Date created = event.getCreateDate();
+        Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
+        Long domainId = acct.getDomainId();
+        UsageVMSnapshotVO vsVO  = new UsageVMSnapshotVO(volumeId,zoneId,accountId,
+                domainId,vmId,offeringId, size, created, null);
+        m_usageVMSnapshotDao.persist(vsVO);
+    }
+
     private class Heartbeat implements Runnable {
         public void run() {
             Transaction usageTxn = Transaction.open(Transaction.USAGE_DB);

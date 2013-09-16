@@ -18,11 +18,18 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import com.cloud.storage.Snapshot;
 
-
 public interface SnapshotInfo extends DataObject, Snapshot {
-	public SnapshotInfo getParent();
-	public SnapshotInfo getChild();
-	public VolumeInfo getBaseVolume();
+    SnapshotInfo getParent();
+
+    String getPath();
+
+    SnapshotInfo getChild();
+
+    VolumeInfo getBaseVolume();
+
+    void addPayload(Object data);
+
     Long getDataCenterId();
-    public Long getPrevSnapshotId();
+
+    ObjectInDataStoreStateMachine.State getStatus();
 }

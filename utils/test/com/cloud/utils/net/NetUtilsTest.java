@@ -17,6 +17,7 @@
 package com.cloud.utils.net;
 
 import java.math.BigInteger;
+import java.net.URI;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -127,5 +128,49 @@ public class NetUtilsTest extends TestCase {
     	assertFalse(NetUtils.isIp6InRange("1234:5678:abcd::1", "1234:5678:abcd::2-1234:5678:abcd::1"));
     	assertFalse(NetUtils.isIp6InRange("1234:5678:abcd::1", null));
     	assertTrue(NetUtils.isIp6InRange("1234:5678:abcd::1", "1234:5678::1-1234:5679::1"));
+    }
+    
+    public void testPvlan() {
+    	URI uri = NetUtils.generateUriForPvlan("123", "456");
+    	assertTrue(uri.toString().equals("pvlan://123-i456"));
+    	assertTrue(NetUtils.getPrimaryPvlanFromUri(uri).equals("123"));
+    	assertTrue(NetUtils.getIsolatedPvlanFromUri(uri).equals("456"));
+    }
+
+    public void testIsSameIpRange() {
+        //Test to check IP Range of 2 CIDRs
+        String cidrFirst = "10.0.144.0/20";
+        String cidrSecond = "10.0.151.0/20";
+        String cidrThird = "10.0.144.0/21";
+        assertTrue(NetUtils.isValidCIDR(cidrFirst));
+        assertTrue(NetUtils.isValidCIDR(cidrSecond));
+        assertTrue(NetUtils.isValidCIDR(cidrThird));
+
+        //Check for exactly same CIDRs
+        assertTrue(NetUtils.isSameIpRange(cidrFirst, cidrFirst));
+        //Check for 2 different CIDRs, but same IP Range
+        assertTrue(NetUtils.isSameIpRange(cidrFirst, cidrSecond));
+        //Check for 2 different CIDRs and different IP Range
+        assertFalse(NetUtils.isSameIpRange(cidrFirst, cidrThird));
+        //Check for Incorrect format of CIDR
+        assertFalse(NetUtils.isSameIpRange(cidrFirst, "10.3.6.5/50"));
+    }
+
+    public void testMacGenerateion() {
+    	String mac = "06:01:23:00:45:67";
+    	String newMac = NetUtils.generateMacOnIncrease(mac, 2);
+    	assertTrue(newMac.equals("06:01:25:00:45:67"));
+    	newMac = NetUtils.generateMacOnIncrease(mac, 16);
+    	assertTrue(newMac.equals("06:01:33:00:45:67"));
+    	mac = "06:ff:ff:00:45:67";
+    	newMac = NetUtils.generateMacOnIncrease(mac, 1);
+    	assertTrue(newMac.equals("06:00:00:00:45:67"));
+    	newMac = NetUtils.generateMacOnIncrease(mac, 16);
+    	assertTrue(newMac.equals("06:00:0f:00:45:67"));
+    }
+
+    @Test
+    public void testGetLocalIPString() {
+        assertNotNull(NetUtils.getLocalIPString());
     }
 }

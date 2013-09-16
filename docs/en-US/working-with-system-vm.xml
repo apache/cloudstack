@@ -32,6 +32,7 @@
       parameter on the &PRODUCT; UI or by calling the listConfigurations API.</para>
   </note>
   <xi:include href="system-vm-template.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="accessing-system-vms.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="multiple-system-vm-vmware.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="console-proxy.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="virtual-router.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>

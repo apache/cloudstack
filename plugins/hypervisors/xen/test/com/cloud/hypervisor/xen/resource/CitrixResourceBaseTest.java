@@ -58,7 +58,10 @@ public class CitrixResourceBaseTest {
             super.scaleVM(conn, vm, vmSpec, host);
         }
 
-
+        @Override
+        protected boolean isDmcEnabled(Connection conn, Host host) throws Types.XenAPIException, XmlRpcException {
+            return true;
+        }
     };
     @Mock XsHost _host;
     @Mock Host host;
@@ -110,10 +113,14 @@ public class CitrixResourceBaseTest {
     @Test
     public void testScaleVMF2() throws Types.XenAPIException, XmlRpcException {
 
-        doReturn(null).when(vm).setMemoryDynamicRangeAsync(conn, 536870912L, 536870912L);
+        when(vm.getMemoryStaticMax(conn)).thenReturn(1073741824L);
+        when(vm.getMemoryStaticMin(conn)).thenReturn(268435456L);
+        doReturn(536870912L).when(vmSpec).getMinRam();
+        doReturn(536870912L).when(vmSpec).getMaxRam();
+        doNothing().when(vm).setMemoryDynamicRange(conn, 536870912L, 536870912L);
         doReturn(1).when(vmSpec).getCpus();
         doNothing().when(vm).setVCPUsNumberLive(conn, 1L);
-        doReturn(500).when(vmSpec).getSpeed();
+        doReturn(500).when(vmSpec).getMinSpeed();
         doReturn(false).when(vmSpec).getLimitCpuUse();
         Map<String, String> args = (Map<String, String>)mock(HashMap.class);
         when(host.callPlugin(conn, "vmops", "add_to_VCPUs_params_live", args)).thenReturn("Success");
@@ -129,12 +136,16 @@ public class CitrixResourceBaseTest {
     @Test
     public void testScaleVMF3() throws Types.XenAPIException, XmlRpcException {
 
-        doReturn(null).when(vm).setMemoryDynamicRangeAsync(conn, 536870912L, 536870912L);
+        when(vm.getMemoryStaticMax(conn)).thenReturn(1073741824L);
+        when(vm.getMemoryStaticMin(conn)).thenReturn(268435456L);
+        doReturn(536870912L).when(vmSpec).getMinRam();
+        doReturn(536870912L).when(vmSpec).getMaxRam();
+        doNothing().when(vm).setMemoryDynamicRange(conn, 536870912L, 536870912L);
         doReturn(1).when(vmSpec).getCpus();
         doNothing().when(vm).setVCPUsNumberLive(conn, 1L);
-        doReturn(500).when(vmSpec).getSpeed();
+        doReturn(500).when(vmSpec).getMinSpeed();
         doReturn(true).when(vmSpec).getLimitCpuUse();
-        doNothing().when(vm).addToVCPUsParamsLive(conn, "cap", "100");
+        doReturn(null).when(_resource).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "cap", "value", "99", "vmname", "i-2-3-VM");
         Map<String, String> args = (Map<String, String>)mock(HashMap.class);
         when(host.callPlugin(conn, "vmops", "add_to_VCPUs_params_live", args)).thenReturn("Success");
         doReturn(null).when(_resource).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "weight", "value", "253", "vmname", "i-2-3-VM");
@@ -143,6 +154,6 @@ public class CitrixResourceBaseTest {
 
         verify(vmSpec, times(1)).getLimitCpuUse();
         verify(_resource, times(1)).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "weight", "value", "253", "vmname", "i-2-3-VM");
-        verify(vm, times(1)).addToVCPUsParamsLive(conn, "cap", "100");
+        verify(_resource, times(1)).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "cap", "value", "99", "vmname", "i-2-3-VM");
     }
 }

@@ -103,8 +103,8 @@ public class CloudStackClient {
 	    			int jobStatus = queryAsyncJobResponse.getAsInt("queryasyncjobresultresponse.jobstatus");
 	    			switch(jobStatus) {
 	    			case 2:
-	    	    		throw new Exception(queryAsyncJobResponse.getAsString("queryasyncjobresultresponse.jobresult.errorcode") + " " + 
-    	    				queryAsyncJobResponse.getAsString("queryasyncjobresultresponse.jobresult.errortext"));
+	    	    		throw new Exception(queryAsyncJobResponse.getAsString("queryasyncjobresultresponse.jobresult.errortext") + " Error Code - " + 
+	    	    		queryAsyncJobResponse.getAsString("queryasyncjobresultresponse.jobresult.errorcode") );
 	    	    		
 	    			case 0 :
 	            	    try { 
@@ -179,6 +179,7 @@ public class CloudStackClient {
             if(errorMessage == null){
                 errorMessage = "CloudStack API call HTTP response error, HTTP status code: " + statusCode;
             }
+            errorMessage = errorMessage.concat(" Error Code - " + Integer.toString(statusCode));
 
         	throw new IOException(errorMessage);
         }

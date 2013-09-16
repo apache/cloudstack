@@ -28,11 +28,7 @@ import javax.ws.rs.QueryParam;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.PodEntity;
 import org.apache.cloudstack.engine.service.api.ProvisioningService;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
-@Component
-@Service("PodService")
 @Produces({"application/json"})
 public class PodRestService {
 //  @Inject
@@ -65,7 +61,7 @@ public class PodRestService {
 
     @PUT @Path("/pod/create")
     public PodEntity create(
-            @QueryParam("xid") String xid, 
+            @QueryParam("xid") String xid,
             @QueryParam("display-name") String displayName) {
         return null;
     }

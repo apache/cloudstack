@@ -19,14 +19,15 @@ package com.cloud.network.guru;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.event.ActionEventUtils;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
@@ -40,10 +41,8 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.vm.ReservationContext;
 
-@Component
 @Local(value=NetworkGuru.class)
 public class OvsGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(OvsGuestNetworkGuru.class);
@@ -71,7 +70,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
                     + NetworkType.Advanced);
             return false;
         }
-    }    
+    }
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
@@ -80,7 +79,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
             return null;
         }
 
-        NetworkVO config = (NetworkVO) super.design(offering, plan, userSpecified, owner); 
+        NetworkVO config = (NetworkVO) super.design(offering, plan, userSpecified, owner);
         if (config == null) {
             return null;
         }
@@ -94,12 +93,12 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
     protected void allocateVnet(Network network, NetworkVO implemented, long dcId,
             long physicalNetworkId, String reservationId) throws InsufficientVirtualNetworkCapcityException {
         if (network.getBroadcastUri() == null) {
-            String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), reservationId);
+            String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), reservationId, UseSystemGuestVlans.valueIn(network.getAccountId()));
             if (vnet == null) {
                 throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a part of network " + network + " implement ", DataCenter.class, dcId);
             }
             implemented.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(vnet));
-            ActionEventUtils.onCompletedActionEvent(UserContext.current().getCallerUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + network.getId(), 0);
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + network.getId(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
         }
@@ -111,7 +110,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
         if (!_ovsTunnelMgr.isOvsTunnelEnabled()) {
             return null;
         }
-        NetworkVO implemented = (NetworkVO)super.implement(config, offering, dest, context);		 
+        NetworkVO implemented = (NetworkVO)super.implement(config, offering, dest, context);
         return implemented;
     }
 

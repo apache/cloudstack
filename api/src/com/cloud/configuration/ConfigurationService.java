@@ -21,8 +21,6 @@ import java.util.List;
 import javax.naming.NamingException;
 
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
-import org.apache.cloudstack.api.command.admin.ldap.LDAPConfigCmd;
-import org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
@@ -34,18 +32,27 @@ import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
+import org.apache.cloudstack.api.command.admin.region.CreatePortableIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.region.DeletePortableIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.region.ListPortableIpRangesCmd;
 import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.region.PortableIp;
+import org.apache.cloudstack.region.PortableIpRange;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Networks.TrafficType;
@@ -63,7 +70,7 @@ public interface ConfigurationService {
      *            - the command wrapping name and value parameters
      * @return updated configuration object if successful
      */
-    Configuration updateConfiguration(UpdateCfgCmd cmd);
+    Configuration updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException;
 
     /**
      * Create a service offering through the API
@@ -234,6 +241,10 @@ public interface ConfigurationService {
 
     boolean deleteVlanIpRange(DeleteVlanIpRangeCmd cmd);
 
+    Vlan dedicatePublicIpRange(DedicatePublicIpRangeCmd cmd) throws ResourceAllocationException;
+
+    boolean releasePublicIpRange(ReleasePublicIpRangeCmd cmd);
+
     NetworkOffering createNetworkOffering(CreateNetworkOfferingCmd cmd);
 
     NetworkOffering updateNetworkOffering(UpdateNetworkOfferingCmd cmd);
@@ -242,33 +253,17 @@ public interface ConfigurationService {
 
     boolean deleteNetworkOffering(DeleteNetworkOfferingCmd cmd);
 
-    NetworkOffering getNetworkOffering(long id);
-
-    Integer getNetworkOfferingNetworkRate(long networkOfferingId);
-
     Account getVlanAccount(long vlanId);
 
     List<? extends NetworkOffering> listNetworkOfferings(TrafficType trafficType, boolean systemOnly);
 
-    DataCenter getZone(long id);
-
-    ServiceOffering getServiceOffering(long serviceOfferingId);
-
     Long getDefaultPageSize();
 
-    Integer getServiceOfferingNetworkRate(long serviceOfferingId);
+    PortableIpRange createPortableIpRange(CreatePortableIpRangeCmd cmd) throws ConcurrentOperationException;
 
-    DiskOffering getDiskOffering(long diskOfferingId);
+    boolean deletePortableIpRange(DeletePortableIpRangeCmd cmd);
 
-    boolean updateLDAP(LDAPConfigCmd cmd) throws NamingException;
+    List<? extends PortableIpRange> listPortableIpRanges(ListPortableIpRangesCmd cmd);
 
-	boolean removeLDAP(LDAPRemoveCmd cmd);
-
-    LDAPConfigCmd listLDAPConfig(LDAPConfigCmd cmd);
-
-    /**
-     * @param offering
-     * @return
-     */
-    boolean isOfferingForVpc(NetworkOffering offering);
+    List<? extends PortableIp> listPortableIps(long id);
 }

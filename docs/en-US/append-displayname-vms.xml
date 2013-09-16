@@ -1,0 +1,84 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied. See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<section id="append-displayname-vms">
+  <title>Appending a Display Name to the Guest VM’s Internal Name</title>
+  <para>Every guest VM has an internal name. The host uses the internal name to identify the guest
+    VMs. &PRODUCT; gives you an option to provide a guest VM with a display name. You can set this
+    display name as the internal name so that the vCenter can use it to identify the guest VM. A new
+    global parameter, vm.instancename.flag, has now been added to achieve this functionality.</para>
+  <para>The default format of the internal name is
+    i-&lt;user_id&gt;-&lt;vm_id&gt;-&lt;instance.name&gt;, where instance.name is a global
+    parameter. However, If vm.instancename.flag is set to true, and if a display name is provided
+    during the creation of a guest VM, the display name is appended to the internal name of the
+    guest VM on the host. This makes the internal name format as
+    i-&lt;user_id&gt;-&lt;vm_id&gt;-&lt;displayName&gt;. The default value of vm.instancename.flag
+    is set to false. This feature is intended to make the correlation between instance names and
+    internal names easier in large data center deployments.</para>
+  <para>The following table explains how a VM name is displayed in different scenarios.</para>
+  <informaltable>
+    <tgroup cols="5" align="left" colsep="1" rowsep="1">
+      <colspec colnum="1" colname="c1" colwidth="1.0*"/>
+      <colspec colnum="2" colname="c2" colwidth="1.31*"/>
+      <colspec colnum="3" colname="c3" colwidth="1.07*"/>
+      <colspec colnum="4" colname="c4" colwidth="2.6*"/>
+      <colspec colnum="5" colname="c5" colwidth="4.65*"/>
+      <thead>
+        <row>
+          <entry><para>User-Provided Display Name </para></entry>
+          <entry><para>vm.instancename.flag</para></entry>
+          <entry><para>Hostname on the VM</para></entry>
+          <entry><para>Name on vCenter</para></entry>
+          <entry><para>Internal Name</para></entry>
+        </row>
+      </thead>
+      <tbody>
+        <row>
+          <entry><para>Yes</para></entry>
+          <entry><para>True</para></entry>
+          <entry><para>Display name</para></entry>
+          <entry><para>i-&lt;user_id&gt;-&lt;vm_id&gt;-displayName</para></entry>
+          <entry><para>i-&lt;user_id&gt;-&lt;vm_id&gt;-displayName</para></entry>
+        </row>
+        <row>
+          <entry><para>No</para></entry>
+          <entry><para>True</para></entry>
+          <entry><para>UUID</para></entry>
+          <entry><para>i-&lt;user_id&gt;-&lt;vm_id&gt;-&lt;instance.name&gt;</para></entry>
+          <entry><para>i-&lt;user_id&gt;-&lt;vm_id&gt;-&lt;instance.name&gt;</para></entry>
+        </row>
+        <row>
+          <entry><para>Yes</para></entry>
+          <entry><para>False</para></entry>
+          <entry><para>Display name</para></entry>
+          <entry><para>i-&lt;user_id&gt;-&lt;vm_id&gt;-&lt;instance.name&gt;</para></entry>
+          <entry><para>i-&lt;user_id&gt;-&lt;vm_id&gt;-&lt;instance.name&gt;</para></entry>
+        </row>
+        <row>
+          <entry><para>No</para></entry>
+          <entry><para>False</para></entry>
+          <entry><para>UUID</para></entry>
+          <entry><para>i-&lt;user_id&gt;-&lt;vm_id&gt;-&lt;instance.name&gt;</para></entry>
+          <entry><para>i-&lt;user_id&gt;-&lt;vm_id&gt;-&lt;instance.name&gt;</para></entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </informaltable>
+</section>

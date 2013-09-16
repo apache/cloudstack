@@ -18,19 +18,28 @@ package org.apache.cloudstack.storage.datastore;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.fsm.NoTransitionException;
 
 public interface ObjectInDataStoreManager {
-    public DataObject create(DataObject template, DataStore dataStore);
+    public DataObject create(DataObject dataObj, DataStore dataStore);
+
+    public boolean delete(DataObject dataObj);
+
+    public boolean deleteIfNotReady(DataObject dataObj);
+
     public DataObject get(DataObject dataObj, DataStore store);
-    public boolean update(DataObject vo, Event event) throws NoTransitionException;
-    DataObjectInStore findObject(String uuid, DataObjectType type,
-            String dataStoreUuid, DataStoreRole role);
+
+    public boolean update(DataObject vo, Event event) throws NoTransitionException, ConcurrentOperationException;
+
+    DataObjectInStore findObject(long objId, DataObjectType type, long dataStoreId, DataStoreRole role);
+
     DataObjectInStore findObject(DataObject obj, DataStore store);
-    DataStore findStore(String objUuid, DataObjectType type,  DataStoreRole role);
+
+    DataStore findStore(long objId, DataObjectType type, DataStoreRole role);
 }

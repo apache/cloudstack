@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.securitygroup;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -26,16 +27,16 @@ import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.network.security.SecurityGroup;
+import com.cloud.network.security.SecurityRule;
 import com.cloud.user.Account;
 
 @APICommand(name = "revokeSecurityGroupIngress", responseObject = SuccessResponse.class, description = "Deletes a particular ingress rule from this security group")
 public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RevokeSecurityGroupIngressCmd.class.getName());
 
-    private static final String s_name = "revokesecuritygroupingress";
+    private static final String s_name = "revokesecuritygroupingressresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -67,9 +68,12 @@ public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        SecurityGroup group = _entityMgr.findById(SecurityGroup.class, getId());
-        if (group != null) {
-            return group.getAccountId();
+        SecurityRule rule = _entityMgr.findById(SecurityRule.class, getId());
+        if (rule != null) {
+            SecurityGroup group = _entityMgr.findById(SecurityGroup.class, rule.getSecurityGroupId());
+            if (group != null) {
+                return group.getAccountId();
+            }
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
@@ -97,8 +101,8 @@ public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.SecurityGroup;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.SecurityGroup;
     }
 
     @Override

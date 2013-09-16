@@ -14,151 +14,157 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-(function($,cloudStack) {
-  $.widget("cloudStack.toolTip", {
-    _init: function(args) {
-      var context = this.options.context;
-      var dataProvider = this.options.dataProvider;
-      var actions = this.options.actions;
-      var docID = this.options.docID;
-      var text = cloudStack.docs[docID].desc;
-      var $tooltip = $('<div>').addClass('tooltip-box');
-      var $text = $('<p>').html(text).appendTo($tooltip);
-      var $container = $('#cloudStack3-container');
+(function($, cloudStack) {
+    $.widget("cloudStack.toolTip", {
+        _init: function(args) {
+            var context = this.options.context;
+            var dataProvider = this.options.dataProvider;
+            var actions = this.options.actions;
+            var docID = this.options.docID;
+            var text = cloudStack.docs[docID].desc;
+            var $tooltip = $('<div>').addClass('tooltip-box');
+            var $text = $('<p>').html(text).appendTo($tooltip);
+            var $container = $('#cloudStack3-container');
 
-      $tooltip.appendTo($container);
+            $tooltip.appendTo($container);
 
-      if (this.options.mode == 'hover'){
-        $(this.element).hover(hoverHandler,outHandler);
-      } else if (this.options.mode == 'focus'){
-        $(this.element).focus(hoverHandler);
-        $(this.element).blur(outHandler);
-      } else if (this.options.mode == 'manual'){}
+            if (this.options.mode == 'hover') {
+                $(this.element).hover(hoverHandler, outHandler);
+            } else if (this.options.mode == 'focus') {
+                $(this.element).focus(hoverHandler);
+                $(this.element).blur(outHandler);
+            } else if (this.options.mode == 'manual') {}
 
-      $(this.element).data('$tooltip', $tooltip);
+            $(this.element).data('$tooltip', $tooltip);
 
-      // Add arrow
-      $tooltip.append($('<div></div>').addClass('arrow'));
+            // Add arrow
+            $tooltip.append($('<div></div>').addClass('arrow'));
 
-      $tooltip.hide();
-    },
+            $tooltip.hide();
+        },
 
-    show: function(){
-      var o = this.options;
+        show: function() {
+            var o = this.options;
 
-      if(o.mode=='manual'){
-        prepare(this.element,o);
-      }
+            if (o.mode == 'manual') {
+                prepare(this.element, o);
+            }
 
-      $(o.toolTip).show();
-    },
+            $(o.toolTip).show();
+        },
 
-    hide: function(){
-      var o = this.options;
-      $(o.toolTip).hide();
-    }
-  });
-
-  $.extend($.cloudStack.toolTip, {
-    defaults: {
-      toolTip: '',
-      onShow: function(sender){
-        //Flipping arrow and text
-
-        var $tooltip = $('.tooltip-box');
-
-        //Switch styles based on how close to viewport border
-
-        if($(window).width()-sender.target.offset().left <= $tooltip.width()) {
-
-          $('.tooltiptextleft',$tooltip).removeClass('tooltiptextleft').addClass('tooltiptextright');
-          $('.tooltiparrowleft',$tooltip).removeClass('tooltiparrowleft').addClass('tooltiparrowright');
-
+        hide: function() {
+            var o = this.options;
+            $(o.toolTip).hide();
         }
-        else{
-          $('.tooltiptextright',$tooltip).removeClass('tooltiptextright').addClass('tooltiptextleft');
-          $('.tooltiparrowright',$tooltip).removeClass('tooltiparrowright').addClass('tooltiparrowleft');
+    });
+
+    $.extend($.cloudStack.toolTip, {
+        defaults: {
+            toolTip: '',
+            onShow: function(sender) {
+                //Flipping arrow and text
+
+                var $tooltip = $('.tooltip-box');
+
+                //Switch styles based on how close to viewport border
+
+                if ($(window).width() - sender.target.offset().left <= $tooltip.width()) {
+
+                    $('.tooltiptextleft', $tooltip).removeClass('tooltiptextleft').addClass('tooltiptextright');
+                    $('.tooltiparrowleft', $tooltip).removeClass('tooltiparrowleft').addClass('tooltiparrowright');
+
+                } else {
+                    $('.tooltiptextright', $tooltip).removeClass('tooltiptextright').addClass('tooltiptextleft');
+                    $('.tooltiparrowright', $tooltip).removeClass('tooltiparrowright').addClass('tooltiparrowleft');
+                }
+
+            },
+            onHide: undefined,
+            mode: 'hover',
+            // provide a speed for the animation
+            speed: 1000,
+            // provide a period for the popup to keep showing
+            period: 2000,
+            // default the animation algorithm to the basic slide
+            animation: 'slide'
+        },
+        animations: {
+            slide: function(e, options) {
+
+            },
+            fade: function(e, options) {
+
+            }
+        }
+    });
+
+    function hoverHandler(event) {
+        //Fetch Options
+        var o = $.data(this, 'toolTip').options;
+
+        //Element who raised the event
+        var $this = $(this);
+
+        //Helper functon for Positioning and Calling Callback function
+        prepare($this, o);
+
+        //Call Show method of the tooltip Widget,
+        //Show method should play on any required animations
+        $.data(this, '$tooltip').show();
+    };
+
+    function outHandler(event) {
+        //Fetch Options
+        var o = $.data(this, 'toolTip').options;
+
+        //Get tooptip Element
+        var $tooltip = $(o.toolTip);
+
+        //If call back method defined, initiate the call
+        if ($.data(this, 'toolTip').options.onHide) {
+            $.data(this, 'toolTip').options.onHide.call(this, {
+                target: $(this)
+            });
         }
 
-      },
-      onHide: undefined,
-      mode: 'hover',
-      // provide a speed for the animation
-      speed: 1000,
-      // provide a period for the popup to keep showing
-      period: 2000,
-      // default the animation algorithm to the basic slide
-      animation:'slide'
-    },
-    animations: {
-      slide: function(e, options) {
+        //Call Hide method of the tooltip Widget,
+        //Hide method should play on any required animations
+        $.data(this, '$tooltip').hide();
+    };
 
-      },
-      fade: function(e, options) {
+    function prepare(jObj, options) {
+        var $tooltip = $(options.tooltip);
+        var element = options.attachTo ?
+            jObj.closest(options.attachTo) : jObj;
+        var offset = element.offset();
 
-      }
-    }
-  });
+        var left = offset.left + element.width();
+        var top = offset.top - 5;
 
-  function hoverHandler(event)
-  {
-    //Fetch Options
-    var o = $.data(this,'toolTip').options;
+        if (options.onShow) {
+            options.onShow.call(this, {
+                target: jObj
+            });
+        }
 
-    //Element who raised the event
-    var $this = $(this);
+        if ($(window).width() - offset.left <= $tooltip.width()) {
+            left = offset.left - $tooltip.width();
+        } else {
+            left += 35;
+        }
+        $tooltip.css({
+            position: 'absolute',
+            top: top + 'px',
+            left: left + 'px'
+        });
 
-    //Helper functon for Positioning and Calling Callback function
-    prepare($this,o);
+        // Fix overlay
+        setTimeout(function() {
+            $('.tooltip-box').zIndex($(':ui-dialog').zIndex() + 10);
+        });
 
-    //Call Show method of the tooltip Widget,
-    //Show method should play on any required animations
-    $.data(this,'$tooltip').show();
-  };
-  function outHandler(event)
-  {
-    //Fetch Options
-    var o = $.data(this,'toolTip').options;
-
-    //Get tooptip Element
-    var $tooltip =  $(o.toolTip);
-
-    //If call back method defined, initiate the call
-    if($.data(this,'toolTip').options.onHide){
-      $.data(this,'toolTip').options.onHide.call(this, {target:$(this)});
-    }
-
-    //Call Hide method of the tooltip Widget,
-    //Hide method should play on any required animations
-    $.data(this,'$tooltip').hide();
-  };
-  function prepare(jObj, options)
-  {
-    var $tooltip =  $(options.tooltip);
-    var element = options.attachTo ?
-          jObj.closest(options.attachTo) : jObj;
-    var offset = element.offset();
-
-    var left = offset.left + element.width();
-    var top = offset.top-5;
-
-    if(options.onShow){
-      options.onShow.call(this, {target:jObj});
-    }
-
-    if($(window).width()-offset.left <= $tooltip.width()) {
-      left = offset.left - $tooltip.width();
-    }
-    else{
-      left += 35;
-    }
-    $tooltip.css({position:'absolute', top:top+'px', left:left+'px'});
-
-    // Fix overlay
-    setTimeout(function() {
-      $('.tooltip-box').zIndex($(':ui-dialog').zIndex() + 10);  });
-
-  };
+    };
 
 
-})(jQuery,cloudStack);
+})(jQuery, cloudStack);

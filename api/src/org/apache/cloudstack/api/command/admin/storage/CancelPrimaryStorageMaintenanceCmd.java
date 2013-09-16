@@ -17,20 +17,21 @@
 package org.apache.cloudstack.api.command.admin.storage;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "cancelStorageMaintenance", description="Cancels maintenance for primary storage", responseObject=StoragePoolResponse.class)
 public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
@@ -70,8 +71,8 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.StoragePool;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.StoragePool;
     }
 
     @Override
@@ -81,7 +82,7 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         if (account != null) {
             return account.getId();
         }

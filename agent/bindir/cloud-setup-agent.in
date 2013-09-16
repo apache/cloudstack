@@ -95,6 +95,11 @@ if __name__ == '__main__':
     parser.add_option("--prvNic", dest="prvNic", help="Private traffic interface")
     parser.add_option("--guestNic", dest="guestNic", help="Guest traffic interface")
 
+    old_config = configFileOps("@AGENTSYSCONFDIR@/agent.properties")
+    bridgeType = old_config.getEntry("network.bridge.type").lower()
+    if bridgeType:
+        glbEnv.bridgeType = bridgeType
+
     (options, args) = parser.parse_args()
     if options.auto is None:
         userInputs = getUserInputs()
@@ -104,7 +109,7 @@ if __name__ == '__main__':
         glbEnv.pod = userInputs[3]
         glbEnv.cluster = userInputs[4]
         #generate UUID
-        glbEnv.uuid = configFileOps("@AGENTSYSCONFDIR@/agent.properties").getEntry("guid")
+        glbEnv.uuid = old_config.getEntry("guid")
         if glbEnv.uuid == "":
             glbEnv.uuid = bash("uuidgen").getStdout()
     else:

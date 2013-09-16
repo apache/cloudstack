@@ -17,5 +17,5 @@
 
 # Specific limits for the CloudStack management server which
 # runs under the user 'cloud' by default
-@MSUSER hard nofile 4096
-@MSUSER soft nofile 4096
+@MSUSER@ hard nofile 4096
+@MSUSER@ soft nofile 4096

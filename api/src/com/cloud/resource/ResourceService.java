@@ -27,10 +27,6 @@ import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
-import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
-import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
-import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
-import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
 
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -38,9 +34,6 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
-import com.cloud.storage.S3;
-import com.cloud.storage.Swift;
-import com.cloud.utils.Pair;
 import com.cloud.utils.fsm.NoTransitionException;
 
 public interface ResourceService {
@@ -71,7 +64,7 @@ public interface ResourceService {
 
     boolean deleteCluster(DeleteClusterCmd cmd);
 
-    Cluster updateCluster(Cluster cluster, String clusterType, String hypervisor, String allocationState, String managedstate,Float memoryOvercommitRatio, Float cpuOvercommitRatio);
+    Cluster updateCluster(Cluster cluster, String clusterType, String hypervisor, String allocationState, String managedstate);
 
     List<? extends Host> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
 
@@ -97,14 +90,8 @@ public interface ResourceService {
 
     Cluster getCluster(Long clusterId);
 
-    Swift discoverSwift(AddSwiftCmd addSwiftCmd) throws DiscoveryException;
-
-    S3 discoverS3(AddS3Cmd cmd) throws DiscoveryException;
-    
     List<HypervisorType> getSupportedHypervisorTypes(long zoneId, boolean forVirtualRouter, Long podId);
 
-    Pair<List<? extends Swift>, Integer> listSwifts(ListSwiftsCmd cmd);
-
-    List<? extends S3> listS3s(ListS3sCmd cmd);
+    boolean releaseHostReservation(Long hostId);
 
 }

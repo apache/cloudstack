@@ -23,6 +23,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -30,14 +33,12 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -73,7 +74,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
 
     @Override
     public VolumeResponse newVolumeResponse(VolumeJoinVO volume) {
-        Account caller = UserContext.current().getCaller();
+        Account caller = CallContext.current().getCallingAccount();
 
         VolumeResponse volResponse = new VolumeResponse();
         volResponse.setId(volume.getUuid());
@@ -101,14 +102,17 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
         // Show the virtual size of the volume
         volResponse.setSize(volume.getSize());
 
+        volResponse.setMinIops(volume.getMinIops());
+        volResponse.setMaxIops(volume.getMaxIops());
+
         volResponse.setCreated(volume.getCreated());
         volResponse.setState(volume.getState().toString());
         if (volume.getState() == Volume.State.UploadOp) {
             // com.cloud.storage.VolumeHostVO volumeHostRef =
             // ApiDBUtils.findVolumeHostRef(volume.getId(),
             // volume.getDataCenterId());
-            volResponse.setSize(volume.getVolumeHostSize());
-            volResponse.setCreated(volume.getVolumeHostCreated());
+            volResponse.setSize(volume.getVolumeStoreSize());
+            volResponse.setCreated(volume.getCreatedOnStore());
 
             if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)
                 volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volume.getFormat()).toString());
@@ -159,15 +163,21 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
             }
             volResponse.setStorageType(volume.isUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared
                     .toString());
+            volResponse.setBytesReadRate(volume.getBytesReadRate());
+            volResponse.setBytesWriteRate(volume.getBytesReadRate());
+            volResponse.setIopsReadRate(volume.getIopsWriteRate());
+            volResponse.setIopsWriteRate(volume.getIopsWriteRate());
+            
         }
-        Long poolId = volume.getPoolId();
-        String poolName = (poolId == null) ? "none" : volume.getPoolName();
-        volResponse.setStoragePoolName(poolName);
-
-        // return hypervisor for ROOT and Resource domain only
-        if ((caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)
-                && volume.getState() != Volume.State.UploadOp && volume.getHypervisorType() != null) {
-            volResponse.setHypervisor(volume.getHypervisorType().toString());
+        
+        // return hypervisor and storage pool info for ROOT and Resource domain only
+        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {   
+            if (volume.getState() != Volume.State.UploadOp && volume.getHypervisorType() != null) {
+                volResponse.setHypervisor(volume.getHypervisorType().toString());
+            }
+            Long poolId = volume.getPoolId();
+            String poolName = (poolId == null) ? "none" : volume.getPoolName();
+            volResponse.setStoragePoolName(poolName);
         }
 
         volResponse.setAttached(volume.getAttached());
@@ -194,10 +204,13 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
         }
 
         volResponse.setExtractable(isExtractable);
+        volResponse.setDisplayVm(volume.isDisplayVolume());
 
         // set async job
-        volResponse.setJobId(volume.getJobUuid());
-        volResponse.setJobStatus(volume.getJobStatus());
+        if (volume.getJobId() != null) {
+            volResponse.setJobId(volume.getJobUuid());
+            volResponse.setJobStatus(volume.getJobStatus());
+        }
 
         volResponse.setObjectName("volume");
         return volResponse;

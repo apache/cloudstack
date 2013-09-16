@@ -46,6 +46,8 @@ public class UsageManagerTest extends TestCase {
     @Inject
     NetworkUsageParser netParser = null;
     @Inject
+    VmDiskUsageParser vmdiskParser = null;
+    @Inject
     PortForwardingUsageParser pfParser = null;
     @Inject
     SecurityGroupUsageParser sgParser = null;
@@ -87,6 +89,7 @@ public class UsageManagerTest extends TestCase {
         lbParser.parse(account, startDate, endDate);
         noParser.parse(account, startDate, endDate);
         netParser.parse(account, startDate, endDate);
+        vmdiskParser.parse(account, startDate, endDate);
         pfParser.parse(account, startDate, endDate);
         sgParser.parse(account, startDate, endDate);
         stParser.parse(account, startDate, endDate);

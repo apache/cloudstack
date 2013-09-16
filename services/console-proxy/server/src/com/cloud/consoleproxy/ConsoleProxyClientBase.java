@@ -253,7 +253,8 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
         
         if(s_logger.isTraceEnabled())
             s_logger.trace("Ajax client start, frame buffer w: " + width + ", " + height);
-        
+
+/*        
         int retry = 0;
         tracker.initCoverageTest();
         while(!tracker.hasFullCoverage() && retry < 10) {
@@ -263,6 +264,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
             }
             retry++;
         }
+*/
         
         List<TileInfo> tiles = tracker.scan(true);
         String imgUrl = prepareAjaxImage(tiles, true);
@@ -329,6 +331,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
                     "</a>", 
                     "<ul>",
                         "<li><a href=\"#\" cmd=\"keyboard_us\"><span>Standard (US) keyboard</span></a></li>",
+                        "<li><a href=\"#\" cmd=\"keyboard_uk\"><span>UK keyboard</span></a></li>",
                         "<li><a href=\"#\" cmd=\"keyboard_jp\"><span>Japanese keyboard</span></a></li>",
                     "</ul>",
                 "</li>",

@@ -63,5 +63,7 @@ public interface VirtualNetworkApplianceService {
     VirtualRouter startRouter(long id) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException;
 
     VirtualRouter destroyRouter(long routerId, Account caller, Long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException;
+    
+    VirtualRouter findRouter(long routerId);
 
 }

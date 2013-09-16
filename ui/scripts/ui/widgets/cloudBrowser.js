@@ -15,418 +15,427 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack) {
-  cloudStack.ui.widgets.browser = {};
-
-  /**
-   * Breadcrumb-related functions
-   */
-  var _breadcrumb = cloudStack.ui.widgets.browser.breadcrumb = {
-    /**
-     * Generate new breadcrumb
-     */
-    create: function($panel, title) {
-      // Attach panel as ref for breadcrumb
-      return cloudStack.ui.event.elem(
-        'cloudBrowser', 'breadcrumb',
-        $('<div>')
-          .append(
-            $('<li>')
-              .attr({
-                title: title
-              })
-              .append(
-                $('<span>').html(title)
-              )
-          )
-          .append($('<div>').addClass('end'))
-          .children(),
-        {
-          panel: $panel
-        }
-      );
-    },
+    cloudStack.ui.widgets.browser = {};
 
     /**
-     * Get breadcrumbs matching specified panels
+     * Breadcrumb-related functions
      */
-    filter: function($panels) {
-      var $breadcrumbs = $('#breadcrumbs ul li');
-      var $result = $([]);
+    var _breadcrumb = cloudStack.ui.widgets.browser.breadcrumb = {
+        /**
+         * Generate new breadcrumb
+         */
+        create: function($panel, title) {
+            // Attach panel as ref for breadcrumb
+            return cloudStack.ui.event.elem(
+                'cloudBrowser', 'breadcrumb',
+                $('<div>')
+                .append(
+                    $('<li>')
+                    .attr({
+                        title: title
+                    })
+                    .append(
+                        $('<span>').html(title)
+                    )
+                )
+                .append($('<div>').addClass('end'))
+                .children(), {
+                    panel: $panel
+                }
+            );
+        },
 
-      $panels.each(function() {
-        var $panel = $(this);
+        /**
+         * Get breadcrumbs matching specified panels
+         */
+        filter: function($panels) {
+            var $breadcrumbs = $('#breadcrumbs ul li');
+            var $result = $([]);
 
-        $.merge(
-          $result,
-          $.merge(
-            $breadcrumbs.filter(function() {
-              return $(this).index('#breadcrumbs ul li') == $panel.index();
-            }),
+            $panels.each(function() {
+                var $panel = $(this);
 
-            // Also include ends
-            $breadcrumbs.siblings('div.end').filter(function() {
-              return $(this).index('div.end') == $panel.index() + 1;
-            })
-          )
-        );
-      });
+                $.merge(
+                    $result,
+                    $.merge(
+                        $breadcrumbs.filter(function() {
+                            return $(this).index('#breadcrumbs ul li') == $panel.index();
+                        }),
 
-      return $result;
-    }
-  };
-
-  /**
-   * Container-related functions
-   */
-  var _container = cloudStack.ui.widgets.browser.container = {
-    /**
-     * Get all panels from container
-     */
-    panels: function($container) {
-      return $container.find('div.panel');
-    }
-  };
-
-  /**
-   * Panel-related functions
-   */
-  var _panel = cloudStack.ui.widgets.browser.panel = {
-    /**
-     * Compute width of panel, relative to container
-     */
-    width: function($container, options) {
-      options = options ? options : {};
-      var width = $container.find('div.panel').size() < 1 || options.maximized == true ?
-            $container.width() : $container.width() - $container.width() / 4;
-
-      return width;
-    },
-
-    /**
-     * Get left position
-     */
-    position: function($container, options) {
-      return $container.find('div.panel').size() <= 1 || options.maximized == true ?
-        0 : _panel.width($container, options) - _panel.width($container, options) / 1.5;
-    },
-
-    /**
-     * Get the top panel z-index, for proper stacking
-     */
-    topIndex: function($container) {
-      var base = 50; // Minimum z-index
-
-      return Math.max.apply(
-        null,
-        $.map(
-          $container.find('div.panel'),
-          function(elem) {
-            return parseInt($(elem).css('z-index')) || base;
-          }
-        )
-      ) + 1;
-    },
-
-    /**
-     * State when panel is outside container
-     */
-    initialState: function($container) {
-      return {
-        left: $container.width()
-      };
-    },
-
-    /**
-     * Get panel and breadcrumb behind specific panel
-     */
-    lower: function($container, $panel) {
-      return _container.panels($container).filter(function() {
-        return $(this).index() < $panel.index();
-      });
-    },
-
-    /**
-     * Get panel and breadcrumb stacked above specific panel
-     */
-    higher: function($container, $panel) {
-      return _container.panels($container).filter(function() {
-        return $(this).index() > $panel.index();
-      });
-    },
-
-    /**
-     * Generate new panel
-     */
-    create: function($container, options) {
-      var $panel = $('<div>').addClass('panel').css(
-        {
-          position: 'absolute',
-          width: _panel.width($container, { maximized: options.maximized }),
-          zIndex: _panel.topIndex($container)
-        }
-      ).append(
-        // Shadow
-        $('<div>').addClass('shadow')
-      ).append(options.data);
-
-      if (options.maximized) $panel.addClass('always-maximized');
-
-      return $panel;
-    }
-  };
-
-  /**
-   * Browser -- jQuery widget
-   */
-  $.widget('cloudStack.cloudBrowser', {
-    _init: function() {
-      this.element.addClass('cloudStack-widget cloudBrowser');
-      $('#breadcrumbs').append(
-        $('<ul>')
-      );
-    },
-
-    /**
-     * Make target panel the top-most
-     */
-    selectPanel: function(args) {
-      var $panel = args.panel;
-      var $container = this.element;
-      var $toShow = _panel.lower($container, $panel);
-      var $toRemove = _panel.higher($container, $panel);
-      var complete = args.complete;
-
-      if ($panel.hasClass('maximized')) return false;
-
-      _breadcrumb.filter($toRemove).remove();
-      _breadcrumb.filter($panel.siblings()).removeClass('active');
-      _breadcrumb.filter($panel).addClass('active');
-      _breadcrumb.filter($('div.panel')).find('span').animate({
-        opacity: 1
-      });
-      _breadcrumb.filter(
-        $('div.panel.maximized')
-          .removeClass('maximized')
-          .addClass('reduced')
-      ).removeClass('active maximized');
-
-      $toRemove.animate(
-        _panel.initialState($container),
-        {
-          duration: 500,
-          complete: function() {
-            $(this).remove();
-
-            if (complete) complete($toShow);
-          }
-        }
-      );
-      $toShow.show();
-      $panel.animate({
-        left: _panel.position($container, { maximized: $panel.hasClass('always-maximized') })
-      });
-      $panel.show().removeClass('reduced');
-    },
-
-    /**
-     * Toggle selected panel as fully expanded, hiding/showing other panels
-     */
-    toggleMaximizePanel: function(args) {
-      var $panel = args.panel;
-      var $container = this.element;
-      var $toHide = $panel.siblings(':not(.always-maximized)');
-      var $shadow = $toHide.find('div.shadow');
-
-      if (args.panel.hasClass('maximized')) {
-        _breadcrumb.filter($panel).removeClass('maximized');
-        $panel.removeClass('maximized');
-        $panel.addClass('reduced');
-        _breadcrumb.filter($panel.siblings()).find('span').animate({ opacity: 1 });
-        $toHide.animate({ left: _panel.position($container, {}) },
-                        { duration: 500 });
-        $shadow.show();
-      } else {
-        _breadcrumb.filter($panel).addClass('maximized');
-        $panel.removeClass('reduced');
-        $panel.addClass('maximized');
-        _breadcrumb.filter($panel.siblings()).find('span').animate({ opacity: 0.5 });
-        $toHide.animate(_panel.initialState($container),
-                        { duration: 500 });
-        $shadow.hide();
-      }
-    },
-
-    /**
-     * Append new panel to end of container
-     */
-    addPanel: function(args) {
-      var duration = args.duration ? args.duration : 500;
-      var $container = this.element;
-      var $parent = args.parent;
-      var $panel, $reduced, targetPosition;
-
-      // Create panel
-      $panel = _panel.create(this.element, {
-        maximized: args.maximizeIfSelected,
-        data: args.data
-      });
-
-      // Remove existing panels from parent
-      if ($parent) {
-        // Cleanup transitioning panels -- prevent old complete actions from running
-        $parent.siblings().stop();
-
-        _breadcrumb.filter(
-          $('div.panel.maximized')
-            .removeClass('maximized')
-            .addClass('reduced')
-        ).removeClass('active maximized');
-
-        $parent.removeClass('maximized');
-        _breadcrumb.filter($parent.next()).remove();
-        $container.find($parent.next()).remove();
-      }
-
-      // Append panel
-      $panel.appendTo($container);
-      _breadcrumb.filter($panel.siblings()).removeClass('active');
-      _breadcrumb.create($panel, args.title)
-        .addClass('active')
-        .appendTo('#breadcrumbs ul');
-
-      // Reduced appearance for previous panels
-      $panel.siblings().filter(function() {
-        return $(this).index() < $panel.index();
-      }).addClass('reduced');
-
-      // Panel initial state
-      if ($panel.index() == 0) $panel.addClass('always-maximized');
-      $panel.css(
-        _panel.initialState($container, $panel)
-      );
-
-      // Panel slide-in
-      targetPosition = _panel.position($container, {
-        maximized: args.maximizeIfSelected
-      });
-      if (!$panel.index()) {
-        // Just show immediately if this is the first panel
-        $panel.css(
-          { left: targetPosition }
-        );
-        if (args.complete) args.complete($panel, _breadcrumb.filter($panel));
-      } else {
-        // Animate slide-in
-        $panel.animate({ left: targetPosition }, {
-          duration: duration,
-          easing: 'easeOutCirc',
-          complete: function() {
-            // Hide panels
-            $panel.siblings().filter(function() {
-              return $(this).width() == $panel.width();
+                        // Also include ends
+                        $breadcrumbs.siblings('div.end').filter(function() {
+                            return $(this).index('div.end') == $panel.index() + 1;
+                        })
+                    )
+                );
             });
 
-            if ($panel.is(':visible') && args.complete) args.complete($panel);
-          }
-        });
-      };
-
-      return $panel;
-    },
+            return $result;
+        }
+    };
 
     /**
-     * Clear all panels
+     * Container-related functions
      */
-    removeAllPanels: function(args) {
-      $('div.panel').stop(); // Prevent destroyed panels from animating
-      this.element.find('div.panel').remove();
-      $('#breadcrumbs').find('ul li').remove();
-      $('#breadcrumbs').find('ul div.end').remove();
-    }
-  });
+    var _container = cloudStack.ui.widgets.browser.container = {
+        /**
+         * Get all panels from container
+         */
+        panels: function($container) {
+            return $container.find('div.panel');
+        }
+    };
 
-  $('#breadcrumbs li').live('click', cloudStack.ui.event.bind(
-    'cloudBrowser',
-    {
-      'breadcrumb': function($target, $browser, data) {
+    /**
+     * Panel-related functions
+     */
+    var _panel = cloudStack.ui.widgets.browser.panel = {
+        /**
+         * Compute width of panel, relative to container
+         */
+        width: function($container, options) {
+            options = options ? options : {};
+            var width = $container.find('div.panel').size() < 1 || options.maximized == true ?
+                $container.width() : $container.width() - $container.width() / 4;
 
-        if ($ ('#browser').hasClass('panel-highlight')) {
-          return false;
-          }
+            return width;
+        },
 
-        $browser.cloudBrowser('selectPanel', { panel: data.panel });
-      }
-    }
-  ));
- 
-  // Breadcrumb hovering 
-  $('#breadcrumbs li').live('mouseover', cloudStack.ui.event.bind(
-    'cloudBrowser',
-    {
-      'breadcrumb': function($target, $browser, data) {
-        var  $hiddenPanels = data.panel.siblings().filter(function(){
-          return $(this).index() > data.panel.index();
-        });
-        var $targetPanel = data.panel.filter(':first');
-        var $targetBreadcrumb = _breadcrumb.filter($targetPanel);
-        var $panelWrapper = $('<div>').addClass('panel panel-highlight-wrapper');
-        
-        $hiddenPanels.addClass('mouseover-hidden');
-        
-        $browser.data('browser-panel-highlight-timer', setTimeout(function() {
-          $('#browser').addClass('panel-highlight');
-          $('.overlay').remove();
+        /**
+         * Get left position
+         */
+        position: function($container, options) {
+            return $container.find('div.panel').size() <= 1 || options.maximized == true ?
+                0 : _panel.width($container, options) - _panel.width($container, options) / 1.5;
+        },
 
-          // Setup panel and wrapper positioning
-          $panelWrapper
-            .css({
-              left: $targetPanel.position().left
-            })
-            .width($targetPanel.width());
-          $targetPanel
-            .wrap($panelWrapper);
-          $panelWrapper
-            .zIndex(10000)
-            .overlay();
-          $targetPanel.filter(':last').addClass('highlighted');
+        /**
+         * Get the top panel z-index, for proper stacking
+         */
+        topIndex: function($container) {
+            var base = 50; // Minimum z-index
 
-          // Setup breadcrumbs
-          $targetBreadcrumb.each(function() {
-            $(this).data('breadcrumb-original-zindex', $(this).zIndex());
-          });
-          $targetBreadcrumb.zIndex(10001);
-          
-          $hiddenPanels.hide();
-        }, 1000));
-      }
-    }
-  ));
+            return Math.max.apply(
+                null,
+                $.map(
+                    $container.find('div.panel'),
+                    function(elem) {
+                        return parseInt($(elem).css('z-index')) || base;
+                    }
+                )
+            ) + 1;
+        },
 
-  $('#breadcrumbs li').live('mouseout',cloudStack.ui.event.bind(
-    'cloudBrowser',
-    {
-      'breadcrumb': function($target, $browser, data) {
-        var $getHiddenPanels = $browser.find('.panel.mouseover-hidden');
-        var $visiblePanels = $getHiddenPanels.siblings();
-        var $visibleBreadcrumbs = _breadcrumb.filter($visiblePanels);
+        /**
+         * State when panel is outside container
+         */
+        initialState: function($container) {
+            return {
+                left: $container.width()
+            };
+        },
 
-        clearTimeout($browser.data('browser-panel-highlight-timer'));
-        $('#browser').removeClass('panel-highlight');
-        $('#browser .panel').removeClass('highlighted');
-        $('#browser .panel.panel-highlight-wrapper').each(function() {
-          var $wrapper = $(this);
-          var $panel = $wrapper.find('.panel');
-          
-          $wrapper.after($panel);
-          $wrapper.remove();
-        });
-        $getHiddenPanels.removeClass('mouseover-hidden').show();
-        $visibleBreadcrumbs.each(function() {
-          $(this).zIndex($(this).data('breadcrumb-original-zindex'));
-        });
-        $('.overlay').remove();
-        $('#browser .panel > .highlight-arrow').remove();
-      }
-    }
-  ));
+        /**
+         * Get panel and breadcrumb behind specific panel
+         */
+        lower: function($container, $panel) {
+            return _container.panels($container).filter(function() {
+                return $(this).index() < $panel.index();
+            });
+        },
+
+        /**
+         * Get panel and breadcrumb stacked above specific panel
+         */
+        higher: function($container, $panel) {
+            return _container.panels($container).filter(function() {
+                return $(this).index() > $panel.index();
+            });
+        },
+
+        /**
+         * Generate new panel
+         */
+        create: function($container, options) {
+            var $panel = $('<div>').addClass('panel').css({
+                position: 'absolute',
+                width: _panel.width($container, {
+                    maximized: options.maximized
+                }),
+                zIndex: _panel.topIndex($container)
+            }).append(
+                // Shadow
+                $('<div>').addClass('shadow')
+            ).append(options.data);
+
+            if (options.maximized) $panel.addClass('always-maximized');
+
+            return $panel;
+        }
+    };
+
+    /**
+     * Browser -- jQuery widget
+     */
+    $.widget('cloudStack.cloudBrowser', {
+        _init: function() {
+            this.element.addClass('cloudStack-widget cloudBrowser');
+            $('#breadcrumbs').append(
+                $('<ul>')
+            );
+        },
+
+        /**
+         * Make target panel the top-most
+         */
+        selectPanel: function(args) {
+            var $panel = args.panel;
+            var $container = this.element;
+            var $toShow = _panel.lower($container, $panel);
+            var $toRemove = _panel.higher($container, $panel);
+            var complete = args.complete;
+
+            if ($panel.hasClass('maximized')) return false;
+
+            _breadcrumb.filter($toRemove).remove();
+            _breadcrumb.filter($panel.siblings()).removeClass('active');
+            _breadcrumb.filter($panel).addClass('active');
+            _breadcrumb.filter($('div.panel')).find('span').animate({
+                opacity: 1
+            });
+            _breadcrumb.filter(
+                $('div.panel.maximized')
+                .removeClass('maximized')
+                .addClass('reduced')
+            ).removeClass('active maximized');
+
+            $toRemove.animate(
+                _panel.initialState($container), {
+                    duration: 500,
+                    complete: function() {
+                        $(this).remove();
+
+                        if (complete) complete($toShow);
+                    }
+                }
+            );
+            $toShow.show();
+            $panel.animate({
+                left: _panel.position($container, {
+                    maximized: $panel.hasClass('always-maximized')
+                })
+            });
+            $panel.show().removeClass('reduced');
+        },
+
+        /**
+         * Toggle selected panel as fully expanded, hiding/showing other panels
+         */
+        toggleMaximizePanel: function(args) {
+            var $panel = args.panel;
+            var $container = this.element;
+            var $toHide = $panel.siblings(':not(.always-maximized)');
+            var $shadow = $toHide.find('div.shadow');
+
+            if (args.panel.hasClass('maximized')) {
+                _breadcrumb.filter($panel).removeClass('maximized');
+                $panel.removeClass('maximized');
+                $panel.addClass('reduced');
+                _breadcrumb.filter($panel.siblings()).find('span').animate({
+                    opacity: 1
+                });
+                $toHide.animate({
+                    left: _panel.position($container, {})
+                }, {
+                    duration: 500
+                });
+                $shadow.show();
+            } else {
+                _breadcrumb.filter($panel).addClass('maximized');
+                $panel.removeClass('reduced');
+                $panel.addClass('maximized');
+                _breadcrumb.filter($panel.siblings()).find('span').animate({
+                    opacity: 0.5
+                });
+                $toHide.animate(_panel.initialState($container), {
+                    duration: 500
+                });
+                $shadow.hide();
+            }
+        },
+
+        /**
+         * Append new panel to end of container
+         */
+        addPanel: function(args) {
+            var duration = args.duration ? args.duration : 500;
+            var $container = this.element;
+            var $parent = args.parent;
+            var $panel, $reduced, targetPosition;
+
+            // Create panel
+            $panel = _panel.create(this.element, {
+                maximized: args.maximizeIfSelected,
+                data: args.data
+            });
+
+            // Remove existing panels from parent
+            if ($parent) {
+                // Cleanup transitioning panels -- prevent old complete actions from running
+                $parent.siblings().stop();
+
+                _breadcrumb.filter(
+                    $('div.panel.maximized')
+                    .removeClass('maximized')
+                    .addClass('reduced')
+                ).removeClass('active maximized');
+
+                $parent.removeClass('maximized');
+                _breadcrumb.filter($parent.next()).remove();
+                $container.find($parent.next()).remove();
+            }
+
+            // Append panel
+            $panel.appendTo($container);
+            _breadcrumb.filter($panel.siblings()).removeClass('active');
+            _breadcrumb.create($panel, args.title)
+                .addClass('active')
+                .appendTo('#breadcrumbs ul');
+
+            // Reduced appearance for previous panels
+            $panel.siblings().filter(function() {
+                return $(this).index() < $panel.index();
+            }).addClass('reduced');
+
+            // Panel initial state
+            if ($panel.index() == 0) $panel.addClass('always-maximized');
+            $panel.css(
+                _panel.initialState($container, $panel)
+            );
+
+            // Panel slide-in
+            targetPosition = _panel.position($container, {
+                maximized: args.maximizeIfSelected
+            });
+            if (!$panel.index()) {
+                // Just show immediately if this is the first panel
+                $panel.css({
+                    left: targetPosition
+                });
+                if (args.complete) args.complete($panel, _breadcrumb.filter($panel));
+            } else {
+                // Animate slide-in
+                $panel.animate({
+                    left: targetPosition
+                }, {
+                    duration: duration,
+                    easing: 'easeOutCirc',
+                    complete: function() {
+                        // Hide panels
+                        $panel.siblings().filter(function() {
+                            return $(this).width() == $panel.width();
+                        });
+
+                        if ($panel.is(':visible') && args.complete) args.complete($panel);
+                    }
+                });
+            };
+
+            return $panel;
+        },
+
+        /**
+         * Clear all panels
+         */
+        removeAllPanels: function(args) {
+            $('div.panel').stop(); // Prevent destroyed panels from animating
+            this.element.find('div.panel').remove();
+            $('#breadcrumbs').find('ul li').remove();
+            $('#breadcrumbs').find('ul div.end').remove();
+        }
+    });
+
+    $('#breadcrumbs li').live('click', cloudStack.ui.event.bind(
+        'cloudBrowser', {
+            'breadcrumb': function($target, $browser, data) {
+
+                if ($('#browser').hasClass('panel-highlight')) {
+                    return false;
+                }
+
+                $browser.cloudBrowser('selectPanel', {
+                    panel: data.panel
+                });
+            }
+        }
+    ));
+
+    // Breadcrumb hovering
+    $('#breadcrumbs li').live('mouseover', cloudStack.ui.event.bind(
+        'cloudBrowser', {
+            'breadcrumb': function($target, $browser, data) {
+                var $hiddenPanels = data.panel.siblings().filter(function() {
+                    return $(this).index() > data.panel.index();
+                });
+                var $targetPanel = data.panel.filter(':first');
+                var $targetBreadcrumb = _breadcrumb.filter($targetPanel);
+                var $panelWrapper = $('<div>').addClass('panel panel-highlight-wrapper');
+
+                $hiddenPanels.addClass('mouseover-hidden');
+
+                $browser.data('browser-panel-highlight-timer', setTimeout(function() {
+                    $('#browser').addClass('panel-highlight');
+                    $('.overlay').remove();
+
+                    // Setup panel and wrapper positioning
+                    $panelWrapper
+                        .css({
+                            left: $targetPanel.position().left
+                        })
+                        .width($targetPanel.width());
+                    $targetPanel
+                        .wrap($panelWrapper);
+                    $panelWrapper
+                        .zIndex(10000)
+                        .overlay();
+                    $targetPanel.filter(':last').addClass('highlighted');
+
+                    // Setup breadcrumbs
+                    $targetBreadcrumb.each(function() {
+                        $(this).data('breadcrumb-original-zindex', $(this).zIndex());
+                    });
+                    $targetBreadcrumb.zIndex(10001);
+
+                    $hiddenPanels.hide();
+                }, 1000));
+            }
+        }
+    ));
+
+    $('#breadcrumbs li').live('mouseout', cloudStack.ui.event.bind(
+        'cloudBrowser', {
+            'breadcrumb': function($target, $browser, data) {
+                var $getHiddenPanels = $browser.find('.panel.mouseover-hidden');
+                var $visiblePanels = $getHiddenPanels.siblings();
+                var $visibleBreadcrumbs = _breadcrumb.filter($visiblePanels);
+
+                clearTimeout($browser.data('browser-panel-highlight-timer'));
+                $('#browser').removeClass('panel-highlight');
+                $('#browser .panel').removeClass('highlighted');
+                $('#browser .panel.panel-highlight-wrapper').each(function() {
+                    var $wrapper = $(this);
+                    var $panel = $wrapper.find('.panel');
+
+                    $wrapper.after($panel);
+                    $wrapper.remove();
+                });
+                $getHiddenPanels.removeClass('mouseover-hidden').show();
+                $visibleBreadcrumbs.each(function() {
+                    $(this).zIndex($(this).data('breadcrumb-original-zindex'));
+                });
+                $('.overlay').remove();
+                $('#browser .panel > .highlight-arrow').remove();
+            }
+        }
+    ));
 })(jQuery, cloudStack);

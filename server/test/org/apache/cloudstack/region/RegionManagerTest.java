@@ -22,7 +22,9 @@ import junit.framework.Assert;
 import junit.framework.TestCase;
 
 import org.apache.cloudstack.api.command.admin.domain.DeleteDomainCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.dao.RegionDao;
+
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,7 +32,6 @@ import org.mockito.Mockito;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 
 

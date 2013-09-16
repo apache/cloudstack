@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -21,6 +21,8 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.DataCenterDao;
@@ -30,9 +32,9 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.State;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -64,9 +66,11 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject
     VlanDao _vlanDao;
     @Inject
-    NetworkManager _networkMgr;
+    NetworkOrchestrationService _networkMgr;
     @Inject
     IPAddressDao _ipAddressDao;
+    @Inject
+    IpAddressManager _ipAddrMgr;
 
     private static final TrafficType[] _trafficTypes = {TrafficType.Public};
 
@@ -107,15 +111,15 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         super();
     }
 
-    protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network) throws InsufficientVirtualNetworkCapcityException,
+    protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile vm, Network network) throws InsufficientVirtualNetworkCapcityException,
     InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null) {
-            PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), VlanType.VirtualNetwork, null, null, false);
+            PublicIp ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), VlanType.VirtualNetwork, null, null, false);
             nic.setIp4Address(ip.getAddress().toString());
             nic.setGateway(ip.getGateway());
             nic.setNetmask(ip.getNetmask());
             nic.setIsolationUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
-            nic.setBroadcastUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
+            nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
             nic.setBroadcastType(BroadcastDomainType.Vlan);
             nic.setFormat(AddressFormat.Ip4);
             nic.setReservationId(String.valueOf(ip.getVlanTag()));
@@ -136,11 +140,11 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) 
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm)
             throws InsufficientVirtualNetworkCapcityException,
     InsufficientAddressCapacityException, ConcurrentOperationException {
 
-        DataCenter dc = _dcDao.findById(network.getDataCenterId());       
+        DataCenter dc = _dcDao.findById(network.getDataCenterId());
 
         if (nic != null && nic.getRequestedIpv4() != null) {
             throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
@@ -164,7 +168,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
+    public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null) {
             getIp(nic, dest.getDataCenter(), vm, network);
@@ -172,7 +176,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
+    public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
         return true;
     }
 
@@ -183,7 +187,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override @DB
-    public void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
+    public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("public network deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIp4Address());
         }
@@ -194,7 +198,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             Transaction txn = Transaction.currentTxn();
             txn.start();
 
-            _networkMgr.markIpAsUnavailable(ip.getId());
+            _ipAddrMgr.markIpAsUnavailable(ip.getId());
             _ipAddressDao.unassignIpAddress(ip.getId());
 
             txn.commit();
@@ -211,7 +215,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public boolean trash(Network network, NetworkOffering offering, Account owner) {
+    public boolean trash(Network network, NetworkOffering offering) {
         return true;
     }
 

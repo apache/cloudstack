@@ -18,6 +18,29 @@
 
 # @VERSION@
 
+do_ilb_if_ilb () {
+  local typ=""
+  local pattern="type=(.*)"
+
+  for keyval in $(cat /var/cache/cloud/cmdline)
+  do    
+     if [[ $keyval =~ $pattern ]]; then      
+        typ=${BASH_REMATCH[1]}; 
+     fi 
+  done
+  if [ "$typ" == "ilbvm" ]
+  then
+     logger -t cloud "$(basename $0): Detected that we are running in an internal load balancer vm"
+     $(dirname $0)/ilb.sh "$@"
+     exit $?
+  fi
+
+}
+
+logger -t cloud "$(basename $0): Entering $(dirname $0)/$(basename $0)"
+
+do_ilb_if_ilb "$@"
+
 source /root/func.sh
 source /opt/cloud/bin/vpc_func.sh
 

@@ -52,4 +52,5 @@ public class EventCategory {
     public static final EventCategory ALERT_EVENT  = new EventCategory("AlertEvent");
     public static final EventCategory USAGE_EVENT  = new EventCategory("UsageEvent");
     public static final EventCategory RESOURCE_STATE_CHANGE_EVENT = new EventCategory("ResourceStateEvent");
+    public static final EventCategory ASYNC_JOB_CHANGE_EVENT = new EventCategory("AsyncJobEvent");
 }

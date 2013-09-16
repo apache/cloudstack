@@ -17,19 +17,20 @@
 package org.apache.cloudstack.api.command.admin.host;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "reconnectHost", description="Reconnects a host.", responseObject=HostResponse.class)
 public class ReconnectHostCmd extends BaseAsyncCmd {
@@ -68,7 +69,7 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
+        Account account = CallContext.current().getCallingAccount();
         if (account != null) {
             return account.getId();
         }
@@ -86,8 +87,8 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
         return  "reconnecting host: " + getId();
     }
 
-    public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Host;
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.Host;
     }
 
     public Long getInstanceId() {

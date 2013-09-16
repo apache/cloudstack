@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -67,8 +67,9 @@ getVMPassword=15
 restoreVirtualMachine=15
 changeServiceForVirtualMachine=15
 scaleVirtualMachine=15
-assignVirtualMachine=1
+assignVirtualMachine=7
 migrateVirtualMachine=1
+migrateVirtualMachineWithVolume=1
 recoverVirtualMachine=7
 
 #### snapshot commands
@@ -124,6 +125,11 @@ listDiskOfferings=15
 createVlanIpRange=1
 deleteVlanIpRange=1
 listVlanIpRanges=1
+dedicatePublicIpRange=1
+releasePublicIpRange=1
+dedicateGuestVlanRange=1
+releaseDedicatedGuestVlanRange=1
+listDedicatedGuestVlanRanges=1
 
 #### address commands
 associateIpAddress=15
@@ -199,13 +205,14 @@ destroySystemVm=1
 listSystemVms=3
 migrateSystemVm=1
 changeServiceForSystemVm=1
+scaleSystemVm=1
 
 #### configuration commands
 updateConfiguration=1
 listConfigurations=1
-ldapConfig=1
-ldapRemove=1
 listCapabilities=15
+listDeploymentPlanners=1
+cleanVMReservations=1
 
 #### pod commands
 createPod=1
@@ -241,6 +248,14 @@ listSwifts=1
 addS3=1
 listS3s=1
 
+#### image store commands
+addImageStore=1
+listImageStores=1
+deleteImageStore=1
+createSecondaryStagingStore=1
+listSecondaryStagingStores=1
+deleteSecondaryStagingStore=1
+
 #### host commands
 addHost=3
 addCluster=1
@@ -252,8 +267,15 @@ deleteHost=3
 prepareHostForMaintenance=1
 cancelHostMaintenance=1
 listHosts=3
+findHostsForMigration=1
 addSecondaryStorage=1
 updateHostPassword=1
+releaseHostReservation=1
+
+#### VmWare DC
+addVmwareDc=1
+removeVmwareDc=1
+listVmwareDcs=1
 
 #### volume commands
 attachVolume=15
@@ -265,6 +287,7 @@ listVolumes=15
 extractVolume=15
 migrateVolume=15
 resizeVolume=15
+updateVolume=1
 
 #### registration command:  FIXME -- this really should be something in management server that
 ####                                 generates a new key for the user and they just have to
@@ -286,6 +309,7 @@ deleteStoragePool=1
 listClusters=3
 enableStorageMaintenance=1
 cancelStorageMaintenance=1
+findStoragePoolsForMigration=1
 
 #### security group commands
 createSecurityGroup=15
@@ -360,12 +384,12 @@ listProjectInvitations=15
 updateProjectInvitation=15
 deleteProjectInvitation=15
 
-#### 
+####
 createFirewallRule=15
 deleteFirewallRule=15
 listFirewallRules=15
 
-#### 
+####
 createEgressFirewallRule=15
 deleteEgressFirewallRule=15
 listEgressFirewallRules=15
@@ -425,8 +449,14 @@ deletePrivateGateway=1
 
 #### Network ACL commands
 createNetworkACL=15
+updateNetworkACLItem=15
 deleteNetworkACL=15
 listNetworkACLs=15
+createNetworkACLList=15
+deleteNetworkACLList=15
+replaceNetworkACLList=15
+listNetworkACLLists=15
+
 
 #### Static route commands
 createStaticRoute=15
@@ -437,6 +467,11 @@ listStaticRoutes=15
 createTags=15
 deleteTags=15
 listTags=15
+
+#### Meta Data commands
+addResourceDetail=1
+removeResourceDetail=1
+listResourceDetails=1
 
 ### Site-to-site VPN commands
 createVpnCustomerGateway=15
@@ -564,7 +599,82 @@ removeFromGlobalLoadBalancerRule=15
 listVMSnapshot=15
 createVMSnapshot=15
 deleteVMSnapshot=15
-revertToSnapshot=15
+revertToVMSnapshot=15
 
 #### Baremetal commands
 addBaremetalHost=1
+addBaremetalPxeKickStartServer=1
+addBaremetalPxePingServer=1
+addBaremetalDhcp=1
+listBaremetalDhcp=1
+listBaremetalPxeServers=1
+
+#### UCS commands
+addUcsManager=1
+listUcsManagers=1
+listUcsProfiles=1
+listUcsBlades=1
+associateUcsProfileToBlade=1
+removedeleteUcsManager=1
+
+#### New Load Balancer commands
+createLoadBalancer=15
+listLoadBalancers=15
+deleteLoadBalancer=15
+
+#Internal Load Balancer Element commands
+configureInternalLoadBalancerElement=7
+createInternalLoadBalancerElement=7
+listInternalLoadBalancerElements=7
+
+
+#### Affinity group commands
+createAffinityGroup=15
+deleteAffinityGroup=15
+listAffinityGroups=15
+updateVMAffinityGroup=15
+listAffinityGroupTypes=15
+
+#### Cisco Vnmc commands
+addCiscoVnmcResource=1
+deleteCiscoVnmcResource=1
+listCiscoVnmcResources=1
+
+#### Cisco Asa1000v commands
+addCiscoAsa1000vResource=1
+deleteCiscoAsa1000vResource=1
+listCiscoAsa1000vResources=1
+
+#### portable public IP commands
+createPortableIpRange=1
+deletePortableIpRange=1
+listPortableIpRanges=1
+
+#### Internal LB VM commands
+stopInternalLoadBalancerVM=1
+startInternalLoadBalancerVM=1
+listInternalLoadBalancerVMs=1
+
+### Network Isolation methods listing
+listNetworkIsolationMethods=1
+
+#### Dedicated Resource commands
+dedicateZone=1
+dedicatePod=1
+dedicateCluster=1
+dedicateHost=1
+releaseDedicatedZone=1
+releaseDedicatedPod=1
+releaseDedicatedCluster=1
+releaseDedicatedHost=1
+listDedicatedZones=1
+listDedicatedPods=1
+listDedicatedClusters=1
+listDedicatedHosts=1
+
+### LDAP
+listLdapConfigurations=15
+addLdapConfiguration=3
+deleteLdapConfiguration=3
+listLdapUsers=3
+ldapCreateAccount=3

@@ -21,9 +21,9 @@ package org.apache.cloudstack.framework.sampleserver;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.framework.eventbus.EventBus;
-import org.apache.cloudstack.framework.eventbus.EventDispatcher;
-import org.apache.cloudstack.framework.eventbus.EventHandler;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
+import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.framework.rpc.RpcProvider;
 import org.apache.cloudstack.framework.rpc.RpcServerCall;
 import org.apache.cloudstack.framework.rpc.RpcServiceDispatcher;
@@ -36,7 +36,7 @@ public class SampleManagerComponent2 {
     private static final Logger s_logger = Logger.getLogger(SampleManagerComponent2.class);
 	
 	@Inject
-	private EventBus _eventBus;
+	private MessageBus _eventBus;
 
 	@Inject
 	private RpcProvider _rpcProvider;
@@ -51,7 +51,7 @@ public class SampleManagerComponent2 {
 			
 		// subscribe to all network events (for example)
 		_eventBus.subscribe("storage", 
-			EventDispatcher.getDispatcher(this));
+			MessageDispatcher.getDispatcher(this));
 	}
 	
 	@RpcServiceHandler(command="StoragePrepare")
@@ -66,7 +66,7 @@ public class SampleManagerComponent2 {
 		call.completeCall(answer);
 	}
 	
-	@EventHandler(topic="storage.prepare")
+	@MessageHandler(topic="storage.prepare")
 	void onPrepareNetwork(String sender, String topic, Object args) {
 	}
 	

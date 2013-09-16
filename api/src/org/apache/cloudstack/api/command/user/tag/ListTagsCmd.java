@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 
-@APICommand(name = "listTags", description = "List resource tag(s)", responseObject = ResourceTagResponse.class, since = "Burbank")
+@APICommand(name = "listTags", description = "List resource tag(s)", responseObject = ResourceTagResponse.class, since = "4.0.0")
 public class ListTagsCmd extends BaseListProjectAndAccountResourcesCmd{
     private static final String s_name = "listtagsresponse";
 

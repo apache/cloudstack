@@ -56,7 +56,7 @@ public interface VpcGateway extends Identity, ControlledEntity, InternalIdentity
     /**
      * @return
      */
-    Long getNetworkId();
+    long getNetworkId();
 
     /**
      * @return
@@ -77,4 +77,13 @@ public interface VpcGateway extends Identity, ControlledEntity, InternalIdentity
      * @return
      */
     State getState();
+    /**
+     * @return
+     */
+    boolean getSourceNat();
+
+    /**
+     * @return
+     */
+    long getNetworkACLId();
 }

@@ -51,4 +51,7 @@ public interface TaggedResourceService {
     boolean deleteTags(List<String> resourceIds, TaggedResourceType resourceType, Map<String, String> tags);
 
     List<? extends ResourceTag> listByResourceTypeAndId(TaggedResourceType type, long resourceId);
-}
+
+    public Long getResourceId(String resourceId, TaggedResourceType resourceType);
+
+    }

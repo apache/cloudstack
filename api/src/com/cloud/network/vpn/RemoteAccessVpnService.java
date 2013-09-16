@@ -29,10 +29,11 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
 public interface RemoteAccessVpnService {
+    static final String RemoteAccessVpnClientIpRangeCK = "remote.access.vpn.client.iprange";
 
     RemoteAccessVpn createRemoteAccessVpn(long vpnServerAddressId, String ipRange, boolean openFirewall, long networkId)
             throws NetworkRuleConflictException;
-    void destroyRemoteAccessVpn(long vpnServerAddressId, Account caller) throws ResourceUnavailableException;
+    void destroyRemoteAccessVpnForIp(long vpnServerAddressId, Account caller) throws ResourceUnavailableException;
     RemoteAccessVpn startRemoteAccessVpn(long vpnServerAddressId, boolean openFirewall) throws ResourceUnavailableException;
 
     VpnUser addVpnUser(long vpnOwnerId, String userName, String password);

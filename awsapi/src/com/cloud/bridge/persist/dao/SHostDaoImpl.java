@@ -42,8 +42,8 @@ public class SHostDaoImpl extends GenericDaoBase<SHostVO, Long> implements SHost
     		SearchCriteria<SHostVO> sc = HostSearch.create();
     		sc.setParameters("Host", host);
     		return findOneBy(sc);
-		
-	    }finally {
+        } finally {
+            txn.commit();
 	        txn.close();
 	    }
 	    
@@ -62,8 +62,8 @@ public class SHostDaoImpl extends GenericDaoBase<SHostVO, Long> implements SHost
             sc.setParameters("MHostID", mhostId);
             sc.setParameters("ExportRoot", storageRoot);
             return findOneBy(sc);
-		
-	    }finally {
+        } finally {
+            txn.commit();
             txn.close();
 	    }	
 	}

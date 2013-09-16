@@ -23,9 +23,139 @@
 -->
 
 <section id="over-provisioning-service-offering-limits">
-    <title>Over-Provisioning and Service Offering Limits</title>
-    <para>&PRODUCT; performs CPU over-provisioning based on an over-provisioning ratio configured by the administrator.  This is defined by the cpu.overprovisioning.factor global configuration variable.</para>
-    <para>&PRODUCT; performs CPU over-provisioning based on an over-provisioning ratio configured by the administrator.  This is defined by the cpu.overprovisioning.factor global configuration variable</para>
-    <para>Service offerings limits (e.g. 1 GHz, 1 core) are strictly enforced for core count.  For example, a guest with a service offering of one core will have only one core available to it regardless of other activity on the Host.  </para>
+  <title>Over-Provisioning and Service Offering Limits</title>
+  <para>(Supported for XenServer, KVM, and VMware)</para>
+  <para>CPU and memory (RAM) over-provisioning factors can be set for each cluster to change the
+    number of VMs that can run on each host in the cluster. This helps optimize the use of
+    resources. By increasing the over-provisioning ratio, more resource capacity will be used. If
+    the ratio is set to 1, no over-provisioning is done.</para>
+  <para>The administrator can also set global default over-provisioning ratios
+    in the cpu.overprovisioning.factor and mem.overprovisioning.factor global configuration variables.
+    The default value of these variables is 1: over-provisioning is turned off by default.
+  </para>
+  <para>Over-provisioning ratios are dynamically substituted in &PRODUCT;'s capacity
+    calculations. For example: </para>
+  <para>Capacity = 2 GB</para>
+  <para>Over-provisioning factor = 2</para>
+  <para>Capacity after over-provisioning = 4 GB</para>
+  <para>With this configuration, suppose you deploy 3 VMs of 1 GB each:</para>
+  <para>Used = 3 GB</para>
+  <para>Free = 1 GB</para>
+  <para>The administrator can specify a memory over-provisioning ratio, and can specify both CPU and
+    memory over-provisioning ratios on a per-cluster basis.</para>
+  <para>In any given cloud, the optimum number of VMs for each host is affected by such things as
+    the hypervisor, storage, and hardware configuration. These may be different for each cluster in
+    the same cloud. A single global over-provisioning setting can not provide the best utilization
+    for all the different clusters in the cloud. It has to be set for the lowest common denominator.
+    The per-cluster setting provides a finer granularity for better utilization of resources, no
+    matter where the &PRODUCT; placement algorithm decides to place a VM.</para>
+  <para>The overprovisioning settings can be used along with dedicated resources (assigning a
+    specific cluster to an account) to effectively offer different levels of service to
+    different accounts. For example, an account paying for a more expensive level of service
+    could be assigned to a dedicated cluster with an over-provisioning ratio of 1, and a
+    lower-paying account to a cluster with a ratio of 2.</para>
+  <para>When a new host is added to a cluster, &PRODUCT; will assume the host has the
+    capability to perform the CPU and RAM over-provisioning which is configured for that
+    cluster. It is up to the administrator to be sure the host is actually suitable for the
+    level of over-provisioning which has been set.</para>
+  <section id="overcommit-limitations">
+    <title>Limitations on Over-Provisioning in XenServer and KVM</title>
+    <itemizedlist>
+      <listitem><para>In XenServer, due to a constraint of this hypervisor, you can not use an
+        over-provisioning factor greater than 4.</para></listitem>
+      <listitem><para>The KVM hypervisor can not manage memory allocation to VMs dynamically.
+        &PRODUCT; sets the minimum and maximum amount of memory that a VM can use.
+        The hypervisor adjusts the memory within the set limits based on the memory contention.</para></listitem>
+    </itemizedlist>    
+  </section>
+  <section id="overcommit-prerequisites">
+    <title>Requirements for Over-Provisioning</title>
+    <para>Several prerequisites are required in order for over-provisioning to function
+      properly. The feature is dependent on the OS type, hypervisor capabilities, and certain
+      scripts. It is the administrator's responsibility to ensure that these requirements are
+      met.</para>
+    <section id="balloon-driver">
+      <title>Balloon Driver</title>
+      <para>All VMs should have a balloon driver installed in them. The hypervisor
+        communicates with the balloon driver to free up and make the memory available to a
+        VM.</para>
+      <formalpara>
+        <title>XenServer</title>
+        <para>The balloon driver can be found as a part of xen pv or PVHVM drivers. The xen
+          pvhvm drivers are included in upstream linux kernels 2.6.36+.</para>
+      </formalpara>
+      <formalpara>
+        <title>VMware</title>
+        <para>The balloon driver can be found as a part of the VMware tools. All the VMs that
+          are deployed in a over-provisioned cluster should have the VMware tools
+          installed.</para>
+      </formalpara>
+      <formalpara>
+        <title>KVM</title>
+        <para>All VMs are required to support the virtio drivers. These drivers are installed
+          in all Linux kernel versions 2.6.25 and greater. The administrator must set
+          CONFIG_VIRTIO_BALLOON=y in the virtio configuration. </para>
+      </formalpara>
+    </section>
+    <section id="memory-ballooning">
+      <title>Hypervisor capabilities</title>
+      <para>The hypervisor must be capable of using the memory ballooning.</para>
+      <formalpara>
+        <title>XenServer</title>
+        <para>The DMC (Dynamic Memory Control) capability of the hypervisor should be enabled.
+          Only XenServer Advanced and above versions have this feature.</para>
+      </formalpara>
+      <formalpara>
+        <title>VMware, KVM</title>
+        <para>Memory ballooning is supported by default.</para>
+      </formalpara>
+    </section>
+  </section>
+  <section id="create-overcommit">
+    <title>Setting Over-Provisioning Ratios</title>
+    <para>There are two ways the root admin can set CPU and RAM over-provisioning ratios. First, the
+      global configuration settings cpu.overprovisioning.factor and mem.overprovisioning.factor will
+      be applied when a new cluster is created. Later, the ratios can be modified for an existing
+      cluster.</para>
+    <para>Only VMs deployed after the change are affected by the new setting.
+      If you want VMs deployed before the change to adopt the new over-provisioning ratio,
+      you must stop and restart the VMs.
+      When this is done, &PRODUCT; recalculates or scales the used and 
+      reserved capacities based on the new over-provisioning ratios,
+      to ensure that &PRODUCT; is correctly tracking the amount of free capacity.</para>
+    <note><para>It is safer not to deploy additional new VMs while the capacity recalculation is underway, in
+      case the new values for available capacity are not high enough to accommodate the new VMs.
+      Just wait for the new used/available values to become available, to be sure there is room
+      for all the new VMs you want.</para></note>
+    <para>To change the over-provisioning ratios for an existing cluster:</para>
+    <orderedlist>
+      <listitem>
+        <para>Log in as administrator to the &PRODUCT; UI.</para>
+      </listitem>
+      <listitem>
+        <para>In the left navigation bar, click Infrastructure.</para>
+      </listitem>
+      <listitem>
+        <para>Under Clusters, click View All.</para>
+      </listitem>
+      <listitem>
+        <para>Select the cluster you want to work with, and click the Edit button.</para>
+      </listitem>
+      <listitem>
+        <para>Fill in your desired over-provisioning multipliers in the fields CPU overcommit
+          ratio and RAM overcommit ratio. The value which is intially shown in these
+          fields is the default value inherited from the global configuration settings.
+        </para>
+        <note>
+          <para>In XenServer, due to a constraint of this hypervisor, you can not use an
+            over-provisioning factor greater than 4.</para>
+        </note>
+      </listitem>
+    </orderedlist>
+  </section>
+  <section id="op-service-offering-limits">
+    <title>Service Offering Limits and Over-Provisioning</title>
+    <para>Service offering   limits (e.g. 1 GHz, 1 core) are strictly enforced for core count.  For example, a guest with a service offering of one core will have only one core available to it regardless of other activity on the Host.  </para>
     <para>Service offering limits for gigahertz are enforced only in the presence of contention for CPU resources.  For example, suppose that a guest was created with a service offering of 1 GHz on a Host that has 2 GHz cores, and that guest is the only guest running on the Host.  The guest will have the full 2 GHz available to it.  When multiple guests are attempting to use the CPU a weighting factor is used to schedule CPU resources.  The weight is based on the clock speed in the service offering.  Guests receive a CPU allocation that is proportionate to the GHz in the service offering.   For example, a guest created from a 2 GHz service offering will receive twice the CPU allocation as a guest created from a 1 GHz service offering. &PRODUCT; does not perform memory over-provisioning.</para>
-    </section>     
+  </section>
+</section>

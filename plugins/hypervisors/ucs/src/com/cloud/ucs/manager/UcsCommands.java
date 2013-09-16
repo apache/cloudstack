@@ -5,16 +5,16 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-// 
+//
 package com.cloud.ucs.manager;
 
 import com.cloud.utils.xmlobject.XmlObject;
@@ -26,7 +26,15 @@ public class UcsCommands {
         cmd.putElement("inPassword", password);
         return cmd.dump();
     }
-    
+
+    public static String refreshCmd(String username, String password, String cookie) {
+        XmlObject cmd = new XmlObject("aaaRefresh");
+        cmd.putElement("inName", username);
+        cmd.putElement("inPassword", password);
+        cmd.putElement("inCookie", cookie);
+        return cmd.dump();
+    }
+
     public static String listComputeBlades(String cookie) {
         XmlObject cmd = new XmlObject("configResolveClass");
         cmd.putElement("classId", "computeBlade");
@@ -34,14 +42,14 @@ public class UcsCommands {
         cmd.putElement("inHierarchical", "false");
         return cmd.dump();
     }
-    
+
     public static String listProfiles(String cookie) {
         XmlObject cmd = new XmlObject("configFindDnsByClassId");
         cmd.putElement("classId", "lsServer");
         cmd.putElement("cookie", cookie);
         return cmd.dump();
     }
-    
+
     public static String cloneProfile(String cookie, String srcDn, String newProfileName) {
         XmlObject cmd = new XmlObject("lsClone");
         cmd.putElement("cookie", cookie);
@@ -51,16 +59,16 @@ public class UcsCommands {
         cmd.putElement("inHierarchical", "false");
         return cmd.dump();
     }
-    
+
     public static String configResolveDn(String cookie, String dn) {
         XmlObject cmd = new XmlObject("configResolveDn");
         cmd.putElement("cookie", cookie);
         cmd.putElement("dn", dn);
         return cmd.toString();
     }
-    
+
     public static String associateProfileToBlade(String cookie, String profileDn, String bladeDn) {
-        XmlObject cmd = new XmlObject("configConfMos").putElement("inHierarchical", "true").putElement(
+        XmlObject cmd = new XmlObject("configConfMos").putElement("cookie", cookie).putElement("inHierarchical", "true").putElement(
                 "inConfigs", new XmlObject("inConfigs").putElement(
                         "pair", new XmlObject("pair").putElement("key", profileDn).putElement(
                                 "lsServer", new XmlObject("lsServer")
@@ -94,7 +102,7 @@ public class UcsCommands {
                                 )
                         )
                 );
-        
+
         return cmd.dump();
     }
 }

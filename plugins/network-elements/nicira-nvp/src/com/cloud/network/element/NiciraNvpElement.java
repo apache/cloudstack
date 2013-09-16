@@ -28,9 +28,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.ConfigurePortForwardingRulesOnLogicalRouterAnswer;
@@ -74,11 +76,11 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.IpAddress;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -117,13 +119,12 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 
 @Component
-@Local(value = {NetworkElement.class, ConnectivityProvider.class, 
-        SourceNatServiceProvider.class, StaticNatServiceProvider.class, 
+@Local(value = {NetworkElement.class, ConnectivityProvider.class,
+        SourceNatServiceProvider.class, StaticNatServiceProvider.class,
         PortForwardingServiceProvider.class, IpDeployer.class} )
 public class NiciraNvpElement extends AdapterBase implements
 ConnectivityProvider, SourceNatServiceProvider,
@@ -134,20 +135,20 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
-    @Inject 
+    @Inject
     NicDao _nicDao;
-    @Inject 
-    ResourceManager _resourceMgr;    
+    @Inject
+    ResourceManager _resourceMgr;
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;
     @Inject
     PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
     @Inject
     NiciraNvpDao _niciraNvpDao;
-    @Inject 
+    @Inject
     HostDetailsDao _hostDetailsDao;
     @Inject
-    HostDao _hostDao;  
+    HostDao _hostDao;
     @Inject
     AgentManager _agentMgr;
     @Inject
@@ -157,7 +158,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
     @Inject
     NetworkDao _networkDao;
     @Inject
-    NetworkManager _networkManager;
+    NetworkOrchestrationService _networkManager;
     @Inject
     NetworkModel _networkModel;
     @Inject
@@ -166,6 +167,8 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
     NetworkServiceMapDao _ntwkSrvcDao;
     @Inject
     VlanDao _vlanDao;
+    @Inject
+    IpAddressManager _ipAddrMgr;
 
     @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
@@ -199,7 +202,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
             return false;
         }
 
-        return true;        
+        return true;
     }
 
     @Override
@@ -259,7 +262,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
                 network.getId(), Service.SourceNat, Provider.NiciraNvp)) {
             s_logger.debug("Apparently we are supposed to provide SourceNat on this network");
 
-            PublicIp sourceNatIp = _networkManager
+            PublicIp sourceNatIp = _ipAddrMgr
                     .assignSourceNatIpAddressToGuestNetwork(owner, network);
             String publicCidr = sourceNatIp.getAddress().addr() + "/"
                     + NetUtils.getCidrSize(sourceNatIp.getVlanNetmask());
@@ -270,7 +273,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
 
             CreateLogicalRouterCommand cmd = new CreateLogicalRouterCommand(
                     niciraNvpHost.getDetail("l3gatewayserviceuuid"), vlanid,
-                    network.getBroadcastUri().getSchemeSpecificPart(),
+                    BroadcastDomainType.getValue(network.getBroadcastUri()),
                     "router-" + network.getDisplayText(), publicCidr,
                     sourceNatIp.getGateway(), internalCidr, context
                     .getDomain().getName()
@@ -296,7 +299,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
 
     @Override
     public boolean prepare(Network network, NicProfile nic,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             DeployDestination dest, ReservationContext context)
                     throws ConcurrentOperationException, ResourceUnavailableException,
                     InsufficientCapacityException {
@@ -336,8 +339,8 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
                         + nic.getName() + " with uuid "
                         + existingNicMap.getLogicalSwitchPortUuid());
                 UpdateLogicalSwitchPortCommand cmd = new UpdateLogicalSwitchPortCommand(
-                        existingNicMap.getLogicalSwitchPortUuid(), network
-                        .getBroadcastUri().getSchemeSpecificPart(),
+                        existingNicMap.getLogicalSwitchPortUuid(),
+                        BroadcastDomainType.getValue(network.getBroadcastUri()),
                         nicVO.getUuid(), context.getDomain().getName() + "-"
                                 + context.getAccount().getAccountName(),
                                 nic.getName());
@@ -352,7 +355,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
         }
 
         CreateLogicalSwitchPortCommand cmd = new CreateLogicalSwitchPortCommand(
-                network.getBroadcastUri().getSchemeSpecificPart(),
+                BroadcastDomainType.getValue(network.getBroadcastUri()),
                 nicVO.getUuid(), context.getDomain().getName() + "-"
                         + context.getAccount().getAccountName(), nic.getName());
         CreateLogicalSwitchPortAnswer answer = (CreateLogicalSwitchPortAnswer) _agentMgr
@@ -363,8 +366,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
             return false;
         }
 
-        NiciraNvpNicMappingVO nicMap = new NiciraNvpNicMappingVO(network
-                .getBroadcastUri().getSchemeSpecificPart(),
+        NiciraNvpNicMappingVO nicMap = new NiciraNvpNicMappingVO(BroadcastDomainType.getValue(network.getBroadcastUri()),
                 answer.getLogicalSwitchPortUuid(), nicVO.getUuid());
         _niciraNvpNicMappingDao.persist(nicMap);
 
@@ -373,7 +375,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
 
     @Override
     public boolean release(Network network, NicProfile nic,
-            VirtualMachineProfile<? extends VirtualMachine> vm,
+            VirtualMachineProfile vm,
             ReservationContext context) throws ConcurrentOperationException,
             ResourceUnavailableException {
 
@@ -629,7 +631,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
             } else {
                 throw new CloudRuntimeException(
                         "Failed to add Nicira Nvp Device due to internal error.");
-            }            
+            }
         } catch (ConfigurationException e) {
             txn.rollback();
             throw new CloudRuntimeException(e.getMessage());
@@ -665,7 +667,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
         if (niciraNvpDevice == null) {
             throw new InvalidParameterValueException(
                     "Could not find a nicira device with id " + niciraDeviceId);
-        }        
+        }
 
         // Find the physical network we work for
         Long physicalNetworkId = niciraNvpDevice.getPhysicalNetworkId();
@@ -736,7 +738,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
         return responseList;
     }
 
-    @Override    
+    @Override
     public List<? extends Network> listNiciraNvpDeviceNetworks(
             ListNiciraNvpDeviceNetworksCmd cmd) {
         Long niciraDeviceId = cmd.getNiciraNvpDeviceId();
@@ -745,7 +747,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
         if (niciraNvpDevice == null) {
             throw new InvalidParameterValueException(
                     "Could not find a nicira device with id " + niciraDeviceId);
-        }        
+        }
 
         // Find the physical network we work for
         Long physicalNetworkId = niciraNvpDevice.getPhysicalNetworkId();
@@ -843,6 +845,11 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
 
             List<String> cidrs = new ArrayList<String>();
             for (PublicIpAddress ip : ipAddress) {
+                if (ip.getState() == IpAddress.State.Releasing) {
+                    // If we are releasing we don't need to push this ip to
+                    // the Logical Router
+                    continue;
+                }
                 cidrs.add(ip.getAddress().addr() + "/" + NetUtils.getCidrSize(ip.getNetmask()));
             }
             ConfigurePublicIpsOnLogicalRouterCommand cmd = new ConfigurePublicIpsOnLogicalRouterCommand(routermapping.getLogicalRouterUuid(),

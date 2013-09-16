@@ -16,21 +16,24 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.swift;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.SwiftResponse;
+import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.DiscoveryException;
-import com.cloud.storage.Swift;
+import com.cloud.storage.ImageStore;
 import com.cloud.user.Account;
 
-@APICommand(name = "addSwift", description = "Adds Swift.", responseObject = HostResponse.class, since="3.0.0")
+@APICommand(name = "addSwift", description = "Adds Swift.", responseObject = ImageStoreResponse.class, since="3.0.0")
 public class AddSwiftCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddSwiftCmd.class.getName());
     private static final String s_name = "addswiftresponse";
@@ -87,21 +90,33 @@ public class AddSwiftCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        try {
-            Swift result = _resourceService.discoverSwift(this);
-            SwiftResponse swiftResponse = null;
-            if (result != null) {
-                swiftResponse = _responseGenerator.createSwiftResponse(result);
-                swiftResponse.setResponseName(getCommandName());
-                swiftResponse.setObjectName("swift");
-                this.setResponseObject(swiftResponse);
+        AddImageStoreCmd cmd = new AddImageStoreCmd() {
+            @Override
+            public Map<String, String> getDetails() {
+                Map<String, String> dm = new HashMap<String, String>();
+                dm.put(ApiConstants.ACCOUNT, getAccount());
+                dm.put(ApiConstants.USERNAME, getUsername());
+                dm.put(ApiConstants.KEY, getKey());
+                return dm;
+            }
+        };
+        cmd.setProviderName("Swift");
+        cmd.setUrl(this.getUrl());
+
+        try{
+            ImageStore result = _storageService.discoverImageStore(cmd);
+            ImageStoreResponse storeResponse = null;
+            if (result != null ) {
+                storeResponse = _responseGenerator.createImageStoreResponse(result);
+                storeResponse.setResponseName(getCommandName());
+                storeResponse.setObjectName("secondarystorage");
+                this.setResponseObject(storeResponse);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Swift");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Swift secondary storage");
             }
         } catch (DiscoveryException ex) {
-            String errMsg = "Failed to add Swift due to " + ex.toString();
-            s_logger.warn(errMsg, ex);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errMsg);
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }
 }
