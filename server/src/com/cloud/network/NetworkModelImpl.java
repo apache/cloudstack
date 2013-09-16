@@ -296,7 +296,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                         ex.addProxyObject(ipAddrUuid, "networkId");
                         throw ex;
                     }
-                }
+               }
                 ipToServices.put(ip, services);
 
                 // if IP in allocating state then it will not have any rules attached so skip IPAssoc to network service
@@ -433,11 +433,15 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         NetworkElement oldElement = getElementImplementingProvider(oldProvider.getName());
         NetworkElement newElement = getElementImplementingProvider(newProvider.getName());
         if (oldElement instanceof IpDeployingRequester && newElement instanceof IpDeployingRequester) {
-            IpDeployer oldIpDeployer = ((IpDeployingRequester)oldElement).getIpDeployer(network);
-            IpDeployer newIpDeployer = ((IpDeployingRequester)newElement).getIpDeployer(network);
-            if (!oldIpDeployer.getProvider().getName().equals(newIpDeployer.getProvider().getName())) {
-                throw new InvalidParameterException("There would be multiple providers for IP " + publicIp.getAddress() + "!");
-            }
+        	IpDeployer oldIpDeployer = ((IpDeployingRequester)oldElement).getIpDeployer(network);
+        	IpDeployer newIpDeployer = ((IpDeployingRequester)newElement).getIpDeployer(network);
+			// if
+			// (!oldIpDeployer.getProvider().getName().equals(newIpDeployer.getProvider().getName()))
+			// {
+			// throw new
+			// InvalidParameterException("There would be multiple providers for IP "
+			// + publicIp.getAddress() + "!");
+			// }
         } else {
             throw new InvalidParameterException("Ip cannot be applied for new provider!");
         }
@@ -517,7 +521,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         SearchCriteria<IPAddressVO> sc = IpAddressSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("associatedWithNetworkId", associatedNetworkId);
-
         if (sourceNat != null) {
             sc.addAnd("sourceNat", SearchCriteria.Op.EQ, sourceNat);
         }
@@ -1885,7 +1888,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(
                 vm.getHypervisorType(), network));
 //        guru.updateNicProfile(profile, network);
-
         return profile;
     }
 
@@ -2010,7 +2012,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                     return PublicIp.createFromAddrAndVlan(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()));
                 }
             }
-
         }
 
         return null;

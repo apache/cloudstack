@@ -262,13 +262,20 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         		_physNetTTDao.findBy(physNetId, TrafficType.Guest);
         HypervisorType hvType = host.getHypervisorType();
 
+        String label = null;
         switch (hvType) {
         	case XenServer:
-        		String label = physNetTT.getXenNetworkLabel();
+        		label = physNetTT.getXenNetworkLabel();
         		if ((label!=null) && (!label.equals(""))) {
         			physNetLabel = label;
         		}
         		break;
+			case KVM:
+				label = physNetTT.getKvmNetworkLabel();
+				if ((label != null) && (!label.equals(""))) {
+					physNetLabel = label;
+				}
+				break;
         	default:
         		throw new CloudRuntimeException("Hypervisor " +
         				hvType.toString() +
@@ -321,9 +328,6 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 
 	@DB
     protected void CheckAndCreateTunnel(VirtualMachine instance, Network nw, DeployDestination dest) {
-		// if (!_isEnabled) {
-		// return;
-		// }
 
 		s_logger.debug("Creating tunnels with OVS tunnel manager");
 		if (instance.getType() != VirtualMachine.Type.User
@@ -436,7 +440,6 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 
 	@Override
 	public boolean isOvsTunnelEnabled() {
-		// return _isEnabled;
 		return true;
 	}
 

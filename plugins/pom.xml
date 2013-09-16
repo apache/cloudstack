@@ -46,6 +46,7 @@
     <module>network-elements/juniper-contrail</module>
     <module>network-elements/palo-alto</module>
     <module>network-elements/nicira-nvp</module>
+<!--     <module>network-elements/odl</module> -->
     <module>network-elements/bigswitch-vns</module>
     <module>network-elements/midonet</module>
     <module>network-elements/stratosphere-ssp</module>

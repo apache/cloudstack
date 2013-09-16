@@ -27,62 +27,22 @@ import os
 import sys
 import subprocess
 import time
-import XenAPIPlugin
-
-sys.path.append("/opt/xensource/sm/")
-import util
 
 from time import localtime as _localtime, asctime as _asctime
 
-xePath = "/opt/xensource/bin/xe"
 lib.setup_logging("/var/log/ovstunnel.log")
 
-
-def block_ipv6_v5(bridge):
-    lib.add_flow(bridge, priority=65000, dl_type='0x86dd', actions='drop')
-
-
-def block_ipv6_v6(bridge):
-    lib.add_flow(bridge, priority=65000, proto='ipv6', actions='drop')
-
-
-block_ipv6_handlers = {
-        '5': block_ipv6_v5,
-        '6': block_ipv6_v6}
-
-
-def echo(fn):
-    def wrapped(*v, **k):
-        name = fn.__name__
-        util.SMlog("#### VMOPS enter  %s ####" % name)
-        res = fn(*v, **k)
-        util.SMlog("#### VMOPS exit  %s ####" % name)
-        return res
-    return wrapped
-
-
-@echo
-def setup_ovs_bridge(session, args):
-    bridge = args.pop("bridge")
-    key = args.pop("key")
-    xs_nw_uuid = args.pop("xs_nw_uuid")
-    cs_host_id = args.pop("cs_host_id")
+def setup_ovs_bridge(bridge, key, cs_host_id):
 
     res = lib.check_switch()
     if res != "SUCCESS":
         return "FAILURE:%s" % res
 
     logging.debug("About to manually create the bridge:%s" % bridge)
-    # create a bridge with the same name as the xapi network
-    # also associate gre key in other config attribute
-    res = lib.do_cmd([lib.VSCTL_PATH, "--", "--may-exist", "add-br", bridge,
-                                     "--", "set", "bridge", bridge,
+    #set gre_key to bridge
+    res = lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge,
                                      "other_config:gre_key=%s" % key])
     logging.debug("Bridge has been manually created:%s" % res)
-    # TODO: Make sure xs-network-uuid is set into external_ids
-    lib.do_cmd([lib.VSCTL_PATH, "set", "Bridge", bridge,
-                            "external_ids:xs-network-uuid=%s" % xs_nw_uuid])
-    # Non empty result means something went wrong
     if res:
         result = "FAILURE:%s" % res
     else:
@@ -93,37 +53,20 @@ def setup_ovs_bridge(session, args):
             result = "SUCCESS:%s" % bridge
         else:
             result = "FAILURE:%s" % res
-        # Finally note in the xenapi network object that the network has
-        # been configured
-        xs_nw_uuid = lib.do_cmd([lib.XE_PATH, "network-list",
-                                "bridge=%s" % bridge, "--minimal"])
-        lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
-                   "other-config:is-ovs-tun-network=True"])
-        conf_hosts = lib.do_cmd([lib.XE_PATH, "network-param-get",
-                                "uuid=%s" % xs_nw_uuid,
-                                "param-name=other-config",
-                                "param-key=ovs-host-setup", "--minimal"])
-        conf_hosts = cs_host_id + (conf_hosts and ',%s' % conf_hosts or '')
-        lib.do_cmd([lib.XE_PATH, "network-param-set", "uuid=%s" % xs_nw_uuid,
-                   "other-config:ovs-host-setup=%s" % conf_hosts])
 
-        # BLOCK IPv6 - Flow spec changes with ovs version
-        # Temporarily no need BLOCK IPv6
-#        host_list_cmd = [lib.XE_PATH, 'host-list', '--minimal']
-#        host_list_str = lib.do_cmd(host_list_cmd)
-#        host_uuid = host_list_str.split(',')[0].strip()
-#        version_cmd = [lib.XE_PATH, 'host-param-get', 'uuid=%s' % host_uuid,
-#                                   'param-name=software-version',
-#                                   'param-key=product_version']
-#        version = lib.do_cmd(version_cmd).split('.')[0]
-#        block_ipv6_handlers[version](bridge)
+	lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge, "other_config:is-ovs-tun-network=True"])
+	#get list of hosts using this bridge
+        conf_hosts = lib.do_cmd([lib.VSCTL_PATH, "get","bridge", bridge,"other_config:ovs-host-setup"])
+	#add cs_host_id to list of hosts using this bridge
+        conf_hosts = cs_host_id + (conf_hosts and ',%s' % conf_hosts or '')
+        lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge,
+                   "other_config:ovs-host-setup=%s" % conf_hosts])
+
     logging.debug("Setup_ovs_bridge completed with result:%s" % result)
     return result
 
+def destroy_ovs_bridge(bridge):
 
-@echo
-def destroy_ovs_bridge(session, args):
-    bridge = args.pop("bridge")
     res = lib.check_switch()
     if res != "SUCCESS":
         return res
@@ -132,25 +75,12 @@ def destroy_ovs_bridge(session, args):
     if res:
         result = "FAILURE:%s" % res
     else:
-        # Note that the bridge has been removed on xapi network object
-        xs_nw_uuid = lib.do_cmd([xePath, "network-list",
-                                "bridge=%s" % bridge, "--minimal"])
-        #FIXME: WOW, this an error
-        #lib.do_cmd([xePath,"network-param-set", "uuid=%s" % xs_nw_uuid,
-        #                  "other-config:ovs-setup=False"])
         result = "SUCCESS:%s" % bridge
 
     logging.debug("Destroy_ovs_bridge completed with result:%s" % result)
     return result
 
-
-@echo
-def create_tunnel(session, args):
-    bridge = args.pop("bridge")
-    remote_ip = args.pop("remote_ip")
-    gre_key = args.pop("key")
-    src_host = args.pop("from")
-    dst_host = args.pop("to")
+def create_tunnel(bridge, remote_ip, gre_key, src_host, dst_host):
 
     logging.debug("Entering create_tunnel")
 
@@ -163,7 +93,7 @@ def create_tunnel(session, args):
     # src and target are enough - consider a fixed length hash
     name = "t%s-%s-%s" % (gre_key, src_host, dst_host)
 
-    # Verify the xapi bridge to be created
+    # Verify the bridge to be created
     # NOTE: Timeout should not be necessary anymore
     wait = [lib.VSCTL_PATH, "--timeout=30", "wait-until", "bridge",
                     bridge, "--", "get", "bridge", bridge, "name"]
@@ -237,11 +167,8 @@ def create_tunnel(session, args):
         # This will not cancel the original exception
         raise
 
+def destroy_tunnel(bridge, iface_name):
 
-@echo
-def destroy_tunnel(session, args):
-    bridge = args.pop("bridge")
-    iface_name = args.pop("in_port")
     logging.debug("Destroying tunnel at port %s for bridge %s"
                             % (iface_name, bridge))
     ofport = get_field_of_interface(iface_name, "ofport")
@@ -249,50 +176,7 @@ def destroy_tunnel(session, args):
     lib.del_port(bridge, iface_name)
     return "SUCCESS"
 
-
 def get_field_of_interface(iface_name, field):
     get_iface_cmd = [lib.VSCTL_PATH, "get", "interface", iface_name, field]
     res = lib.do_cmd(get_iface_cmd)
     return res
-
-def is_xcp(session, args):
-    host_list_cmd = [lib.XE_PATH, 'host-list', '--minimal']
-    host_list_str = lib.do_cmd(host_list_cmd)
-    host_uuid = host_list_str.split(',')[0].strip()
-
-    status, output = commands.getstatusoutput("xe host-param-list uuid="+host_uuid+" | grep platform_name")
-    if (status != 0):
-       return "FALSE"
-
-    platform_cmd = [lib.XE_PATH, 'host-param-get', 'uuid=%s' % host_uuid,
-                               'param-name=software-version',
-                               'param-key=platform_name']
-    platform = lib.do_cmd(platform_cmd).split('.')[0]
-    return platform
-
-def getLabel(session, args):
-    i = 0
-    pif_list_cmd = [lib.XE_PATH, 'pif-list', '--minimal']
-    pif_list_str = lib.do_cmd(pif_list_cmd)
-    while True:
-	pif_uuid = pif_list_str.split(',')[i].strip()
-	network_cmd = [lib.XE_PATH, 'pif-param-get', 'uuid=%s' % pif_uuid, 'param-name=network-uuid']
-	network_uuid = lib.do_cmd(network_cmd).split('.')[0]
-	iface_cmd = [lib.XE_PATH, 'network-param-get', 'uuid=%s' % network_uuid, 'param-name=bridge']
-	iface = lib.do_cmd(iface_cmd)
-	status,output = commands.getstatusoutput("ifconfig "+iface+" | grep inet")
-	if (status != 0):
-		i += 1
-		continue
-    	label_cmd = [lib.XE_PATH, 'network-param-get', 'uuid=%s' % network_uuid, 'param-name=name-label']
-    	label = lib.do_cmd(label_cmd).split('.')[0]
-    	return label
-    return False
-
-if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"create_tunnel": create_tunnel,
-                           "destroy_tunnel": destroy_tunnel,
-                           "setup_ovs_bridge": setup_ovs_bridge,
-                           "destroy_ovs_bridge": destroy_ovs_bridge,
-                           "is_xcp": is_xcp,
-                           "getLabel": getLabel})
