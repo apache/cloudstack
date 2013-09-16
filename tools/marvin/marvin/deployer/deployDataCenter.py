@@ -20,7 +20,7 @@ import logging
 import configGenerator
 from os import path
 from time import sleep
-from cloudstackAPI import *
+from marvin.cloudstackAPI import *
 from optparse import OptionParser
 from marvin import cloudstackTestClient
 from marvin import cloudstackException
