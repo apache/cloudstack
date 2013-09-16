@@ -51,7 +51,7 @@ public class Upgrade410to420 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "4.1.0", "4.2.0" };
+        return new String[] { "4.1.0", "4.1.1" };
     }
 
     @Override

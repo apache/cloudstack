@@ -198,6 +198,20 @@ def preparePING(tftpRootDir):
     if not bashWithResult("mkdir -p %s/pxelinux.cfg"%tftpRootDir): return False
     
     return True
+
+def prepareSyslinux(tftpRootDir):
+    pkg = bash('rpm -ql syslinux | grep "/pxelinux.0$"')
+    if not pkg.isSuccess():
+        printError('cannot find pxelinux.0 on system. is syslinux installed?')
+        return False
+
+    pkg = pkg.getStdout()
+    cp = "cp -f %s %s" % (pkg, tftpRootDir)
+    if not bashWithResult(cp):
+        return False
+
+    return True
+
             
         
 if __name__ == "__main__":
@@ -209,7 +223,8 @@ if __name__ == "__main__":
     exitIfFail(getTftpRootDir(tftpRootDirList))
     
     tftpRootDir = tftpRootDirList[0].strip()
-    exitIfFail(preparePING(tftpRootDir))
+    #exitIfFail(preparePING(tftpRootDir))
+    exitIfFail(prepareSyslinux(tftpRootDir))
     printMsg("")
     printMsg("Setup BareMetal PXE server successfully")
     printMsg("TFTP root directory is: %s\n"%tftpRootDir)
