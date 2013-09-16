@@ -833,33 +833,6 @@ public class LibvirtVMDef {
         }
     }
 
-    public static class CpuModeDef {
-        private String _mode;
-        private String _model;
-
-        public void setMode(String mode) {
-            _mode = mode;
-        }
-
-        public void setModel(String model) {
-            _model = model;
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder modeBuidler = new StringBuilder();
-            if ("custom".equalsIgnoreCase(_mode) && _model != null) {
-                modeBuidler.append("<cpu mode='custom' match='exact'><model fallback='allow'>"
-                            + _model + "</model></cpu>");
-            } else if ("host-model".equals(_mode)) {
-                modeBuidler.append("<cpu mode='host-model'><model fallback='allow'></model></cpu>");
-            } else if ("host-passthrough".equals(_mode)) {
-                modeBuidler.append("<cpu mode='host-passthrough'></cpu>");
-            }
-            return modeBuidler.toString();
-        }
-    }
-
     public static class SerialDef {
         private final String _type;
         private final String _source;
