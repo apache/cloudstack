@@ -1117,7 +1117,7 @@ function listViewDataProvider(args, data) {
     });
 }
 
-//used by infrastruct page and network page
+//used by infrastructure page and network page
 var addExtraPropertiesToGuestNetworkObject = function(jsonObj) {
     jsonObj.networkdomaintext = jsonObj.networkdomain;
     jsonObj.networkofferingidText = jsonObj.networkofferingid;
@@ -1137,6 +1137,13 @@ var addExtraPropertiesToGuestNetworkObject = function(jsonObj) {
     if (jsonObj.vlan == null && jsonObj.broadcasturi != null) {
         jsonObj.vlan = jsonObj.broadcasturi.replace("vlan://", "");
     }
+}
+
+//used by infrastructure page
+var addExtraPropertiesToUcsBladeObject = function(jsonObj) {
+	var array1 = jsonObj.bladedn.split('/');
+	jsonObj.chassis = array1[1];
+	jsonObj.bladeid = array1[2];
 }
 
 //find service object in network object
