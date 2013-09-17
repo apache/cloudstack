@@ -464,7 +464,9 @@ class TestPortForwarding(cloudstackTestCase):
                                             src_nat_ip_addr.ipaddress,
                                             self.virtual_machine.ssh_port,
                                             self.virtual_machine.username,
-                                            self.virtual_machine.password
+                                            self.virtual_machine.password,
+                                            retries=2,
+                                            delay=0
                                             )
         return
 
@@ -580,7 +582,9 @@ class TestPortForwarding(cloudstackTestCase):
                                             ip_address.ipaddress.ipaddress,
                                             self.virtual_machine.ssh_port,
                                             self.virtual_machine.username,
-                                            self.virtual_machine.password
+                                            self.virtual_machine.password,
+                                            retries=2,
+                                            delay=0
                                             )
         return
 
@@ -883,7 +887,9 @@ class TestReleaseIP(cloudstackTestCase):
                                     self.ip_addr.ipaddress,
                                     self.services["natrule"]["publicport"],
                                     self.virtual_machine.username,
-                                    self.virtual_machine.password
+                                    self.virtual_machine.password,
+                                    retries=2,
+                                    delay=0
                                     )
         return
 
