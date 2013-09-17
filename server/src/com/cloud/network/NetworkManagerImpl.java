@@ -2519,6 +2519,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     public boolean isDhcpAccrossMultipleSubnetsSupported(Network network) {
+        if (!_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)) {
+        	return false;
+        }
+    	
         DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
         Map <Network.Capability, String> capabilities = dhcpServiceProvider.getCapabilities().get(Network.Service.Dhcp);
         String supportsMultipleSubnets = capabilities.get(Network.Capability.DhcpAccrossMultipleSubnets);
