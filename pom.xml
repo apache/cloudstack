@@ -86,6 +86,7 @@
     <cs.target.dir>target</cs.target.dir>
     <cs.daemon.version>1.0.10</cs.daemon.version>
     <cs.jna.version>4.0.0</cs.jna.version>
+    <cs.maven.ant.version>1.7</cs.maven.ant.version>
   </properties>
 
   <distributionManagement>

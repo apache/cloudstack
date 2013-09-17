@@ -17,16 +17,16 @@
 
 from marvin.factory.virtualmachine import VirtualMachineFactory
 
-
 class VirtualMachineIsolatedNetwork(VirtualMachineFactory):
     """
-    Create a virtualmachine in an isolated network typically in an advanced zone
+    Creates a virtualmachine in an isolated network typically in an advanced zone inside a user account
 
-    Uses a serviceoffering of tinyInstance
+    Uses a serviceoffering of tinyInstance of the shared storage type
     Uses a builtin template available
     Deploys in the first zone available
     """
 
+    apiclient = None
     serviceofferingid = None
     templateid = None
     zoneid = None

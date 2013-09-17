@@ -15,15 +15,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from marvin.factory.firewallrule import FirewallRuleFactory
+from marvin.factory.firewall import FirewallFactory
 
-class SshFirewallRuleFactory(FirewallRuleFactory):
+class SshFirewallRuleFactory(FirewallFactory):
     protocol = 'tcp'
     startport = 22
     endport = 22
     cidrlist = '0.0.0.0/0'
 
-class HttpFirewallRuleFactory(FirewallRuleFactory):
+class HttpFirewallRuleFactory(FirewallFactory):
     protocol = 'tcp'
     startport = 80
     endport = 80

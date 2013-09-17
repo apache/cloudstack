@@ -87,6 +87,8 @@ def entity_adjust(entity):
     #Cloudstack returns Register entity for registerUserKeys
     elif entity == 'Register':
         return 'UserKeys'
+    elif entity == 'FirewallRule':
+        return 'Firewall'
     #Cloudstack maintains Template/ISO/Volume as single Image type
     #elif entity in ['Template', 'Volume']:
     #    return 'Image'

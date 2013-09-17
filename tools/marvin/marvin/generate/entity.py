@@ -57,13 +57,48 @@ class Entity(object):
         update.body.append(self.tabspace + 'return self')
         return  update
 
+    def creators(self, apis):
+        _creator_list = ['create', 'register', 'deploy']
+        for c in _creator_list:
+            if filter(lambda a: a['apimodule'].startswith(c), apis):
+                return c
+        else:
+            return None
+
+    def special_creators(self, entity):
+        """Entities that do not conform to the regular creator rules
+        """
+        entity = entity.lower()
+        if entity == 'template':
+            return 'registerTemplate'
+        elif entity == 'iso':
+            return 'registerIso'
+        elif entity == 'firewall':
+            return 'createFirewallRule'
+        elif entity == 'ipaddress':
+            return 'associateIpAddress'
+        else:
+            return None
+
+    def find_creator(self, entity, actions):
+        c = self.special_creators(entity)
+        if c:
+            return c
+        c = self.creators(actions.values())
+        if c:
+            return c
+        else:
+            return None
+
     def generate_entity(self, entity, actions):
         self.imports.append('from cloudstackentity import CloudStackEntity')
         self.name = entity
         self.classname = 'class %s(CloudStackEntity):' % entity
+        self.creator = self.find_creator(entity, actions)
         for action, details in actions.iteritems():
             self.imports.append('from marvin.cloudstackAPI import %s' % details['apimodule'])
             m = Method(action)
+            m.creator = self.creator and details['apimodule'].startswith(self.creator)
             self.methods.append(m)
             #TODO: doc to explain what possible args go into **kwargs
             m.docstring = 'Placeholder for docstring\n' + 'optional arguments (**kwargs): [%s]"""' % ', '.join(
@@ -96,7 +131,7 @@ class Entity(object):
                     m.signature = 'def __init__(self, apiclient=None, %s, factory=None, **kwargs):' % (
                     ', '.join(map(lambda arg: arg + '=None', list(set(details['args'])))))
                 else:
-                    m.signature = 'def %s(cls, apiclient, factory=None, **kwargs):' % action
+                    m.signature = 'def __init__(self, apiclient=None, factory=None, **kwargs):'
 
                 m.body.append(self.tabspace + 'self.__update__(kwargs)')
                 m.body.append(self.tabspace + 'if not apiclient:')
@@ -126,6 +161,7 @@ class Method(object):
         self.action = action
         self.docstring = None
         self.signature = None
+        self.creator = False
         self.body = []
 
     def is_creator(self):
@@ -135,9 +171,7 @@ class Method(object):
         @param action: action verb
         @return: True if creator False otherwise
         """
-        if self.action.startswith('create') \
-               or self.action.startswith('register') \
-               or self.action.startswith('deploy'):
+        if self.creator:
             return True
         return False
 

@@ -28,9 +28,12 @@ from marvin.factory.data.template import *
 from marvin.factory.data.user import *
 from marvin.factory.data.networkoffering import *
 from marvin.factory.data.network import *
+from marvin.factory.data.vm import *
+from marvin.factory.data.firewallrule import *
 
 from marvin.factory.virtualmachine import *
 
+from marvin.entity.firewall import Firewall
 from marvin.entity.serviceoffering import ServiceOffering
 from marvin.entity.networkoffering import NetworkOffering
 from marvin.entity.zone import Zone
@@ -39,6 +42,8 @@ from marvin.entity.template import Template
 from marvin.entity.user import User
 from marvin.entity.network import Network
 from marvin.entity.ipaddress import IpAddress
+
+from marvin.util import *
 
 
 class BuildVsCreateStrategyTest(unittest.TestCase):
@@ -229,3 +234,53 @@ class IpAddressFactoryTest(unittest.TestCase):
         networks = Network.list(apiclient=self.apiClient,
             account = accnt.name, domainid = accnt.domainid)
         firstip.associate(apiclient=self.apiClient, networkid = networks[0].id)
+
+
+class FirewallRuleFactoryTest(unittest.TestCase):
+    def setUp(self):
+        self.apiClient = cloudstackTestClient(mgtSvr='localhost',
+            logging=logging.getLogger('factory.cloudstack')).getApiClient()
+
+    def tearDown(self):
+        self.account.delete(apiclient=self.apiClient)
+
+    @attr(tags='firewall')
+    def test_firewallRuleFactoryTest(self):
+        self.account = UserAccountFactory(apiclient=self.apiClient)
+        domainid = get_domain(self.apiClient).id
+        self.account |should| be_instance_of(Account)
+        vm = VirtualMachineFactory(
+            apiclient=self.apiClient,
+            account=self.account.name,
+            domainid=domainid,
+            templateid=get_template(self.apiClient).id,
+            serviceofferingid=get_service_offering(self.apiClient).id,
+            zoneid=get_zone(self.apiClient).id
+        )
+        vm |should| be_instance_of(VirtualMachine)
+        vm.state |should| equal_to('Running')
+        vm.nic |should_not| equal_to(None)
+        vm.nic |should| be_instance_of(list)
+
+        ipaddresses = IpAddress.listPublic(
+            apiclient=self.apiClient,
+            networkid=vm.nic[0].networkid
+        )
+        ipaddresses |should_not| equal_to(None)
+        ipaddresses |should| be_instance_of(list)
+
+        ipaddress = IpAddress(
+            apiclient=self.apiClient,
+            account=self.account.name,
+            domainid=domainid,
+            zoneid=get_zone(self.apiClient).id
+        )
+        ipaddress |should_not| be(None)
+        ipaddress |should| be_instance_of(IpAddress)
+
+        fwrule = SshFirewallRuleFactory(
+            apiclient=self.apiClient,
+            ipaddressid=ipaddress.ipaddress.id
+        )
+        fwrule |should_not| be(None)
+        fwrule |should| be_instance_of(Firewall)
