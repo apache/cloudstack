@@ -27,7 +27,6 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
@@ -94,7 +93,22 @@ public class ActionEventUtils {
 
         return event.getId();
     }
+    
+    public static void startNestedActionEvent(String eventType, String eventDescription) {
+        CallContext.setActionEventInfo(eventType, eventDescription);
+        onStartedActionEventFromContext(eventType, eventDescription);
+    }
 
+    public static void onStartedActionEventFromContext(String eventType, String eventDescription) {
+        CallContext ctx = CallContext.current();
+        long userId = ctx.getCallingUserId();
+        long accountId = ctx.getCallingAccountId();
+        long startEventId = ctx.getStartEventId();
+        
+        if ( ! eventType.equals("") )
+            ActionEventUtils.onStartedActionEvent(userId, accountId, eventType, eventDescription, startEventId);
+    }
+    
     /*
      * Save event after starting execution of an async job
      */

@@ -1979,6 +1979,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CREATE, eventDescription = "creating service offering")
     public ServiceOffering createServiceOffering(CreateServiceOfferingCmd cmd) {
         Long userId = CallContext.current().getCallingUserId();
 
@@ -2079,9 +2080,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getBytesReadRate(), cmd.getBytesWriteRate(), cmd.getIopsReadRate(), cmd.getIopsWriteRate());
     }
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CREATE, eventDescription = "creating service offering")
-    public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_type,
+    protected ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_type,
             String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired,
             boolean offerHA, boolean limitResourceUse, boolean volatileVm,  String tags, Long domainId, String hostTag,
             Integer networkRate, String deploymentPlanner, Map<String, String> details, Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
@@ -2182,9 +2181,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_DISK_OFFERING_CREATE, eventDescription = "creating disk offering")
-    public DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized,
+    protected DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized,
     		boolean localStorageRequired, boolean isDisplayOfferingEnabled, Boolean isCustomizedIops, Long minIops, Long maxIops,
     		Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
         long diskSize = 0;// special case for custom disk offerings
@@ -2263,6 +2260,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_DISK_OFFERING_CREATE, eventDescription = "creating disk offering")
     public DiskOffering createDiskOffering(CreateDiskOfferingCmd cmd) {
         String name = cmd.getOfferingName();
         String description = cmd.getDisplayText();

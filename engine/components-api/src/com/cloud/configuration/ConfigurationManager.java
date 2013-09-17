@@ -69,58 +69,58 @@ public interface ConfigurationManager {
      */
     String updateConfiguration(long userId, String name, String category, String value, String scope, Long id);
 
-    /**
-     * Creates a new service offering
-     * 
-     * @param name
-     * @param cpu
-     * @param ramSize
-     * @param speed
-     * @param displayText
-     * @param localStorageRequired
-     * @param offerHA
-     * @param domainId
-     * @param volatileVm
-     * @param hostTag
-     * @param networkRate
-     *            TODO
-     * @param id
-     * @param useVirtualNetwork
-     * @param deploymentPlanner
-     * @param details
-     * @param bytesReadRate
-     * @param bytesWriteRate
-     * @param iopsReadRate
-     * @param iopsWriteRate
-     * @return ID
-     */
-    ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_typeType, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired,
-            boolean offerHA, boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag, Integer networkRate, String deploymentPlanner, Map<String, String> details,
-            Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate);
+//    /**
+//     * Creates a new service offering
+//     * 
+//     * @param name
+//     * @param cpu
+//     * @param ramSize
+//     * @param speed
+//     * @param displayText
+//     * @param localStorageRequired
+//     * @param offerHA
+//     * @param domainId
+//     * @param volatileVm
+//     * @param hostTag
+//     * @param networkRate
+//     *            TODO
+//     * @param id
+//     * @param useVirtualNetwork
+//     * @param deploymentPlanner
+//     * @param details
+//     * @param bytesReadRate
+//     * @param bytesWriteRate
+//     * @param iopsReadRate
+//     * @param iopsWriteRate
+//     * @return ID
+//     */
+//    ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_typeType, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired,
+//            boolean offerHA, boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag, Integer networkRate, String deploymentPlanner, Map<String, String> details,
+//            Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate);
 
-    /**
-     * Creates a new disk offering
-     * 
-     * @param domainId
-     * @param name
-     * @param description
-     * @param numGibibytes
-     * @param tags
-     * @param isCustomized
-     * @param localStorageRequired
-     * @param isDisplayOfferingEnabled
-     * @param isCustomizedIops (is admin allowing users to set custom iops?)
-     * @param minIops
-     * @param maxIops
-     * @param bytesReadRate
-     * @param bytesWriteRate
-     * @param iopsReadRate
-     * @param iopsWriteRate
-     * @return newly created disk offering
-     */
-    DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized,
-    		boolean localStorageRequired, boolean isDisplayOfferingEnabled, Boolean isCustomizedIops, Long minIops, Long maxIops,
-    		Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate);
+//    /**
+//     * Creates a new disk offering
+//     * 
+//     * @param domainId
+//     * @param name
+//     * @param description
+//     * @param numGibibytes
+//     * @param tags
+//     * @param isCustomized
+//     * @param localStorageRequired
+//     * @param isDisplayOfferingEnabled
+//     * @param isCustomizedIops (is admin allowing users to set custom iops?)
+//     * @param minIops
+//     * @param maxIops
+//     * @param bytesReadRate
+//     * @param bytesWriteRate
+//     * @param iopsReadRate
+//     * @param iopsWriteRate
+//     * @return newly created disk offering
+//     */
+//    DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized,
+//    		boolean localStorageRequired, boolean isDisplayOfferingEnabled, Boolean isCustomizedIops, Long minIops, Long maxIops,
+//    		Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate);
 
     /**
      * Creates a new pod

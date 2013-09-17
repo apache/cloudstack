@@ -2107,12 +2107,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return _consoleProxyMgr.assignProxy(dataCenterId, userVmId);
     }
 
-    @ActionEvent(eventType = EventTypes.EVENT_PROXY_START, eventDescription = "starting console proxy Vm", async = true)
     private ConsoleProxyVO startConsoleProxy(long instanceId) {
         return _consoleProxyMgr.startProxy(instanceId);
     }
 
-    @ActionEvent(eventType = EventTypes.EVENT_PROXY_STOP, eventDescription = "stopping console proxy Vm", async = true)
     private ConsoleProxyVO stopConsoleProxy(VMInstanceVO systemVm, boolean isForced) throws ResourceUnavailableException, OperationTimedoutException,
     ConcurrentOperationException {
 
@@ -2120,14 +2118,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return _consoleProxyDao.findById(systemVm.getId());
     }
 
-    @ActionEvent(eventType = EventTypes.EVENT_PROXY_REBOOT, eventDescription = "rebooting console proxy Vm", async = true)
     private ConsoleProxyVO rebootConsoleProxy(long instanceId) {
         _consoleProxyMgr.rebootProxy(instanceId);
         return _consoleProxyDao.findById(instanceId);
     }
 
-    @ActionEvent(eventType = EventTypes.EVENT_PROXY_DESTROY, eventDescription = "destroying console proxy Vm", async = true)
-    public ConsoleProxyVO destroyConsoleProxy(long instanceId) {
+    protected ConsoleProxyVO destroyConsoleProxy(long instanceId) {
         ConsoleProxyVO proxy = _consoleProxyDao.findById(instanceId);
 
         if (_consoleProxyMgr.destroyProxy(instanceId)) {
@@ -2168,7 +2164,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_UPDATE, eventDescription = "updating Domain")
     @DB
     public DomainVO updateDomain(UpdateDomainCmd cmd) {
         Long domainId = cmd.getId();
@@ -2988,12 +2983,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return _poolDao.searchAndCount(sc, searchFilter);
     }
 
-    @ActionEvent(eventType = EventTypes.EVENT_SSVM_START, eventDescription = "starting secondary storage Vm", async = true)
-    public SecondaryStorageVmVO startSecondaryStorageVm(long instanceId) {
+    private SecondaryStorageVmVO startSecondaryStorageVm(long instanceId) {
         return _secStorageVmMgr.startSecStorageVm(instanceId);
     }
 
-    @ActionEvent(eventType = EventTypes.EVENT_SSVM_STOP, eventDescription = "stopping secondary storage Vm", async = true)
     private SecondaryStorageVmVO stopSecondaryStorageVm(VMInstanceVO systemVm, boolean isForced) throws ResourceUnavailableException,
     OperationTimedoutException, ConcurrentOperationException {
 
@@ -3001,14 +2994,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return _secStorageVmDao.findById(systemVm.getId());
     }
 
-    @ActionEvent(eventType = EventTypes.EVENT_SSVM_REBOOT, eventDescription = "rebooting secondary storage Vm", async = true)
     public SecondaryStorageVmVO rebootSecondaryStorageVm(long instanceId) {
         _secStorageVmMgr.rebootSecStorageVm(instanceId);
         return _secStorageVmDao.findById(instanceId);
     }
 
-    @ActionEvent(eventType = EventTypes.EVENT_SSVM_DESTROY, eventDescription = "destroying secondary storage Vm", async = true)
-    public SecondaryStorageVmVO destroySecondaryStorageVm(long instanceId) {
+    protected SecondaryStorageVmVO destroySecondaryStorageVm(long instanceId) {
         SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(instanceId);
         if (_secStorageVmMgr.destroySecStorageVm(instanceId)) {
             return secStorageVm;
@@ -3102,6 +3093,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
+    @ActionEvent(eventType = "", eventDescription = "", async = true)
     public VirtualMachine startSystemVM(long vmId) {
 
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(vmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
@@ -3112,8 +3104,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (systemVm.getType() == VirtualMachine.Type.ConsoleProxy) {
+            ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_PROXY_START, "starting console proxy Vm");
             return startConsoleProxy(vmId);
         } else if (systemVm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
+            ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_SSVM_START, "starting secondary storage Vm");
             return startSecondaryStorageVm(vmId);
         } else {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find a system vm with specified vmId");
@@ -3123,6 +3117,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
+    @ActionEvent(eventType = "", eventDescription = "", async = true)
     public VMInstanceVO stopSystemVM(StopSystemVmCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException {
         Long id = cmd.getId();
 
@@ -3136,8 +3131,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         try {
             if (systemVm.getType() == VirtualMachine.Type.ConsoleProxy) {
+                ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_PROXY_STOP, "stopping console proxy Vm");
                 return stopConsoleProxy(systemVm, cmd.isForced());
             } else if (systemVm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
+                ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_SSVM_STOP, "stopping secondary storage Vm");
                 return stopSecondaryStorageVm(systemVm, cmd.isForced());
             }
             return null;
@@ -3147,6 +3144,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_PROXY_REBOOT, eventDescription = "", async = true)
     public VMInstanceVO rebootSystemVM(RebootSystemVmCmd cmd) {
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(cmd.getId(), VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
 
@@ -3157,13 +3155,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)) {
+            ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy Vm");
             return rebootConsoleProxy(cmd.getId());
         } else {
+            ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_SSVM_REBOOT, "rebooting secondary storage Vm");
             return rebootSecondaryStorageVm(cmd.getId());
         }
     }
 
     @Override
+    @ActionEvent(eventType = "", eventDescription = "", async = true)    
     public VMInstanceVO destroySystemVM(DestroySystemVmCmd cmd) {
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(cmd.getId(), VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
 
@@ -3174,8 +3175,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)) {
+            ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_PROXY_DESTROY, "destroying console proxy Vm");
             return destroyConsoleProxy(cmd.getId());
         } else {
+            ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_SSVM_DESTROY, "destroying secondary storage Vm");
             return destroySecondaryStorageVm(cmd.getId());
         }
     }

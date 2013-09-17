@@ -391,17 +391,6 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.configuration.ConfigurationManager#createServiceOffering(long, boolean, com.cloud.vm.VirtualMachine.Type, java.lang.String, int, int, int, java.lang.String, boolean, boolean, boolean, java.lang.String, java.lang.Long, java.lang.String, java.lang.Integer)
-     */
-    @Override
-    public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, Type vm_typeType, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA,
-            boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag, Integer networkRate, String deploymentPlanner, Map<String, String> details,
-            Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.configuration.ConfigurationManager#createPod(long, java.lang.String, long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, boolean)
      */
     @Override
@@ -508,17 +497,6 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public AllocationState findClusterAllocationState(ClusterVO cluster) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.configuration.ConfigurationManager#createDiskOffering(java.lang.Long, java.lang.String, java.lang.String, java.lang.Long, java.lang.String, boolean, boolean, boolean)
-     */
-    @Override
-    public DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized,
-    		boolean localStorageRequired, boolean isDisplayOfferingEnabled, Boolean isCustomizedIops, Long minIops, Long maxIops,
-    		Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
         // TODO Auto-generated method stub
         return null;
     }

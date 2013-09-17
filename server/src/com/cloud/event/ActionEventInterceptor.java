@@ -17,15 +17,14 @@
 package com.cloud.event;
 
 import java.lang.reflect.Method;
-
-import org.apache.log4j.Logger;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.utils.component.ComponentMethodInterceptor;
 
 public class ActionEventInterceptor implements ComponentMethodInterceptor {
-	private static final Logger s_logger = Logger.getLogger(ActionEventInterceptor.class);
 
 	public ActionEventInterceptor() {
 	}
@@ -33,19 +32,15 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor {
 	@Override
     public Object interceptStart(Method method, Object target) {
         EventVO event = null;
-        ActionEvent actionEvent = method.getAnnotation(ActionEvent.class);
-        if (actionEvent != null) {
+        for ( ActionEvent actionEvent : getActionEvents(method) ) {
             boolean async = actionEvent.async();
             if(async){
                 CallContext ctx = CallContext.current();
-                long userId = ctx.getCallingUserId();
-                long accountId = ctx.getCallingAccountId();
-                long startEventId = ctx.getStartEventId();
-                String eventDescription = actionEvent.eventDescription();
-                if(ctx.getEventDetails() != null){
-                    eventDescription += ". "+ctx.getEventDetails();
-                }
-                ActionEventUtils.onStartedActionEvent(userId, accountId, actionEvent.eventType(), eventDescription, startEventId);
+                
+                String eventDescription = getEventDescription(actionEvent, ctx);
+                String eventType = getEventType(actionEvent, ctx);
+                
+                ActionEventUtils.onStartedActionEventFromContext(eventType, eventDescription);
             }
         }
         return event;
@@ -53,43 +48,45 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor {
 
 	@Override
     public void interceptComplete(Method method, Object target, Object event) {
-        ActionEvent actionEvent = method.getAnnotation(ActionEvent.class);
-        if (actionEvent != null) {
+	    for ( ActionEvent actionEvent : getActionEvents(method) ) {
             CallContext ctx = CallContext.current();
             long userId = ctx.getCallingUserId();
             long accountId = ctx.getCallingAccountId();
             long startEventId = ctx.getStartEventId();
-            String eventDescription = actionEvent.eventDescription();
-            if(ctx.getEventDetails() != null){
-                eventDescription += ". "+ctx.getEventDetails();
-            }            
+            String eventDescription = getEventDescription(actionEvent, ctx);
+            String eventType = getEventType(actionEvent, ctx);
+            
+            if ( eventType.equals("") )
+                return;
+            
             if(actionEvent.create()){
                 //This start event has to be used for subsequent events of this action
-                startEventId = ActionEventUtils.onCreatedActionEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully created entity for "+eventDescription);
+                startEventId = ActionEventUtils.onCreatedActionEvent(userId, accountId, EventVO.LEVEL_INFO, eventType, "Successfully created entity for "+eventDescription);
                 ctx.setStartEventId(startEventId);
             } else {
-                ActionEventUtils.onCompletedActionEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully completed "+eventDescription, startEventId);
+                ActionEventUtils.onCompletedActionEvent(userId, accountId, EventVO.LEVEL_INFO, eventType, "Successfully completed "+eventDescription, startEventId);
             }
         }
     }
 
 	@Override
     public void interceptException(Method method, Object target, Object event) {
-        ActionEvent actionEvent = method.getAnnotation(ActionEvent.class);
-        if (actionEvent != null) {
+	    for ( ActionEvent actionEvent : getActionEvents(method) ) {
             CallContext ctx = CallContext.current();
             long userId = ctx.getCallingUserId();
             long accountId = ctx.getCallingAccountId();
             long startEventId = ctx.getStartEventId();
-            String eventDescription = actionEvent.eventDescription();
-            if(ctx.getEventDetails() != null){
-                eventDescription += ". "+ctx.getEventDetails();
-            }
+            String eventDescription = getEventDescription(actionEvent, ctx);
+            String eventType = getEventType(actionEvent, ctx);
+            
+            if ( eventType.equals("") )
+                return;
+            
             if(actionEvent.create()){
-                long eventId = ActionEventUtils.onCreatedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while creating entity for "+eventDescription);
+                long eventId = ActionEventUtils.onCreatedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, eventType, "Error while creating entity for "+eventDescription);
                 ctx.setStartEventId(eventId);
             } else {
-                ActionEventUtils.onCompletedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while "+eventDescription, startEventId);
+                ActionEventUtils.onCompletedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, eventType, "Error while "+eventDescription, startEventId);
             }
         }
     }
@@ -101,6 +98,49 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor {
             return true;
         }
         
+        ActionEvents events = method.getAnnotation(ActionEvents.class);
+        if ( events != null ) {
+            return true;
+        }
+        
         return false;
     }
+	
+	protected List<ActionEvent> getActionEvents(Method m) {
+	    List<ActionEvent> result = new ArrayList<ActionEvent>();
+	    
+	    ActionEvents events = m.getAnnotation(ActionEvents.class);
+	    
+	    if ( events != null ) {
+	        for ( ActionEvent e : events.value() ) {
+	            result.add(e);
+	        }
+	    }
+	    
+	    ActionEvent e = m.getAnnotation(ActionEvent.class);
+	    
+	    if ( e != null ) {
+	        result.add(e);
+	    }
+	    
+	    return result;
+	}
+	protected String getEventType(ActionEvent actionEvent, CallContext ctx) {
+	    String type = ctx.getEventType();
+	    
+	    return type == null ? actionEvent.eventType() : type;
+	}
+	
+	protected String getEventDescription(ActionEvent actionEvent, CallContext ctx) {
+	    String eventDescription = ctx.getEventDescription();
+	    if ( eventDescription == null ) {
+	        eventDescription = actionEvent.eventDescription();
+	    }
+	    
+        if(ctx.getEventDetails() != null){
+            eventDescription += ". "+ctx.getEventDetails();
+        }
+        
+        return eventDescription;
+	}
 }

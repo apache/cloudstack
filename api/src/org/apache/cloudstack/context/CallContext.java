@@ -42,7 +42,9 @@ public class CallContext {
     private String contextId;
     private Account account;
     private long startEventId = 0;
+    private String eventDescription;
     private String eventDetails;
+    private String eventType;
     private User user;
     private final Map<Object, Object> context = new HashMap<Object, Object>();
 
@@ -210,6 +212,30 @@ public class CallContext {
 
     public String getEventDetails() {
         return eventDetails;
+    }
+    
+    public String getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
+    }
+    
+    public String getEventDescription() {
+        return eventDescription;
+    }
+
+    public void setEventDescription(String eventDescription) {
+        this.eventDescription = eventDescription;
+    }
+
+    public static void setActionEventInfo(String eventType, String description) {
+        CallContext context = CallContext.current();
+        if ( context != null ) {
+            context.setEventType(eventType);
+            context.setEventDescription(description);
+        }
     }
 
     @Override

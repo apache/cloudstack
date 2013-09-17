@@ -55,22 +55,22 @@ public interface FirewallManager extends FirewallService {
 
     boolean revokeFirewallRulesForIp(long ipId, long userId, Account caller) throws ResourceUnavailableException;
 
-    /**
-     * Revokes a firewall rule
-     * 
-     * @param ruleId
-     *            the id of the rule to revoke.
-     * @param caller
-     *            TODO
-     * @param userId
-     *            TODO
-     * @return
-     */
-    boolean revokeFirewallRule(long ruleId, boolean apply, Account caller, long userId);
+//    /**
+//     * Revokes a firewall rule
+//     * 
+//     * @param ruleId
+//     *            the id of the rule to revoke.
+//     * @param caller
+//     *            TODO
+//     * @param userId
+//     *            TODO
+//     * @return
+//     */
+//    boolean revokeFirewallRule(long ruleId, boolean apply, Account caller, long userId);
 
-    FirewallRule createFirewallRule(Long ipAddrId, Account caller, String xId, Integer portStart, Integer portEnd, String protocol, List<String> sourceCidrList, Integer icmpCode, Integer icmpType, Long relatedRuleId,
-            FirewallRule.FirewallRuleType type, Long networkId, FirewallRule.TrafficType traffictype)
-            throws NetworkRuleConflictException;
+//    FirewallRule createFirewallRule(Long ipAddrId, Account caller, String xId, Integer portStart, Integer portEnd, String protocol, List<String> sourceCidrList, Integer icmpCode, Integer icmpType, Long relatedRuleId,
+//            FirewallRule.FirewallRuleType type, Long networkId, FirewallRule.TrafficType traffictype)
+//            throws NetworkRuleConflictException;
 
     FirewallRule createRuleForAllCidrs(long ipAddrId, Account caller, Integer startPort, Integer endPort, String protocol, Integer icmpCode, Integer icmpType, Long relatedRuleId, long networkId) throws NetworkRuleConflictException;
 

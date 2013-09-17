@@ -39,7 +39,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -75,6 +74,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
+import com.cloud.event.ActionEvents;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudAuthenticationException;
@@ -855,7 +855,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     @DB
-    @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account")
+    @ActionEvents({
+        @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account"),
+        @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User"),
+    })
     public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType,
                                          Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID) {
 
@@ -927,6 +930,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")
     public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID) {
 
         // default domain to ROOT if not specified
@@ -1777,7 +1781,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return account;
     }
 
-    @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")
     protected UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone, String userUUID) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);

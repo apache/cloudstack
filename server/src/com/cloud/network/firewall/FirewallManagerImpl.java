@@ -155,6 +155,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_OPEN, eventDescription = "creating firewall rule", create = true)
     public FirewallRule createEgressFirewallRule(FirewallRule rule) throws NetworkRuleConflictException {
         Account caller = CallContext.current().getCallingAccount();
 
@@ -169,6 +170,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_OPEN, eventDescription = "creating firewall rule", create = true)
     public FirewallRule createIngressFirewallRule(FirewallRule rule) throws NetworkRuleConflictException {
          Account caller = CallContext.current().getCallingAccount();
         Long sourceIpAddressId = rule.getSourceIpAddressId();
@@ -179,9 +181,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     @DB
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_OPEN, eventDescription = "creating firewall rule", create = true)
-    public FirewallRule createFirewallRule(Long ipAddrId, Account caller, String xId, Integer portStart,
+    protected FirewallRule createFirewallRule(Long ipAddrId, Account caller, String xId, Integer portStart,
             Integer portEnd, String protocol, List<String> sourceCidrList, Integer icmpCode, Integer icmpType,
             Long relatedRuleId, FirewallRule.FirewallRuleType type, Long networkId, FirewallRule.TrafficType trafficType) throws NetworkRuleConflictException {
 
@@ -688,9 +688,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         return true;
     }
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_CLOSE, eventDescription = "revoking firewall rule", async = true)
-    public boolean revokeFirewallRule(long ruleId, boolean apply, Account caller, long userId) {
+    protected boolean revokeFirewallRule(long ruleId, boolean apply, Account caller, long userId) {
 
         FirewallRuleVO rule = _firewallDao.findById(ruleId);
         if (rule == null || rule.getPurpose() != Purpose.Firewall) {
@@ -727,6 +725,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_CLOSE, eventDescription = "revoking firewall rule", async = true)
     public boolean revokeFirewallRule(long ruleId, boolean apply) {
         Account caller = CallContext.current().getCallingAccount();
         long userId = CallContext.current().getCallingUserId();
@@ -770,6 +769,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_CLOSE, eventDescription = "revoking firewall rule", async = true)
     public boolean revokeFirewallRulesForIp(long ipId, long userId, Account caller) throws ResourceUnavailableException {
         List<FirewallRule> rules = new ArrayList<FirewallRule>();
 
@@ -799,6 +799,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_OPEN, eventDescription = "creating firewall rule", create = true)
     public FirewallRule createRuleForAllCidrs(long ipAddrId, Account caller,
             Integer startPort, Integer endPort, String protocol, Integer icmpCode, Integer icmpType, Long relatedRuleId, long networkId)
                     throws NetworkRuleConflictException {
@@ -817,6 +818,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_CLOSE, eventDescription = "revoking firewall rule", async = true)
     public boolean revokeAllFirewallRulesForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException {
         List<FirewallRule> rules = new ArrayList<FirewallRule>();
 
@@ -860,6 +862,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_CLOSE, eventDescription = "revoking firewall rule", async = true)
     public boolean revokeFirewallRulesForVm(long vmId) {
         boolean success = true;
         UserVmVO vm = _vmDao.findByIdIncludingRemoved(vmId);
@@ -916,6 +919,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_OPEN, eventDescription = "creating firewall rule", create = true)
     public boolean addSystemFirewallRules(IPAddressVO ip, Account acct) {
         List<FirewallRuleVO> systemRules = _firewallDao.listSystemRules();
         for (FirewallRuleVO rule : systemRules) {
