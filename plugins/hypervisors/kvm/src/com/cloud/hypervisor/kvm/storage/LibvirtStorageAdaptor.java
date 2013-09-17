@@ -148,7 +148,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             // if error is that pool is mounted, try to handle it
             if (e.toString().contains("already mounted")) {
                 s_logger.error("Attempting to unmount old mount libvirt is unaware of at "+targetPath);
-                String result = Script.runSimpleBashScript("umount " + targetPath );
+                String result = Script.runSimpleBashScript("umount -l " + targetPath );
                 if (result == null) {
                     s_logger.error("Succeeded in unmounting " + targetPath);
                     try {
