@@ -82,7 +82,6 @@ import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -186,11 +185,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        init();
         return true;
     }
 
-    public void init() {
+    @Override
+    public boolean start() {
         Integer apiPort = null; // api port, null by default
         SearchCriteria<ConfigurationVO> sc = _configDao.createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, Config.IntegrationAPIPort.key());
@@ -245,6 +244,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             ListenerThread listenerThread = new ListenerThread(this, apiPort);
             listenerThread.start();
         }
+        
+        return true;
     }
 
     // NOTE: handle() only handles over the wire (OTW) requests from integration.api.port 8096

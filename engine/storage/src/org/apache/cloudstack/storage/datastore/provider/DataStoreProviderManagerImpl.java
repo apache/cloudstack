@@ -20,6 +20,8 @@ package org.apache.cloudstack.storage.datastore.provider;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.component.Registry;
+
 import org.apache.cloudstack.api.response.StorageProviderResponse;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider.DataStoreProviderType;
@@ -33,18 +35,22 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Component
-public class DataStoreProviderManagerImpl extends ManagerBase implements DataStoreProviderManager {
+public class DataStoreProviderManagerImpl extends ManagerBase implements DataStoreProviderManager, Registry<DataStoreProvider> {
     private static final Logger s_logger = Logger.getLogger(DataStoreProviderManagerImpl.class);
-    @Inject
+    
     List<DataStoreProvider> providers;
-    protected Map<String, DataStoreProvider> providerMap = new HashMap<String, DataStoreProvider>();
+    protected Map<String, DataStoreProvider> providerMap = new ConcurrentHashMap<String, DataStoreProvider>();
     @Inject
     PrimaryDataStoreProviderManager primaryDataStoreProviderMgr;
     @Inject
@@ -96,43 +102,54 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        Map<String, Object> copyParams = new HashMap<String, Object>(params);
 
-        for (DataStoreProvider provider : providers) {
-            String providerName = provider.getName();
-            if (providerMap.get(providerName) != null) {
-                s_logger.debug("Failed to register data store provider, provider name: " + providerName
-                        + " is not unique");
-                return false;
-            }
-
-            s_logger.debug("registering data store provider:" + provider.getName());
-
-            providerMap.put(providerName, provider);
-            try {
-                boolean registrationResult = provider.configure(copyParams);
-                if (!registrationResult) {
-                    providerMap.remove(providerName);
-                    s_logger.debug("Failed to register data store provider: " + providerName);
-                    return false;
-                }
-
-                Set<DataStoreProviderType> types = provider.getTypes();
-                if (types.contains(DataStoreProviderType.PRIMARY)) {
-                    primaryDataStoreProviderMgr.registerDriver(provider.getName(),
-                            (PrimaryDataStoreDriver) provider.getDataStoreDriver());
-                    primaryDataStoreProviderMgr.registerHostListener(provider.getName(), provider.getHostListener());
-                } else if (types.contains(DataStoreProviderType.IMAGE)) {
-                    imageStoreProviderMgr.registerDriver(provider.getName(),
-                            (ImageStoreDriver) provider.getDataStoreDriver());
-                }
-            } catch (Exception e) {
-                s_logger.debug("configure provider failed", e);
-                providerMap.remove(providerName);
-                return false;
+        if ( providers != null ) {
+            for (DataStoreProvider provider : providers) {
+                registerProvider(provider);
             }
         }
 
+        providers = new CopyOnWriteArrayList<DataStoreProvider>(providers);
+        
+        return true;
+    }
+
+    protected boolean registerProvider(DataStoreProvider provider) {
+        Map<String, Object> copyParams = new HashMap<String, Object>();
+
+        String providerName = provider.getName();
+        if (providerMap.get(providerName) != null) {
+            s_logger.debug("Did not register data store provider, provider name: " + providerName
+                    + " is not unique");
+            return false;
+        }
+
+        s_logger.debug("registering data store provider:" + provider.getName());
+
+        providerMap.put(providerName, provider);
+        try {
+            boolean registrationResult = provider.configure(copyParams);
+            if (!registrationResult) {
+                providerMap.remove(providerName);
+                s_logger.debug("Failed to register data store provider: " + providerName);
+                return false;
+            }
+
+            Set<DataStoreProviderType> types = provider.getTypes();
+            if (types.contains(DataStoreProviderType.PRIMARY)) {
+                primaryDataStoreProviderMgr.registerDriver(provider.getName(),
+                        (PrimaryDataStoreDriver) provider.getDataStoreDriver());
+                primaryDataStoreProviderMgr.registerHostListener(provider.getName(), provider.getHostListener());
+            } else if (types.contains(DataStoreProviderType.IMAGE)) {
+                imageStoreProviderMgr.registerDriver(provider.getName(),
+                        (ImageStoreDriver) provider.getDataStoreDriver());
+            }
+        } catch (Exception e) {
+            s_logger.debug("configure provider failed", e);
+            providerMap.remove(providerName);
+            return false;
+        }
+        
         return true;
     }
 
@@ -167,6 +184,27 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
         }
     }
 
+    @Override
+    public boolean register(DataStoreProvider type) {
+        if ( registerProvider(type) ) {
+            providers.add(type);
+            return true;
+        }
+        
+        return false;
+    }
+
+    @Override
+    public void unregister(DataStoreProvider type) {
+        /* Sorry, no unregister supported... */
+    }
+
+    @Override
+    public List<DataStoreProvider> getRegistered() {
+        return Collections.unmodifiableList(providers);
+    }
+    
+    @Inject
     public void setProviders(List<DataStoreProvider> providers) {
         this.providers = providers;
     }
@@ -178,4 +216,9 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     public void setImageStoreProviderMgr(ImageStoreProviderManager imageDataStoreProviderMgr) {
         this.imageStoreProviderMgr = imageDataStoreProviderMgr;
     }
+
+    public List<DataStoreProvider> getProviders() {
+        return providers;
+    }
+    
 }

@@ -2491,4 +2491,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             return false;
         }
     }
+
+    @Override
+    public boolean start() {
+        // TODO Auto-generated method stub
+        return super.start();
+    }
+    
+    
 }
