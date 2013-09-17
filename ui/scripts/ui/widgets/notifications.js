@@ -111,7 +111,7 @@
                     },
                     incomplete: function(args) {},
                     error: function(args) {
-                        if (args.message) {
+                        if (args && args.message) {
                             cloudStack.dialog.notice({
                                 message: _s(args.message)
                             });

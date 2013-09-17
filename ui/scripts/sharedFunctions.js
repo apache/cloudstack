@@ -107,7 +107,9 @@ var pollAsyncJobResult = function(args) {
             }
         },
         error: function(XMLHttpResponse) {
-            args.error();
+            args.error({
+            	message: parseXMLHttpResponse(XMLHttpResponse)
+            });
         }
     });
 }
