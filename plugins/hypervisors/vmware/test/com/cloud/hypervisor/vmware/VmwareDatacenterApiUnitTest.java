@@ -56,6 +56,7 @@ import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.cluster.ClusterManager;
+import com.cloud.cluster.dao.ManagementServerHostPeerDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
@@ -383,6 +384,11 @@ public class VmwareDatacenterApiUnitTest {
             return Mockito.mock(LegacyZoneDao.class);
         }
 
+        @Bean
+        public ManagementServerHostPeerDao managementServerHostPeerDao() {
+            return Mockito.mock(ManagementServerHostPeerDao.class);
+        }
+        
         @Bean
         public ConfigurationDao configurationDao() {
             return Mockito.mock(ConfigurationDao.class);
