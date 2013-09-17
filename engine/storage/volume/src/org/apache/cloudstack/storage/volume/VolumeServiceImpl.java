@@ -227,7 +227,7 @@ public class VolumeServiceImpl implements VolumeService {
             return false;
         }
         VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(volumeId);
-        if (vol.getState() == State.Expunged && volumeStore == null) {
+        if ((vol.getState() == State.Expunged || (vol.getPodId() == null && vol.getState() == State.Destroy)) && volumeStore == null) {
             // volume is expunged from primary, as well as on secondary
             return true;
         } else {
@@ -265,18 +265,23 @@ public class VolumeServiceImpl implements VolumeService {
 
         String volumePath = vol.getPath();
         Long poolId = vol.getPoolId();
-        if (poolId == null || volumePath == null || volumePath.trim().isEmpty()) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Marking volume that was never created as destroyed: " + vol);
+        if (poolId == null || volumePath == null || volumePath.trim().isEmpty() ) {
+            // not created on primary store
+            if (volumeStore == null) {
+                // also not created on secondary store
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Marking volume that was never created as destroyed: " + vol);
+                }
+                volDao.remove(vol.getId());
+                future.complete(result);
+                return future;
             }
-            volDao.remove(vol.getId());
-            future.complete(result);
-            return future;
         }
         VolumeObject vo = (VolumeObject) volume;
 
         if (volume.getDataStore().getRole() == DataStoreRole.Image) {
-            volume.processEvent(Event.DestroyRequested);
+            // no need to change state in volumes table
+            volume.processEventOnly(Event.DestroyRequested);
         } else if (volume.getDataStore().getRole() == DataStoreRole.Primary) {
             volume.processEvent(Event.ExpungeRequested);
         }
