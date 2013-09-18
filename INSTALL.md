@@ -96,23 +96,20 @@ Clean and build:
 
     $ mvn clean install -P systemvm,developer
 
-In case you want support for VMWare, SRX and other non-Apache (referred to as nonoss)
-compliant libs, you may download the following jar artifacts from respective vendors:
+CloudStack supports several plugins that depend on libraries with distribution restrictions. 
+Because of this they are not included in the default build. Enable these additional plugins 
+activate their respective profiles. For convenience adding -Dnoredist will enable all plugins
+that depend on libraries with distribution restrictions. The build procedure expects that the 
+required libraries are present in the maven repository. 
 
-     deps/cloud-iControl.jar
-     deps/cloud-manageontap.jar
-     deps/cloud-netscaler-sdx.jar
-     deps/cloud-netscaler.jar
-     deps/vmware-apputils.jar
-     deps/vmware-vim.jar
-     deps/vmware-vim25.jar
-
-Install them to ~/.m2 so maven can get them as dependencies:
+The following procedure can be used to add the libraries to the local maven repository. Details 
+on obtaining the required libraries can be found in this file. Note that this will vary between
+releases of cloudstack
 
     $ cd deps
     $ ./install-non-oss.sh
 
-To build with nonoss components, use the build command with the nonoss flag:
+To build all non redistributable components, add the noredist flag to the build command:
 
     $ mvn clean install -P systemvm,developer -Dnonoss
 
@@ -153,7 +150,7 @@ This section describes packaging and installation.
 
 To create debs:
 
-    $ mvn -P deps # -D nonoss, for nonoss as described in the "Building" section above
+    $ mvn -P deps # -D noredist, for noredist as described in the "Building" section above
     $ dpkg-buildpackage
 
 All the deb packages will be created in ../$PWD
@@ -183,15 +180,15 @@ Install needed packages, apt-get upgrade for upgrading:
 
 To create rpms:
 
-    $ mvn -P deps # -D nonoss, for nonoss as described in the "Building" section above
-    $ ./waf rpm
+    $ cd packaging/centos63
+    $ bash packaging.sh [ -p NOREDIST ]
 
-All the rpm packages will be create in artifacts/rpmbuild/RPMS/x86_64
+All the rpm packages will be create in dist/rpmbuild/RPMS/x86_64
 
 To create a yum repo: (assuming appropriate user privileges)
 
     $ path=/path/to/your/webserver/cloudstack
-    $ cd artifacts/rpmbuild/RPMS/x86_64
+    $ cd dist/rpmbuild/RPMS/x86_64
     $ mv *.rpm $path
     $ createrepo $path
 
@@ -208,10 +205,10 @@ Installation:
 Install needed packages:
 
     $ yum update
-    $ yum install cloud-client                       # management server
+    $ yum install cloudstack-management                       # management server
     $ yum install mysql-server                       # mysql server
-    $ yum install cloud-agent                        # agent (kvm)
-    $ yum install cloud-usage                        # usage server
+    $ yum install cloudstack-agent                        # agent (kvm)
+    $ yum install cloudstack-usage                        # usage server
 
 ## Installing CloudMonkey CLI
 
