@@ -408,13 +408,12 @@ class TestAddMultipleNSDiffZone(cloudstackTestCase):
         for zone in zones:
             if zone.networktype == 'Advanced':
                 zone_list.append(zone)
-
         self.assertGreater(
                            len(zone_list),
                            1,
                            "Atleast 2 advanced mode zones should be present for this test"
                            )
-
+        zoneid=zone_list[0].id
         physical_networks = PhysicalNetwork.list(
                                                  self.apiclient,
                                                  zoneid=zone_list[0].id
@@ -424,43 +423,12 @@ class TestAddMultipleNSDiffZone(cloudstackTestCase):
                 True,
                 "There should be atleast one physical network for advanced zone"
                 )
-        physical_network = physical_networks[0]
         self.debug("Adding netscaler device: %s" %
                                     self.services["netscaler_1"]["ipaddress"])
-        netscaler_1 = NetScaler.add(
-                                  self.apiclient,
-                                  self.services["netscaler_1"],
-                                  physicalnetworkid=physical_network.id
-                                  )
+        netscaler_1 = add_netscaler(self.apiclient, zoneid, self.services["netscaler_1"])
         self.cleanup.append(netscaler_1)
-        self.debug("Checking if Netscaler network service provider is enabled?")
 
-        nw_service_providers = NetworkServiceProvider.list(
-                                        self.apiclient,
-                                        name='Netscaler',
-                                        physicalnetworkid=physical_network.id
-                                        )
-        self.assertEqual(
-                         isinstance(nw_service_providers, list),
-                         True,
-                         "Network service providers list should not be empty"
-                         )
-        netscaler_provider = nw_service_providers[0]
-        if netscaler_provider.state != 'Enabled':
-            self.debug("Netscaler provider is not enabled. Enabling it..")
-            response = NetworkServiceProvider.update(
-                                          self.apiclient,
-                                          id=netscaler_provider.id,
-                                          state='Enabled'
-                                          )
-            self.assertEqual(
-                        response.state,
-                        "Enabled",
-                        "Network service provider should be in enabled state"
-                         )
-        else:
-            self.debug("Netscaler service provider is already enabled.")
-
+        physical_network = physical_networks[0]
         ns_list = NetScaler.list(
                                  self.apiclient,
                                  lbdeviceid=netscaler_1.lbdeviceid
@@ -492,6 +460,7 @@ class TestAddMultipleNSDiffZone(cloudstackTestCase):
                                                  self.apiclient,
                                                  zoneid=zone_list[1].id
                                                  )
+        zoneid=zone_list[1].id
         self.assertEqual(
                 isinstance(physical_networks, list),
                 True,
@@ -501,11 +470,7 @@ class TestAddMultipleNSDiffZone(cloudstackTestCase):
 
         self.debug("Adding netscaler device: %s" %
                                     self.services["netscaler_2"]["ipaddress"])
-        netscaler_2 = NetScaler.add(
-                                  self.apiclient,
-                                  self.services["netscaler_2"],
-                                  physicalnetworkid=physical_network.id
-                                  )
+        netscaler_2 = add_netscaler(self.apiclient, zoneid, self.services["netscaler_2"])
         self.cleanup.append(netscaler_2)
         ns_list = NetScaler.list(
                                  self.apiclient,
