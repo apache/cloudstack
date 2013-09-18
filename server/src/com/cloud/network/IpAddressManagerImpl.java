@@ -820,7 +820,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     addr.getUuid());
             }
             // don't increment resource count for direct and dedicated ip addresses
-            if (addr.getAssociatedWithNetworkId() != null && !isIpDedicated(addr)) {
+            if ((addr.getAssociatedWithNetworkId() != null || addr.getVpcId() != null) && !isIpDedicated(addr)) {
                 _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
             }
         }
