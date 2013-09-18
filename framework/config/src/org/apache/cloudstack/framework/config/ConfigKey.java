@@ -32,7 +32,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ConfigKey<T> {
 
     public static enum Scope {
-        Global, Zone, Cluster, StoragePool, Account
+        Global, Zone, Cluster, StoragePool, Account, ManagementServer
     }
 
     private final String _category;
@@ -104,6 +104,7 @@ public class ConfigKey<T> {
         _multiplier = multiplier;
     }
 
+    @Deprecated
     public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic) {
         this(type, name, category, defaultValue, description, isDynamic, Scope.Global, null);
     }
