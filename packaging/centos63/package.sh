@@ -18,14 +18,14 @@
 
 function usage() {
  echo ""
- echo "usage: ./package.sh [-p|--pack] [-h|--help] [ARGS]"
+ echo "usage: ./package.sh [-p|e-pack] [-h|--help] [ARGS]"
  echo ""
  echo "The commonly used Arguments are:"
- echo "oss|OSS         To package OSS specific"
- echo "nonoss|NONOSS   To package NONOSS specific"
+ echo "oss|OSS             To package OSS specific"
+ echo "noredist|NOREDIST   To package with no redistributable libraries"
  echo ""
  echo "Examples: ./package.sh -p|--pack oss|OSS"
- echo "          ./package.sh -p|--pack nonoss|NONOSS"
+ echo "          ./package.sh -p|--pack noredist|NOREDIST"
  echo "          ./package.sh (Default OSS)"
  exit 1
 }
@@ -114,6 +114,7 @@ elif [ $# -gt 0 ] ; then
 	eval set -- "$ARGS"
 
 	while [ $# -gt 0 ] ; do
+        echo $1
 	case "$1" in
 	-h | --help)
 		usage
@@ -124,7 +125,7 @@ elif [ $# -gt 0 ] ; then
 		packageval=$2
 		if [ "$packageval" == "oss" -o "$packageval" == "OSS" ] ; then
 			defaultPackaging
-		elif [ "$packageval" == "nonoss" -o "$packageval" == "NONOSS" ] ; then
+		elif [ "$packageval" == "noredist" -o "$packageval" == "NOREDIST" ] ; then
 			packaging
 		else
 			echo "Error: Incorrect value provided in package.sh script, Please see help ./package.sh --help|-h for more details."
@@ -136,19 +137,8 @@ elif [ $# -gt 0 ] ; then
 		usage
 		exit 1
 		;;
-	--)
-		echo "Unrecognized option..."
-		usage
-		exit 1
-		;;
-	-*)
-		echo "Unrecognized option..."
-		usage
-		exit 1
-		;;
 	*)
 		shift
-		break
 		;;
 	esac
 	done
