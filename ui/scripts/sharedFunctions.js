@@ -450,7 +450,14 @@ var addGuestNetworkDialog = {
                     label: 'label.network.offering',
                     docID: 'helpGuestNetworkZoneNetworkOffering',
                     dependsOn: ['zoneId', 'scope'],
-                    select: function(args) {
+                    select: function(args) {                    	
+                    	if(args.$form.find('.form-item[rel=zoneId]').find('select').val() == null || args.$form.find('.form-item[rel=zoneId]').find('select').val().length == 0) {
+                    		args.response.success({
+                                data: null
+                            });
+                    		return;
+                    	}
+                    	
                         var data = {
                             state: 'Enabled',
                             zoneid: args.$form.find('.form-item[rel=zoneId]').find('select').val()
