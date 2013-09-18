@@ -229,11 +229,9 @@ class IpAddressFactoryTest(unittest.TestCase):
             account=accnt.name,
             domainid=accnt.domainid)
 
-        all_ips = IpAddress.listPublic(apiclient=self.apiClient)
-        firstip = all_ips[0]
         networks = Network.list(apiclient=self.apiClient,
             account = accnt.name, domainid = accnt.domainid)
-        firstip.associate(apiclient=self.apiClient, networkid = networks[0].id)
+        IpAddress(apiclient=self.apiClient, networkid = networks[0].id)
 
 
 class FirewallRuleFactoryTest(unittest.TestCase):
@@ -280,7 +278,7 @@ class FirewallRuleFactoryTest(unittest.TestCase):
 
         fwrule = SshFirewallRuleFactory(
             apiclient=self.apiClient,
-            ipaddressid=ipaddress.ipaddress.id
+            ipaddressid=ipaddress.id
         )
         fwrule |should_not| be(None)
         fwrule |should| be_instance_of(Firewall)

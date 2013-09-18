@@ -113,10 +113,6 @@ def finalizeResultObj(result, responseName, responsecls):
                                              responsecls)
         return result
     elif responsecls is not None:
-        for k, v in result.__dict__.iteritems():
-            if k in responsecls.__dict__:
-                return result
-
         attr = result.__dict__.keys()[0]
 
         value = getattr(result, attr)
