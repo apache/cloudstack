@@ -99,7 +99,7 @@
       <id>netapp</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>noredist</name>
         </property>
       </activation>
       <modules>
@@ -110,7 +110,7 @@
       <id>kvm</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>noredist</name>
         </property>
       </activation>
       <modules>
@@ -121,7 +121,7 @@
       <id>f5</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>noredist</name>
         </property>
       </activation>
       <modules>
@@ -132,7 +132,7 @@
       <id>netscaler</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>noredist</name>
         </property>
       </activation>
       <modules>
@@ -143,7 +143,7 @@
       <id>srx</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>noredist</name>
         </property>
       </activation>
       <modules>
@@ -154,7 +154,7 @@
       <id>vmware</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>noredist</name>
         </property>
       </activation>
       <modules>

@@ -727,7 +727,7 @@
       <id>vmware</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>noredist</name>
         </property>
       </activation>
       <modules>

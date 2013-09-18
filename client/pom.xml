@@ -447,13 +447,13 @@
             </configuration>
           </execution>
           <execution>
-            <id>process-nonoss</id>
+            <id>process-noredist</id>
             <phase>process-resources</phase>
             <goals>
               <goal>run</goal>
             </goals>
             <configuration>
-              <target if="${nonoss}">
+              <target if="${noredist}">
                 <echo>test</echo>
                 <replaceregexp
                   file="${basedir}/target/generated-webapp/WEB-INF/classes/environment.properties"
@@ -479,13 +479,13 @@
             </configuration>
           </execution>
           <execution>
-            <id>process-nonoss-spring-context</id>
+            <id>process-noredist-spring-context</id>
             <phase>process-resources</phase>
             <goals>
               <goal>run</goal>
             </goals>
             <configuration>
-              <target if="${nonoss}">
+              <target if="${noredist}">
                 <replaceregexp file="${basedir}/target/generated-webapp/WEB-INF/web.xml"
                   match="classpath:componentContext.xml"
                   replace="classpath:nonossComponentContext.xml" byline="true"/>
@@ -645,7 +645,7 @@
       <id>netapp</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>noredist</name>
         </property>
       </activation>
       <dependencies>
@@ -660,7 +660,7 @@
       <id>f5</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>noredist</name>
         </property>
       </activation>
       <dependencies>
@@ -675,7 +675,7 @@
       <id>netscaler</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>noredist</name>
         </property>
       </activation>
       <dependencies>
@@ -690,7 +690,7 @@
       <id>srx</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>noredist</name>
         </property>
       </activation>
       <dependencies>
@@ -705,7 +705,7 @@
       <id>vmware</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>noredist</name>
         </property>
       </activation>
       <dependencies>
