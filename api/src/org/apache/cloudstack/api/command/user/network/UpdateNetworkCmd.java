@@ -33,6 +33,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 
@@ -152,7 +153,26 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Updating network: " + getId();
+        
+        
+        StringBuffer eventMsg = new StringBuffer("Updating network: " + getId());
+        if (getNetworkOfferingId() != null) {
+            Network network = _networkService.getNetwork(getId());
+            if (network == null) {
+                throw new InvalidParameterValueException("Networkd id=" + id + " doesn't exist");
+            }
+            if (network.getNetworkOfferingId() != getNetworkOfferingId()) {
+                NetworkOffering oldOff = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
+                NetworkOffering newOff = _entityMgr.findById(NetworkOffering.class, getNetworkOfferingId());
+                if (newOff == null) {
+                    throw new InvalidParameterValueException("Networkd offering id supplied is invalid");
+                }
+
+                eventMsg.append(". Original network offering id: " + oldOff.getUuid() + ", new network offering id: " + newOff.getUuid());
+            }
+        }
+            
+        return eventMsg.toString();
     }
 
     @Override
