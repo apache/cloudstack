@@ -281,3 +281,53 @@ CREATE VIEW `cloud`.`template_view` AS
             and (resource_tags.resource_type = 'Template' or resource_tags.resource_type='ISO')
     where
         vm_template.state='Active';	
+        
+-- ACL DB schema        
+CREATE TABLE `cloud`.`acl_group` (
+  `id` bigint unsigned NOT NULL UNIQUE auto_increment,
+  `name` varchar(255) NOT NULL,
+  `uuid` varchar(40),
+  `removed` datetime COMMENT 'date the group was removed',
+  `created` datetime COMMENT 'date the group was created',
+  PRIMARY KEY  (`id`),
+  INDEX `i_acl_group__removed`(`removed`),
+  CONSTRAINT `uc_acl_group__uuid` UNIQUE (`uuid`)  
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`acl_group_account_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `group_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_acl_group_vm_map___group_id` FOREIGN KEY(`group_id`) REFERENCES `acl_group` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_acl_group_vm_map___account_id` FOREIGN KEY(`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;        
+
+CREATE TABLE `cloud`.`acl_role` (
+  `id` bigint unsigned NOT NULL UNIQUE auto_increment,
+  `name` varchar(255) NOT NULL,
+  `uuid` varchar(40),
+  `removed` datetime COMMENT 'date the role was removed',
+  `created` datetime COMMENT 'date the role was created',
+  PRIMARY KEY  (`id`),
+  INDEX `i_acl_role__removed`(`removed`),
+  CONSTRAINT `uc_acl_role__uuid` UNIQUE (`uuid`)  
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`acl_api_permission` (
+  `id` bigint unsigned NOT NULL UNIQUE auto_increment,
+  `role_id` bigint unsigned NOT NULL,
+  `api` varchar(255) NOT NULL,
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_acl_api_permission___role_id` FOREIGN KEY(`role_id`) REFERENCES `acl_role` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`acl_entity_permission` (
+  `id` bigint unsigned NOT NULL UNIQUE auto_increment,
+  `group_id` bigint unsigned NOT NULL,
+  `entity_type` varchar(100) NOT NULL,
+  `entity_id` bigint unsigned NOT NULL,
+  `access_type` varchar(40) NOT NULL,  
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_acl_entity_permission___group_id` FOREIGN KEY(`group_id`) REFERENCES `acl_group` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
