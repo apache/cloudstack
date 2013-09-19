@@ -82,10 +82,10 @@ class Services:
                          "network1": {
                                   "name": "MySharedNetwork - Test1",
                                   "displaytext": "MySharedNetwork1",
-                                  "gateway" :"172.16.15.1",
+                                  "gateway" :"172.16.16.1",
                                   "netmask" :"255.255.255.0",
-                                  "startip" :"172.16.15.21",
-                                  "endip" :"172.16.15.41",
+                                  "startip" :"172.16.16.21",
+                                  "endip" :"172.16.16.41",
                                   "acltype" : "Domain",
                                   "scope":"all",
                                 },
@@ -2189,7 +2189,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network1"]["acltype"] = "domain"
         self.services["network1"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network1"]["physicalnetworkid"] = physical_network.id
-        self.services["network1"]["vlan"] = self.getFreeVlan(self.api_client, self.zone.id)
+        self.services["network1"]["vlan"] = self.getFreeVlan(self.api_client, self.zone.id)[1] #vlan id is second return value of function
 
         self.network1 = Network.create(
                          self.api_client,
