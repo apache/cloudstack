@@ -181,10 +181,13 @@
                                                 return;
 
                                             var apiCmd;
-                                            if (args.zone == -1)
-                                                apiCmd = "listHypervisors&zoneid=-1";
-                                            else
+                                            if (args.zone == -1) { //All Zones
+                                                //apiCmd = "listHypervisors&zoneid=-1"; //"listHypervisors&zoneid=-1" has been changed to return only hypervisors available in all zones (bug 8809)
+                                            	apiCmd = "listHypervisors"; 
+                                            }
+                                            else {
                                                 apiCmd = "listHypervisors&zoneid=" + args.zone;
+                                            }
 
                                             $.ajax({
                                                 url: createURL(apiCmd),
