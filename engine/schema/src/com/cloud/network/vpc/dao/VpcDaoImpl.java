@@ -128,7 +128,7 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
 
     @Override
     @DB
-    public VpcVO persist(VpcVO vpc, Map<String, String> serviceProviderMap) {
+    public VpcVO persist(VpcVO vpc, Map<String, List<String>> serviceProviderMap) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         VpcVO newVpc = super.persist(vpc);
@@ -139,12 +139,14 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
 
     @Override
     @DB
-    public void persistVpcServiceProviders(long vpcId, Map<String, String> serviceProviderMap) {
+    public void persistVpcServiceProviders(long vpcId, Map<String, List<String>> serviceProviderMap) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         for (String service : serviceProviderMap.keySet()) {
-            VpcServiceMapVO serviceMap = new VpcServiceMapVO(vpcId, Network.Service.getService(service), Network.Provider.getProvider(serviceProviderMap.get(service)));
-            _vpcSvcMap.persist(serviceMap);
+            for (String provider : serviceProviderMap.get(service)) {
+                VpcServiceMapVO serviceMap = new VpcServiceMapVO(vpcId, Network.Service.getService(service), Network.Provider.getProvider(provider));
+                _vpcSvcMap.persist(serviceMap);
+            }
         }
         txn.commit();
     }

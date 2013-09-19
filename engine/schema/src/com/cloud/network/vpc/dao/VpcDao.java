@@ -40,8 +40,8 @@ public interface VpcDao extends GenericDao<VpcVO, Long>{
     
     long countByAccountId(long accountId);
 
-    VpcVO persist(VpcVO vpc, Map<String, String> serviceProviderMap);
+    VpcVO persist(VpcVO vpc, Map<String, List<String>> serviceProviderMap);
 
     void persistVpcServiceProviders(long vpcId,
-                                    Map<String, String> serviceProviderMap);
+                                    Map<String, List<String>> serviceProviderMap);
 }

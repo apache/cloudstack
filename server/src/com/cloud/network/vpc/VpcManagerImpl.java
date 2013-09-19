@@ -670,18 +670,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return vpc;
     }
 
-    private Map<String, String> finalizeServicesAndProvidersForVpc(long zoneId, long offeringId) {
-        Map<String, String> svcProviders = new HashMap<String, String>();
-        Map<String, List<String>> providerSvcs = new HashMap<String, List<String>>();
+    private Map<String, List<String>> finalizeServicesAndProvidersForVpc(long zoneId, long offeringId) {
+        Map<String, List<String>> svcProviders = new HashMap<String, List<String>>();
         List<VpcOfferingServiceMapVO> servicesMap = _vpcOffSvcMapDao.listByVpcOffId(offeringId);
 
         for (VpcOfferingServiceMapVO serviceMap : servicesMap) {
-            if (svcProviders.containsKey(serviceMap.getService())) {
-                // FIXME - right now we pick up the first provider from the list, need to add more logic based on
-                // provider load, etc
-                continue;
-            }
-
             String service = serviceMap.getService();
             String provider = serviceMap.getProvider();
 
@@ -695,13 +688,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 throw new InvalidParameterValueException("Provider " + provider +
                         " should be enabled in at least one physical network of the zone specified");
             }
-
-            svcProviders.put(service, provider);
-            List<String> l = providerSvcs.get(provider);
-            if (l == null) {
-                providerSvcs.put(provider, l = new ArrayList<String>());
+            
+            List<String> providers = null;
+            if (svcProviders.get(service) == null) {
+                providers = new ArrayList<String>();
+            } else {
+                providers = svcProviders.get(service);
             }
-            l.add(service);
+            providers.add(provider);
+            svcProviders.put(service, providers);
         }
 
         return svcProviders;
