@@ -468,6 +468,12 @@
                     <exclude name="*.in" />
                   </fileset>
                 </copy>
+                <copy overwrite="true" todir="${basedir}/../utils/conf/">
+                  <fileset dir="${basedir}/tomcatconf">
+                    <include name="commands.properties.in" />
+                  </fileset>
+                  <globmapper from="*.in" to="*" />
+                </copy>
               </target>
             </configuration>
           </execution>
