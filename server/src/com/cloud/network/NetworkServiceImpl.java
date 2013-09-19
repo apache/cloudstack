@@ -3869,7 +3869,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         //check if we need to create guest network
         Network privateNetwork = _networksDao.getPrivateNetwork(uriString, cidr,
-                networkOwnerId, pNtwk.getDataCenterId(), null);
+                networkOwnerId, pNtwk.getDataCenterId(), networkOfferingId);
         if (privateNetwork == null) {
             //create Guest network
             privateNetwork = _networkMgr.createGuestNetwork(ntwkOff.getId(), networkName, displayText, gateway, cidr, uriString,
