@@ -314,6 +314,13 @@ CREATE TABLE `cloud`.`acl_role` (
   CONSTRAINT `uc_acl_role__uuid` UNIQUE (`uuid`)  
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
+
+INSERT IGNORE INTO `cloud`.`acl_role` (name, uuid, created) VALUES ('NORMAL', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_role` (name, uuid, created) VALUES ('ADMIN', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_role` (name, uuid, created) VALUES ('DOMAIN_ADMIN', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_role` (name, uuid, created) VALUES ('RESOURCE_DOMAIN_ADMIN', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_role` (name, uuid, created) VALUES ('READ_ONLY_ADMIN', UUID(), Now());
+
 CREATE TABLE `cloud`.`acl_api_permission` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
   `role_id` bigint unsigned NOT NULL,
