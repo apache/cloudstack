@@ -5,9 +5,9 @@
 # Required-Stop:     $local_fs
 # Should-Start:      
 # Should-Stop:       
-# Default-Start:     2 3 4 5
+# Default-Start:     
 # Default-Stop:      0 1 6
-# Short-Description: 	Start up the cloud.com service
+# Short-Description: 	Start up the CloudStack cloud service
 ### END INIT INFO
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -74,7 +74,7 @@ _failure() {
   fi
 }
 RETVAL=$?
-CLOUD_COM_HOME="/usr/local/cloud"
+CLOUDSTACK_HOME="/usr/local/cloud"
 
 # mkdir -p /var/log/vmops
 
@@ -82,23 +82,23 @@ get_pids() {
   local i
   for i in $(ps -ef| grep java | grep -v grep | awk '{print $2}'); 
   do 
-    echo $(pwdx $i) | grep "$CLOUD_COM_HOME"  | awk -F: '{print $1}'; 
+    echo $(pwdx $i) | grep "$CLOUDSTACK_HOME"  | awk -F: '{print $1}'; 
   done
 }
 
 start() {
    local pid=$(get_pids)
    if [ "$pid" != "" ]; then
-       echo "cloud.com sevice is already running, PID = $pid"
+       echo "CloudStack cloud sevice is already running, PID = $pid"
        return 0
    fi
 
-   echo -n "Starting cloud.com service (type=$TYPE) "
-   if [ -f $CLOUD_COM_HOME/systemvm/run.sh ];
+   echo -n "Starting CloudStack cloud service (type=$TYPE) "
+   if [ -f $CLOUDSTACK_HOME/systemvm/run.sh ];
    then
      if [ "$pid" == "" ]
      then
-       (cd $CLOUD_COM_HOME/systemvm; nohup ./run.sh > /var/log/cloud/cloud.out 2>&1 & )
+       (cd $CLOUDSTACK_HOME/systemvm; nohup ./run.sh > /var/log/cloud/cloud.out 2>&1 & )
        pid=$(get_pids)
        echo $pid > /var/run/cloud.pid 
      fi
@@ -107,29 +107,29 @@ start() {
      _failure
    fi
    echo
-   echo 'start' > $CLOUD_COM_HOME/systemvm/user_request
+   echo 'start' > $CLOUDSTACK_HOME/systemvm/user_request
 }
 
 stop() {
   local pid
-  echo -n  "Stopping cloud.com service (type=$TYPE): "
+  echo -n  "Stopping CloudStack cloud service (type=$TYPE): "
   for pid in $(get_pids)
   do
     kill $pid
   done
   _success
   echo
-  echo 'stop' > $CLOUD_COM_HOME/systemvm/user_request
+  echo 'stop' > $CLOUDSTACK_HOME/systemvm/user_request
 }
 
 status() {
   local pids=$(get_pids)
   if [ "$pids" == "" ]
   then
-    echo "cloud.com service is not running"
+    echo "CloudStack cloud service is not running"
     return 1
   fi
-  echo "cloud.com service (type=$TYPE) is running: process id: $pids"
+  echo "CloudStack cloud service (type=$TYPE) is running: process id: $pids"
   return 0
 }
 
