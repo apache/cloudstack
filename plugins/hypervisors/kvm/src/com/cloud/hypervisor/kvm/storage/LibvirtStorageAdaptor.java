@@ -707,6 +707,53 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
+    public boolean connectPhysicalDisk(String name, KVMStoragePool pool, Map<String, String> details) {
+        // this is for managed storage that needs to prep disks prior to use
+        return true;
+    }
+
+    @Override
+    public boolean disconnectPhysicalDisk(String uuid, KVMStoragePool pool) {
+        // this is for managed storage that needs to cleanup disks after use
+        return true;
+    }
+
+    @Override
+    public boolean disconnectPhysicalDiskByPath(String localPath) {
+        // we've only ever cleaned up ISOs that are NFS mounted
+
+        String poolUuid = null;
+
+        if (localPath != null && localPath.startsWith(_mountPoint)) {
+            String[] token = localPath.split("/");
+
+            if (token.length > 3) {
+                poolUuid = token[2];
+            }
+        } else {
+            return false;
+        }
+
+        if (poolUuid == null) {
+            return false;
+        }
+
+        try {
+            Connect conn = LibvirtConnection.getConnection();
+
+            StoragePool pool = conn.storagePoolLookupByUUIDString(poolUuid);
+
+            deleteStoragePool(poolUuid);
+
+            return true;
+        } catch (LibvirtException ex) {
+            return false;
+        } catch (CloudRuntimeException ex) {
+            return false;
+        }
+    }
+
+    @Override
     public boolean deletePhysicalDisk(String uuid, KVMStoragePool pool) {
 
         /**

@@ -18,21 +18,35 @@
  */
 package com.cloud.agent.api.to;
 
+import java.util.Map;
+
 import com.cloud.storage.Volume;
 
 public class DiskTO {
+    public static final String CHAP_INITIATOR_USERNAME = "chapInitiatorUsername";
+    public static final String CHAP_INITIATOR_SECRET = "chapInitiatorSecret";
+    public static final String CHAP_TARGET_USERNAME = "chapTargetUsername";
+    public static final String CHAP_TARGET_SECRET = "chapTargetSecret";
+    public static final String MANAGED = "managed";
+    public static final String IQN = "iqn";
+    public static final String STORAGE_HOST = "storageHost";
+    public static final String STORAGE_PORT = "storagePort";
+    public static final String VOLUME_SIZE = "volumeSize";
+
     private DataTO data;
     private Long diskSeq;
-    private String vdiUuid;
+    private String path;
     private Volume.Type type;
+    private Map<String, String> _details;
+
     public DiskTO() {
         
     }
     
-    public DiskTO(DataTO data, Long diskSeq, String vdiUuid, Volume.Type type) {
+    public DiskTO(DataTO data, Long diskSeq, String path, Volume.Type type) {
         this.data = data;
         this.diskSeq = diskSeq;
-        this.vdiUuid = vdiUuid;
+        this.path = path;
         this.type = type;
     }
 
@@ -52,12 +66,12 @@ public class DiskTO {
         this.diskSeq = diskSeq;
     }
 
-    public String getVdiUuid() {
-        return vdiUuid;
+    public String getPath() {
+        return path;
     }
 
-    public void setVdiUuid(String vdiUuid) {
-        this.vdiUuid = vdiUuid;
+    public void setPath(String path) {
+        this.path = path;
     }
 
     public Volume.Type getType() {
@@ -66,5 +80,13 @@ public class DiskTO {
 
     public void setType(Volume.Type type) {
         this.type = type;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        _details = details;
+    }
+
+    public Map<String, String> getDetails() {
+        return _details;
     }
 }

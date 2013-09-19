@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
@@ -1231,7 +1232,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             StoragePoolVO volumePool = _storagePoolDao.findById(volume.getPoolId());
 
             DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
-            DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), null, volume.getVolumeType());
+            DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
 
             DettachCommand cmd = new DettachCommand(disk, vm.getInstanceName());
 
@@ -1605,29 +1606,41 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (sendCommand) {
             volumeToAttachStoragePool = _storagePoolDao.findById(volumeToAttach.getPoolId());
-            long storagePoolId = volumeToAttachStoragePool.getId();
+
+            HostVO host = _hostDao.findById(hostId);
+
+            if (host.getHypervisorType() == HypervisorType.KVM &&
+                volumeToAttachStoragePool.isManaged() &&
+                volumeToAttach.getPath() == null) {
+                volumeToAttach.setPath(volumeToAttach.get_iScsiName());
+
+                _volsDao.update(volumeToAttach.getId(), volumeToAttach);
+            }
 
             DataTO volTO = volFactory.getVolume(volumeToAttach.getId()).getTO();
-            DiskTO disk = new DiskTO(volTO, deviceId, null, volumeToAttach.getVolumeType());
+            DiskTO disk = new DiskTO(volTO, deviceId, volumeToAttach.getPath(), volumeToAttach.getVolumeType());
 
             AttachCommand cmd = new AttachCommand(disk, vm.getInstanceName());
 
-            cmd.setManaged(volumeToAttachStoragePool.isManaged());
-
-            cmd.setStorageHost(volumeToAttachStoragePool.getHostAddress());
-            cmd.setStoragePort(volumeToAttachStoragePool.getPort());
-
-            cmd.set_iScsiName(volumeToAttach.get_iScsiName());
-
             VolumeInfo volumeInfo = volFactory.getVolume(volumeToAttach.getId());
-            DataStore dataStore = dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+            DataStore dataStore = dataStoreMgr.getDataStore(volumeToAttachStoragePool.getId(), DataStoreRole.Primary);
             ChapInfo chapInfo = volService.getChapInfo(volumeInfo, dataStore);
 
+            Map<String, String> details = new HashMap<String, String>();
+
+            disk.setDetails(details);
+
+            details.put(DiskTO.MANAGED, String.valueOf(volumeToAttachStoragePool.isManaged()));
+            details.put(DiskTO.STORAGE_HOST, volumeToAttachStoragePool.getHostAddress());
+            details.put(DiskTO.STORAGE_PORT, String.valueOf(volumeToAttachStoragePool.getPort()));
+            details.put(DiskTO.VOLUME_SIZE, String.valueOf(volumeToAttach.getSize()));
+            details.put(DiskTO.IQN, volumeToAttach.get_iScsiName());
+
             if (chapInfo != null) {
-                cmd.setChapInitiatorUsername(chapInfo.getInitiatorUsername());
-                cmd.setChapInitiatorPassword(chapInfo.getInitiatorSecret());
-                cmd.setChapTargetUsername(chapInfo.getTargetUsername());
-                cmd.setChapTargetPassword(chapInfo.getTargetSecret());
+                details.put(DiskTO.CHAP_INITIATOR_USERNAME, chapInfo.getInitiatorUsername());
+                details.put(DiskTO.CHAP_INITIATOR_SECRET, chapInfo.getInitiatorSecret());
+                details.put(DiskTO.CHAP_TARGET_USERNAME, chapInfo.getTargetUsername());
+                details.put(DiskTO.CHAP_TARGET_SECRET, chapInfo.getTargetSecret());
             }
 
             try {
@@ -1646,7 +1659,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volumeToAttach = _volsDao.findById(volumeToAttach.getId());
 
                 if (volumeToAttachStoragePool.isManaged() && volumeToAttach.getPath() == null) {
-                    volumeToAttach.setPath(answer.getDisk().getVdiUuid());
+                    volumeToAttach.setPath(answer.getDisk().getPath());
 
                     _volsDao.update(volumeToAttach.getId(), volumeToAttach);
                 }

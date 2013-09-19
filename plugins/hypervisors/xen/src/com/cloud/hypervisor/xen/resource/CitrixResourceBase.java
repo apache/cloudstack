@@ -1199,10 +1199,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected VBD createVbd(Connection conn, DiskTO volume, String vmName, VM vm, BootloaderType bootLoaderType) throws XmlRpcException, XenAPIException {
+    protected VBD createVbd(Connection conn, DiskTO volume, String vmName, VM vm, BootloaderType bootLoaderType, VDI vdi) throws XmlRpcException, XenAPIException {
         Volume.Type type = volume.getType();
 
-        VDI vdi = mount(conn, vmName, volume);
+        if (vdi == null) {
+            vdi = mount(conn, vmName, volume);
+        }
+
         if ( vdi != null ) {
             Map<String, String> smConfig = vdi.getSmConfig(conn);
             for (String key : smConfig.keySet()) {
@@ -1608,6 +1611,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String vmName = vmSpec.getName();
         State state = State.Stopped;
         VM vm = null;
+        // if a VDI is created, record its UUID to send back to the CS MS
+        Map<String, String> iqnToPath = new HashMap<String, String>();
         try {
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
             if ( vms != null ) {
@@ -1636,7 +1641,37 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vm = createVmFromTemplate(conn, vmSpec, host);
 
             for (DiskTO disk : vmSpec.getDisks()) {
-                createVbd(conn, disk, vmName, vm, vmSpec.getBootloader());
+                VDI vdi = null;
+
+                if (disk.getData() instanceof VolumeObjectTO) {
+                    Map<String, String> details = disk.getDetails();
+                    boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+
+                    if (isManaged) {
+                        String iScsiName = details.get(DiskTO.IQN);
+                        String storageHost = details.get(DiskTO.STORAGE_HOST);
+                        String chapInitiatorUsername = disk.getDetails().get(DiskTO.CHAP_INITIATOR_USERNAME);
+                        String chapInitiatorSecret = disk.getDetails().get(DiskTO.CHAP_INITIATOR_SECRET);
+                        Long volumeSize = Long.parseLong(details.get(DiskTO.VOLUME_SIZE));
+                        String vdiNameLabel = vmName + "-DATA";
+
+                        SR sr = getIscsiSR(conn, iScsiName, storageHost, iScsiName,
+                                    chapInitiatorUsername, chapInitiatorSecret, true);
+
+                        vdi = getVDIbyUuid(conn, disk.getPath(), false);
+
+                        if (vdi == null) {
+                            vdi = createVdi(sr, vdiNameLabel, volumeSize);
+
+                            iqnToPath.put(iScsiName, vdi.getUuid(conn));
+                        }
+                        else {
+                            vdi.setNameLabel(conn, vdiNameLabel);
+                        }
+                    }
+                }
+
+                createVbd(conn, disk, vmName, vm, vmSpec.getBootloader(), vdi);
             }
 
             if (vmSpec.getType() != VirtualMachine.Type.User) {
@@ -1718,11 +1753,21 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
             state = State.Running;
-            return new StartAnswer(cmd);
+
+            StartAnswer startAnswer = new StartAnswer(cmd);
+
+            startAnswer.setIqnToPath(iqnToPath);
+
+            return startAnswer;
         } catch (Exception e) {
             s_logger.warn("Catch Exception: " + e.getClass().toString() + " due to " + e.toString(), e);
             String msg = handleVmStartFailure(conn, vmName, vm, "", e);
-            return new StartAnswer(cmd, msg);
+
+            StartAnswer startAnswer = new StartAnswer(cmd, msg);
+
+            startAnswer.setIqnToPath(iqnToPath);
+
+            return startAnswer;
         } finally {
             synchronized (_cluster.intern()) {
                 if (state != State.Stopped) {
@@ -1733,6 +1778,46 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     s_logger.debug("The VM is in stopped state, detected problem during startup : " + vmName);
                 }
             }
+
+            if (state != State.Running) {
+                disconnectManagedVolumes(conn, vm);
+            }
+        }
+    }
+
+    private void disconnectManagedVolumes(Connection conn, VM vm) {
+        try {
+            Set<VBD> vbds = vm.getVBDs(conn);
+
+            for (VBD vbd : vbds) {
+                VDI vdi = vbd.getVDI(conn);
+                SR sr = null;
+
+                try {
+                    sr = vdi.getSR(conn);
+                }
+                catch (Exception ex) {
+                    continue;
+                }
+
+                if (sr.getNameLabel(conn).startsWith("/iqn.")) {
+                    VBD.Record vbdr = vbd.getRecord(conn);
+
+                    if (vbdr.currentlyAttached) {
+                        vbd.unplug(conn);
+                    }
+
+                    vbd.destroy(conn);
+
+                    vdi.setNameLabel(conn, "detached");
+
+                    umount(conn, vdi);
+
+                    handleSrAndVdiDetach(sr.getNameLabel(conn));
+                }
+            }
+        } catch (Exception ex) {
+            s_logger.debug(ex.getMessage());
         }
     }
 
@@ -3976,6 +4061,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                     try {
                         if (vm.getPowerState(conn) == VmPowerState.HALTED) {
+                            disconnectManagedVolumes(conn, vm);
+
                             Map<String, String> platform = vm.getPlatform(conn);
                             Integer timeoffset = null;
                             try {
@@ -5385,7 +5472,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (pool.getType() == StoragePoolType.NetworkFilesystem) {
                 getNfsSR(conn, pool);
             } else if (pool.getType() == StoragePoolType.IscsiLUN) {
-                getIscsiSR(conn, pool.getUuid(), pool.getHost(), pool.getPath(), null, null);
+                getIscsiSR(conn, pool.getUuid(), pool.getHost(), pool.getPath(), null, null, false);
             } else if (pool.getType() == StoragePoolType.PreSetup) {
             } else {
                 return new Answer(cmd, false, "The pool type: " + pool.getType().name() + " is not supported.");
@@ -6224,7 +6311,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected SR getIscsiSR(Connection conn, String srNameLabel, String target, String path,
-            String chapInitiatorUsername, String chapInitiatorPassword) {
+            String chapInitiatorUsername, String chapInitiatorPassword, boolean ignoreIntroduceException) {
         synchronized (srNameLabel.intern()) {
             Map<String, String> deviceConfig = new HashMap<String, String>();
             try {
@@ -6273,8 +6360,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 deviceConfig.put("target", target);
                 deviceConfig.put("targetIQN", targetiqn);
 
-                if (StringUtils.isNotBlank(chapInitiatorUsername) &&
-                        StringUtils.isNotBlank(chapInitiatorPassword)) {
+                if (StringUtils.isNotBlank(chapInitiatorUsername) && StringUtils.isNotBlank(chapInitiatorPassword)) {
                     deviceConfig.put("chapuser", chapInitiatorUsername);
                     deviceConfig.put("chappassword", chapInitiatorPassword);
                 }
@@ -6329,8 +6415,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     sr = SR.create(conn, host, deviceConfig, new Long(0), srNameLabel, srNameLabel, type, "user", true,
                             smConfig);
                 } else {
-                    sr = SR.introduce(conn, pooluuid, srNameLabel, srNameLabel,
-                            type, "user", true, smConfig);
+                    try {
+                        sr = SR.introduce(conn, pooluuid, srNameLabel, srNameLabel,
+                                type, "user", true, smConfig);
+                    }
+                    catch (XenAPIException ex) {
+                        if (ignoreIntroduceException) {
+                            return sr;
+                        }
+
+                        throw ex;
+                    }
 
                     Set<Host> setHosts = Host.getAll(conn);
 
@@ -6557,6 +6652,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
         boolean attach = cmd.getAttach();
         String vmName = cmd.getVmName();
+        String vdiNameLabel = vmName + "-DATA";
         Long deviceId = cmd.getDeviceId();
 
         String errorMsg;
@@ -6571,12 +6667,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             if (cmd.getAttach() && cmd.isManaged()) {
                 SR sr = getIscsiSR(conn, cmd.get_iScsiName(), cmd.getStorageHost(), cmd.get_iScsiName(),
-                            cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword());
+                            cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword(), true);
 
                 vdi = getVDIbyUuid(conn, cmd.getVolumePath(), false);
 
                 if (vdi == null) {
-                    vdi = createVdi(sr, cmd.get_iScsiName(), cmd.getVolumeSize());
+                    vdi = createVdi(sr, vdiNameLabel, cmd.getVolumeSize());
                 }
             }
             else {
@@ -6632,7 +6728,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 vbd.plug(conn);
 
                 // Update the VDI's label to include the VM name
-                vdi.setNameLabel(conn, vmName + "-DATA");
+                vdi.setNameLabel(conn, vdiNameLabel);
 
                 return new AttachVolumeAnswer(cmd, Long.parseLong(diskNumber), vdi.getUuid(conn));
             } else {

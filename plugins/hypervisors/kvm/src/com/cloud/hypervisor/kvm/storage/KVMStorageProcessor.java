@@ -828,7 +828,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         if (result == null && !isAttach) {
             for (DiskDef disk : disks) {
                 if (disk.getDeviceType() == DiskDef.deviceType.CDROM) {
-                    this.resource.cleanupDisk(conn, disk);
+                    this.resource.cleanupDisk(disk);
                 }
             }
 
@@ -972,6 +972,9 @@ public class KVMStorageProcessor implements StorageProcessor {
         String vmName = cmd.getVmName();
         try {
             Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
+
+            storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath(), disk.getDetails());
+
             KVMPhysicalDisk phyDisk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
 
             attachOrDetachDisk(conn, true, vmName, phyDisk, disk.getDiskSeq().intValue());
@@ -994,9 +997,12 @@ public class KVMStorageProcessor implements StorageProcessor {
         String vmName = cmd.getVmName();
         try {
             Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
+
             KVMPhysicalDisk phyDisk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
 
             attachOrDetachDisk(conn, false, vmName, phyDisk, disk.getDiskSeq().intValue());
+
+            storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
 
             return new DettachAnswer(disk);
         } catch (LibvirtException e) {

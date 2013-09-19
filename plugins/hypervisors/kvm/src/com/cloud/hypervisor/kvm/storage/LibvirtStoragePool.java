@@ -18,6 +18,7 @@ package com.cloud.hypervisor.kvm.storage;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
@@ -151,6 +152,16 @@ public class LibvirtStoragePool implements KVMStoragePool {
         disk.setSize(f.length());
         disk.setVirtualSize(f.length());
         return disk;
+    }
+
+    @Override
+    public boolean connectPhysicalDisk(String name, Map<String, String> details) {
+        return true;
+    }
+
+    @Override
+    public boolean disconnectPhysicalDisk(String uuid) {
+        return true;
     }
 
     @Override

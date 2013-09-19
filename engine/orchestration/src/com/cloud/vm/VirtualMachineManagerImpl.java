@@ -51,7 +51,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -844,6 +843,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
 
+                    handlePath(vmTO.getDisks(), vm.getHypervisorType());
+
                     cmds = new Commands(Command.OnError.Stop);
                     cmds.addCommand(new StartCommand(vmTO, dest.getHost(), getExecuteInSequence()));
 
@@ -862,6 +863,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     startAnswer = cmds.getAnswer(StartAnswer.class);
                     if (startAnswer != null && startAnswer.getResult()) {
+                        handlePath(vmTO.getDisks(), startAnswer.getIqnToPath());
                         String host_guid = startAnswer.getHost_guid();
                         if (host_guid != null) {
                             HostVO finalHost = _resourceMgr.findHostByGuid(host_guid);
@@ -975,14 +977,63 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
+    // for managed storage on KVM, need to make sure the path field of the volume in question is populated with the IQN
+    private void handlePath(DiskTO[] disks, HypervisorType hypervisorType) {
+        if (hypervisorType != HypervisorType.KVM) {
+            return;
+        }
+
+        if (disks != null) {
+            for (DiskTO disk : disks) {
+                Map<String, String> details = disk.getDetails();
+                boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+
+                if (isManaged && disk.getPath() == null) {
+                    Long volumeId = disk.getData().getId();
+                    VolumeVO volume = _volsDao.findById(volumeId);
+
+                    disk.setPath(volume.get_iScsiName());
+                    volume.setPath(volume.get_iScsiName());
+
+                    _volsDao.update(volumeId, volume);
+                }
+            }
+        }
+    }
+
+    // for managed storage on XenServer and VMware, need to update the DB with a path if the VDI/VMDK file was newly created
+    private void handlePath(DiskTO[] disks, Map<String, String> iqnToPath) {
+        if (disks != null) {
+            for (DiskTO disk : disks) {
+                Map<String, String> details = disk.getDetails();
+                boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+
+                if (isManaged && disk.getPath() == null) {
+                    Long volumeId = disk.getData().getId();
+                    VolumeVO volume = _volsDao.findById(volumeId);
+                    String iScsiName = volume.get_iScsiName();
+                    String path = iqnToPath.get(iScsiName);
+
+                    volume.setPath(path);
+
+                    _volsDao.update(volumeId, volume);
+                }
+            }
+        }
+    }
+
     private void syncDiskChainChange(StartAnswer answer) {
         VirtualMachineTO vmSpec = answer.getVirtualMachine();
 
         for(DiskTO disk : vmSpec.getDisks()) {
             if(disk.getType() != Volume.Type.ISO) {
                 VolumeObjectTO vol = (VolumeObjectTO)disk.getData();
+                VolumeVO volume = _volsDao.findById(vol.getId());
 
-                volumeMgr.updateVolumeDiskChain(vol.getId(), vol.getPath(), vol.getChainInfo());
+                // Use getPath() from VolumeVO to get a fresh copy of what's in the DB.
+                // Before doing this, in a certain situation, getPath() from VolumeObjectTO
+                // returned null instead of an actual path (because it was out of date with the DB).
+                volumeMgr.updateVolumeDiskChain(vol.getId(), volume.getPath(), vol.getChainInfo());
             }
         }
     }
@@ -1523,7 +1574,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         boolean migrated = false;
         try {
             boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
-            MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows);
+            MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows, to);
             mc.setHostGuid(dest.getHost().getGuid());
 
             try {
@@ -3150,7 +3201,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         boolean migrated = false;
         try {
             boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
-            MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows);
+            MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows, to);
             mc.setHostGuid(dest.getHost().getGuid());
 
             try {
