@@ -59,7 +59,6 @@ class Services:
                         "cpunumber": 1,
                         "cpuspeed": 100,
                         "memory": 128,
-                        "storagetype": "local"
                 },
                 "egress": {
                     "name": 'web',
