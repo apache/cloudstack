@@ -22,9 +22,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -59,6 +62,7 @@ public class Upgrade420to430 implements DbUpgrade {
     @Override
     public void performDataMigration(Connection conn) {
         populateACLGroupAccountMap(conn);
+        populateACLRoleBasedAPIPermission(conn);
     }
 
     // populate acl_group_account_map table for existing accounts
@@ -104,6 +108,47 @@ public class Upgrade420to430 implements DbUpgrade {
             }
         }
         s_logger.debug("Completed populate acl_group_account_map for existing accounts.");
+    }
+
+    private void populateACLRoleBasedAPIPermission(Connection conn) {
+        // read the commands.properties.in and populate the table
+        PreparedStatement apiInsert = null;
+
+        s_logger.debug("Populating acl_api_permission table for existing commands...");
+        try {
+            apiInsert = conn.prepareStatement("INSERT INTO `cloud`.`acl_api_permission` (role_id, api) values(?, ?)");
+
+            Map<String, String> commandMap = PropertiesUtil.processConfigFile(new String[] { "commands.properties" });
+            for (Map.Entry<String, String> entry : commandMap.entrySet()) {
+                String apiName = entry.getKey();
+                String roleMask = entry.getValue();
+                try {
+                    short cmdPermissions = Short.parseShort(roleMask);
+                    for (RoleType roleType : RoleType.values()) {
+                        if ((cmdPermissions & roleType.getValue()) != 0) {
+                            // insert entry into api_permission for this role
+                            apiInsert.setLong(1, roleType.ordinal() + 1);
+                            apiInsert.setString(2, apiName);
+                            apiInsert.executeUpdate();
+                        }
+                    }
+                } catch (NumberFormatException nfe) {
+                    s_logger.info("Malformed key=value pair for entry: " + entry.toString());
+                }
+            }
+        } catch (SQLException e) {
+            String msg = "Unable to populate acl_api_permission for existing commands." + e.getMessage();
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg, e);
+        } finally {
+            try {
+                if (apiInsert != null) {
+                    apiInsert.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Completed populate acl_api_permission for existing commands.");
     }
 
     @Override
