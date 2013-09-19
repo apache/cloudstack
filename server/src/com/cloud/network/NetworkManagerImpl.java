@@ -551,7 +551,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                         addr.getSystem(), addr.getClass().getName(), addr.getUuid());
             }
             // don't increment resource count for direct and dedicated ip addresses
-            if (addr.getAssociatedWithNetworkId() != null && !isIpDedicated(addr)) {
+            if (updateIpResourceCount(addr)) {
                 _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
             }
         }
@@ -3783,7 +3783,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             txn.start();
 
             // don't decrement resource count for direct and dedicated ips
-            if (ip.getAssociatedWithNetworkId() != null && !isIpDedicated(ip)) {
+            if (updateIpResourceCount(ip)) {
                 _resourceLimitMgr.decrementResourceCount(_ipAddressDao.findById(addrId).getAllocatedToAccountId(), ResourceType.public_ip);
             }
 
@@ -3807,7 +3807,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         return ip;
     }
-
+    
+    protected boolean updateIpResourceCount(IPAddressVO ip) {
+        return (ip.getAssociatedWithNetworkId() != null || ip.getVpcId() != null) && !isIpDedicated(ip);
+    }
     
 
     Random _rand = new Random(System.currentTimeMillis());
