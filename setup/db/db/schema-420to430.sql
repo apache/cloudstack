@@ -315,11 +315,17 @@ CREATE TABLE `cloud`.`acl_role` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 
-INSERT IGNORE INTO `cloud`.`acl_role` (name, uuid, created) VALUES ('NORMAL', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_role` (name, uuid, created) VALUES ('ADMIN', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_role` (name, uuid, created) VALUES ('DOMAIN_ADMIN', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_role` (name, uuid, created) VALUES ('RESOURCE_DOMAIN_ADMIN', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_role` (name, uuid, created) VALUES ('READ_ONLY_ADMIN', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, uuid, created) VALUES (1,'NORMAL', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, uuid, created) VALUES (2, 'ADMIN', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, uuid, created) VALUES (3, 'DOMAIN_ADMIN', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, uuid, created) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, uuid, created) VALUES (5, 'READ_ONLY_ADMIN', UUID(), Now());
+
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, uuid, created) VALUES (1, 'NORMAL', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, uuid, created) VALUES (2, 'ADMIN', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, uuid, created) VALUES (3, 'DOMAIN_ADMIN', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, uuid, created) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, uuid, created) VALUES (5, 'READ_ONLY_ADMIN', UUID(), Now());
 
 CREATE TABLE `cloud`.`acl_api_permission` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,

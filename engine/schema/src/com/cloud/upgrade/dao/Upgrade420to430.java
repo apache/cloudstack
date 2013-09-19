@@ -19,6 +19,9 @@ package com.cloud.upgrade.dao;
 
 import java.io.File;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
 
@@ -55,6 +58,52 @@ public class Upgrade420to430 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
+        populateACLGroupAccountMap(conn);
+    }
+
+    // populate acl_group_account_map table for existing accounts
+    private void populateACLGroupAccountMap(Connection conn) {
+        PreparedStatement acctInsert = null;
+        PreparedStatement acctQuery = null;
+        ResultSet rs = null;
+
+        s_logger.debug("Populating acl_group_account_map table for existing accounts...");
+        try {
+            acctInsert = conn
+                    .prepareStatement("INSERT INTO `cloud`.`acl_group_account_map` (group_id, account_id) values(?, ?)");
+            acctQuery = conn
+                    .prepareStatement("select id, type from `cloud`.`account` where removed is null");
+            rs = acctQuery.executeQuery();
+
+            while (rs.next()) {
+                Long acct_id = rs.getLong("id");
+                short type = rs.getShort("type");
+
+                // insert entry in acl_group_account_map table
+                acctInsert.setLong(1, type + 1);
+                acctInsert.setLong(2, acct_id);
+                acctInsert.executeUpdate();
+            }
+        } catch (SQLException e) {
+            String msg = "Unable to populate acl_group_account_map for existing accounts." + e.getMessage();
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg, e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (acctInsert != null) {
+                    acctInsert.close();
+                }
+                if (acctQuery != null) {
+                    acctQuery.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Completed populate acl_group_account_map for existing accounts.");
     }
 
     @Override
