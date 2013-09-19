@@ -2057,6 +2057,8 @@
                         var data = {};
                         listViewDataProvider(args, data);
 
+                        //The following 10 lines caused CLOUDSTACK-4713 (EIP/ELB Basic Zone - unable to see any IPs that are acquired)
+                        /*
                         if (g_supportELB == "guest") // IPs are allocated on guest network
                             $.extend(data, {
                                 forvirtualnetwork: false,
@@ -2067,6 +2069,7 @@
                                 forvirtualnetwork: true,
                                 forloadbalancing: true
                             });
+                        */
 
                         if (args.context.networks) {
                             $.extend(data, {
