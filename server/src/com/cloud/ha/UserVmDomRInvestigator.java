@@ -18,11 +18,9 @@ package com.cloud.ha;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
@@ -45,7 +43,6 @@ import com.cloud.vm.dao.UserVmDao;
 public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
     private static final Logger s_logger = Logger.getLogger(UserVmDomRInvestigator.class);
 
-    private String _name = null;
     @Inject private final UserVmDao _userVmDao = null;
     @Inject private final AgentManager _agentMgr = null;
     @Inject private final NetworkModel _networkMgr = null;
@@ -141,18 +138,6 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
             s_logger.debug("could not reach agent, could not reach agent's host, returning that we don't have enough information");
         }
         return null;
-    }
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override
