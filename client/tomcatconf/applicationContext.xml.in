@@ -42,12 +42,14 @@
   <bean id="componentContext" class="com.cloud.utils.component.ComponentContext" />
   <bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />
   <bean id="actionEventInterceptor" class="com.cloud.event.ActionEventInterceptor" />
+  <bean id="contrailEventInterceptor" class="net.juniper.contrail.management.EventUtils.EventInterceptor" />
 
   <bean id="instantiatePostProcessor" class="com.cloud.utils.component.ComponentInstantiationPostProcessor">
     <property name="Interceptors">
         <list>
             <ref bean="transactionContextBuilder" />
             <ref bean="actionEventInterceptor" />
+            <ref bean="contrailEventInterceptor" />
         </list>
     </property>
   </bean>

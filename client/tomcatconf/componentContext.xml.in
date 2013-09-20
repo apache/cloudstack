@@ -235,6 +235,26 @@
     </property>
   </bean>
 
+  <bean id="messageBus" class = "org.apache.cloudstack.framework.messagebus.MessageBusBase" />
+
+  <!--
+      Juniper Contrail support components
+  -->
+  <bean id="ContrailManager"
+	class="net.juniper.contrail.management.ContrailManagerImpl"/>
+  <bean id="ContrailElement"
+	class="net.juniper.contrail.management.ContrailElementImpl"/>
+  <bean id="ContrailGuru"
+	class="net.juniper.contrail.management.ContrailGuru"/>
+  <bean id="ServerDBSync"
+	class="net.juniper.contrail.management.ServerDBSyncImpl"/>
+  <bean id="ServerEventHandler"
+	class="net.juniper.contrail.management.ServerEventHandlerImpl"/>
+  <bean id="EventUtils"
+	class="net.juniper.contrail.management.EventUtils"/>
+  <bean id="ServiceManager"
+	class="net.juniper.contrail.management.ServiceManagerImpl"/>
+
   <!-- Networking adapters -->
   <bean id="ipDeployers" class="com.cloud.utils.component.AdapterList">
     <property name="Adapters">
@@ -244,6 +264,7 @@
           <ref bean="VpcVirtualRouter"/>
           <ref bean="NiciraNvp"/>
           <ref bean="InternalLbVm"/>
+	  <ref bean="ContrailElement"/>
       </list>
     </property>
   </bean>
@@ -269,6 +290,7 @@
           <ref bean="ControlNetworkGuru"/>
           <ref bean="DirectNetworkGuru"/>
           <ref bean="OvsGuestNetworkGuru"/>
+	  <ref bean="ContrailGuru"/>
           <ref bean="PrivateNetworkGuru"/>
           <ref bean="NiciraNvpGuestNetworkGuru"/>
           <ref bean="MidoNetGuestNetworkGuru"/>
@@ -282,6 +304,7 @@
     <property name="Adapters">
       <list>
           <ref bean="VirtualRouter"/>
+          <ref bean="ContrailElement"/>
           <ref bean="Ovs"/>
           <ref bean="SecurityGroupProvider"/>
           <ref bean="VpcVirtualRouter"/>
