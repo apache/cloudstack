@@ -16,7 +16,10 @@
 // under the License.
 package com.cloud.server.auth;
 
+import java.util.Map;
+
 import javax.ejb.Local;
+import javax.naming.ConfigurationException;
 
 import com.cloud.utils.component.AdapterBase;
 
@@ -26,4 +29,28 @@ import com.cloud.utils.component.AdapterBase;
  */
 @Local(value={UserAuthenticator.class})
 public abstract class DefaultUserAuthenticator extends AdapterBase implements UserAuthenticator {
+	private String _name = null;
+	
+	@Override
+	public boolean configure(String name, Map<String, Object> params)
+			throws ConfigurationException {
+		_name = name;
+		return true;
+	}
+
+	@Override
+	public String getName() {
+		return _name;
+	}
+
+	@Override
+	public boolean start() {
+		return true;
+	}
+
+	@Override
+	public boolean stop() {
+		return true;
+	}
+
 }

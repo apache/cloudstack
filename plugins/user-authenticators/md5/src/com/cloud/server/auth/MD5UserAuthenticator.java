@@ -22,11 +22,12 @@ import java.util.Map;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
+
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -58,6 +59,17 @@ public class MD5UserAuthenticator extends DefaultUserAuthenticator {
 		return true;
 	}
 
+	@Override
+	public boolean configure(String name, Map<String, Object> params)
+			throws ConfigurationException {
+	        if(name == null) {
+                     name = "MD5";
+                }
+		super.configure(name, params);
+		return true;
+	}
+
+	@Override
 	public String encode(String password) {
 		MessageDigest md5 = null;
 		try {

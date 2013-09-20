@@ -15,15 +15,20 @@
 
 package com.cloud.server.auth;
 
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 
 @Local(value={UserAuthenticator.class})
@@ -48,6 +53,16 @@ public class PlainTextUserAuthenticator extends DefaultUserAuthenticator {
             s_logger.debug("Password does not match");
             return false;
         }
+		return true;
+	}
+
+    @Override
+	public boolean configure(String name, Map<String, Object> params)
+			throws ConfigurationException {
+        if (name == null) {
+            name = "PLAINTEXT";
+        }
+		super.configure(name, params);
 		return true;
 	}
 
