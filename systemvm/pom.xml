@@ -112,6 +112,7 @@
             </goals>
             <configuration>
               <target>
+                <mkdir dir="${basedir}/dist" />
                 <mkdir dir="${basedir}/target/build-patch" />
                 <mkdir dir="${basedir}/target/build-patch/usr/sbin" />
                 <copy overwrite="true" todir="${basedir}/target/build-patch">
