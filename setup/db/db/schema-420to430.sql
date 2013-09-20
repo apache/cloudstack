@@ -286,6 +286,7 @@ CREATE VIEW `cloud`.`template_view` AS
 CREATE TABLE `cloud`.`acl_group` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
   `name` varchar(255) NOT NULL,
+  `description` varchar(255) default NULL,
   `uuid` varchar(40),
   `removed` datetime COMMENT 'date the group was removed',
   `created` datetime COMMENT 'date the group was created',
@@ -298,6 +299,8 @@ CREATE TABLE `cloud`.`acl_group_account_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `group_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
+  `removed` datetime COMMENT 'date the account was removed from the group',
+  `created` datetime COMMENT 'date the account was assigned to the group',  
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_acl_group_vm_map___group_id` FOREIGN KEY(`group_id`) REFERENCES `acl_group` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_acl_group_vm_map___account_id` FOREIGN KEY(`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE
@@ -306,6 +309,7 @@ CREATE TABLE `cloud`.`acl_group_account_map` (
 CREATE TABLE `cloud`.`acl_role` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
   `name` varchar(255) NOT NULL,
+  `description` varchar(255) default NULL,  
   `uuid` varchar(40),
   `removed` datetime COMMENT 'date the role was removed',
   `created` datetime COMMENT 'date the role was created',
@@ -314,23 +318,36 @@ CREATE TABLE `cloud`.`acl_role` (
   CONSTRAINT `uc_acl_role__uuid` UNIQUE (`uuid`)  
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`acl_group_role_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `group_id` bigint unsigned NOT NULL,
+  `role_id` bigint unsigned NOT NULL,
+  `removed` datetime COMMENT 'date the role was revoked from the group',
+  `created` datetime COMMENT 'date the role was granted to the group',   
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_acl_group_role_map___group_id` FOREIGN KEY(`group_id`) REFERENCES `acl_group` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_acl_group_role_map___role_id` FOREIGN KEY(`role_id`) REFERENCES `acl_role` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;        
 
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, uuid, created) VALUES (1,'NORMAL', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, uuid, created) VALUES (2, 'ADMIN', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, uuid, created) VALUES (3, 'DOMAIN_ADMIN', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, uuid, created) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, uuid, created) VALUES (5, 'READ_ONLY_ADMIN', UUID(), Now());
 
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, uuid, created) VALUES (1, 'NORMAL', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, uuid, created) VALUES (2, 'ADMIN', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, uuid, created) VALUES (3, 'DOMAIN_ADMIN', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, uuid, created) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, uuid, created) VALUES (5, 'READ_ONLY_ADMIN', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, created) VALUES (1,'NORMAL', 'Domain user role', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, created) VALUES (2, 'ADMIN', 'Root admin role', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, created) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin role', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, created) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin role', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, created) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin role', UUID(), Now());
+
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, created) VALUES (1, 'NORMAL', 'Domain user group', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, created) VALUES (2, 'ADMIN', 'Root admin group', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, created) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin group', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, created) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin group', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, created) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin group', UUID(), Now());
 
 CREATE TABLE `cloud`.`acl_api_permission` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
   `role_id` bigint unsigned NOT NULL,
   `api` varchar(255) NOT NULL,
+  `removed` datetime COMMENT 'date the permission was revoked',
+  `created` datetime COMMENT 'date the permission was granted',  
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_acl_api_permission___role_id` FOREIGN KEY(`role_id`) REFERENCES `acl_role` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -341,6 +358,8 @@ CREATE TABLE `cloud`.`acl_entity_permission` (
   `entity_type` varchar(100) NOT NULL,
   `entity_id` bigint unsigned NOT NULL,
   `access_type` varchar(40) NOT NULL,  
+  `removed` datetime COMMENT 'date the permission was revoked',
+  `created` datetime COMMENT 'date the permission was granted',   
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_acl_entity_permission___group_id` FOREIGN KEY(`group_id`) REFERENCES `acl_group` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

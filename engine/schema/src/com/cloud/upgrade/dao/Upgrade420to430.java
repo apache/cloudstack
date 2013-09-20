@@ -24,8 +24,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
 
-import org.apache.cloudstack.acl.RoleType;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.RoleType;
 
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -62,6 +63,7 @@ public class Upgrade420to430 implements DbUpgrade {
     @Override
     public void performDataMigration(Connection conn) {
         populateACLGroupAccountMap(conn);
+        populateACLGroupRoleMap(conn);
         populateACLRoleBasedAPIPermission(conn);
     }
 
@@ -74,7 +76,7 @@ public class Upgrade420to430 implements DbUpgrade {
         s_logger.debug("Populating acl_group_account_map table for existing accounts...");
         try {
             acctInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`acl_group_account_map` (group_id, account_id) values(?, ?)");
+                    .prepareStatement("INSERT INTO `cloud`.`acl_group_account_map` (group_id, account_id, created) values(?, ?, Now())");
             acctQuery = conn
                     .prepareStatement("select id, type from `cloud`.`account` where removed is null");
             rs = acctQuery.executeQuery();
@@ -110,13 +112,47 @@ public class Upgrade420to430 implements DbUpgrade {
         s_logger.debug("Completed populate acl_group_account_map for existing accounts.");
     }
 
+    // populate acl_group_role_map table for existing accounts
+    private void populateACLGroupRoleMap(Connection conn) {
+        PreparedStatement sqlInsert = null;
+        ResultSet rs = null;
+
+        s_logger.debug("Populating acl_group_role_map table for default groups and roles...");
+        try {
+            sqlInsert = conn
+                    .prepareStatement("INSERT INTO `cloud`.`acl_group_role_map` (group_id, role_id, created) values(?, ?, Now())");
+            for (int i = 1; i < 6; i++) {
+                // insert entry in acl_group_role_map table, 1 to 1 mapping for default group and role
+                sqlInsert.setLong(1, i);
+                sqlInsert.setLong(2, i);
+                sqlInsert.executeUpdate();
+            }
+        } catch (SQLException e) {
+            String msg = "Unable to populate acl_group_role_map for default groups and roles." + e.getMessage();
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg, e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (sqlInsert != null) {
+                    sqlInsert.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Completed populate acl_group_role_map for existing accounts.");
+    }
+
     private void populateACLRoleBasedAPIPermission(Connection conn) {
         // read the commands.properties.in and populate the table
         PreparedStatement apiInsert = null;
 
         s_logger.debug("Populating acl_api_permission table for existing commands...");
         try {
-            apiInsert = conn.prepareStatement("INSERT INTO `cloud`.`acl_api_permission` (role_id, api) values(?, ?)");
+            apiInsert = conn.prepareStatement("INSERT INTO `cloud`.`acl_api_permission` (role_id, api, created) values(?, ?, Now())");
 
             Map<String, String> commandMap = PropertiesUtil.processConfigFile(new String[] { "commands.properties" });
             for (Map.Entry<String, String> entry : commandMap.entrySet()) {
