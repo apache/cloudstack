@@ -439,6 +439,13 @@
                   <include>**/*</include>
                 </includes>
               </fileset>
+              <fileset>
+                <directory>${basedir}</directory>
+                <includes>
+                  <include>${cs.target.dir}</include>
+                  <include>dist</include>
+                </includes>
+              </fileset>
             </filesets>
           </configuration>
         </plugin>
