@@ -819,8 +819,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     addr.getClass().getName(),
                     addr.getUuid());
             }
-            // don't increment resource count for direct and dedicated ip addresses
-            if ((addr.getAssociatedWithNetworkId() != null || addr.getVpcId() != null) && !isIpDedicated(addr)) {
+
+            if (updateIpResourceCount(addr)) {
                 _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
             }
         }
@@ -1604,8 +1604,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         if (ip.getState() != State.Releasing) {
             txn.start();
 
-            // don't decrement resource count for direct and dedicated ips
-            if (ip.getAssociatedWithNetworkId() != null && !isIpDedicated(ip)) {
+            if (updateIpResourceCount(ip)) {
                 _resourceLimitMgr.decrementResourceCount(_ipAddressDao.findById(addrId).getAllocatedToAccountId(), ResourceType.public_ip);
             }
 
@@ -1635,6 +1634,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
 
         return ip;
+    }
+
+    protected boolean updateIpResourceCount(IPAddressVO ip) {
+        // don't increment resource count for direct and dedicated ip addresses
+        return (ip.getAssociatedWithNetworkId() != null || ip.getVpcId() != null) && !isIpDedicated(ip);
     }
 
     @Override
