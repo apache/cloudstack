@@ -31,25 +31,19 @@
   </dependencySets>
   <fileSets>
     <fileSet>
-      <directory>../../../scripts/storage/secondary/</directory>
+      <directory>../scripts/storage/secondary/</directory>
       <outputDirectory>scripts/storage/secondary</outputDirectory>
       <directoryMode>555</directoryMode>
       <fileMode>555</fileMode>
     </fileSet>
     <fileSet>
-      <directory>../../secondary-storage/scripts/</directory>
+      <directory>../services/secondary-storage/scripts/</directory>
       <outputDirectory></outputDirectory>
       <directoryMode>555</directoryMode>
       <fileMode>555</fileMode>
       <includes>
         <include>ssvm-check.sh</include>
       </includes>
-    </fileSet>
-    <fileSet>
-      <directory>../../../scripts/storage/secondary/</directory>
-      <outputDirectory>scripts/storage/secondary</outputDirectory>
-      <directoryMode>555</directoryMode>
-      <fileMode>555</fileMode>
     </fileSet>
     <fileSet>
       <directory>scripts</directory>

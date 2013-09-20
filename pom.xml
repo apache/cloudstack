@@ -168,7 +168,6 @@
     <module>deps/XenServerJava</module>
     <module>engine</module>
     <module>plugins</module>
-    <module>patches</module>
     <module>framework</module>
     <module>test</module>
     <module>client</module>
@@ -678,6 +677,12 @@
       <id>awsapi</id>
       <modules>
         <module>awsapi</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>systemvm</id>
+      <modules>
+        <module>systemvm</module>
       </modules>
     </profile>
     <profile>

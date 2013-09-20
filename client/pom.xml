@@ -277,8 +277,9 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-console-proxy</artifactId>
+      <artifactId>cloud-systemvm</artifactId>
       <version>${project.version}</version>
+      <type>pom</type>
     </dependency>
   </dependencies>
   <build>
@@ -361,7 +362,7 @@
             <configuration>
               <target>
                 <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes/vms">
-                  <fileset dir="${basedir}/../services/console-proxy/server/dist">
+                  <fileset dir="${basedir}/../systemvm/dist">
                     <include name="systemvm.zip" />
                     <include name="systemvm.iso" />
                   </fileset>
