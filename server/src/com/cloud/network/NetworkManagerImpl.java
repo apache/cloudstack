@@ -1354,7 +1354,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         Map<Network.Service, Set<Network.Provider>> defaultVPCOffProviders =
                 new HashMap<Network.Service, Set<Network.Provider>>();
         defaultProviders.clear();
-        defaultProviders.add(Network.Provider.VirtualRouter);
+        defaultProviders.add(Network.Provider.VPCVirtualRouter);
         defaultVPCOffProviders.put(Service.Dhcp, defaultProviders);
         defaultVPCOffProviders.put(Service.Dns, defaultProviders);
         defaultVPCOffProviders.put(Service.UserData, defaultProviders);
