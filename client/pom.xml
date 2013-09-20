@@ -16,8 +16,8 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.2.0-SNAPSHOT</version>
-  </parent>
+    <version>4.3.0-SNAPSHOT</version>
+  </parent> 
   <dependencies>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -173,7 +173,6 @@
     <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
-      <version>${cs.mysql.version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -196,13 +195,6 @@
       <artifactId>cloud-engine-components-api</artifactId>
       <version>${project.version}</version>
     </dependency>
-
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-engine-compute</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-network</artifactId>
@@ -290,7 +282,6 @@
     </dependency>
   </dependencies>
   <build>
-    <defaultGoal>install</defaultGoal>
     <plugins>
       <plugin>
         <groupId>ru.concerteza.buildnumber</groupId>
@@ -338,8 +329,8 @@
               <maxIdleTime>60000</maxIdleTime>
             </connector>
           </connectors>
-          <webXml>${project.build.directory}/${project.build.finalName}/WEB-INF/web.xml</webXml>
-          <webAppSourceDirectory>${project.build.directory}/${project.build.finalName}</webAppSourceDirectory>
+          <webXml>${project.build.directory}/generated-webapp/WEB-INF/web.xml</webXml>
+          <webAppSourceDirectory>${project.build.directory}/generated-webapp</webAppSourceDirectory>
           <webAppConfig>
             <contextPath>/client</contextPath>
             <extraClasspath>${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
@@ -391,10 +382,7 @@
                   <fileset dir="${basedir}/../scripts" />
                 </copy>
                 <!-- CLOUDSTACK-1304 -->
-                <chmod perm="755">
-                  <fileset
-                    dir="${basedir}/target/generated-webapp/WEB-INF/classes/scripts" />
-                </chmod>
+                <chmod perm="755" file="${basedir}/target/generated-webapp/WEB-INF/classes/scripts/**" type="both" />
                 <copy todir="${basedir}/target/generated-webapp/WEB-INF/">
                   <fileset dir="${basedir}/WEB-INF/">
                     <include name="web.xml" />
@@ -561,7 +549,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>2.5.1</version>
         <executions>
           <execution>
             <id>copy</id>
