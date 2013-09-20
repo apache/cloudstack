@@ -688,6 +688,11 @@
     </profile>
     <profile>
       <id>systemvm</id>
+      <activation>
+        <property>
+          <name>systemvm</name>
+        </property>
+      </activation>
       <modules>
         <module>systemvm</module>
       </modules>
