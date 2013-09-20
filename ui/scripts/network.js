@@ -2054,57 +2054,63 @@
                     },
 
                     dataProvider: function(args) {
-                        var data = {};
-                        listViewDataProvider(args, data);
-
-                        //The following 10 lines caused CLOUDSTACK-4713 (EIP/ELB Basic Zone - unable to see any IPs that are acquired)
-                        /*
-                        if (g_supportELB == "guest") // IPs are allocated on guest network
-                            $.extend(data, {
-                                forvirtualnetwork: false,
-                                forloadbalancing: true
-                            });
-                        else if (g_supportELB == "public") // IPs are allocated on public network
-                            $.extend(data, {
-                                forvirtualnetwork: true,
-                                forloadbalancing: true
-                            });
-                        */
-
+                    	var items = [];                    	
+                    	var data = {};
+                        listViewDataProvider(args, data);     
                         if (args.context.networks) {
                             $.extend(data, {
                                 associatedNetworkId: args.context.networks[0].id
                             });
-
                         }
-
                         if ("vpc" in args.context) {
                             $.extend(data, {
                                 vpcid: args.context.vpc[0].id
                             });
-                        }
-
+                        }  
+                        
                         $.ajax({
                             url: createURL('listPublicIpAddresses'),
-                            data: data,
+                            data: $.extend({}, data, {
+                                forvirtualnetwork: true, //IPs are allocated on public network
+                            }),
                             dataType: "json",
-                            async: true,
+                            async: false,
                             success: function(json) {
-                                var items = json.listpublicipaddressesresponse.publicipaddress;
-
-                                $(items).each(function() {
-                                    getExtaPropertiesForIpObj(this, args);
-                                });
-
-                                args.response.success({
-                                    actionFilter: actionFilters.ipAddress,
-                                    data: items
-                                });
-                            },
-                            error: function(data) {
-                                args.response.error(parseXMLHttpResponse(data));
+                                var ips = json.listpublicipaddressesresponse.publicipaddress;                                
+                                if(ips != null) {
+                                	for(var i = 0; i < ips.length; i++) {                                		
+                                		getExtaPropertiesForIpObj(ips[i], args);
+                                		items.push(ips[i]);                                		
+                                	}
+                                }                                
                             }
                         });
+                                                
+                        if (g_supportELB == "guest") {                  
+	                        $.ajax({
+	                            url: createURL('listPublicIpAddresses'),
+	                            data: $.extend({}, data, {
+	                                forvirtualnetwork: false, // ELB IPs are allocated on guest network       
+	                                forloadbalancing: true
+	                            }),
+	                            dataType: "json",
+	                            async: false,
+	                            success: function(json) {
+	                                var ips = json.listpublicipaddressesresponse.publicipaddress;	                                
+	                                if(ips != null) {
+	                                	for(var i = 0; i < ips.length; i++) {	                                		
+	                                		getExtaPropertiesForIpObj(ips[i], args);
+	                                		items.push(ips[i]);                                		
+	                                	}
+	                                }                                
+	                            }
+	                        });
+                        }
+                         
+                        args.response.success({
+                            actionFilter: actionFilters.ipAddress,
+                            data: items
+                        });                        
                     },
 
                     // Detail view
