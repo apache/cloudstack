@@ -189,7 +189,6 @@ class Services:
             "mode": 'advanced'
         }
 
-
 class TestVMLifeCycleVPC(cloudstackTestCase):
 
     @classmethod
@@ -927,13 +926,6 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                      domainid=cls.domain.id
                                      )
 
-        cls.vpc_off = VpcOffering.create(
-                                     cls.api_client,
-                                     cls.services["vpc_offering"]
-                                     )
-
-        cls.vpc_off.update(cls.api_client, state='Enabled')
-
         cls.services["vpc"]["cidr"] = '10.1.1.1/16'
         cls.vpc = VPC.create(
                          cls.api_client,
@@ -984,6 +976,10 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         cls.services["network"]["physicalnetworkid"] = physical_network.id
         cls.services["network"]["vlan"] = shared_vlan
 
+        # Start Ip and End Ip should be specified for shared network
+        cls.services["network"]["startip"] = '10.1.2.20'
+        cls.services["network"]["endip"] = '10.1.2.30'
+
         # Creating network using the network offering created
         cls.network_2 = Network.create(
                                 cls.api_client,
@@ -994,7 +990,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                 zoneid=cls.zone.id,
                                 gateway='10.1.2.1',
                                 )
-        # Spawn an instance in that network
+
         cls.vm_1 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
@@ -1004,7 +1000,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                   networkids=[str(cls.network_1.id),
                                               str(cls.network_2.id)]
                                   )
-        # Spawn an instance in that network
+
         cls.vm_2 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
@@ -1014,6 +1010,8 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                   networkids=[str(cls.network_1.id),
                                               str(cls.network_2.id)]
                                   )
+
+
         cls.vm_3 = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
@@ -1023,6 +1021,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                   networkids=[str(cls.network_1.id),
                                               str(cls.network_2.id)]
                                   )
+
         cls.public_ip_1 = PublicIPAddress.create(
                                 cls.api_client,
                                 accountid=cls.account.name,
@@ -1040,7 +1039,10 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                     vpcid=cls.vpc.id,
                                     domainid=cls.account.domainid
                                 )
-        cls.lb_rule.assign(cls.api_client, [cls.vm_1, cls.vm_2, cls.vm_3])
+
+        # Only the vms in the same network can be added to load balancing rule
+        # hence we can't add vm_2 with vm_1
+        cls.lb_rule.assign(cls.api_client, [cls.vm_1])
 
         cls.public_ip_2 = PublicIPAddress.create(
                                 cls.api_client,
@@ -1084,16 +1086,20 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                         )
         cls._cleanup = [
                         cls.account,
-                        cls.service_offering,
+                        cls.network_2,
                         cls.nw_off,
                         cls.shared_nw_off,
-                        cls.vpc_off
+                        cls.vpc_off,
+                        cls.service_offering,
                         ]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
+            cls.vpc_off.update(cls.api_client, state='Disabled')
+            cls.shared_nw_off.update(cls.api_client, state='Disabled')
+            cls.nw_off.update(cls.api_client, state='Disabled')
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -1381,6 +1387,9 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to destroy the virtual instances, %s" % e)
 
+        #Wait for expunge interval to cleanup VM
+        wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
+
         self.debug("Check if the instance is in stopped state?")
         vms = VirtualMachine.list(
                                   self.apiclient,
@@ -1388,15 +1397,9 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                   listall=True
                                   )
         self.assertEqual(
-                         isinstance(vms, list),
-                         True,
-                         "List virtual machines should return a valid list"
-                         )
-        vm = vms[0]
-        self.assertEqual(
-                         vm.state,
-                         "Expunging",
-                         "Virtual machine should be in expunging state"
+                         vms,
+                         None,
+                         "List virtual machines should not return anything"
                          )
 
         self.debug("Validating if network rules are coonfigured properly?")
@@ -1652,7 +1655,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                          ["expunge.interval", "expunge.delay"]
                         )
 
-        # Check if the network rules still exists after Vm expunged 
+        # Check if the network rules still exists after Vm expunged
         self.debug("Checking if NAT rules existed ")
         with self.assertRaises(Exception):
             nat_rules = NATRule.list(
@@ -1667,7 +1670,6 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                          listall=True
                                          )
         return
-
 
 class TestVMLifeCycleBothIsolated(cloudstackTestCase):
 
@@ -2003,7 +2005,6 @@ class TestVMLifeCycleBothIsolated(cloudstackTestCase):
                          "VM state should be running after deployment"
                          )
         return
-
 
 class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
 
@@ -2690,7 +2691,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
                          ["expunge.interval", "expunge.delay"]
                         )
 
-        # Check if the network rules still exists after Vm expunged 
+        # Check if the network rules still exists after Vm expunged
         self.debug("Checking if NAT rules existed ")
         with self.assertRaises(Exception):
             nat_rules = NATRule.list(
