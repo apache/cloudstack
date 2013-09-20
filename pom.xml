@@ -434,6 +434,12 @@
                   <include>**/*</include>
                 </includes>
               </fileset>
+              <fileset>
+                <directory>dist</directory>
+                <includes>
+                  <include>**/*</include>
+                </includes>
+              </fileset>
             </filesets>
           </configuration>
         </plugin>
