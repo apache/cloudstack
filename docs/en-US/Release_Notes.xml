@@ -1024,15 +1024,15 @@ under the License.
           >Jira</ulink> to track its issues. All new features and bugs for 4.2.0 have been tracked
         in Jira, and have a standard naming convention of "CLOUDSTACK-NNNN" where "NNNN" is the
         issue number.</para>
-      <para>For list of issues fixed, see <ulink
+      <para>For the list of issues fixed, see <ulink
           url="https://issues.apache.org/jira/issues/?filter=12324870">Issues Fixed in
         4.2</ulink>.</para>
     </section>
     <section id="known-issues-4.2">
       <title>Known Issues in 4.2.0</title>
-      <para>This section includes a summary of known issues that were fixed in 4.2.0. For list of
-        known issues, see <ulink url="https://issues.apache.org/jira/issues/?filter=12324873">Known
-          Issues</ulink>.</para>
+      <para>This section includes a summary of known issues that were fixed in 4.2.0. For the list
+        of known issues, see <ulink url="https://issues.apache.org/jira/issues/?filter=12324873"
+          >Known Issues</ulink>.</para>
     </section>
   </chapter>
   <chapter id="upgrade-instructions">
