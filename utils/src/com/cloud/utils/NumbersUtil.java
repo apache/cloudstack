@@ -199,25 +199,29 @@ public class NumbersUtil {
     public static String toReadableSize(long bytes) {
         if (bytes <= KB && bytes >= 0) {
             return Long.toString(bytes) + " bytes";
-        } else if (bytes <= MB) {
+        } else if (bytes < MB) {
             StringBuilder builder = new StringBuilder();
             Formatter format = new Formatter(builder);
             format.format("%.2f KB", (float)bytes / (float)KB);
+            format.close();
             return builder.toString();
-        } else if (bytes <= GB) {
+        } else if (bytes < GB) {
             StringBuilder builder = new StringBuilder();
             Formatter format = new Formatter(builder);
             format.format("%.2f MB", (float)bytes / (float)MB);
+            format.close();
             return builder.toString();
-        } else if (bytes <= TB) {
+        } else if (bytes < TB) {
             StringBuilder builder = new StringBuilder();
             Formatter format = new Formatter(builder);
             format.format("%.2f GB", (float)bytes / (float)GB);
+            format.close();
             return builder.toString();
         } else {
             StringBuilder builder = new StringBuilder();
             Formatter format = new Formatter(builder);
             format.format("%.4f TB", (float)bytes / (float)TB);
+            format.close();
             return builder.toString();
         }
     }
