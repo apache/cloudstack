@@ -18,11 +18,11 @@
 
 function usage() {
  echo ""
- echo "usage: ./package.sh [-p|-pack] [-h|--help] [ARGS]"
+ echo "usage: ./package.sh [-p|--pack] [-h|--help] [ARGS]"
  echo ""
  echo "The commonly used Arguments are:"
- echo "oss|OSS             To package OSS specific"
- echo "noredist|NOREDIST   To package with no redistributable libraries"
+ echo "oss|OSS             To package with only redistributable libraries (default)"
+ echo "noredist|NOREDIST   To package with non-redistributable libraries"
  echo ""
  echo "Examples: ./package.sh -p|--pack oss|OSS"
  echo "          ./package.sh -p|--pack noredist|NOREDIST"
