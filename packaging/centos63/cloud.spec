@@ -174,12 +174,12 @@ cp packaging/centos63/replace.properties build/replace.properties
 echo VERSION=%{_maventag} >> build/replace.properties
 echo PACKAGE=%{name} >> build/replace.properties
 
-if [ "%{_ossnoss}" == "NONOSS" -o "%{_ossnoss}" == "nonoss" ] ; then
-   echo "Executing mvn packaging for NONOSS ..."
-   mvn -Pawsapi,systemvm -Dnonoss package clean install
+if [ "%{_ossnoss}" == "NOREDIST" -o "%{_ossnoss}" == "noredist" ] ; then
+   echo "Executing mvn packaging with non-redistributable libraries ..."
+   mvn -Pawsapi,systemvm -Dnoredist clean package
 else
-   echo "Executing mvn packaging for OSS ..."
-   mvn -Pawsapi package -Dsystemvm clean install
+   echo "Executing mvn packaging ..."
+   mvn -Pawsapi,systemvm clean package
 fi
 
 %install

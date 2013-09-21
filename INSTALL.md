@@ -111,7 +111,7 @@ releases of cloudstack
 
 To build all non redistributable components, add the noredist flag to the build command:
 
-    $ mvn clean install -P systemvm,developer -Dnonoss
+    $ mvn clean install -P systemvm,developer -Dnoredist
 
 Clear old database (if any) and deploy the database schema:
 
