@@ -16,7 +16,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# From https://devcentral.f5.com
+# Version: unknown
 mvn install:install-file -Dfile=cloud-iControl.jar      -DgroupId=com.cloud.com.f5     -DartifactId=icontrol        -Dversion=1.0   -Dpackaging=jar
+
+# From Citrix
+# Version: unknown
 mvn install:install-file -Dfile=cloud-netscaler-sdx.jar -DgroupId=com.cloud.com.citrix -DartifactId=netscaler-sdx   -Dversion=1.0   -Dpackaging=jar
 
 # From http://support.netapp.com/  (not available online, contact your support representative)
