@@ -108,7 +108,6 @@ public class VirtualRoutingResource implements Manager {
     private String _firewallPath;
     private String _loadbPath;
     private String _dhcpEntryPath;
-    private String _vmDataPath;
     private String _publicEthIf;
     private String _privateEthIf;
     private String _bumpUpPriorityPath;

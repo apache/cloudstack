@@ -27,7 +27,6 @@ import java.util.Date;
 import org.junit.Test;
 
 import com.cloud.agent.api.BackupSnapshotCommand;
-import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;

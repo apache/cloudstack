@@ -26,7 +26,6 @@ import com.cloud.agent.api.storage.Proxy;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Volume;
 
 
 public class DownloadCommand extends AbstractDownloadCommand implements InternalIdentity {
@@ -53,29 +52,29 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
 
 	public DownloadCommand(DownloadCommand that) {
 	    super(that);
-	    this.hvm = that.hvm;
-	    this.checksum = that.checksum;
-	    this.id = that.id;
-	    this.description = that.description;
-	    this.auth = that.getAuth();
-	    this.setSecUrl(that.getSecUrl());
-	    this.maxDownloadSizeInBytes = that.getMaxDownloadSizeInBytes();
-	    this.resourceType = that.resourceType;
-	    this.installPath = that.installPath;
-	    this._store = that._store;
+	    hvm = that.hvm;
+	    checksum = that.checksum;
+	    id = that.id;
+	    description = that.description;
+	    auth = that.getAuth();
+	    setSecUrl(that.getSecUrl());
+	    maxDownloadSizeInBytes = that.getMaxDownloadSizeInBytes();
+	    resourceType = that.resourceType;
+	    installPath = that.installPath;
+	    _store = that._store;
 	}
 
 	public DownloadCommand(TemplateObjectTO template, Long maxDownloadSizeInBytes) {
 
 	    super(template.getName(), template.getOrigUrl(), template.getFormat(), template.getAccountId());
-	    this._store = template.getDataStore();
-	    this.installPath = template.getPath();
-	    this.hvm = template.isRequiresHvm();
-	    this.checksum = template.getChecksum();
-	    this.id = template.getId();
-	    this.description = template.getDescription();
+	    _store = template.getDataStore();
+	    installPath = template.getPath();
+	    hvm = template.isRequiresHvm();
+	    checksum = template.getChecksum();
+	    id = template.getId();
+	    description = template.getDescription();
         if (_store instanceof NfsTO) {
-            this.setSecUrl(((NfsTO) _store).getUrl());
+            setSecUrl(((NfsTO) _store).getUrl());
         }
 	    this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
 	}
@@ -87,12 +86,12 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
 
     public DownloadCommand(VolumeObjectTO volume, Long maxDownloadSizeInBytes, String checkSum, String url, ImageFormat format) {
         super(volume.getName(), url, format, volume.getAccountId());
-        this.checksum = checkSum;
-        this.id = volume.getVolumeId();
-        this.installPath = volume.getPath();
-        this._store = volume.getDataStore();
+        checksum = checkSum;
+        id = volume.getVolumeId();
+        installPath = volume.getPath();
+        _store = volume.getDataStore();
         this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
-        this.resourceType = ResourceType.VOLUME;
+        resourceType = ResourceType.VOLUME;
     }
 	@Override
     public long getId() {
@@ -184,6 +183,6 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
     }
 
     public DataStoreTO getCacheStore() {
-        return this.cacheStore;
+        return cacheStore;
     }
 }

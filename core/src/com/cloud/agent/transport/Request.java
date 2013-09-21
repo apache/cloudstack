@@ -31,14 +31,6 @@ import java.util.zip.GZIPOutputStream;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
-import com.cloud.exception.UnsupportedVersionException;
-import com.cloud.serializer.GsonHelper;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
@@ -49,6 +41,15 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.stream.JsonReader;
+
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
+import com.cloud.exception.UnsupportedVersionException;
+import com.cloud.serializer.GsonHelper;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * Request is a simple wrapper around command and answer to add sequencing,
@@ -107,7 +108,7 @@ public class Request {
     protected long      _agentId;
     protected Command[] _cmds;
     protected String    _content;
-    
+
     protected Request() {
     }
 
@@ -158,14 +159,14 @@ public class Request {
     }
 
     protected Request(final Request that, final Command[] cmds) {
-        this._ver = that._ver;
-        this._seq = that._seq;
+        _ver = that._ver;
+        _seq = that._seq;
         setInSequence(that.executeInSequence());
         setStopOnError(that.stopOnError());
-        this._cmds = cmds;
-        this._mgmtId = that._mgmtId;
-        this._via = that._via;
-        this._agentId = that._agentId;
+        _cmds = cmds;
+        _mgmtId = that._mgmtId;
+        _via = that._via;
+        _agentId = that._agentId;
         setFromServer(!that.isFromServer());
     }
 
@@ -287,7 +288,7 @@ public class Request {
         retBuff.flip();
         return retBuff;
     }
-    
+
     public static ByteBuffer doCompress(ByteBuffer buffer, int length) {
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream(length);
         byte[] array;
@@ -307,11 +308,11 @@ public class Request {
         }
         return ByteBuffer.wrap(byteOut.toByteArray());
     }
-    
+
     public ByteBuffer[] toBytes() {
         final ByteBuffer[] buffers = new ByteBuffer[2];
         ByteBuffer tmp;
-        
+
         if (_content == null) {
             _content = s_gson.toJson(_cmds, _cmds.getClass());
         }
@@ -372,7 +373,7 @@ public class Request {
             }
         }
     }
-    
+
     @Override
     public String toString() {
         return log("", true, Level.DEBUG);
@@ -447,7 +448,7 @@ public class Request {
         if (version.ordinal() != Version.v1.ordinal() && version.ordinal() != Version.v3.ordinal()) {
             throw new UnsupportedVersionException("This version is no longer supported: " + version.toString(), UnsupportedVersionException.IncompatibleVersion);
         }
-        final byte reserved = buff.get(); // tossed away for now.
+        buff.get();
         final short flags = buff.getShort();
         final boolean isRequest = (flags & FLAG_REQUEST) > 0;
 
@@ -456,7 +457,7 @@ public class Request {
         final int size = buff.getInt();
         final long mgmtId = buff.getLong();
         final long agentId = buff.getLong();
-        
+
         long via;
         if (version.ordinal() == Version.v1.ordinal()) {
             via = buff.getLong();
@@ -467,7 +468,7 @@ public class Request {
         if ((flags & FLAG_COMPRESSED) != 0) {
             buff = doDecompress(buff, size);
         }
-        
+
         byte[] command = null;
         int offset = 0;
         if (buff.hasArray()) {
@@ -519,7 +520,7 @@ public class Request {
     public static long getViaAgentId(final byte[] bytes) {
         return NumbersUtil.bytesToLong(bytes, 32);
     }
-    
+
     public static boolean fromServer(final byte[] bytes) {
         return (bytes[3] & FLAG_FROM_SERVER) > 0;
     }

@@ -20,7 +20,6 @@ import java.util.List;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.LoadBalancerTO;
-import com.cloud.agent.api.to.NicTO;
 
 /**
  * LoadBalancerConfigCommand sends the load balancer configuration

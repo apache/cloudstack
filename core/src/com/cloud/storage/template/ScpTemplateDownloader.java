@@ -22,9 +22,10 @@ import java.net.URISyntaxException;
 
 import org.apache.log4j.Logger;
 
+import com.trilead.ssh2.SCPClient;
+
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.trilead.ssh2.SCPClient;
 
 public class ScpTemplateDownloader extends TemplateDownloaderBase implements TemplateDownloader {
     private static final Logger s_logger = Logger.getLogger(ScpTemplateDownloader.class);
@@ -83,7 +84,6 @@ public class ScpTemplateDownloader extends TemplateDownloaderBase implements Tem
         if (port == -1) {
             port = 22;
         }
-        long length = 0;
         File file = new File(_toFile);
         
         com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(uri.getHost(), port);
