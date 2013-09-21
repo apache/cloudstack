@@ -119,13 +119,13 @@
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
+      <!--  TODO: Is this version override required -->
       <version>4.2.2</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
-      <version>${cs.mysql.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -150,7 +150,6 @@
       </plugin>
        <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
-        <version>1.7</version>
         <executions>
           <execution>
             <id>generate-resource</id>
