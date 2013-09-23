@@ -46,6 +46,10 @@ body {
         }
     }
 
+    .view-switcher {
+        display: none !important;
+    }
+
     #user {
         background: url(csui/img/form/dropdown-arrow-white.png) no-repeat right;
     }
