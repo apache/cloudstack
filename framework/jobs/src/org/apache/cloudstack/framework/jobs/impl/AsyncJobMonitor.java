@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -41,14 +42,14 @@ public class AsyncJobMonitor extends ManagerBase {
 	
 	private final Map<Long, ActiveTaskRecord> _activeTasks = new HashMap<Long, ActiveTaskRecord>();
 	private final Timer _timer = new Timer();
-	
-	private volatile int _activePoolThreads = 0;
-	private volatile int _activeInplaceThreads = 0;
-	
-	// configuration
-	private long _inactivityCheckIntervalMs = 60000;
-	private long _inactivityWarningThresholdMs = 90000;
-	
+
+    private final AtomicInteger _activePoolThreads = new AtomicInteger();
+    private final AtomicInteger _activeInplaceThreads = new AtomicInteger();
+
+    // configuration
+    private long _inactivityCheckIntervalMs = 60000;
+    private long _inactivityWarningThresholdMs = 90000;
+
 	public AsyncJobMonitor() {
 	}
 	
@@ -118,9 +119,9 @@ public class AsyncJobMonitor extends ManagerBase {
             ActiveTaskRecord record = new ActiveTaskRecord(jobId, threadId, fromPoolThread);
 			_activeTasks.put(runNumber, record);
 			if(fromPoolThread)
-				_activePoolThreads++;
+				_activePoolThreads.incrementAndGet();
 			else
-				_activeInplaceThreads++;
+				_activeInplaceThreads.incrementAndGet();
 		}
 	}
 	
@@ -132,23 +133,23 @@ public class AsyncJobMonitor extends ManagerBase {
 				s_logger.info("Remove job-" + record.getJobId() + " from job monitoring");
 				
 				if(record.isPoolThread())
-					_activePoolThreads--;
+					_activePoolThreads.decrementAndGet();
 				else
-					_activeInplaceThreads--;
+					_activeInplaceThreads.decrementAndGet();
 				
 				_activeTasks.remove(runNumber);
 			}
 		}
 	}
-	
+
 	public int getActivePoolThreads() {
-		return _activePoolThreads;
+		return _activePoolThreads.get();
 	}
-	
+
 	public int getActiveInplaceThread() {
-		return _activeInplaceThreads;
+		return _activeInplaceThreads.get();
 	}
-	
+
 	private static class ActiveTaskRecord {
 		long _jobId;
 		long _threadId;
