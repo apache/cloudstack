@@ -228,10 +228,10 @@
             return [
                 $('<div>').addClass('logo'),
                 $('<div>').addClass('controls')
-                .append($notificationArea)
                 .append($viewSwitcher)
                 .append($projectSelect)
                 .append($userInfo)
+                .append($notificationArea)
             ];
         },
 
