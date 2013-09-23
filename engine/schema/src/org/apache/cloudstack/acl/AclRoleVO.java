@@ -45,6 +45,9 @@ public class AclRoleVO implements AclRole {
     @Column(name = "uuid")
     private String uuid;
 
+    @Column(name = "parent_role_id")
+    private long parentRoleId;
+
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
@@ -93,4 +96,13 @@ public class AclRoleVO implements AclRole {
     public Date getCreated() {
         return created;
     }
+
+    public long getParentRoleId() {
+        return parentRoleId;
+    }
+
+    public void setParentRoleId(long parentRoleId) {
+        this.parentRoleId = parentRoleId;
+    }
+
 }

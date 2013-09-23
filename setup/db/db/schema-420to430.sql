@@ -302,8 +302,8 @@ CREATE TABLE `cloud`.`acl_group_account_map` (
   `removed` datetime COMMENT 'date the account was removed from the group',
   `created` datetime COMMENT 'date the account was assigned to the group',  
   PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_acl_group_vm_map___group_id` FOREIGN KEY(`group_id`) REFERENCES `acl_group` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_acl_group_vm_map___account_id` FOREIGN KEY(`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_acl_group_vm_map__group_id` FOREIGN KEY(`group_id`) REFERENCES `acl_group` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_acl_group_vm_map__account_id` FOREIGN KEY(`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;        
 
 CREATE TABLE `cloud`.`acl_role` (
@@ -311,11 +311,13 @@ CREATE TABLE `cloud`.`acl_role` (
   `name` varchar(255) NOT NULL,
   `description` varchar(255) default NULL,  
   `uuid` varchar(40),
+  `parent_role_id` bigint unsigned DEFAULT 0,
   `removed` datetime COMMENT 'date the role was removed',
   `created` datetime COMMENT 'date the role was created',
   PRIMARY KEY  (`id`),
   INDEX `i_acl_role__removed`(`removed`),
-  CONSTRAINT `uc_acl_role__uuid` UNIQUE (`uuid`)  
+  CONSTRAINT `uc_acl_role__uuid` UNIQUE (`uuid`),  
+  CONSTRAINT `fk_acl_role__parent_role_id` FOREIGN KEY(`parent_role_id`) REFERENCES `acl_role` (`id`) ON DELETE CASCADE  
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`acl_group_role_map` (
@@ -325,8 +327,8 @@ CREATE TABLE `cloud`.`acl_group_role_map` (
   `removed` datetime COMMENT 'date the role was revoked from the group',
   `created` datetime COMMENT 'date the role was granted to the group',   
   PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_acl_group_role_map___group_id` FOREIGN KEY(`group_id`) REFERENCES `acl_group` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_acl_group_role_map___role_id` FOREIGN KEY(`role_id`) REFERENCES `acl_role` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_acl_group_role_map__group_id` FOREIGN KEY(`group_id`) REFERENCES `acl_group` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_acl_group_role_map__role_id` FOREIGN KEY(`role_id`) REFERENCES `acl_role` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;        
 
 
@@ -349,7 +351,7 @@ CREATE TABLE `cloud`.`acl_api_permission` (
   `removed` datetime COMMENT 'date the permission was revoked',
   `created` datetime COMMENT 'date the permission was granted',  
   PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_acl_api_permission___role_id` FOREIGN KEY(`role_id`) REFERENCES `acl_role` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_acl_api_permission__role_id` FOREIGN KEY(`role_id`) REFERENCES `acl_role` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`acl_entity_permission` (
@@ -361,5 +363,5 @@ CREATE TABLE `cloud`.`acl_entity_permission` (
   `removed` datetime COMMENT 'date the permission was revoked',
   `created` datetime COMMENT 'date the permission was granted',   
   PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_acl_entity_permission___group_id` FOREIGN KEY(`group_id`) REFERENCES `acl_group` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_acl_entity_permission__group_id` FOREIGN KEY(`group_id`) REFERENCES `acl_group` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
