@@ -235,9 +235,9 @@ var addGuestNetworkDialog = {
                     label: 'label.physical.network',
                     dependsOn: 'zoneId',
                     select: function(args) {
-                        if ('physicalNetworks' in args.context) {
+                        if ('physicalNetworks' in args.context) { //Infrastructure menu > zone detail > guest traffic type > network tab (only shown in advanced zone) > add guest network dialog
                             addGuestNetworkDialog.physicalNetworkObjs = args.context.physicalNetworks;
-                        } else {
+                        } else { //Network menu > guest network section > add guest network dialog
                             var selectedZoneId = args.$form.find('.form-item[rel=zoneId]').find('select').val();
                             $.ajax({
                                 url: createURL('listPhysicalNetworks'),
@@ -245,8 +245,33 @@ var addGuestNetworkDialog = {
                                     zoneid: selectedZoneId
                                 },
                                 async: false,
-                                success: function(json) {
-                                    addGuestNetworkDialog.physicalNetworkObjs = json.listphysicalnetworksresponse.physicalnetwork;
+                                success: function(json) {                                    
+                                	var items = [];
+                                	var physicalnetworks = json.listphysicalnetworksresponse.physicalnetwork;
+                                	if (physicalnetworks != null) {
+                                	    for (var i = 0; i < physicalnetworks.length; i++) {
+                                	    	$.ajax({
+                                	    		url: createURL('listTrafficTypes'),
+                                	    		data: {
+                                	    			physicalnetworkid: physicalnetworks[i].id
+                                	    		},
+                                	    		async: false,
+                                	    		success: function(json) {                                	    			
+                                	    			var traffictypes = json.listtraffictypesresponse.traffictype;
+                                	    			if (traffictypes != null) {
+                                	    				for (var k = 0; k < traffictypes.length; k++) {
+                                	    					if (traffictypes[k].traffictype == 'Guest') {
+                                	    						items.push(physicalnetworks[i]);
+                                	    						break;
+                                	    					}
+                                	    				}
+                                	    			} 
+                                	    		}
+                                	    	});
+                                	    }	
+                                	}  
+                                	
+                                	addGuestNetworkDialog.physicalNetworkObjs = items;                                	
                                 }
                             });
                         }
