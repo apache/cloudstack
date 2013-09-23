@@ -132,7 +132,7 @@ install:
 	install -D client/target/utilities/bin/cloud-setup-management $(DESTDIR)/usr/bin/cloudstack-setup-management
 	install -D client/target/utilities/bin/cloud-setup-encryption $(DESTDIR)/usr/bin/cloudstack-setup-encryption
 	install -D client/target/utilities/bin/cloud-sysvmadm $(DESTDIR)/usr/bin/cloudstack-sysvmadm
-	install -D services/console-proxy/server/dist/systemvm.iso $(DESTDIR)/usr/share/$(PACKAGE)-common/vms/systemvm.iso
+	install -D systemvm/dist/systemvm.iso $(DESTDIR)/usr/share/$(PACKAGE)-common/vms/systemvm.iso
 	# We need jasypt for cloud-install-sys-tmplt, so this is a nasty hack to get it into the right place
 	install -D agent/target/dependencies/jasypt-1.9.0.jar $(DESTDIR)/usr/share/$(PACKAGE)-common/lib
 
