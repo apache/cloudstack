@@ -29,14 +29,7 @@ under the License.
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title></title>
-    <link type="text/css" rel="stylesheet" href="lib/reset.css"/>
-    <link type="text/css" rel="stylesheet" href="css/cloudstack3.css" />
-    <c:if test="${!empty cookie.lang && cookie.lang.value != 'en'}">
-      <link type="text/css" rel="stylesheet" href="css/cloudstack3.${cookie.lang.value}.css" />
-    </c:if>
-    <!--[if IE 7]>
-    <link type="text/css" rel="stylesheet" href="css/cloudstack3-ie7.css" />
-    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="stylesheets/cloudstack.css" />
   </head>
   <body>
     <!-- CloudStack widget content -->
