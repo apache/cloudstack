@@ -217,8 +217,10 @@ under the License.
             <para><xref linkend="blacklist-route"/></para>
           </listitem>
         </itemizedlist>
-        <section id="kvm-vpc"><title>Support for KVM</title><para>VPC is now supported on KVM
-          hypervisors.</para></section>
+        <section id="kvm-vpc">
+          <title>Support for KVM</title>
+          <para>VPC is now supported on KVM hypervisors.</para>
+        </section>
         <section id="add-loadbalancer-rule-vpc">
           <title>Load Balancing Support for VPC</title>
           <para>In a VPC, you can configure two types of load balancing&mdash;external LB and
@@ -1039,7 +1041,7 @@ under the License.
     <title>Upgrade Instructions for 4.2</title>
     <para>This section contains upgrade instructions from prior versions of CloudStack to Apache
       CloudStack 4.2.0. We include instructions on upgrading to Apache CloudStack from pre-Apache
-      versions of Citrix CloudStack (last version prior to Apache is 3.0.2) and from the releases
+      versions of Citrix &PRODUCT; (last version prior to Apache is 3.0.2) and from the releases
       made while CloudStack was in the Apache Incubator.</para>
     <para>If you run into any issues during upgrades, please feel free to ask questions on
       users@cloudstack.apache.org or dev@cloudstack.apache.org.</para>
@@ -1080,11 +1082,11 @@ under the License.
         <listitem>
           <para>Stop your management server or servers. Run this on all management server
             hosts:</para>
-          <programlisting><prompt>#</prompt> service cloud-management stop</programlisting>
+          <programlisting><prompt>#</prompt> service cloudstack-management stop</programlisting>
         </listitem>
         <listitem>
           <para>If you are running a usage server or usage servers, stop those as well:</para>
-          <programlisting><prompt>#</prompt> service cloud-usage stop</programlisting>
+          <programlisting><prompt>#</prompt> service cloudstack-usage stop</programlisting>
         </listitem>
         <listitem>
           <para>Make a backup of your MySQL database. If you run into any issues or need to roll
@@ -1130,7 +1132,7 @@ under the License.
               If you've created your own packages and APT repository, substitute your own URL for
               the ones used in these examples.</para>
           </note>
-          <orderedlist id="debsteps">
+          <orderedlist id="debsteps" numeration="loweralpha">
             <listitem>
               <para>The first order of business will be to change the sources list for each system
                 with &PRODUCT; packages. This means all management servers, and any hosts that have
@@ -1176,27 +1178,10 @@ under the License.
             <listitem>
               <para>Restart the agent:</para>
               <programlisting language="Bash">
-service cloud-agent stop
+service cloudstack-agent stop
 killall jsvc
 service cloudstack-agent start
                             </programlisting>
-            </listitem>
-            <listitem>
-              <para>During the upgrade, <filename>log4j-cloud.xml</filename> was simply copied over,
-                so the logs will continue to be added to
-                  <filename>/var/log/cloud/agent/agent.log</filename>. There's nothing
-                  <emphasis>wrong</emphasis> with this, but if you prefer to be consistent, you can
-                change this by copying over the sample configuration file:</para>
-              <programlisting language="Bash">
-cd /etc/cloudstack/agent
-mv log4j-cloud.xml.dpkg-dist log4j-cloud.xml
-service cloudstack-agent restart
-                            </programlisting>
-            </listitem>
-            <listitem>
-              <para>Once the agent is running, you can uninstall the old cloud-* packages from your
-                system:</para>
-              <programlisting language="Bash">sudo dpkg --purge cloud-agent</programlisting>
             </listitem>
           </orderedlist>
         </listitem>
@@ -1285,7 +1270,7 @@ service cloudstack-agent restart
               If you've created your own packages and yum repository, substitute your own URL for
               the ones used in these examples.</para>
           </note>
-          <orderedlist id="rpmsteps">
+          <orderedlist id="rpmsteps" numeration="loweralpha">
             <listitem>
               <para>The first order of business will be to change the yum repository for each system
                 with &PRODUCT; packages. This means all management servers, and any hosts that have
@@ -1310,31 +1295,25 @@ gpgcheck=0
             <listitem id="rpm-master">
               <para>Now that you have the repository configured, it's time to install the
                   <filename>cloudstack-management</filename> package by upgrading the older
-                  <filename>cloud-client</filename> package.</para>
-              <programlisting language="Bash">$ sudo yum upgrade cloud-client</programlisting>
+                  <filename>cloudstack-management</filename> package.</para>
+              <programlisting language="Bash">$ sudo yum upgrade cloudstack-management</programlisting>
             </listitem>
             <listitem id="kvm-agent-rpm">
               <para>For KVM hosts, you will need to upgrade the <filename>cloud-agent</filename>
                 package, similarly installing the new version as
                   <filename>cloudstack-agent</filename>.</para>
-              <programlisting language="Bash">$ sudo yum upgrade cloud-agent</programlisting>
-              <para>During the installation of <filename>cloudstack-agent</filename>, the RPM will
-                copy your <filename>agent.properties</filename>,
-                  <filename>log4j-cloud.xml</filename>, and
-                  <filename>environment.properties</filename> from
-                  <filename>/etc/cloud/agent</filename> to
-                  <filename>/etc/cloudstack/agent</filename>.</para>
+              <programlisting language="Bash">$ sudo yum upgrade cloudstack-agent</programlisting>
             </listitem>
             <listitem>
               <para>For CentOS 5.5, perform the following:</para>
-              <orderedlist>
+              <orderedlist numeration="lowerroman">
                 <listitem>
                   <para>Run the following command:</para>
                   <programlisting>rpm -Uvh http://download.cloud.com/support/jsvc/jakarta-commons-daemon-jsvc-1.0.1-8.9.el6.x86_64.rpm</programlisting>
                 </listitem>
                 <listitem>
                   <para>Upgrade the Usage server.</para>
-                  <programlisting>sudo yum upgrade cloud-usage</programlisting>
+                  <programlisting>sudo yum upgrade cloudstack-usage</programlisting>
                 </listitem>
               </orderedlist>
             </listitem>
@@ -1348,7 +1327,7 @@ gpgcheck=0
             <listitem>
               <para>Restart the agent:</para>
               <programlisting language="Bash">
-service cloud-agent stop
+service cloudstack-agent stop
 killall jsvc
 service cloudstack-agent start
                             </programlisting>
@@ -1421,54 +1400,60 @@ Done restarting router(s).
                   <colspec colwidth="2*" colname="2" colnum="2"/>
                   <thead>
                     <row>
-                      <entry><para>Field</para></entry>
-                      <entry><para>Value</para></entry>
+                      <entry><para>Hypervisor</para></entry>
+                      <entry><para>Description</para></entry>
                     </row>
                   </thead>
                   <tbody>
                     <row>
-                      <entry><para>Name</para></entry>
-                      <entry><para>systemvm-vmware-4.2</para></entry>
+                      <entry><para>XenServer</para></entry>
+                      <entry><para>Name: systemvm-xenserver-4.2.0</para>
+                        <para>Description: systemvm-xenserver-4.2.0</para>
+                        <para>URL:http://download.cloud.com/templates/4.2/systemvmtemplate-2013-07-12-master-xen.vhd.bz2 </para>
+                        <para>Zone: Choose the zone where this hypervisor is used</para>
+                        <para>Hypervisor: XenServer</para>
+                        <para>Format: VHD</para>
+                        <para>OS Type: Debian GNU/Linux 7.0 (32-bit) (or the highest Debian release
+                          number available in the dropdown)</para>
+                        <para>Extractable: no</para>
+                        <para>Password Enabled: no</para>
+                        <para>Public: no</para>
+                        <para>Featured: no</para>
+                      </entry>
                     </row>
                     <row>
-                      <entry><para>Description</para></entry>
-                      <entry><para>systemvm-vmware-4.2</para></entry>
+                      <entry><para>KVM</para></entry>
+                      <entry><para>Name: systemvm-kvm-4.2.0</para>
+                        <para>Description: systemvm-kvm-4.2.0</para>
+                        <para>URL:
+                          http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-kvm.qcow2.bz2</para>
+                        <para>Zone: Choose the zone where this hypervisor is used</para>
+                        <para>Hypervisor: KVM</para>
+                        <para>Format: QCOW2</para>
+                        <para>OS Type: Debian GNU/Linux 7.0 (32-bit) (or the highest Debian release
+                          number available in the dropdown)</para>
+                        <para>Extractable: no</para>
+                        <para>Password Enabled: no</para>
+                        <para>Public: no</para>
+                        <para>Featured: no</para>
+                      </entry>
                     </row>
                     <row>
-                      <entry><para>URL</para></entry>
-                      <entry><para>http://download.cloud.com/templates/burbank/burbank-systemvm-08012012.ova</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>Zone</para></entry>
-                      <entry><para>Choose the zone where this hypervisor is used</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>Hypervisor</para></entry>
                       <entry><para>VMware</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>Format</para></entry>
-                      <entry><para>OVA</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>OS Type</para></entry>
-                      <entry><para>Debian GNU/Linux 5.0 (32-bit)</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>Extractable</para></entry>
-                      <entry><para>no</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>Password Enabled</para></entry>
-                      <entry><para>no</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>Public</para></entry>
-                      <entry><para>no</para></entry>
-                    </row>
-                    <row>
-                      <entry><para>Featured</para></entry>
-                      <entry><para>no</para></entry>
+                      <entry><para>Name: systemvm-vmware-4.2.0</para>
+                        <para>Description: systemvm-vmware-4.2.0</para>
+                        <para>URL:
+                          http://download.cloud.com/templates/4.2/systemvmtemplate-4.2-vh7.ova</para>
+                        <para>Zone: Choose the zone where this hypervisor is used</para>
+                        <para>Hypervisor: VMware</para>
+                        <para>Format: OVA</para>
+                        <para>OS Type: Debian GNU/Linux 7.0 (32-bit) (or the highest Debian release
+                          number available in the dropdown)</para>
+                        <para>Extractable: no</para>
+                        <para>Password Enabled: no</para>
+                        <para>Public: no</para>
+                        <para>Featured: no</para>
+                      </entry>
                     </row>
                   </tbody>
                 </tgroup>
@@ -1480,7 +1465,47 @@ Done restarting router(s).
             </listitem>
           </orderedlist>
         </listitem>
-        <listitem id="stopping-usage-servers">
+        <listitem>
+          <para>(KVM on RHEL 6.0/6.1 only) If your existing &PRODUCT; deployment includes one or
+            more clusters of KVM hosts running RHEL 6.0 or RHEL 6.1, perform the following:</para>
+          <orderedlist numeration="loweralpha">
+            <listitem>
+              <para>Ensure that you upgrade the operating system version on those hosts before
+                upgrading &PRODUCT;</para>
+              <para>To do that, change the yum repository for each system with &PRODUCT; packages,
+                that implies that all the Management Servers and any hosts that have the KVM agent.
+              </para>
+            </listitem>
+            <listitem>
+              <para>Open <filename>/etc/yum.repos.d/cloudstack.repo</filename> on any systems that
+                have &PRODUCT; packages installed.</para>
+            </listitem>
+            <listitem>
+              <para>Edit as follows:</para>
+              <programlisting>
+            [upgrade]
+            name=rhel63
+            baseurl=url-of-your-rhel6.3-repo
+            enabled=1
+            gpgcheck=0
+            [apache CloudStack]
+            name= Apache CloudStack
+            baseurl= http://cloudstack.apt-get.eu/rhel/4.0/
+            enabled=1
+            gpgcheck=0</programlisting>
+              <para>If you are using the community provided package repository, change the baseurl
+                to http:// cloudstack.apt-get.eu/rhel/4.2/</para>
+              <para>If you are using your own package repository, change this line to read as
+                appropriate for your 4.2.0 repository.</para>
+            </listitem>
+            <listitem>
+              <para>Now that you have the repository configured, upgrade the host operating system
+                from RHEL 6.0 to 6.3:</para>
+              <programlisting># yum upgrade</programlisting>
+            </listitem>
+          </orderedlist>
+        </listitem>
+        <listitem>
           <para>Stop all Usage Servers if running. Run this on all Usage Server hosts.</para>
           <programlisting language="Bash"><prompt>#</prompt> service cloud-usage stop</programlisting>
         </listitem>
@@ -1582,32 +1607,6 @@ service cloudstack-agent restart
             </listitem>
           </orderedlist>
         </listitem>
-        <listitem>
-          <para>(KVM only) Additional steps are required for each KVM host. These steps will not
-            affect running guests in the cloud. These steps are required only for clouds using KVM
-            as hosts and only on the KVM hosts.</para>
-          <orderedlist numeration="loweralpha">
-            <listitem>
-              <para>Copy the CloudPlatform 4.2 tar file to the host, untar it, and change directory
-                to the resulting directory.</para>
-            </listitem>
-            <listitem>
-              <para>Stop the running agent.</para>
-              <programlisting># service cloud-agent stop</programlisting>
-            </listitem>
-            <listitem>
-              <para>Update the agent software.</para>
-              <programlisting># ./install.sh</programlisting>
-            </listitem>
-            <listitem>
-              <para>Choose "U" to update the packages.</para>
-            </listitem>
-            <listitem>
-              <para>Start the agent.</para>
-              <programlisting># service cloudstack-agent start</programlisting>
-            </listitem>
-          </orderedlist>
-        </listitem>
         <listitem id="upgrade-rpm-packages-302">
           <para>If you are using CentOS or RHEL, follow this procedure to upgrade your packages. If
             not, skip to step <xref linkend="correct-components-xml-302"/>.</para>
@@ -1617,7 +1616,7 @@ service cloudstack-agent restart
               If you've created your own packages and yum repository, substitute your own URL for
               the ones used in these examples.</para>
           </note>
-          <orderedlist id="rpmsteps-302">
+          <orderedlist numeration="loweralpha" id="rpmsteps-302">
             <listitem>
               <para>The first order of business will be to change the yum repository for each system
                 with &PRODUCT; packages. This means all management servers, and any hosts that have
@@ -1766,11 +1765,26 @@ service cloudstack-agent start
                 "com.cloud.hypervisor.kvm.resource.LibvirtComputingResource".</para>
             </listitem>
             <listitem>
-              <para>Start the cloud agent and cloud management services.</para>
+              <para>Upgrade all the existing bridge names to new bridge names by running this
+                script:</para>
+              <programlisting> # cloudstack-agent-upgrade</programlisting>
+            </listitem>
+            <listitem>
+              <para> Install a libvirt hook with the following commands:</para>
+              <programlisting> # mkdir /etc/libvirt/hooks
+ # cp /usr/share/cloudstack-agent/lib/libvirtqemuhook /etc/libvirt/hooks/qemu
+ # chmod +x /etc/libvirt/hooks/qemu</programlisting>
+            </listitem>
+            <listitem>
+              <para>Restart libvirtd.</para>
+              <programlisting># service libvirtd restart</programlisting>
+            </listitem>
+            <listitem>
+              <para>Start the agent.</para>
               <programlisting># service cloudstack-agent start</programlisting>
             </listitem>
             <listitem>
-              <para>When the Management Server is up and running, log in to the CloudStack UI and
+              <para>When the Management Server is up and running, log in to the &PRODUCT; UI and
                 restart the virtual router for proper functioning of all the features.</para>
             </listitem>
           </orderedlist>
@@ -1805,13 +1819,13 @@ service cloudstack-agent start
           </orderedlist>
         </listitem>
         <listitem>
-          <para>Run the <command>cloud-sysvmadm</command> script to stop, then start, all Secondary
-            Storage VMs, Console Proxy VMs, and virtual routers. Run the script once on each
-            management server. Substitute your own IP address of the MySQL instance, the MySQL user
-            to connect as, and the password to use for that user. In addition to those parameters,
-            provide the <command>-c</command> and <command>-r</command> arguments. For
+          <para>Run the <command>cloudstack-sysvmadm</command> script to stop, then start, all
+            Secondary Storage VMs, Console Proxy VMs, and virtual routers. Run the script once on
+            each management server. Substitute your own IP address of the MySQL instance, the MySQL
+            user to connect as, and the password to use for that user. In addition to those
+            parameters, provide the <command>-c</command> and <command>-r</command> arguments. For
             example:</para>
-          <para><command># nohup cloud-sysvmadm -d 192.168.1.5 -u cloud -p password -c -r >
+          <para><command># nohup cloudstack-sysvmadm -d 192.168.1.5 -u cloud -p password -c -r >
               sysvm.log 2>&amp;1 &amp;</command></para>
           <para><command># tail -f sysvm.log</command></para>
           <para>This might take up to an hour or more to run, depending on the number of accounts in
@@ -2040,7 +2054,8 @@ service cloudstack-agent start
                         <para>Zone: Choose the zone where this hypervisor is used</para>
                         <para>Hypervisor: XenServer</para>
                         <para>Format: VHD</para>
-                        <para>OS Type: Debian GNU/Linux 6.0 (32-bit)</para>
+                        <para>OS Type: Debian GNU/Linux 7.0 (32-bit) (or the highest Debian release
+                          number available in the dropdown)</para>
                         <para>Extractable: no</para>
                         <para>Password Enabled: no</para>
                         <para>Public: no</para>
@@ -2056,7 +2071,8 @@ service cloudstack-agent start
                         <para>Zone: Choose the zone where this hypervisor is used</para>
                         <para>Hypervisor: KVM</para>
                         <para>Format: QCOW2</para>
-                        <para>OS Type: Debian GNU/Linux 5.0 (32-bit)</para>
+                        <para>OS Type: Debian GNU/Linux 7.0 (32-bit) (or the highest Debian release
+                          number available in the dropdown)</para>
                         <para>Extractable: no</para>
                         <para>Password Enabled: no</para>
                         <para>Public: no</para>
@@ -2072,7 +2088,8 @@ service cloudstack-agent start
                         <para>Zone: Choose the zone where this hypervisor is used</para>
                         <para>Hypervisor: VMware</para>
                         <para>Format: OVA</para>
-                        <para>OS Type: Debian GNU/Linux 5.0 (32-bit)</para>
+                        <para>OS Type: Debian GNU/Linux 7.0 (32-bit) (or the highest Debian release
+                          number available in the dropdown)</para>
                         <para>Extractable: no</para>
                         <para>Password Enabled: no</para>
                         <para>Public: no</para>
@@ -2093,6 +2110,46 @@ service cloudstack-agent start
           <para><emphasis role="bold">WARNING</emphasis>: If you use more than one type of
             hypervisor in your cloud, be sure you have repeated these steps to download the system
             VM template for each hypervisor type. Otherwise, the upgrade will fail.</para>
+        </listitem>
+        <listitem>
+          <para>(KVM on RHEL 6.0/6.1 only) If your existing &PRODUCT; deployment includes one or
+            more clusters of KVM hosts running RHEL 6.0 or RHEL 6.1, perform the following:</para>
+          <orderedlist numeration="loweralpha">
+            <listitem>
+              <para>Ensure that you upgrade the operating system version on those hosts before
+                upgrading &PRODUCT;</para>
+              <para>To do that, change the yum repository for each system with &PRODUCT; packages,
+                that implies that all the Management Servers and any hosts that have the KVM agent.
+              </para>
+            </listitem>
+            <listitem>
+              <para>Open <filename>/etc/yum.repos.d/cloudstack.repo</filename> on any systems that
+                have &PRODUCT; packages installed.</para>
+            </listitem>
+            <listitem>
+              <para>Edit as follows:</para>
+              <programlisting>
+            [upgrade]
+            name=rhel63
+            baseurl=url-of-your-rhel6.3-repo
+            enabled=1
+            gpgcheck=0
+            [apache CloudStack]
+            name= Apache CloudStack
+            baseurl= http://cloudstack.apt-get.eu/rhel/4.0/
+            enabled=1
+            gpgcheck=0</programlisting>
+              <para>If you are using the community provided package repository, change the baseurl
+                to http:// cloudstack.apt-get.eu/rhel/4.2/</para>
+              <para>If you are using your own package repository, change this line to read as
+                appropriate for your 4.2.0 repository.</para>
+            </listitem>
+            <listitem>
+              <para>Now that you have the repository configured, upgrade the host operating system
+                from RHEL 6.0 to 6.3:</para>
+              <programlisting># yum upgrade</programlisting>
+            </listitem>
+          </orderedlist>
         </listitem>
         <listitem>
           <para>Stop all Usage Servers if running. Run this on all Usage Server hosts.</para>
@@ -2127,7 +2184,7 @@ service cloudstack-agent start
               If you've created your own packages and APT repository, substitute your own URL for
               the ones used in these examples.</para>
           </note>
-          <orderedlist id="debsteps-22">
+          <orderedlist numeration="loweralpha" id="debsteps-22">
             <listitem>
               <para>The first order of business will be to change the sources list for each system
                 with &PRODUCT; packages. This means all management servers, and any hosts that have
@@ -2206,7 +2263,7 @@ service cloudstack-agent restart
               If you've created your own packages and yum repository, substitute your own URL for
               the ones used in these examples.</para>
           </note>
-          <orderedlist id="rpmsteps-22">
+          <orderedlist numeration="loweralpha" id="rpmsteps-22">
             <listitem>
               <para>The first order of business will be to change the yum repository for each system
                 with &PRODUCT; packages. This means all management servers, and any hosts that have
@@ -2287,7 +2344,7 @@ service cloudstack-agent start
             </listitem>
             <listitem>
               <para>Merge your changes from the backup file into the new components.xml file.</para>
-              <programlisting><prompt>#</prompt> <command>vi</command> <filename>/etc/cloud/management/components.xml</filename>
+              <programlisting><prompt>#</prompt> <command>vi</command> <filename>/etc/cloudstack/management/components.xml</filename>
                             </programlisting>
             </listitem>
           </orderedlist>
@@ -2319,7 +2376,7 @@ service cloudstack-agent start
             CloudStack installation, the changes will be preserved in the upgrade. However, you need
             to do the following steps to place these changes in a new version of the file which is
             compatible with version 4.0.0-incubating.</para>
-          <orderedlist>
+          <orderedlist numeration="loweralpha">
             <listitem>
               <para>Make a backup copy of your file
                   <filename>/etc/cloud/management/db.properties</filename>. For example:</para>
@@ -2332,7 +2389,7 @@ service cloudstack-agent start
             </listitem>
             <listitem>
               <para>Merge your changes from the backup file into the new db.properties file.</para>
-              <programlisting><prompt>#</prompt> <command>vi</command> <filename>/etc/cloud/management/db.properties</filename></programlisting>
+              <programlisting><prompt>#</prompt> <command>vi</command> <filename>/etc/cloudstack/management/db.properties</filename></programlisting>
             </listitem>
           </orderedlist>
         </listitem>
@@ -2378,32 +2435,6 @@ service cloudstack-agent start
           <programlisting language="Bash"><prompt>#</prompt> service cloudstack-usage start</programlisting>
         </listitem>
         <listitem>
-          <para>(KVM only) Additional steps are required for each KVM host. These steps will not
-            affect running guests in the cloud. These steps are required only for clouds using KVM
-            as hosts and only on the KVM hosts.</para>
-          <orderedlist numeration="loweralpha">
-            <listitem>
-              <para>Copy the CloudPlatform 4.2 tar file to the host, untar it, and change directory
-                to the resulting directory.</para>
-            </listitem>
-            <listitem>
-              <para>Stop the running agent.</para>
-              <programlisting># service cloud-agent stop</programlisting>
-            </listitem>
-            <listitem>
-              <para>Update the agent software.</para>
-              <programlisting># ./install.sh</programlisting>
-            </listitem>
-            <listitem>
-              <para>Choose "U" to update the packages.</para>
-            </listitem>
-            <listitem>
-              <para>Start the agent.</para>
-              <programlisting># service cloudstack-agent start</programlisting>
-            </listitem>
-          </orderedlist>
-        </listitem>
-        <listitem>
           <para>(KVM only) Perform the following additional steps on each KVM host. </para>
           <para>These steps will not affect running guests in the cloud. These steps are required
             only for clouds using KVM as hosts and only on the KVM hosts.</para>
@@ -2421,21 +2452,33 @@ service cloudstack-agent start
                 appropriate.</para>
               <programlisting><prompt>#</prompt> <command>yum</command> update cloud-*</programlisting>
               <programlisting>
-                                <prompt>#</prompt> <command>apt-get</command> update
-                                <prompt>#</prompt> <command>apt-get</command> upgrade cloud-*
+ <prompt>#</prompt> <command>apt-get</command> update
+ <prompt>#</prompt> <command>apt-get</command> upgrade cloud-*
                             </programlisting>
-            </listitem>
-            <listitem>
-              <para>Start the agent.</para>
-              <programlisting># service cloudstack-agent start</programlisting>
             </listitem>
             <listitem>
               <para> Copy the contents of the <filename>agent.properties</filename> file to the new
                   <filename>agent.properties</filename> file by using the following command</para>
-              <programlisting><command>sed</command> -i 's/com.cloud.agent.resource.computing.LibvirtComputingResource/com.cloud.hypervisor.kvm.resource.LibvirtComputingResource/g' <filename>/etc/cloud/agent/agent.properties</filename></programlisting>
+              <programlisting><command>sed</command> -i 's/com.cloud.agent.resource.computing.LibvirtComputingResource/com.cloud.hypervisor.kvm.resource.LibvirtComputingResource/g' <filename>/etc/cloudstack/agent/agent.properties</filename></programlisting>
             </listitem>
             <listitem>
-              <para>Start the cloud agent and cloud management services.</para>
+              <para>Upgrade all the existing bridge names to new bridge names by running this
+                script:</para>
+              <programlisting> # cloudstack-agent-upgrade</programlisting>
+            </listitem>
+            <listitem>
+              <para> Install a libvirt hook with the following commands:</para>
+              <programlisting> # mkdir /etc/libvirt/hooks
+ # cp /usr/share/cloudstack-agent/lib/libvirtqemuhook /etc/libvirt/hooks/qemu
+ # chmod +x /etc/libvirt/hooks/qemu</programlisting>
+            </listitem>
+            <listitem>
+              <para>Restart libvirtd.</para>
+              <programlisting># service libvirtd restart</programlisting>
+            </listitem>
+            <listitem>
+              <para>Start the agent.</para>
+              <programlisting># service cloudstack-agent start</programlisting>
             </listitem>
             <listitem>
               <para>When the Management Server is up and running, log in to the CloudStack UI and
@@ -2459,8 +2502,8 @@ service cloudstack-agent start
                 the MySQL instance, the MySQL user to connect as, and the password to use for that
                 user. In addition to those parameters, provide the "-c" and "-r" arguments. For
                 example:</para>
-              <programlisting><prompt>#</prompt> <command>nohup cloud-sysvmadm</command> -d <replaceable>192.168.1.5</replaceable> -u cloud -p <replaceable>password</replaceable> -c -r > sysvm.log 2>&amp;1 &amp;
-                                <prompt>#</prompt> <command>tail</command> -f <filename>sysvm.log</filename></programlisting>
+              <programlisting><prompt>#</prompt> <command>nohup cloudstack-sysvmadm</command> -d <replaceable>192.168.1.5</replaceable> -u cloud -p <replaceable>password</replaceable> -c -r > sysvm.log 2>&amp;1 &amp;
+<prompt>#</prompt> <command>tail</command> -f <filename>sysvm.log</filename></programlisting>
               <para>This might take up to an hour or more to run, depending on the number of
                 accounts in the system.</para>
             </listitem>
