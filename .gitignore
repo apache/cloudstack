@@ -84,3 +84,4 @@ configure-stamp
 *_flymake.js
 engine/storage/integration-test/test-output
 ui/stylesheets/*.css
+ui/stylesheets/csui/*.css
