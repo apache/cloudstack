@@ -25,6 +25,7 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'label.use.default.language': '<fmt:message key="label.use.default.language" />',
 'label.delete.events': '<fmt:message key="label.delete.events" />',
 'label.delete.alerts': '<fmt:message key="label.delete.alerts" />',
 'label.archive.events': '<fmt:message key="label.archive.events" />',

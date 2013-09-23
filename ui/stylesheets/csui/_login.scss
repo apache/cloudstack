@@ -21,11 +21,10 @@
     padding-bottom: 60px;
     position: relative;
     top: 15%;
-    height: 400px;
 
     .logo {
       @include shift(2);
-      @include span-columns(4);
+      @include span-columns(3);
 
       background: url(csui/img/logo-main.png) no-repeat top center;
       background-size: contain;
@@ -34,10 +33,9 @@
     }
 
     .fields {
-      @include shift(3);
       @include span-columns(3);
+      @include shift(1);
 
-      margin: auto;
       color: white;
 
       input[type=text],
@@ -63,7 +61,11 @@
         @include csui-dropdown-dark;
 
         width: 100%;
-        margin-top: 20px;
+        margin-top: 50px;
+      }
+
+      label {
+          font-size: 12px;
       }
     }
   }
