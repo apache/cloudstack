@@ -28,7 +28,7 @@ body {
         float: right;
         margin-right: 20px;
         padding-right: 20px;
-        top: -125%;
+        top: -65px;
     }
 
     .notifications {
@@ -48,6 +48,54 @@ body {
 
     .view-switcher {
         display: none !important;
+    }
+
+    .project-switcher {
+        @include span-columns(3);
+        @include row;
+        
+        padding: 5px;
+        top: 10px;
+
+        label {
+            @include csui-label;
+            @include span-columns(3);
+        }
+        
+        select {
+            @include csui-dropdown;
+            @include span-columns(8);
+        }
+    }
+
+    .region-switcher {
+        @include span-columns(2);
+        @include row;
+
+        height: 100%;
+        cursor: pointer;
+        padding: 5px;
+
+        &:hover {
+            box-shadow: inset 0px 0px 10px black;
+            border-radius: 3px;
+        }
+        
+        .icon {
+            @include span-columns(3 of 16);
+            @include csui-sprite(142, 390);
+            
+            height: 30px;
+        }
+        
+        .title {
+            @include span-columns(11 of 16);
+            @include shift(1);
+            @include csui-label;
+            
+            text-align: left;
+;
+        }
     }
 
     #user {

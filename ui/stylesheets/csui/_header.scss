@@ -9,7 +9,7 @@
   .logo {
     background: url(csui/img/logo-main.png) no-repeat left;
     width: 1280px;
-    height: 100px;
+    height: 80px;
     margin: auto;
     background-size: 300px;
   }
@@ -19,8 +19,7 @@
     @include row;
 
     width: 1280px;
-    height: 75px;
-    padding-top: 14px;
+    padding: 15px;
     margin: auto;
     color: white;
     border: 1px solid gray;

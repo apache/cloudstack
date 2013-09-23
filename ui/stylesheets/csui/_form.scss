@@ -29,3 +29,9 @@
   font-weight: bold;
   text-shadow: 0px 1px 1px black;
 }
+
+@mixin csui-label {
+    font-size: 14px;
+    position: relative;
+    top: 7px;
+}
