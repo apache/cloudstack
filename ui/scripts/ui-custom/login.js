@@ -53,33 +53,6 @@
         // Form validation
         $form.validate();
 
-        // Form label behavior
-        $inputs.bind('keydown focus click blur', function(event) {
-            var $target = $(event.target);
-            var $label = $form.find('label').filter(function() {
-                return $(this).attr('for') == $target.attr('name');
-            });
-
-            if (event.type == 'keydown') {
-                $label.hide();
-
-                return true;
-            } else if (event.type == 'blur') {
-                if ($target.hasClass('first-input')) {
-                    $target.removeClass('first-input');
-                }
-                if (!$(this).val()) {
-                    $label.show();
-                }
-            } else {
-                if (!$target.hasClass('first-input')) {
-                    $label.hide();
-                }
-            }
-
-            return true;
-        });
-
         if (!args.hasLogo) $login.addClass('nologo');
 
         // Labels cause related input to be focused

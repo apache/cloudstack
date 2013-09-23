@@ -10,8 +10,8 @@
   );
 
   background-repeat: no-repeat, repeat-x, repeat, no-repeat;
-  background-size: auto, auto, auto, cover;
-  background-position: center bottom 25px, bottom, center, center;
+  background-size: 300px, auto, auto, cover;
+  background-position: center bottom 10px, bottom, center, center;
 
   form {
     @include row;
@@ -30,7 +30,7 @@
       background: url(csui/img/logo-main.png) no-repeat top center;
       background-size: contain;
       float: left;
-      height: 500px;
+      height: 300px;
     }
 
     .fields {
