@@ -1,0 +1,101 @@
+@import "csui/csui";
+
+html body > .login {
+    @include csui-login;
+}
+
+body {
+    background: #dbdbdb;
+}
+
+#template {
+    display: none !important;
+}
+
+#header {
+    @include csui-header;
+
+    .controls {
+        position: relative;
+
+        * {
+            float: left;
+        }
+    }
+
+    #user, .notifications {
+        position: relative;
+        float: right;
+        margin-right: 20px;
+        padding-right: 20px;
+        top: -125%;
+    }
+
+    .notifications {
+        cursor: pointer;
+
+        .total {
+            padding: 5px 10px;
+            @include linear-gradient(lightgray, lighten(black, 15%));
+            border-radius: 1px;
+            margin-top: -5px;
+            margin-right: 20px;
+            float: left;
+            border-radius: 8px;
+            text-shadow: 0px 1px 1px black;
+        }
+    }
+
+    #user {
+        background: url(csui/img/form/dropdown-arrow-white.png) no-repeat right;
+    }
+}
+
+#main-area {
+    width: 1280px;
+    height: 728px;
+    margin: 0px auto;
+    background: white;
+    box-shadow: 0px -15px 20px gray;
+    overflow: hidden;
+    border: 1px solid #c0c0c0;
+}
+
+#navigation {
+    @include linear-gradient(white, #dbdbdb 7%);
+
+    width: 20%;
+    height: 100%;
+    float: left;
+
+    ul {
+        margin: 60px 0 0 0;
+        padding: 0;
+
+        li {
+            list-style: none;
+            text-indent: 10px;
+        }
+    }
+}
+
+#browser {
+    width: 80%;
+    height: 100%;
+    float: left;
+    box-shadow: -5px 0px 10px #b6b6b6;
+
+    .container {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+
+        .panel {
+            background: white;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+        }
+    }
+}
