@@ -1,0 +1,3 @@
+@mixin csui-sprite($x, $y) {
+    background: url(../images/sprites.png) no-repeat -#{$x}px -#{$y}px;
+}
