@@ -1,6 +1,8 @@
 @mixin csui-dropdown {
-  -webkit-appearance: button;
+  -webkit-appearance: none;
   -moz-appearance: none;
+  text-indent: 0.01px;
+  text-overflow: '';
 
   @include background(
     url(csui/img/form/dropdown-arrow.png) no-repeat right 8px center,
@@ -12,6 +14,8 @@
   font-size: 14px;
   height: 30px;
   text-indent: 8px;
+  width: 105%;
+  overflow: hidden;
 }
 
 @mixin csui-dropdown-dark {
