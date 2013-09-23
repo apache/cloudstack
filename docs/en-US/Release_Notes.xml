@@ -1044,18 +1044,9 @@ under the License.
     <para>If you run into any issues during upgrades, please feel free to ask questions on
       users@cloudstack.apache.org or dev@cloudstack.apache.org.</para>
     <section id="upgrade-from-4.0-to-4.1">
-      <title>Upgrade from 4.x.x to 4.2.0</title>
-      <para>This section will guide you from &PRODUCT; 4.0.x versions to &PRODUCT; 4.2.0.</para>
+      <title>Upgrade from 4.1.x to 4.2.0</title>
+      <para>This section will guide you from &PRODUCT; 4.1.x versions to &PRODUCT; 4.2.0.</para>
       <para>Any steps that are hypervisor-specific will be called out with a note.</para>
-      <warning>
-        <title>Package Structure Changes</title>
-        <para>The package structure for &PRODUCT; has changed significantly since the 4.0.x
-          releases. If you've compiled your own packages, you'll notice that the package names and
-          the number of packages has changed. This is <emphasis>not</emphasis> a bug.</para>
-        <para>However, this does mean that the procedure is not as simple as an <command>apt-get
-            upgrade</command> or <command>yum update</command>, so please follow this section
-          carefully.</para>
-      </warning>
       <para>We recommend reading through this section once or twice before beginning your upgrade
         procedure, and working through it on a test system before working on a production
         system.</para>
@@ -1091,35 +1082,6 @@ under the License.
             back the upgrade, this will assist in debugging or restoring your existing environment.
             You'll be prompted for your password.</para>
           <programlisting><prompt>#</prompt> mysqldump -u root -p cloud &gt; cloudstack-backup.sql</programlisting>
-        </listitem>
-        <listitem>
-          <para>If you have made changes to
-              <filename>/etc/cloud/management/components.xml</filename>, you'll need to carry these
-            over manually to the new file,
-              <filename>/etc/cloudstack/management/componentContext.xml</filename>. This is not done
-            automatically. (If you're unsure, we recommend making a backup of the original
-              <filename>components.xml</filename> to be on the safe side.</para>
-        </listitem>
-        <listitem>
-          <para>After upgrading to 4.2, API clients are expected to send plain text passwords for
-            login and user creation, instead of MD5 hash. If API client changes are not acceptable,
-            following changes are to be made for backward compatibility:</para>
-          <para>Modify componentsContext.xml, and make PlainTextUserAuthenticator as the default
-            authenticator (1st entry in the userAuthenticators adapter list is default)</para>
-          <programlisting language="XML">
-&lt;!-- Security adapters --&gt;
-&lt;bean id="userAuthenticators" class="com.cloud.utils.component.AdapterList"&gt;
-  &lt;property name="Adapters"&gt;
-    &lt;list&gt;
-      &lt;ref bean="PlainTextUserAuthenticator"/&gt;
-      &lt;ref bean="MD5UserAuthenticator"/&gt;
-      &lt;ref bean="LDAPUserAuthenticator"/&gt;
-    &lt;/list&gt;
-  &lt;/property&gt;
-&lt;/bean&gt;
-            </programlisting>
-          <para>PlainTextUserAuthenticator works the same way MD5UserAuthenticator worked prior to
-            4.2.</para>
         </listitem>
         <listitem id="upgrade-deb-packages">
           <para>If you are using Ubuntu, follow this procedure to upgrade your packages. If not,
