@@ -77,8 +77,9 @@ body {
         padding: 5px;
 
         &:hover {
-            box-shadow: inset 0px 0px 10px black;
-            border-radius: 3px;
+            .title {
+                text-decoration: underline;
+            }
         }
         
         .icon {
