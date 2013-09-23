@@ -1298,8 +1298,11 @@ service cloudstack-agent start
         </listitem>
         <listitem id="restart-system-vms">
           <para>Once you've upgraded the packages on your management servers, you'll need to restart
-            the system VMs. Make sure port 8096 is open in your local host firewall to do
-            this.</para>
+            the system VMs. Ensure that the admin port is set to 8096 by using the "integration.api.port" global parameter.
+This port is used by the cloud-sysvmadm script at the end of the upgrade procedure. For
+information about how to set this parameter, see "Setting Global Configuration Parameters" in
+the Installation Guide. Changing this parameter will require management server restart. Also make sure port 8096 is open in your local host firewall to do
+            this. </para>
           <para>There is a script that will do this for you, all you need to do is run the script
             and supply the IP address for your MySQL instance and your MySQL credentials:</para>
           <programlisting language="Bash"><prompt>#</prompt> nohup cloudstack-sysvmadm -d <replaceable>IP address</replaceable> -u cloud -p -a &gt; sysvm.log 2&gt;&amp;1 &amp;</programlisting>
@@ -1369,8 +1372,8 @@ Done restarting router(s).
                   <tbody>
                     <row>
                       <entry><para>XenServer</para></entry>
-                      <entry><para>Name: systemvm-xenserver-4.2.0</para>
-                        <para>Description: systemvm-xenserver-4.2.0</para>
+                      <entry><para>Name: systemvm-xenserver-4.2</para>
+                        <para>Description: systemvm-xenserver-4.2</para>
                         <para>URL:http://download.cloud.com/templates/4.2/systemvmtemplate-2013-07-12-master-xen.vhd.bz2 </para>
                         <para>Zone: Choose the zone where this hypervisor is used</para>
                         <para>Hypervisor: XenServer</para>
@@ -1385,8 +1388,8 @@ Done restarting router(s).
                     </row>
                     <row>
                       <entry><para>KVM</para></entry>
-                      <entry><para>Name: systemvm-kvm-4.2.0</para>
-                        <para>Description: systemvm-kvm-4.2.0</para>
+                      <entry><para>Name: systemvm-kvm-4.2</para>
+                        <para>Description: systemvm-kvm-4.2</para>
                         <para>URL:
                           http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-kvm.qcow2.bz2</para>
                         <para>Zone: Choose the zone where this hypervisor is used</para>
@@ -1402,8 +1405,8 @@ Done restarting router(s).
                     </row>
                     <row>
                       <entry><para>VMware</para></entry>
-                      <entry><para>Name: systemvm-vmware-4.2.0</para>
-                        <para>Description: systemvm-vmware-4.2.0</para>
+                      <entry><para>Name: systemvm-vmware-4.2</para>
+                        <para>Description: systemvm-vmware-4.2</para>
                         <para>URL:
                           http://download.cloud.com/templates/4.2/systemvmtemplate-4.2-vh7.ova</para>
                         <para>Zone: Choose the zone where this hypervisor is used</para>
@@ -2010,8 +2013,8 @@ service cloudstack-agent start
                   <tbody>
                     <row>
                       <entry><para>XenServer</para></entry>
-                      <entry><para>Name: systemvm-xenserver-4.2.0</para>
-                        <para>Description: systemvm-xenserver-4.2.0</para>
+                      <entry><para>Name: systemvm-xenserver-4.2</para>
+                        <para>Description: systemvm-xenserver-4.2</para>
                         <para>URL:http://download.cloud.com/templates/4.2/systemvmtemplate-2013-07-12-master-xen.vhd.bz2 </para>
                         <para>Zone: Choose the zone where this hypervisor is used</para>
                         <para>Hypervisor: XenServer</para>
@@ -2026,8 +2029,8 @@ service cloudstack-agent start
                     </row>
                     <row>
                       <entry><para>KVM</para></entry>
-                      <entry><para>Name: systemvm-kvm-4.2.0</para>
-                        <para>Description: systemvm-kvm-4.2.0</para>
+                      <entry><para>Name: systemvm-kvm-4.2</para>
+                        <para>Description: systemvm-kvm-4.2</para>
                         <para>URL:
                           http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-kvm.qcow2.bz2</para>
                         <para>Zone: Choose the zone where this hypervisor is used</para>
@@ -2043,8 +2046,8 @@ service cloudstack-agent start
                     </row>
                     <row>
                       <entry><para>VMware</para></entry>
-                      <entry><para>Name: systemvm-vmware-4.2.0</para>
-                        <para>Description: systemvm-vmware-4.2.0</para>
+                      <entry><para>Name: systemvm-vmware-4.2</para>
+                        <para>Description: systemvm-vmware-4.2</para>
                         <para>URL:
                           http://download.cloud.com/templates/4.2/systemvmtemplate-4.2-vh7.ova</para>
                         <para>Zone: Choose the zone where this hypervisor is used</para>
