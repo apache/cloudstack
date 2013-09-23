@@ -1,0 +1,27 @@
+@mixin csui-dropdown {
+  -webkit-appearance: button;
+  -moz-appearance: none;
+
+  @include background(
+    url(csui/img/form/dropdown-arrow.png) no-repeat right 8px center,
+    linear-gradient(#fff, #b6b6b6)
+  );
+
+  border-radius: 3px;
+  border: 1px solid black;
+  font-size: 14px;
+  height: 30px;
+  text-indent: 8px;
+}
+
+@mixin csui-dropdown-dark {
+  @include csui-dropdown;
+  @include background(
+      url(csui/img/form/dropdown-arrow-white.png) no-repeat right 8px center,
+      linear-gradient(#4e4e4e, #242424)
+  );
+
+  color: white;
+  font-weight: bold;
+  text-shadow: 0px 1px 1px black;
+}

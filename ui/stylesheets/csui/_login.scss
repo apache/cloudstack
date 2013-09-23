@@ -1,0 +1,70 @@
+@mixin csui-login {
+  height: 100%;
+  min-height: 630px;
+
+  @include background(
+    url(csui/img/login/brand-logo.png),
+    url(csui/img/login/bottom-bar.png),
+    url(csui/img/login/overlay-pattern.png),
+    url(csui/img/login/gradient.png)
+  );
+
+  background-repeat: no-repeat, repeat-x, repeat, no-repeat;
+  background-size: auto, auto, auto, cover;
+  background-position: center bottom 25px, bottom, center, center;
+
+  form {
+    @include row;
+
+    background: rgba(#000812, 0.8);
+    padding-top: 60px;
+    padding-bottom: 60px;
+    position: relative;
+    top: 15%;
+    height: 400px;
+
+    .logo {
+      @include shift(2);
+      @include span-columns(4);
+
+      background: url(csui/img/logo-main.png) no-repeat top center;
+      background-size: contain;
+      float: left;
+      height: 500px;
+    }
+
+    .fields {
+      @include shift(3);
+      @include span-columns(3);
+
+      margin: auto;
+      color: white;
+
+      input[type=text],
+      input[type=password] {
+        font-size: 13px;
+        width: 100%;
+        padding: 10px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        border: 2px solid gray;
+
+        &:focus {
+          border: 2px solid #6aa6e9;
+          outline: none;
+        }
+      }
+
+      input[type=submit] {
+        @include csui-button-cta;
+      }
+
+      select {
+        @include csui-dropdown-dark;
+
+        width: 100%;
+        margin-top: 20px;
+      }
+    }
+  }
+}
