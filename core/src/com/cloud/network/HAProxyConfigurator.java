@@ -44,6 +44,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
     private static String[] globalSection = { "global",
             "\tlog 127.0.0.1:3914   local0 warning", 
             "\tmaxconn 4096",
+            "\tmaxpipes 1024",
             "\tchroot /var/lib/haproxy", 
             "\tuser haproxy",
             "\tgroup haproxy",
@@ -122,7 +123,9 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         sb = new StringBuilder();
         // FIXME sb.append("\t").append("balance ").append(algorithm);
         result.add(sb.toString());
-        if (publicPort.equals(NetUtils.HTTP_PORT)) {
+        if (publicPort.equals(NetUtils.HTTP_PORT)
+                // && global option httpclose set (or maybe not in this spot???)
+                ) {
             sb = new StringBuilder();
             sb.append("\t").append("mode http");
             result.add(sb.toString());
@@ -434,7 +437,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         return sb.toString();
     }
 
-    private List<String> getRulesForPool(LoadBalancerTO lbTO)  {
+    private List<String> getRulesForPool(LoadBalancerTO lbTO, boolean keepAliveEnabled)  {
         StringBuilder sb = new StringBuilder();
         String poolName = sb.append(lbTO.getSrcIp().replace(".", "_"))
                 .append('-').append(lbTO.getSrcPort()).toString();
@@ -498,7 +501,9 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         if ((stickinessSubRule != null) && !destsAvailable) {
             s_logger.warn("Haproxy stickiness policy for lb rule: " + lbTO.getSrcIp() + ":" + lbTO.getSrcPort() +": Not Applied, cause:  backends are unavailable");
         }
-        if ((publicPort.equals(NetUtils.HTTP_PORT)) || (httpbasedStickiness) ) {
+        if ((publicPort.equals(NetUtils.HTTP_PORT)
+              && !keepAliveEnabled
+                ) || (httpbasedStickiness) ) {
             sb = new StringBuilder();
             sb.append("\t").append("mode http");
             result.add(sb.toString());
@@ -516,23 +521,58 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         StringBuilder rule = new StringBuilder("\nlisten ").append(ruleName)
                 .append(" ").append(statsIp).append(":")
                 .append(lbCmd.lbStatsPort);
+        // TODO DH: write test for this in both cases
+        if(!lbCmd.keepAliveEnabled) {
+            s_logger.info("Haproxy mode http enabled");
+            rule.append("\n\tmode http\n\toption httpclose");
+        }
         rule.append(
-                "\n\tmode http\n\toption httpclose\n\tstats enable\n\tstats uri     ")
+                "\n\tstats enable\n\tstats uri     ")
                 .append(lbCmd.lbStatsUri)
                 .append("\n\tstats realm   Haproxy\\ Statistics\n\tstats auth    ")
                 .append(lbCmd.lbStatsAuth);
         rule.append("\n");
-        return rule.toString();
+        String result = rule.toString();
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Haproxystats rule: " + result);
+        }
+        return result;
     }
 
     @Override
     public String[] generateConfiguration(LoadBalancerConfigCommand lbCmd)   {
         List<String> result = new ArrayList<String>();
         List <String> gSection =  Arrays.asList(globalSection);
+//        note that this is overwritten on the String in the static ArrayList<String> 
         gSection.set(2,"\tmaxconn " + lbCmd.maxconn);
+        // TODO DH: write test for this function
+        String pipesLine = "\tmaxpipes " + Long.toString(Long.parseLong(lbCmd.maxconn)/4);
+        gSection.set(3,pipesLine);
+        if(s_logger.isDebugEnabled()) {
+            for(String s : gSection) {
+                s_logger.debug("global section: " + s);
+            }
+        }
         result.addAll(gSection);
+        // TODO decide under what circumstances these options are needed
+//        result.add("\tnokqueue");
+//        result.add("\tnopoll");
+
         result.add(blankLine);
-        result.addAll(Arrays.asList(defaultsSection));
+        List <String> dSection =  Arrays.asList(defaultsSection);
+        if(lbCmd.keepAliveEnabled) {
+            dSection.set(6, "\t#no option set here :<"); 
+            dSection.set(7, "\tno option forceclose");
+        } else {
+            dSection.set(6, "\toption forwardfor"); 
+            dSection.set(7, "\toption forceclose");
+        }
+        if(s_logger.isDebugEnabled()) {
+            for(String s : dSection) {
+                s_logger.debug("default section: " + s);
+            }
+        }
+        result.addAll(dSection);
         if (!lbCmd.lbStatsVisibility.equals("disabled")) {
             /* new rule : listen admin_page guestip/link-local:8081 */
             if (lbCmd.lbStatsVisibility.equals("global")) {
@@ -571,7 +611,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             if ( lbTO.isRevoked() ) {
                 continue;
             }
-            List<String> poolRules = getRulesForPool(lbTO);
+            List<String> poolRules = getRulesForPool(lbTO, lbCmd.keepAliveEnabled);
             result.addAll(poolRules);
             has_listener = true;
         }

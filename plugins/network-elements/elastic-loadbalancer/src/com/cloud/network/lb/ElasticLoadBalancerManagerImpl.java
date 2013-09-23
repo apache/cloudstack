@@ -311,7 +311,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             maxconn = offering.getConcurrentConnections().toString();
         }
         LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs,elbVm.getPublicIpAddress(),
-                _nicDao.getIpAddress(guestNetworkId, elbVm.getId()),elbVm.getPrivateIpAddress(), null, null, maxconn);
+                _nicDao.getIpAddress(guestNetworkId, elbVm.getId()),elbVm.getPrivateIpAddress(), null, null, maxconn, offering.isKeepAliveEnabled());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP,
                 elbVm.getPrivateIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME,

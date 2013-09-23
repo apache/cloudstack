@@ -3646,6 +3646,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Map<String, String> detailsStr = cmd.getDetails();
         Boolean egressDefaultPolicy = cmd.getEgressDefaultPolicy();
         Integer maxconn = null;
+        boolean enableKeepAlive = false;
 
         // Verify traffic type
         for (TrafficType tType : TrafficType.values()) {
@@ -3807,6 +3808,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 maxconn=Integer.parseInt(_configDao.getValue(Config.NetworkLBHaproxyMaxConn.key()));
             }
         }
+        if(cmd.getKeepAliveEnabled() != null && cmd.getKeepAliveEnabled()) {
+            enableKeepAlive = true;
+        }
         
         // validate the Source NAT service capabilities specified in the network
         // offering
@@ -3865,7 +3869,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         NetworkOffering offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate,
                 serviceProviderMap, false, guestType, false, serviceOfferingId, conserveMode, serviceCapabilityMap,
-                specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn);
+                specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive);
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         return offering;
     }
@@ -3987,7 +3991,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type,
             boolean systemOnly, Long serviceOfferingId, boolean conserveMode,
             Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
-            Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn) {
+            Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
@@ -4146,6 +4150,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // 1) create network offering object
         s_logger.debug("Adding network offering " + offering);
         offering.setConcurrentConnections(maxconn);
+        offering.setKeepAliveEnabled(enableKeepAlive);
         offering = _networkOfferingDao.persist(offering, details);
         // 2) populate services and providers
         if (serviceProviderMap != null) {

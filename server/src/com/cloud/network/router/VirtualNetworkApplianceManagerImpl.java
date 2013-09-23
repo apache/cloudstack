@@ -3328,9 +3328,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         else {
             maxconn = offering.getConcurrentConnections().toString();
         }
+
         LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs, routerPublicIp,
                 getRouterIpInNetwork(guestNetworkId, router.getId()), router.getPrivateIpAddress(),
-                _itMgr.toNicTO(nicProfile, router.getHypervisorType()), router.getVpcId(), maxconn);
+                _itMgr.toNicTO(nicProfile, router.getHypervisorType()), router.getVpcId(), maxconn, offering.isKeepAliveEnabled());
 
         cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
         cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());

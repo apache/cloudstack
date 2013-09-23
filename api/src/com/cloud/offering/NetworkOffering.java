@@ -130,4 +130,6 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     boolean getEgressDefaultPolicy();
 
     Integer getConcurrentConnections();
+
+    boolean isKeepAliveEnabled();
 }
