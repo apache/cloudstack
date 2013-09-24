@@ -1085,6 +1085,15 @@ under the License.
             You'll be prompted for your password.</para>
           <programlisting><prompt>#</prompt> mysqldump -u root -p cloud &gt; cloudstack-backup.sql</programlisting>
         </listitem>
+        <listitem>
+            <para>(KVM Only) If primary storage of type local storage is in use, the path for this
+              storage needs to be verified to ensure it passes new validation. Check local storage by
+              querying the cloud.storage_pool table:
+            </para>
+            <programlisting><prompt>#</prompt>mysql -u cloud -p -e "select id,name,path from cloud.storage_pool where pool_type='Filesystem'"</programlisting>
+            <para>If local storage paths are found to have a trailing forward slash, remove it:
+            <programlisting><prompt>#</prompt>mysql -u cloud -p -e 'update cloud.storage_pool set path="/var/lib/libvirt/images" where path="/var/lib/libvirt/images/"';</programlisting>
+        </listitem>
         <listitem id="upgrade-deb-packages">
           <para>If you are using Ubuntu, follow this procedure to upgrade your packages. If not,
             skip to step <xref linkend="upgrade-rpm-packages"/>.</para>
