@@ -1,6 +1,4 @@
 @mixin csui-header {
-  background-color: #0a5f91;
-
   @include background(
     url(csui/img/overlay-pattern.png) repeat,
     url(csui/img/header/gradient.png) no-repeat
