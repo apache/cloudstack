@@ -7049,7 +7049,7 @@
                             var listView = $.extend(true, {}, cloudStack.sections.system.subsections.virtualRouters.listView, {
                                 dataProvider: function(args) {
                                     var searchByArgs = args.filterBy.search.value.length ?
-                                        '&name=' + args.filterBy.search.value : '';
+                                        '&keyword=' + args.filterBy.search.value : '';
 
                                     var routers = [];
                                     $.ajax({
