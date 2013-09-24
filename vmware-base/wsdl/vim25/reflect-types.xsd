@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+   Copyright 2005-2012 VMware, Inc.  All rights reserved.
+-->
+<schema
+   targetNamespace="urn:reflect"
+   xmlns="http://www.w3.org/2001/XMLSchema"
+   xmlns:reflect="urn:reflect"
+   xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+   xmlns:vim25="urn:vim25"
+   elementFormDefault="qualified"
+>
+   <import namespace="urn:vim25" schemaLocation="core-types.xsd" />
+</schema>

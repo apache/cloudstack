@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
-import org.apache.xerces.impl.xs.identity.Selector.Matcher;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;

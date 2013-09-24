@@ -31,6 +31,12 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-utils</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+            <groupId>org.owasp.esapi</groupId>
+            <artifactId>esapi</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -46,23 +52,37 @@
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
     </dependency>
-    <dependency>
-      <groupId>com.cloud.com.vmware</groupId>
-      <artifactId>vmware-vim25</artifactId>
-      <version>${cs.vmware.api.version}</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.axis</groupId>
-      <artifactId>axis</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.axis</groupId>
-      <artifactId>axis-jaxrpc</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>wsdl4j</groupId>
-      <artifactId>wsdl4j</artifactId>
-    </dependency>
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.cxf</groupId>
+        <artifactId>cxf-codegen-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>generate-sources</id>
+            <phase>generate-sources</phase>
+            <configuration>
+              <sourceRoot>${project.build.directory}/generated/cxf</sourceRoot>
+              <wsdlOptions>
+                <wsdlOption>
+                  <wsdl>${basedir}/wsdl/vim25/vimService.wsdl</wsdl>
+                  <extraargs>
+                    <extraarg>-client</extraarg>
+                    <extraarg>-frontend</extraarg>
+                    <extraarg>jaxws21</extraarg>
+                    <extraarg>-p</extraarg>
+                    <extraarg>com.vmware.vim25</extraarg>
+                  </extraargs>
+                </wsdlOption>
+              </wsdlOptions>
+            </configuration>
+            <goals>
+              <goal>wsdl2java</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>
