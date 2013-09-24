@@ -238,11 +238,11 @@
                                 //comment the 4 lines above and uncomment the following 4 lines if listHosts API still responds slowly.
 
                                 /*
-								dataFns.primaryStorageCount($.extend(data, {
+                dataFns.primaryStorageCount($.extend(data, {
                   clusterCount: json.listclustersresponse.count ?
                     json.listclustersresponse.count : 0
                 }));
-								*/
+                */
                             }
                         });
                     },
@@ -1082,19 +1082,19 @@
                         actions: {
                             edit: {
                                 label: 'label.edit',
-                                action: function(args) {                                   
+                                action: function(args) {
                                     var data = {
-                                    	id: selectedPhysicalNetworkObj.id,
-                                    };                                 
-                                   
-                                	$.extend(data, {
-                                		vlan: args.data.vlan
-                                	});                                                                       
-                                
-                                	$.extend(data, {
-                                		tags: args.data.tags
-                                	});
-                                        
+                                      id: selectedPhysicalNetworkObj.id
+                                    };
+
+                                  $.extend(data, {
+                                    vlan: args.data.vlan
+                                  });
+
+                                  $.extend(data, {
+                                    tags: args.data.tags
+                                  });
+
                                     $.ajax({
                                         url: createURL('updatePhysicalNetwork'),
                                         data: data,
@@ -1148,7 +1148,7 @@
                                     vlan: {
                                         label: 'VLAN Range(s)',
                                         isEditable: true
-                                    },   
+                                    },
                                     tags: {
                                         label: 'Tags',
                                         isEditable: true
@@ -1192,17 +1192,17 @@
                                             //	var startVlan, endVlan;
                                             var vlan = selectedPhysicalNetworkObj.vlan;
                                             /*	if(vlan != null && vlan.length > 0) {
-												if(vlan.indexOf("-") != -1) {
-													var vlanArray = vlan.split("-");
-													startVlan = vlanArray[0];
-													endVlan = vlanArray[1];
-												}
-												else {
-													startVlan = vlan;
-												}
-												selectedPhysicalNetworkObj["startVlan"] = startVlan;
-												selectedPhysicalNetworkObj["endVlan"] = endVlan;
-											}*/
+                        if(vlan.indexOf("-") != -1) {
+                          var vlanArray = vlan.split("-");
+                          startVlan = vlanArray[0];
+                          endVlan = vlanArray[1];
+                        }
+                        else {
+                          startVlan = vlan;
+                        }
+                        selectedPhysicalNetworkObj["startVlan"] = startVlan;
+                        selectedPhysicalNetworkObj["endVlan"] = endVlan;
+                      }*/
 
                                             //traffic type
                                             var xentrafficlabel, kvmtrafficlabel, vmwaretrafficlabel;
@@ -1723,13 +1723,13 @@
                                                                     });
                                                                 }
                                                             });
-                                                                                                                        
+
                                                             //include currently selected network offeirng to dropdown
                                                             items.push({
                                                                 id: selectedGuestNetworkObj.networkofferingid,
                                                                 description: selectedGuestNetworkObj.networkofferingdisplaytext
-                                                            });                                                             
-                                                            
+                                                            });
+
                                                             args.response.success({
                                                                 data: items
                                                             });
@@ -1971,7 +1971,7 @@
                                                 fields: [{
                                                     guestvlanrange: {
                                                         label: 'VLAN Range(s)'
-                                                    },
+                                                    }
                                                 }, {
                                                     domain: {
                                                         label: 'label.domain'
@@ -1993,7 +1993,7 @@
                                                             var item = json.listdedicatedguestvlanrangesresponse.dedicatedguestvlanrange[0];
                                                             args.response.success({
                                                                 data: item
-                                                            })
+                                                            });
                                                         }
                                                     });
                                                 }
@@ -5260,7 +5260,7 @@
                                         numretries: {
                                             label: 'label.numretries',
                                             defaultValue: '2'
-                                        },
+                                        }
                                     }
                                 },
                                 action: function(args) {
@@ -5457,7 +5457,7 @@
                                         })
                                     });
                                 }
-                            },
+                            }
                         },
                         actions: {
                             enable: {
@@ -5653,7 +5653,7 @@
                                                     validation: {
                                                         required: true
                                                     }
-                                                },
+                                                }
                                             }
                                         },
                                         action: function(args) {
@@ -6072,10 +6072,10 @@
                                                     $.ajax({
                                                         url: createURL('listDedicatedZones'),
                                                         data: {
-                                                        	zoneid: args.context.physicalResources[0].id
+                                                          zoneid: args.context.physicalResources[0].id
                                                         },
                                                         async: false,
-                                                        success: function(json) {                                                       
+                                                        success: function(json) {
                                                             if (json.listdedicatedzonesresponse.dedicatedzone != undefined) {
                                                                 var dedicatedzoneObj = json.listdedicatedzonesresponse.dedicatedzone[0];
                                                                 if (dedicatedzoneObj.domainid != null) {
@@ -6096,17 +6096,17 @@
                                                     });
 
                                                     $.ajax({
-                                                    	url: createURL('listClusters'),
-                                                    	data: {
+                                                      url: createURL('listClusters'),
+                                                      data: {
                                                             zoneid: args.context.physicalResources[0].id
                                                         },
                                                         async: false,
-                                                        success: function(json) {                                                        	
-                                                        	var clusters = json.listclustersresponse.cluster;
-                                                        	if (clusters != null) {
-                                                        		for (var i = 0; i < clusters.length; i++) {                                                        			
-                                                        			if (clusters[i].hypervisortype == 'VMware') {                                                        				
-                                                        				$.ajax({
+                                                        success: function(json) {
+                                                          var clusters = json.listclustersresponse.cluster;
+                                                          if (clusters != null) {
+                                                            for (var i = 0; i < clusters.length; i++) {
+                                                              if (clusters[i].hypervisortype == 'VMware') {
+                                                                $.ajax({
                                                                             url: createURL('listVmwareDcs'), //listVmwareDcs API exists in only non-oss bild
                                                                             data: {
                                                                                 zoneid: args.context.physicalResources[0].id
@@ -6120,16 +6120,16 @@
                                                                                     selectedZoneObj.vmwaredcId = vmwaredcs[0].id;
                                                                                 }
                                                                             }
-                                                                            //, error: function(XMLHttpResponse) {} //override default error handling: cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)});   
-                                                                        });                                                        				
-                                                        				
-                                                        				break;
-                                                        			}
-                                                        		}                                                        		
-                                                        	}                                                        	
+                                                                            //, error: function(XMLHttpResponse) {} //override default error handling: cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)});
+                                                                        });
+
+                                                                break;
+                                                              }
+                                                            }
+                                                          }
                                                         }
-                                                    });                         
-                                                    
+                                                    });
+
                                                     args.response.success({
                                                         actionFilter: zoneActionfilter,
                                                         data: selectedZoneObj
@@ -6451,13 +6451,13 @@
                                                         createForm: {
                                                             title: 'label.change.service.offering',
                                                             desc: function(args) {
-                                                            	var description = '';                            	
-                                                            	var vmObj = args.jsonObj;     
-                                                            	//if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') { //needs to wait for API fix that will return hypervisor property
-                                                            	if (vmObj.state == 'Running') {	
-                                                            		description = 'Please read the dynamic scaling section in the admin guide before scaling up.';
-                                                            	}                             
-                                                                return description;                  	                
+                                                              var description = '';
+                                                              var vmObj = args.jsonObj;
+                                                              //if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') { //needs to wait for API fix that will return hypervisor property
+                                                              if (vmObj.state == 'Running') {
+                                                                description = 'Please read the dynamic scaling section in the admin guide before scaling up.';
+                                                              }
+                                                                return description;
                                                             },
                                                             fields: {
                                                                 serviceOfferingId: {
@@ -6992,17 +6992,17 @@
                                             var systemvmObjs = json.listsystemvmsresponse.systemvm;
                                             if (systemvmObjs != null) {
                                                 $.ajax({
-                                                    url: createURL("listHosts&listAll=true"),                                                    
+                                                    url: createURL("listHosts&listAll=true"),
                                                     success: function(json) {
                                                         var hostObjs = json.listhostsresponse.host;
                                                         for (var i = 0; i < systemvmObjs.length; i++) {
-                                                        	for (var k = 0; k < hostObjs.length; k++) {
-                                                        		if (hostObjs[k].name == systemvmObjs[i].name) {
-                                                        			systemvmObjs[i].agentstate = hostObjs[k].state;
-                                                        			break;
-                                                        		}
-                                                        	}
-                                                        }    
+                                                          for (var k = 0; k < hostObjs.length; k++) {
+                                                            if (hostObjs[k].name == systemvmObjs[i].name) {
+                                                              systemvmObjs[i].agentstate = hostObjs[k].state;
+                                                              break;
+                                                            }
+                                                          }
+                                                        }
                                                         args.response.success({
                                                             data: systemvmObjs
                                                         });
@@ -7426,13 +7426,13 @@
                                 createForm: {
                                     title: 'label.change.service.offering',
                                     desc: function(args) {
-                                    	var description = '';                            	
-                                    	var vmObj = args.jsonObj;     
-                                    	//if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') { //needs to wait for API fix that will return hypervisor property
-                                    	if (vmObj.state == 'Running') {	
-                                    		description = 'Please read the dynamic scaling section in the admin guide before scaling up.';
-                                    	}                             
-                                        return description;                  	                
+                                      var description = '';
+                                      var vmObj = args.jsonObj;
+                                      //if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') { //needs to wait for API fix that will return hypervisor property
+                                      if (vmObj.state == 'Running') {
+                                        description = 'Please read the dynamic scaling section in the admin guide before scaling up.';
+                                      }
+                                        return description;
                                     },
                                     fields: {
                                         serviceOfferingId: {
@@ -7983,13 +7983,13 @@
                                 createForm: {
                                     title: 'label.change.service.offering',
                                     desc: function(args) {
-                                    	var description = '';                            	
-                                    	var vmObj = args.jsonObj;     
-                                    	//if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') { //needs to wait for API fix that will return hypervisor property
-                                    	if (vmObj.state == 'Running') {	
-                                    		description = 'Please read the dynamic scaling section in the admin guide before scaling up.';
-                                    	}                             
-                                        return description;                  	                
+                                      var description = '';
+                                      var vmObj = args.jsonObj;
+                                      //if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') { //needs to wait for API fix that will return hypervisor property
+                                      if (vmObj.state == 'Running') {
+                                        description = 'Please read the dynamic scaling section in the admin guide before scaling up.';
+                                      }
+                                        return description;
                                     },
                                     fields: {
                                         serviceOfferingId: {
@@ -8458,7 +8458,7 @@
                             notification: {
                                 poll: pollAsyncJobResult
                             }
-                        },
+                        }
                     },
                     dataProvider: function(args) {
                         $.ajax({
@@ -8536,7 +8536,7 @@
                             notification: {
                                 poll: pollAsyncJobResult
                             }
-                        },
+                        }
                     },
                     dataProvider: function(args) {
                         $.ajax({
@@ -9208,7 +9208,7 @@
                     fields: {
                         hostname: {
                             label: 'label.bigswitch.controller.address'
-                        },
+                        }
                     },
                     actions: {
                         add: {
@@ -9223,7 +9223,7 @@
                                     numretries: {
                                         label: 'label.numretries',
                                         defaultValue: '2'
-                                    },
+                                    }
                                 }
                             },
                             action: function(args) {
@@ -9334,7 +9334,7 @@
                                     },
                                     hostname: {
                                         label: 'label.ip.address'
-                                    },
+                                    }
                                 }],
                                 dataProvider: function(args) {
                                     $.ajax({
@@ -9484,8 +9484,6 @@
                                         isBoolean: true,
                                         isChecked: false,
                                         docID: 'helpDedicateResource'
-
-
                                     },
 
                                     domainId: {
@@ -9529,7 +9527,6 @@
                                         validation: {
                                             required: false
                                         }
-
                                     }
 
                                 }
@@ -9576,7 +9573,7 @@
                                                             notification: {
                                                                 poll: pollAsyncJobResult,
                                                                 interval: 4500,
-                                                                desc: "Dedicate Pod"    
+                                                                desc: "Dedicate Pod"
                                                             },
 
                                                             data: item
@@ -9585,7 +9582,6 @@
                                                     },
 
                                                     error: function(json) {
-
                                                         args.response.error(parseXMLHttpResponse(XMLHttpResponse));
                                                     }
                                                 });
@@ -9602,8 +9598,6 @@
                                     }
 
                                 });
-
-
                             },
 
                             notification: {
@@ -9769,7 +9763,7 @@
                                                     getActionFilter: function() {
                                                         return podActionfilter;
                                                     }
-                                                },
+                                                }
                                             });
                                         },
                                         error: function(json) {
@@ -10096,14 +10090,14 @@
                             createForm: {
                                 title: 'label.add.cluster',
                                 preFilter: function(args) {
-                                    var $form = args.$form;                                    
-                                    $form.click(function() {  
+                                    var $form = args.$form;
+                                    $form.click(function() {
                                         var $nexusDvsOptFields = $form.find('.form-item').filter(function() {
                                             var nexusDvsOptFields = [
                                                 'vsmipaddress',
                                                 'vsmusername',
                                                 'vsmpassword'
-                                            ];	
+                                            ];
                                             return $.inArray($(this).attr('rel'), nexusDvsOptFields) > -1;
                                         });
                                         var $nexusDvsReqFields = $form.find('.form-item').filter(function() {
@@ -10111,22 +10105,22 @@
                                                 'vsmipaddress_req',
                                                 'vsmusername_req',
                                                 'vsmpassword_req'
-                                            ];	
+                                            ];
                                             return $.inArray($(this).attr('rel'), nexusDvsReqFields) > -1;
-                                        });                                           
-                                    	
-                                    	if ($form.find('.form-item[rel=hypervisor] select').val() == 'VMware' ) {   
-                                    		$form.find('.form-item[rel=vCenterHost]').css('display', 'inline-block');
+                                        });
+
+                                      if ($form.find('.form-item[rel=hypervisor] select').val() == 'VMware' ) {
+                                        $form.find('.form-item[rel=vCenterHost]').css('display', 'inline-block');
                                             $form.find('.form-item[rel=vCenterUsername]').css('display', 'inline-block');
                                             $form.find('.form-item[rel=vCenterPassword]').css('display', 'inline-block');
                                             $form.find('.form-item[rel=vCenterDatacenter]').css('display', 'inline-block');
-                                            
+
                                             var $overridePublicTraffic = $form.find('.form-item[rel=overridepublictraffic] input[type=checkbox]');
-	                                        var $vSwitchPublicType = $form.find('.form-item[rel=vSwitchPublicType] select');	                                        
-	                                        var $overrideGuestTraffic = $form.find('.form-item[rel=overrideguesttraffic] input[type=checkbox]');
-	                                        var $vSwitchGuestType = $form.find('.form-item[rel=vSwitchGuestType] select');    	                                        
-		                                            
-                                            
+                                          var $vSwitchPublicType = $form.find('.form-item[rel=vSwitchPublicType] select');
+                                          var $overrideGuestTraffic = $form.find('.form-item[rel=overrideguesttraffic] input[type=checkbox]');
+                                          var $vSwitchGuestType = $form.find('.form-item[rel=vSwitchGuestType] select');
+
+
                                             var useDvs = false;
                                             $.ajax({
                                                 url: createURL('listConfigurations'),
@@ -10139,12 +10133,12 @@
                                                         useDvs = true;
                                                     }
                                                 }
-                                            });                                    		                                            
-                                            if (useDvs == true) { //If using Distributed vswitch, there is OverrideTraffic option.                                                       
-                                                $form.find('.form-item[rel=overridepublictraffic]').css('display', 'inline-block');                                               
-                                                $form.find('.form-item[rel=overrideguesttraffic]').css('display', 'inline-block');   
-                                                                                                                                         
-                                        		var useNexusDvs = false;                                            
+                                            });
+                                            if (useDvs == true) { //If using Distributed vswitch, there is OverrideTraffic option.
+                                                $form.find('.form-item[rel=overridepublictraffic]').css('display', 'inline-block');
+                                                $form.find('.form-item[rel=overrideguesttraffic]').css('display', 'inline-block');
+
+                                            var useNexusDvs = false;
                                                 $.ajax({
                                                     url: createURL('listConfigurations'),
                                                     data: {
@@ -10157,65 +10151,65 @@
                                                         }
                                                     }
                                                 });
-                                                if (useNexusDvs == true) { //If using Nexus Distributed vswitch, show Nexus Distributed vswitch fields (either required ones or optional ones).     
-        	                                        if (($overridePublicTraffic.is(':checked') && $vSwitchPublicType.val() == 'nexusdvs') ||
-        	                                            ($overrideGuestTraffic.is(':checked') && $vSwitchGuestType.val() == 'nexusdvs' )) {
-        	                                            $nexusDvsReqFields.css('display', 'inline-block');
-        	                                            $nexusDvsOptFields.hide();
-        	                                        } else {
-        	                                            $nexusDvsOptFields.css('display', 'inline-block');
-        	                                            $nexusDvsReqFields.hide();
-        	                                        }
-                                                	
-                                                } else { //If not using Nexus Distributed vswitch, hide Nexus Distributed vswitch fields.                                                                                                                                                                  	
-                                                	$nexusDvsOptFields.hide();
-                                                	$nexusDvsReqFields.hide();
-                                                }                                                 
-                                                
-                                            } else { //useDvs == false                                                      
+                                                if (useNexusDvs == true) { //If using Nexus Distributed vswitch, show Nexus Distributed vswitch fields (either required ones or optional ones).
+                                                  if (($overridePublicTraffic.is(':checked') && $vSwitchPublicType.val() == 'nexusdvs') ||
+                                                      ($overrideGuestTraffic.is(':checked') && $vSwitchGuestType.val() == 'nexusdvs' )) {
+                                                      $nexusDvsReqFields.css('display', 'inline-block');
+                                                      $nexusDvsOptFields.hide();
+                                                  } else {
+                                                      $nexusDvsOptFields.css('display', 'inline-block');
+                                                      $nexusDvsReqFields.hide();
+                                                  }
+
+                                                } else { //If not using Nexus Distributed vswitch, hide Nexus Distributed vswitch fields.
+                                                  $nexusDvsOptFields.hide();
+                                                  $nexusDvsReqFields.hide();
+                                                }
+
+                                            } else { //useDvs == false
                                                 $form.find('.form-item[rel=overridepublictraffic]').css('display', 'none');
                                                 $form.find('.form-item[rel=vSwitchPublicType]').css('display', 'none');
                                                 $form.find('.form-item[rel=vSwitchPublicName]').css('display', 'none');
-                                                
+
                                                 $form.find('.form-item[rel=overrideguesttraffic]').css('display', 'none');
-                                                $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'none');                                                
-                                                $form.find('.form-item[rel=vSwitchGuestName]').css('display', 'none');    
-                                                
+                                                $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'none');
+                                                $form.find('.form-item[rel=vSwitchGuestName]').css('display', 'none');
+
                                                 $nexusDvsOptFields.hide();
-                                            	$nexusDvsReqFields.hide();
+                                              $nexusDvsReqFields.hide();
                                             }
-                                     
-	                                        
+
+
                                         } else { //XenServer, KVM, etc (non-VMware)
                                             $form.find('.form-item[rel=vCenterHost]').css('display', 'none');
                                             $form.find('.form-item[rel=vCenterUsername]').css('display', 'none');
                                             $form.find('.form-item[rel=vCenterPassword]').css('display', 'none');
                                             $form.find('.form-item[rel=vCenterDatacenter]').css('display', 'none');
                                             $form.find('.form-item[rel=enableNexusVswitch]').css('display', 'none');
-                                            
+
                                             $form.find('.form-item[rel=overridepublictraffic]').css('display', 'none');
-                                            $form.find('.form-item[rel=overrideguesttraffic]').css('display', 'none');                                                                                                                        	
-                                        	$nexusDvsOptFields.hide();
-                                        	$nexusDvsReqFields.hide();
-                                        }  
-                                    	                                       
+                                            $form.find('.form-item[rel=overrideguesttraffic]').css('display', 'none');
+                                          $nexusDvsOptFields.hide();
+                                          $nexusDvsReqFields.hide();
+                                        }
+
                                         if ($form.find('.form-item[rel=overridepublictraffic]').css('display') != 'none' && $overridePublicTraffic.is(':checked')) {
-                                        	$form.find('.form-item[rel=vSwitchPublicType]').css('display', 'inline-block');   
-                                            $form.find('.form-item[rel=vSwitchPublicName]').css('display', 'inline-block');   
+                                          $form.find('.form-item[rel=vSwitchPublicType]').css('display', 'inline-block');
+                                            $form.find('.form-item[rel=vSwitchPublicName]').css('display', 'inline-block');
                                         } else {
-                                        	$form.find('.form-item[rel=vSwitchPublicType]').css('display', 'none'); 
+                                          $form.find('.form-item[rel=vSwitchPublicType]').css('display', 'none');
                                             $form.find('.form-item[rel=vSwitchPublicName]').css('display', 'none');
                                         }
-                                        
+
                                         if ($form.find('.form-item[rel=overrideguesttraffic]').css('display') != 'none' && $overrideGuestTraffic.is(':checked')) {
-                                        	$form.find('.form-item[rel=vSwitchGuestType]').css('display', 'inline-block');   
-                                            $form.find('.form-item[rel=vSwitchGuestName]').css('display', 'inline-block');   
+                                          $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'inline-block');
+                                            $form.find('.form-item[rel=vSwitchGuestName]').css('display', 'inline-block');
                                         } else {
-                                        	$form.find('.form-item[rel=vSwitchGuestType]').css('display', 'none'); 
+                                          $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'none');
                                             $form.find('.form-item[rel=vSwitchGuestName]').css('display', 'none');
-                                        }                                        
+                                        }
                                     });
-                                    
+
                                     $form.trigger('click');
                                 },
                                 fields: {
@@ -10253,7 +10247,7 @@
                                     hypervisor: {
                                         label: 'label.hypervisor',
                                         docID: 'helpClusterHypervisor',
-                                        select: function(args) {                                            
+                                        select: function(args) {
                                             $.ajax({
                                                 url: createURL("listHypervisors"),
                                                 dataType: "json",
@@ -10451,12 +10445,12 @@
                                             args.response.success({
                                                 data: items
                                             });
-                                        },                                        
-                                        isHidden: true                                        
+                                        },
+                                        isHidden: true
                                     },
 
                                     vSwitchPublicName: {
-                                        label: 'Public Traffic vSwitch Name',                                        
+                                        label: 'Public Traffic vSwitch Name',
                                         isHidden: true
                                     },
 
@@ -10472,7 +10466,7 @@
                                         label: 'Guest Traffic vSwitch Type',
                                         select: function(args) {
                                             var items = []
-                                            
+
                                             var useNexusDvs = false;
                                             $.ajax({
                                                 url: createURL('listConfigurations'),
@@ -10516,7 +10510,7 @@
                                                     description: "Cisco Nexus 1000v Distributed Virtual Switch"
                                                 });
                                             }
-                                            
+
                                             args.response.success({
                                                 data: items
                                             });
@@ -10525,7 +10519,7 @@
                                     },
 
                                     vSwitchGuestName: {
-                                        label: ' Guest Traffic vSwitch Name',                                       
+                                        label: ' Guest Traffic vSwitch Name',
                                         isHidden: true
                                     },
 
@@ -10613,29 +10607,29 @@
                                     if (args.data.vSwitchGuestName != "")
                                         array1.push("&guestvswitchname=" + args.data.vSwitchGuestName);
 
-                                    //Nexus VSM fields                                 
+                                    //Nexus VSM fields
                                     if (args.$form.find('.form-item[rel=vsmipaddress]').css('display') != 'none' && args.data.vsmipaddress != null && args.data.vsmipaddress.length > 0) {
-                                        array1.push('&vsmipaddress=' + args.data.vsmipaddress);                                        
+                                        array1.push('&vsmipaddress=' + args.data.vsmipaddress);
                                     }
                                     if (args.$form.find('.form-item[rel=vsmipaddress_req]').css('display') != 'none' && args.data.vsmipaddress_req != null && args.data.vsmipaddress_req.length > 0) {
-                                        array1.push('&vsmipaddress=' + args.data.vsmipaddress_req);                                        
+                                        array1.push('&vsmipaddress=' + args.data.vsmipaddress_req);
                                     }
-                                    
+
                                     if(args.$form.find('.form-item[rel=vsmusername]').css('display') != 'none' && args.data.vsmusername != null && args.data.vsmusername.length > 0) {
-                                    	array1.push('&vsmusername=' + args.data.vsmusername);
+                                      array1.push('&vsmusername=' + args.data.vsmusername);
                                     }
                                     if(args.$form.find('.form-item[rel=vsmusername_req]').css('display') != 'none' && args.data.vsmusername_req != null && args.data.vsmusername_req.length > 0) {
-                                    	array1.push('&vsmusername=' + args.data.vsmusername_req);
+                                      array1.push('&vsmusername=' + args.data.vsmusername_req);
                                     }
-                                    
+
                                     if(args.$form.find('.form-item[rel=vsmpassword]').css('display') != 'none' && args.data.vsmpassword != null && args.data.vsmpassword.length > 0) {
-                                    	array1.push('&vsmpassword=' + args.data.vsmpassword);
-                                    }   
+                                      array1.push('&vsmpassword=' + args.data.vsmpassword);
+                                    }
                                     if(args.$form.find('.form-item[rel=vsmpassword_req]').css('display') != 'none' && args.data.vsmpassword_req != null && args.data.vsmpassword_req.length > 0) {
-                                    	array1.push('&vsmpassword=' + args.data.vsmpassword_req);
-                                    } 
-                                    
-                                    
+                                      array1.push('&vsmpassword=' + args.data.vsmpassword_req);
+                                    }
+
+
                                     var hostname = args.data.vCenterHost;
                                     var dcName = args.data.vCenterDatacenter;
 
@@ -10671,7 +10665,7 @@
                                 $.ajax({
                                     url: createURL("addCluster" + array1.join("")),
                                     dataType: "json",
-                                    type: "POST",                                    
+                                    type: "POST",
                                     success: function(json) {
                                         var item = json.addclusterresponse.cluster[0];
                                         clusterId = json.addclusterresponse.cluster[0].id;
@@ -13444,7 +13438,7 @@
                                         isEditable: true
                                     },
                                     zonename: {
-                                    	label: 'label.zone'
+                                      label: 'label.zone'
                                     },
                                     podname: {
                                         label: 'label.pod'
@@ -13580,36 +13574,36 @@
                             label: 'label.url'
                         }
                     },
-                    dataProvider: function(args) {                       
-			            $.ajax({
-			              url: createURL('listUcsManagers'),
-			              data: {
-			                zoneid: args.context.physicalResources[0].id
-			              },
-			              success: function(json) {	
-			            	  //for testing only (begin)
-			            	  /*            	  
-			            	  json = 
-			            	  {
-			            	      "listucsmanagerreponse": {
-			            		      "count": 1,
-			            		      "ucsmanager": [
-			            		          {
-			            		              "id": "07b5b813-83ed-4859-952c-c95cafb63ac4",
-			            		              "name": "ucsmanager",
-			            		              "url": "10.223.184.2",
-			            		              "zoneid": "54c9a65c-ba89-4380-96e9-1d429c5372e3"
-			            		          }
-			            		      ]
-			            	      }
-			            	  };
-			            	  */
-			            	  //for testing only (end)
-			            	  
-			            	  var items = json.listucsmanagerreponse.ucsmanager;
-			            	  args.response.success({ data: items });			            	  
-			              }
-			            });
+                    dataProvider: function(args) {
+                  $.ajax({
+                    url: createURL('listUcsManagers'),
+                    data: {
+                      zoneid: args.context.physicalResources[0].id
+                    },
+                    success: function(json) {
+                      //for testing only (begin)
+                      /*
+                      json =
+                      {
+                          "listucsmanagerreponse": {
+                            "count": 1,
+                            "ucsmanager": [
+                                {
+                                    "id": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+                                    "name": "ucsmanager",
+                                    "url": "10.223.184.2",
+                                    "zoneid": "54c9a65c-ba89-4380-96e9-1d429c5372e3"
+                                }
+                            ]
+                          }
+                      };
+                      */
+                      //for testing only (end)
+
+                      var items = json.listucsmanagerreponse.ucsmanager;
+                      args.response.success({ data: items });
+                    }
+                  });
                     },
                     actions: {
                         add: {
@@ -13693,7 +13687,7 @@
                         isMaximized: true,
                         noCompact: true,
                         actions: {
-                        	remove: {
+                          remove: {
                                 label: 'Delete UCS Manager',
                                 messages: {
                                     confirm: function(args) {
@@ -13705,11 +13699,11 @@
                                 },
                                 action: function(args) {
                                     var data = {
-                                    	ucsmanagerid: args.context.ucsManagers[0].id
+                                      ucsmanagerid: args.context.ucsManagers[0].id
                                     };
                                     $.ajax({
                                         url: createURL('deleteUcsManager'),
-                                        data: data,                                        
+                                        data: data,
                                         success: function(json) {
                                             args.response.success();
                                         },
@@ -13724,64 +13718,64 @@
                                     }
                                 }
                             }
-                        },                        
-                        tabs: {   
+                        },
+                        tabs: {
                             details: {
                                 title: 'label.details',
 
                                 fields: [{
                                     name: {
-                                        label: 'label.name',                                       
+                                        label: 'label.name'
                                     }
                                 }, {
                                     id: {
                                         label: 'label.id'
-                                    },   
+                                    },
                                     url: {
                                         label: 'label.url'
-                                    },
+                                    }
                                 }],
 
-                                dataProvider: function(args) {                                    
+                                dataProvider: function(args) {
                                     $.ajax({
-                                    	url: createURL('listUcsManagers'),
-                                    	data: {
-                                    		id: args.context.ucsManagers[0].id 
-                			            },                                      
+                                      url: createURL('listUcsManagers'),
+                                      data: {
+                                        id: args.context.ucsManagers[0].id
+                                  },
                                         success: function(json) {
                                             //for testing only (begin)
-              			            	    /*	            	  
-              			            	    json = 
-              			            	    {
-              			            	        "listucsmanagerreponse": {
-              			            		        "count": 1,
-              			            		        "ucsmanager": [
-              			            		            {
-              			            		                "id": "07b5b813-83ed-4859-952c-c95cafb63ac4",
-              			            		                "name": "ucsmanager",
-              			            		                "url": "10.223.184.2",
-              			            		                "zoneid": "54c9a65c-ba89-4380-96e9-1d429c5372e3"
-              			            		            }
-              			            		        ]
-              			            	        }
-              			            	    };
-              			            	    */
-              			            	    //for testing only (end)
-                                        	                                        	
+                                      /*
+                                      json =
+                                      {
+                                          "listucsmanagerreponse": {
+                                            "count": 1,
+                                            "ucsmanager": [
+                                                {
+                                                    "id": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+                                                    "name": "ucsmanager",
+                                                    "url": "10.223.184.2",
+                                                    "zoneid": "54c9a65c-ba89-4380-96e9-1d429c5372e3"
+                                                }
+                                            ]
+                                          }
+                                      };
+                                      */
+                                      //for testing only (end)
+
                                             var item = json.listucsmanagerreponse.ucsmanager[0];
-                                            args.response.success({                                                
+                                            args.response.success({
                                                 data: item
                                             });
                                         }
                                     });
                                 }
-                            },                            
-                            
+                            },
+
                             blades: {
                                 title: 'Blades',
                                 listView: {
                                     id: 'blades',
-                                    fields: {                                        
+                                    fields: {
                                         chassis: {
                                             label: 'Chassis'
                                         },
@@ -13800,45 +13794,45 @@
                                             },
                                             success: function(json) {
                                                 //for testing only (begin)
-                                            	/*
-                                            	json = {
-                                                	"listucsbladeresponse": {
-                                                	    "count": 4,
-                                                	    "ucsblade": [
-                                                	        {
-                                                	            "id": "84edb958-cf8a-4e71-99c6-190ccc3fe2bd",
-                                                	            "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
-                                                	            "bladedn": "sys/chassis-1/blade-1",
-                                                	            "profiledn": "org-root/ls-profile-for-blade-1"
-                                                	        },
-                                                	        {
-                                                	            "id": "524a3e55-5b61-4561-9464-1b19e3543189",
-                                                	            "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
-                                                	            "bladedn": "sys/chassis-1/blade-2",
-                                                	            "profiledn": "org-root/ls-profile-for-blade-2"
-                                                	        },
-                                                	        {
-                                                	            "id": "4828f560-6191-46e6-8a4c-23d1d7d017f0",
-                                                	            "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
-                                                	            "bladedn": "sys/chassis-1/blade-3"
-                                                	        },
-                                                	        {
-                                                	            "id": "80ab25c8-3dcf-400e-8849-84dc5e1e6594",
-                                                	            "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
-                                                	            "bladedn": "sys/chassis-1/blade-4"
-                                                	        }
-                                                	    ]
-                                                	}
-                                                };  
-                                            	*/
-                                            	//for testing only (end)
-                                            	
-                                            	var items = json.listucsbladeresponse.ucsblade ? json.listucsbladeresponse.ucsblade : [];
-                                                for (var i = 0; i < items.length; i++) {                                                    
-                                                	addExtraPropertiesToUcsBladeObject(items[i]);   
+                                              /*
+                                              json = {
+                                                  "listucsbladeresponse": {
+                                                      "count": 4,
+                                                      "ucsblade": [
+                                                          {
+                                                              "id": "84edb958-cf8a-4e71-99c6-190ccc3fe2bd",
+                                                              "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+                                                              "bladedn": "sys/chassis-1/blade-1",
+                                                              "profiledn": "org-root/ls-profile-for-blade-1"
+                                                          },
+                                                          {
+                                                              "id": "524a3e55-5b61-4561-9464-1b19e3543189",
+                                                              "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+                                                              "bladedn": "sys/chassis-1/blade-2",
+                                                              "profiledn": "org-root/ls-profile-for-blade-2"
+                                                          },
+                                                          {
+                                                              "id": "4828f560-6191-46e6-8a4c-23d1d7d017f0",
+                                                              "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+                                                              "bladedn": "sys/chassis-1/blade-3"
+                                                          },
+                                                          {
+                                                              "id": "80ab25c8-3dcf-400e-8849-84dc5e1e6594",
+                                                              "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+                                                              "bladedn": "sys/chassis-1/blade-4"
+                                                          }
+                                                      ]
+                                                  }
+                                                };
+                                              */
+                                              //for testing only (end)
+
+                                              var items = json.listucsbladeresponse.ucsblade ? json.listucsbladeresponse.ucsblade : [];
+                                                for (var i = 0; i < items.length; i++) {
+                                                  addExtraPropertiesToUcsBladeObject(items[i]);
                                                 }
                                                 args.response.success({
-                                                	actionFilter: bladeActionfilter,
+                                                  actionFilter: bladeActionfilter,
                                                     data: items
                                                 });
                                             }
@@ -13867,35 +13861,35 @@
                                                                     ucsmanagerid: args.context.ucsManagers[0].id
                                                                 },
                                                                 async: false,
-                                                                success: function(json) { 
+                                                                success: function(json) {
                                                                     //for testing only (begin)
-                                                                	/*
-                                                                	json = {
-                                                                    	    "listucsprofileresponse": {
-                                                                    	        "count": 5,
-                                                                    	        "ucsprofile": [
-                                                                    	            {
-                                                                    	                "ucsdn": "org-root/ls-profile-for-blade-2"
-                                                                    	            },
-                                                                    	            {
-                                                                    	                "ucsdn": "org-root/ls-profile-for-blade-1"
-                                                                    	            },
-                                                                    	            {
-                                                                    	                "ucsdn": "org-root/ls-simpleProfile"
-                                                                    	            },
-                                                                    	            {
-                                                                    	                "ucsdn": "org-root/ls-testProfile"
-                                                                    	            },
-                                                                    	            {
-                                                                    	                "ucsdn": "org-root/ls-UCS_Test"
-                                                                    	            }
-                                                                    	        ]
-                                                                    	    }
-                                                                    	};
+                                                                  /*
+                                                                  json = {
+                                                                          "listucsprofileresponse": {
+                                                                              "count": 5,
+                                                                              "ucsprofile": [
+                                                                                  {
+                                                                                      "ucsdn": "org-root/ls-profile-for-blade-2"
+                                                                                  },
+                                                                                  {
+                                                                                      "ucsdn": "org-root/ls-profile-for-blade-1"
+                                                                                  },
+                                                                                  {
+                                                                                      "ucsdn": "org-root/ls-simpleProfile"
+                                                                                  },
+                                                                                  {
+                                                                                      "ucsdn": "org-root/ls-testProfile"
+                                                                                  },
+                                                                                  {
+                                                                                      "ucsdn": "org-root/ls-UCS_Test"
+                                                                                  }
+                                                                              ]
+                                                                          }
+                                                                      };
                                                                     */
-                                                                	//for testing only (end)
-                                                                	
-                                                                	var ucsprofiles = json.listucsprofileresponse.ucsprofile;
+                                                                  //for testing only (end)
+
+                                                                  var ucsprofiles = json.listucsprofileresponse.ucsprofile;
                                                                     if (ucsprofiles != null) {
                                                                         for (var i = 0; i < ucsprofiles.length; i++) {
                                                                             items.push({
@@ -13909,14 +13903,14 @@
 
                                                             //for testing only (begin)
                                                             /*
-								                            items.push({id: 'org-root/ls-testProfile1', description: 'org-root/ls-testProfile1'});
-								                            items.push({id: 'org-root/ls-testProfile2', description: 'org-root/ls-testProfile2'});
-								                            items.push({id: 'org-root/ls-testProfile3', description: 'org-root/ls-testProfile3'});
-								                            items.push({id: 'org-root/ls-testProfile4', description: 'org-root/ls-testProfile4'});
-								                            items.push({id: 'org-root/ls-testProfile5', description: 'org-root/ls-testProfile5'});
-								                            items.push({id: 'org-root/ls-testProfile6', description: 'org-root/ls-testProfile6'});
-								                            items.push({id: 'org-root/ls-testProfile7', description: 'org-root/ls-testProfile7'});
-								                            */
+                                            items.push({id: 'org-root/ls-testProfile1', description: 'org-root/ls-testProfile1'});
+                                            items.push({id: 'org-root/ls-testProfile2', description: 'org-root/ls-testProfile2'});
+                                            items.push({id: 'org-root/ls-testProfile3', description: 'org-root/ls-testProfile3'});
+                                            items.push({id: 'org-root/ls-testProfile4', description: 'org-root/ls-testProfile4'});
+                                            items.push({id: 'org-root/ls-testProfile5', description: 'org-root/ls-testProfile5'});
+                                            items.push({id: 'org-root/ls-testProfile6', description: 'org-root/ls-testProfile6'});
+                                            items.push({id: 'org-root/ls-testProfile7', description: 'org-root/ls-testProfile7'});
+                                            */
                                                             //for testing only (end)
 
                                                             args.response.success({
@@ -13939,52 +13933,52 @@
                                                         bladeid: args.context.blades[0].id
                                                     },
                                                     success: function(json) {
-                                                    	//for testing only (begin)
-                                                    	/*
-                                                    	json = {
-                                                        	    "associateucsprofiletobladeresponse": {
-                                                        	        "jobid": "770bec68-7739-4127-8609-4b87bd7867d2"
-                                                        	    }
-                                                        	}
-                                                    	*/
-                                                    	//for testing only (end)
-                                                    	                                                    	
-                                                    	var jid = json.associateucsprofiletobladeresponse.jobid;
+                                                      //for testing only (begin)
+                                                      /*
+                                                      json = {
+                                                              "associateucsprofiletobladeresponse": {
+                                                                  "jobid": "770bec68-7739-4127-8609-4b87bd7867d2"
+                                                              }
+                                                          }
+                                                      */
+                                                      //for testing only (end)
+
+                                                      var jid = json.associateucsprofiletobladeresponse.jobid;
                                                         args.response.success({
                                                             _custom: {
                                                                 jobId: jid,
-                                                                getUpdatedItem: function(json) {                                                               	    
-                                                                	//for testing only (begin)
-                                                                	/*
-                                                                	json = {
-                                                                		    "queryasyncjobresultresponse": {
-                                                                		        "accountid": "b24f6e36-f0ca-11e2-8c16-d637902e3581",
-                                                                		        "userid": "b24f7d8d-f0ca-11e2-8c16-d637902e3581",
-                                                                		        "cmd": "org.apache.cloudstack.api.AssociateUcsProfileToBladeCmd",
-                                                                		        "jobstatus": 1,
-                                                                		        "jobprocstatus": 0,
-                                                                		        "jobresultcode": 0,
-                                                                		        "jobresulttype": "object",
-                                                                		        "jobresult": {
-                                                                		            "ucsblade": {
-                                                                		                "id": "80ab25c8-3dcf-400e-8849-84dc5e1e6594",
-                                                                		                "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
-                                                                		                "bladedn": "sys/chassis-1/blade-4",
-                                                                		                "profiledn": "org-root/ls-profile-for-blade-4"
-                                                                		            }
-                                                                		        },
-                                                                		        "created": "2013-07-26T13:53:01-0700",
-                                                                		        "jobid": "770bec68-7739-4127-8609-4b87bd7867d2"
-                                                                		    }
-                                                                		};
-                                                                	*/
-                                                                	//for testing only (end)
-                                                                	 
-                                                                	addExtraPropertiesToUcsBladeObject(json.queryasyncjobresultresponse.jobresult.ucsblade);                                                                	
+                                                                getUpdatedItem: function(json) {
+                                                                  //for testing only (begin)
+                                                                  /*
+                                                                  json = {
+                                                                        "queryasyncjobresultresponse": {
+                                                                            "accountid": "b24f6e36-f0ca-11e2-8c16-d637902e3581",
+                                                                            "userid": "b24f7d8d-f0ca-11e2-8c16-d637902e3581",
+                                                                            "cmd": "org.apache.cloudstack.api.AssociateUcsProfileToBladeCmd",
+                                                                            "jobstatus": 1,
+                                                                            "jobprocstatus": 0,
+                                                                            "jobresultcode": 0,
+                                                                            "jobresulttype": "object",
+                                                                            "jobresult": {
+                                                                                "ucsblade": {
+                                                                                    "id": "80ab25c8-3dcf-400e-8849-84dc5e1e6594",
+                                                                                    "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
+                                                                                    "bladedn": "sys/chassis-1/blade-4",
+                                                                                    "profiledn": "org-root/ls-profile-for-blade-4"
+                                                                                }
+                                                                            },
+                                                                            "created": "2013-07-26T13:53:01-0700",
+                                                                            "jobid": "770bec68-7739-4127-8609-4b87bd7867d2"
+                                                                        }
+                                                                    };
+                                                                  */
+                                                                  //for testing only (end)
+
+                                                                  addExtraPropertiesToUcsBladeObject(json.queryasyncjobresultresponse.jobresult.ucsblade);
                                                                     return json.queryasyncjobresultresponse.jobresult.ucsblade;
                                                                 }
                                                             }
-                                                        });                                                    	
+                                                        });
                                                     }
                                                 });
                                             },
@@ -13992,81 +13986,81 @@
                                                 poll: pollAsyncJobResult
                                             }
                                         },
-                                                                                
+
                                         disassociateProfileFromBlade: {
                                             label: 'Disassociate Profile from Blade',
                                             addRow: 'false',
                                             messages: {
-                                            	confirm: function(args) {
-                                            		return 'Please confirm that you want to disassociate Profile from Blade.';
-                                            	},
+                                              confirm: function(args) {
+                                                return 'Please confirm that you want to disassociate Profile from Blade.';
+                                              },
                                                 notification: function(args) {
                                                     return 'Disassociate Profile from Blade';
                                                 }
-                                            },                                           
-                                            action: function(args) {                                            	
+                                            },
+                                            action: function(args) {
                                                 $.ajax({
-                                                    url: createURL('disassociateUcsProfileFromBlade'), 
+                                                    url: createURL('disassociateUcsProfileFromBlade'),
                                                     data: {
-                                                        //ucsmanagerid: args.context.ucsManagers[0].id,                                                        
+                                                        //ucsmanagerid: args.context.ucsManagers[0].id,
                                                         bladeid: args.context.blades[0].id
                                                     },
-                                                    success: function(json) {   
-                                                    	//for testing only (begin)
-                                                    	/*
-                                                    	json = {
-                                                        	    "disassociateucsprofilefrombladeresponse": {
-                                                        	        "jobid": "e371592e-31be-4e53-9346-a5c565d420df"
-                                                        	    }
-                                                        	}
-                                                    	*/
-                                                    	//for testing only (end)
-                                                    	                                                    	
-                                                    	var jid = json.disassociateucsprofilefrombladeresponse.jobid;
+                                                    success: function(json) {
+                                                      //for testing only (begin)
+                                                      /*
+                                                      json = {
+                                                              "disassociateucsprofilefrombladeresponse": {
+                                                                  "jobid": "e371592e-31be-4e53-9346-a5c565d420df"
+                                                              }
+                                                          }
+                                                      */
+                                                      //for testing only (end)
+
+                                                      var jid = json.disassociateucsprofilefrombladeresponse.jobid;
                                                         args.response.success({
                                                             _custom: {
                                                                 jobId: jid,
-                                                                getUpdatedItem: function(json) {  
-                                                                	//for testing only (begin)
-                                                                	/*
-                                                                	json = {
-                                                                		    "queryasyncjobresultresponse": {
-                                                                		        "accountid": "835fb2d5-0b76-11e3-9350-f4f3e49b5dfe",
-                                                                		        "userid": "835fc0e5-0b76-11e3-9350-f4f3e49b5dfe",
-                                                                		        "cmd": "org.apache.cloudstack.api.DisassociateUcsProfileCmd",
-                                                                		        "jobstatus": 1,
-                                                                		        "jobprocstatus": 0,
-                                                                		        "jobresultcode": 0,
-                                                                		        "jobresulttype": "object",
-                                                                		        "jobresult": {
-                                                                		            "ucsblade": {
-                                                                		                "id": "f8d08575-7a1c-4f79-a588-d129c38bcc4f",
-                                                                		                "ucsmanagerid": "0d87c1a6-5664-425c-9024-2ddd9605d260",
-                                                                		                "bladedn": "sys/chassis-1/blade-1"
-                                                                		            }
-                                                                		        },
-                                                                		        "created": "2013-09-13T22:17:29-0700",
-                                                                		        "jobid": "2c3698a8-39ac-43e6-8ade-86eb2d3726a0"
-                                                                		    }
-                                                                		}; 
-                                                                	*/       
-                                                                	//for testing only (end)
-                                                                	 
-                                                                	addExtraPropertiesToUcsBladeObject(json.queryasyncjobresultresponse.jobresult.ucsblade);         
+                                                                getUpdatedItem: function(json) {
+                                                                  //for testing only (begin)
+                                                                  /*
+                                                                  json = {
+                                                                        "queryasyncjobresultresponse": {
+                                                                            "accountid": "835fb2d5-0b76-11e3-9350-f4f3e49b5dfe",
+                                                                            "userid": "835fc0e5-0b76-11e3-9350-f4f3e49b5dfe",
+                                                                            "cmd": "org.apache.cloudstack.api.DisassociateUcsProfileCmd",
+                                                                            "jobstatus": 1,
+                                                                            "jobprocstatus": 0,
+                                                                            "jobresultcode": 0,
+                                                                            "jobresulttype": "object",
+                                                                            "jobresult": {
+                                                                                "ucsblade": {
+                                                                                    "id": "f8d08575-7a1c-4f79-a588-d129c38bcc4f",
+                                                                                    "ucsmanagerid": "0d87c1a6-5664-425c-9024-2ddd9605d260",
+                                                                                    "bladedn": "sys/chassis-1/blade-1"
+                                                                                }
+                                                                            },
+                                                                            "created": "2013-09-13T22:17:29-0700",
+                                                                            "jobid": "2c3698a8-39ac-43e6-8ade-86eb2d3726a0"
+                                                                        }
+                                                                    };
+                                                                  */
+                                                                  //for testing only (end)
+
+                                                                  addExtraPropertiesToUcsBladeObject(json.queryasyncjobresultresponse.jobresult.ucsblade);
                                                                     return json.queryasyncjobresultresponse.jobresult.ucsblade;
                                                                 }
                                                             }
-                                                        });                                                    	
+                                                        });
                                                     }
                                                 });
                                             },
                                             notification: {
                                                 poll: pollAsyncJobResult
                                             }
-                                        }                                        
-                                    }                                 
+                                        }
+                                    }
                                 }
-                            }                         
+                            }
                         }
                     }
                 }
@@ -14097,7 +14091,7 @@
                                 }
                             },
 
-                            
+
                             dataProvider: function(args) {
                                 var array1 = [];
                                 if(args.filterBy != null) {
@@ -14506,9 +14500,9 @@
                                             $.ajax({
                                                 url: createURL('addImageStore'),
                                                 data: data,
-                                                success: function(json) {                                                    
+                                                success: function(json) {
                                                     g_regionsecondaryenabled = true;
-                                                	
+
                                                     var item = json.addimagestoreresponse.imagestore;
                                                     args.response.success({
                                                         data: item
@@ -14567,9 +14561,9 @@
                                             $.ajax({
                                                 url: createURL('addImageStore'),
                                                 data: data,
-                                                success: function(json) {                                                    
+                                                success: function(json) {
                                                     g_regionsecondaryenabled = true;
-                                                	
+
                                                     var item = json.addimagestoreresponse.imagestore;
                                                     args.response.success({
                                                         data: item
@@ -14851,7 +14845,7 @@
                                 name: 'Secondary Staging Store details',
                                 isMaximized: true,
                                 actions: {
-                                	remove: {
+                                  remove: {
                                         label: 'Delete Secondary Staging Store',
                                         messages: {
                                             confirm: function(args) {
@@ -14863,7 +14857,7 @@
                                         },
                                         action: function(args) {
                                             var data = {
-                                            	id: args.context.cacheStorage[0].id
+                                              id: args.context.cacheStorage[0].id
                                             };
                                             $.ajax({
                                                 url: createURL('deleteSecondaryStagingStore'),
@@ -15022,10 +15016,10 @@
                                         label: 'IPv4 End IP'
                                     },
                                     ip6cidr: {
-                                    	label: 'IPv6 CIDR'
+                                      label: 'IPv6 CIDR'
                                     },
                                     ip6gateway: {
-                                    	label: 'IPv6 Gateway'
+                                      label: 'IPv6 Gateway'
                                     },
                                     startipv6: {
                                         label: 'IPv6 Start IP'
@@ -15047,12 +15041,12 @@
                                     array2.push("&startip=" + args.data.startipv4);
                                 if (args.data.endipv4 != null && args.data.endipv4.length > 0)
                                     array2.push("&endip=" + args.data.endipv4);
-                                
+
                                 if (args.data.ip6cidr != null && args.data.ip6cidr.length > 0)
                                     array2.push("&ip6cidr=" + args.data.ip6cidr);
                                 if (args.data.ip6gateway != null && args.data.ip6gateway.length > 0)
                                     array2.push("&ip6gateway=" + args.data.ip6gateway);
-                                
+
                                 if (args.data.startipv6 != null && args.data.startipv6.length > 0)
                                     array2.push("&startipv6=" + args.data.startipv6);
                                 if (args.data.endipv6 != null && args.data.endipv6.length > 0)
@@ -16080,16 +16074,16 @@
 
         if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
-            
+
             //when systemVm is running, scaleUp is not supported for KVM and XenServer.
             //however, listRouters API doesn't return hypervisor property....
             /*
             if (jsonObj.hypervisor != 'KVM' && jsonObj.hypervisor != 'XenServer') {
-            	allowedActions.push("scaleUp");
-            }  
+              allowedActions.push("scaleUp");
+            }
             */
             allowedActions.push("scaleUp");
-            
+
             allowedActions.push("restart");
 
             allowedActions.push("viewConsole");
@@ -16097,7 +16091,7 @@
                 allowedActions.push("migrate");
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("start");
-            allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors 
+            allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors
             allowedActions.push("remove");
         }
         return allowedActions;
@@ -16127,37 +16121,37 @@
             allowedActions.push("stop");
             allowedActions.push("restart");
             allowedActions.push("remove");
-            
-            //when systemVm is running, scaleUp is not supported for KVM and XenServer.            
+
+            //when systemVm is running, scaleUp is not supported for KVM and XenServer.
             //however, listSystemVms API doesn't return hypervisor property....
             /*
             if (jsonObj.hypervisor != 'KVM' && jsonObj.hypervisor != 'XenServer') {
-            	allowedActions.push("scaleUp");
-            }  
+              allowedActions.push("scaleUp");
+            }
             */
             allowedActions.push("scaleUp");
-            
+
             allowedActions.push("viewConsole");
             if (isAdmin())
                 allowedActions.push("migrate");
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("start");
-            allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors           
+            allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors
             allowedActions.push("remove");
         } else if (jsonObj.state == 'Error') {
             allowedActions.push("remove");
         }
         return allowedActions;
     }
-    
-    var bladeActionfilter = function(args) {    	
+
+    var bladeActionfilter = function(args) {
         var jsonObj = args.context.item;
         var allowedActions = [];
         if(jsonObj.profiledn == null) {
-        	allowedActions.push("associateProfileToBlade");
+          allowedActions.push("associateProfileToBlade");
         } else {
-        	allowedActions.push("disassociateProfileFromBlade");
-        }     
+          allowedActions.push("disassociateProfileFromBlade");
+        }
         return allowedActions;
     }
 

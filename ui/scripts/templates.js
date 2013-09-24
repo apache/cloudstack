@@ -1316,7 +1316,7 @@
                                     //***** updateIsoPermissions *****
                                     var data = {
                                         id: args.context.isos[0].id,
-                                        zoneid: args.context.isos[0].zoneid,
+                                        zoneid: args.context.isos[0].zoneid
                                     };
                                     //if args.data.ispublic is undefined, do not pass ispublic to API call.
                                     if (args.data.ispublic == "on") {

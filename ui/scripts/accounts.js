@@ -88,7 +88,7 @@
                                 custom: cloudStack.uiCustom.accountsWizard(
                                     cloudStack.accountsWizard
                                 )
-                            },
+                            }
 
                         }
                     },

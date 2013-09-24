@@ -183,7 +183,7 @@
       var $router = elems.tier({
         context: args.context,
         tier: {
-          name: 'Router',
+          name: 'Router'
         },
         dashboardItems: args.dashboardItems
       }).addClass('router');

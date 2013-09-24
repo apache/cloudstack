@@ -438,7 +438,7 @@ var addGuestNetworkDialog = {
                 subdomainaccess: {
                     label: 'label.subdomain.access',
                     isBoolean: true,
-                    isHidden: true,
+                    isHidden: true
                 },
                 account: {
                     label: 'label.account'
