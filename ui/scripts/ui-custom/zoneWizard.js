@@ -715,10 +715,12 @@
                             $('<option>').attr({
                                 value: 'VNS'
                             }).html('VNS'),
-
                             $('<option>').attr({
                                 value: 'SSP'
-                            }).html('SSP')
+                            }).html('SSP'),
+                            $('<option>').attr({
+                                value: 'VXLAN'
+                            }).html('VXLAN')
                         )
                     )
                 );
