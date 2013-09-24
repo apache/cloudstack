@@ -322,8 +322,8 @@ def default_network_rules_systemvm(vm_name, localbrname):
     for bridge in bridges:
         if bridge != localbrname:
             if not addFWFramework(bridge):
-                return False
-            brfw = "BF-" + bridge
+                return False 
+            brfw = getBrfw(bridge)
             vifs = getVifsForBridge(vm_name, bridge)
             for vif in vifs:
                 try:
@@ -429,7 +429,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname, sec_ips):
         return False
 
     vmName = vm_name
-    brfw = "BF-" + brname
+    brfw = getBrfw(brname)
     domID = getvmId(vm_name)
     delete_rules_for_vm_in_bridge_firewall_chain(vmName)
     vmchain = vm_name
@@ -619,7 +619,7 @@ def network_rules_for_rebooted_vm(vmName):
     if brName is None or brName is "":
         brName = "cloudbr0"
     else:
-        brName = re.sub("^BF-", "", brName)
+        brName = execute("iptables-save |grep physdev-is-bridged |grep FORWARD |grep BF |grep '\-o' |awk '{print $4}' | head -1").strip()
 
     if 1 in [ vm_name.startswith(c) for c in ['r-', 's-', 'v-'] ]:
 
@@ -632,8 +632,8 @@ def network_rules_for_rebooted_vm(vmName):
     vifs = getVifs(vmName)
     logging.debug(vifs, brName)
     for v in vifs:
-        execute("iptables -A " + "BF-" + brName + "-IN " + " -m physdev --physdev-is-bridged --physdev-in " + v + " -j "+ vmchain_default)
-        execute("iptables -A " + "BF-" + brName + "-OUT " + " -m physdev --physdev-is-bridged --physdev-out " + v + " -j "+ vmchain_default)
+        execute("iptables -A " + getBrfw(brName) + "-IN " + " -m physdev --physdev-is-bridged --physdev-in " + v + " -j "+ vmchain_default)
+        execute("iptables -A " + getBrfw(brName) + "-OUT " + " -m physdev --physdev-is-bridged --physdev-out " + v + " -j "+ vmchain_default)
 
     #change antispoof rule in vmchain
     try:
@@ -939,6 +939,13 @@ def getvmId(vmName):
 
     return dom.ID()
 
+def getBrfw(brname):
+    cmd = "iptables-save |grep physdev-is-bridged |grep FORWARD |grep BF |grep '\-o' | grep -w " + brname  + "|awk '{print $9}' | head -1"
+    brfwname = bash("-c", cmd).stdout.strip()
+    if brfwname == "":
+        brfwname = "BF-" + brname
+    return brfwname
+    
 def addFWFramework(brname):
     try:
         cfo = configFileOps("/etc/sysctl.conf")
@@ -952,7 +959,7 @@ def addFWFramework(brname):
         logging.debug("failed to turn on bridge netfilter")
         return False
 
-    brfw = "BF-" + brname
+    brfw = getBrfw(brname)
     try:
         execute("iptables -L " + brfw)
     except:

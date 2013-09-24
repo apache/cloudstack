@@ -45,7 +45,6 @@ public class BridgeVifDriver extends VifDriverBase {
 
     private static final Object _vnetBridgeMonitor = new Object();
     private String _modifyVlanPath;
-    private String bridgeNameSchema;
 
     @Override
     public void configure(Map<String, Object> params) throws ConfigurationException {
@@ -59,8 +58,6 @@ public class BridgeVifDriver extends VifDriverBase {
         if (networkScriptsDir == null) {
             networkScriptsDir = "scripts/vm/network/vnet";
         }
-
-        bridgeNameSchema = (String) params.get("network.bridge.name.schema");
 
         String value = (String) params.get("scripts.timeout");
         _timeout = NumbersUtil.parseInt(value, 30 * 60) * 1000;
@@ -145,18 +142,7 @@ public class BridgeVifDriver extends VifDriverBase {
     }
 
     private String setVnetBrName(String pifName, String vnetId) {
-        String brName = null;
-        if (bridgeNameSchema != null) {
-            if (bridgeNameSchema.equalsIgnoreCase("3.0")) {
-                brName = "cloudVirBr" + vnetId;
-            } else if (bridgeNameSchema.equalsIgnoreCase("4.0")) {
-                brName = "br" + pifName + "-"+ vnetId;
-            }
-        } else {
-            brName = "br" + pifName + "-"+ vnetId;
-        }
-
-        return brName;
+        return "br" + pifName + "-"+ vnetId;
     }
 
     private String createVlanBr(String vlanId, String nic)
