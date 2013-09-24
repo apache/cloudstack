@@ -4,11 +4,17 @@
 @import "../lib/bourbon/bourbon";
 @import "../lib/neat/neat";
 
+// Custom main UI font
+@font-face {
+  font-family: 'Noto Sans';
+  src: url('../fonts/Noto_Sans/NotoSans-Regular.ttf');
+}
+
 // Core style
 html, body {
   height: 100%;
-  font-family: Segoe UI,Trebuchet MS,Tahoma,Arial,sans-serif;
-  font-size: 14px;
+  font-family: 'Noto Sans', sans-serif;
+  font-size: 13px;
 }
 
 // Sub-components
