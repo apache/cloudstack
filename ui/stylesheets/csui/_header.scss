@@ -1,4 +1,6 @@
 @mixin csui-header {
+  background-color: #0a5f91;
+
   @include background(
     url(csui/img/overlay-pattern.png) repeat,
     url(csui/img/header/gradient.png) no-repeat
@@ -7,7 +9,7 @@
   background-size: auto, cover;
 
   .logo {
-    background: url(csui/img/logo-main.png) no-repeat left;
+    background: url(csui/img/header/logo.png) no-repeat left;
     width: 1280px;
     height: 80px;
     margin: auto;

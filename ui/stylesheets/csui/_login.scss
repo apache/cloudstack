@@ -2,6 +2,8 @@
   height: 100%;
   min-height: 630px;
 
+  background-color: #385770;
+
   @include background(
     url(csui/img/login/brand-logo.png),
     url(csui/img/login/bottom-bar.png),
@@ -16,6 +18,7 @@
   form {
     @include row;
 
+    background-color: #000812;
     background: rgba(#000812, 0.8);
     padding-top: 60px;
     padding-bottom: 60px;
@@ -24,17 +27,15 @@
 
     .logo {
       @include shift(2);
-      @include span-columns(3);
+      @include span-columns(4);
 
-      background: url(csui/img/logo-main.png) no-repeat top center;
-      background-size: contain;
+      background: url(csui/img/login/logo.png) no-repeat top center;
       float: left;
       height: 300px;
     }
 
     .fields {
       @include span-columns(3);
-      @include shift(1);
 
       color: white;
 
