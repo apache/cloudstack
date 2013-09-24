@@ -1,5 +1,13 @@
 @mixin list {
-    table {
+    padding: 20px;
 
+    table {
+        width: 100%;
+        th {
+            text-align: left;
+            border: 1px solid gray;
+            padding: 5px;
+            background: #e8e8e8;
+        }
     }
 }

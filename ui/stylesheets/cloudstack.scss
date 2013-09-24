@@ -207,3 +207,10 @@ body {
 #user-options {
     display: none;
 }
+
+// List view widget
+.list-view {
+    @include list;
+
+    margin: 20px;
+}
