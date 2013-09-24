@@ -1573,7 +1573,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         if (haHosts != null && haTag != null && !haTag.isEmpty()) {
-            sc.setJoinParameters("hostTagSearch", "tag", haTag);
+            sc.setParameters("tag", haTag);
         }
 
         // search host details by ids
