@@ -37,7 +37,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  */
 public class CallContext {
     private static final Logger s_logger = Logger.getLogger(CallContext.class);
-    private static ThreadLocal<CallContext> s_currentContext = new ThreadLocal<CallContext>();
+    private static final ThreadLocal<CallContext> s_currentContext = new ThreadLocal<CallContext>();
 
     private String contextId;
     private Account account;
