@@ -111,7 +111,7 @@
                         },
                         port: {
                             label: 'LDAP Port'
-                        },
+                        }
                     },
                     dataProvider: function(args) {
                         var data = {};

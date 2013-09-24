@@ -382,7 +382,7 @@
                                             	zoneid: args.zoneId,
                                                 guestiptype: 'Isolated',
                                                 supportedServices: 'SourceNat',
-                                                state: 'Enabled',
+                                                state: 'Enabled'
                                             };
                                            
                                             if ('vpc' in args.context) { //from VPC section                                            	
@@ -2071,7 +2071,7 @@
                         $.ajax({
                             url: createURL('listPublicIpAddresses'),
                             data: $.extend({}, data, {
-                                forvirtualnetwork: true, //IPs are allocated on public network
+                                forvirtualnetwork: true //IPs are allocated on public network
                             }),
                             dataType: "json",
                             async: false,

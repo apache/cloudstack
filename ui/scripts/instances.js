@@ -458,6 +458,12 @@
                             },
                             notification: function(args) {
                                 return 'label.action.reboot.instance';
+                            },
+                            complete: function(args) {
+                            	if (args.password != null && args.password.length > 0)
+                                    return 'Password has been reset to ' + args.password;
+                            	else
+                            		return null;
                             }
                         },
                         notification: {

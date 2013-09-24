@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.utils;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
@@ -24,7 +24,7 @@ public class NumbersUtilTest {
 
     @Test
     public void formattingCheck() {
-        long size = 1024*1024*1024;
+        long size = 1024 * 1024 * 1024;
         String formatted = NumbersUtil.toReadableSize(size);
         assertEquals("1.00 GB", formatted);
     }

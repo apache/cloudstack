@@ -21,6 +21,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Formatter;
+import java.util.Locale;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -49,17 +50,16 @@ public class NumbersUtil {
     }
 
     public static float parseFloat(String s, float defaultValue) {
-    	if (s == null) {
-    		return defaultValue;
-    	}
-    	try {
-    		return Float.parseFloat(s);
-    	} catch (NumberFormatException e) {
-    		return defaultValue;
-    	}
+        if (s == null) {
+            return defaultValue;
+        }
+        try {
+            return Float.parseFloat(s);
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
     }
 
-    
     /**
      * Converts bytes to short on input.
      */
@@ -91,26 +91,26 @@ public class NumbersUtil {
      */
     public static byte[] shortToBytes(int n) {
         byte b[] = new byte[2];
-        b[1] = (byte) (n & 0xff);
-        b[0] = (byte) ((n >> 8) & 0xff);
+        b[1] = (byte)(n & 0xff);
+        b[0] = (byte)((n >> 8) & 0xff);
         return b;
     }
 
     public static char encodeByte(int b) {
         if (b < 10) {
-            return (char) (b + '0');
+            return (char)(b + '0');
         } else if (b < 36) {
-            return (char) (b - 10 + 'A');
+            return (char)(b - 10 + 'A');
         } else if (b < 62) {
-            return (char) (b - 36 + 'a');
+            return (char)(b - 36 + 'a');
         } else if (b == 62) {
             return '(';
         } else if (b == 63) {
             return ')';
         }
-        return (char) 255;
+        return (char)255;
     }
-    
+
     public static int decodeByte(char b) {
         if (b >= 'A' && b <= 'Z') {
             return b + 10 - 'A';
@@ -131,10 +131,10 @@ public class NumbersUtil {
      */
     public static byte[] intToBytes(int n) {
         byte b[] = new byte[4];
-        b[3] = (byte) (n & 0xff);
-        b[2] = (byte) ((n >> 8) & 0xff);
-        b[1] = (byte) ((n >> 16) & 0xff);
-        b[0] = (byte) ((n >> 24) & 0xff);
+        b[3] = (byte)(n & 0xff);
+        b[2] = (byte)((n >> 8) & 0xff);
+        b[1] = (byte)((n >> 16) & 0xff);
+        b[0] = (byte)((n >> 24) & 0xff);
         return b;
     }
 
@@ -143,14 +143,14 @@ public class NumbersUtil {
      **/
     public static byte[] longToBytes(long n) {
         byte b[] = new byte[8];
-        b[7] = (byte) (n & 0xff);
-        b[6] = (byte) ((n >> 8) & 0xff);
-        b[5] = (byte) ((n >> 16) & 0xff);
-        b[4] = (byte) ((n >> 24) & 0xff);
-        b[3] = (byte) ((n >> 32) & 0xff);
-        b[2] = (byte) ((n >> 40) & 0xff);
-        b[1] = (byte) ((n >> 48) & 0xff);
-        b[0] = (byte) ((n >> 56) & 0xff);
+        b[7] = (byte)(n & 0xff);
+        b[6] = (byte)((n >> 8) & 0xff);
+        b[5] = (byte)((n >> 16) & 0xff);
+        b[4] = (byte)((n >> 24) & 0xff);
+        b[3] = (byte)((n >> 32) & 0xff);
+        b[2] = (byte)((n >> 40) & 0xff);
+        b[1] = (byte)((n >> 48) & 0xff);
+        b[0] = (byte)((n >> 56) & 0xff);
         return b;
     }
 
@@ -191,41 +191,37 @@ public class NumbersUtil {
         }
         return buf.toString();
     }
-    
+
     protected static final long KB = 1024;
     protected static final long MB = 1024 * KB;
     protected static final long GB = 1024 * MB;
     protected static final long TB = 1024 * GB;
+
     public static String toReadableSize(long bytes) {
         if (bytes <= KB && bytes >= 0) {
             return Long.toString(bytes) + " bytes";
-        } else if (bytes < MB) {
-            StringBuilder builder = new StringBuilder();
-            Formatter format = new Formatter(builder);
+        }
+        StringBuilder builder = new StringBuilder();
+        Formatter format = new Formatter(builder, Locale.getDefault());
+        if (bytes < MB) {
             format.format("%.2f KB", (float)bytes / (float)KB);
             format.close();
             return builder.toString();
         } else if (bytes < GB) {
-            StringBuilder builder = new StringBuilder();
-            Formatter format = new Formatter(builder);
             format.format("%.2f MB", (float)bytes / (float)MB);
             format.close();
             return builder.toString();
         } else if (bytes < TB) {
-            StringBuilder builder = new StringBuilder();
-            Formatter format = new Formatter(builder);
             format.format("%.2f GB", (float)bytes / (float)GB);
             format.close();
             return builder.toString();
         } else {
-            StringBuilder builder = new StringBuilder();
-            Formatter format = new Formatter(builder);
             format.format("%.4f TB", (float)bytes / (float)TB);
             format.close();
             return builder.toString();
         }
     }
-    
+
     /**
      * Converts a string of the format 'yy-MM-dd'T'HH:mm:ss.SSS" into ms.
      * 
@@ -244,7 +240,7 @@ public class NumbersUtil {
         } else if (str.contains("S")) {
             sdf = new SimpleDateFormat("ss'S'SSS'ms'");
         } else if (str.contains("ms")) {
-        	sdf = new SimpleDateFormat("SSS'ms'");
+            sdf = new SimpleDateFormat("SSS'ms'");
         }
         Date date;
         try {
@@ -261,11 +257,11 @@ public class NumbersUtil {
             }
         }
     }
-    
+
     public static int hash(long value) {
-        return (int)(value^(value>>>32));
+        return (int)(value ^ (value >>> 32));
     }
-    
+
     public static void main(String[] args) {
         long interval = parseInterval(args[0], -1);
         System.out.println(args[0] + " is " + interval);

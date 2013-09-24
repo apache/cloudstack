@@ -188,7 +188,7 @@
                                             number: true
                                         },
                                         isHidden: true
-                                    },
+                                    }
 
                                 }
                             },

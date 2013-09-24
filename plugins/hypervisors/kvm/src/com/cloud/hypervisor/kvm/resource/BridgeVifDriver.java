@@ -59,7 +59,7 @@ public class BridgeVifDriver extends VifDriverBase {
             networkScriptsDir = "scripts/vm/network/vnet";
         }
 
-        String value = (String)params.get("scripts.timeout");
+        String value = (String) params.get("scripts.timeout");
         _timeout = NumbersUtil.parseInt(value, 30 * 60) * 1000;
 
         _modifyVlanPath = Script.findScript(networkScriptsDir, "modifyvlan.sh");
@@ -142,16 +142,7 @@ public class BridgeVifDriver extends VifDriverBase {
     }
 
     private String setVnetBrName(String pifName, String vnetId) {
-        String brName = "br" + pifName + "-" + vnetId;
-        String oldStyleBrName = "cloudVirBr" + vnetId;
-
-        String cmdout = Script.runSimpleBashScript("brctl show | grep " + oldStyleBrName);
-        if (cmdout != null && cmdout.contains(oldStyleBrName)) {
-            s_logger.info("Using old style bridge name for vlan " + vnetId + " because existing bridge " + oldStyleBrName + " was found");
-            brName = oldStyleBrName;
-        }
-
-        return brName;
+        return "br" + pifName + "-"+ vnetId;
     }
 
     private String createVlanBr(String vlanId, String nic)
