@@ -15,6 +15,9 @@ body {
 #header {
     @include csui-header;
 
+    position: relative;
+    z-index: 2;
+
     .controls {
         position: relative;
 
@@ -137,6 +140,7 @@ body {
     height: 100%;
     float: left;
     box-shadow: -5px 0px 10px #b6b6b6;
+    z-index: 1;
 
     .container {
         width: 100%;
