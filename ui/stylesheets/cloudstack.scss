@@ -123,14 +123,50 @@ body {
     width: 20%;
     height: 100%;
     float: left;
+    overflow: auto;
 
     ul {
-        margin: 60px 0 0 0;
+        margin: 50px 0 0 0;
         padding: 0;
 
         li {
+            font-size: 12px;
             list-style: none;
             text-indent: 10px;
+            font-weight: bold;
+            color: lighten(black, 20%);
+            cursor: pointer;
+            text-shadow: 0px 1px 1px darken(white, 10%);
+            padding-left: 20px;
+            padding-right: 20px;
+
+            span {
+                display: block;
+                border-bottom: 1px solid #a7a7a7;
+                padding-top: 10px;
+                padding-bottom: 10px;
+                box-shadow: 0px 1px 0px white;
+            }
+
+            span.icon {
+                display: none;
+            }
+
+            &:hover {
+                background: #3f3f3f;
+                color: white;
+                text-shadow: 0px 1px 1px black;
+                box-shadow: inset 0px 0px 10px black;
+                position: relative;
+                z-index: 3;
+                top: -1px;
+                padding-top: 1px;
+
+                span {
+                    border-bottom: none;
+                    box-shadow: none;
+                }
+            }
         }
     }
 }

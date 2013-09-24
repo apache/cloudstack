@@ -9,6 +9,11 @@
   font-family: 'Noto Sans';
   src: url('../fonts/Noto_Sans/NotoSans-Regular.ttf');
 }
+@font-face {
+  font-family: 'Noto Sans';
+  src: url('../fonts/Noto_Sans/NotoSans-Bold.ttf');
+  font-weight: bold;
+}
 
 // Core style
 html, body {
