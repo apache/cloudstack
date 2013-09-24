@@ -156,7 +156,16 @@ public class BridgeVifDriver extends VifDriverBase {
     }
 
     private String setVnetBrName(String pifName, String vnetId) {
-        return "br" + pifName + "-"+ vnetId;
+        String brName = "br" + pifName + "-" + vnetId;
+        String oldStyleBrName = "cloudVirBr" + vnetId;
+
+        String cmdout = Script.runSimpleBashScript("brctl show | grep " + oldStyleBrName);
+        if (cmdout != null && cmdout.contains(oldStyleBrName)) {
+            s_logger.info("Using old style bridge name for vNet " + vnetId + " because existing bridge " + oldStyleBrName + " was found");
+            brName = oldStyleBrName;
+        }
+
+        return brName;
     }
 
     private String createVnetBr(String vNetId, String nic, String protocol)
