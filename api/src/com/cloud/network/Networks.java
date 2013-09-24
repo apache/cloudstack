@@ -108,6 +108,7 @@ public class Networks {
         },
         Mido("mido", String.class),
         Pvlan("pvlan", String.class),
+        Vxlan("vxlan", Long.class),
         UnDecided(null, null);
 
         private final String scheme;

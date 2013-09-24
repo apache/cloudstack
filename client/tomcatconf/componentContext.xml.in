@@ -91,6 +91,13 @@
   <bean id="ucsBladeDaoImpl" class="com.cloud.ucs.database.UcsBladeDaoImpl" />
   <bean id="ucsManagerDaoImpl" class="com.cloud.ucs.database.UcsManagerDaoImpl" />
 
+  <!--
+      VXLAN support components
+  -->
+  <bean id="VxlanGuestNetworkGuru" class="com.cloud.network.guru.VxlanGuestNetworkGuru">
+    <property name="name" value="VxlanGuestNetworkGuru"/>
+  </bean>
+
 <!--
 
   Deployment configurations of various adapters
@@ -266,6 +273,7 @@
           <ref bean="NiciraNvpGuestNetworkGuru"/>
           <ref bean="MidoNetGuestNetworkGuru"/>
           <ref bean="SspGuestNetworkGuru"/>
+          <ref bean="VxlanGuestNetworkGuru"/>
       </list>
     </property>
   </bean>
