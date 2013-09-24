@@ -152,3 +152,11 @@ body {
         }
     }
 }
+
+.ui-dialog, .notification-box, #user-options {
+  @include dialog;
+}
+
+#user-options {
+  display: none;
+}
