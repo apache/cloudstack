@@ -34,6 +34,14 @@ case "$1" in
                 fi
             done
         fi
+
+        # Running cloudstack-agent-upgrade to update bridge name for upgrade from CloudStack 4.0.x (and before) to CloudStack 4.1 (and later)
+        /usr/bin/cloudstack-agent-upgrade
+        if [ ! -d "/etc/libvirt/hooks" ] ; then
+            mkdir /etc/libvirt/hooks
+        fi
+        cp -a /usr/share/cloudstack-agent/lib/libvirtqemuhook /etc/libvirt/hooks/qemu
+        /etc/init.d/libvirt-bin restart
         ;;
 esac
 

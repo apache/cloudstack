@@ -463,6 +463,13 @@ fi
 
 %post agent
 if [ "$1" == "1" ] ; then
+    echo "Running %{_bindir}/%{name}-agent-upgrade to update bridge name for upgrade from CloudStack 4.0.x (and before) to CloudStack 4.1 (and later)"
+    %{_bindir}/%{name}-agent-upgrade
+    if [ ! -d %{_sysconfdir}/libvirt/hooks ] ; then
+        mkdir %{_sysconfdir}/libvirt/hooks
+    fi
+    cp -a ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib/libvirtqemuhook %{_sysconfdir}/libvirt/hooks/qemu
+    /sbin/service libvirtd restart
     /sbin/chkconfig --add cloudstack-agent > /dev/null 2>&1 || true
     /sbin/chkconfig --level 345 cloudstack-agent on > /dev/null 2>&1 || true
 fi

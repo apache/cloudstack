@@ -71,6 +71,8 @@ install:
 	install -D packaging/debian/init/cloud-agent $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-agent
 	install -D agent/target/transformed/cloud-setup-agent $(DESTDIR)/usr/bin/cloudstack-setup-agent
 	install -D agent/target/transformed/cloud-ssh $(DESTDIR)/usr/bin/cloudstack-ssh
+	install -D agent/target/transformed/cloudstack-agent-upgrade $(DESTDIR)/usr/bin/cloudstack-setup-agent
+	install -D agent/target/transformed/libvirtqemuhook $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 	install -D agent/target/transformed/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/agent
 
 	# cloudstack-management
