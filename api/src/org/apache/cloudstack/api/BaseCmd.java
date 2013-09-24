@@ -473,16 +473,6 @@ public abstract class BaseCmd {
         return 0;
     }
 
-    public static boolean isAdmin(short accountType) {
-        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
-                (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) ||
-                (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
-    }
-
-    public static boolean isRootAdmin(short accountType) {
-        return ((accountType == Account.ACCOUNT_TYPE_ADMIN));
-    }
-
     public void setFullUrlParams(Map<String, String> map) {
         this.fullUrlParams = map;
     }

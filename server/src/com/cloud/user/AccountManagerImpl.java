@@ -344,16 +344,19 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public boolean isRootAdmin(short accountType) {
-        return (accountType == Account.ACCOUNT_TYPE_ADMIN);
+    public boolean isRootAdmin(long accountId) {
+        // refer to account_group_map and check if account is in Root 'Admin'
+        // group
+        return false;
     }
 
     public boolean isResourceDomainAdmin(short accountType) {
         return (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN);
     }
 
-    public boolean isInternalAccount(short accountType) {
-        if (isRootAdmin(accountType) || (accountType == Account.ACCOUNT_ID_SYSTEM)) {
+    public boolean isInternalAccount(long accountId) {
+        Account account = _accountDao.findById(accountId);
+        if (isRootAdmin(accountId) || (account.getType() == Account.ACCOUNT_ID_SYSTEM)) {
             return true;
         }
         return false;
@@ -377,7 +380,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public void checkAccess(Account caller, AccessType accessType, boolean sameOwner, ControlledEntity... entities) {
 
-        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(caller.getType())) {
+        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(caller.getId())) {
             // no need to make permission checks if the system/root admin makes the call
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("No need to make permission check for System/RootAdmin account, returning true");
@@ -1973,7 +1976,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 // return null;
             }
             // Whenever the user is able to log in successfully, reset the login attempts to zero
-            if(!isInternalAccount(userAccount.getType()))
+            if (!isInternalAccount(userAccount.getId()))
                 updateLoginAttempts(userAccount.getId(), 0, false);
 
             return userAccount;
@@ -2230,7 +2233,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 } else if (!listAll) {
                     if (id == null) {
                         permittedAccounts.add(caller.getId());
-                    } else if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                    } else if (!isRootAdmin(caller.getId())) {
                         domainIdRecursiveListProject.first(caller.getDomainId());
                         domainIdRecursiveListProject.second(true);
                     }

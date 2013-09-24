@@ -44,6 +44,7 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.user.AccountService;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -59,6 +60,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
 
     @Inject
     private ConfigurationDao  _configDao;
+    @Inject
+    public AccountService _accountService;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
@@ -99,7 +102,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
     private String getTemplateStatus(TemplateJoinVO template){
         boolean isAdmin = false;
         Account caller = CallContext.current().getCallingAccount();
-        if ((caller == null) || BaseCmd.isAdmin(caller.getType())) {
+        if ((caller == null) || _accountService.isAdmin(caller.getType())) {
             isAdmin = true;
         }
 
@@ -319,7 +322,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
 
         Account caller = CallContext.current().getCallingAccount();
         boolean isAdmin = false;
-        if ((caller == null) || BaseCmd.isAdmin(caller.getType())) {
+        if ((caller == null) || _accountService.isAdmin(caller.getType())) {
             isAdmin = true;
         }
 

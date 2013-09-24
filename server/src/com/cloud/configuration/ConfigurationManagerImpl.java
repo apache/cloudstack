@@ -1234,7 +1234,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         DataCenterVO zone = _zoneDao.findById(zoneId);
         Account account = CallContext.current().getCallingAccount();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState()
-                && !_accountMgr.isRootAdmin(account.getType())) {
+                && !_accountMgr.isRootAdmin(account.getId())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
 
@@ -2565,7 +2565,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // Check if zone is enabled
         Account caller = CallContext.current().getCallingAccount();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState()
-                && !_accountMgr.isRootAdmin(caller.getType())) {
+                && !_accountMgr.isRootAdmin(caller.getId())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
 

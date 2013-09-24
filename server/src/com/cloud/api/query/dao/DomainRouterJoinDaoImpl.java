@@ -35,6 +35,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -46,6 +47,8 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
 
     @Inject
     private ConfigurationDao  _configDao;
+    @Inject
+    public AccountManager _accountMgr;
 
     private final SearchBuilder<DomainRouterJoinVO> vrSearch;
 
@@ -78,7 +81,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         routerResponse.setRedundantState(router.getRedundantState().toString());
 
         if (caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
-                || caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+                || _accountMgr.isRootAdmin(caller.getId())) {
             if (router.getHostId() != null) {
                 routerResponse.setHostId(router.getHostUuid());
                 routerResponse.setHostName(router.getHostName());

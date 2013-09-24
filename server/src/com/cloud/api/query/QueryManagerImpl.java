@@ -2234,7 +2234,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         // if a domainId is provided, we just return the disk offering
         // associated with this domain
         if (domainId != null) {
-            if (account.getType() == Account.ACCOUNT_TYPE_ADMIN || isPermissible(account.getDomainId(), domainId)) {
+            if (_accountMgr.isRootAdmin(account.getId()) || isPermissible(account.getDomainId(), domainId)) {
                 // check if the user's domain == do's domain || user's domain is
                 // a child of so's domain for non-root users
                 sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
@@ -2355,14 +2355,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Boolean isSystem = cmd.getIsSystem();
         String vmTypeStr = cmd.getSystemVmType();
 
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && isSystem) {
+        if (!_accountMgr.isRootAdmin(caller.getId()) && isSystem) {
             throw new InvalidParameterValueException("Only ROOT admins can access system's offering");
         }
 
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the so associated with this
         // domain
-        if (domainId != null && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        if (domainId != null && !_accountMgr.isRootAdmin(caller.getId())) {
             // check if the user's domain == so's domain || user's domain is a
             // child of so's domain
             if (!isPermissible(caller.getDomainId(), domainId)) {
@@ -2761,7 +2761,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
 
             // if template is not public, perform permission check here
-            if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            if (!template.isPublicTemplate() && !_accountMgr.isRootAdmin(caller.getId())) {
                 Account owner = _accountMgr.getAccount(template.getAccountId());
                 _accountMgr.checkAccess(caller, null, true, owner);
             }

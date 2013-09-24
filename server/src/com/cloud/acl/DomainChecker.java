@@ -41,6 +41,7 @@ import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
@@ -57,6 +58,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Inject NetworkModel _networkMgr;
     @Inject
     private DedicatedResourceDao _dedicatedDao;
+    @Inject
+    AccountService _accountService;
     
     protected DomainChecker() {
         super();
@@ -97,7 +100,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             Account owner = _accountDao.findById(template.getAccountId());
             // validate that the template is usable by the account
             if (!template.isPublicTemplate()) {
-                if (BaseCmd.isRootAdmin(caller.getType()) || (owner.getId() == caller.getId())) {
+                if (_accountService.isRootAdmin(caller.getId()) || (owner.getId() == caller.getId())) {
                     return true;
                 }
                 //special handling for the project case
@@ -114,7 +117,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             } else {
                 // Domain admin and regular user can delete/modify only templates created by them
                 if (accessType != null && accessType == AccessType.ModifyEntry) {
-                    if (!BaseCmd.isRootAdmin(caller.getType()) && owner.getId() != caller.getId()) {
+                    if (!_accountService.isRootAdmin(caller.getId()) && owner.getId() != caller.getId()) {
                         // For projects check if the caller account can access the project account
                         if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT || !(_projectMgr.canAccessProjectAccount(caller, owner.getId()))) {
                             throw new PermissionDeniedException("Domain Admin and regular users can modify only their own Public templates");
@@ -164,7 +167,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 			return true;
         } else {
 			//admin has all permissions
-            if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+            if (_accountService.isRootAdmin(account.getId())) {
 				return true;
 			}		
 			//if account is normal user or domain admin
@@ -200,7 +203,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 			return true;
         } else {
 			//admin has all permissions
-            if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+            if (_accountService.isRootAdmin(account.getId())) {
 				return true;
 			}		
 			//if account is normal user or domain admin
@@ -236,7 +239,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 			return true;
         } else {
 			//admin has all permissions
-            if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+            if (_accountService.isRootAdmin(account.getId())) {
 				return true;
 			}		
 			//if account is normal user

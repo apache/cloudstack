@@ -19,6 +19,7 @@ package com.cloud.api.query.dao;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ResourceLimitAndCountResponse;
@@ -32,6 +33,7 @@ import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -42,6 +44,8 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
     public static final Logger s_logger = Logger.getLogger(AccountJoinDaoImpl.class);
 
     private SearchBuilder<AccountJoinVO> acctIdSearch;
+    @Inject
+    public AccountManager _accountMgr;
 
     protected AccountJoinDaoImpl() {
 
@@ -69,11 +73,11 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         accountResponse.setBytesReceived(account.getBytesReceived());
         accountResponse.setBytesSent(account.getBytesSent());
 
-        boolean accountIsAdmin = (account.getType() == Account.ACCOUNT_TYPE_ADMIN);
+        boolean accountIsAdmin = (_accountMgr.isRootAdmin(account.getId()));
         setResourceLimits(account, accountIsAdmin, accountResponse);
         
         //get resource limits for projects
-        long projectLimit = ApiDBUtils.findCorrectResourceLimit(account.getProjectLimit(), account.getType(), ResourceType.project);
+        long projectLimit = ApiDBUtils.findCorrectResourceLimit(account.getProjectLimit(), account.getId(), ResourceType.project);
         String projectLimitDisplay = (accountIsAdmin || projectLimit == -1) ? "Unlimited" : String.valueOf(projectLimit);
         long projectTotal = (account.getProjectTotal() == null) ? 0 : account.getProjectTotal();
         String projectAvail = (accountIsAdmin || projectLimit == -1) ? "Unlimited" : String.valueOf(projectLimit - projectTotal);
@@ -103,7 +107,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
     @Override
     public void setResourceLimits(AccountJoinVO account, boolean accountIsAdmin, ResourceLimitAndCountResponse response) {
         // Get resource limits and counts
-        long vmLimit = ApiDBUtils.findCorrectResourceLimit(account.getVmLimit(), account.getType(), ResourceType.user_vm);
+        long vmLimit = ApiDBUtils.findCorrectResourceLimit(account.getVmLimit(), account.getId(), ResourceType.user_vm);
         String vmLimitDisplay = (accountIsAdmin || vmLimit == -1) ? "Unlimited" : String.valueOf(vmLimit);
         long vmTotal = (account.getVmTotal() == null) ? 0 : account.getVmTotal();
         String vmAvail = (accountIsAdmin || vmLimit == -1) ? "Unlimited" : String.valueOf(vmLimit - vmTotal);

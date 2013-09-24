@@ -39,6 +39,8 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountService;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -51,6 +53,8 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
 
     @Inject
     private ConfigurationDao  _configDao;
+    @Inject
+    public AccountManager _accountMgr;
 
     private final SearchBuilder<VolumeJoinVO> volSearch;
 
@@ -114,7 +118,8 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
             volResponse.setSize(volume.getVolumeStoreSize());
             volResponse.setCreated(volume.getCreatedOnStore());
 
-            if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)
+            if (_accountMgr.isRootAdmin(caller.getId())
+                    || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)
                 volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volume.getFormat()).toString());
             if (volume.getDownloadState() != Status.DOWNLOADED) {
                 String volumeStatus = "Processing";
@@ -171,7 +176,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
         }
         
         // return hypervisor and storage pool info for ROOT and Resource domain only
-        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {   
+        if (_accountMgr.isRootAdmin(caller.getId()) || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
             if (volume.getState() != Volume.State.UploadOp && volume.getHypervisorType() != null) {
                 volResponse.setHypervisor(volume.getHypervisorType().toString());
             }

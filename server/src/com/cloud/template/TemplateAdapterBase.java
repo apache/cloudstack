@@ -95,13 +95,6 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         return true;
     }
 
-    private static boolean isAdmin(short accountType) {
-        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
-                (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) ||
-                (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
-                (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
-    }
-
     @Override
     public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits,
             Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic, Boolean featured,
@@ -158,7 +151,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             sshkeyEnabled = Boolean.FALSE;
         }
 
-        boolean isAdmin = _accountDao.findById(templateOwner.getId()).getType() == Account.ACCOUNT_TYPE_ADMIN;
+        boolean isAdmin = _accountMgr.isRootAdmin(templateOwner.getId());
 
         if (!isAdmin && zoneId == null) {
             throw new InvalidParameterValueException("Please specify a valid zone Id.");
@@ -191,7 +184,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.template);
 
-        if (templateOwner.getType() != Account.ACCOUNT_TYPE_ADMIN && zoneId == null) {
+        if (!_accountMgr.isRootAdmin(templateOwner.getId()) && zoneId == null) {
             throw new IllegalArgumentException("Only admins can create templates in all zones");
         }
 
@@ -202,7 +195,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 throw new IllegalArgumentException("Please specify a valid zone.");
             }
             Account caller = CallContext.current().getCallingAccount();
-            if(Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())){
+            if(Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())){
                 throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: "+ zoneId );
             }
         }
@@ -298,7 +291,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             throws PermissionDeniedException {
 
         if (account != null) {
-            if (!isAdmin(account.getType())) {
+            if (!_accountMgr.isAdmin(account.getType())) {
                 if ((vmInstanceCheck != null) && (account.getId() != vmInstanceCheck.getAccountId())) {
                     throw new PermissionDeniedException(msg + ". Permission denied.");
                 }

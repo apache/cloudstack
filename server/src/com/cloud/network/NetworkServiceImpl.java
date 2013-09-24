@@ -1018,7 +1018,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         if(displayNetwork != null){
-            if(!_accountMgr.isRootAdmin(caller.getType())){
+            if(!_accountMgr.isRootAdmin(caller.getId())){
                 throw new PermissionDeniedException("Only admin allowed to update displaynetwork parameter");
             }
         }else{
@@ -1030,7 +1030,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             throw new InvalidParameterValueException("Specified zone id was not found");
         }
 
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
             // See DataCenterVO.java
             PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation since specified Zone is currently disabled");
             ex.addProxyObject(zone.getUuid(), "zoneId");
@@ -1194,13 +1194,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         // Don't allow to specify vlan if the caller is not ROOT admin
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && (ntwkOff.getSpecifyVlan() || vlanId != null)) {
+        if (!_accountMgr.isRootAdmin(caller.getId()) && (ntwkOff.getSpecifyVlan() || vlanId != null)) {
             throw new InvalidParameterValueException("Only ROOT admin is allowed to specify vlanId");
         }
 
         if (ipv4) {
         	// For non-root admins check cidr limit - if it's allowed by global config value
-        	if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && cidr != null) {
+            if (!_accountMgr.isRootAdmin(caller.getId()) && cidr != null) {
 
         		String[] cidrPair = cidr.split("\\/");
         		int cidrSize = Integer.valueOf(cidrPair[1]);
@@ -1307,7 +1307,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             		ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan);
         }
 
-        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && createVlan) {
+        if (_accountMgr.isRootAdmin(caller.getId()) && createVlan) {
             // Create vlan ip range
             _configMgr.createVlanAndPublicIpRange(pNtwk.getDataCenterId(), network.getId(), physicalNetworkId,
                     false, null, startIP, endIP, gateway, netmask, vlanId, null, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
@@ -1960,7 +1960,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         if(displayNetwork != null){
-            if(!_accountMgr.isRootAdmin(callerAccount.getType())){
+            if (!_accountMgr.isRootAdmin(callerAccount.getId())) {
                 throw new PermissionDeniedException("Only admin allowed to update displaynetwork parameter");
             }
             network.setDisplayNetwork(displayNetwork);

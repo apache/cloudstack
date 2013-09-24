@@ -1030,7 +1030,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize) {
         // access check - only root admin can migrate VM
         Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Caller is not a root admin, permission denied to migrate the VM");
             }
@@ -1240,7 +1240,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(Long volumeId) {
         // Access check - only root administrator can migrate volumes.
         Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Caller is not a root admin, permission denied to migrate the volume");
             }
@@ -1826,7 +1826,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         _accountMgr.checkAccess(account, AccessType.ModifyEntry, true, template);
 
         if(cmd.isRoutingType() != null){
-            if(!_accountService.isRootAdmin(account.getType())){
+            if (!_accountService.isRootAdmin(account.getId())) {
                 throw new PermissionDeniedException("Parameter isrouting can only be specified by a Root Admin, permission denied");
             }
         }
@@ -2476,13 +2476,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return capacity == null ? 0 : capacity.getReservedCapacity() + capacity.getUsedCapacity();
 
     }
-
-    public static boolean isAdmin(short accountType) {
-        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)
-                || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
-    }
-
-
 
     @Override
     public List<Class<?>> getCommands() {

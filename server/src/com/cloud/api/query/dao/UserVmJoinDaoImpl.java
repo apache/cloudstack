@@ -41,6 +41,7 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -56,7 +57,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
 
     @Inject
     private ConfigurationDao  _configDao;
-
+    @Inject
+    public AccountManager _accountMgr;
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
 
@@ -121,7 +123,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         }
         userVmResponse.setZoneId(userVm.getDataCenterUuid());
         userVmResponse.setZoneName(userVm.getDataCenterName());
-        if ((caller == null) || (caller.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
+        if ((caller == null) || (_accountMgr.isRootAdmin(caller.getId()))) {
             userVmResponse.setInstanceName(userVm.getInstanceName());
             userVmResponse.setHostId(userVm.getHostUuid());
             userVmResponse.setHostName(userVm.getHostName());

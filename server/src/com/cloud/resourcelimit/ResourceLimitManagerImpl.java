@@ -263,7 +263,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         long max = Resource.RESOURCE_UNLIMITED; // if resource limit is not found, then we treat it as unlimited
 
         // No limits for Root Admin accounts
-        if (_accountMgr.isRootAdmin(account.getType())) {
+        if (_accountMgr.isRootAdmin(account.getId())) {
             return max;
         }
 
@@ -293,15 +293,16 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
-    public long findCorrectResourceLimitForAccount(short accountType, Long limit, ResourceType type) {
+    public long findCorrectResourceLimitForAccount(long accountId, Long limit, ResourceType type) {
 
         long max = Resource.RESOURCE_UNLIMITED; // if resource limit is not found, then we treat it as unlimited
 
         // No limits for Root Admin accounts
-        if (_accountMgr.isRootAdmin(accountType)) {
+        if (_accountMgr.isRootAdmin(accountId)) {
             return max;
         }
 
+        Account account = _accountDao.findById(accountId);
 
         // Check if limit is configured for account
         if (limit != null) {
@@ -309,7 +310,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         } else {
             // If the account has an no limit set, then return global default account limits
             Long value = null;
-            if (accountType == Account.ACCOUNT_TYPE_PROJECT) {
+            if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                 value = projectResourceLimitMap.get(type);
             } else {
                 value = accountResourceLimitMap.get(type);
@@ -366,7 +367,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         Project project = null;
 
         // Don't place any limits on system or root admin accounts
-        if (_accountMgr.isRootAdmin(account.getType())) {
+        if (_accountMgr.isRootAdmin(account.getId())) {
             return;
         }
 
@@ -605,7 +606,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             }
 
             //only Unlimited value is accepted if account is  Root Admin
-            if (_accountMgr.isRootAdmin(account.getType()) && max.shortValue() != ResourceLimit.RESOURCE_UNLIMITED) {
+            if (_accountMgr.isRootAdmin(account.getId()) && max.shortValue() != ResourceLimit.RESOURCE_UNLIMITED) {
                 throw new InvalidParameterValueException("Only " + ResourceLimit.RESOURCE_UNLIMITED + " limit is supported for Root Admin accounts");
             }
 

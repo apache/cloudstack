@@ -983,7 +983,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         VlanType vlanType = VlanType.VirtualNetwork;
         boolean assign = false;
 
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
             // zone is of type DataCenter. See DataCenterVO.java.
             PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation, " + "Zone is currently disabled");
             ex.addProxyObject(zone.getUuid(), "zoneId");

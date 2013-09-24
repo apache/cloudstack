@@ -631,7 +631,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
         // Check if zone is disabled
         Account account = CallContext.current().getCallingAccount();
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getId())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
 
@@ -1675,7 +1675,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
 
             Account account = CallContext.current().getCallingAccount();
-            if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
+            if (Grouping.AllocationState.Disabled == zone.getAllocationState()
+                    && !_accountMgr.isRootAdmin(account.getId())) {
                 PermissionDeniedException ex = new PermissionDeniedException(
                         "Cannot perform this operation, Zone with specified id is currently disabled");
                 ex.addProxyObject(zone.getUuid(), "dcId");
@@ -1828,7 +1829,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         Account account = CallContext.current().getCallingAccount();
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getId())) {
             PermissionDeniedException ex = new PermissionDeniedException(
                     "Cannot perform this operation, Zone with specified id is currently disabled");
             ex.addProxyObject(zone.getUuid(), "dcId");

@@ -163,7 +163,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public boolean isRootAdmin(short accountType) {
+    public boolean isRootAdmin(long accountId) {
         // TODO Auto-generated method stub
         return false;
     }

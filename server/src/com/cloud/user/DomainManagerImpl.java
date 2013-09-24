@@ -431,7 +431,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             }
             _accountMgr.checkAccess(caller, domain);
         } else {
-            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            if (!_accountMgr.isRootAdmin(caller.getId())) {
             domainId = caller.getDomainId();
             }
             if (listAll) {

@@ -764,7 +764,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         long accountLimit = _resourceLimitMgr.findCorrectResourceLimitForAccount(owner, ResourceType.snapshot);
         long domainLimit = _resourceLimitMgr.findCorrectResourceLimitForDomain(_domainMgr.getDomain(owner.getDomainId()), ResourceType.snapshot);
         int max = cmd.getMaxSnaps().intValue();
-        if (owner.getType() != Account.ACCOUNT_TYPE_ADMIN && ((accountLimit != -1 && max > accountLimit) || (domainLimit != -1 && max > domainLimit))) {
+        if (!_accountMgr.isRootAdmin(owner.getId())&& ((accountLimit != -1 && max > accountLimit) || (domainLimit != -1 && max > domainLimit))) {
         	String message = "domain/account";
         	if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
         		message = "domain/project";

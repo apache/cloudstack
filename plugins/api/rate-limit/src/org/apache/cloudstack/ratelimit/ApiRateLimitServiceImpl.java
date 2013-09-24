@@ -156,7 +156,7 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
         }
         Long accountId = user.getAccountId();
         Account account = _accountService.getAccount(accountId);
-        if ( _accountService.isRootAdmin(account.getType())){
+        if (_accountService.isRootAdmin(account.getId())) {
             // no API throttling on root admin
             return true;
         }

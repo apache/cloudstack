@@ -121,7 +121,7 @@ public class CreateUserCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         Account account = CallContext.current().getCallingAccount();
-        if ((account == null) || isAdmin(account.getType())) {
+        if ((account == null) || _accountService.isAdmin(account.getType())) {
             if ((domainId != null) && (accountName != null)) {
                 Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
                 if (userAccount != null) {

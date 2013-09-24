@@ -86,7 +86,7 @@ public interface AccountService {
 
     User getUserIncludingRemoved(long userId);
 
-    boolean isRootAdmin(short accountType);
+    boolean isRootAdmin(long accountId);
 
     User getActiveUserByRegistrationToken(String registrationToken);
 

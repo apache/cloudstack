@@ -19,6 +19,7 @@ package com.cloud.api.query.dao;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
@@ -31,6 +32,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -44,6 +46,8 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
 
 
     private SearchBuilder<DataCenterJoinVO> dofIdSearch;
+    @Inject
+    public AccountManager _accountMgr;
 
     protected DataCenterJoinDaoImpl() {
 
@@ -70,7 +74,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
             zoneResponse.setDescription(dataCenter.getDescription());
         }
 
-        if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
+        if ((account == null) || (_accountMgr.isRootAdmin(account.getId()))) {
             zoneResponse.setDns1(dataCenter.getDns1());
             zoneResponse.setDns2(dataCenter.getDns2());
             zoneResponse.setIp6Dns1(dataCenter.getIp6Dns1());

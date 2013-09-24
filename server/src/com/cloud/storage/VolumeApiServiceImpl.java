@@ -360,7 +360,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // Check if zone is disabled
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
 
@@ -572,7 +572,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (displayVolumeEnabled == null) {
             displayVolumeEnabled = true;
         } else {
-            if (!_accountMgr.isRootAdmin(caller.getType())) {
+            if (!_accountMgr.isRootAdmin(caller.getId())) {
                 throw new PermissionDeniedException("Cannot update parameter displayvolume, only admin permitted ");
             }
         }
@@ -587,7 +587,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // Check if zone is disabled
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
 
@@ -1352,7 +1352,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Can't find zone by id " + volume.getDataCenterId());
         }
 
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zone.getName());
         }
 
@@ -1383,7 +1383,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         String mode = cmd.getMode();
         Account account = CallContext.current().getCallingAccount();
 
-        if (!_accountMgr.isRootAdmin(account.getType()) && ApiDBUtils.isExtractionDisabled()) {
+        if (!_accountMgr.isRootAdmin(account.getId()) && ApiDBUtils.isExtractionDisabled()) {
             throw new PermissionDeniedException("Extraction has been disabled by admin");
         }
 
@@ -1421,7 +1421,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 // we allow extraction of all ISO based
                 // volumes
                 boolean isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
-                if (!isExtractable && account != null && account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                if (!isExtractable && account != null && !_accountMgr.isRootAdmin(account.getId())) {
                     // Global admins are always allowed to extract
                     PermissionDeniedException ex = new PermissionDeniedException("The volume with specified volumeId is not allowed to be extracted");
                     ex.addProxyObject(volume.getUuid(), "volumeId");

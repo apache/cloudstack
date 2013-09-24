@@ -47,6 +47,7 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageJobDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.Manager;
@@ -69,6 +70,8 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
     @Inject private ConfigurationDao _configDao;
     @Inject private ProjectManager _projectMgr;
     private TimeZone _usageTimezone;
+    @Inject
+    private AccountService _accountService;
 
     public UsageServiceImpl() {
     }
@@ -156,7 +159,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             accountId = caller.getId();
             //List records for all the accounts if the caller account is of type admin. 
             //If account_id or account_name is explicitly mentioned, list records for the specified account only even if the caller is of type admin
-            if(caller.getType() == Account.ACCOUNT_TYPE_ADMIN){
+            if (_accountService.isRootAdmin(caller.getId())) {
                 isAdmin = true;
             }
             s_logger.debug("Account details not available. Using userContext accountId: " + accountId);

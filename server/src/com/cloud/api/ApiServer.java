@@ -409,7 +409,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         } catch (InsufficientCapacityException ex){
             s_logger.info(ex.getMessage());
             String errorMsg = ex.getMessage();
-            if (CallContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
+            if (!_accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())) {
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
             }
@@ -420,7 +420,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         } catch (ResourceUnavailableException ex){
             s_logger.info(ex.getMessage());
             String errorMsg = ex.getMessage();
-            if (CallContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
+            if (!_accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())) {
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
             }
@@ -431,7 +431,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         } catch (Exception ex){
             s_logger.error("unhandled exception executing api command: " + ((command == null) ? "null" : command[0]), ex);
             String errorMsg = ex.getMessage();
-            if (CallContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN){
+            if (!_accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())) {
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
             }
@@ -565,7 +565,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             List<? extends AsyncJob> jobs = null;
 
             // list all jobs for ROOT admin
-            if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+            if (_accountMgr.isRootAdmin(account.getId())) {
                 jobs = _asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType().toString(), null);
             } else {
                 jobs = _asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType().toString(), account.getId());

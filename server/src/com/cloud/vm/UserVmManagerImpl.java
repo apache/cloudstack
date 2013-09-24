@@ -1800,7 +1800,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (isDisplayVmEnabled == null) {
             isDisplayVmEnabled = vmInstance.isDisplayVm();
         } else{
-            if(!_accountMgr.isRootAdmin(caller.getType())){
+            if(!_accountMgr.isRootAdmin(caller.getId())){
                 throw new PermissionDeniedException( "Cannot update parameter displayvm, only admin permitted ");
             }
         }
@@ -2471,7 +2471,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         assert !(requestedIps != null && (defaultIps.getIp4Address() != null || defaultIps.getIp6Address() != null)) : "requestedIp list and defaultNetworkIp should never be specified together";
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState()
-                && !_accountMgr.isRootAdmin(caller.getType())) {
+                && !_accountMgr.isRootAdmin(caller.getId())) {
             throw new PermissionDeniedException(
                     "Cannot perform this operation, Zone is currently disabled: "
                             + zone.getId());
@@ -2540,7 +2540,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         // Root admin has access to both VM and AG by default,
                         // but
                         // make sure the owner of these entities is same
-                        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getType())) {
+                        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId())) {
                             if (!_affinityGroupService.isAffinityGroupAvailableInDomain(ag.getId(), owner.getDomainId())) {
                                 throw new PermissionDeniedException("Affinity Group " + ag
                                         + " does not belong to the VM's domain");
@@ -2551,7 +2551,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         // Root admin has access to both VM and AG by default,
                         // but
                         // make sure the owner of these entities is same
-                        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getType())) {
+                        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId())) {
                             if (ag.getAccountId() != owner.getAccountId()) {
                                 throw new PermissionDeniedException("Affinity Group " + ag
                                         + " does not belong to the VM's account");
@@ -2776,7 +2776,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if(isDisplayVmEnabled != null){
-            if(!_accountMgr.isRootAdmin(caller.getType())){
+            if(!_accountMgr.isRootAdmin(caller.getId())){
                 throw new PermissionDeniedException( "Cannot update parameter displayvm, only admin permitted ");
             }
             vm.setDisplayVm(isDisplayVmEnabled);
@@ -3264,7 +3264,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Host destinationHost = null;
         if (hostId != null) {
             Account account = CallContext.current().getCallingAccount();
-            if (!_accountService.isRootAdmin(account.getType())) {
+            if (!_accountService.isRootAdmin(account.getId())) {
                 throw new PermissionDeniedException(
                         "Parameter hostid can only be specified by a Root Admin, permission denied");
             }
@@ -3759,7 +3759,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool) {
         // access check - only root admin can migrate VM
         Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Caller is not a root admin, permission denied to migrate the VM");
             }
@@ -3832,7 +3832,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             ManagementServerException, VirtualMachineMigrationException {
         // access check - only root admin can migrate VM
         Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Caller is not a root admin, permission denied to migrate the VM");
             }
@@ -4162,7 +4162,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             ManagementServerException, VirtualMachineMigrationException {
         // Access check - only root administrator can migrate VM.
         Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Caller is not a root admin, permission denied to migrate the VM");
             }
@@ -4289,7 +4289,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // VV 1: verify the two users
         Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN
+        if (!_accountMgr.isRootAdmin(caller.getId())
                 && caller.getType() != Account.ACCOUNT_TYPE_DOMAIN_ADMIN) { // only
             // root
             // admin

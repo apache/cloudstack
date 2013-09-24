@@ -468,7 +468,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
     private boolean isRootAdmin(ReservationContext reservationContext) {
         if(reservationContext != null){
             if(reservationContext.getAccount() != null){
-                return _accountMgr.isRootAdmin(reservationContext.getAccount().getType());
+                return _accountMgr.isRootAdmin(reservationContext.getAccount().getId());
             }else{
                 return false;
             }

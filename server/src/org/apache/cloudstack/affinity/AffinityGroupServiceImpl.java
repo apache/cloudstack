@@ -161,7 +161,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
         AffinityGroupProcessor processor = typeProcessorMap.get(affinityGroupType);
 
-        if (processor.isAdminControlledGroup() && !_accountMgr.isRootAdmin(caller.getType())) {
+        if (processor.isAdminControlledGroup() && !_accountMgr.isRootAdmin(caller.getId())) {
             throw new PermissionDeniedException("Cannot create the affinity group");
         }
 
@@ -176,7 +176,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
         } else if (domainId != null && account == null) {
 
-            if (!_accountMgr.isRootAdmin(caller.getType())) {
+            if (!_accountMgr.isRootAdmin(caller.getId())) {
                 // non root admin need to pass both account and domain
                 throw new InvalidParameterValueException(
                         "Unable to create affinity group, account name must be passed with the domainId");
@@ -484,7 +484,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
                 _accountMgr.checkAccess(caller, null, true, owner, ag);
                 // Root admin has access to both VM and AG by default, but make sure the
                 // owner of these entities is same
-                if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getType())) {
+                if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId())) {
                     if (ag.getAccountId() != owner.getAccountId()) {
                         throw new PermissionDeniedException("Affinity Group " + ag
                                 + " does not belong to the VM's account");

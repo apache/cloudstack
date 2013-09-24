@@ -70,7 +70,7 @@ public class ApiRateLimitTest {
 	    testAccount = acct;
 
 	    when(_accountService.getAccount(5L)).thenReturn(testAccount);
-	    when(_accountService.isRootAdmin(Account.ACCOUNT_TYPE_NORMAL)).thenReturn(false);
+        when(_accountService.isRootAdmin(5L)).thenReturn(false);
 	}
 
     @Before

@@ -681,7 +681,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // show this info to admin only
         Account account = CallContext.current().getCallingAccount();
-        if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+        if (_accountMgr.isRootAdmin(account.getId())) {
             VlanVO vl = ApiDBUtils.findVlanById(ipAddr.getVlanId());
             if (vl != null) {
                 ipResponse.setVlanId(vl.getUuid());
@@ -2176,7 +2176,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setReservedIpRange(reservation);
 
         // return vlan information only to Root admin
-        if (network.getBroadcastUri() != null && CallContext.current().getCallingAccount().getType() == Account.ACCOUNT_TYPE_ADMIN) {
+        if (network.getBroadcastUri() != null
+                && _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())) {
             String broadcastUri = network.getBroadcastUri().toString();
             response.setBroadcastUri(broadcastUri);
             String vlan = "N/A";
