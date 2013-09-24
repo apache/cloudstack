@@ -1,73 +1,73 @@
 @mixin csui-login {
-  height: 100%;
-  min-height: 630px;
+    height: 100%;
+    min-height: 630px;
 
-  background-color: #385770;
+    background-color: #385770;
 
-  @include background(
-    url(csui/img/login/brand-logo.png),
-    url(csui/img/login/bottom-bar.png),
-    url(csui/img/overlay-pattern.png),
-    url(csui/img/login/gradient.png)
-  );
+    @include background(
+            url(csui/img/login/brand-logo.png),
+            url(csui/img/login/bottom-bar.png),
+            url(csui/img/overlay-pattern.png),
+            url(csui/img/login/gradient.png)
+    );
 
-  background-repeat: no-repeat, repeat-x, repeat, no-repeat;
-  background-size: 300px, auto, auto, cover;
-  background-position: center bottom 10px, bottom, center, center;
+    background-repeat: no-repeat, repeat-x, repeat, no-repeat;
+    background-size: 300px, auto, auto, cover;
+    background-position: center bottom 10px, bottom, center, center;
 
-  form {
-    @include row;
+    form {
+        @include row;
 
-    background-color: #000812;
-    background: rgba(#000812, 0.8);
-    padding-top: 60px;
-    padding-bottom: 60px;
-    position: relative;
-    top: 15%;
+        background-color: #000812;
+        background: rgba(#000812, 0.8);
+        padding-top: 60px;
+        padding-bottom: 60px;
+        position: relative;
+        top: 15%;
 
-    .logo {
-      @include shift(2);
-      @include span-columns(4);
+        .logo {
+            @include shift(2);
+            @include span-columns(4);
 
-      background: url(csui/img/login/logo.png) no-repeat top center;
-      float: left;
-      height: 300px;
-    }
-
-    .fields {
-      @include span-columns(3);
-
-      color: white;
-
-      input[type=text],
-      input[type=password] {
-        font-size: 13px;
-        width: 100%;
-        padding: 10px;
-        margin-top: 10px;
-        margin-bottom: 10px;
-        border: 2px solid gray;
-
-        &:focus {
-          border: 2px solid #6aa6e9;
-          outline: none;
+            background: url(csui/img/login/logo.png) no-repeat top center;
+            float: left;
+            height: 300px;
         }
-      }
 
-      input[type=submit] {
-        @include csui-button-cta;
-      }
+        .fields {
+            @include span-columns(3);
 
-      select {
-        @include csui-dropdown-dark;
+            color: white;
 
-        width: 100%;
-        margin-top: 50px;
-      }
+            input[type=text],
+            input[type=password] {
+                font-size: 13px;
+                width: 100%;
+                padding: 10px;
+                margin-top: 10px;
+                margin-bottom: 10px;
+                border: 2px solid gray;
 
-      label {
-          font-size: 12px;
-      }
+                &:focus {
+                    border: 2px solid #6aa6e9;
+                    outline: none;
+                }
+            }
+
+            input[type=submit] {
+                @include csui-button-cta;
+            }
+
+            select {
+                @include csui-dropdown-dark;
+
+                width: 100%;
+                margin-top: 50px;
+            }
+
+            label {
+                font-size: 12px;
+            }
+        }
     }
-  }
 }

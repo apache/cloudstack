@@ -1,36 +1,36 @@
 @mixin csui-dropdown {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  text-indent: 0.01px;
-  text-overflow: '';
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    text-indent: 0.01px;
+    text-overflow: '';
 
-  @include background(
-    url(csui/img/form/dropdown-arrow.png) no-repeat right 8px center,
-    linear-gradient(#fff, #b6b6b6)
-  );
+    @include background(
+            url(csui/img/form/dropdown-arrow.png) no-repeat right 8px center,
+            linear-gradient(#fff, #b6b6b6)
+    );
 
-  border-radius: 3px;
-  border: 1px solid black;
-  font-size: 14px;
-  height: 30px;
-  text-indent: 8px;
-  width: 105%;
-  overflow: hidden;
+    border-radius: 3px;
+    border: 1px solid black;
+    font-size: 14px;
+    height: 30px;
+    text-indent: 8px;
+    width: 105%;
+    overflow: hidden;
 }
 
 @mixin csui-dropdown-dark {
-  @include csui-dropdown;
+    @include csui-dropdown;
 
-  background-color: #333333;
+    background-color: #333333;
 
-  @include background(
-      url(csui/img/form/dropdown-arrow-white.png) no-repeat right 8px center,
-      linear-gradient(#4e4e4e, #242424)
-  );
+    @include background(
+            url(csui/img/form/dropdown-arrow-white.png) no-repeat right 8px center,
+            linear-gradient(#4e4e4e, #242424)
+    );
 
-  color: white;
-  font-weight: bold;
-  text-shadow: 0px 1px 1px black;
+    color: white;
+    font-weight: bold;
+    text-shadow: 0px 1px 1px black;
 }
 
 @mixin csui-label {

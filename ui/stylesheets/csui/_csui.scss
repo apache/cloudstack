@@ -6,20 +6,20 @@
 
 // Custom main UI font
 @font-face {
-  font-family: 'Noto Sans';
-  src: url('../fonts/Noto_Sans/NotoSans-Regular.ttf');
+    font-family: 'Noto Sans';
+    src: url('../fonts/Noto_Sans/NotoSans-Regular.ttf');
 }
 @font-face {
-  font-family: 'Noto Sans';
-  src: url('../fonts/Noto_Sans/NotoSans-Bold.ttf');
-  font-weight: bold;
+    font-family: 'Noto Sans';
+    src: url('../fonts/Noto_Sans/NotoSans-Bold.ttf');
+    font-weight: bold;
 }
 
 // Core style
 html, body {
-  height: 100%;
-  font-family: 'Noto Sans', sans-serif;
-  font-size: 13px;
+    height: 100%;
+    font-family: 'Noto Sans', sans-serif;
+    font-size: 13px;
 }
 
 // Sub-components

@@ -63,7 +63,7 @@ body {
     .project-switcher {
         @include span-columns(3);
         @include row;
-        
+
         padding: 5px;
         top: 10px;
 
@@ -71,7 +71,7 @@ body {
             @include csui-label;
             @include span-columns(3);
         }
-        
+
         select {
             @include csui-dropdown;
             @include span-columns(8);
@@ -91,21 +91,21 @@ body {
                 text-decoration: underline;
             }
         }
-        
+
         .icon {
             @include span-columns(3 of 16);
             @include csui-sprite(142, 390);
-            
+
             height: 30px;
         }
-        
+
         .title {
             @include span-columns(11 of 16);
             @include shift(1);
             @include csui-label;
-            
+
             text-align: left;
-;
+            ;
         }
     }
 
@@ -201,9 +201,9 @@ body {
 }
 
 .ui-dialog, .notification-box, #user-options {
-  @include dialog;
+    @include dialog;
 }
 
 #user-options {
-  display: none;
+    display: none;
 }

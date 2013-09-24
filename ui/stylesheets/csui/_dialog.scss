@@ -1,27 +1,27 @@
 @mixin dialog {
-  background: white;
-  box-shadow: 0px 2px 10px black;
-  position: absolute;
-  padding: 20px;
+    background: white;
+    box-shadow: 0px 2px 10px black;
+    position: absolute;
+    padding: 20px;
 
-  .ui-dialog-titlebar {
-    @include row;
+    .ui-dialog-titlebar {
+        @include row;
 
-    width: 100%;
-    background-color: white;
-    padding: 10px;
-  }
+        width: 100%;
+        background-color: white;
+        padding: 10px;
+    }
 
-  .ui-dialog-content {
-    overflow: auto;
-  }
+    .ui-dialog-content {
+        overflow: auto;
+    }
 
-  .ui-dialog-title {
-    float: left;
-    font-weight: bold;
-  }
+    .ui-dialog-title {
+        float: left;
+        font-weight: bold;
+    }
 
-  .ui-dialog-titlebar-close {
-    float: right;
-  }
+    .ui-dialog-titlebar-close {
+        float: right;
+    }
 }
