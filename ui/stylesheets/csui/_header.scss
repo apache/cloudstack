@@ -1,29 +1,31 @@
 @mixin csui-header {
-  @include background(
-    url(csui/img/overlay-pattern.png) repeat,
-    url(csui/img/header/gradient.png) no-repeat
-  );
+    background-color: #0d68a0;
 
-  background-size: auto, cover;
-  border-bottom: 2px solid #0c89d0;
+    @include background(
+            url(csui/img/overlay-pattern.png) repeat,
+            url(csui/img/header/gradient.png) no-repeat
+    );
 
-  .logo {
-    background: url(csui/img/header/logo.png) no-repeat left;
-    width: 1280px;
-    height: 80px;
-    margin: auto;
-    background-size: 300px;
-  }
+    background-size: auto, cover;
+    border-bottom: 2px solid #0c89d0;
 
-  .controls {
-    @include linear-gradient(#525252, #262626);
-    @include row;
+    .logo {
+        background: url(csui/img/header/logo.png) no-repeat left;
+        width: 1280px;
+        height: 80px;
+        margin: auto;
+        background-size: 300px;
+    }
 
-    width: 1280px;
-    padding: 15px;
-    margin: auto;
-    color: white;
-    border: 1px solid gray;
-    border-radius: 4px 4px 0 0;
-  }
+    .controls {
+        @include linear-gradient(#525252, #262626);
+        @include row;
+
+        width: 1280px;
+        padding: 15px;
+        margin: auto;
+        color: white;
+        border: 1px solid gray;
+        border-radius: 4px 4px 0 0;
+    }
 }
