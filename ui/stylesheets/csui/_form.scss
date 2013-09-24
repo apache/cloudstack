@@ -12,10 +12,10 @@
     border-radius: 3px;
     border: 1px solid black;
     font-size: 14px;
-    height: 30px;
-    text-indent: 8px;
-    width: 105%;
-    overflow: hidden;
+    padding-right: 25px;
+    padding-left: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
 }
 
 @mixin csui-dropdown-dark {
@@ -38,3 +38,8 @@
     position: relative;
     top: 7px;
 }
+
+
+// Defaults
+label { @include csui-label; }
+select { @include csui-dropdown; }
