@@ -17,6 +17,8 @@
 # under the License.
 from cloudutils.networkConfig import networkConfig
 from cloudutils.utilities import bash
+import logging
+import re
 def isOldStyleBridge(brName):
     if brName.find("cloudVirBr") == 0:
        return True
@@ -33,6 +35,17 @@ def upgradeBridgeName(brName, enslavedDev):
     bash("ip link set %s down"%brName) 
     bash("ip link set %s name %s"%(brName, newBrName))
     bash("ip link set %s up" %newBrName)
+    cmd = "iptables-save | grep FORWARD | grep -w " +  brName
+    rules = bash(cmd).stdout.split('\n')
+    rules.pop()
+    for rule in rules:
+        try:
+            delrule = re.sub("-A", "-D", rule)
+            newrule = re.sub(" " + brName + " ", " " + newBrName + " ", rule)
+            bash("iptables " + delrule)
+            bash("iptables " + newrule)
+        except:
+            logging.exception("Ignoring failure to update rules for rule " + rule + " on bridge " + brName)
 if __name__ == '__main__':
    netlib = networkConfig() 
    bridges = netlib.listNetworks()
