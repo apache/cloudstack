@@ -2149,7 +2149,7 @@ class TestInvalidParametersForEgress(cloudstackTestCase):
         return
 
 
-class TestEgressAfterHostMaintainance(cloudstackTestCase):
+class TestEgressAfterHostMaintenance(cloudstackTestCase):
 
     def setUp(self):
 
@@ -2171,7 +2171,7 @@ class TestEgressAfterHostMaintainance(cloudstackTestCase):
     def setUpClass(cls):
         cls.services = Services().services
         cls.api_client = super(
-                               TestEgressAfterHostMaintainance,
+                               TestEgressAfterHostMaintenance,
                                cls
                                ).getClsTestClient().getApiClient()
 
@@ -2222,7 +2222,7 @@ class TestEgressAfterHostMaintainance(cloudstackTestCase):
 
     @attr(speed = "slow")
     @attr(tags = ["sg", "eip", "maintenance"])
-    def test_egress_after_host_maintainance(self):
+    def test_egress_after_host_maintenance(self):
         """Test maintenance case for egress
         """
 
@@ -2234,7 +2234,7 @@ class TestEgressAfterHostMaintainance(cloudstackTestCase):
         #    CIDR: 0.0.0.0/0
         # 5. deployVirtualMachine into this security group (ssh)
         # 6. deployed VM should be Running, ssh should be allowed into the VM
-        # 7. Enable maintainance mode for host, cance maintainance mode
+        # 7. Enable maintenance mode for host, cance maintenance mode
         # 8. User should be able to SSH into VM after maintainace
 
         security_group = SecurityGroup.create(
@@ -2329,12 +2329,12 @@ class TestEgressAfterHostMaintainance(cloudstackTestCase):
                     )
         vm = vms[0]
 
-        self.debug("Enabling host maintainance for ID: %s" % vm.hostid)
+        self.debug("Enabling host maintenance for ID: %s" % vm.hostid)
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
         cmd.id = vm.hostid
         self.apiclient.prepareHostForMaintenance(cmd)
 
-        self.debug("Canceling host maintainance for ID: %s" % vm.hostid)
+        self.debug("Canceling host maintenance for ID: %s" % vm.hostid)
         cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
         cmd.id = vm.hostid
         self.apiclient.cancelHostMaintenance(cmd)
