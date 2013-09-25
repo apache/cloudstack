@@ -24,6 +24,7 @@ import com.cloud.storage.snapshot.SnapshotSchedulerImpl;
 import com.cloud.user.DomainManager;
 import com.cloud.utils.component.ComponentContext;
 
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
@@ -50,7 +51,6 @@ public class FakeDriverTestConfiguration extends ChildTestConfiguration{
         return strategy;
     }
 
-
     @Bean
     public SnapshotScheduler SnapshotScheduler() {
         return Mockito.mock(SnapshotScheduler.class);
@@ -61,10 +61,11 @@ public class FakeDriverTestConfiguration extends ChildTestConfiguration{
         return Mockito.mock(DomainManager.class);
     }
 
+
     @Override
     @Bean
     public EndPointSelector selector() {
         return ComponentContext.inject(DefaultEndPointSelector.class);
     }
-
 }
+

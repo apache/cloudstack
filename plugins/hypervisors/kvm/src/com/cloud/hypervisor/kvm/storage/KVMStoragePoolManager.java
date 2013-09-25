@@ -31,8 +31,11 @@ import com.cloud.hypervisor.kvm.resource.KVMHAMonitor;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.log4j.Logger;
 
 public class KVMStoragePoolManager {
+    private static final Logger s_logger = Logger
+            .getLogger(KVMStoragePoolManager.class);
     private class StoragePoolInformation {
          String name;
          String host;
@@ -131,6 +134,36 @@ public class KVMStoragePoolManager {
 
         // secondary storage registers itself through here
         return createStoragePool(uuid, sourceHost, 0, sourcePath, "", protocol, false);
+    }
+
+    public KVMPhysicalDisk getPhysicalDisk(StoragePoolType type, String poolUuid, String volName) {
+        int cnt = 0;
+        int retries = 10;
+        KVMPhysicalDisk vol = null;
+        //harden get volume, try cnt times to get volume, in case volume is created on other host
+        String errMsg = "";
+        while (cnt < retries) {
+            try {
+                KVMStoragePool pool = getStoragePool(type, poolUuid);
+                vol = pool.getPhysicalDisk(volName);
+                if (vol != null) {
+                    break;
+                }
+
+                Thread.sleep(10000);
+            } catch (Exception e) {
+                s_logger.debug("Failed to find volume:" + volName + " due to" + e.toString() + ", retry:" + cnt);
+                errMsg = e.toString();
+            }
+            cnt++;
+        }
+
+        if (vol == null) {
+            throw new CloudRuntimeException(errMsg);
+        } else {
+            return vol;
+        }
+
     }
 
     public KVMStoragePool createStoragePool( String name, String host, int port,

@@ -3627,10 +3627,10 @@ ServerResource {
                 physicalDisk = secondaryStorage.getPhysicalDisk(volName);
             } else if (volume.getType() != Volume.Type.ISO) {
                 PrimaryDataStoreTO store = (PrimaryDataStoreTO)data.getDataStore();
-                pool = _storagePoolMgr.getStoragePool(
-                        store.getPoolType(),
-                        store.getUuid());
-                physicalDisk = pool.getPhysicalDisk(data.getPath());
+                physicalDisk = _storagePoolMgr.getPhysicalDisk(  store.getPoolType(),
+                        store.getUuid(),
+                        data.getPath());
+                pool = physicalDisk.getPool();
             }
 
             String volPath = null;
@@ -3703,10 +3703,9 @@ ServerResource {
                 if (volume.getType() == Volume.Type.ROOT) {
                     DataTO data = volume.getData();
                     PrimaryDataStoreTO store = (PrimaryDataStoreTO)data.getDataStore();
-                    KVMStoragePool pool = _storagePoolMgr.getStoragePool(
-                            store.getPoolType(),
-                            store.getUuid());
-                    KVMPhysicalDisk physicalDisk = pool.getPhysicalDisk(data.getPath());
+                    KVMPhysicalDisk physicalDisk = _storagePoolMgr.getPhysicalDisk( store.getPoolType(),
+                            store.getUuid(),
+                            data.getPath());
                     FilesystemDef rootFs = new FilesystemDef(physicalDisk.getPath(), "/");
                     vm.getDevices().addDevice(rootFs);
                     break;
@@ -3748,6 +3747,10 @@ ServerResource {
         // need to umount secondary storage
         String path = disk.getDiskPath();
         String poolUuid = null;
+        if (path.endsWith("systemvm.iso")) {
+            //Don't need to clean up system vm iso, as it's stored in local
+            return true;
+        }
         if (path != null) {
             String[] token = path.split("/");
             if (token.length > 3) {
