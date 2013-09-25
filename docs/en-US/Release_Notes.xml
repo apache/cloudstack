@@ -1093,6 +1093,7 @@ under the License.
             <programlisting><prompt>#</prompt>mysql -u cloud -p -e "select id,name,path from cloud.storage_pool where pool_type='Filesystem'"</programlisting>
             <para>If local storage paths are found to have a trailing forward slash, remove it:
             <programlisting><prompt>#</prompt>mysql -u cloud -p -e 'update cloud.storage_pool set path="/var/lib/libvirt/images" where path="/var/lib/libvirt/images/"';</programlisting>
+            </para>
         </listitem>
         <listitem id="upgrade-deb-packages">
           <para>If you are using Ubuntu, follow this procedure to upgrade your packages. If not,
