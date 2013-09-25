@@ -383,9 +383,6 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             try {
                 String dbVersion = _dao.getCurrentVersion();
                 String currentVersion = this.getClass().getPackage().getImplementationVersion();
-                if (currentVersion == null) {
-                    currentVersion = this.getClass().getSuperclass().getPackage().getImplementationVersion();
-                }
 
                 if (currentVersion == null)
                     return;
