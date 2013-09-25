@@ -33,6 +33,7 @@ import com.cloud.utils.db.SearchCriteria;
 public class AclGroupAccountMapDaoImpl extends GenericDaoBase<AclGroupAccountMapVO, Long> implements AclGroupAccountMapDao {
     private SearchBuilder<AclGroupAccountMapVO> ListByGroupId;
     private SearchBuilder<AclGroupAccountMapVO> ListByAccountId;
+    private SearchBuilder<AclGroupAccountMapVO> _findByAccountAndGroupId;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -45,6 +46,13 @@ public class AclGroupAccountMapDaoImpl extends GenericDaoBase<AclGroupAccountMap
         ListByAccountId = createSearchBuilder();
         ListByAccountId.and("accountId", ListByAccountId.entity().getAccountId(), SearchCriteria.Op.EQ);
         ListByAccountId.done();
+
+        _findByAccountAndGroupId = createSearchBuilder();
+        _findByAccountAndGroupId
+                .and("groupId", _findByAccountAndGroupId.entity().getAclGroupId(), SearchCriteria.Op.EQ);
+        _findByAccountAndGroupId.and("accountId", _findByAccountAndGroupId.entity().getAccountId(),
+                SearchCriteria.Op.EQ);
+        _findByAccountAndGroupId.done();
 
         return true;
     }
@@ -61,6 +69,14 @@ public class AclGroupAccountMapDaoImpl extends GenericDaoBase<AclGroupAccountMap
         SearchCriteria<AclGroupAccountMapVO> sc = ListByAccountId.create();
         sc.setParameters("accountId", accountId);
         return listBy(sc);
+    }
+
+    @Override
+    public AclGroupAccountMapVO findAccountInAdminGroup(long accountId) {
+        SearchCriteria<AclGroupAccountMapVO> sc = _findByAccountAndGroupId.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("groupId", 2);
+        return findOneBy(sc);
     }
 
 }

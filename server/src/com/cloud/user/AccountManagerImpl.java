@@ -39,10 +39,12 @@ import javax.naming.ConfigurationException;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
+import org.apache.cloudstack.acl.AclGroupAccountMapVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.dao.AclGroupAccountMapDao;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
@@ -244,6 +246,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private DedicatedResourceDao _dedicatedDao;
     @Inject
     private GlobalLoadBalancerRuleDao _gslbRuleDao;
+
+    @Inject
+    private AclGroupAccountMapDao _aclGroupAccountDao;
+
     @Inject
     public com.cloud.region.ha.GlobalLoadBalancingRulesService _gslbService;
 
@@ -347,6 +353,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public boolean isRootAdmin(long accountId) {
         // refer to account_group_map and check if account is in Root 'Admin'
         // group
+        
+        AclGroupAccountMapVO adminGroupMember = _aclGroupAccountDao.findAccountInAdminGroup(accountId);
+        if (adminGroupMember != null) {
+            return true;
+        }
         return false;
     }
 

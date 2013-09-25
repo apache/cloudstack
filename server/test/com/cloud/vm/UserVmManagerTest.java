@@ -564,6 +564,9 @@ public class UserVmManagerTest {
                 any(Boolean.class), any(ControlledEntity.class));
 
         CallContext.register(user, caller);
+
+        when(_accountMgr.isRootAdmin(anyLong())).thenReturn(true);
+
         try {
             _userVmMgr.moveVMToUser(cmd);
         } finally {

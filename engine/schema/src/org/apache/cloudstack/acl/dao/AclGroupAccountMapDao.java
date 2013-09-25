@@ -28,4 +28,6 @@ public interface AclGroupAccountMapDao extends GenericDao<AclGroupAccountMapVO, 
 
     List<AclGroupAccountMapVO> listByAccountId(long accountId);
 
+    AclGroupAccountMapVO findAccountInAdminGroup(long accountId);
+
 }

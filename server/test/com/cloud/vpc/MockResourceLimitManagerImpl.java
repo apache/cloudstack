@@ -75,7 +75,7 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
 
 
     @Override
-    public long findCorrectResourceLimitForAccount(short accountType, Long limit, ResourceType type) {
+    public long findCorrectResourceLimitForAccount(long accountId, Long limit, ResourceType type) {
         // TODO Auto-generated method stub
         return 0;
     }
