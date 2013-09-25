@@ -1339,9 +1339,9 @@ Done restarting router(s).
         </listitem>
       </orderedlist>
     </section>
-    <section id="upgrade-from-3.0.2-to-4.0">
-      <title>Upgrade from 3.0.2 to 4.2.0</title>
-      <para>This section will guide you from Citrix CloudStack 3.0.2 to Apache CloudStack 4.2.0.
+    <section id="upgrade-from-3.0.x-to-4.0">
+      <title>Upgrade from 3.0.x to 4.2.0</title>
+      <para>This section will guide you from Citrix CloudStack 3.0.x to Apache CloudStack 4.2.0.
         Sections that are hypervisor-specific will be called out with a note.</para>
       <orderedlist>
         <listitem>
@@ -1353,7 +1353,7 @@ Done restarting router(s).
           <para>In each zone that includes VMware hosts, you need to add a new system VM template. </para>
           <orderedlist numeration="loweralpha">
             <listitem>
-              <para>While running the existing 3.0.2 system, log in to the UI as root
+              <para>While running the existing 3.0.x system, log in to the UI as root
                 administrator.</para>
             </listitem>
             <listitem>
@@ -1775,7 +1775,7 @@ service cloudstack-agent start
           <para>Do not proceed to the next step until the hosts show in Up state.</para>
         </listitem>
         <listitem>
-          <para>If you are upgrading from 3.0.2, perform the following:</para>
+          <para>If you are upgrading from 3.0.x, perform the following:</para>
           <orderedlist numeration="loweralpha">
             <listitem>
               <para>Ensure that the admin port is set to 8096 by using the "integration.api.port"
