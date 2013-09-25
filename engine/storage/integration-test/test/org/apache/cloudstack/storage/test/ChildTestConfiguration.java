@@ -186,12 +186,6 @@ public class ChildTestConfiguration extends TestConfiguration {
         return Mockito.mock(VirtualMachineManager.class);
     }
 
-
-    @Bean
-    public SnapshotManager snapshotMgr() {
-        return Mockito.mock(SnapshotManager.class);
-    }
-
     @Bean
     public ResourceManager resourceMgr() {
         return Mockito.mock(ResourceManager.class);

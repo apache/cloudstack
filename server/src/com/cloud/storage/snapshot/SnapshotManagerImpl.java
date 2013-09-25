@@ -140,8 +140,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     @Inject
     protected VMTemplateDao _templateDao;
     @Inject
-    protected HostDao _hostDao;
-    @Inject
     protected UserVmDao _vmDao;
     @Inject
     protected VolumeDao _volsDao;
@@ -157,8 +155,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     protected SnapshotDataStoreDao _snapshotStoreDao;
     @Inject
     protected PrimaryDataStoreDao _storagePoolDao;
-    @Inject
-    protected EventDao _eventDao;
     @Inject
     protected SnapshotPolicyDao _snapshotPolicyDao = null;
     @Inject

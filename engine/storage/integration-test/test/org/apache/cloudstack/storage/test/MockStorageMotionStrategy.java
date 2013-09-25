@@ -19,7 +19,11 @@
 package org.apache.cloudstack.storage.test;
 
 import java.util.Map;
+import java.util.UUID;
 
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -29,6 +33,9 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 
 public class MockStorageMotionStrategy implements DataMotionStrategy {
 
@@ -45,7 +52,22 @@ public class MockStorageMotionStrategy implements DataMotionStrategy {
 
     @Override
     public Void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
-        CopyCommandResult result = new CopyCommandResult("something", null);
+        CopyCmdAnswer answer = null;
+        DataTO data = null;
+        if (destData.getType() == DataObjectType.SNAPSHOT) {
+            SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
+            newSnapshot.setPath(UUID.randomUUID().toString());
+            data = newSnapshot;
+        } else if (destData.getType() == DataObjectType.TEMPLATE) {
+            TemplateObjectTO newTemplate = new TemplateObjectTO();
+            newTemplate.setPath(UUID.randomUUID().toString());
+            newTemplate.setFormat(Storage.ImageFormat.QCOW2);
+            newTemplate.setSize(10L);
+            newTemplate.setPhysicalSize(10L);
+            data = newTemplate;
+        }
+        answer = new CopyCmdAnswer(data);
+        CopyCommandResult result = new CopyCommandResult("something", answer);
         callback.complete(result);
         return null;
     }
