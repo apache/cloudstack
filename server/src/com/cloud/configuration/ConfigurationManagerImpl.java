@@ -3770,7 +3770,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         validateLoadBalancerServiceCapabilities(lbServiceCapabilityMap);
         
-        if (!serviceProviderMap.containsKey(Service.Lb) && lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
+        if (lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
             maxconn = cmd.getMaxconnections();
             if (maxconn == null) {
                 maxconn=Integer.parseInt(_configDao.getValue(Config.NetworkLBHaproxyMaxConn.key()));
