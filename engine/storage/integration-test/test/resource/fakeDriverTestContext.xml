@@ -86,5 +86,6 @@
     <bean id='SnapshotManagerImpl' class='com.cloud.storage.snapshot.SnapshotManagerImpl'/>
     <bean id='SnapshotPolicyDao' class='com.cloud.storage.dao.SnapshotPolicyDaoImpl'/>
     <bean id='SnapshotScheduleDao' class='com.cloud.storage.dao.SnapshotScheduleDaoImpl' />
+    <bean id='UserContextInitializer'  class='com.cloud.user.UserContextInitializer' />
 
 </beans>

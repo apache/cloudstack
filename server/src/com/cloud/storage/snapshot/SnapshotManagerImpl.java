@@ -459,7 +459,9 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         while (snaps.size() > maxSnaps && snaps.size() > 1) {
             SnapshotVO oldestSnapshot = snaps.get(0);
             long oldSnapId = oldestSnapshot.getId();
-            s_logger.debug("Max snaps: " + policy.getMaxSnaps() + " exceeded for snapshot policy with Id: " + policyId + ". Deleting oldest snapshot: " + oldSnapId);
+            if (policy != null) {
+                s_logger.debug("Max snaps: " + policy.getMaxSnaps() + " exceeded for snapshot policy with Id: " + policyId + ". Deleting oldest snapshot: " + oldSnapId);
+            }
             if(deleteSnapshot(oldSnapId)){
             	//log Snapshot delete event
                 ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, oldestSnapshot.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_SNAPSHOT_DELETE, "Successfully deleted oldest snapshot: " + oldSnapId, 0);
@@ -997,6 +999,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 		return true;
 	}
     @Override
+    @DB
     public SnapshotInfo takeSnapshot(VolumeInfo volume) throws ResourceAllocationException {
         CreateSnapshotPayload payload = (CreateSnapshotPayload)volume.getpayload();
         Long snapshotId = payload.getSnapshotId();
@@ -1015,15 +1018,17 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             if (!processed) {
                 throw new CloudRuntimeException("Can't find snapshot strategy to deal with snapshot:" + snapshotId);
             }
-            postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId());
 
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(),
-                    snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
-                    volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
+            try {
+                postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId());
 
-
-            _resourceLimitMgr.incrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
-
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(),
+                        snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
+                        volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
+                _resourceLimitMgr.incrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
+            } catch (Exception e) {
+                s_logger.debug("post process snapshot failed", e);
+            }
         } catch(Exception e) {
             s_logger.debug("Failed to create snapshot", e);
             if (backup) {
