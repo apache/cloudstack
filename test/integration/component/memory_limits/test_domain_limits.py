@@ -32,7 +32,8 @@ from marvin.integration.lib.common import (get_domain,
                                         cleanup_resources,
 					                    wait_for_cleanup,
                                         find_suitable_host,
-                                        get_resource_type
+                                        get_resource_type,
+                                        update_resource_count
                                         )
 
 class Services:
@@ -219,12 +220,16 @@ class TestDomainMemoryLimits(cloudstackTestCase):
 
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts()
-        users =  { self.domain: self.admin,
-                   self.child_domain: self.child_do_admin
+        users =  { self.child_domain_1: self.child_do_admin_1,
+                   self.child_domain_2: self.child_do_admin_2
                  }
         for domain, admin in users.items():
             self.account = admin
             self.domain = domain
+
+            #Resetting memory count in service offering
+            self.services["service_offering"]["memory"] = 5120
+
             self.debug("Creating an instance with service offering: %s" %
                                                     self.service_offering.name)
 
@@ -258,7 +263,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
                               )
             resource_count_after_stop = account_list[0].memorytotal
 
-            self.asserEqual(resource_count_after_stop, expected_resource_count,
+            self.assertEqual(resource_count_after_stop, expected_resource_count,
                          "Resource count should be same after stopping the instance")
 
             self.debug("Creating service offering with 7 GB RAM")
@@ -282,6 +287,8 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             except Exception as e:
                 self.fail("Failed to change service offering of vm %s - %s" %
                                                                 (vm.name, e))
+
+            update_resource_count(self.apiclient, domainid=self.domain.id, rtype=9) #RAM
 
             account_list = Account.list(self.apiclient, id=self.account.id)
             self.assertIsInstance(account_list,
@@ -308,12 +315,17 @@ class TestDomainMemoryLimits(cloudstackTestCase):
                 self.fail("Failed to change service offering of vm %s - %s" %
                                                                 (vm.name, e))
 
+            update_resource_count(self.apiclient, domainid=self.domain.id, rtype=9) #RAM
+
             account_list = Account.list(self.apiclient, id=self.account.id)
             self.assertIsInstance(account_list,
                               list,
                               "List Accounts should return a valid response"
                               )
+
             resource_count_after_downgrade = account_list[0].memorytotal
+
+            self.debug(resource_count_after_downgrade)
 
             self.assertTrue(resource_count_after_downgrade < resource_count_after_upgrade,
                             "Resource count should be less than before, after downgrading service offering")
@@ -344,10 +356,13 @@ class TestDomainMemoryLimits(cloudstackTestCase):
         # 2. List Resource count for the root admin Memory usage
         # 3. Migrate vm to another host, resource count should list properly.
 
+        #Resetting memory count in service offering
+        self.services["service_offering"]["memory"] = 5120
+
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts()
-        users =  { self.domain: self.admin,
-                   self.child_domain: self.child_do_admin
+        users =  { self.child_domain_1: self.child_do_admin_1,
+                   self.child_domain_2: self.child_do_admin_2
                  }
         for domain, admin in users.items():
             self.account = admin
@@ -400,10 +415,13 @@ class TestDomainMemoryLimits(cloudstackTestCase):
         # 2. List Resource count for the root admin Memory usage
         # 3. Delete vm, resource count should list as 0 after delete operation.
 
+        # Resetting the memory count of service offering
+        self.services["service_offering"]["memory"] = 5120
+
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts()
-        users =  { self.domain: self.admin,
-                   self.child_domain: self.child_do_admin
+        users =  { self.child_domain_1: self.child_do_admin_1,
+                   self.child_domain_2: self.child_do_admin_2
                  }
         for domain, admin in users.items():
             self.account = admin
@@ -457,10 +475,13 @@ class TestDomainMemoryLimits(cloudstackTestCase):
         # 3. List Resource count for the root admin Memory usage
         # 4. Memory usage should list properly
 
+        # Resetting the memory count of service offering
+        self.services["service_offering"]["memory"] = 5120
+
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts()
-        users =  { self.domain: self.admin,
-                   self.child_domain: self.child_do_admin
+        users =  { self.child_domain_1: self.child_do_admin_1,
+                   self.child_domain_2: self.child_do_admin_2
                  }
         for domain, admin in users.items():
             self.account = admin
@@ -496,7 +517,6 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             vm_3.delete(self.apiclient)
         return
 
-
 class TestMultipleChildDomainsMemory(cloudstackTestCase):
 
     @classmethod
@@ -507,7 +527,7 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
-	cls.services["mode"] = cls.zone.networktype
+        cls.services["mode"] = cls.zone.networktype
 
         cls.template = get_template(
                             cls.api_client,
@@ -548,8 +568,8 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
         self.debug("Deploying an instance in account: %s" %
                                                 account.name)
 
-	if api_client is None:
-	    api_client = self.apiclient
+        if api_client is None:
+	        api_client = self.apiclient
 
         try:
             vm = VirtualMachine.create(
@@ -644,12 +664,12 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
                               account=self.cadmin_2.name,
                               domainid=self.cadmin_2.domainid)
 
-	# Cleanup the resources created at end of test
+	    # Cleanup the resources created at end of test
         self.cleanup.append(self.cadmin_1)
         self.cleanup.append(self.cadmin_2)
         self.cleanup.append(self.cdomain_1)
-	self.cleanup.append(self.cdomain_2)
-	self.cleanup.append(self.parentd_admin)
+        self.cleanup.append(self.cdomain_2)
+        self.cleanup.append(self.parentd_admin)
         self.cleanup.append(self.parent_domain)
 
         users = {
@@ -687,11 +707,11 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts()
 
-	api_client_cadmin_1 = self.testClient.createUserApiClient(
+        api_client_cadmin_1 = self.testClient.createUserApiClient(
                             UserName=self.cadmin_1.name,
                             DomainName=self.cadmin_1.domain)
 
-	api_client_cadmin_2 = self.testClient.createUserApiClient(
+        api_client_cadmin_2 = self.testClient.createUserApiClient(
                             UserName=self.cadmin_2.name,
                             DomainName=self.cadmin_2.domain)
 
