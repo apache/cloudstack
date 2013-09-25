@@ -3534,15 +3534,18 @@ ServerResource {
             if (vmSpec.getType() != VirtualMachine.Type.User) {
                 if ((_kernelVersion < 2006034) && (conn.getVersion() < 1001000)) { // CLOUDSTACK-2823: try passCmdLine some times if kernel < 2.6.34 and qemu < 1.1.0 on hypervisor (for instance, CentOS 6.4)
                     //wait for 5 minutes at most
-                    for (int count = 0; count < 30; count ++) {
-                        boolean succeed = passCmdLine(vmName, vmSpec.getBootArgs());
-                        if (succeed) {
-                            break;
+                    String controlIp = null;
+                    for (NicTO nic : nics) {
+                        if (nic.getType() == TrafficType.Control) {
+                            controlIp = nic.getIp();
                         }
-                        try {
-                            Thread.sleep(5000);
-                        } catch (InterruptedException e) {
-                            s_logger.trace("Ignoring InterruptedException.", e);
+                    }
+                    for (int count = 0; count < 30; count ++) {
+                        passCmdLine(vmName, vmSpec.getBootArgs());
+                        //check router is up?
+                        boolean result = _virtRouterResource.connect(controlIp, 1, 5000);
+                        if (result) {
+                            break;
                         }
                     }
                 } else {
