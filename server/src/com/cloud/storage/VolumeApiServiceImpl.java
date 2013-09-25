@@ -757,7 +757,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             if (diskOffering.getTags() != null) {
-                if (!newDiskOffering.getTags().equals(diskOffering.getTags())) {
+                if (newDiskOffering.getTags() == null || !newDiskOffering.getTags().equals(diskOffering.getTags())) {
                     throw new InvalidParameterValueException("Tags on new and old disk offerings must match");
                 }
             } else if (newDiskOffering.getTags() != null) {
