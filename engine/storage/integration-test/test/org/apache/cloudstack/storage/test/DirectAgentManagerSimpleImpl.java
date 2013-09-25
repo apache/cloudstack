@@ -26,6 +26,10 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.host.Host;
+import com.cloud.host.Status;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.fsm.StateMachine2;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -246,6 +250,7 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
             e1.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
         return true;
+
     }
 
     @Override

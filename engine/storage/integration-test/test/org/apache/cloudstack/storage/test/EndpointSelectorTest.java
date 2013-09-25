@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.storage.test;
 
+
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -28,6 +29,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.server.LockMasterListener;
 import junit.framework.Assert;
 
 import org.junit.Before;
@@ -58,6 +60,9 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.AgentManager;
+
+import com.cloud.agent.AgentManager;
+
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -87,6 +92,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.Merovingian2;
+
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = { "classpath:/fakeDriverTestContext.xml" })
@@ -121,6 +127,8 @@ public class EndpointSelectorTest {
     ImageStoreVO imageStore;
     @Inject
     AccountManager accountManager;
+
+    LockMasterListener lockMasterListener;
     VolumeInfo vol = null;
     FakePrimaryDataStoreDriver driver = new FakePrimaryDataStoreDriver();
     @Inject

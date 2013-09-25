@@ -24,7 +24,6 @@ import com.cloud.storage.snapshot.SnapshotSchedulerImpl;
 import com.cloud.user.DomainManager;
 import com.cloud.utils.component.ComponentContext;
 
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
@@ -60,7 +59,6 @@ public class FakeDriverTestConfiguration extends ChildTestConfiguration{
     public DomainManager DomainManager() {
         return Mockito.mock(DomainManager.class);
     }
-
 
     @Override
     @Bean
