@@ -16,14 +16,19 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import java.io.File;
 import java.util.List;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.log4j.Logger;
 import org.libvirt.StoragePool;
 
 import com.cloud.storage.Storage.StoragePoolType;
 
 public class LibvirtStoragePool implements KVMStoragePool {
+    private static final Logger s_logger = Logger
+            .getLogger(LibvirtStoragePool.class);
     protected String uuid;
     protected String uri;
     protected long capacity;
@@ -120,7 +125,32 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public KVMPhysicalDisk getPhysicalDisk(String volumeUuid) {
-        return this._storageAdaptor.getPhysicalDisk(volumeUuid, this);
+        KVMPhysicalDisk disk = null;
+        try {
+            disk = this._storageAdaptor.getPhysicalDisk(volumeUuid, this);
+        } catch (CloudRuntimeException e) {
+            if ((this.getStoragePoolType() != StoragePoolType.NetworkFilesystem) ||
+                    (this.getStoragePoolType() != StoragePoolType.Filesystem)) {
+                throw e;
+            }
+        }
+
+        if (disk != null) {
+            return disk;
+        }
+        s_logger.debug("find volume bypass libvirt");
+        //For network file system or file system, try to use java file to find the volume, instead of through libvirt. BUG:CLOUDSTACK-4459
+        String localPoolPath = this.getLocalPath();
+        File f = new File(localPoolPath + File.separator + volumeUuid);
+        if (!f.exists()) {
+            s_logger.debug("volume: " + volumeUuid + " not exist on storage pool");
+            throw new CloudRuntimeException("Can't find volume:" + volumeUuid);
+        }
+        disk = new KVMPhysicalDisk(f.getPath(), volumeUuid, this);
+        disk.setFormat(PhysicalDiskFormat.QCOW2);
+        disk.setSize(f.length());
+        disk.setVirtualSize(f.length());
+        return disk;
     }
 
     @Override
