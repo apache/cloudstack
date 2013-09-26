@@ -25,3 +25,18 @@
     font-weight: bold;
     text-shadow: 0px 1px 1px black;
 }
+
+// Defaults
+.ui-dialog button {
+    &:not(.ok) {
+        @include csui-button;
+    }
+
+    &.ok {
+        @include csui-button-cta;
+
+        float: right;
+    }
+
+    float: left;
+}
