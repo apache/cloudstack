@@ -22,6 +22,15 @@ html, body {
     font-size: 13px;
 }
 
+@mixin csui-hyperlink {
+    color: black;
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
 // Sub-components
 @import "login";
 @import "button";

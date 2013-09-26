@@ -332,6 +332,10 @@
                     return false;
                 });
             }
+            if (this == 'label.logout') {
+                $link.addClass('logout');
+
+            }
         });
 
         // Initialize browser
@@ -463,8 +467,14 @@
             }
 
             // User options
-            if ($target.closest('#user div.icon.options').size()) {
-                $('#user-options').toggle();
+            if ($target.closest('#user').size()) {
+                var $options = $('#user-options');
+
+                $options.css({
+                    top: $target.offset().top + $target.height(),
+                    left: $target.offset().left
+                });
+                $options.toggle();
 
                 return false;
             }

@@ -202,10 +202,21 @@ body {
 
 .ui-dialog, .notification-box, #user-options {
     @include dialog;
+
+    display: none;
 }
 
 #user-options {
-    display: none;
+    a {
+        @include csui-hyperlink;
+        @include row;
+
+        &.logout {
+            font-weight: bold;
+            border-bottom: 1px solid gray;
+            margin-bottom: 25px;
+        }
+    }
 }
 
 // List view widget
