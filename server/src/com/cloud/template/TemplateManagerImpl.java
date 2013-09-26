@@ -770,29 +770,42 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     @Override
+    @DB
     public void evictTemplateFromStoragePool(VMTemplateStoragePoolVO templatePoolVO) {
-        StoragePool pool = (StoragePool) _dataStoreMgr.getPrimaryDataStore(templatePoolVO.getPoolId());
-        VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templatePoolVO.getTemplateId());
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Evicting " + templatePoolVO);
+        //Need to hold the lock, otherwise, another thread may create a volume from the template at the same time.
+        //Assumption here is that, we will hold the same lock during create volume from template
+        VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.acquireInLockTable(templatePoolVO.getId());
+        if (templatePoolRef == null) {
+           s_logger.debug("can't aquire the lock for template pool ref:" + templatePoolVO.getId());
+           return;
         }
-        DestroyCommand cmd = new DestroyCommand(pool, templatePoolVO);
 
         try {
-            Answer answer = _storageMgr.sendToPool(pool, cmd);
+            StoragePool pool = (StoragePool) this._dataStoreMgr.getPrimaryDataStore(templatePoolVO.getPoolId());
+            VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templatePoolVO.getTemplateId());
 
-            if (answer != null && answer.getResult()) {
-                // Remove the templatePoolVO
-                if (_tmpltPoolDao.remove(templatePoolVO.getId())) {
-                    s_logger.debug("Successfully evicted template: " + template.getName() + " from storage pool: " + pool.getName());
-                }
-            } else {
-                s_logger.info("Will retry evicte template: " + template.getName() + " from storage pool: " + pool.getName());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Evicting " + templatePoolVO);
             }
-        } catch (StorageUnavailableException e) {
-            s_logger.info("Storage is unavailable currently.  Will retry evicte template: " + template.getName() + " from storage pool: "
-                    + pool.getName());
+            DestroyCommand cmd = new DestroyCommand(pool, templatePoolVO);
+
+            try {
+                Answer answer = _storageMgr.sendToPool(pool, cmd);
+
+                if (answer != null && answer.getResult()) {
+                    // Remove the templatePoolVO
+                    if (_tmpltPoolDao.remove(templatePoolVO.getId())) {
+                        s_logger.debug("Successfully evicted template: " + template.getName() + " from storage pool: " + pool.getName());
+                    }
+                } else {
+                    s_logger.info("Will retry evicte template: " + template.getName() + " from storage pool: " + pool.getName());
+                }
+            } catch (StorageUnavailableException e) {
+                s_logger.info("Storage is unavailable currently.  Will retry evicte template: " + template.getName() + " from storage pool: "
+                        + pool.getName());
+            }
+        } finally {
+            _tmpltPoolDao.releaseFromLockTable(templatePoolRef.getId());
         }
 
     }
@@ -1376,15 +1389,22 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     //getting the prent volume
                     long parentVolumeId=_snapshotDao.findById(snapshotId).getVolumeId();
                     VolumeVO parentVolume = _volumeDao.findById(parentVolumeId);
-                    if (parentVolume.getIsoId() != null) {
+
+                    if (parentVolume != null && parentVolume.getIsoId() != null && parentVolume.getIsoId() != 0) {
                         privateTemplate.setSourceTemplateId(parentVolume.getIsoId());
+                        _tmpltDao.update(privateTemplate.getId(), privateTemplate);
+                    } else if (parentVolume != null && parentVolume.getTemplateId() != null) {
+                        privateTemplate.setSourceTemplateId(parentVolume.getTemplateId());
                         _tmpltDao.update(privateTemplate.getId(), privateTemplate);
                     }
                 }
                 else if (volumeId != null) {
                     VolumeVO parentVolume = _volumeDao.findById(volumeId);
-                    if (parentVolume.getIsoId() != null) {
+                    if (parentVolume.getIsoId() != null && parentVolume.getIsoId() != 0) {
                         privateTemplate.setSourceTemplateId(parentVolume.getIsoId());
+                        _tmpltDao.update(privateTemplate.getId(), privateTemplate);
+                    } else if (parentVolume.getTemplateId() != null) {
+                        privateTemplate.setSourceTemplateId(parentVolume.getTemplateId());
                         _tmpltDao.update(privateTemplate.getId(), privateTemplate);
                     }
                 }

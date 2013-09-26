@@ -25,6 +25,8 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+
+import com.cloud.utils.db.DB;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
@@ -51,6 +53,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private SearchBuilder<SnapshotDataStoreVO> cacheSearch;
     private SearchBuilder<SnapshotDataStoreVO> snapshotSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeSnapshotSearch;
+    private SearchBuilder<SnapshotDataStoreVO> snapshotIdSearch;
     private String parentSearch = "select store_id, store_role, snapshot_id from cloud.snapshot_store_ref where store_id = ? " +
             " and store_role = ? and volume_id = ? and state = 'Ready'" +
             " order by created DESC " +
@@ -100,6 +103,10 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         storeSnapshotSearch.and("store_id", storeSnapshotSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         storeSnapshotSearch.and("store_role", storeSnapshotSearch.entity().getRole(), SearchCriteria.Op.EQ);
         storeSnapshotSearch.done();
+
+        snapshotIdSearch = createSearchBuilder();
+        snapshotIdSearch.and("snapshot_id", snapshotIdSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
+        snapshotIdSearch.done();
 
         return true;
     }
@@ -173,6 +180,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
+    @DB
     public SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId) {
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
@@ -191,8 +199,6 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
             }
         } catch (SQLException e) {
             s_logger.debug("Failed to find parent snapshot: " + e.toString());
-        } finally {
-            txn.close();
         }
         return null;
     }
@@ -203,6 +209,13 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         sc.setParameters("snapshot_id", snapshotId);
         sc.setParameters("store_role", role);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> findBySnapshotId(long snapshotId) {
+        SearchCriteria<SnapshotDataStoreVO> sc = snapshotIdSearch.create();
+        sc.setParameters("snapshot_id", snapshotId);
+        return listBy(sc);
     }
 
     @Override

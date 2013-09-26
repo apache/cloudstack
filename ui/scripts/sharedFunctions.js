@@ -1168,8 +1168,11 @@ var addExtraPropertiesToGuestNetworkObject = function(jsonObj) {
             jsonObj.scope = "Account (" + jsonObj.domain + ", " + jsonObj.account + ")";
     }
 
-    if (jsonObj.vlan == null && jsonObj.broadcasturi != null) {
+    if (jsonObj.vlan == null && jsonObj.broadcasturi != null && jsonObj.broadcasturi.substring(0,7) == "vlan://") {
         jsonObj.vlan = jsonObj.broadcasturi.replace("vlan://", "");
+    }
+    if(jsonObj.vxlan == null && jsonObj.broadcasturi != null && jsonObj.broadcasturi.substring(0,8) == "vxlan://") {
+        jsonObj.vxlan = jsonObj.broadcasturi.replace("vxlan://", "");   	
     }
 }
 

@@ -190,6 +190,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     private static final long MAX_VLAN_ID = 4095L; // 2^12 - 1
     private static final long MIN_GRE_KEY = 0L;
     private static final long MAX_GRE_KEY = 4294967295L; // 2^32 -1
+    private static final long MIN_VXLAN_VNI = 0L;
+    private static final long MAX_VXLAN_VNI = 16777215L; // 2^24 -1
 
     @Inject
     DataCenterDao _dcDao = null;
@@ -2648,6 +2650,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             if (network.getIsolationMethods().contains("GRE")) {
                 minVnet = MIN_GRE_KEY;
                 maxVnet = MAX_GRE_KEY;
+            } else if (network.getIsolationMethods().contains("VXLAN")) {
+                minVnet = MIN_VXLAN_VNI;
+                maxVnet = MAX_VXLAN_VNI;
             }
             String rangeMessage = " between " + minVnet + " and " + maxVnet;
             if (VnetRange.length == 1 && VnetRange[0].equals("")) {

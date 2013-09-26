@@ -1365,7 +1365,7 @@ ServerResource {
                         secondaryStorageUrl
                         + volumeDestPath);
                 _storagePoolMgr.copyPhysicalDisk(volume,
-                        destVolumeName,secondaryStoragePool);
+                        destVolumeName,secondaryStoragePool, 0);
                 return new CopyVolumeAnswer(cmd, true, null, null, volumeName);
             } else {
                 volumePath = "/volumes/" + cmd.getVolumeId() + File.separator;
@@ -1375,7 +1375,7 @@ ServerResource {
                 KVMPhysicalDisk volume = secondaryStoragePool
                         .getPhysicalDisk(cmd.getVolumePath() + ".qcow2");
                 _storagePoolMgr.copyPhysicalDisk(volume, volumeName,
-                        primaryPool);
+                        primaryPool, 0);
                 return new CopyVolumeAnswer(cmd, true, null, null, volumeName);
             }
         } catch (CloudRuntimeException e) {
@@ -1461,7 +1461,7 @@ ServerResource {
                 } else {
                     BaseVol = primaryPool.getPhysicalDisk(cmd.getTemplateUrl());
                     vol = _storagePoolMgr.createDiskFromTemplate(BaseVol, UUID
-                            .randomUUID().toString(), primaryPool);
+                            .randomUUID().toString(), primaryPool, 0);
                 }
                 if (vol == null) {
                     return new Answer(cmd, false,
@@ -1522,7 +1522,7 @@ ServerResource {
 
             /* Copy volume to primary storage */
 
-            KVMPhysicalDisk primaryVol = _storagePoolMgr.copyPhysicalDisk(templateVol, UUID.randomUUID().toString(), primaryPool);
+            KVMPhysicalDisk primaryVol = _storagePoolMgr.copyPhysicalDisk(templateVol, UUID.randomUUID().toString(), primaryPool, 0);
             return primaryVol;
         } catch (CloudRuntimeException e) {
             s_logger.error("Failed to download template to primary storage",e);
@@ -2347,7 +2347,7 @@ ServerResource {
                             primaryUuid);
             String volUuid = UUID.randomUUID().toString();
             KVMPhysicalDisk disk = _storagePoolMgr.copyPhysicalDisk(snapshot,
-                    volUuid, primaryPool);
+                    volUuid, primaryPool, 0);
             return new CreateVolumeFromSnapshotAnswer(cmd, true, "",
                     disk.getName());
         } catch (CloudRuntimeException e) {
@@ -2498,7 +2498,7 @@ ServerResource {
                 QemuImgFile destFile = new QemuImgFile(tmpltPath + "/" + cmd.getUniqueName() + ".qcow2");
                 destFile.setFormat(PhysicalDiskFormat.QCOW2);
 
-                QemuImg q = new QemuImg();
+                QemuImg q = new QemuImg(0);
                 try {
                     q.convert(srcFile, destFile);
                 } catch (QemuImgException e) {
@@ -2601,7 +2601,7 @@ ServerResource {
                     cmd.getPoolUuid());
 
             KVMPhysicalDisk primaryVol = _storagePoolMgr.copyPhysicalDisk(
-                    tmplVol, UUID.randomUUID().toString(), primaryPool);
+                    tmplVol, UUID.randomUUID().toString(), primaryPool, 0);
 
             return new PrimaryStorageDownloadAnswer(primaryVol.getName(),
                     primaryVol.getSize());
@@ -3357,10 +3357,28 @@ ServerResource {
         }
     }
 
+    protected  String getUuid(String uuid) {
+        if (uuid == null) {
+            uuid = UUID.randomUUID().toString();
+        } else {
+            try {
+                UUID uuid2 = UUID.fromString(uuid);
+                String uuid3 = uuid2.toString();
+                if (!uuid3.equals(uuid)) {
+                    uuid = UUID.randomUUID().toString();
+                }
+            } catch (IllegalArgumentException e) {
+                uuid = UUID.randomUUID().toString();
+            }
+        }
+        return uuid;
+    }
     protected LibvirtVMDef createVMFromSpec(VirtualMachineTO vmTO) {
         LibvirtVMDef vm = new LibvirtVMDef();
         vm.setDomainName(vmTO.getName());
-        vm.setDomUUID(vmTO.getUuid());
+        String uuid = vmTO.getUuid();
+        uuid = getUuid(uuid);
+        vm.setDomUUID(uuid);
         vm.setDomDescription(vmTO.getOs());
 
         GuestDef guest = new GuestDef();
@@ -3534,15 +3552,18 @@ ServerResource {
             if (vmSpec.getType() != VirtualMachine.Type.User) {
                 if ((_kernelVersion < 2006034) && (conn.getVersion() < 1001000)) { // CLOUDSTACK-2823: try passCmdLine some times if kernel < 2.6.34 and qemu < 1.1.0 on hypervisor (for instance, CentOS 6.4)
                     //wait for 5 minutes at most
-                    for (int count = 0; count < 30; count ++) {
-                        boolean succeed = passCmdLine(vmName, vmSpec.getBootArgs());
-                        if (succeed) {
-                            break;
+                    String controlIp = null;
+                    for (NicTO nic : nics) {
+                        if (nic.getType() == TrafficType.Control) {
+                            controlIp = nic.getIp();
                         }
-                        try {
-                            Thread.sleep(5000);
-                        } catch (InterruptedException e) {
-                            s_logger.trace("Ignoring InterruptedException.", e);
+                    }
+                    for (int count = 0; count < 30; count ++) {
+                        passCmdLine(vmName, vmSpec.getBootArgs());
+                        //check router is up?
+                        boolean result = _virtRouterResource.connect(controlIp, 1, 5000);
+                        if (result) {
+                            break;
                         }
                     }
                 } else {
@@ -3627,10 +3648,10 @@ ServerResource {
                 physicalDisk = secondaryStorage.getPhysicalDisk(volName);
             } else if (volume.getType() != Volume.Type.ISO) {
                 PrimaryDataStoreTO store = (PrimaryDataStoreTO)data.getDataStore();
-                pool = _storagePoolMgr.getStoragePool(
-                        store.getPoolType(),
-                        store.getUuid());
-                physicalDisk = pool.getPhysicalDisk(data.getPath());
+                physicalDisk = _storagePoolMgr.getPhysicalDisk(  store.getPoolType(),
+                        store.getUuid(),
+                        data.getPath());
+                pool = physicalDisk.getPool();
             }
 
             String volPath = null;
@@ -3703,10 +3724,9 @@ ServerResource {
                 if (volume.getType() == Volume.Type.ROOT) {
                     DataTO data = volume.getData();
                     PrimaryDataStoreTO store = (PrimaryDataStoreTO)data.getDataStore();
-                    KVMStoragePool pool = _storagePoolMgr.getStoragePool(
-                            store.getPoolType(),
-                            store.getUuid());
-                    KVMPhysicalDisk physicalDisk = pool.getPhysicalDisk(data.getPath());
+                    KVMPhysicalDisk physicalDisk = _storagePoolMgr.getPhysicalDisk( store.getPoolType(),
+                            store.getUuid(),
+                            data.getPath());
                     FilesystemDef rootFs = new FilesystemDef(physicalDisk.getPath(), "/");
                     vm.getDevices().addDevice(rootFs);
                     break;
@@ -3748,6 +3768,10 @@ ServerResource {
         // need to umount secondary storage
         String path = disk.getDiskPath();
         String poolUuid = null;
+        if (path.endsWith("systemvm.iso")) {
+            //Don't need to clean up system vm iso, as it's stored in local
+            return true;
+        }
         if (path != null) {
             String[] token = path.split("/");
             if (token.length > 3) {

@@ -18,10 +18,12 @@
  */
 package org.apache.cloudstack.storage.test;
 
+
 import com.cloud.storage.snapshot.SnapshotScheduler;
 import com.cloud.storage.snapshot.SnapshotSchedulerImpl;
 import com.cloud.user.DomainManager;
 import com.cloud.utils.component.ComponentContext;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
@@ -63,5 +65,5 @@ public class FakeDriverTestConfiguration extends ChildTestConfiguration{
     public EndPointSelector selector() {
         return ComponentContext.inject(DefaultEndPointSelector.class);
     }
-
 }
+

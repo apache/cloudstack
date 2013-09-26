@@ -518,6 +518,7 @@ public class VolumeServiceImpl implements VolumeService {
         if (result.isSuccess()) {
             vo.processEvent(Event.OperationSuccessed, result.getAnswer());
         } else {
+
             vo.processEvent(Event.OperationFailed);
             volResult.setResult(result.getResult());
             // hack for Vmware: host is down, previously download template to the host needs to be re-downloaded, so we need to reset
@@ -1291,20 +1292,11 @@ public class VolumeServiceImpl implements VolumeService {
 
     @Override
     public SnapshotInfo takeSnapshot(VolumeInfo volume) {
-        VolumeObject vol = (VolumeObject) volume;
-        vol.stateTransit(Volume.Event.SnapshotRequested);
-
         SnapshotInfo snapshot = null;
         try {
             snapshot = snapshotMgr.takeSnapshot(volume);
         } catch (Exception e) {
             s_logger.debug("Take snapshot: " + volume.getId() + " failed", e);
-        } finally {
-            if (snapshot != null) {
-                vol.stateTransit(Volume.Event.OperationSucceeded);
-            } else {
-                vol.stateTransit(Volume.Event.OperationFailed);
-            }
         }
 
         return snapshot;

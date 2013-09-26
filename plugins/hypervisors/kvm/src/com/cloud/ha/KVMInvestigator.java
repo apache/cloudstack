@@ -58,15 +58,19 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
             return null;
         }
         CheckOnHostCommand cmd = new CheckOnHostCommand(agent);
-        List<HostVO> neighbors = _resourceMgr.listAllHostsInCluster(agent.getClusterId());
+        List<HostVO> neighbors = _resourceMgr.listHostsInClusterByStatus(agent.getClusterId(), Status.Up);
         for (HostVO neighbor : neighbors) {
             if (neighbor.getId() == agent.getId() || neighbor.getHypervisorType() != Hypervisor.HypervisorType.KVM) {
                 continue;
             }
-            Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
-
-            return answer.getResult() ? Status.Down : Status.Up;
-
+            try {
+                Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
+                if (answer != null) {
+                    return answer.getResult() ? Status.Down : Status.Up;
+                }
+            } catch (Exception e) {
+                s_logger.debug("Failed to send command to host: " + neighbor.getId());
+            }
         }
 
         return null;

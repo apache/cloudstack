@@ -390,7 +390,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         Map<Network.Service, Set<Network.Provider>> defaultVPCOffProviders = new HashMap<Network.Service, Set<Network.Provider>>();
         defaultProviders.clear();
-        defaultProviders.add(Network.Provider.VirtualRouter);
+        defaultProviders.add(Network.Provider.VPCVirtualRouter);
         defaultVPCOffProviders.put(Service.Dhcp, defaultProviders);
         defaultVPCOffProviders.put(Service.Dns, defaultProviders);
         defaultVPCOffProviders.put(Service.UserData, defaultProviders);
@@ -600,8 +600,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         try {
-            if (predefined == null ||
-                (offering.getTrafficType() != TrafficType.Guest && predefined.getCidr() == null && predefined.getBroadcastUri() == null && !(predefined.getBroadcastDomainType() == BroadcastDomainType.Vlan || predefined.getBroadcastDomainType() == BroadcastDomainType.Lswitch))) {
+            if (predefined == null || (offering.getTrafficType() != TrafficType.Guest && predefined.getCidr() == null && predefined.getBroadcastUri() == null &&
+                !(predefined.getBroadcastDomainType() == BroadcastDomainType.Vlan || 
+                predefined.getBroadcastDomainType() == BroadcastDomainType.Lswitch || 
+                predefined.getBroadcastDomainType() == BroadcastDomainType.Vxlan)
+                )) {
                 List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
                 if (configs.size() > 0) {
                     if (s_logger.isDebugEnabled()) {
@@ -1698,6 +1701,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
 
+        //TODO(VXLAN): Support VNI specified
         // VlanId can be specified only when network offering supports it
         boolean vlanSpecified = (vlanId != null);
         if (vlanSpecified != ntwkOff.getSpecifyVlan()) {

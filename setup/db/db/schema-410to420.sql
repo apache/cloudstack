@@ -2371,3 +2371,7 @@ CREATE VIEW `cloud`.`data_center_view` AS
         `cloud`.`dedicated_resources` ON data_center.id = dedicated_resources.data_center_id
 			left join
         `cloud`.`affinity_group` ON dedicated_resources.affinity_group_id = affinity_group.id;
+
+
+
+UPDATE `cloud`.`ntwk_offering_service_map` SET Provider='VpcVirtualRouter' WHERE network_offering_id IN (SELECT id from `cloud`.`network_offerings` WHERE name IN ('DefaultIsolatedNetworkOfferingForVpcNetworks', 'DefaultIsolatedNetworkOfferingForVpcNetworksNoLB'));

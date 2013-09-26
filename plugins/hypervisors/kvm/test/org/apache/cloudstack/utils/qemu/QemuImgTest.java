@@ -38,7 +38,7 @@ public class QemuImgTest {
         long size = 10995116277760l;
         QemuImgFile file = new QemuImgFile(filename, size, PhysicalDiskFormat.QCOW2);
 
-        QemuImg qemu = new QemuImg();
+        QemuImg qemu = new QemuImg(0);
         qemu.create(file);
         Map<String, String> info = qemu.info(file);
 
@@ -69,7 +69,7 @@ public class QemuImgTest {
 
         options.put("cluster_size", clusterSize);
 
-        QemuImg qemu = new QemuImg();
+        QemuImg qemu = new QemuImg(0);
         qemu.create(file, options);
         Map<String, String> info = qemu.info(file);
 
@@ -96,7 +96,7 @@ public class QemuImgTest {
         QemuImgFile file = new QemuImgFile(filename, startSize, PhysicalDiskFormat.QCOW2);
 
         try {
-            QemuImg qemu = new QemuImg();
+            QemuImg qemu = new QemuImg(0);
             qemu.create(file);
             qemu.resize(file, endSize);
             Map<String, String> info = qemu.info(file);
@@ -125,7 +125,7 @@ public class QemuImgTest {
         QemuImgFile file = new QemuImgFile(filename, startSize, PhysicalDiskFormat.RAW);
 
         try {
-            QemuImg qemu = new QemuImg();
+            QemuImg qemu = new QemuImg(0);
             qemu.create(file);
             qemu.resize(file, increment, true);
             Map<String, String> info = qemu.info(file);
@@ -153,7 +153,7 @@ public class QemuImgTest {
         QemuImgFile file = new QemuImgFile(filename, startSize, PhysicalDiskFormat.RAW);
 
         try {
-            QemuImg qemu = new QemuImg();
+            QemuImg qemu = new QemuImg(0);
             qemu.create(file);
             qemu.resize(file, increment, true);
             Map<String, String> info = qemu.info(file);
@@ -182,7 +182,7 @@ public class QemuImgTest {
         long endSize = -1;
         QemuImgFile file = new QemuImgFile(filename, startSize, PhysicalDiskFormat.QCOW2);
 
-        QemuImg qemu = new QemuImg();
+        QemuImg qemu = new QemuImg(0);
         try {
             qemu.create(file);
             qemu.resize(file, endSize);
@@ -199,7 +199,7 @@ public class QemuImgTest {
         long startSize = 20480;
         QemuImgFile file = new QemuImgFile(filename, 20480, PhysicalDiskFormat.QCOW2);
 
-        QemuImg qemu = new QemuImg();
+        QemuImg qemu = new QemuImg(0);
         qemu.create(file);
         qemu.resize(file, 0);
 
@@ -216,7 +216,7 @@ public class QemuImgTest {
         QemuImgFile firstFile = new QemuImgFile(firstFileName, 20480, PhysicalDiskFormat.QCOW2);
         QemuImgFile secondFile = new QemuImgFile(secondFileName, PhysicalDiskFormat.QCOW2);
 
-        QemuImg qemu = new QemuImg();
+        QemuImg qemu = new QemuImg(0);
         qemu.create(firstFile);
         qemu.create(secondFile, firstFile);
 
@@ -240,7 +240,7 @@ public class QemuImgTest {
         QemuImgFile srcFile = new QemuImgFile(srcFileName, srcSize);
         QemuImgFile destFile = new QemuImgFile(destFileName);
 
-        QemuImg qemu = new QemuImg();
+        QemuImg qemu = new QemuImg(0);
         qemu.create(srcFile);
         qemu.convert(srcFile, destFile);
         Map<String, String> info = qemu.info(destFile);
@@ -267,7 +267,7 @@ public class QemuImgTest {
         QemuImgFile srcFile = new QemuImgFile(srcFileName, srcSize, srcFormat);
         QemuImgFile destFile = new QemuImgFile(destFileName, destFormat);
 
-        QemuImg qemu = new QemuImg();
+        QemuImg qemu = new QemuImg(0);
         qemu.create(srcFile);
         qemu.convert(srcFile, destFile);
 
