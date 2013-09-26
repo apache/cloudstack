@@ -13113,6 +13113,7 @@
                                     // RBD
                                     rbdmonitor: {
                                         label: 'label.rbd.monitor',
+                                        docID: 'helpPrimaryStorageRBDMonitor',
                                         validation: {
                                             required: true
                                         },
@@ -13120,6 +13121,7 @@
                                     },
                                     rbdpool: {
                                         label: 'label.rbd.pool',
+                                        docID: 'helpPrimaryStorageRBDPool',
                                         validation: {
                                             required: true
                                         },
@@ -13127,6 +13129,7 @@
                                     },
                                     rbdid: {
                                         label: 'label.rbd.id',
+                                        docID: 'helpPrimaryStorageRBDId',
                                         validation: {
                                             required: false
                                         },
@@ -13134,6 +13137,7 @@
                                     },
                                     rbdsecret: {
                                         label: 'label.rbd.secret',
+                                        docID: 'helpPrimaryStorageRBDSecret',
                                         validation: {
                                             required: false
                                         },

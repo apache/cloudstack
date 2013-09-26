@@ -643,6 +643,22 @@ cloudStack.docs = {
         desc: 'In iSCSI, this is the LUN number. For example, 3.',
         externalLink: ''
     },
+    helpPrimaryStorageRBDMonitor: {
+        desc: 'The address of a Ceph monitor. Can also be a Round Robin DNS record',
+        externalLink: ''
+    },
+    helpPrimaryStorageRBDPool: {
+        desc: 'The pool to use on the Ceph cluster. This pool should already exist',
+        externalLink: ''
+    },
+    helpPrimaryStorageRBDId: {
+        desc: 'The cephx user to use without the client. prefix. For example: admin',
+        externalLink: ''
+    },
+    helpPrimaryStorageRBDSecret: {
+        desc: 'The base64 encoded secret of the cephx user.',
+        externalLink: ''
+    },
     helpPrimaryStorageTags: {
         desc: 'Comma-separated list of tags for this storage device. Must be the same set or a superset of the tags on your disk offerings.',
         externalLink: ''
