@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -269,30 +269,32 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
     )
 
     assert isinstance(qresultset, list), "Invalid db query response for snapshot %s" % snapshotid
-    assert len(qresultset) != 0, "No such snapshot %s found in the cloudstack db" % snapshotid
+
+    if len(qresultset) == 0:
+        #Snapshot does not exist
+        return False
 
     snapshotPath = qresultset[0][0]
 
     nfsurl = secondaryStore.url
-    # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
     from urllib2 import urlparse
     parse_url = urlparse.urlsplit(nfsurl, scheme='nfs')
     host, path = parse_url.netloc, parse_url.path
 
     if not config.mgtSvr:
         raise Exception("Your marvin configuration does not contain mgmt server credentials")
-    host, user, passwd = config.mgtSvr[0].mgtSvrIp, config.mgtSvr[0].user, config.mgtSvr[0].passwd
+    mgtSvr, user, passwd = config.mgtSvr[0].mgtSvrIp, config.mgtSvr[0].user, config.mgtSvr[0].passwd
 
     try:
         ssh_client = remoteSSHClient(
-            host,
+            mgtSvr,
             22,
             user,
-            passwd,
+            passwd
         )
         cmds = [
                 "mkdir -p %s /mnt/tmp",
-                "mount -t %s %s:%s /mnt/tmp" % (
+                "mount -t %s %s%s /mnt/tmp" % (
                     'nfs',
                     host,
                     path,
@@ -314,5 +316,5 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
             ssh_client.execute(c)
     except Exception as e:
         raise Exception("SSH failed for management server: %s - %s" %
-                      (config[0].mgtSvrIp, e))
+                      (config.mgtSvr[0].mgtSvrIp, e))
     return 'snapshot exists' in result
