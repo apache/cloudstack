@@ -61,13 +61,15 @@
     margin-top: 10px;
     margin-bottom: 10px;
     border: 2px solid gray;
-
-    @include transition(100ms);
+    text-indent: 15px;
+    padding-right: 15px;
 
     &:focus {
-        border: 1px solid #15aaf3;
         border-left-width: 10px;
+        border-color: #15aaf3;
         outline: none;
+        text-indent: 7px;
+        padding-right: 7px;
     }
 }
 
