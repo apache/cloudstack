@@ -200,7 +200,7 @@ body {
     }
 }
 
-.ui-dialog, .notification-box, #user-options {
+.ui-dialog, .notification-box, #user-options, .region-selector {
     @include dialog;
 
     display: none;
@@ -213,8 +213,7 @@ body {
 
         &.logout {
             font-weight: bold;
-            border-bottom: 1px solid gray;
-            margin-bottom: 25px;
+            margin-top: 25px;
         }
     }
 }

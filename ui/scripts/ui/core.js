@@ -293,7 +293,7 @@
         })
             .appendTo($('#header'));
 
-        $(['label.logout', 'label.help', 'label.about']).each(function() {
+        $(['label.about', 'label.help', 'label.logout']).each(function() {
             var $link = $('<a>')
                 .attr({
                     href: '#'
