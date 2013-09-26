@@ -4,6 +4,8 @@
     position: absolute;
     padding: 20px;
 
+    @extend .animated.fadeInDown;
+
     .ui-dialog-titlebar {
         @include row;
 

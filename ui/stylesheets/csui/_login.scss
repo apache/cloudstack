@@ -3,6 +3,8 @@
     min-height: 630px;
     background-color: #385770;
 
+    @include animation-duration(300ms);
+
     @include background(
             url(csui/img/login/brand-logo.png),
             url(csui/img/login/bottom-bar.png),
