@@ -148,7 +148,6 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                                 )
 
             cls.services["account"] = cls.account.name
-            cls._cleanup.append(cls.account)
 
             if cls.zone.localstorageenabled:
                 cls.services["service_offering"]["storagetype"] = "local"
@@ -156,7 +155,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                                                 cls.api_client,
                                                 cls.services["service_offering"]
                                                 )
-            cls._cleanup.append(cls.service_offering)
+
             cls.virtual_machine = VirtualMachine.create(
                                     cls.api_client,
                                     cls.services["server"],
@@ -165,7 +164,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                                     domainid=cls.account.domainid,
                                     serviceofferingid=cls.service_offering.id
                                     )
-            cls._cleanup.append(cls.virtual_machine)
+
             # Get the Root disk of VM
             volumes = list_volumes(
                                 cls.api_client,
@@ -177,13 +176,10 @@ class TestAccountSnapshotClean(cloudstackTestCase):
 
             # Create a snapshot from the ROOTDISK
             cls.snapshot = Snapshot.create(cls.api_client, volumes[0].id)
-            cls._cleanup.append(cls.snapshot)
         except Exception, e:
             cls.tearDownClass()
             unittest.SkipTest("setupClass fails for %s" % cls.__name__)
             raise e
-        else:
-            cls._cleanup.remove(cls.account)
         return
 
     @classmethod
@@ -296,15 +292,12 @@ class TestAccountSnapshotClean(cloudstackTestCase):
 
         # Wait for account cleanup interval
         wait_for_cleanup(self.apiclient, configs=["account.cleanup.interval"])
-        accounts = list_accounts(
+
+        with self.assertRaises(Exception):
+            accounts = list_accounts(
                                  self.apiclient,
                                  id=self.account.id
                                  )
-        self.assertEqual(
-            accounts,
-            None,
-            "List accounts should return empty list after account deletion"
-            )
 
         self.assertFalse(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config, self.zone.id, self.snapshot.id),
                                             "Snapshot was still found on NFS after account gc")
