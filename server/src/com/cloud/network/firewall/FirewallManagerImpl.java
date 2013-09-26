@@ -553,6 +553,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             throws ResourceUnavailableException {
         boolean handled = false;
         switch (purpose){
+        /* StaticNatRule would be applied by Firewall provider, since the incompatible of two object */
+        case StaticNat:
         case Firewall:
             for (FirewallServiceProvider fwElement: _firewallElements) {
                 Network.Provider provider = fwElement.getProvider();
@@ -573,18 +575,6 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                     continue;
                 }
                 handled = element.applyPFRules(network, (List<PortForwardingRule>) rules);
-                if (handled)
-                    break;
-            }
-            break;
-        case StaticNat:
-            for (StaticNatServiceProvider element: _staticNatElements) {
-                Network.Provider provider = element.getProvider();
-                boolean  isSnatProvider = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.StaticNat, provider);
-                if (!isSnatProvider) {
-                    continue;
-                }
-                handled = element.applyStaticNats(network, (List<? extends StaticNat>) rules);
                 if (handled)
                     break;
             }
