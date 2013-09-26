@@ -77,11 +77,14 @@
                 data: data,
                 response: {
                     success: function(args) {
-                        $login.remove();
-                        $('html body').removeClass('login');
-                        complete({
-                            user: args.data.user
-                        });
+                        $login.addClass('animated fadeOutUp');
+                        setTimeout(function() {
+                            $login.remove();
+                            $('html body').removeClass('login');
+                            complete({
+                                user: args.data.user
+                            });
+                        }, 100);
                     },
                     error: function(args) {
                         cloudStack.dialog.notice({
