@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.AclRoleResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -63,6 +64,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.api.query.dao.AccountJoinDao;
+import com.cloud.api.query.dao.AclRoleJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.api.query.dao.DataCenterJoinDao;
@@ -83,6 +85,7 @@ import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
+import com.cloud.api.query.vo.AclRoleJoinVO;
 import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.DataCenterJoinVO;
@@ -400,6 +403,7 @@ public class ApiDBUtils {
     static NetworkACLDao _networkACLDao;
     static ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     static AccountService _accountService;
+    static AclRoleJoinDao _aclRoleJoinDao;
 
 
     @Inject
@@ -515,6 +519,8 @@ public class ApiDBUtils {
     @Inject private AccountService accountService;
     @Inject
     private ConfigurationManager configMgr;
+    @Inject
+    private AclRoleJoinDao aclRoleJoinDao;
 
     @PostConstruct
     void init() {
@@ -626,6 +632,7 @@ public class ApiDBUtils {
         _networkACLDao = networkACLDao;
         _serviceOfferingDetailsDao = serviceOfferingDetailsDao;
         _accountService = accountService;
+        _aclRoleJoinDao = aclRoleJoinDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -1669,6 +1676,14 @@ public class ApiDBUtils {
 
     public static AffinityGroupResponse fillAffinityGroupDetails(AffinityGroupResponse resp, AffinityGroupJoinVO group) {
         return _affinityGroupJoinDao.setAffinityGroupResponse(resp, group);
+    }
+
+    public static AclRoleResponse newAclRoleResponse(AclRoleJoinVO role) {
+        return _aclRoleJoinDao.newAclRoleResponse(role);
+    }
+
+    public static AclRoleResponse fillAclRoleDetails(AclRoleResponse resp, AclRoleJoinVO role) {
+        return _aclRoleJoinDao.setAclRoleResponse(resp, role);
     }
 
     public static List<? extends LoadBalancer> listSiteLoadBalancers(long gslbRuleId) {

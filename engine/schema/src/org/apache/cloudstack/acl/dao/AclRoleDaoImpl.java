@@ -39,6 +39,7 @@ public class AclRoleDaoImpl extends GenericDaoBase<AclRoleVO, Long> implements A
 
         nameSearch = createSearchBuilder();
         nameSearch.and("name", nameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        nameSearch.and("domainId", nameSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         nameSearch.done();
 
 
@@ -46,9 +47,12 @@ public class AclRoleDaoImpl extends GenericDaoBase<AclRoleVO, Long> implements A
     }
 
     @Override
-    public AclRole findByName(String name) {
+    public AclRole findByName(Long domainId, String name) {
         SearchCriteria<AclRoleVO> sc = nameSearch.create();
         sc.setParameters("name", name);
+        if (domainId != null) {
+            sc.setParameters("domainId", domainId);
+        }
         return findOneBy(sc);
     }
 

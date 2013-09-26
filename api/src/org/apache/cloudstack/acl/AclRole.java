@@ -19,11 +19,13 @@ package org.apache.cloudstack.acl;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface AclRole extends InternalIdentity, Identity {
+import com.cloud.domain.PartOf;
+
+public interface AclRole extends PartOf, InternalIdentity, Identity {
 
     String getName();
 
     String getDescription();
 
-    long getParentRoleId();
+    Long getParentRoleId();
 }

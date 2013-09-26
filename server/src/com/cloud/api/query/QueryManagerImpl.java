@@ -29,7 +29,10 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.acl.AclRole;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.dao.AclRoleDao;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
@@ -61,6 +64,7 @@ import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.AclRoleResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -88,6 +92,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 
 import com.cloud.api.query.dao.AccountJoinDao;
+import com.cloud.api.query.dao.AclRoleJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.api.query.dao.DataCenterJoinDao;
@@ -108,6 +113,7 @@ import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
+import com.cloud.api.query.vo.AclRoleJoinVO;
 import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.DataCenterJoinVO;
@@ -139,8 +145,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.dao.NetworkDomainVO;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.org.Grouping;
@@ -326,6 +330,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Inject
     AffinityGroupDomainMapDao _affinityGroupDomainMapDao;
+
+    @Inject
+    AclRoleJoinDao _aclRoleJoinDao;
+
+    @Inject
+    AclRoleDao _aclRoleDao;
 
     /*
      * (non-Javadoc)
@@ -3246,6 +3256,110 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         }
 
+    }
+
+    @Override
+    public ListResponse<AclRoleResponse> listAclRoles(Long aclRoleId, String aclRoleName, Long domainId, Long startIndex, Long pageSize) {
+        Pair<List<AclRoleJoinVO>, Integer> result = listAclRolesInternal(aclRoleId, aclRoleName, domainId, true, true, startIndex, pageSize);
+        ListResponse<AclRoleResponse> response = new ListResponse<AclRoleResponse>();
+
+        List<AclRoleResponse> roleResponses = ViewResponseHelper.createAclRoleResponses(result.first());
+        response.setResponses(roleResponses, result.second());
+        return response;
+    }
+
+    private Pair<List<AclRoleJoinVO>, Integer> listAclRolesInternal(Long aclRoleId, String aclRoleName, Long domainId, boolean isRecursive, boolean listAll, Long startIndex,
+            Long pageSize) {
+
+        Account caller = CallContext.current().getCallingAccount();
+        Boolean listForDomain = false;
+
+        if (aclRoleId != null) {
+            AclRole role = _aclRoleDao.findById(aclRoleId);
+            if (role == null) {
+                throw new InvalidParameterValueException("Unable to find acl role by id " + aclRoleId);
+            }
+
+            _accountMgr.checkAccess(caller, null, true, role);
+        }
+
+        if (domainId != null) {
+            Domain domain = _domainDao.findById(domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
+            }
+
+            _accountMgr.checkAccess(caller, domain);
+
+            if (aclRoleName != null) {
+                AclRole role = _aclRoleDao.findByName(domainId, aclRoleName);
+                if (role == null) {
+                    throw new InvalidParameterValueException("Unable to find acl role by name " + aclRoleName
+                            + " in domain " + domainId);
+                }
+                _accountMgr.checkAccess(caller, null, true, role);
+            }
+        }
+
+        if (aclRoleId == null) {
+            if (_accountMgr.isAdmin(caller.getType()) && listAll && domainId == null) {
+                listForDomain = true;
+                isRecursive = true;
+                if (domainId == null) {
+                    domainId = caller.getDomainId();
+                }
+            } else if (_accountMgr.isAdmin(caller.getType()) && domainId != null) {
+                listForDomain = true;
+            }
+        }
+
+        Filter searchFilter = new Filter(AccountJoinVO.class, "id", true, startIndex, pageSize);
+
+
+        SearchBuilder<AclRoleJoinVO> sb = _aclRoleJoinDao.createSearchBuilder();
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+
+        if (listForDomain && isRecursive) {
+            sb.and("path", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
+        }
+
+        SearchCriteria<AclRoleJoinVO> sc = sb.create();
+
+        if (aclRoleName != null) {
+            sc.setParameters("name", aclRoleName);
+        }
+
+        if (aclRoleId != null) {
+            sc.setParameters("id", aclRoleId);
+        }
+
+        if (listForDomain) {
+            if (isRecursive) {
+                Domain domain = _domainDao.findById(domainId);
+                sc.setParameters("path", domain.getPath() + "%");
+            } else {
+                sc.setParameters("domainId", domainId);
+            }
+        }
+
+
+        // search role details by ids
+        Pair<List<AclRoleJoinVO>, Integer> uniqueRolePair = _aclRoleJoinDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueRolePair.second();
+        if (count.intValue() == 0) {
+            // empty result
+            return uniqueRolePair;
+        }
+        List<AclRoleJoinVO> uniqueRoles = uniqueRolePair.first();
+        Long[] vrIds = new Long[uniqueRoles.size()];
+        int i = 0;
+        for (AclRoleJoinVO v : uniqueRoles) {
+            vrIds[i++] = v.getId();
+        }
+        List<AclRoleJoinVO> vrs = _aclRoleJoinDao.searchByIds(vrIds);
+        return new Pair<List<AclRoleJoinVO>, Integer>(vrs, count);
     }
 
 }

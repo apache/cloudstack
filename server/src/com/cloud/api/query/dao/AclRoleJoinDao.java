@@ -14,41 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api;
+package com.cloud.api.query.dao;
 
-public enum ApiCommandJobType {
-    None,
-    VirtualMachine,
-    DomainRouter,
-    Volume,
-    ConsoleProxy,
-    Snapshot,
-    Template,
-    Iso,
-    SystemVm,
-    Host,
-    StoragePool,
-    IpAddress,
-    PortableIpAddress,
-    SecurityGroup,
-    PhysicalNetwork,
-    TrafficType,
-    PhysicalNetworkServiceProvider,
-    FirewallRule,
-    Account,
-    User,
-    PrivateGateway,
-    StaticRoute,
-    Counter,
-    Condition,
-    AutoScalePolicy,
-    AutoScaleVmProfile,
-    AutoScaleVmGroup,
-    GlobalLoadBalancerRule,
-    LoadBalancerRule,
-    AffinityGroup,
-    InternalLbVm,
-    DedicatedGuestVlanRange,
-    AclRole,
-    AclGroup
+import java.util.List;
+
+import org.apache.cloudstack.acl.AclRole;
+import org.apache.cloudstack.api.response.AclRoleResponse;
+
+import com.cloud.api.query.vo.AclRoleJoinVO;
+import com.cloud.utils.db.GenericDao;
+
+public interface AclRoleJoinDao extends GenericDao<AclRoleJoinVO, Long> {
+
+    AclRoleResponse newAclRoleResponse(AclRoleJoinVO role);
+
+    AclRoleResponse setAclRoleResponse(AclRoleResponse response, AclRoleJoinVO os);
+
+    List<AclRoleJoinVO> newAclRoleView(AclRole role);
+
+    List<AclRoleJoinVO> searchByIds(Long... ids);
 }

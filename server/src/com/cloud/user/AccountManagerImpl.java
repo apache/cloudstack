@@ -39,6 +39,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.AclGroupAccountMapVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
@@ -73,6 +74,7 @@ import com.cloud.dc.dao.DataCenterVnetDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
+import com.cloud.domain.PartOf;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
@@ -386,6 +388,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         assert false : "How can all of the security checkers pass on checking this caller?";
         throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to " + domain);
+    }
+
+    @Override
+    public void checkAccess(Account account, AccessType accessType, boolean sameOwner, PartOf... entities) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+
+        //TO BE IMPLEMENTED
+
     }
 
     @Override

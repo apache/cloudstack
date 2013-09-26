@@ -22,6 +22,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -29,10 +31,10 @@ import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.domain.Domain;
+import com.cloud.domain.PartOf;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -223,6 +225,12 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     @Override
     public void checkAccess(Account account, AccessType accessType, boolean sameOwner, ControlledEntity... entities) throws PermissionDeniedException {
         // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void checkAccess(Account account, AccessType accessType, boolean sameOwner, PartOf... entities) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+
     }
 
     @Override

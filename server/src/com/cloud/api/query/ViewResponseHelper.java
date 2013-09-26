@@ -16,40 +16,26 @@
 // under the License.
 package com.cloud.api.query;
 
-import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.vo.AccountJoinVO;
-import com.cloud.api.query.vo.AffinityGroupJoinVO;
-import com.cloud.api.query.vo.AsyncJobJoinVO;
-import com.cloud.api.query.vo.DataCenterJoinVO;
-import com.cloud.api.query.vo.DiskOfferingJoinVO;
-import com.cloud.api.query.vo.DomainRouterJoinVO;
-import com.cloud.api.query.vo.EventJoinVO;
-import com.cloud.api.query.vo.HostJoinVO;
-import com.cloud.api.query.vo.InstanceGroupJoinVO;
-import com.cloud.api.query.vo.ProjectAccountJoinVO;
-import com.cloud.api.query.vo.ProjectInvitationJoinVO;
-import com.cloud.api.query.vo.ProjectJoinVO;
-import com.cloud.api.query.vo.ResourceTagJoinVO;
-import com.cloud.api.query.vo.SecurityGroupJoinVO;
-import com.cloud.api.query.vo.ServiceOfferingJoinVO;
-import com.cloud.api.query.vo.StoragePoolJoinVO;
-import com.cloud.api.query.vo.UserAccountJoinVO;
-import com.cloud.api.query.vo.UserVmJoinVO;
-import com.cloud.api.query.vo.VolumeJoinVO;
-import com.cloud.user.Account;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.Hashtable;
+import java.util.List;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.AclRoleResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -64,15 +50,30 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.vo.AccountJoinVO;
+import com.cloud.api.query.vo.AclRoleJoinVO;
+import com.cloud.api.query.vo.AffinityGroupJoinVO;
+import com.cloud.api.query.vo.AsyncJobJoinVO;
+import com.cloud.api.query.vo.DataCenterJoinVO;
+import com.cloud.api.query.vo.DiskOfferingJoinVO;
+import com.cloud.api.query.vo.DomainRouterJoinVO;
+import com.cloud.api.query.vo.EventJoinVO;
+import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
+import com.cloud.api.query.vo.InstanceGroupJoinVO;
+import com.cloud.api.query.vo.ProjectAccountJoinVO;
+import com.cloud.api.query.vo.ProjectInvitationJoinVO;
+import com.cloud.api.query.vo.ProjectJoinVO;
+import com.cloud.api.query.vo.ResourceTagJoinVO;
+import com.cloud.api.query.vo.SecurityGroupJoinVO;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
+import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
-
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.Hashtable;
-import java.util.List;
+import com.cloud.api.query.vo.UserAccountJoinVO;
+import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.user.Account;
 
 /**
  * Helper class to generate response from DB view VO objects.
@@ -435,5 +436,21 @@ public class ViewResponseHelper {
             vrDataList.put(vr.getId(), vrData);
         }
         return new ArrayList<AffinityGroupResponse>(vrDataList.values());
+    }
+
+    public static List<AclRoleResponse> createAclRoleResponses(List<AclRoleJoinVO> roles) {
+        Hashtable<Long, AclRoleResponse> vrDataList = new Hashtable<Long, AclRoleResponse>();
+        for (AclRoleJoinVO vr : roles) {
+            AclRoleResponse vrData = vrDataList.get(vr.getId());
+            if (vrData == null) {
+                // first time encountering this Acl role
+                vrData = ApiDBUtils.newAclRoleResponse(vr);
+            } else {
+                // update vms
+                vrData = ApiDBUtils.fillAclRoleDetails(vrData, vr);
+            }
+            vrDataList.put(vr.getId(), vrData);
+        }
+        return new ArrayList<AclRoleResponse>(vrDataList.values());
     }
 }

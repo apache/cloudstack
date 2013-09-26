@@ -288,6 +288,7 @@ CREATE TABLE `cloud`.`acl_group` (
   `name` varchar(255) NOT NULL,
   `description` varchar(255) default NULL,
   `uuid` varchar(40),
+  `domain_id` bigint unsigned NOT NULL,  
   `removed` datetime COMMENT 'date the group was removed',
   `created` datetime COMMENT 'date the group was created',
   PRIMARY KEY  (`id`),
@@ -312,6 +313,7 @@ CREATE TABLE `cloud`.`acl_role` (
   `description` varchar(255) default NULL,  
   `uuid` varchar(40),
   `parent_role_id` bigint unsigned DEFAULT 0,
+  `domain_id` bigint unsigned NOT NULL,  
   `removed` datetime COMMENT 'date the role was removed',
   `created` datetime COMMENT 'date the role was created',
   PRIMARY KEY  (`id`),
@@ -365,3 +367,31 @@ CREATE TABLE `cloud`.`acl_entity_permission` (
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_acl_entity_permission__group_id` FOREIGN KEY(`group_id`) REFERENCES `acl_group` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+DROP VIEW IF EXISTS `cloud`.`acl_role_view`;
+CREATE VIEW `cloud`.`acl_role_view` AS
+    select 
+        acl_role.id id,
+        acl_role.uuid uuid,        
+        acl_role.name name,
+        acl_role.description description,
+        parent_role.id parent_role_id,
+        parent_role.uuid parent_role_uuid,
+        parent_role.name parent_role_name,
+        acl_role.removed removed,
+        acl_role.created created,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        acl_api_permission.api api_name
+    from
+        `cloud`.`acl_role`
+            inner join
+        `cloud`.`domain` ON acl_role.domain_id = domain.id
+            left join
+        `cloud`.`acl_role` parent_role on parent_role.id = acl_role.parent_role_id    
+            left join
+        `cloud`.`acl_api_permission` ON acl_role.id = acl_api_permission.role_id;
+ 

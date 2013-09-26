@@ -27,17 +27,15 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.AclService;
 import org.apache.cloudstack.affinity.AffinityGroupService;
-
-import com.cloud.server.ResourceMetaDataService;
-
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.usage.UsageService;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.domain.Domain;
@@ -55,10 +53,10 @@ import com.cloud.network.StorageNetworkService;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.as.AutoScaleService;
 import com.cloud.network.firewall.FirewallService;
-import com.cloud.network.vpc.NetworkACLService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.SecurityGroupService;
+import com.cloud.network.vpc.NetworkACLService;
 import com.cloud.network.vpc.VpcProvisioningService;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpn.RemoteAccessVpnService;
@@ -67,6 +65,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceService;
 import com.cloud.server.ManagementService;
+import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.DataStoreProviderApiService;
 import com.cloud.storage.StorageService;
@@ -150,6 +149,8 @@ public abstract class BaseCmd {
     @Inject public ApplicationLoadBalancerService _newLbSvc;
     @Inject public ApplicationLoadBalancerService _appLbService;
     @Inject public AffinityGroupService _affinityGroupService;
+    @Inject
+    public AclService _aclService;
     @Inject public InternalLoadBalancerElementService _internalLbElementSvc;
     @Inject public InternalLoadBalancerVMService _internalLbSvc;
     @Inject public NetworkModel _ntwkModel;
@@ -474,11 +475,11 @@ public abstract class BaseCmd {
     }
 
     public void setFullUrlParams(Map<String, String> map) {
-        this.fullUrlParams = map;
+        fullUrlParams = map;
     }
 
     public Map<String, String> getFullUrlParams() {
-        return this.fullUrlParams;
+        return fullUrlParams;
     }
 
     public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {

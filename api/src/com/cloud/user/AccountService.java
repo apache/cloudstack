@@ -24,6 +24,7 @@ import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 
 import com.cloud.domain.Domain;
+import com.cloud.domain.PartOf;
 import com.cloud.exception.PermissionDeniedException;
 
 public interface AccountService {
@@ -102,4 +103,6 @@ public interface AccountService {
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, ControlledEntity... entities) throws PermissionDeniedException;
 
+    //TO be implemented, to check accessibility for an entity owned by domain
+    void checkAccess(Account account, AccessType accessType, boolean sameOwner, PartOf... entities) throws PermissionDeniedException;
 }

@@ -248,7 +248,7 @@ public class ApiConstants {
     public static final String IS_VOLATILE = "isvolatile";
     public static final String VOLUME_ID = "volumeid";
     public static final String ZONE_ID = "zoneid";
-    public static final String ZONE_NAME = "zonename";    
+    public static final String ZONE_NAME = "zonename";
     public static final String NETWORK_TYPE = "networktype";
     public static final String PAGE = "page";
     public static final String PAGE_SIZE = "pagesize";
@@ -518,6 +518,12 @@ public class ApiConstants {
     public static final String ROUTING = "isrouting";
     public static final String MAX_CONNECTIONS = "maxconnections";
     public static final String SERVICE_STATE = "servicestate";
+    public static final String ACL_ACCOUNT_IDS = "accountids";
+    public static final String ACL_PARENT_ROLE_ID = "parentroleid";
+    public static final String ACL_PARENT_ROLE_NAME = "parentrolename";
+    public static final String ACL_ROLES = "roles";
+    public static final String ACL_ROLE_IDS = "roleids";
+    public static final String ACL_ALLOWED_APIS = "allowedapis";
     public enum HostDetails {
         all, capacity, events, stats, min;
     }

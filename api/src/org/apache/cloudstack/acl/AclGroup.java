@@ -19,10 +19,11 @@ package org.apache.cloudstack.acl;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface AclGroup extends InternalIdentity, Identity {
+import com.cloud.domain.PartOf;
+
+public interface AclGroup extends PartOf, InternalIdentity, Identity {
 
     String getName();
 
     String getDescription();
-
 }

@@ -14,10 +14,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.acl;
+package com.cloud.api.query.vo;
 
 import java.util.Date;
-import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -29,8 +28,8 @@ import javax.persistence.Table;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name = ("acl_role"))
-public class AclRoleVO implements AclRole {
+@Table(name = ("acl_role_view"))
+public class AclRoleJoinVO extends BaseViewVO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -48,8 +47,26 @@ public class AclRoleVO implements AclRole {
     @Column(name = "parent_role_id")
     private Long parentRoleId;
 
+    @Column(name = "parent_role_uuid")
+    private String parentRoleUuid;
+
+    @Column(name = "parent_role_name")
+    private String parentRoleName;
+
     @Column(name = "domain_id")
     private long domainId;
+
+    @Column(name = "domain_uuid")
+    private String domainUuid;
+
+    @Column(name = "domain_name")
+    private String domainName;
+
+    @Column(name = "domain_path")
+    private String domainPath;
+
+    @Column(name = "api_name")
+    private String apiName;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
@@ -57,14 +74,7 @@ public class AclRoleVO implements AclRole {
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    public AclRoleVO() {
-    	uuid = UUID.randomUUID().toString();
-    }
-
-    public AclRoleVO(String name, String description) {
-        this.name = name;
-        this.description = description;
-    	uuid = UUID.randomUUID().toString();
+    public AclRoleJoinVO() {
     }
 
     @Override
@@ -73,23 +83,44 @@ public class AclRoleVO implements AclRole {
     }
 
     @Override
+    public void setId(long id) {
+        this.id = id;
+    }
+
     public String getName() {
         return name;
     }
 
-    @Override
     public String getDescription() {
         return description;
     }
 
-
-    @Override
     public String getUuid() {
-    	return uuid;
+        return uuid;
     }
 
-    public void setUuid(String uuid) {
-    	this.uuid = uuid;
+    public Long getParentRoleId() {
+        return parentRoleId;
+    }
+
+    public long getDomainId() {
+        return domainId;
+    }
+
+    public String getDomainUuid() {
+        return domainUuid;
+    }
+
+    public String getDomainName() {
+        return domainName;
+    }
+
+    public String getDomainPath() {
+        return domainPath;
+    }
+
+    public String getApiName() {
+        return apiName;
     }
 
     public Date getRemoved() {
@@ -100,22 +131,12 @@ public class AclRoleVO implements AclRole {
         return created;
     }
 
-    @Override
-    public Long getParentRoleId() {
-        return parentRoleId;
+    public String getParentRoleUuid() {
+        return parentRoleUuid;
     }
 
-    public void setParentRoleId(long parentRoleId) {
-        this.parentRoleId = parentRoleId;
-    }
-
-    @Override
-    public long getDomainId() {
-        return domainId;
-    }
-
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
+    public String getParentRoleName() {
+        return parentRoleName;
     }
 
 }

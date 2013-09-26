@@ -45,6 +45,9 @@ public class AclGroupVO implements AclGroup {
     @Column(name = "uuid")
     private String uuid;
 
+    @Column(name = "domain_id")
+    private long domainId;
+
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
@@ -76,6 +79,10 @@ public class AclGroupVO implements AclGroup {
         return description;
     }
 
+    @Override
+    public long getDomainId() {
+        return domainId;
+    }
 
     @Override
     public String getUuid() {

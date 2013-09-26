@@ -33,6 +33,8 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclGroup;
+import org.apache.cloudstack.acl.AclRole;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -42,6 +44,8 @@ import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.AclGroupResponse;
+import org.apache.cloudstack.api.response.AclRoleResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerRuleResponse;
@@ -3667,6 +3671,46 @@ public class ApiResponseHelper implements ResponseGenerator {
             return ag.getId();
         }
     }
+
+    @Override
+    public AclRoleResponse createAclRoleResponse(AclRole role) {
+        AclRoleResponse response = new AclRoleResponse();
+
+        response.setId(role.getUuid());
+        response.setName(role.getName());
+        response.setDescription(role.getDescription());
+        Domain domain = _entityMgr.findById(Domain.class, role.getDomainId());
+        if (domain != null) {
+            response.setDomainId(domain.getUuid());
+            response.setDomainName(domain.getName());
+        }
+        if (role.getParentRoleId() != null ){
+            AclRole parRole = _entityMgr.findById(AclRole.class, role.getParentRoleId());
+            if (parRole != null) {
+                response.setParentRoleId(parRole.getUuid());
+            }
+        }
+        response.setObjectName("aclrole");
+        return response;
+    }
+
+    @Override
+    public AclGroupResponse createAclGroupResponse(AclGroup group) {
+        AclGroupResponse response = new AclGroupResponse();
+
+        response.setId(group.getUuid());
+        response.setName(group.getName());
+        response.setDescription(group.getDescription());
+        Domain domain = _entityMgr.findById(Domain.class, group.getDomainId());
+        if (domain != null) {
+            response.setDomainId(domain.getUuid());
+            response.setDomainName(domain.getName());
+        }
+
+        response.setObjectName("aclgroup");
+        return response;
+    }
+
 
     @Override
     public PortableIpRangeResponse createPortableIPRangeResponse(PortableIpRange ipRange) {

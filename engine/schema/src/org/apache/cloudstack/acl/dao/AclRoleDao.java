@@ -23,6 +23,6 @@ import com.cloud.utils.db.GenericDao;
 
 public interface AclRoleDao extends GenericDao<AclRoleVO, Long> {
 
-    AclRole findByName(String roleName);
+    AclRole findByName(Long domainId, String roleName);
 
 }
