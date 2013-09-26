@@ -45,6 +45,8 @@
         .logo {
             @include shift(2);
             @include span-columns(4);
+            @include animation-duration(1s);
+            @extend .animated.fadeInLeft;
 
             background: url(csui/img/login/logo.png) no-repeat top center;
             float: left;
