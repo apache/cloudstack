@@ -58,23 +58,12 @@
 
             color: white;
 
-            input[type=text],
-            input[type=password] {
-                font-size: 13px;
-                width: 100%;
-                padding: 10px;
-                margin-top: 10px;
-                margin-bottom: 10px;
-                border: 2px solid gray;
-
-                &:focus {
-                    border: 2px solid #6aa6e9;
-                    outline: none;
-                }
-            }
-
             input[type=submit] {
                 @include csui-button-cta;
+            }
+
+            input[type=text], input[type=password] {
+                width: 100%;
             }
 
             select {
