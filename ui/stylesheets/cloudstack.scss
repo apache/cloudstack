@@ -8,6 +8,10 @@ body {
     background: #dbdbdb;
 }
 
+#container {
+    @include animation-duration(500ms);
+}
+
 #template {
     display: none !important;
 }
@@ -200,7 +204,7 @@ body {
     }
 }
 
-.ui-dialog, .notification-box, #user-options, .region-selector {
+.notification-box, #user-options, .region-selector {
     @include dialog;
 
     display: none;

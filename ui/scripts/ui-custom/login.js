@@ -38,6 +38,7 @@
 
         $login.appendTo('html body');
         $('html body').addClass('login');
+        $login.find('.logo, .fields').addClass('animated bounceIn');
 
         // Remove label if field was auto filled
         $.each($form.find('label'), function() {

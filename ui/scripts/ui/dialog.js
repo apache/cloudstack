@@ -73,7 +73,7 @@
                 $('.overlay').remove();
 
                 return $formContainer.dialog({
-                    dialogClass: 'create-form',
+                    dialogClass: 'create-form animated fadeInDown',
                     closeOnEscape: false,
                     draggable: false,
                     width: 400,
@@ -664,7 +664,7 @@
             $listView.find('th.actions').html(_l('label.select'));
 
             $listView.dialog({
-                dialogClass: 'multi-edit-add-list panel',
+                dialogClass: 'multi-edit-add-list panel animated fadeInDown',
                 width: 825,
                 title: _l('Select VM'),
                 buttons: [{
@@ -759,7 +759,7 @@
                 )
             ).dialog({
                 title: _l('label.confirmation'),
-                dialogClass: 'confirm',
+                dialogClass: 'confirm animated fadeInRight',
                 closeOnEscape: false,
                 zIndex: 5000,
                 buttons: [{

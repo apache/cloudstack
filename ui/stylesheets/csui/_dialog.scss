@@ -25,3 +25,9 @@
         float: right;
     }
 }
+
+// Defaults
+.ui-dialog { // jqUI dialog
+    @include dialog;
+    @include animation-duration(300ms);
+}

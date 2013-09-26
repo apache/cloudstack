@@ -271,7 +271,8 @@
                 'cloudStack-container': true
             })
             .data('cloudStack-args', args)
-            .appendTo(this);
+            .appendTo(this)
+            .addClass('animated fadeInDown');
         var context = args.context;
 
         // Create pageElems

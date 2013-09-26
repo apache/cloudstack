@@ -1,7 +1,6 @@
 @mixin csui-login {
     height: 100%;
     min-height: 630px;
-
     background-color: #385770;
 
     @include background(
