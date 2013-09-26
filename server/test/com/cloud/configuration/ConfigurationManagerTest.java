@@ -27,7 +27,9 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import junit.framework.Assert;
@@ -53,7 +55,9 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.Network.Capability;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -415,6 +419,70 @@ public class ConfigurationManagerTest {
         }
     }
 
+    @Test
+    public void validateEmptyStaticNatServiceCapablitiesTest() {
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+
+        configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
+    }
+
+    @Test
+    public void validateInvalidStaticNatServiceCapablitiesTest() {
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "Frue and Talse");
+
+        boolean caught = false;
+        try {
+            configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
+        }
+        catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage(),e.getMessage().contains("(frue and talse)"));
+            caught = true;
+        }
+        Assert.assertTrue("should not be accepted",caught);
+    }
+
+    @Test
+    public void validateTTStaticNatServiceCapablitiesTest() {
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "true and Talse");
+        staticNatServiceCapabilityMap.put(Capability.ElasticIp, "True");
+
+        configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
+    }
+    @Test
+    public void validateFTStaticNatServiceCapablitiesTest() {
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "false");
+        staticNatServiceCapabilityMap.put(Capability.ElasticIp, "True");
+
+        configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
+    }
+    @Test
+    public void validateTFStaticNatServiceCapablitiesTest() {
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "true and Talse");
+        staticNatServiceCapabilityMap.put(Capability.ElasticIp, "false");
+
+        boolean caught = false;
+        try {
+            configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
+        }
+        catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage(),e.getMessage().contains("Capability " + Capability.AssociatePublicIP.getName()
+                        + " can only be set when capability " + Capability.ElasticIp.getName() + " is true"));
+            caught = true;
+        }
+        Assert.assertTrue("should not be accepted",caught);
+    }
+    @Test
+    public void validateFFStaticNatServiceCapablitiesTest() {
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "false");
+        staticNatServiceCapabilityMap.put(Capability.ElasticIp, "False");
+
+        configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
+    }
 
     public class DedicatePublicIpRangeCmdExtn extends DedicatePublicIpRangeCmd {
         @Override

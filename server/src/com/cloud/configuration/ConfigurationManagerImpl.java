@@ -3924,42 +3924,27 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     void validateStaticNatServiceCapablities(Map<Capability, String> staticNatServiceCapabilityMap) {
         if (staticNatServiceCapabilityMap != null && !staticNatServiceCapabilityMap.isEmpty()) {
-            if (staticNatServiceCapabilityMap.keySet().size() > 2) {
-                throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() + " and "
-                        + Capability.AssociatePublicIP.getName()
-                        + " capabilitiy can be sepcified for static nat service");
-            }
-
             boolean eipEnabled = false;
-            boolean eipDisabled = false;
             boolean associatePublicIP = true;
             for (Capability capability : staticNatServiceCapabilityMap.keySet()) {
-                String value = staticNatServiceCapabilityMap.get(capability);
+                String value = staticNatServiceCapabilityMap.get(capability).toLowerCase();
+                if (! (value.contains("true") ^ value.contains("false"))) {
+                    throw new InvalidParameterValueException("Unknown specified value (" + value + ") for "
+                            + capability);
+                }
                 if (capability == Capability.ElasticIp) {
                     eipEnabled = value.contains("true");
-                    eipDisabled = value.contains("false");
-                    if (!eipEnabled && !eipDisabled) {
-                        throw new InvalidParameterValueException("Unknown specified value for "
-                                + Capability.ElasticIp.getName());
-                    }
                 } else if (capability == Capability.AssociatePublicIP) {
-                    if (value.contains("true")) {
-                        associatePublicIP = true;
-                    } else if (value.contains("false")) {
-                        associatePublicIP = false;
-                    } else {
-                        throw new InvalidParameterValueException("Unknown specified value for "
-                                + Capability.AssociatePublicIP.getName());
-                    }
+                    associatePublicIP = value.contains("true");
                 } else {
                     throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() + " and "
                             + Capability.AssociatePublicIP.getName()
                             + " capabilitiy can be sepcified for static nat service");
                 }
-                if (eipDisabled && associatePublicIP) {
-                    throw new InvalidParameterValueException("Capability " + Capability.AssociatePublicIP.getName()
-                            + " can only be set when capability " + Capability.ElasticIp.getName() + " is true");
-                }
+            }
+            if ((! eipEnabled) && associatePublicIP) {
+                throw new InvalidParameterValueException("Capability " + Capability.AssociatePublicIP.getName()
+                        + " can only be set when capability " + Capability.ElasticIp.getName() + " is true");
             }
         }
     }
