@@ -26,7 +26,6 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.DataStoreRole;
@@ -44,6 +43,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;

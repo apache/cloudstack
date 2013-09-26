@@ -1203,14 +1203,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         } catch (AgentUnavailableException e) {
             s_logger.warn("Unable to stop vm, agent unavailable: " + e.toString());
-            if (!forced) {
-                throw e;
-            }
         } catch (OperationTimedoutException e) {
             s_logger.warn("Unable to stop vm, operation timed out: " + e.toString());
-            if (!forced) {
-                throw e;
-            }
         } finally {
             if (!stopped) {
                 if (!cleanUpEvenIfUnableToStop) {
