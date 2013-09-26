@@ -3,11 +3,27 @@
 
     table {
         width: 100%;
+        margin-top: 20px;
+
         th {
             text-align: left;
-            border: 1px solid gray;
-            padding: 5px;
+            border: 1px solid #b9b9b9;
+            padding: 7px;
             background: #e8e8e8;
+            font-size: 11px;
+            color: #474747;
+            white-space: nowrap;
+            @include linear-gradient(#ffffff, #e2e2e2);
+        }
+
+        tr td {
+            padding: 7px;
+            border-bottom: 1px solid #ccc;
+            font-size: 11px;
+        }
+
+        &.body {
+            margin-top: 0px;
         }
     }
 }
