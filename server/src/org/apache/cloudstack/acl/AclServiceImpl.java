@@ -41,6 +41,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
 
 @Local(value = {AclService.class})
 public class AclServiceImpl extends ManagerBase implements AclService, Manager {
@@ -73,7 +74,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACL_ROLE_CREATE, eventDescription = "Creating Acl Role", create = true)
-    public AclRole createAclRole(Long domainId, String aclRoleName, String description) {
+    public AclRole createAclRole(Long domainId, String aclRoleName, String description, Long parentRoleId) {
         Account caller = CallContext.current().getCallingAccount();
         if (!_accountMgr.isRootAdmin(caller.getAccountId())) {
             // domain admin can only create role for his domain
@@ -92,6 +93,9 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         if (domainId != null) {
             rvo.setDomainId(domainId);
         }
+        if (parentRoleId != null) {
+            rvo.setParentRoleId(parentRoleId);
+        }
         return _aclRoleDao.persist(rvo);
     }
 
@@ -109,6 +113,8 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         // check permissions
         _accountMgr.checkAccess(caller, null, true, role);
 
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         // remove this role related entry in acl_group_role_map
         List<AclGroupRoleMapVO> groupRoleMap = _aclGroupRoleMapDao.listByRoleId(role.getId());
         if (groupRoleMap != null) {
@@ -127,6 +133,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
 
         // remove this role from acl_role table
         _aclRoleDao.remove(aclRoleId);
+        txn.commit();
 
         return true;
     }
@@ -146,6 +153,8 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         // check permissions
         _accountMgr.checkAccess(caller, null, true, role);
 
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         // add entries in acl_api_permission table
         for (String api : apiNames) {
             AclApiPermissionVO perm = _apiPermissionDao.findByRoleAndApi(aclRoleId, api);
@@ -155,6 +164,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
                 _apiPermissionDao.persist(perm);
             }
         }
+        txn.commit();
         return role;
 
     }
@@ -173,6 +183,8 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         // check permissions
         _accountMgr.checkAccess(caller, null, true, role);
 
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         // add entries in acl_api_permission table
         for (String api : apiNames) {
             AclApiPermissionVO perm = _apiPermissionDao.findByRoleAndApi(aclRoleId, api);
@@ -181,6 +193,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
                 _apiPermissionDao.remove(perm.getId());
             }
         }
+        txn.commit();
         return role;
     }
 
@@ -198,6 +211,8 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         // check group permissions
         _accountMgr.checkAccess(caller, null, true, group);
  
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         // add entries in acl_group_role_map table
         for (Long roleId : roleIds) {
             // check role permissions
@@ -215,6 +230,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
                 _aclGroupRoleMapDao.persist(grMap);
             }
         }
+        txn.commit();
         return group;
     }
 
@@ -232,6 +248,8 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         // check group permissions
         _accountMgr.checkAccess(caller, null, true, group);
 
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         // add entries in acl_group_role_map table
         for (Long roleId : roleIds) {
             // check role permissions
@@ -248,6 +266,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
                 _aclGroupRoleMapDao.remove(grMap.getId());
             }
         }
+        txn.commit();
         return group;
     }
 

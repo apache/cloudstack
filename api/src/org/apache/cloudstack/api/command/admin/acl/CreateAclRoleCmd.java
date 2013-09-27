@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.acl;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.AclRole;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -52,6 +53,10 @@ public class CreateAclRoleCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the acl group")
     private String name;
 
+    @ACL
+    @Parameter(name = ApiConstants.ACL_PARENT_ROLE_ID, type = CommandType.UUID, description = "The ID of parent acl role.", entityType = AclRoleResponse.class)
+    private Long parentRoleId;
+
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -70,6 +75,9 @@ public class CreateAclRoleCmd extends BaseAsyncCreateCmd {
         return name;
     }
 
+    public Long getParentRoleId() {
+        return parentRoleId;
+    }
 
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
@@ -99,7 +107,7 @@ public class CreateAclRoleCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        AclRole result = _aclService.createAclRole(domainId, name, description);
+        AclRole result = _aclService.createAclRole(domainId, name, description, parentRoleId);
         if (result != null) {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());

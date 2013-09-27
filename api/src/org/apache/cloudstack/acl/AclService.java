@@ -31,7 +31,7 @@ public interface AclService {
      * @return AclRole
      */
 
-    AclRole createAclRole(Long domainId, String aclRoleName, String description);
+    AclRole createAclRole(Long domainId, String aclRoleName, String description, Long parentRoleId);
 
     /**
      * Delete an acl role.
