@@ -102,6 +102,10 @@ public class VmwareContext {
 		if(s_logger.isInfoEnabled())
 			s_logger.info("New VmwareContext object, current outstanding count: " + getOutstandingContextCount());
 	}
+	
+	public boolean validate() {
+		return _vimClient.validate();
+	}
 
 	public void registerStockObject(String name, Object obj) {
 		synchronized(_stockMap) {

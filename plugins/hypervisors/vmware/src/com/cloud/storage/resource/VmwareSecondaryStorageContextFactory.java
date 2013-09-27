@@ -16,11 +16,15 @@
 // under the License.
 package com.cloud.storage.resource;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareContextPool;
 
 public class VmwareSecondaryStorageContextFactory {
+    private static final Logger s_logger = Logger.getLogger(VmwareSecondaryStorageContextFactory.class);
+    
 	private static volatile int s_seq = 1;
 
 	private static VmwareContextPool s_pool;
@@ -51,6 +55,12 @@ public class VmwareSecondaryStorageContextFactory {
 		VmwareContext context = s_pool.getContext(vCenterAddress, vCenterUserName);
 		if(context == null) {
 			context = create(vCenterAddress, vCenterUserName, vCenterPassword);
+		} else {
+			if(!context.validate()) {
+				s_logger.info("Validation of the context faild. dispose and create a new one");
+				context.close();
+				context = create(vCenterAddress, vCenterUserName, vCenterPassword);
+			}
 		}
 		
 		if(context != null) {
