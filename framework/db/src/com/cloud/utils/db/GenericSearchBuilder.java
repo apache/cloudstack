@@ -19,14 +19,9 @@ package com.cloud.utils.db;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
-
-import net.sf.cglib.proxy.Factory;
 
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria.SelectType;
 
 /**
  * GenericSearchBuilder is used to build a search based on a VO object
@@ -37,34 +32,22 @@ import com.cloud.utils.db.SearchCriteria.SelectType;
  * @param <K> Result object that should contain the results.
  */
 public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
-    @SuppressWarnings("unchecked")
     protected GenericSearchBuilder(Class<T> entityType, Class<K> resultType) {
         super(entityType, resultType);
     }
     
-    public T entity() {
-        return _entity;
-    }
-    
-    protected Attribute getSpecifiedAttribute() {
-        if (_entity == null || _specifiedAttrs == null || _specifiedAttrs.size() != 1) {
-            throw new RuntimeException("Now now, better specify an attribute or else we can't help you");
-        }
-        return _specifiedAttrs.get(0);
-    }
-
-    public GenericSearchBuilder<T, K> selectField(Object... useless) {
+    public GenericSearchBuilder<T, K> selectFields(Object... useless) {
         if (_entity == null) {
             throw new RuntimeException("SearchBuilder cannot be modified once it has been setup");
         }
         if (_specifiedAttrs.size() <= 0) {
             throw new RuntimeException("You didn't specify any attributes");
         }
-   
+
         if (_selects == null) {
             _selects = new ArrayList<Select>();
         }
-        
+
         for (Attribute attr : _specifiedAttrs) {
             Field field = null;
             try {
@@ -75,12 +58,12 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
             }
             _selects.add(new Select(Func.NATIVE, attr, field, null));
         }
-        
+
         _specifiedAttrs.clear();
-        
+
         return this;
     }
-    
+
     /**
      * Specifies the field to select.
      * 
@@ -130,13 +113,6 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
         return this;
     }
     
-    @Override
-    protected void set(String name) {
-        Attribute attr = _attrs.get(name);
-        assert (attr != null) : "Searching for a field that's not there: " + name;
-        _specifiedAttrs.add(attr);
-    }
-   
     /**
      * Adds an AND condition to the SearchBuilder.
      * 
@@ -153,11 +129,6 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
     public GenericSearchBuilder<T, K> and(Object useless, Op op, String name) {
         constructCondition(name, " AND ", _specifiedAttrs.get(0), op);
         return this;
-    }
-
-    public Preset and(Object useless, Op op) {
-        Condition condition = constructCondition(UUID.randomUUID().toString(), " AND ", _specifiedAttrs.get(0), op);
-        return new Preset(this, condition);
     }
 
     public GenericSearchBuilder<T, K> and() {
@@ -182,10 +153,6 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
         return and(name, useless, op);
     }
 
-    public Preset where(Object useless, Op op) {
-        return and(useless, op);
-    }
-
     public GenericSearchBuilder<T, K> left(String name, Object useless, Op op) {
         constructCondition(name, " ( ", _specifiedAttrs.get(0), op);
         return this;
@@ -196,17 +163,8 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
         return this;
     }
 
-    public Preset left(Object useless, Op op) {
-        Condition condition = constructCondition(UUID.randomUUID().toString(), " ( ", _specifiedAttrs.get(0), op);
-        return new Preset(this, condition);
-    }
-
     public GenericSearchBuilder<T, K> op(Object useless, Op op, String name) {
         return left(useless, op, name);
-    }
-
-    public Preset op(Object useless, Op op) {
-        return left(useless, op);
     }
 
     public GenericSearchBuilder<T, K> op(String name, Object useless, Op op) {
@@ -221,19 +179,12 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
         return left(name, useless, op);
     }
     
-    public Preset openParen(Object useless, Op op) {
-        return left(useless, op);
-    }
-
-    public GroupBy<T, K> groupBy(Object... useless) {
+    public GroupBy<GenericSearchBuilder<T, K>, T, K> groupBy(Object... useless) {
         assert _groupBy == null : "Can't do more than one group bys";
-        _groupBy = new GroupBy<T, K>(this);
+        GroupBy<GenericSearchBuilder<T, K>, T, K> groupBy = new GroupBy<GenericSearchBuilder<T, K>, T, K>(this);
+        _groupBy = groupBy;
         
-        return _groupBy;
-    }
-    
-    protected List<Attribute> getSpecifiedAttributes() {
-        return _specifiedAttrs;
+        return groupBy;
     }
     
     /**
@@ -254,11 +205,6 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
         return this;
     }
 
-    public Preset or(Object useless, Op op) {
-        Condition condition = constructCondition(UUID.randomUUID().toString(), " OR ", _specifiedAttrs.get(0), op);
-        return new Preset(this, condition);
-    }
-
     public GenericSearchBuilder<T, K> join(String name, GenericSearchBuilder<?, ?> builder, Object useless, Object useless2, JoinBuilder.JoinType joinType) {
         assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
         assert _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
@@ -266,9 +212,9 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
         assert builder._specifiedAttrs.size() == 1 : "You didn't select the attribute.";
         assert builder != this : "You can't add yourself, can you?  Really think about it!";
         
-        JoinBuilder<GenericSearchBuilder<?, ?>> t = new JoinBuilder<GenericSearchBuilder<?, ?>>(builder, _specifiedAttrs.get(0), builder._specifiedAttrs.get(0), joinType);
+        JoinBuilder<SearchBase<?, ?>> t = new JoinBuilder<SearchBase<?, ?>>(builder, _specifiedAttrs.get(0), builder._specifiedAttrs.get(0), joinType);
         if (_joins == null) {
-        	_joins = new HashMap<String, JoinBuilder<GenericSearchBuilder<?, ?>>>();
+            _joins = new HashMap<String, JoinBuilder<SearchBase<?, ?>>>();
         }
         _joins.put(name, t);
         
@@ -277,29 +223,7 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
         return this;
     }
     
-    protected Condition constructCondition(String conditionName, String cond, Attribute attr, Op op) {
-        assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
-        assert op == null || _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
-        assert op != Op.SC : "Call join";
-        
-        Condition condition = new Condition(conditionName, cond, attr, op);
-        _conditions.add(condition);
-        _specifiedAttrs.clear();
-        return condition;
-    }
 
-    /**
-     * creates the SearchCriteria so the actual values can be filled in.
-     * 
-     * @return SearchCriteria
-     */
-    public SearchCriteria<K> create() {
-        if (_entity != null) {
-            done();
-        }
-        return new SearchCriteria<K>(this);
-    }
-    
     public SearchCriteria<K> create(String name, Object... values) {
         SearchCriteria<K> sc = create();
         sc.setParameters(name, values);
@@ -320,62 +244,11 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
         return right();
     }
     
-    public SelectType getSelectType() {
-        return _selectType;
-    }
-    
     /**
      * Marks the SearchBuilder as completed in building the search conditions.
      */
     public synchronized void done() {
-        if (_entity != null) {
-            Factory factory = (Factory)_entity;
-            factory.setCallback(0, null);
-            _entity = null;
-        }
-        
-        if (_joins != null) {
-        	for (JoinBuilder<GenericSearchBuilder<?, ?>> join : _joins.values()) {
-        		join.getT().done();
-            }
-        }
-        
-        if (_selects == null || _selects.size() == 0) {
-            _selectType = SelectType.Entity;
-            assert _entityBeanType.equals(_resultType) : "Expecting " + _entityBeanType + " because you didn't specify any selects but instead got " + _resultType;
-            return;
-        }
-        
-        for (Select select : _selects) {
-            if (select.field == null) {
-                assert (_selects.size() == 1) : "You didn't specify any fields to put the result in but you're specifying more than one select so where should I put the selects?";
-                _selectType = SelectType.Single;
-                return;
-            }
-            if (select.func != null) {
-                _selectType = SelectType.Result;
-                return;
-            }
-        }
-        
-        _selectType = SelectType.Fields;
+        super.finalize();
     }
     
-    public class Preset {
-        GenericSearchBuilder<T, K> builder;
-        Condition condition;
-
-        protected Preset(GenericSearchBuilder<T, K> builder, Condition condition) {
-            this.builder = builder;
-            this.condition = condition;
-        }
-
-        public GenericSearchBuilder<T, K> values(Object... params) {
-            if (condition.op.getParams() > 0 && condition.op.params != params.length) {
-                throw new RuntimeException("The # of parameters set " + params.length + " does not match # of parameters required by " + condition.op);
-            }
-            condition.setPresets(params);
-            return builder;
-        }
-    }
 }

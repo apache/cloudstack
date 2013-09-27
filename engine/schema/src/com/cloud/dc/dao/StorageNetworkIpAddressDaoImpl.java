@@ -56,7 +56,7 @@ public class StorageNetworkIpAddressDaoImpl extends GenericDaoBase<StorageNetwor
 		countInUserIp.done();
 		
 		listInUseIp = createSearchBuilder(String.class);
-		listInUseIp.selectField(listInUseIp.entity().getIpAddress());
+		listInUseIp.selectFields(listInUseIp.entity().getIpAddress());
 		listInUseIp.and("rangeId", listInUseIp.entity().getRangeId(), Op.EQ);
 		listInUseIp.and("taken", listInUseIp.entity().getTakenAt(), Op.NNULL);
 		listInUseIp.done();

@@ -898,13 +898,13 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
         JoinJobSearch = _joinMapDao.createSearchBuilder(Long.class);
         JoinJobSearch.and(JoinJobSearch.entity().getJoinJobId(), Op.EQ, "joinJobId");
-        JoinJobSearch.selectField(JoinJobSearch.entity().getJobId());
+        JoinJobSearch.selectFields(JoinJobSearch.entity().getJobId());
         JoinJobSearch.done();
 
         JoinJobTimeSearch = _joinMapDao.createSearchBuilder(Long.class);
         JoinJobTimeSearch.and(JoinJobTimeSearch.entity().getNextWakeupTime(), Op.LT, "beginTime");
         JoinJobTimeSearch.and(JoinJobTimeSearch.entity().getExpiration(), Op.GT, "endTime");
-        JoinJobTimeSearch.selectField(JoinJobTimeSearch.entity().getJobId()).done();
+        JoinJobTimeSearch.selectFields(JoinJobTimeSearch.entity().getJobId()).done();
 
         JobIdsSearch = _jobDao.createSearchBuilder();
         JobIdsSearch.and(JobIdsSearch.entity().getId(), Op.IN, "ids").done();
@@ -913,13 +913,13 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         QueueJobIdsSearch.and(QueueJobIdsSearch.entity().getContentId(), Op.IN, "contentIds").done();
 
         JoinJobIdsSearch = _joinMapDao.createSearchBuilder(Long.class);
-        JoinJobIdsSearch.selectField(JoinJobIdsSearch.entity().getJobId());
+        JoinJobIdsSearch.selectFields(JoinJobIdsSearch.entity().getJobId());
         JoinJobIdsSearch.and(JoinJobIdsSearch.entity().getJoinJobId(), Op.EQ, "joinJobId");
         JoinJobIdsSearch.and(JoinJobIdsSearch.entity().getJobId(), Op.NIN, "jobIds");
         JoinJobIdsSearch.done();
 
         ContentIdsSearch = _queueItemDao.createSearchBuilder(Long.class);
-        ContentIdsSearch.selectField(ContentIdsSearch.entity().getContentId()).done();
+        ContentIdsSearch.selectFields(ContentIdsSearch.entity().getContentId()).done();
 
         AsyncJobExecutionContext.init(this, _joinMapDao);
         OutcomeImpl.init(this);

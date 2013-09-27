@@ -56,7 +56,7 @@ public class VpcServiceMapDaoImpl extends GenericDaoBase<VpcServiceMapVO, Long> 
         DistinctProvidersSearch = createSearchBuilder(String.class);
         DistinctProvidersSearch.and("vpcId", DistinctProvidersSearch.entity().getVpcId(), SearchCriteria.Op.EQ);
         DistinctProvidersSearch.and("provider", DistinctProvidersSearch.entity().getProvider(), SearchCriteria.Op.EQ);
-        DistinctProvidersSearch.selectField(DistinctProvidersSearch.entity().getProvider());
+        DistinctProvidersSearch.selectFields(DistinctProvidersSearch.entity().getProvider());
         DistinctProvidersSearch.done();
     }
 

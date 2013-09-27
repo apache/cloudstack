@@ -306,7 +306,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         AvailHypevisorInZone.done();
 
         HostsInStatusSearch = createSearchBuilder(Long.class);
-        HostsInStatusSearch.selectField(HostsInStatusSearch.entity().getId());
+        HostsInStatusSearch.selectFields(HostsInStatusSearch.entity().getId());
         HostsInStatusSearch.and("dc", HostsInStatusSearch.entity().getDataCenterId(), Op.EQ);
         HostsInStatusSearch.and("pod", HostsInStatusSearch.entity().getPodId(), Op.EQ);
         HostsInStatusSearch.and("cluster", HostsInStatusSearch.entity().getClusterId(), Op.EQ);
@@ -370,7 +370,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         HostsInClusterSearch.done();
 
         HostIdSearch = createSearchBuilder(Long.class);
-        HostIdSearch.selectField(HostIdSearch.entity().getId());
+        HostIdSearch.selectFields(HostIdSearch.entity().getId());
         HostIdSearch.and("dataCenterId", HostIdSearch.entity().getDataCenterId(), Op.EQ);
         HostIdSearch.done();
 

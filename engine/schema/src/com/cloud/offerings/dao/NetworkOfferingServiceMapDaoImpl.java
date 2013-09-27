@@ -72,7 +72,7 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
         DistinctProvidersSearch = createSearchBuilder(String.class);
         DistinctProvidersSearch.and("offId", DistinctProvidersSearch.entity().getNetworkOfferingId(), SearchCriteria.Op.EQ);
         DistinctProvidersSearch.and("provider", DistinctProvidersSearch.entity().getProvider(), SearchCriteria.Op.EQ);
-        DistinctProvidersSearch.selectField(DistinctProvidersSearch.entity().getProvider());
+        DistinctProvidersSearch.selectFields(DistinctProvidersSearch.entity().getProvider());
         DistinctProvidersSearch.done();
     }
     

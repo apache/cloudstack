@@ -269,7 +269,7 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
         AvailHypevisorInZone.done();
 
         HostsInStatusSearch = createSearchBuilder(Long.class);
-        HostsInStatusSearch.selectField(HostsInStatusSearch.entity().getId());
+        HostsInStatusSearch.selectFields(HostsInStatusSearch.entity().getId());
         HostsInStatusSearch.and("dc", HostsInStatusSearch.entity().getDataCenterId(), Op.EQ);
         HostsInStatusSearch.and("pod", HostsInStatusSearch.entity().getPodId(), Op.EQ);
         HostsInStatusSearch.and("cluster", HostsInStatusSearch.entity().getClusterId(), Op.EQ);

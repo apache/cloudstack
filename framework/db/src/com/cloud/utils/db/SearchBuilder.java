@@ -56,7 +56,6 @@ package com.cloud.utils.db;
  */
 public class SearchBuilder<T> extends GenericSearchBuilder<T, T> {
     
-    @SuppressWarnings("unchecked")
     public SearchBuilder(Class<T> entityType) {
         super(entityType, entityType);
     }

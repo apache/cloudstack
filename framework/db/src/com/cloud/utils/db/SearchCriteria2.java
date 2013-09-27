@@ -23,11 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-import net.sf.cglib.proxy.Factory;
-
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria.SelectType;
 
 public class SearchCriteria2<T, K> extends SearchBase<T, K> {
     final HashMap<String, Object[]> _params = new HashMap<String, Object[]>();
@@ -69,16 +66,6 @@ public class SearchCriteria2<T, K> extends SearchBase<T, K> {
         _specifiedAttrs.clear();
     }
 
-    private void constructCondition(String conditionName, String cond, Attribute attr, Op op) {
-        assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
-        assert op == null || _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
-        assert op != Op.SC : "Call join";
-
-        GenericSearchBuilder.Condition condition = new GenericSearchBuilder.Condition(conditionName, cond, attr, op);
-        _conditions.add(condition);
-        _specifiedAttrs.clear();
-    }
-
     private void setParameters(String conditionName, Object... params) {
         assert _conditions.contains(new Condition(conditionName)) : "Couldn't find " + conditionName;
         _params.put(conditionName, params);
@@ -91,8 +78,8 @@ public class SearchCriteria2<T, K> extends SearchBase<T, K> {
     }
 
     public List<K> list() {
-        done();
-        SearchCriteria sc1 = createSearchCriteria();
+        finalize();
+        SearchCriteria sc1 = create();
         if (isSelectAll()) {
             return (List<K>)_dao.search(sc1, null);
         } else {
@@ -108,43 +95,56 @@ public class SearchCriteria2<T, K> extends SearchBase<T, K> {
         return _entity;
     }
 
-    private SearchCriteria<K> createSearchCriteria() {
-        return new SearchCriteria<K>(_attrs, _conditions, _selects, _selectType, _resultType, _params);
-    }
-
-    private void done() {
-        if (_entity != null) {
-            Factory factory = (Factory)_entity;
-            factory.setCallback(0, null);
-            _entity = null;
-        }
-
-        if (_selects == null || _selects.size() == 0) {
-            _selectType = SelectType.Entity;
-            assert _entityBeanType.equals(_resultType) : "Expecting " + _entityBeanType + " because you didn't specify any selects but instead got " + _resultType;
-            return;
-        }
-
-        for (Select select : _selects) {
-            if (select.field == null) {
-                assert (_selects.size() == 1) : "You didn't specify any fields to put the result in but you're specifying more than one select so where should I put the selects?";
-                _selectType = SelectType.Single;
-                return;
-            }
-            if (select.func != null) {
-                _selectType = SelectType.Result;
-                return;
-            }
-        }
-
-        _selectType = SelectType.Fields;
-    }
-
-    public <K> K find() {
+    public K find() {
         assert isSelectAll() : "find doesn't support select search";
-        done();
-        SearchCriteria sc1 = createSearchCriteria();
+        finalize();
+        SearchCriteria sc1 = create();
         return (K)_dao.findOneBy(sc1);
+    }
+
+    public Preset and(Object useless, Op op) {
+        Condition condition = constructCondition(UUID.randomUUID().toString(), " AND ", _specifiedAttrs.get(0), op);
+        return new Preset(this, condition);
+    }
+
+    public Preset where(Object useless, Op op) {
+        return and(useless, op);
+    }
+
+    public Preset left(Object useless, Op op) {
+        Condition condition = constructCondition(UUID.randomUUID().toString(), " ( ", _specifiedAttrs.get(0), op);
+        return new Preset(this, condition);
+    }
+
+    public Preset op(Object useless, Op op) {
+        return left(useless, op);
+    }
+
+    public Preset openParen(Object useless, Op op) {
+        return left(useless, op);
+    }
+
+    public Preset or(Object useless, Op op) {
+        Condition condition = constructCondition(UUID.randomUUID().toString(), " OR ", _specifiedAttrs.get(0), op);
+        return new Preset(this, condition);
+    }
+
+    public class Preset {
+        SearchCriteria2<T, K> builder;
+        Condition condition;
+
+        protected Preset(SearchCriteria2<T, K> builder, Condition condition) {
+            this.builder = builder;
+            this.condition = condition;
+        }
+
+        public SearchCriteria2<T, K> values(Object... params) {
+            if (condition.op.getParams() > 0 && condition.op.params != params.length) {
+                throw new RuntimeException("The # of parameters set " + params.length + " does not match # of parameters required by " + condition.op);
+            }
+            condition.setPresets(params);
+            return builder;
+        }
     }
 
 }

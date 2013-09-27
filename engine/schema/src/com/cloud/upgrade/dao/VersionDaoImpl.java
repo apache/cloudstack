@@ -51,7 +51,7 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
         super();
 
         CurrentVersionSearch = createSearchBuilder(String.class);
-        CurrentVersionSearch.selectField(CurrentVersionSearch.entity().getVersion());
+        CurrentVersionSearch.selectFields(CurrentVersionSearch.entity().getVersion());
         CurrentVersionSearch.and("step", CurrentVersionSearch.entity().getStep(), Op.EQ);
         CurrentVersionSearch.done();
 

@@ -23,12 +23,12 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 
-public class GroupBy<T, R> {
-    GenericSearchBuilder<T, R> _builder;
+public class GroupBy<J extends SearchBase<T, R>, T, R> {
+    J _builder;
     List<Pair<Func, Attribute>> _groupBys;
     Having _having;
     
-    public GroupBy(GenericSearchBuilder<T, R> builder) {
+    public GroupBy(J builder) {
         _builder = builder;
         _groupBys = new ArrayList<Pair<Func, Attribute>>();
         _having = null;
@@ -38,19 +38,19 @@ public class GroupBy<T, R> {
         _builder.getSpecifiedAttributes().clear();
     }
     
-    public GroupBy<T, R> group(Object useless) {
+    public GroupBy<J, T, R> group(Object useless) {
         _groupBys.add(new Pair<Func, Attribute>(null, _builder.getSpecifiedAttributes().get(0)));
         _builder.getSpecifiedAttributes().clear();
-        return this; 
+        return this;
     }
     
-    public GroupBy<T, R> group(Func func, Object useless) {
+    public GroupBy<J, T, R> group(Func func, Object useless) {
         _groupBys.add(new Pair<Func, Attribute>(func, _builder.getSpecifiedAttributes().get(0)));
         _builder.getSpecifiedAttributes().clear();
         return this;
     }
     
-    public GenericSearchBuilder<T, R> having(Func func, Object obj, Op op, Object value) {
+    public J having(Func func, Object obj, Op op, Object value) {
         assert(_having == null) : "You can only specify one having in a group by";
         List<Attribute> attrs = _builder.getSpecifiedAttributes();
         assert attrs.size() == 1 : "You didn't specified an attribute";

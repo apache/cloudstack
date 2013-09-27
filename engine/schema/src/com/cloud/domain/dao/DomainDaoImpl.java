@@ -74,7 +74,7 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
 		FindAllChildrenSearch.done();
 
 		FindIdsOfAllChildrenSearch = createSearchBuilder(Long.class);
-		FindIdsOfAllChildrenSearch.selectField(FindIdsOfAllChildrenSearch.entity().getId());
+		FindIdsOfAllChildrenSearch.selectFields(FindIdsOfAllChildrenSearch.entity().getId());
 		FindIdsOfAllChildrenSearch.and("path", FindIdsOfAllChildrenSearch.entity().getPath(), SearchCriteria.Op.LIKE);
 		FindIdsOfAllChildrenSearch.done();
 

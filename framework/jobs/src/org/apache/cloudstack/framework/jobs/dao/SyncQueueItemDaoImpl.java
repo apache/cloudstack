@@ -49,7 +49,7 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
         queueIdSearch = createSearchBuilder(Long.class);
         queueIdSearch.and("contentId", queueIdSearch.entity().getContentId(), Op.EQ);
         queueIdSearch.and("contentType", queueIdSearch.entity().getContentType(), Op.EQ);
-        queueIdSearch.selectField(queueIdSearch.entity().getId());
+        queueIdSearch.selectFields(queueIdSearch.entity().getId());
         queueIdSearch.done();
     }
 

@@ -928,7 +928,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @Override @DB(txn=false)
-    @SuppressWarnings("unchecked")
     public T findByUuid(final String uuid) {
         SearchCriteria<T> sc = createSearchCriteria();
         sc.addAnd("uuid", SearchCriteria.Op.EQ, uuid);
@@ -936,7 +935,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @Override @DB(txn=false)
-    @SuppressWarnings("unchecked")
     public T findByUuidIncludingRemoved(final String uuid) {
         SearchCriteria<T> sc = createSearchCriteria();
         sc.addAnd("uuid", SearchCriteria.Op.EQ, uuid);
@@ -1044,7 +1042,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @DB(txn=false)
     protected List<Object> addGroupBy(final StringBuilder sql, SearchCriteria<?> sc) {
-        Pair<GroupBy<?, ?>, List<Object>> groupBys = sc.getGroupBy();
+        Pair<GroupBy<?, ?, ?>, List<Object>> groupBys = sc.getGroupBy();
         if (groupBys != null) {
             groupBys.first().toSql(sql);
             return groupBys.second();
@@ -1368,7 +1366,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             Object obj = entry.getValue();
 
             EcInfo ec = (EcInfo)attr.attache;
-            Enumeration en = null;
+            Enumeration<?> en = null;
             if (ec.rawClass == null) {
                 en = Collections.enumeration(Arrays.asList((Object[])obj));
             } else {

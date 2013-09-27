@@ -113,12 +113,13 @@ public class SearchCriteria<K> {
     private int _counter;
     private HashMap<String, JoinBuilder<SearchCriteria<?>>> _joins;
     private final ArrayList<Select> _selects;
-    private final GroupBy<?, K> _groupBy;
+    private final GroupBy<? extends SearchBase<?, K>, ?, K> _groupBy;
     private final List<Object> _groupByValues;
     private final Class<K> _resultType;
     private final SelectType _selectType;
 
-    protected SearchCriteria(final Map<String, Attribute> attrs, ArrayList<GenericSearchBuilder.Condition> conditions, ArrayList<Select> selects, SelectType selectType, Class<K> resultType, HashMap<String, Object[]> params) {
+    protected SearchCriteria(Map<String, Attribute> attrs, ArrayList<Condition> conditions, ArrayList<Select> selects, SelectType selectType, Class<K> resultType,
+            HashMap<String, Object[]> params) {
         this._attrs = attrs;
         this._conditions = conditions;
         this._selects = selects;
@@ -132,7 +133,7 @@ public class SearchCriteria<K> {
         this._groupByValues = null;
     }
 
-    protected SearchCriteria(GenericSearchBuilder<?, K> sb) {
+    protected SearchCriteria(SearchBase<?, K> sb) {
         this._attrs = sb._attrs;
         this._conditions = sb._conditions;
         this._additionals = new ArrayList<Condition>();
@@ -140,8 +141,8 @@ public class SearchCriteria<K> {
         this._joins = null;
         if (sb._joins != null) {
             _joins = new HashMap<String, JoinBuilder<SearchCriteria<?>>>(sb._joins.size());
-            for (Map.Entry<String, JoinBuilder<GenericSearchBuilder<?, ?>>> entry : sb._joins.entrySet()) {
-                JoinBuilder<GenericSearchBuilder<?, ?>> value =  entry.getValue();
+            for (Map.Entry<String, JoinBuilder<SearchBase<?, ?>>> entry : sb._joins.entrySet()) {
+                JoinBuilder<SearchBase<?, ?>> value = entry.getValue();
                 _joins.put(entry.getKey(), new JoinBuilder<SearchCriteria<?>>(value.getT().create(),value.getFirstAttribute(), value.getSecondAttribute(), value.getType()));
             }
         }
@@ -242,8 +243,8 @@ public class SearchCriteria<K> {
         return _joins.get(joinName).getT();
     }
 
-    public Pair<GroupBy<?, ?>, List<Object>> getGroupBy() {
-        return _groupBy == null ? null : new Pair<GroupBy<?, ?>, List<Object>>(_groupBy, _groupByValues);
+    public Pair<GroupBy<?, ?, ?>, List<Object>> getGroupBy() {
+        return _groupBy == null ? null : new Pair<GroupBy<?, ?, ?>, List<Object>>(_groupBy, _groupByValues);
     }
 
     public void setGroupByValues(Object... values) {

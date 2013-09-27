@@ -202,7 +202,7 @@ public class EngineClusterDaoImpl extends GenericDaoBase<EngineClusterVO, Long> 
     @Override
     public List<Long> listDisabledClusters(long zoneId, Long podId) {
         GenericSearchBuilder<EngineClusterVO, Long> clusterIdSearch = createSearchBuilder(Long.class);
-        clusterIdSearch.selectField(clusterIdSearch.entity().getId());
+        clusterIdSearch.selectFields(clusterIdSearch.entity().getId());
         clusterIdSearch.and("dataCenterId", clusterIdSearch.entity().getDataCenterId(), Op.EQ);
         if(podId != null){
             clusterIdSearch.and("podId", clusterIdSearch.entity().getPodId(), Op.EQ);
@@ -224,12 +224,12 @@ public class EngineClusterDaoImpl extends GenericDaoBase<EngineClusterVO, Long> 
     public List<Long> listClustersWithDisabledPods(long zoneId) {
 
         GenericSearchBuilder<EngineHostPodVO, Long> disabledPodIdSearch = _hostPodDao.createSearchBuilder(Long.class);
-        disabledPodIdSearch.selectField(disabledPodIdSearch.entity().getId());
+        disabledPodIdSearch.selectFields(disabledPodIdSearch.entity().getId());
         disabledPodIdSearch.and("dataCenterId", disabledPodIdSearch.entity().getDataCenterId(), Op.EQ);
         disabledPodIdSearch.and("allocationState", disabledPodIdSearch.entity().getAllocationState(), Op.EQ);
 
         GenericSearchBuilder<EngineClusterVO, Long> clusterIdSearch = createSearchBuilder(Long.class);
-        clusterIdSearch.selectField(clusterIdSearch.entity().getId());
+        clusterIdSearch.selectFields(clusterIdSearch.entity().getId());
         clusterIdSearch.join("disabledPodIdSearch", disabledPodIdSearch, clusterIdSearch.entity().getPodId(), disabledPodIdSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         clusterIdSearch.done();
 

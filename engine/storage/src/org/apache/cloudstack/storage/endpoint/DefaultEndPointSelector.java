@@ -27,15 +27,16 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
+import org.apache.cloudstack.storage.RemoteHostEndPoint;
 
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -44,10 +45,9 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -55,7 +55,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     private static final Logger s_logger = Logger.getLogger(DefaultEndPointSelector.class);
     @Inject
     HostDao hostDao;
-    private String findOneHostOnPrimaryStorage = "select h.id from host h, storage_pool_host_ref s  where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and" +
+    private final String findOneHostOnPrimaryStorage = "select h.id from host h, storage_pool_host_ref s  where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and" +
             " h.id = s.host_id and s.pool_id = ? ";
 
     protected boolean moveBetweenPrimaryImage(DataStore srcStore, DataStore destStore) {
@@ -261,7 +261,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
             sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, store.getScope().getScopeId());
             sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
-            List<HostVO> hosts = sc.find();
+            List<HostVO> hosts = sc.list();
             for (HostVO host : hosts) {
                 endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(),
                         host.getPublicIpAddress()));
