@@ -28,4 +28,6 @@ public interface AclGroupRoleMapDao extends GenericDao<AclGroupRoleMapVO, Long> 
 
     List<AclGroupRoleMapVO> listByRoleId(long roleId);
 
+    AclGroupRoleMapVO findByGroupAndRole(long groupId, long roleId);
+
 }

@@ -20,18 +20,20 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AclRoleResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 
+import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
 @APICommand(name = "deleteAclRole", description = "Deletes acl role", responseObject = SuccessResponse.class)
-public class DeleteAclRoleCmd extends BaseCmd {
+public class DeleteAclRoleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteAclRoleCmd.class.getName());
     private static final String s_name = "deleteaclroleresponse";
 
@@ -75,5 +77,20 @@ public class DeleteAclRoleCmd extends BaseCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete acl role");
         }
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_ACL_ROLE_DELETE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Deleting Acl role";
+    }
+
+    @Override
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.AclRole;
     }
 }

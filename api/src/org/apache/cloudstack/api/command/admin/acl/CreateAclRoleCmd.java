@@ -20,18 +20,21 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.AclRole;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AclRoleResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 
 @APICommand(name = "createAclRole", responseObject = AclRoleResponse.class, description = "Creates an acl role")
-public class CreateAclRoleCmd extends BaseCmd {
+public class CreateAclRoleCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAclRoleCmd.class.getName());
 
     private static final String s_name = "createaclroleresponse";
@@ -84,7 +87,7 @@ public class CreateAclRoleCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        AclRole role = _aclService.createAclRole(domainId, name, description);
+        AclRole role = _entityMgr.findById(AclRole.class, getEntityId());
         if (role != null) {
             AclRoleResponse response = _responseGenerator.createAclRoleResponse(role);
             response.setResponseName(getCommandName());
@@ -94,5 +97,41 @@ public class CreateAclRoleCmd extends BaseCmd {
         }
     }
 
+    @Override
+    public void create() throws ResourceAllocationException {
+        AclRole result = _aclService.createAclRole(domainId, name, description);
+        if (result != null) {
+            setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create acl role entity" + name);
+        }
+
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_ACL_ROLE_CREATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "creating Acl role";
+    }
+
+    @Override
+    public String getCreateEventType() {
+        return EventTypes.EVENT_ACL_ROLE_CREATE;
+    }
+
+    @Override
+    public String getCreateEventDescription() {
+        return "creating acl role";
+    }
+
+    @Override
+    public ApiCommandJobType getInstanceType() {
+        return ApiCommandJobType.AclRole;
+    }
 
 }

@@ -57,6 +57,13 @@ import org.apache.cloudstack.api.command.admin.account.DisableAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.EnableAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.LockAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.acl.AddAclRoleToAclGroupCmd;
+import org.apache.cloudstack.api.command.admin.acl.CreateAclRoleCmd;
+import org.apache.cloudstack.api.command.admin.acl.DeleteAclRoleCmd;
+import org.apache.cloudstack.api.command.admin.acl.GrantPermissionToAclRoleCmd;
+import org.apache.cloudstack.api.command.admin.acl.ListAclRolesCmd;
+import org.apache.cloudstack.api.command.admin.acl.RemoveAclRoleFromAclGroupCmd;
+import org.apache.cloudstack.api.command.admin.acl.RevokePermissionFromAclRoleCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.DeleteCounterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
@@ -2853,6 +2860,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ReplaceNetworkACLListCmd.class);
         cmdList.add(UpdateNetworkACLItemCmd.class);
         cmdList.add(CleanVMReservationsCmd.class);
+        cmdList.add(CreateAclRoleCmd.class);
+        cmdList.add(DeleteAclRoleCmd.class);
+        cmdList.add(ListAclRolesCmd.class);
+        cmdList.add(GrantPermissionToAclRoleCmd.class);
+        cmdList.add(RevokePermissionFromAclRoleCmd.class);
+        cmdList.add(AddAclRoleToAclGroupCmd.class);
+        cmdList.add(RemoveAclRoleFromAclGroupCmd.class);
         return cmdList;
     }
 
@@ -3157,7 +3171,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    @ActionEvent(eventType = "", eventDescription = "", async = true)    
+    @ActionEvent(eventType = "", eventDescription = "", async = true)
     public VMInstanceVO destroySystemVM(DestroySystemVmCmd cmd) {
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(cmd.getId(), VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
 

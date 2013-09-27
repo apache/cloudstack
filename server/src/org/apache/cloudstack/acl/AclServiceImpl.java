@@ -26,10 +26,13 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.dao.AclApiPermissionDao;
 import org.apache.cloudstack.acl.dao.AclEntityPermissionDao;
 import org.apache.cloudstack.acl.dao.AclGroupAccountMapDao;
+import org.apache.cloudstack.acl.dao.AclGroupDao;
 import org.apache.cloudstack.acl.dao.AclGroupRoleMapDao;
 import org.apache.cloudstack.acl.dao.AclRoleDao;
 import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
@@ -52,6 +55,9 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     AclRoleDao _aclRoleDao;
 
     @Inject
+    AclGroupDao _aclGroupDao;
+
+    @Inject
     AclGroupRoleMapDao _aclGroupRoleMapDao;
 
     @Inject
@@ -66,6 +72,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
 
     @DB
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_ROLE_CREATE, eventDescription = "Creating Acl Role", create = true)
     public AclRole createAclRole(Long domainId, String aclRoleName, String description) {
         Account caller = CallContext.current().getCallingAccount();
         if (!_accountMgr.isRootAdmin(caller.getAccountId())) {
@@ -90,6 +97,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
 
     @DB
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_ROLE_DELETE, eventDescription = "Deleting Acl Role")
     public boolean deleteAclRole(long aclRoleId) {
         Account caller = CallContext.current().getCallingAccount();
         // get the Acl Role entity
@@ -99,12 +107,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
                     + "; failed to delete acl role.");
         }
         // check permissions
-        if (!_accountMgr.isRootAdmin(caller.getAccountId())) {
-            // domain admin can only delete role for his domain
-            if (caller.getDomainId() != role.getDomainId()) {
-                throw new PermissionDeniedException("Can't delete acl role in domain " + role.getDomainId() + ", permission denied");
-            }
-        }
+        _accountMgr.checkAccess(caller, null, true, role);
 
         // remove this role related entry in acl_group_role_map
         List<AclGroupRoleMapVO> groupRoleMap = _aclGroupRoleMapDao.listByRoleId(role.getId());
@@ -128,28 +131,124 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         return true;
     }
 
+
+    @DB
     @Override
-    public Pair<List<? extends AclRole>, Integer> listAclRoles(Long aclRoleId, String aclRoleName, Long domainId, Long startIndex, Long pageSize) {
-        // TODO Auto-generated method stub
-        return null;
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_ROLE_GRANT, eventDescription = "Granting permission to Acl Role")
+    public AclRole grantPermissionToAclRole(long aclRoleId, List<String> apiNames) {
+        Account caller = CallContext.current().getCallingAccount();
+        // get the Acl Role entity
+        AclRole role = _aclRoleDao.findById(aclRoleId);
+        if (role == null) {
+            throw new InvalidParameterValueException("Unable to find acl role: " + aclRoleId
+                    + "; failed to grant permission to role.");
+        }
+        // check permissions
+        _accountMgr.checkAccess(caller, null, true, role);
+
+        // add entries in acl_api_permission table
+        for (String api : apiNames) {
+            AclApiPermissionVO perm = _apiPermissionDao.findByRoleAndApi(aclRoleId, api);
+            if (perm == null) {
+                // not there already
+                perm = new AclApiPermissionVO(aclRoleId, api);
+                _apiPermissionDao.persist(perm);
+            }
+        }
+        return role;
+
     }
 
+    @DB
     @Override
-    public AclRole getAclRole(Long roleId) {
-        // TODO Auto-generated method stub
-        return null;
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_ROLE_REVOKE, eventDescription = "Revoking permission from Acl Role")
+    public AclRole revokePermissionFromAclRole(long aclRoleId, List<String> apiNames) {
+        Account caller = CallContext.current().getCallingAccount();
+        // get the Acl Role entity
+        AclRole role = _aclRoleDao.findById(aclRoleId);
+        if (role == null) {
+            throw new InvalidParameterValueException("Unable to find acl role: " + aclRoleId
+                    + "; failed to revoke permission from role.");
+        }
+        // check permissions
+        _accountMgr.checkAccess(caller, null, true, role);
+
+        // add entries in acl_api_permission table
+        for (String api : apiNames) {
+            AclApiPermissionVO perm = _apiPermissionDao.findByRoleAndApi(aclRoleId, api);
+            if (perm != null) {
+                // not removed yet
+                _apiPermissionDao.remove(perm.getId());
+            }
+        }
+        return role;
     }
 
+    @DB
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_UPDATE, eventDescription = "Adding roles to acl group")
     public AclGroup addAclRolesToGroup(List<Long> roleIds, Long groupId) {
-        // TODO Auto-generated method stub
-        return null;
+        Account caller = CallContext.current().getCallingAccount();
+        // get the Acl Group entity
+        AclGroup group = _aclGroupDao.findById(groupId);
+        if (group == null) {
+            throw new InvalidParameterValueException("Unable to find acl group: " + groupId
+                    + "; failed to add roles to acl group.");
+        }
+        // check group permissions
+        _accountMgr.checkAccess(caller, null, true, group);
+ 
+        // add entries in acl_group_role_map table
+        for (Long roleId : roleIds) {
+            // check role permissions
+            AclRole role = _aclRoleDao.findById(roleId);
+            if ( role == null ){
+                throw new InvalidParameterValueException("Unable to find acl role: " + roleId
+                        + "; failed to add roles to acl group.");
+            }
+            _accountMgr.checkAccess(caller,null, true, role);
+            
+            AclGroupRoleMapVO grMap = _aclGroupRoleMapDao.findByGroupAndRole(groupId, roleId);
+            if (grMap == null) {
+                // not there already
+                grMap = new AclGroupRoleMapVO(groupId, roleId);
+                _aclGroupRoleMapDao.persist(grMap);
+            }
+        }
+        return group;
     }
 
+    @DB
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_UPDATE, eventDescription = "Removing roles from acl group")
     public AclGroup removeAclRolesFromGroup(List<Long> roleIds, Long groupId) {
-        // TODO Auto-generated method stub
-        return null;
+        Account caller = CallContext.current().getCallingAccount();
+        // get the Acl Group entity
+        AclGroup group = _aclGroupDao.findById(groupId);
+        if (group == null) {
+            throw new InvalidParameterValueException("Unable to find acl group: " + groupId
+                    + "; failed to remove roles from acl group.");
+        }
+        // check group permissions
+        _accountMgr.checkAccess(caller, null, true, group);
+
+        // add entries in acl_group_role_map table
+        for (Long roleId : roleIds) {
+            // check role permissions
+            AclRole role = _aclRoleDao.findById(roleId);
+            if (role == null) {
+                throw new InvalidParameterValueException("Unable to find acl role: " + roleId
+                        + "; failed to add roles to acl group.");
+            }
+            _accountMgr.checkAccess(caller, null, true, role);
+
+            AclGroupRoleMapVO grMap = _aclGroupRoleMapDao.findByGroupAndRole(groupId, roleId);
+            if (grMap != null) {
+                // not removed yet
+                _aclGroupRoleMapDao.remove(grMap.getId());
+            }
+        }
+        return group;
     }
 
     @Override

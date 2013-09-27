@@ -60,7 +60,7 @@ public class AclRoleResponse extends BaseResponse {
     @Param(description = "the domain name of the acl role")
     private String domainName;
 
-    @SerializedName(ApiConstants.ACL_ALLOWED_APIS)
+    @SerializedName(ApiConstants.ACL_APIS)
     @Param(description = "allowed apis for the acl role ")
     private List<String> apiList;
 

@@ -25,6 +25,7 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.AclRole;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -1676,6 +1677,10 @@ public class ApiDBUtils {
 
     public static AffinityGroupResponse fillAffinityGroupDetails(AffinityGroupResponse resp, AffinityGroupJoinVO group) {
         return _affinityGroupJoinDao.setAffinityGroupResponse(resp, group);
+    }
+
+    public static List<AclRoleJoinVO> newAclRoleView(AclRole role) {
+        return _aclRoleJoinDao.newAclRoleView(role);
     }
 
     public static AclRoleResponse newAclRoleResponse(AclRoleJoinVO role) {

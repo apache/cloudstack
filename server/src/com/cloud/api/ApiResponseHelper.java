@@ -151,6 +151,7 @@ import org.apache.cloudstack.usage.UsageTypes;
 
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
+import com.cloud.api.query.vo.AclRoleJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.api.query.vo.DataCenterJoinVO;
@@ -3674,24 +3675,10 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public AclRoleResponse createAclRoleResponse(AclRole role) {
-        AclRoleResponse response = new AclRoleResponse();
-
-        response.setId(role.getUuid());
-        response.setName(role.getName());
-        response.setDescription(role.getDescription());
-        Domain domain = _entityMgr.findById(Domain.class, role.getDomainId());
-        if (domain != null) {
-            response.setDomainId(domain.getUuid());
-            response.setDomainName(domain.getName());
-        }
-        if (role.getParentRoleId() != null ){
-            AclRole parRole = _entityMgr.findById(AclRole.class, role.getParentRoleId());
-            if (parRole != null) {
-                response.setParentRoleId(parRole.getUuid());
-            }
-        }
-        response.setObjectName("aclrole");
-        return response;
+        List<AclRoleJoinVO> viewRoles = ApiDBUtils.newAclRoleView(role);
+        List<AclRoleResponse> listRoles = ViewResponseHelper.createAclRoleResponses(viewRoles);
+        assert listRoles != null && listRoles.size() == 1 : "There should be one acl role returned";
+        return listRoles.get(0);
     }
 
     @Override

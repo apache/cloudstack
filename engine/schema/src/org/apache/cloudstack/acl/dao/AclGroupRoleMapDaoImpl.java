@@ -33,6 +33,7 @@ import com.cloud.utils.db.SearchCriteria;
 public class AclGroupRoleMapDaoImpl extends GenericDaoBase<AclGroupRoleMapVO, Long> implements AclGroupRoleMapDao {
     private SearchBuilder<AclGroupRoleMapVO> ListByGroupId;
     private SearchBuilder<AclGroupRoleMapVO> ListByRoleId;
+    private SearchBuilder<AclGroupRoleMapVO> findByRoleGroupId;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -45,6 +46,11 @@ public class AclGroupRoleMapDaoImpl extends GenericDaoBase<AclGroupRoleMapVO, Lo
         ListByRoleId = createSearchBuilder();
         ListByRoleId.and("roleId", ListByRoleId.entity().getAclRoleId(), SearchCriteria.Op.EQ);
         ListByRoleId.done();
+
+        findByRoleGroupId = createSearchBuilder();
+        findByRoleGroupId.and("roleId", findByRoleGroupId.entity().getAclRoleId(), SearchCriteria.Op.EQ);
+        findByRoleGroupId.and("groupId", findByRoleGroupId.entity().getAclGroupId(), SearchCriteria.Op.EQ);
+        findByRoleGroupId.done();
 
         return true;
     }
@@ -61,6 +67,14 @@ public class AclGroupRoleMapDaoImpl extends GenericDaoBase<AclGroupRoleMapVO, Lo
         SearchCriteria<AclGroupRoleMapVO> sc = ListByRoleId.create();
         sc.setParameters("roleId", roleId);
         return listBy(sc);
+    }
+
+    @Override
+    public AclGroupRoleMapVO findByGroupAndRole(long groupId, long roleId) {
+        SearchCriteria<AclGroupRoleMapVO> sc = findByRoleGroupId.create();
+        sc.setParameters("roleId", roleId);
+        sc.setParameters("groupId", groupId);
+        return findOneBy(sc);
     }
 
 }

@@ -445,6 +445,13 @@ public class EventTypes {
     
     public static final String EVENT_UCS_ASSOCIATED_PROFILE = "UCS.ASSOCIATEPROFILE";
 
+    public static final String EVENT_ACL_ROLE_CREATE = "ACLROLE.CREATE";
+    public static final String EVENT_ACL_ROLE_DELETE = "ACLROLE.DELETE";
+    public static final String EVENT_ACL_ROLE_GRANT = "ACLROLE.GRANT";
+    public static final String EVENT_ACL_ROLE_REVOKE = "ACLROLE.REVOKE";
+    
+    public static final String EVENT_ACL_GROUP_UPDATE = "ACLGROUP.UPDATE";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking

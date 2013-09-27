@@ -371,10 +371,12 @@
   <bean id="serviceOfferingDetailsDaoImpl" class="com.cloud.service.dao.ServiceOfferingDetailsDaoImpl"/>
   <bean id="AclGroupDaoImpl" class="org.apache.cloudstack.acl.dao.AclGroupDaoImpl"/>
   <bean id="AclRoleDaoImpl" class="org.apache.cloudstack.acl.dao.AclRoleDaoImpl"/>  
+  <bean id="AclRoleJoinDaoImpl" class="com.cloud.api.query.dao.AclRoleJoinDaoImpl"/>    
   <bean id="AclGroupAccountMapDaoImpl" class="org.apache.cloudstack.acl.dao.AclGroupAccountMapDaoImpl"/>
   <bean id="AclGroupRoleMapDaoImpl" class="org.apache.cloudstack.acl.dao.AclGroupRoleMapDaoImpl"/> 
   <bean id="AclApiPermissionDaoImpl" class="org.apache.cloudstack.acl.dao.AclApiPermissionDaoImpl"/>
   <bean id="AclEntityPermissionDaoImpl" class="org.apache.cloudstack.acl.dao.AclEntityPermissionDaoImpl"/>    
+  
    
   <!--
     Checkers

@@ -678,3 +678,13 @@ addLdapConfiguration=3
 deleteLdapConfiguration=3
 listLdapUsers=3
 ldapCreateAccount=3
+
+### Acl commands
+createAclRole=7
+deleteAclRole=7
+listAclRoles=7
+grantPermissionToAclRole=7
+revokePermissionFromAclRole=7
+addAclRoleToAclGroup=7
+removeAclRoleFromAclGroup=7
+

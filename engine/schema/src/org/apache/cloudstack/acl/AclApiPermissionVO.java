@@ -32,6 +32,15 @@ public class AclApiPermissionVO implements AclApiPermission {
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
+    public AclApiPermissionVO() {
+
+    }
+
+    public AclApiPermissionVO(long roleid, String api) {
+        aclRoleId = roleid;
+        apiName = api;
+    }
+
     @Override
     public long getId() {
         return id;
@@ -54,4 +63,13 @@ public class AclApiPermissionVO implements AclApiPermission {
     public Date getCreated() {
         return created;
     }
+
+    public void setAclRoleId(long aclRoleId) {
+        this.aclRoleId = aclRoleId;
+    }
+
+    public void setApiName(String apiName) {
+        this.apiName = apiName;
+    }
+
 }

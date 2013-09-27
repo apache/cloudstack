@@ -40,24 +40,9 @@ public interface AclService {
      */
     boolean deleteAclRole(long aclRoleId);
 
-    /** Lists Acl roles for a domain
-     * @param domainId
-     * @param aclRoleId
-     * @param aclRoleName
-     * @param startIndex
-     * @param pageSize
-     * @return
-     */
-    Pair<List<? extends AclRole>, Integer> listAclRoles(Long aclRoleId, String aclRoleName,
-            Long domainId, Long startIndex, Long pageSize);
+    AclRole grantPermissionToAclRole(long aclRoleId, List<String> apiNames);
 
-
-    /**
-     * Get the acl role for the given role id.
-     * @param roleId
-     * @return AclRole
-     */
-    AclRole getAclRole(Long roleId);
+    AclRole revokePermissionFromAclRole(long aclRoleId, List<String> apiNames);
 
     AclGroup addAclRolesToGroup(List<Long> roleIds, Long groupId);
 

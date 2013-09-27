@@ -523,7 +523,8 @@ public class ApiConstants {
     public static final String ACL_PARENT_ROLE_NAME = "parentrolename";
     public static final String ACL_ROLES = "roles";
     public static final String ACL_ROLE_IDS = "roleids";
-    public static final String ACL_ALLOWED_APIS = "allowedapis";
+    public static final String ACL_APIS = "apis";
+
     public enum HostDetails {
         all, capacity, events, stats, min;
     }
