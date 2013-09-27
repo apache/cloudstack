@@ -80,8 +80,15 @@ public class VmwareContextFactory {
 	
 	public static VmwareContext getContext(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
 		VmwareContext context = s_pool.getContext(vCenterAddress, vCenterUserName);
-		if(context == null)
+		if(context == null) {
 			context = create(vCenterAddress, vCenterUserName, vCenterPassword);
+		} else {
+			if(!context.validate()) {
+				s_logger.info("Validation of the context faild. dispose and create a new one");
+				context.close();
+				context = create(vCenterAddress, vCenterUserName, vCenterPassword);
+			}
+		}
 		
 		if(context != null) {
 			context.registerStockObject(VmwareManager.CONTEXT_STOCK_NAME, s_vmwareMgr);
