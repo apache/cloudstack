@@ -868,6 +868,22 @@ under the License.
           </listitem>
         </itemizedlist>
       </section>
+      <section id="vm-disk-statistics">
+        <title>Disk I/O statistics for VMs</title>
+        <para>(Supported on KVM)</para>
+        <para>The disk I/O statistics for virtual machines, including read/write (bytes and I/O requests)
+          are collected and save in the database from &PRODUCT; 4.2. The data are also managed by 
+          &PRODUCT; Usage Server. You can get the statistics through listUsageRecords API call. </para>
+        <para>This functionality is supported from libvirt 0.9.4. </para>
+      </section>
+      <section id="vm-disk-throttling">
+        <title>Disk I/O throttling for VMs</title>
+        <para>(Supported on KVM)</para>
+        <para>In &PRODUCT; 4.2, you can limit the read/write rate (bytes and I/O requests per second)
+          at user's virtual machines. This is useful to deduce the mutual influence between the 
+          virtual machines running on the same storage device.</para>
+        <para>This functionality is supported from libvirt 0.9.8 and QEMU 1.1.0.</para>
+      </section>
     </section>
     <section id="ops">
       <title>Monitoring, Maintenance, and Operations Enhancements</title>
