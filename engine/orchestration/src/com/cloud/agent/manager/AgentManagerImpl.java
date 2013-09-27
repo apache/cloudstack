@@ -99,7 +99,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
+import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.HypervisorVersionChangedException;
@@ -1448,7 +1448,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             try {
                 List<Long> behindAgents = findAgentsBehindOnPing();
                 for (Long agentId : behindAgents) {
-                    SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+                    SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
                     sc.addAnd(sc.getEntity().getId(), Op.EQ, agentId);
                     HostVO h = sc.find();
                     if (h != null) {
@@ -1470,7 +1470,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     }
                 }
 
-                SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+                SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
                 sc.addAnd(sc.getEntity().getResourceState(), Op.IN, ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
                 List<HostVO> hosts = sc.list();
 

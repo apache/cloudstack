@@ -89,7 +89,7 @@ import com.cloud.utils.Profiler;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
+import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.nio.Link;
@@ -783,7 +783,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     public void startRebalanceAgents() {
         s_logger.debug("Management server " + _nodeId + " is asking other peers to rebalance their agents");
         List<ManagementServerHostVO> allMS = _mshostDao.listBy(ManagementServerHost.State.Up);
-        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+        SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
         sc.addAnd(sc.getEntity().getManagementServerId(), Op.NNULL);
         sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
         List<HostVO> allManagedAgents = sc.list();
@@ -1369,7 +1369,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         profilerAgentLB.start();
         //initiate agent lb task will be scheduled and executed only once, and only when number of agents loaded exceeds _connectedAgentsThreshold
         if (EnableLB.value() && !_agentLbHappened) {
-            SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+            SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
             sc.addAnd(sc.getEntity().getManagementServerId(), Op.NNULL);
             sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
             List<HostVO> allManagedRoutingAgents = sc.list();

@@ -62,7 +62,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
+import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.xmlobject.XmlObject;
@@ -132,7 +132,7 @@ public class UcsManagerImpl implements UcsManager {
 		}
 
     	private void syncBlades(UcsManagerVO mgr) {
-    		SearchCriteriaService<UcsBladeVO, UcsBladeVO> q = SearchCriteria2.create(UcsBladeVO.class);
+    		SearchCriteria2<UcsBladeVO, UcsBladeVO> q = SearchCriteria2.create(UcsBladeVO.class);
     		q.addAnd(q.getEntity().getUcsManagerId(), Op.EQ, mgr.getId());
     		List<UcsBladeVO> pblades = q.list();
     		if (pblades.isEmpty()) {
@@ -210,7 +210,7 @@ public class UcsManagerImpl implements UcsManager {
     @Override
     @DB
     public UcsManagerResponse addUcsManager(AddUcsManagerCmd cmd) {
-        SearchCriteriaService<UcsManagerVO, UcsManagerVO> q = SearchCriteria2.create(UcsManagerVO.class);
+        SearchCriteria2<UcsManagerVO, UcsManagerVO> q = SearchCriteria2.create(UcsManagerVO.class);
         q.addAnd(q.getEntity().getUrl(), Op.EQ, cmd.getUrl());
         UcsManagerVO mgrvo = q.find();
         if (mgrvo != null) {
@@ -342,7 +342,7 @@ public class UcsManagerImpl implements UcsManager {
 
     @Override
     public UcsBladeResponse associateProfileToBlade(AssociateUcsProfileToBladeCmd cmd) {
-        SearchCriteriaService<UcsBladeVO, UcsBladeVO> q = SearchCriteria2.create(UcsBladeVO.class);
+        SearchCriteria2<UcsBladeVO, UcsBladeVO> q = SearchCriteria2.create(UcsBladeVO.class);
         q.addAnd(q.getEntity().getUcsManagerId(), Op.EQ, cmd.getUcsManagerId());
         q.addAnd(q.getEntity().getId(), Op.EQ, cmd.getBladeId());
         UcsBladeVO bvo = q.find();
@@ -424,7 +424,7 @@ public class UcsManagerImpl implements UcsManager {
             return response;
     	}
     	
-        SearchCriteriaService<UcsManagerVO, UcsManagerVO> serv = SearchCriteria2.create(UcsManagerVO.class);
+        SearchCriteria2<UcsManagerVO, UcsManagerVO> serv = SearchCriteria2.create(UcsManagerVO.class);
         serv.addAnd(serv.getEntity().getZoneId(), Op.EQ, cmd.getZoneId());
         List<UcsManagerVO> vos = serv.list();
 
@@ -454,7 +454,7 @@ public class UcsManagerImpl implements UcsManager {
     
     @Override
     public ListResponse<UcsBladeResponse> listUcsBlades(ListUcsBladeCmd cmd) {
-        SearchCriteriaService<UcsBladeVO, UcsBladeVO> serv = SearchCriteria2.create(UcsBladeVO.class);
+        SearchCriteria2<UcsBladeVO, UcsBladeVO> serv = SearchCriteria2.create(UcsBladeVO.class);
         serv.addAnd(serv.getEntity().getUcsManagerId(), Op.EQ, cmd.getUcsManagerId());
         List<UcsBladeVO> vos = serv.list();
         
@@ -509,7 +509,7 @@ public class UcsManagerImpl implements UcsManager {
 
 	@Override
 	public void deleteUcsManager(Long id) {
-        SearchCriteriaService<UcsBladeVO, UcsBladeVO> serv = SearchCriteria2.create(UcsBladeVO.class);
+        SearchCriteria2<UcsBladeVO, UcsBladeVO> serv = SearchCriteria2.create(UcsBladeVO.class);
         serv.addAnd(serv.getEntity().getUcsManagerId(), Op.EQ, id);
         List<UcsBladeVO> vos = serv.list();
         for (UcsBladeVO vo : vos) {

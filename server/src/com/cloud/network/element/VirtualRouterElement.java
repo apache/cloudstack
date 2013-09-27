@@ -82,7 +82,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
+import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -969,7 +969,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         Long nspId = cmd.getNspId();
         Boolean enabled = cmd.getEnabled();
 
-        SearchCriteriaService<VirtualRouterProviderVO, VirtualRouterProviderVO> sc = SearchCriteria2.create(VirtualRouterProviderVO.class);
+        SearchCriteria2<VirtualRouterProviderVO, VirtualRouterProviderVO> sc = SearchCriteria2.create(VirtualRouterProviderVO.class);
         if (id != null) {
             sc.addAnd(sc.getEntity().getId(), Op.EQ, id);
         }

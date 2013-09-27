@@ -119,7 +119,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
+import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -1693,7 +1693,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     }
 
     protected HostVO findConsoleProxyHostByName(String name) {
-        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+        SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
         sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.ConsoleProxy);
         sc.addAnd(sc.getEntity().getName(), Op.EQ, name);
         return sc.find();

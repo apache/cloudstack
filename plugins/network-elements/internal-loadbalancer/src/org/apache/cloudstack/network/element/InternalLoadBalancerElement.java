@@ -75,7 +75,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
+import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
@@ -509,7 +509,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     @Override
     public List<? extends VirtualRouterProvider> searchForInternalLoadBalancerElements(Long id, Long ntwkSvsProviderId, Boolean enabled) {
 
-        SearchCriteriaService<VirtualRouterProviderVO, VirtualRouterProviderVO> sc = SearchCriteria2.create(VirtualRouterProviderVO.class);
+        SearchCriteria2<VirtualRouterProviderVO, VirtualRouterProviderVO> sc = SearchCriteria2.create(VirtualRouterProviderVO.class);
         if (id != null) {
             sc.addAnd(sc.getEntity().getId(), Op.EQ, id);
         }

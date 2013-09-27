@@ -38,7 +38,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteriaService;
+import com.cloud.utils.db.SearchCriteria2;
 
 @Component
 @Local(value=AgentLoadBalancerPlanner.class)
@@ -49,7 +49,7 @@ public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements
     
     @Override
     public List<HostVO> getHostsToRebalance(long msId, int avLoad) {
-    	SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+    	SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
     	sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
     	sc.addAnd(sc.getEntity().getManagementServerId(), Op.EQ, msId);
         List<HostVO> allHosts = sc.list();

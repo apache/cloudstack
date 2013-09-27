@@ -24,8 +24,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.utils.Pair;
-import com.cloud.utils.db.GenericSearchBuilder.Condition;
-import com.cloud.utils.db.GenericSearchBuilder.Select;
+import com.cloud.utils.db.SearchBase.Condition;
+import com.cloud.utils.db.SearchBase.Select;
 
 /**
  * big joins or high performance searches, it is much better to

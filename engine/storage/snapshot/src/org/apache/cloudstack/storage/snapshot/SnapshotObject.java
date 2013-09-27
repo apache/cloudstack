@@ -44,7 +44,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
+import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -104,7 +104,7 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public SnapshotInfo getChild() {
-        SearchCriteriaService<SnapshotDataStoreVO, SnapshotDataStoreVO> sc = SearchCriteria2
+        SearchCriteria2<SnapshotDataStoreVO, SnapshotDataStoreVO> sc = SearchCriteria2
                 .create(SnapshotDataStoreVO.class);
         sc.addAnd(sc.getEntity().getDataStoreId(), Op.EQ, this.store.getId());
         sc.addAnd(sc.getEntity().getRole(), Op.EQ, this.store.getRole());

@@ -31,7 +31,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
+import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.UpdateBuilder;
 
 @Component
@@ -50,7 +50,7 @@ public class TemplatePrimaryDataStoreDaoImpl extends GenericDaoBase<TemplatePrim
 
     @Override
     public TemplatePrimaryDataStoreVO findByTemplateIdAndPoolId(long templateId, long poolId) {
-        SearchCriteriaService<TemplatePrimaryDataStoreVO, TemplatePrimaryDataStoreVO> sc = SearchCriteria2
+        SearchCriteria2<TemplatePrimaryDataStoreVO, TemplatePrimaryDataStoreVO> sc = SearchCriteria2
                 .create(TemplatePrimaryDataStoreVO.class);
         sc.addAnd(sc.getEntity().getTemplateId(), Op.EQ, templateId);
         sc.addAnd(sc.getEntity().getPoolId(), Op.EQ, poolId);
@@ -59,7 +59,7 @@ public class TemplatePrimaryDataStoreDaoImpl extends GenericDaoBase<TemplatePrim
 
     @Override
     public TemplatePrimaryDataStoreVO findByTemplateIdAndPoolIdAndReady(long templateId, long poolId) {
-        SearchCriteriaService<TemplatePrimaryDataStoreVO, TemplatePrimaryDataStoreVO> sc = SearchCriteria2
+        SearchCriteria2<TemplatePrimaryDataStoreVO, TemplatePrimaryDataStoreVO> sc = SearchCriteria2
                 .create(TemplatePrimaryDataStoreVO.class);
         sc.addAnd(sc.getEntity().getTemplateId(), Op.EQ, templateId);
         sc.addAnd(sc.getEntity().getPoolId(), Op.EQ, poolId);

@@ -26,7 +26,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
+import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.*;
@@ -79,7 +79,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
     }
 
     protected List<DataStore> getCacheStores() {
-        SearchCriteriaService<ImageStoreVO, ImageStoreVO> sc = SearchCriteria2.create(ImageStoreVO.class);
+        SearchCriteria2<ImageStoreVO, ImageStoreVO> sc = SearchCriteria2.create(ImageStoreVO.class);
         sc.addAnd(sc.getEntity().getRole(), SearchCriteria.Op.EQ, DataStoreRole.ImageCache);
         List<ImageStoreVO> imageStoreVOs = sc.list();
         List<DataStore> stores = new ArrayList<DataStore>();

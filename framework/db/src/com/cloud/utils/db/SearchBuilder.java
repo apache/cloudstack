@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.utils.db;
 
-import java.util.Map;
 
 /**
  * SearchBuilder is meant as a static query construct.  Often times in DAO code,
@@ -58,7 +57,7 @@ import java.util.Map;
 public class SearchBuilder<T> extends GenericSearchBuilder<T, T> {
     
     @SuppressWarnings("unchecked")
-    public SearchBuilder(T entity, Map<String, Attribute> attrs) {
-        super(entity, (Class<T>)entity.getClass(), attrs);
+    public SearchBuilder(Class<T> entityType) {
+        super(entityType, entityType);
     }
 }

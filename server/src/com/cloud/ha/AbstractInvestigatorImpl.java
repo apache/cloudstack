@@ -40,7 +40,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteriaService;
+import com.cloud.utils.db.SearchCriteria2;
 
 public abstract class AbstractInvestigatorImpl extends AdapterBase implements Investigator {
     private static final Logger s_logger = Logger.getLogger(AbstractInvestigatorImpl.class);
@@ -68,7 +68,7 @@ public abstract class AbstractInvestigatorImpl extends AdapterBase implements In
     
     // Host.status is up and Host.type is routing
     protected List<Long> findHostByPod(long podId, Long excludeHostId) {
-    	SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+    	SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
         sc.addAnd(sc.getEntity().getType(), Op.EQ, Type.Routing);
         sc.addAnd(sc.getEntity().getPodId(), Op.EQ, podId);
         sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
