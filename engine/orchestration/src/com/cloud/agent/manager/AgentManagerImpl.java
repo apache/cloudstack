@@ -1449,7 +1449,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 List<Long> behindAgents = findAgentsBehindOnPing();
                 for (Long agentId : behindAgents) {
                     GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
-                    sc.addAnd(sc.getEntity().getId(), Op.EQ, agentId);
+                    sc.and(sc.entity().getId(), Op.EQ, agentId);
                     HostVO h = sc.find();
                     if (h != null) {
                         ResourceState resourceState = h.getResourceState();
@@ -1471,7 +1471,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 }
 
                 GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
-                sc.addAnd(sc.getEntity().getResourceState(), Op.IN, ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
+                sc.and(sc.entity().getResourceState(), Op.IN, ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
                 List<HostVO> hosts = sc.list();
 
                 for (HostVO host : hosts) {

@@ -133,7 +133,7 @@ public class UcsManagerImpl implements UcsManager {
 
     	private void syncBlades(UcsManagerVO mgr) {
     		GenericQueryBuilder<UcsBladeVO, UcsBladeVO> q = GenericQueryBuilder.create(UcsBladeVO.class);
-    		q.addAnd(q.getEntity().getUcsManagerId(), Op.EQ, mgr.getId());
+    		q.and(q.entity().getUcsManagerId(), Op.EQ, mgr.getId());
     		List<UcsBladeVO> pblades = q.list();
     		if (pblades.isEmpty()) {
     			return;
@@ -211,7 +211,7 @@ public class UcsManagerImpl implements UcsManager {
     @DB
     public UcsManagerResponse addUcsManager(AddUcsManagerCmd cmd) {
         GenericQueryBuilder<UcsManagerVO, UcsManagerVO> q = GenericQueryBuilder.create(UcsManagerVO.class);
-        q.addAnd(q.getEntity().getUrl(), Op.EQ, cmd.getUrl());
+        q.and(q.entity().getUrl(), Op.EQ, cmd.getUrl());
         UcsManagerVO mgrvo = q.find();
         if (mgrvo != null) {
             throw new IllegalArgumentException(String.format("duplicate UCS manager. url[%s] is used by another UCS manager already", cmd.getUrl()));
@@ -343,8 +343,8 @@ public class UcsManagerImpl implements UcsManager {
     @Override
     public UcsBladeResponse associateProfileToBlade(AssociateUcsProfileToBladeCmd cmd) {
         GenericQueryBuilder<UcsBladeVO, UcsBladeVO> q = GenericQueryBuilder.create(UcsBladeVO.class);
-        q.addAnd(q.getEntity().getUcsManagerId(), Op.EQ, cmd.getUcsManagerId());
-        q.addAnd(q.getEntity().getId(), Op.EQ, cmd.getBladeId());
+        q.and(q.entity().getUcsManagerId(), Op.EQ, cmd.getUcsManagerId());
+        q.and(q.entity().getId(), Op.EQ, cmd.getBladeId());
         UcsBladeVO bvo = q.find();
         if (bvo == null) {
             throw new IllegalArgumentException(String.format("cannot find UCS blade[id:%s, ucs manager id:%s]", cmd.getBladeId(), cmd.getUcsManagerId()));
@@ -425,7 +425,7 @@ public class UcsManagerImpl implements UcsManager {
     	}
     	
         GenericQueryBuilder<UcsManagerVO, UcsManagerVO> serv = GenericQueryBuilder.create(UcsManagerVO.class);
-        serv.addAnd(serv.getEntity().getZoneId(), Op.EQ, cmd.getZoneId());
+        serv.and(serv.entity().getZoneId(), Op.EQ, cmd.getZoneId());
         List<UcsManagerVO> vos = serv.list();
 
         for (UcsManagerVO vo : vos) {
@@ -455,7 +455,7 @@ public class UcsManagerImpl implements UcsManager {
     @Override
     public ListResponse<UcsBladeResponse> listUcsBlades(ListUcsBladeCmd cmd) {
         GenericQueryBuilder<UcsBladeVO, UcsBladeVO> serv = GenericQueryBuilder.create(UcsBladeVO.class);
-        serv.addAnd(serv.getEntity().getUcsManagerId(), Op.EQ, cmd.getUcsManagerId());
+        serv.and(serv.entity().getUcsManagerId(), Op.EQ, cmd.getUcsManagerId());
         List<UcsBladeVO> vos = serv.list();
         
         List<UcsBladeResponse> rsps = new ArrayList<UcsBladeResponse>(vos.size());
@@ -510,7 +510,7 @@ public class UcsManagerImpl implements UcsManager {
 	@Override
 	public void deleteUcsManager(Long id) {
         GenericQueryBuilder<UcsBladeVO, UcsBladeVO> serv = GenericQueryBuilder.create(UcsBladeVO.class);
-        serv.addAnd(serv.getEntity().getUcsManagerId(), Op.EQ, id);
+        serv.and(serv.entity().getUcsManagerId(), Op.EQ, id);
         List<UcsBladeVO> vos = serv.list();
         for (UcsBladeVO vo : vos) {
         	bladeDao.remove(vo.getId());

@@ -85,7 +85,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.VirtualRouterProvider;
-import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
+import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -506,7 +506,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
                 if (provider == null) {
                     throw new CloudRuntimeException("Cannot find service provider " + typeString + " in physical network " + physicalNetworkId);
                 }
-                VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), VirtualRouterProviderType.ElasticLoadBalancerVm);
+                VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), Type.ElasticLoadBalancerVm);
                 if (vrProvider == null) {
                     throw new CloudRuntimeException("Cannot find virtual router provider " + typeString + " as service provider " + provider.getId());
                 }

@@ -66,23 +66,21 @@ public class GenericQueryBuilder<T, K> extends SearchBase<T, K> {
         _specifiedAttrs.clear();
     }
 
-    private void setParameters(String conditionName, Object... params) {
-        assert _conditions.contains(new Condition(conditionName)) : "Couldn't find " + conditionName;
-        _params.put(conditionName, params);
-    }
-
-    public void addAnd(Object useless, Op op, Object... values) {
+    public void and(Object useless, Op op, Object... values) {
         String uuid = UUID.randomUUID().toString();
-        constructCondition(uuid, " AND ", _specifiedAttrs.get(0), op);
-        setParameters(uuid, values);
+        Condition condition = constructCondition(uuid, " AND ", _specifiedAttrs.get(0), op);
+        condition.setPresets(values);
     }
 
+    @SuppressWarnings("unchecked")
     public List<K> list() {
         finalize();
-        SearchCriteria sc1 = create();
         if (isSelectAll()) {
+            @SuppressWarnings("rawtypes")
+            SearchCriteria sc1 = create();
             return (List<K>)_dao.search(sc1, null);
         } else {
+            SearchCriteria<K> sc1 = create();
             return _dao.customSearch(sc1, null);
         }
     }
@@ -91,60 +89,13 @@ public class GenericQueryBuilder<T, K> extends SearchBase<T, K> {
         return _selects == null || _selects.size() == 0;
     }
 
-    public T getEntity() {
-        return _entity;
-    }
-
+    @SuppressWarnings("unchecked")
     public K find() {
-        assert isSelectAll() : "find doesn't support select search";
         finalize();
+        @SuppressWarnings("rawtypes")
         SearchCriteria sc1 = create();
         return (K)_dao.findOneBy(sc1);
     }
 
-    public Preset and(Object useless, Op op) {
-        Condition condition = constructCondition(UUID.randomUUID().toString(), " AND ", _specifiedAttrs.get(0), op);
-        return new Preset(this, condition);
-    }
-
-    public Preset where(Object useless, Op op) {
-        return and(useless, op);
-    }
-
-    public Preset left(Object useless, Op op) {
-        Condition condition = constructCondition(UUID.randomUUID().toString(), " ( ", _specifiedAttrs.get(0), op);
-        return new Preset(this, condition);
-    }
-
-    public Preset op(Object useless, Op op) {
-        return left(useless, op);
-    }
-
-    public Preset openParen(Object useless, Op op) {
-        return left(useless, op);
-    }
-
-    public Preset or(Object useless, Op op) {
-        Condition condition = constructCondition(UUID.randomUUID().toString(), " OR ", _specifiedAttrs.get(0), op);
-        return new Preset(this, condition);
-    }
-
-    public class Preset {
-        GenericQueryBuilder<T, K> builder;
-        Condition condition;
-
-        protected Preset(GenericQueryBuilder<T, K> builder, Condition condition) {
-            this.builder = builder;
-            this.condition = condition;
-        }
-
-        public GenericQueryBuilder<T, K> values(Object... params) {
-            if (condition.op.getParams() > 0 && condition.op.params != params.length) {
-                throw new RuntimeException("The # of parameters set " + params.length + " does not match # of parameters required by " + condition.op);
-            }
-            condition.setPresets(params);
-            return builder;
-        }
-    }
 
 }

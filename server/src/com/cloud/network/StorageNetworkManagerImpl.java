@@ -340,7 +340,7 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
     @Override
     public boolean isStorageIpRangeAvailable(long zoneId) {
         GenericQueryBuilder<StorageNetworkIpRangeVO, StorageNetworkIpRangeVO> sc = GenericQueryBuilder.create(StorageNetworkIpRangeVO.class);
-        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, zoneId);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, zoneId);
         List<StorageNetworkIpRangeVO> entries = sc.list();
         return entries.size() > 0;
     }

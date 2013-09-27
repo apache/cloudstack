@@ -140,12 +140,11 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.GenericQueryBuilder;
-import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -2256,27 +2255,27 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public List<HostVO> findDirectlyConnectedHosts() {
         /* The resource column is not null for direct connected resource */
-        GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getResource(), Op.NNULL);
-        sc.addAnd(sc.getEntity().getResourceState(), Op.NIN, ResourceState.Disabled);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getResource(), Op.NNULL);
+        sc.and(sc.entity().getResourceState(), Op.NIN, ResourceState.Disabled);
         return sc.list();
     }
 
     @Override
     public List<HostVO> listAllUpAndEnabledHosts(Type type, Long clusterId, Long podId, long dcId) {
-        GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         if (type != null) {
-            sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
+            sc.and(sc.entity().getType(), Op.EQ,type);
         }
         if (clusterId != null) {
-            sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, clusterId);
+            sc.and(sc.entity().getClusterId(), Op.EQ,clusterId);
         }
         if (podId != null) {
-            sc.addAnd(sc.getEntity().getPodId(), Op.EQ, podId);
+            sc.and(sc.entity().getPodId(), Op.EQ,podId);
         }
-        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
-        sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
-        sc.addAnd(sc.getEntity().getResourceState(), Op.EQ, ResourceState.Enabled);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
+        sc.and(sc.entity().getStatus(), Op.EQ,Status.Up);
+        sc.and(sc.entity().getResourceState(), Op.EQ,ResourceState.Enabled);
         return sc.list();
     }
 
@@ -2288,60 +2287,60 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public List<HostVO> findHostByGuid(long dcId, String guid) {
-        GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
-        sc.addAnd(sc.getEntity().getGuid(), Op.EQ, guid);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
+        sc.and(sc.entity().getGuid(), Op.EQ,guid);
         return sc.list();
     }
 
     @Override
     public List<HostVO> listAllHostsInCluster(long clusterId) {
-        GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, clusterId);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getClusterId(), Op.EQ,clusterId);
         return sc.list();
     }
 
     @Override
     public List<HostVO> listHostsInClusterByStatus(long clusterId, Status status) {
-        GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, clusterId);
-        sc.addAnd(sc.getEntity().getStatus(), Op.EQ, status);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getClusterId(), Op.EQ,clusterId);
+        sc.and(sc.entity().getStatus(), Op.EQ,status);
         return sc.list();
     }
 
     @Override
     public List<HostVO> listAllUpAndEnabledHostsInOneZoneByType(Type type, long dcId) {
-        GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
-        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
-        sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
-        sc.addAnd(sc.getEntity().getResourceState(), Op.EQ, ResourceState.Enabled);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getType(), Op.EQ,type);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
+        sc.and(sc.entity().getStatus(), Op.EQ,Status.Up);
+        sc.and(sc.entity().getResourceState(), Op.EQ,ResourceState.Enabled);
         return sc.list();
     }
 
     @Override
     public List<HostVO> listAllNotInMaintenanceHostsInOneZone(Type type, Long dcId) {
-        GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         if (dcId != null) {
-            sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+            sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
         }
-        sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
-        sc.addAnd(sc.getEntity().getResourceState(), Op.NIN, ResourceState.Maintenance, ResourceState.ErrorInMaintenance, ResourceState.PrepareForMaintenance, ResourceState.Error);
+        sc.and(sc.entity().getType(), Op.EQ,type);
+        sc.and(sc.entity().getResourceState(), Op.NIN, ResourceState.Maintenance, ResourceState.ErrorInMaintenance, ResourceState.PrepareForMaintenance, ResourceState.Error);
         return sc.list();
     }
 
     @Override
     public List<HostVO> listAllHostsInOneZoneByType(Type type, long dcId) {
-        GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
-        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getType(), Op.EQ,type);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
         return sc.list();
     }
 
     @Override
     public List<HostVO> listAllHostsInAllZonesByType(Type type) {
-        GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getType(), Op.EQ,type);
         return sc.list();
     }
 
@@ -2370,15 +2369,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public HostVO findHostByGuid(String guid) {
-        GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getGuid(), Op.EQ, guid);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getGuid(), Op.EQ,guid);
         return sc.find();
     }
 
     @Override
     public HostVO findHostByName(String name) {
-        GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getName(), Op.EQ, name);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getName(), Op.EQ,name);
         return sc.find();
     }
 
@@ -2449,11 +2448,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public List<HostVO> listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType type, long dcId) {
-        GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getHypervisorType(), Op.EQ, type);
-        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
-        sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
-        sc.addAnd(sc.getEntity().getResourceState(), Op.EQ, ResourceState.Enabled);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getHypervisorType(), Op.EQ,type);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
+        sc.and(sc.entity().getStatus(), Op.EQ,Status.Up);
+        sc.and(sc.entity().getResourceState(), Op.EQ,ResourceState.Enabled);
         return sc.list();
     }
 

@@ -22,14 +22,21 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.*;
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -42,9 +49,8 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.GenericQueryBuilder;
-import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -83,19 +89,19 @@ public class SnapshotObject implements SnapshotInfo {
     }
 
     public DataStore getStore() {
-        return this.store;
+        return store;
     }
 
     @Override
     public SnapshotInfo getParent() {
 
-        SnapshotDataStoreVO snapStoreVO = this.snapshotStoreDao.findByStoreSnapshot(this.store.getRole(),
-                this.store.getId(), this.snapshot.getId());
+        SnapshotDataStoreVO snapStoreVO = snapshotStoreDao.findByStoreSnapshot(store.getRole(),
+                store.getId(), snapshot.getId());
         Long parentId = null;
         if (snapStoreVO != null) {
             parentId = snapStoreVO.getParentSnapshotId();
             if (parentId != null && parentId != 0) {
-                return this.snapshotFactory.getSnapshot(parentId, store);
+                return snapshotFactory.getSnapshot(parentId, store);
             }
         }
 
@@ -104,42 +110,41 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public SnapshotInfo getChild() {
-        GenericQueryBuilder<SnapshotDataStoreVO, SnapshotDataStoreVO> sc = GenericQueryBuilder
-                .create(SnapshotDataStoreVO.class);
-        sc.addAnd(sc.getEntity().getDataStoreId(), Op.EQ, this.store.getId());
-        sc.addAnd(sc.getEntity().getRole(), Op.EQ, this.store.getRole());
-        sc.addAnd(sc.getEntity().getState(), Op.NIN, State.Destroying, State.Destroyed, State.Error);
-        sc.addAnd(sc.getEntity().getParentSnapshotId(), Op.EQ, this.getId());
+        QueryBuilder<SnapshotDataStoreVO> sc = QueryBuilder.create(SnapshotDataStoreVO.class);
+        sc.and(sc.entity().getDataStoreId(), Op.EQ,store.getId());
+        sc.and(sc.entity().getRole(), Op.EQ,store.getRole());
+        sc.and(sc.entity().getState(), Op.NIN, State.Destroying, State.Destroyed, State.Error);
+        sc.and(sc.entity().getParentSnapshotId(), Op.EQ,getId());
         SnapshotDataStoreVO vo = sc.find();
         if (vo == null) {
             return null;
         }
-        return this.snapshotFactory.getSnapshot(vo.getId(), store);
+        return snapshotFactory.getSnapshot(vo.getId(), store);
     }
 
     @Override
     public VolumeInfo getBaseVolume() {
-        return volFactory.getVolume(this.snapshot.getVolumeId());
+        return volFactory.getVolume(snapshot.getVolumeId());
     }
 
     @Override
     public long getId() {
-        return this.snapshot.getId();
+        return snapshot.getId();
     }
 
     @Override
     public String getUri() {
-        return this.snapshot.getUuid();
+        return snapshot.getUuid();
     }
 
     @Override
     public DataStore getDataStore() {
-        return this.store;
+        return store;
     }
 
     @Override
     public Long getSize() {
-        return this.snapshot.getSize();
+        return snapshot.getSize();
     }
 
     @Override
@@ -149,7 +154,7 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public String getUuid() {
-        return this.snapshot.getUuid();
+        return snapshot.getUuid();
     }
 
     @Override
@@ -168,17 +173,17 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public long getAccountId() {
-        return this.snapshot.getAccountId();
+        return snapshot.getAccountId();
     }
 
     @Override
     public long getVolumeId() {
-        return this.snapshot.getVolumeId();
+        return snapshot.getVolumeId();
     }
 
     @Override
     public String getPath() {
-        DataObjectInStore objectInStore = this.objectInStoreMgr.findObject(this, getDataStore());
+        DataObjectInStore objectInStore = objectInStoreMgr.findObject(this, getDataStore());
         if (objectInStore != null) {
             return objectInStore.getInstallPath();
         }
@@ -187,60 +192,60 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public String getName() {
-        return this.snapshot.getName();
+        return snapshot.getName();
     }
 
     @Override
     public Date getCreated() {
-        return this.snapshot.getCreated();
+        return snapshot.getCreated();
     }
 
     @Override
     public Type getRecurringType() {
-        return this.snapshot.getRecurringType();
+        return snapshot.getRecurringType();
     }
 
     @Override
     public State getState() {
-        return this.snapshot.getState();
+        return snapshot.getState();
     }
 
     @Override
     public HypervisorType getHypervisorType() {
-        return this.snapshot.getHypervisorType();
+        return snapshot.getHypervisorType();
     }
 
     @Override
     public boolean isRecursive() {
-        return this.snapshot.isRecursive();
+        return snapshot.isRecursive();
     }
 
     @Override
     public short getsnapshotType() {
-        return this.snapshot.getsnapshotType();
+        return snapshot.getsnapshotType();
     }
 
     @Override
     public long getDomainId() {
-        return this.snapshot.getDomainId();
+        return snapshot.getDomainId();
     }
 
     @Override
     public Long getDataCenterId() {
-        return this.snapshot.getDataCenterId();
+        return snapshot.getDataCenterId();
     }
 
     public void processEvent(Snapshot.Event event) throws NoTransitionException {
-        stateMachineMgr.processEvent(this.snapshot, event);
+        stateMachineMgr.processEvent(snapshot, event);
     }
 
     public SnapshotVO getSnapshotVO() {
-        return this.snapshot;
+        return snapshot;
     }
 
     @Override
     public DataTO getTO() {
-        DataTO to = this.store.getDriver().getTO(this);
+        DataTO to = store.getDriver().getTO(this);
         if (to == null) {
             return new SnapshotObjectTO(this);
         }
@@ -250,28 +255,28 @@ public class SnapshotObject implements SnapshotInfo {
     @Override
     public void processEvent(ObjectInDataStoreStateMachine.Event event, Answer answer) {
         try {
-            SnapshotDataStoreVO snapshotStore = this.snapshotStoreDao.findByStoreSnapshot(
-                    this.getDataStore().getRole(), this.getDataStore().getId(), this.getId());
+            SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findByStoreSnapshot(
+                    getDataStore().getRole(), getDataStore().getId(), getId());
             if (answer instanceof CreateObjectAnswer) {
                 SnapshotObjectTO snapshotTO = (SnapshotObjectTO) ((CreateObjectAnswer) answer).getData();
                 snapshotStore.setInstallPath(snapshotTO.getPath());
-                this.snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
+                snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
             } else if (answer instanceof CopyCmdAnswer) {
                 SnapshotObjectTO snapshotTO = (SnapshotObjectTO) ((CopyCmdAnswer) answer).getNewData();
                 snapshotStore.setInstallPath(snapshotTO.getPath());
                 if (snapshotTO.getParentSnapshotPath() == null) {
                     snapshotStore.setParentSnapshotId(0L);
                 }
-                this.snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
+                snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
                 
                 // update side-effect of snapshot operation
                 if(snapshotTO.getVolume() != null && snapshotTO.getVolume().getPath() != null) {
-                	VolumeVO vol = this.volumeDao.findByUuid(snapshotTO.getVolume().getUuid());
+                	VolumeVO vol = volumeDao.findByUuid(snapshotTO.getVolume().getUuid());
                 	if(vol != null) {
 	                	s_logger.info("Update volume path change due to snapshot operation, volume " + vol.getId() + " path: "
 	                		+ vol.getPath() + "->" + snapshotTO.getVolume().getPath());
 	                	vol.setPath(snapshotTO.getVolume().getPath());
-	                	this.volumeDao.update(vol.getId(), vol);
+	                	volumeDao.update(vol.getId(), vol);
                 	} else {
                 		s_logger.error("Cound't find the original volume with uuid: " + snapshotTO.getVolume().getUuid());
                 	}
@@ -290,13 +295,13 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public void incRefCount() {
-        if (this.store == null) {
+        if (store == null) {
             return;
         }
 
-        if (this.store.getRole() == DataStoreRole.Image || this.store.getRole() == DataStoreRole.ImageCache) {
+        if (store.getRole() == DataStoreRole.Image || store.getRole() == DataStoreRole.ImageCache) {
             SnapshotDataStoreVO store = snapshotStoreDao.findByStoreSnapshot(this.store.getRole(), this.store.getId(),
-                    this.getId());
+                    getId());
             store.incrRefCnt();
             store.setLastUpdated(new Date());
             snapshotStoreDao.update(store.getId(), store);
@@ -305,12 +310,12 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public void decRefCount() {
-        if (this.store == null) {
+        if (store == null) {
             return;
         }
-        if (this.store.getRole() == DataStoreRole.Image || this.store.getRole() == DataStoreRole.ImageCache) {
+        if (store.getRole() == DataStoreRole.Image || store.getRole() == DataStoreRole.ImageCache) {
             SnapshotDataStoreVO store = snapshotStoreDao.findByStoreSnapshot(this.store.getRole(), this.store.getId(),
-                    this.getId());
+                    getId());
             store.decrRefCnt();
             store.setLastUpdated(new Date());
             snapshotStoreDao.update(store.getId(), store);
@@ -319,12 +324,12 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public Long getRefCount() {
-        if (this.store == null) {
+        if (store == null) {
             return null;
         }
-        if (this.store.getRole() == DataStoreRole.Image || this.store.getRole() == DataStoreRole.ImageCache) {
+        if (store.getRole() == DataStoreRole.Image || store.getRole() == DataStoreRole.ImageCache) {
             SnapshotDataStoreVO store = snapshotStoreDao.findByStoreSnapshot(this.store.getRole(), this.store.getId(),
-                    this.getId());
+                    getId());
             return store.getRefCnt();
         }
         return null;
@@ -332,7 +337,7 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public ObjectInDataStoreStateMachine.State getStatus() {
-        return this.objectInStoreMgr.findObject(this, store).getObjectInStoreState();
+        return objectInStoreMgr.findObject(this, store).getObjectInStoreState();
     }
 
     @Override

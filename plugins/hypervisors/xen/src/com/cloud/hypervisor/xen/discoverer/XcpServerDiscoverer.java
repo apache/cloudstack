@@ -127,7 +127,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             _clusterDao.update(cluster.getId(), cluster);
         } catch (EntityExistsException e) {
             GenericQueryBuilder<ClusterVO, ClusterVO> sc = GenericQueryBuilder.create(ClusterVO.class);
-            sc.addAnd(sc.getEntity().getGuid(), Op.EQ, guid);
+            sc.and(sc.entity().getGuid(), Op.EQ, guid);
             List<ClusterVO> clusters = sc.list();
             ClusterVO clu = clusters.get(0);
             List<HostVO> clusterHosts = _resourceMgr.listAllHostsInCluster(clu.getId());

@@ -85,8 +85,8 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
 	@Override
     public boolean prepare(VirtualMachineProfile profile, NicProfile pxeNic, DeployDestination dest, ReservationContext context) {
 	    GenericQueryBuilder<BaremetalPxeVO, BaremetalPxeVO> sc = GenericQueryBuilder.create(BaremetalPxeVO.class);
-        sc.addAnd(sc.getEntity().getDeviceType(), Op.EQ, BaremetalPxeType.PING.toString());
-        sc.addAnd(sc.getEntity().getPodId(), Op.EQ, dest.getPod().getId());
+        sc.and(sc.entity().getDeviceType(), Op.EQ, BaremetalPxeType.PING.toString());
+        sc.and(sc.entity().getPodId(), Op.EQ, dest.getPod().getId());
         BaremetalPxeVO pxeVo = sc.find();
         if (pxeVo == null) {
             throw new CloudRuntimeException("No PING PXE server found in pod: " + dest.getPod().getId() + ", you need to add it before starting VM");

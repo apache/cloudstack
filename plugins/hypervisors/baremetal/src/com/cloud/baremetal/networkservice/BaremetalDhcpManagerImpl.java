@@ -313,7 +313,7 @@ public class BaremetalDhcpManagerImpl extends ManagerBase implements BaremetalDh
 
         GenericQueryBuilder<BaremetalDhcpVO, BaremetalDhcpVO> sc = GenericQueryBuilder.create(BaremetalDhcpVO.class);
         if (cmd.getDeviceType() != null) {
-        	sc.addAnd(sc.getEntity().getDeviceType(), Op.EQ, cmd.getDeviceType());
+        	sc.and(sc.entity().getDeviceType(), Op.EQ, cmd.getDeviceType());
         }
 
         List<BaremetalDhcpVO> vos = sc.list();

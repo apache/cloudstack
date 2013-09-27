@@ -51,21 +51,21 @@ public class StorageNetworkIpRangeDaoImpl extends GenericDaoBase<StorageNetworkI
 	@Override
     public List<StorageNetworkIpRangeVO> listByPodId(long podId) {
 		GenericQueryBuilder<StorageNetworkIpRangeVO, StorageNetworkIpRangeVO> sc = GenericQueryBuilder.create(StorageNetworkIpRangeVO.class);
-	    sc.addAnd(sc.getEntity().getPodId(), Op.EQ, podId);
+	    sc.and(sc.entity().getPodId(), Op.EQ, podId);
 		return sc.list();
     }
 
 	@Override
     public List<StorageNetworkIpRangeVO> listByRangeId(long rangeId) {
 		GenericQueryBuilder<StorageNetworkIpRangeVO, StorageNetworkIpRangeVO> sc = GenericQueryBuilder.create(StorageNetworkIpRangeVO.class);
-	    sc.addAnd(sc.getEntity().getId(), Op.EQ, rangeId);
+	    sc.and(sc.entity().getId(), Op.EQ, rangeId);
 		return sc.list();
     }
 
 	@Override
     public List<StorageNetworkIpRangeVO> listByDataCenterId(long dcId) {
 		GenericQueryBuilder<StorageNetworkIpRangeVO, StorageNetworkIpRangeVO> sc = GenericQueryBuilder.create(StorageNetworkIpRangeVO.class);
-	    sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+	    sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
 		return sc.list();
     }
 	

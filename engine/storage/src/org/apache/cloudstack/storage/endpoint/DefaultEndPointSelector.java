@@ -45,8 +45,8 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -220,12 +220,12 @@ public class DefaultEndPointSelector implements EndPointSelector {
     }
 
     private List<HostVO> listUpAndConnectingSecondaryStorageVmHost(Long dcId) {
-        GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         if (dcId != null) {
-            sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+            sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
         }
-        sc.addAnd(sc.getEntity().getStatus(), Op.IN, com.cloud.host.Status.Up, com.cloud.host.Status.Connecting);
-        sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorageVM);
+        sc.and(sc.entity().getStatus(), Op.IN, Status.Up, Status.Connecting);
+        sc.and(sc.entity().getType(), Op.EQ, Host.Type.SecondaryStorageVM);
         return sc.list();
     }
 
@@ -258,9 +258,9 @@ public class DefaultEndPointSelector implements EndPointSelector {
             endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(),
                     host.getPublicIpAddress()));
         } else if (store.getScope().getScopeType() == ScopeType.CLUSTER) {
-            GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
-            sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, store.getScope().getScopeId());
-            sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
+            QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+            sc.and(sc.entity().getClusterId(), Op.EQ, store.getScope().getScopeId());
+            sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
             List<HostVO> hosts = sc.list();
             for (HostVO host : hosts) {
                 endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(),

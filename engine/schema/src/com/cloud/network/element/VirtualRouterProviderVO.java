@@ -42,7 +42,7 @@ public class VirtualRouterProviderVO implements VirtualRouterProvider {
     
     @Column(name="type")
     @Enumerated(EnumType.STRING)
-    private VirtualRouterProviderType type;
+    private Type type;
     
     @Column(name="enabled")
     private boolean enabled;
@@ -60,7 +60,7 @@ public class VirtualRouterProviderVO implements VirtualRouterProvider {
         this.uuid = UUID.randomUUID().toString();
     }
     
-    public VirtualRouterProviderVO(long nspId, VirtualRouterProviderType type) {
+    public VirtualRouterProviderVO(long nspId, Type type) {
         this.nspId = nspId;
         this.type = type;
         this.uuid = UUID.randomUUID().toString();
@@ -81,7 +81,7 @@ public class VirtualRouterProviderVO implements VirtualRouterProvider {
     }
 
     @Override
-    public VirtualRouterProviderType getType() {
+    public Type getType() {
         return this.type;
     }
     
@@ -106,7 +106,7 @@ public class VirtualRouterProviderVO implements VirtualRouterProvider {
         this.id = id;
     }
 
-    public void setType(VirtualRouterProviderType type) {
+    public void setType(Type type) {
         this.type = type;
     }
 

@@ -19,6 +19,7 @@ package com.cloud.utils.db;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.UUID;
 
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -131,6 +132,11 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
         return this;
     }
 
+    public Preset and(Object useless, Op op) {
+        Condition condition = constructCondition(UUID.randomUUID().toString(), " AND ", _specifiedAttrs.get(0), op);
+        return new Preset(this, condition);
+    }
+
     public GenericSearchBuilder<T, K> and() {
         constructCondition(null, " AND ", null, null);
         return this;
@@ -153,6 +159,10 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
         return and(name, useless, op);
     }
 
+    public Preset where(Object useless, Op op) {
+        return and(useless, op);
+    }
+
     public GenericSearchBuilder<T, K> left(String name, Object useless, Op op) {
         constructCondition(name, " ( ", _specifiedAttrs.get(0), op);
         return this;
@@ -163,8 +173,17 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
         return this;
     }
 
+    public Preset left(Object useless, Op op) {
+        Condition condition = constructCondition(UUID.randomUUID().toString(), " ( ", _specifiedAttrs.get(0), op);
+        return new Preset(this, condition);
+    }
+
     public GenericSearchBuilder<T, K> op(Object useless, Op op, String name) {
         return left(useless, op, name);
+    }
+
+    public Preset op(Object useless, Op op) {
+        return left(useless, op);
     }
 
     public GenericSearchBuilder<T, K> op(String name, Object useless, Op op) {
@@ -179,6 +198,10 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
         return left(name, useless, op);
     }
     
+    public Preset openParen(Object useless, Op op) {
+        return left(useless, op);
+    }
+
     public GroupBy<GenericSearchBuilder<T, K>, T, K> groupBy(Object... useless) {
         assert _groupBy == null : "Can't do more than one group bys";
         GroupBy<GenericSearchBuilder<T, K>, T, K> groupBy = new GroupBy<GenericSearchBuilder<T, K>, T, K>(this);
@@ -203,6 +226,11 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
     public GenericSearchBuilder<T, K> or(Object useless, Op op, String name) {
         constructCondition(name, " OR ", _specifiedAttrs.get(0), op);
         return this;
+    }
+
+    public Preset or(Object useless, Op op) {
+        Condition condition = constructCondition(UUID.randomUUID().toString(), " OR ", _specifiedAttrs.get(0), op);
+        return new Preset(this, condition);
     }
 
     public GenericSearchBuilder<T, K> join(String name, GenericSearchBuilder<?, ?> builder, Object useless, Object useless2, JoinBuilder.JoinType joinType) {
@@ -251,4 +279,21 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
         super.finalize();
     }
     
+    public class Preset {
+        GenericSearchBuilder<T, K> builder;
+        Condition condition;
+
+        protected Preset(GenericSearchBuilder<T, K> builder, Condition condition) {
+            this.builder = builder;
+            this.condition = condition;
+        }
+
+        public GenericSearchBuilder<T, K> values(Object... params) {
+            if (condition.op.getParams() > 0 && condition.op.params != params.length) {
+                throw new RuntimeException("The # of parameters set " + params.length + " does not match # of parameters required by " + condition.op);
+            }
+            condition.setPresets(params);
+            return builder;
+        }
+    }
 }

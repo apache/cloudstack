@@ -92,7 +92,7 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
         Pod pod = dest.getPod();
         if (pod != null && dest.getDataCenter().getNetworkType() == NetworkType.Basic && trafficType == TrafficType.Guest) {
             GenericQueryBuilder<BaremetalPxeVO, BaremetalPxeVO> sc = GenericQueryBuilder.create(BaremetalPxeVO.class);
-            sc.addAnd(sc.getEntity().getPodId(), Op.EQ, pod.getId());
+            sc.and(sc.entity().getPodId(), Op.EQ, pod.getId());
             return sc.find() != null;
         }
         

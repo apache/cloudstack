@@ -75,6 +75,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
@@ -114,9 +115,8 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.GenericQueryBuilder;
-import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -420,9 +420,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         SecStorageFirewallCfgCommand thiscpc = new SecStorageFirewallCfgCommand(true);
         thiscpc.addPortConfig(thisSecStorageVm.getPublicIpAddress(), copyPort, true, TemplateConstants.DEFAULT_TMPLT_COPY_INTF);
 
-        GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorageVM);
-        sc.addAnd(sc.getEntity().getStatus(), Op.IN, com.cloud.host.Status.Up, com.cloud.host.Status.Connecting);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getType(), Op.EQ,Host.Type.SecondaryStorageVM);
+        sc.and(sc.entity().getStatus(), Op.IN, Status.Up, Status.Connecting);
         List<HostVO> ssvms = sc.list();
         for (HostVO ssvm : ssvms) {
             if (ssvm.getId() == ssAHostId) {
@@ -1345,12 +1345,12 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Override
     public List<HostVO> listUpAndConnectingSecondaryStorageVmHost(Long dcId) {
-        GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         if (dcId != null) {
-            sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+            sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
         }
-        sc.addAnd(sc.getEntity().getState(), Op.IN, com.cloud.host.Status.Up, com.cloud.host.Status.Connecting);
-        sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorageVM);
+        sc.and(sc.entity().getState(), Op.IN, Status.Up, Status.Connecting);
+        sc.and(sc.entity().getType(), Op.EQ,Host.Type.SecondaryStorageVM);
         return sc.list();
     }
 

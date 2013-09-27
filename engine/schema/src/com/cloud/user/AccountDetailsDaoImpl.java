@@ -47,7 +47,7 @@ public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long>
     @Override
     public Map<String, String> findDetails(long accountId) {
         GenericQueryBuilder<AccountDetailVO, AccountDetailVO> sc = GenericQueryBuilder.create(AccountDetailVO.class);
-        sc.addAnd(sc.getEntity().getAccountId(), Op.EQ, accountId);
+        sc.and(sc.entity().getAccountId(), Op.EQ, accountId);
         List<AccountDetailVO> results = sc.list();
         Map<String, String> details = new HashMap<String, String>(results.size());
         for (AccountDetailVO r : results) {
@@ -73,8 +73,8 @@ public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long>
     @Override
     public AccountDetailVO findDetail(long accountId, String name) {
         GenericQueryBuilder<AccountDetailVO, AccountDetailVO> sc = GenericQueryBuilder.create(AccountDetailVO.class);
-        sc.addAnd(sc.getEntity().getAccountId(), Op.EQ, accountId);
-        sc.addAnd(sc.getEntity().getName(), Op.EQ, name);
+        sc.and(sc.entity().getAccountId(), Op.EQ, accountId);
+        sc.and(sc.entity().getName(), Op.EQ, name);
         return sc.find();
     }
 

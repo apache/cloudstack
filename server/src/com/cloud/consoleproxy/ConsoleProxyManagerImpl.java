@@ -1694,8 +1694,8 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
 
     protected HostVO findConsoleProxyHostByName(String name) {
         GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.ConsoleProxy);
-        sc.addAnd(sc.getEntity().getName(), Op.EQ, name);
+        sc.and(sc.entity().getType(), Op.EQ, Host.Type.ConsoleProxy);
+        sc.and(sc.entity().getName(), Op.EQ, name);
         return sc.find();
     }
 

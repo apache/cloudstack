@@ -88,8 +88,8 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
     public boolean prepare(VirtualMachineProfile profile, NicProfile nic, DeployDestination dest, ReservationContext context) {
         NetworkVO nwVO = _nwDao.findById(nic.getNetworkId());
         GenericQueryBuilder<BaremetalPxeVO, BaremetalPxeVO> sc = GenericQueryBuilder.create(BaremetalPxeVO.class);
-        sc.addAnd(sc.getEntity().getDeviceType(), Op.EQ, BaremetalPxeType.KICK_START.toString());
-        sc.addAnd(sc.getEntity().getPhysicalNetworkId(), Op.EQ, nwVO.getPhysicalNetworkId());
+        sc.and(sc.entity().getDeviceType(), Op.EQ, BaremetalPxeType.KICK_START.toString());
+        sc.and(sc.entity().getPhysicalNetworkId(), Op.EQ, nwVO.getPhysicalNetworkId());
         BaremetalPxeVO pxeVo = sc.find();
         if (pxeVo == null) {
             throw new CloudRuntimeException("No kickstart PXE server found in pod: " + dest.getPod().getId() + ", you need to add it before starting VM");

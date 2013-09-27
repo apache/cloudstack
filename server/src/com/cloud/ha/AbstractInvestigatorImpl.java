@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -38,16 +37,15 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.db.GenericQueryBuilder;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.GenericQueryBuilder;
 
 public abstract class AbstractInvestigatorImpl extends AdapterBase implements Investigator {
     private static final Logger s_logger = Logger.getLogger(AbstractInvestigatorImpl.class);
 
-    @Inject private HostDao _hostDao = null;
-    @Inject private AgentManager _agentMgr = null;
-    @Inject private ResourceManager _resourceMgr = null;
+    @Inject private final HostDao _hostDao = null;
+    @Inject private final AgentManager _agentMgr = null;
+    @Inject private final ResourceManager _resourceMgr = null;
 
 
     @Override
@@ -68,10 +66,10 @@ public abstract class AbstractInvestigatorImpl extends AdapterBase implements In
     
     // Host.status is up and Host.type is routing
     protected List<Long> findHostByPod(long podId, Long excludeHostId) {
-    	GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getType(), Op.EQ, Type.Routing);
-        sc.addAnd(sc.getEntity().getPodId(), Op.EQ, podId);
-        sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getType(), Op.EQ, Type.Routing);
+        sc.and(sc.entity().getPodId(), Op.EQ, podId);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
         List<HostVO> hosts = sc.list();
         
         List<Long> hostIds = new ArrayList<Long>(hosts.size());

@@ -23,7 +23,7 @@ import javax.ejb.Local;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.element.VirtualRouterProviderVO;
-import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
+import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -46,7 +46,7 @@ public class VirtualRouterProviderDaoImpl extends GenericDaoBase<VirtualRouterPr
     }
 
     @Override
-    public VirtualRouterProviderVO findByNspIdAndType(long nspId, VirtualRouterProviderType type) {
+    public VirtualRouterProviderVO findByNspIdAndType(long nspId, Type type) {
         SearchCriteria<VirtualRouterProviderVO> sc = AllFieldsSearch.create();
         sc.setParameters("nsp_id", nspId);
         sc.setParameters("type", type);
@@ -54,7 +54,7 @@ public class VirtualRouterProviderDaoImpl extends GenericDaoBase<VirtualRouterPr
     }
     
     @Override
-    public List<VirtualRouterProviderVO> listByEnabledAndType(boolean enabled, VirtualRouterProviderType type) {
+    public List<VirtualRouterProviderVO> listByEnabledAndType(boolean enabled, Type type) {
         SearchCriteria<VirtualRouterProviderVO> sc = AllFieldsSearch.create();
         sc.setParameters("enabled", enabled);
         sc.setParameters("type", type);
@@ -62,7 +62,7 @@ public class VirtualRouterProviderDaoImpl extends GenericDaoBase<VirtualRouterPr
     }
     
     @Override
-    public VirtualRouterProviderVO findByIdAndEnabledAndType(long id, boolean enabled, VirtualRouterProviderType type) {
+    public VirtualRouterProviderVO findByIdAndEnabledAndType(long id, boolean enabled, Type type) {
         SearchCriteria<VirtualRouterProviderVO> sc = AllFieldsSearch.create();
         sc.setParameters("id", id);
         sc.setParameters("enabled", enabled);
@@ -71,7 +71,7 @@ public class VirtualRouterProviderDaoImpl extends GenericDaoBase<VirtualRouterPr
     }
 
     @Override
-    public List<VirtualRouterProviderVO> listByType(VirtualRouterProviderType type) {
+    public List<VirtualRouterProviderVO> listByType(Type type) {
         SearchCriteria<VirtualRouterProviderVO> sc = AllFieldsSearch.create();
         sc.setParameters("type", type);
         return listBy(sc);

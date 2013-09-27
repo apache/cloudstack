@@ -52,8 +52,8 @@ public class TemplatePrimaryDataStoreDaoImpl extends GenericDaoBase<TemplatePrim
     public TemplatePrimaryDataStoreVO findByTemplateIdAndPoolId(long templateId, long poolId) {
         GenericQueryBuilder<TemplatePrimaryDataStoreVO, TemplatePrimaryDataStoreVO> sc = GenericQueryBuilder
                 .create(TemplatePrimaryDataStoreVO.class);
-        sc.addAnd(sc.getEntity().getTemplateId(), Op.EQ, templateId);
-        sc.addAnd(sc.getEntity().getPoolId(), Op.EQ, poolId);
+        sc.and(sc.entity().getTemplateId(), Op.EQ, templateId);
+        sc.and(sc.entity().getPoolId(), Op.EQ, poolId);
         return sc.find();
     }
 
@@ -61,9 +61,9 @@ public class TemplatePrimaryDataStoreDaoImpl extends GenericDaoBase<TemplatePrim
     public TemplatePrimaryDataStoreVO findByTemplateIdAndPoolIdAndReady(long templateId, long poolId) {
         GenericQueryBuilder<TemplatePrimaryDataStoreVO, TemplatePrimaryDataStoreVO> sc = GenericQueryBuilder
                 .create(TemplatePrimaryDataStoreVO.class);
-        sc.addAnd(sc.getEntity().getTemplateId(), Op.EQ, templateId);
-        sc.addAnd(sc.getEntity().getPoolId(), Op.EQ, poolId);
-        sc.addAnd(sc.getEntity().getState(), Op.EQ, ObjectInDataStoreStateMachine.State.Ready);
+        sc.and(sc.entity().getTemplateId(), Op.EQ, templateId);
+        sc.and(sc.entity().getPoolId(), Op.EQ, poolId);
+        sc.and(sc.entity().getState(), Op.EQ, ObjectInDataStoreStateMachine.State.Ready);
         return sc.find();
     }
 

@@ -142,10 +142,10 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
         }
 
         GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, clusterId);
-        sc.addAnd(sc.getEntity().getPodId(), Op.EQ, cluster.getPodId());
-        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, cluster.getDataCenterId());
-        sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
+        sc.and(sc.entity().getClusterId(), Op.EQ, clusterId);
+        sc.and(sc.entity().getPodId(), Op.EQ, cluster.getPodId());
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, cluster.getDataCenterId());
+        sc.and(sc.entity().getType(), Op.EQ, Host.Type.Routing);
         List<HostVO> hosts = sc.list();
         if (hosts.isEmpty()) {
             s_logger.debug("There is no host in cluster " + clusterId + ", no need to prepare OCFS2 nodes");

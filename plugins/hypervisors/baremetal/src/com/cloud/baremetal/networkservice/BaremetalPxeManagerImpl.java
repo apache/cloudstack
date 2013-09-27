@@ -223,7 +223,7 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
         GenericQueryBuilder<BaremetalPxeVO, BaremetalPxeVO> sc = GenericQueryBuilder.create(BaremetalPxeVO.class);
         //TODO: handle both kickstart and PING
         //sc.addAnd(sc.getEntity().getPodId(), Op.EQ, vm.getPodIdToDeployIn());
-        sc.addAnd(sc.getEntity().getPhysicalNetworkId(), Op.EQ, phy.getId());
+        sc.and(sc.entity().getPhysicalNetworkId(), Op.EQ, phy.getId());
         BaremetalPxeVO pxeVo = sc.find();
         if (pxeVo == null) {
             throw new CloudRuntimeException("No PXE server found in pod: " + vm.getPodIdToDeployIn() + ", you need to add it before starting VM");
