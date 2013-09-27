@@ -27,7 +27,7 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.GenericQueryBuilder;
 
 public interface UcsManagerDao extends GenericDao<UcsManagerVO, Long> {
 }

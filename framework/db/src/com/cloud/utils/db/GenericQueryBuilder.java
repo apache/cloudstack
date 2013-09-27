@@ -26,21 +26,21 @@ import java.util.UUID;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 
-public class SearchCriteria2<T, K> extends SearchBase<T, K> {
+public class GenericQueryBuilder<T, K> extends SearchBase<T, K> {
     final HashMap<String, Object[]> _params = new HashMap<String, Object[]>();
 
-    protected SearchCriteria2(Class<T> entityType, Class<K> resultType) {
+    protected GenericQueryBuilder(Class<T> entityType, Class<K> resultType) {
         super(entityType, resultType);
     }
 
     @SuppressWarnings("unchecked")
-    static public <T, K> SearchCriteria2<T, K> create(Class<T> entityType, Class<K> resultType) {
+    static public <T, K> GenericQueryBuilder<T, K> create(Class<T> entityType, Class<K> resultType) {
         GenericDao<T, ? extends Serializable> dao = (GenericDao<T, ? extends Serializable>)GenericDaoBase.getDao(entityType);
         assert dao != null : "Can not find DAO for " + entityType.getName();
-        return new SearchCriteria2<T, K>(entityType, resultType);
+        return new GenericQueryBuilder<T, K>(entityType, resultType);
     }
 
-    static public <T> SearchCriteria2<T, T> create(Class<T> entityType) {
+    static public <T> GenericQueryBuilder<T, T> create(Class<T> entityType) {
         return create(entityType, entityType);
     }
 
@@ -130,15 +130,15 @@ public class SearchCriteria2<T, K> extends SearchBase<T, K> {
     }
 
     public class Preset {
-        SearchCriteria2<T, K> builder;
+        GenericQueryBuilder<T, K> builder;
         Condition condition;
 
-        protected Preset(SearchCriteria2<T, K> builder, Condition condition) {
+        protected Preset(GenericQueryBuilder<T, K> builder, Condition condition) {
             this.builder = builder;
             this.condition = condition;
         }
 
-        public SearchCriteria2<T, K> values(Object... params) {
+        public GenericQueryBuilder<T, K> values(Object... params) {
             if (condition.op.getParams() > 0 && condition.op.params != params.length) {
                 throw new RuntimeException("The # of parameters set " + params.length + " does not match # of parameters required by " + condition.op);
             }

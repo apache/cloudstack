@@ -39,8 +39,8 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.GenericQueryBuilder;
+import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -316,7 +316,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     public List<StoragePoolVO> findZoneWideStoragePoolsByTags(long dcId, String[] tags) {
         List<StoragePoolVO> storagePools = null;
         if (tags == null || tags.length == 0) {
-            SearchCriteria2<StoragePoolVO, StoragePoolVO> sc = SearchCriteria2.create(StoragePoolVO.class);
+            GenericQueryBuilder<StoragePoolVO, StoragePoolVO> sc = GenericQueryBuilder.create(StoragePoolVO.class);
             sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
             sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
             sc.addAnd(sc.getEntity().getScope(), Op.EQ, ScopeType.ZONE);
@@ -421,7 +421,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
     @Override
     public List<StoragePoolVO> findZoneWideStoragePoolsByHypervisor(long dataCenterId, HypervisorType hypervisorType) {
-        SearchCriteria2<StoragePoolVO, StoragePoolVO> sc =  SearchCriteria2.create(StoragePoolVO.class);
+        GenericQueryBuilder<StoragePoolVO, StoragePoolVO> sc =  GenericQueryBuilder.create(StoragePoolVO.class);
         sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dataCenterId);
         sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
         sc.addAnd(sc.getEntity().getScope(), Op.EQ, ScopeType.ZONE);

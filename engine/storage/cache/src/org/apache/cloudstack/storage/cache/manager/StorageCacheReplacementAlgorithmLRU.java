@@ -21,8 +21,8 @@ import com.cloud.configuration.Config;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.GenericQueryBuilder;
+import com.cloud.utils.db.GenericQueryBuilder;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -72,7 +72,7 @@ public class StorageCacheReplacementAlgorithmLRU implements StorageCacheReplacem
         cal.add(Calendar.DAY_OF_MONTH, -unusedTimeInterval.intValue());
         Date bef = cal.getTime();
 
-        SearchCriteria2<TemplateDataStoreVO, TemplateDataStoreVO> sc = SearchCriteria2.create(TemplateDataStoreVO.class);
+        GenericQueryBuilder<TemplateDataStoreVO, TemplateDataStoreVO> sc = GenericQueryBuilder.create(TemplateDataStoreVO.class);
         sc.addAnd(sc.getEntity().getLastUpdated(), SearchCriteria.Op.LT, bef);
         sc.addAnd(sc.getEntity().getState(), SearchCriteria.Op.EQ, ObjectInDataStoreStateMachine.State.Ready);
         sc.addAnd(sc.getEntity().getDataStoreId(), SearchCriteria.Op.EQ, store.getId());
@@ -83,7 +83,7 @@ public class StorageCacheReplacementAlgorithmLRU implements StorageCacheReplacem
             return templateFactory.getTemplate(template.getTemplateId(), store);
         }
 
-        SearchCriteria2<VolumeDataStoreVO, VolumeDataStoreVO> volSc = SearchCriteria2.create(VolumeDataStoreVO.class);
+        GenericQueryBuilder<VolumeDataStoreVO, VolumeDataStoreVO> volSc = GenericQueryBuilder.create(VolumeDataStoreVO.class);
         volSc.addAnd(volSc.getEntity().getLastUpdated(), SearchCriteria.Op.LT, bef);
         volSc.addAnd(volSc.getEntity().getState(), SearchCriteria.Op.EQ, ObjectInDataStoreStateMachine.State.Ready);
         volSc.addAnd(volSc.getEntity().getDataStoreId(), SearchCriteria.Op.EQ, store.getId());
@@ -93,7 +93,7 @@ public class StorageCacheReplacementAlgorithmLRU implements StorageCacheReplacem
             return volumeFactory.getVolume(volume.getVolumeId(), store);
         }
 
-        SearchCriteria2<SnapshotDataStoreVO, SnapshotDataStoreVO> snapshotSc = SearchCriteria2.create(SnapshotDataStoreVO.class);
+        GenericQueryBuilder<SnapshotDataStoreVO, SnapshotDataStoreVO> snapshotSc = GenericQueryBuilder.create(SnapshotDataStoreVO.class);
         snapshotSc.addAnd(snapshotSc.getEntity().getLastUpdated(), SearchCriteria.Op.LT, bef);
         snapshotSc.addAnd(snapshotSc.getEntity().getState(), SearchCriteria.Op.EQ, ObjectInDataStoreStateMachine.State.Ready);
         snapshotSc.addAnd(snapshotSc.getEntity().getDataStoreId(), SearchCriteria.Op.EQ, store.getId());

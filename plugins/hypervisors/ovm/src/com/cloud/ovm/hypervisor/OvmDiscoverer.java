@@ -49,7 +49,7 @@ import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 
@@ -90,7 +90,7 @@ public class OvmDiscoverer extends DiscovererBase implements Discoverer,
 	}
 
 	private boolean checkIfExisted(String guid) {
-		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
 		sc.addAnd(sc.getEntity().getGuid(), SearchCriteria.Op.EQ, guid);
 		sc.addAnd(sc.getEntity().getHypervisorType(), SearchCriteria.Op.EQ,
 				HypervisorType.Ovm);

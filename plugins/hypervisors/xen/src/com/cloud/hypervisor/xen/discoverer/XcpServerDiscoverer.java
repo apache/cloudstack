@@ -70,8 +70,8 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.GenericQueryBuilder;
+import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.HypervisorVersionChangedException;
 import com.xensource.xenapi.Connection;
@@ -126,7 +126,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         try {
             _clusterDao.update(cluster.getId(), cluster);
         } catch (EntityExistsException e) {
-            SearchCriteria2<ClusterVO, ClusterVO> sc = SearchCriteria2.create(ClusterVO.class);
+            GenericQueryBuilder<ClusterVO, ClusterVO> sc = GenericQueryBuilder.create(ClusterVO.class);
             sc.addAnd(sc.getEntity().getGuid(), Op.EQ, guid);
             List<ClusterVO> clusters = sc.list();
             ClusterVO clu = clusters.get(0);

@@ -115,8 +115,8 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.GenericQueryBuilder;
+import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -420,7 +420,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         SecStorageFirewallCfgCommand thiscpc = new SecStorageFirewallCfgCommand(true);
         thiscpc.addPortConfig(thisSecStorageVm.getPublicIpAddress(), copyPort, true, TemplateConstants.DEFAULT_TMPLT_COPY_INTF);
 
-        SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+        GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
         sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorageVM);
         sc.addAnd(sc.getEntity().getStatus(), Op.IN, com.cloud.host.Status.Up, com.cloud.host.Status.Connecting);
         List<HostVO> ssvms = sc.list();
@@ -1345,7 +1345,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Override
     public List<HostVO> listUpAndConnectingSecondaryStorageVmHost(Long dcId) {
-        SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+        GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
         if (dcId != null) {
             sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
         }

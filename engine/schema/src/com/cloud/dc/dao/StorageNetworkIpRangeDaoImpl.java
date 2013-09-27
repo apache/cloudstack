@@ -31,8 +31,8 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.GenericQueryBuilder;
+import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 
@@ -50,21 +50,21 @@ public class StorageNetworkIpRangeDaoImpl extends GenericDaoBase<StorageNetworkI
 	
 	@Override
     public List<StorageNetworkIpRangeVO> listByPodId(long podId) {
-		SearchCriteria2<StorageNetworkIpRangeVO, StorageNetworkIpRangeVO> sc = SearchCriteria2.create(StorageNetworkIpRangeVO.class);
+		GenericQueryBuilder<StorageNetworkIpRangeVO, StorageNetworkIpRangeVO> sc = GenericQueryBuilder.create(StorageNetworkIpRangeVO.class);
 	    sc.addAnd(sc.getEntity().getPodId(), Op.EQ, podId);
 		return sc.list();
     }
 
 	@Override
     public List<StorageNetworkIpRangeVO> listByRangeId(long rangeId) {
-		SearchCriteria2<StorageNetworkIpRangeVO, StorageNetworkIpRangeVO> sc = SearchCriteria2.create(StorageNetworkIpRangeVO.class);
+		GenericQueryBuilder<StorageNetworkIpRangeVO, StorageNetworkIpRangeVO> sc = GenericQueryBuilder.create(StorageNetworkIpRangeVO.class);
 	    sc.addAnd(sc.getEntity().getId(), Op.EQ, rangeId);
 		return sc.list();
     }
 
 	@Override
     public List<StorageNetworkIpRangeVO> listByDataCenterId(long dcId) {
-		SearchCriteria2<StorageNetworkIpRangeVO, StorageNetworkIpRangeVO> sc = SearchCriteria2.create(StorageNetworkIpRangeVO.class);
+		GenericQueryBuilder<StorageNetworkIpRangeVO, StorageNetworkIpRangeVO> sc = GenericQueryBuilder.create(StorageNetworkIpRangeVO.class);
 	    sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
 		return sc.list();
     }

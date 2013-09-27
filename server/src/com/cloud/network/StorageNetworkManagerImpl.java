@@ -47,8 +47,8 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.GenericQueryBuilder;
+import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -339,7 +339,7 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
 
     @Override
     public boolean isStorageIpRangeAvailable(long zoneId) {
-        SearchCriteria2<StorageNetworkIpRangeVO, StorageNetworkIpRangeVO> sc = SearchCriteria2.create(StorageNetworkIpRangeVO.class);
+        GenericQueryBuilder<StorageNetworkIpRangeVO, StorageNetworkIpRangeVO> sc = GenericQueryBuilder.create(StorageNetworkIpRangeVO.class);
         sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, zoneId);
         List<StorageNetworkIpRangeVO> entries = sc.list();
         return entries.size() > 0;

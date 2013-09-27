@@ -30,8 +30,8 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.GenericQueryBuilder;
+import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.db.Transaction;
 
 @Local(value = {AccountDetailsDao.class})
@@ -46,7 +46,7 @@ public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long>
 
     @Override
     public Map<String, String> findDetails(long accountId) {
-        SearchCriteria2<AccountDetailVO, AccountDetailVO> sc = SearchCriteria2.create(AccountDetailVO.class);
+        GenericQueryBuilder<AccountDetailVO, AccountDetailVO> sc = GenericQueryBuilder.create(AccountDetailVO.class);
         sc.addAnd(sc.getEntity().getAccountId(), Op.EQ, accountId);
         List<AccountDetailVO> results = sc.list();
         Map<String, String> details = new HashMap<String, String>(results.size());
@@ -72,7 +72,7 @@ public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long>
 
     @Override
     public AccountDetailVO findDetail(long accountId, String name) {
-        SearchCriteria2<AccountDetailVO, AccountDetailVO> sc = SearchCriteria2.create(AccountDetailVO.class);
+        GenericQueryBuilder<AccountDetailVO, AccountDetailVO> sc = GenericQueryBuilder.create(AccountDetailVO.class);
         sc.addAnd(sc.getEntity().getAccountId(), Op.EQ, accountId);
         sc.addAnd(sc.getEntity().getName(), Op.EQ, name);
         return sc.find();

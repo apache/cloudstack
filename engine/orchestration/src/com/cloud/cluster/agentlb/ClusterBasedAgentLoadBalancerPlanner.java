@@ -36,9 +36,9 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.GenericQueryBuilder;
 
 @Component
 @Local(value=AgentLoadBalancerPlanner.class)
@@ -49,7 +49,7 @@ public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements
     
     @Override
     public List<HostVO> getHostsToRebalance(long msId, int avLoad) {
-    	SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+    	GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
     	sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
     	sc.addAnd(sc.getEntity().getManagementServerId(), Op.EQ, msId);
         List<HostVO> allHosts = sc.list();
@@ -59,7 +59,7 @@ public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements
             return null;
         }
         
-        sc = SearchCriteria2.create(HostVO.class);
+        sc = GenericQueryBuilder.create(HostVO.class);
         sc.addAnd(sc.getEntity().getManagementServerId(), Op.EQ, msId);
         sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
         List<HostVO> directHosts = sc.list();

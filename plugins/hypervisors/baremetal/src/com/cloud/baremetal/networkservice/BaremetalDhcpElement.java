@@ -40,8 +40,8 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.GenericQueryBuilder;
+import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.*;
 import com.cloud.vm.VirtualMachine.Type;
@@ -84,7 +84,7 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
     private boolean canHandle(DeployDestination dest, TrafficType trafficType, GuestType networkType) {
         Pod pod = dest.getPod();
         if (pod != null && dest.getDataCenter().getNetworkType() == NetworkType.Basic && trafficType == TrafficType.Guest) {
-            SearchCriteria2<BaremetalDhcpVO, BaremetalDhcpVO> sc = SearchCriteria2.create(BaremetalDhcpVO.class);
+            GenericQueryBuilder<BaremetalDhcpVO, BaremetalDhcpVO> sc = GenericQueryBuilder.create(BaremetalDhcpVO.class);
             sc.addAnd(sc.getEntity().getPodId(), Op.EQ, pod.getId());
             return sc.find() != null;
         }

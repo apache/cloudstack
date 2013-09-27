@@ -68,8 +68,8 @@ import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.GenericQueryBuilder;
+import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
@@ -311,7 +311,7 @@ public class BaremetalDhcpManagerImpl extends ManagerBase implements BaremetalDh
             return responses;
         }
 
-        SearchCriteria2<BaremetalDhcpVO, BaremetalDhcpVO> sc = SearchCriteria2.create(BaremetalDhcpVO.class);
+        GenericQueryBuilder<BaremetalDhcpVO, BaremetalDhcpVO> sc = GenericQueryBuilder.create(BaremetalDhcpVO.class);
         if (cmd.getDeviceType() != null) {
         	sc.addAnd(sc.getEntity().getDeviceType(), Op.EQ, cmd.getDeviceType());
         }

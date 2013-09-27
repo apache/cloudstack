@@ -47,8 +47,8 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.GenericQueryBuilder;
+import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
@@ -91,7 +91,7 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
     private boolean canHandle(DeployDestination dest, TrafficType trafficType, GuestType networkType) {
         Pod pod = dest.getPod();
         if (pod != null && dest.getDataCenter().getNetworkType() == NetworkType.Basic && trafficType == TrafficType.Guest) {
-            SearchCriteria2<BaremetalPxeVO, BaremetalPxeVO> sc = SearchCriteria2.create(BaremetalPxeVO.class);
+            GenericQueryBuilder<BaremetalPxeVO, BaremetalPxeVO> sc = GenericQueryBuilder.create(BaremetalPxeVO.class);
             sc.addAnd(sc.getEntity().getPodId(), Op.EQ, pod.getId());
             return sc.find() != null;
         }

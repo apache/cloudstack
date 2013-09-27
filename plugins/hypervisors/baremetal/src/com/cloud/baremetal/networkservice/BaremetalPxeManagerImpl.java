@@ -63,8 +63,8 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.GenericQueryBuilder;
+import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -220,7 +220,7 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
         }
         PhysicalNetworkVO phy = phys.get(0);
         
-        SearchCriteria2<BaremetalPxeVO, BaremetalPxeVO> sc = SearchCriteria2.create(BaremetalPxeVO.class);
+        GenericQueryBuilder<BaremetalPxeVO, BaremetalPxeVO> sc = GenericQueryBuilder.create(BaremetalPxeVO.class);
         //TODO: handle both kickstart and PING
         //sc.addAnd(sc.getEntity().getPodId(), Op.EQ, vm.getPodIdToDeployIn());
         sc.addAnd(sc.getEntity().getPhysicalNetworkId(), Op.EQ, phy.getId());

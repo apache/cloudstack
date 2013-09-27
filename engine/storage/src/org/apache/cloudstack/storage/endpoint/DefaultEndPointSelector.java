@@ -46,7 +46,7 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -220,7 +220,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     }
 
     private List<HostVO> listUpAndConnectingSecondaryStorageVmHost(Long dcId) {
-        SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+        GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
         if (dcId != null) {
             sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
         }
@@ -258,7 +258,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(),
                     host.getPublicIpAddress()));
         } else if (store.getScope().getScopeType() == ScopeType.CLUSTER) {
-            SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+            GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
             sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, store.getScope().getScopeId());
             sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
             List<HostVO> hosts = sc.list();
