@@ -50,7 +50,7 @@ under the License.
         url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.2.0/html/Admin_Guide/index.html"
         >&PRODUCT; Administrator's Guide</ulink>. Developers and users who wish to work with the API
       will find instruction in the <ulink
-        url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.0.1-incubating/html/API_Developers_Guide/index.html"
+        url="http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.0.2/html/API_Developers_Guide/index.html"
         >&PRODUCT; API Developer's Guide</ulink></para>
     <para>If you find any errors or problems in this guide, please see <xref linkend="feedback"/>.
       We hope you enjoy working with &PRODUCT;!</para>
@@ -151,6 +151,19 @@ under the License.
         <title>IPv6 </title>
         <para>&PRODUCT; 4.2 introduces initial support for IPv6. This feature is provided as a
           technical preview only. Full support is planned for a future release.</para>
+      </section>
+      <section id="advancedsg">
+        <title>Security Groups Isolation in Advanced Zone </title>
+        <para>(Supported on XenServer and KVM)</para>
+        <para>Isolation of VM Traffic is achieved using Security Groups in Basic Zones. For Advanced zone, 
+          traffic can be isolated on a per network basis using VLANs.  Advanced Zones support shared as 
+          well as isolated networks. This functionality uses security group rules to isolate guest VM 
+          within a shared network in advanced zone. And in Advanced zone, VM can be on multiple shared 
+          networks, different NICs of a VM can have different SG sets, says SG works on NIC level in 
+          Advanced zone.</para>
+        <para>This functionality was added to &PRODUCT; 2.2.X and 3.0.X products, but not in &PRODUCT; 4.0.X
+          and 4.1.X products. The users who use this functionality in older verions can upgrade there 
+          platforms to &PRODUCT; 4.2.</para>
       </section>
       <section id="portable-ip">
         <title>Portable IPs</title>
@@ -1678,7 +1691,7 @@ service cloudstack-agent start
           <para>After upgrading to 4.2, API clients are expected to send plain text passwords for
             login and user creation, instead of MD5 hash. Incase, api client changes are not
             acceptable, following changes are to be made for backward compatibility:</para>
-          <para>Modify componentsContext.xml, and make PlainTextUserAuthenticator as the default
+          <para>Modify componentContext.xml, and make PlainTextUserAuthenticator as the default
             authenticator (1st entry in the userAuthenticators adapter list is default)</para>
           <programlisting language="XML">
 &lt;!-- Security adapters --&gt;
@@ -2328,7 +2341,7 @@ service cloudstack-agent start
           <para>After upgrading to 4.2, API clients are expected to send plain text passwords for
             login and user creation, instead of MD5 hash. If API client changes are not acceptable,
             following changes are to be made for backward compatibility:</para>
-          <para>Modify componentsContext.xml, and make PlainTextUserAuthenticator as the default
+          <para>Modify componentContext.xml, and make PlainTextUserAuthenticator as the default
             authenticator (1st entry in the userAuthenticators adapter list is default)</para>
           <programlisting language="XML">
 &lt;!-- Security adapters --&gt;
