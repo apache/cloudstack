@@ -127,6 +127,11 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
         return this;
     }
     
+    public GenericSearchBuilder<T, K> and() {
+        constructCondition(null, " AND ", null, null);
+        return this;
+    }
+
     public GenericSearchBuilder<T, K> and(Object useless, Op op, String name) {
         constructCondition(name, " AND ", _specifiedAttrs.get(0), op);
         return this;
@@ -137,22 +142,9 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
         return new Preset(this, condition);
     }
 
-    public GenericSearchBuilder<T, K> and() {
-        constructCondition(null, " AND ", null, null);
-        return this;
-    }
-    
-    public GenericSearchBuilder<T, K> where() {
-        return and();
-    }
-    
     public GenericSearchBuilder<T, K> or() {
         constructCondition(null, " OR ", null, null);
         return this;
-    }
-    
-    public GenericSearchBuilder<T, K> where(String name, Object useless, Op op) {
-        return and(name, useless, op);
     }
     
     public GenericSearchBuilder<T, K> where(Object useless, Op op, String name) {
@@ -163,17 +155,12 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
         return and(useless, op);
     }
 
-    public GenericSearchBuilder<T, K> left(String name, Object useless, Op op) {
-        constructCondition(name, " ( ", _specifiedAttrs.get(0), op);
-        return this;
-    }
-    
-    public GenericSearchBuilder<T, K> left(Object useless, Op op, String name) {
+    protected GenericSearchBuilder<T, K> left(Object useless, Op op, String name) {
         constructCondition(name, " ( ", _specifiedAttrs.get(0), op);
         return this;
     }
 
-    public Preset left(Object useless, Op op) {
+    protected Preset left(Object useless, Op op) {
         Condition condition = constructCondition(UUID.randomUUID().toString(), " ( ", _specifiedAttrs.get(0), op);
         return new Preset(this, condition);
     }
@@ -187,21 +174,9 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
     }
 
     public GenericSearchBuilder<T, K> op(String name, Object useless, Op op) {
-        return left(name, useless, op);
+        return left(useless, op, name);
     }
     
-    public GenericSearchBuilder<T, K> openParen(Object useless, Op op, String name) {
-        return left(name, useless, op);
-    }
-
-    public GenericSearchBuilder<T, K> openParen(String name, Object useless, Op op) {
-        return left(name, useless, op);
-    }
-    
-    public Preset openParen(Object useless, Op op) {
-        return left(useless, op);
-    }
-
     public GroupBy<GenericSearchBuilder<T, K>, T, K> groupBy(Object... useless) {
         assert _groupBy == null : "Can't do more than one group bys";
         GroupBy<GenericSearchBuilder<T, K>, T, K> groupBy = new GroupBy<GenericSearchBuilder<T, K>, T, K>(this);
@@ -258,17 +233,13 @@ public class GenericSearchBuilder<T, K> extends SearchBase<T, K> {
         return sc;
     }
     
-    public GenericSearchBuilder<T, K> right() {
+    protected GenericSearchBuilder<T, K> right() {
         Condition condition = new Condition("rp", " ) ", null, Op.RP);
         _conditions.add(condition);
         return this;
     }
     
     public GenericSearchBuilder<T, K> cp() {
-        return right();
-    }
-    
-    public GenericSearchBuilder<T, K> closeParen() {
         return right();
     }
     

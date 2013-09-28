@@ -44,6 +44,11 @@ public class GenericQueryBuilder<T, K> extends SearchBase<T, K> {
         return create(entityType, entityType);
     }
 
+    public GenericQueryBuilder<T, K> or() {
+        constructCondition(null, " OR ", null, null);
+        return this;
+    }
+
     public void selectField(Object... useless) {
         assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
         assert _specifiedAttrs.size() > 0 : "You didn't specify any attributes";
@@ -66,10 +71,48 @@ public class GenericQueryBuilder<T, K> extends SearchBase<T, K> {
         _specifiedAttrs.clear();
     }
 
-    public void and(Object useless, Op op, Object... values) {
+    public GenericQueryBuilder<T, K> and(Object useless, Op op, Object... values) {
         String uuid = UUID.randomUUID().toString();
         Condition condition = constructCondition(uuid, " AND ", _specifiedAttrs.get(0), op);
         condition.setPresets(values);
+        return this;
+    }
+
+    public GenericQueryBuilder<T, K> or(Object useless, Op op, Object... values) {
+        String uuid = UUID.randomUUID().toString();
+        Condition condition = constructCondition(uuid, " OR ", _specifiedAttrs.get(0), op);
+        condition.setPresets(values);
+        return this;
+    }
+
+    protected GenericQueryBuilder<T, K> left(Object useless, Op op, Object... values) {
+        String uuid = UUID.randomUUID().toString();
+        Condition condition = constructCondition(uuid, " ( ", _specifiedAttrs.get(0), op);
+        condition.setPresets(values);
+        return this;
+    }
+
+    public GenericQueryBuilder<T, K> and() {
+        constructCondition(null, " AND ", null, null);
+        return this;
+    }
+
+    public GenericQueryBuilder<T, K> where() {
+        return and();
+    }
+
+    public GenericQueryBuilder<T, K> op(Object useless, Op op, Object... values) {
+        return left(useless, op, values);
+    }
+
+    protected GenericQueryBuilder<T, K> right() {
+        Condition condition = new Condition("rp", " ) ", null, Op.RP);
+        _conditions.add(condition);
+        return this;
+    }
+
+    public GenericQueryBuilder<T, K> cp() {
+        return right();
     }
 
     @SuppressWarnings("unchecked")
@@ -96,6 +139,4 @@ public class GenericQueryBuilder<T, K> extends SearchBase<T, K> {
         SearchCriteria sc1 = create();
         return (K)_dao.findOneBy(sc1);
     }
-
-
 }
