@@ -370,6 +370,7 @@
   <bean id="networkOfferingDetailsDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingDetailsDaoImpl" />
   <bean id="serviceOfferingDetailsDaoImpl" class="com.cloud.service.dao.ServiceOfferingDetailsDaoImpl"/>
   <bean id="AclGroupDaoImpl" class="org.apache.cloudstack.acl.dao.AclGroupDaoImpl"/>
+  <bean id="AclGroupJoinDaoImpl" class="com.cloud.api.query.dao.AclGroupJoinDaoImpl"/>      
   <bean id="AclRoleDaoImpl" class="org.apache.cloudstack.acl.dao.AclRoleDaoImpl"/>  
   <bean id="AclRoleJoinDaoImpl" class="com.cloud.api.query.dao.AclRoleJoinDaoImpl"/>    
   <bean id="AclGroupAccountMapDaoImpl" class="org.apache.cloudstack.acl.dao.AclGroupAccountMapDaoImpl"/>
