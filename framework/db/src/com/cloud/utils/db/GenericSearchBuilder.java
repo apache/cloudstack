@@ -36,6 +36,28 @@ import com.cloud.utils.db.SearchCriteria.Op;
  * runtime and, more importantly, the proper construction can be checked when
  * components are being loaded.  However, if you prefer to just construct
  * the entire search at runtime, you can use GenericQueryBuilder.
+ * 
+ * <code>
+ * // To specify the GenericSearchBuilder, you should do this at load time.
+ * // Note that in the following search, it selects a func COUNT to be the
+ * // return result so for the second parameterized type is long.  It also
+ * // presets the type in the search and declares created to be set during
+ * // runtime.  Note the entity object itself must have came from search and
+ * // it uses the getters of the object to retrieve the field used in the search.
+ * 
+ * GenericSearchBuilder<HostVO, Long> CountSearch = _hostDao.createSearchBuilder(Long.class);
+ * HostVO entity = CountSearch.entity();
+ * CountSearch.select(null, FUNC.COUNT, null, null).where(entity.getType(), Op.EQ).value(Host.Type.Routing);
+ * CountSearch.and(entity.getCreated(), Op.LT, "create_date").done();
+ * 
+ * // Later in the code during runtime
+ * SearchCriteria<Long> sc = CountSearch.create();
+ * sc.setParameter("create_date", new Date());
+ * Long count = _hostDao.customizedSearch(sc, null);
+ * </code>
+ * 
+ * @see GenericQueryBuilder for runtime construction of search query
+ * @see SearchBuilder for returning VO objects itself
  *
  * @param <T> VO object this Search is build for.
  * @param <K> Result object that should contain the results.
@@ -118,11 +140,13 @@ public class GenericSearchBuilder<T, K> extends SearchBase<GenericSearchBuilder<
     }
 
     /**
-     * open parenthesis
-     * @param field
-     * @param op
-     * @param name
-     * @return
+     * Adds an condition that starts with open parenthesis.  Use cp() to close
+     * the parenthesis.
+     * 
+     * @param field field of the entity object
+     * @param op operator
+     * @param name parameter name used to set the value later
+     * @return this
      */
     public GenericSearchBuilder<T, K> op(Object field, Op op, String name) {
         return left(field, op, name);
@@ -132,6 +156,15 @@ public class GenericSearchBuilder<T, K> extends SearchBase<GenericSearchBuilder<
         return left(field, op);
     }
 
+    /**
+     * Adds an condition that starts with open parenthesis.  Use cp() to close
+     * the parenthesis.
+     * 
+     * @param name parameter name used to set the parameter value later.
+     * @param field field of the entity object
+     * @param op operator
+     * @return this
+     */
     public GenericSearchBuilder<T, K> op(String name, Object field, Op op) {
         return left(field, op, name);
     }
@@ -149,16 +182,39 @@ public class GenericSearchBuilder<T, K> extends SearchBase<GenericSearchBuilder<
         return this;
     }
     
+    /**
+     * Adds an OR condition
+     * 
+     * @param field field of the entity object
+     * @param op operator
+     * @param name parameter name
+     * @return this
+     */
     public GenericSearchBuilder<T, K> or(Object field, Op op, String name) {
         constructCondition(name, " OR ", _specifiedAttrs.get(0), op);
         return this;
     }
 
+    /**
+     * Adds an OR condition but the values can be preset
+     * 
+     * @param field field of the entity object
+     * @param op operator
+     * @return Preset
+     */
     public Preset or(Object field, Op op) {
         Condition condition = constructCondition(UUID.randomUUID().toString(), " OR ", _specifiedAttrs.get(0), op);
         return new Preset(this, condition);
     }
 
+    /**
+     * Convenience method to create the search criteria and set a
+     * parameter in the search.
+     * 
+     * @param name parameter name set during construction
+     * @param values values to be inserted for that parameter
+     * @return SearchCriteria
+     */
     public SearchCriteria<K> create(String name, Object... values) {
         SearchCriteria<K> sc = create();
         sc.setParameters(name, values);
