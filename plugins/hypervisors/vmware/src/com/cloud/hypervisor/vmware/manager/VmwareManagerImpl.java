@@ -575,12 +575,16 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         		s_logger.info("Worker VM's owner management server has changed runid, recycle it");
         	return true;
         }
-   	
+  
+        // disable time-out check until we have found out a VMware API that can check if
+        // there are pending tasks on the subject VM
+/*        
         if(System.currentTimeMillis() - startTick > _hungWorkerTimeout) {
         	if(s_logger.isInfoEnabled())
         		s_logger.info("Worker VM expired, seconds elapsed: " + (System.currentTimeMillis() - startTick) / 1000);
         	return true;
         }
+*/        
     	return false;
     }
 

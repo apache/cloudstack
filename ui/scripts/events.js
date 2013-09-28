@@ -111,6 +111,9 @@
                                     data: data,
                                     success: function(data) {
                                         args.response.success();
+                                    },
+                                    error:function(data) {
+                                        args.response.error(parseXMLHttpResponse(data));
                                     }
                                 });
                             }
@@ -452,6 +455,9 @@
 
                                     success: function(data) {
                                         args.response.success();
+                                    },
+                                    error:function(data) {
+                                        args.response.error(parseXMLHttpResponse(data));
                                     }
                                 });
                             }
