@@ -23,7 +23,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 
-public class GroupBy<J extends SearchBase<T, R>, T, R> {
+public class GroupBy<J extends SearchBase<?, T, R>, T, R> {
     J _builder;
     List<Pair<Func, Attribute>> _groupBys;
     Having _having;

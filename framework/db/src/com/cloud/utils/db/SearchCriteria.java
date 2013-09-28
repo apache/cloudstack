@@ -56,6 +56,7 @@ public class SearchCriteria<K> {
 
         private final String op;
         int params;
+
         Op(String op, int params) {
             this.op = op;
             this.params = params;
@@ -113,27 +114,12 @@ public class SearchCriteria<K> {
     private int _counter;
     private HashMap<String, JoinBuilder<SearchCriteria<?>>> _joins;
     private final ArrayList<Select> _selects;
-    private final GroupBy<? extends SearchBase<?, K>, ?, K> _groupBy;
+    private final GroupBy<? extends SearchBase<?, ?, K>, ?, K> _groupBy;
     private final List<Object> _groupByValues;
     private final Class<K> _resultType;
     private final SelectType _selectType;
 
-    protected SearchCriteria(Map<String, Attribute> attrs, ArrayList<Condition> conditions, ArrayList<Select> selects, SelectType selectType, Class<K> resultType,
-            HashMap<String, Object[]> params) {
-        this._attrs = attrs;
-        this._conditions = conditions;
-        this._selects = selects;
-        this._selectType = selectType;
-        this._resultType = resultType;
-        this._params = params;
-        this._additionals = new ArrayList<Condition>();
-        this._counter = 0;
-        this._joins = null;
-        this._groupBy = null;
-        this._groupByValues = null;
-    }
-
-    protected SearchCriteria(SearchBase<?, K> sb) {
+    protected SearchCriteria(SearchBase<?, ?, K> sb) {
         this._attrs = sb._attrs;
         this._conditions = sb._conditions;
         this._additionals = new ArrayList<Condition>();
@@ -141,9 +127,9 @@ public class SearchCriteria<K> {
         this._joins = null;
         if (sb._joins != null) {
             _joins = new HashMap<String, JoinBuilder<SearchCriteria<?>>>(sb._joins.size());
-            for (Map.Entry<String, JoinBuilder<SearchBase<?, ?>>> entry : sb._joins.entrySet()) {
-                JoinBuilder<SearchBase<?, ?>> value = entry.getValue();
-                _joins.put(entry.getKey(), new JoinBuilder<SearchCriteria<?>>(value.getT().create(),value.getFirstAttribute(), value.getSecondAttribute(), value.getType()));
+            for (Map.Entry<String, JoinBuilder<SearchBase<?, ?, ?>>> entry : sb._joins.entrySet()) {
+                JoinBuilder<SearchBase<?, ?, ?>> value = entry.getValue();
+                _joins.put(entry.getKey(), new JoinBuilder<SearchCriteria<?>>(value.getT().create(), value.getFirstAttribute(), value.getSecondAttribute(), value.getType()));
             }
         }
         _selects = sb._selects;
@@ -155,6 +141,10 @@ public class SearchCriteria<K> {
         }
         _resultType = sb._resultType;
         _selectType = sb._selectType;
+    }
+
+    protected void setParameters(HashMap<String, Object[]> parameters) {
+        _params = parameters;
     }
 
     public SelectType getSelectType() {
@@ -202,22 +192,22 @@ public class SearchCriteria<K> {
     }
 
     protected JoinBuilder<SearchCriteria<?>> findJoin(Map<String, JoinBuilder<SearchCriteria<?>>> jbmap, String joinName) {
-    	JoinBuilder<SearchCriteria<?>> jb = jbmap.get(joinName);
-    	if (jb != null) {
-    		return jb;
-    	}
-    	
-    	for (JoinBuilder<SearchCriteria<?>> j2 : jbmap.values()) {
-    		SearchCriteria<?> sc = j2.getT();
-    		if(sc._joins != null)
-    		    jb = findJoin(sc._joins, joinName);
-    		if (jb != null) {
-    			return jb;
-    		}
-    	}
-    	
-    	assert (false) : "Unable to find a join by the name " + joinName;
-    	return null;
+        JoinBuilder<SearchCriteria<?>> jb = jbmap.get(joinName);
+        if (jb != null) {
+            return jb;
+        }
+
+        for (JoinBuilder<SearchCriteria<?>> j2 : jbmap.values()) {
+            SearchCriteria<?> sc = j2.getT();
+            if (sc._joins != null)
+                jb = findJoin(sc._joins, joinName);
+            if (jb != null) {
+                return jb;
+            }
+        }
+
+        assert (false) : "Unable to find a join by the name " + joinName;
+        return null;
     }
 
     public void setJoinParameters(String joinName, String conditionName, Object... params) {
@@ -225,18 +215,6 @@ public class SearchCriteria<K> {
         assert (join != null) : "Incorrect join name specified: " + joinName;
         join.getT().setParameters(conditionName, params);
 
-    }
-
-    public void addJoinAnd(String joinName, String field, Op op, Object... values) {
-        JoinBuilder<SearchCriteria<?>> join = _joins.get(joinName);
-        assert (join != null) : "Incorrect join name specified: " + joinName;
-        join.getT().addAnd(field, op, values);
-    }
-
-    public void addJoinOr(String joinName, String field, Op op, Object... values) {
-        JoinBuilder<SearchCriteria<?>> join = _joins.get(joinName);
-        assert (join != null) : "Incorrect join name specified: " + joinName;
-        join.getT().addOr(field, op, values);
     }
 
     public SearchCriteria<?> getJoin(String joinName) {
@@ -257,27 +235,24 @@ public class SearchCriteria<K> {
         return _resultType;
     }
 
+    @Deprecated
     public void addAnd(String field, Op op, Object... values) {
         String name = Integer.toString(_counter++);
         addCondition(name, " AND ", field, op);
         setParameters(name, values);
     }
 
+    @Deprecated
     public void addAnd(Attribute attr, Op op, Object... values) {
         String name = Integer.toString(_counter++);
         addCondition(name, " AND ", attr, op);
         setParameters(name, values);
     }
 
+    @Deprecated
     public void addOr(String field, Op op, Object... values) {
         String name = Integer.toString(_counter++);
         addCondition(name, " OR ", field, op);
-        setParameters(name, values);
-    }
-
-    public void addOr(Attribute attr, Op op, Object... values) {
-        String name = Integer.toString(_counter++);
-        addCondition(name, " OR ", attr, op);
         setParameters(name, values);
     }
 

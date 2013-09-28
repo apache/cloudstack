@@ -23,7 +23,6 @@
 package com.cloud.baremetal.networkservice;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +35,6 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxePingServerCmd;
 import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
@@ -62,9 +60,8 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResource;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.GenericQueryBuilder;
-import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
@@ -84,7 +81,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
 	
 	@Override
     public boolean prepare(VirtualMachineProfile profile, NicProfile pxeNic, DeployDestination dest, ReservationContext context) {
-	    GenericQueryBuilder<BaremetalPxeVO, BaremetalPxeVO> sc = GenericQueryBuilder.create(BaremetalPxeVO.class);
+        QueryBuilder<BaremetalPxeVO> sc = QueryBuilder.create(BaremetalPxeVO.class);
         sc.and(sc.entity().getDeviceType(), Op.EQ, BaremetalPxeType.PING.toString());
         sc.and(sc.entity().getPodId(), Op.EQ, dest.getPod().getId());
         BaremetalPxeVO pxeVo = sc.find();

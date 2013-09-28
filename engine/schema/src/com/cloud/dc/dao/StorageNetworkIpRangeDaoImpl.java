@@ -17,22 +17,17 @@
 package com.cloud.dc.dao;
 
 import java.util.List;
-import java.util.Map;
 
 import javax.ejb.Local;
-import javax.naming.ConfigurationException;
 
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.StorageNetworkIpRangeVO;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
-import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.GenericQueryBuilder;
-import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 
@@ -50,21 +45,21 @@ public class StorageNetworkIpRangeDaoImpl extends GenericDaoBase<StorageNetworkI
 	
 	@Override
     public List<StorageNetworkIpRangeVO> listByPodId(long podId) {
-		GenericQueryBuilder<StorageNetworkIpRangeVO, StorageNetworkIpRangeVO> sc = GenericQueryBuilder.create(StorageNetworkIpRangeVO.class);
+        QueryBuilder<StorageNetworkIpRangeVO> sc = QueryBuilder.create(StorageNetworkIpRangeVO.class);
 	    sc.and(sc.entity().getPodId(), Op.EQ, podId);
 		return sc.list();
     }
 
 	@Override
     public List<StorageNetworkIpRangeVO> listByRangeId(long rangeId) {
-		GenericQueryBuilder<StorageNetworkIpRangeVO, StorageNetworkIpRangeVO> sc = GenericQueryBuilder.create(StorageNetworkIpRangeVO.class);
+        QueryBuilder<StorageNetworkIpRangeVO> sc = QueryBuilder.create(StorageNetworkIpRangeVO.class);
 	    sc.and(sc.entity().getId(), Op.EQ, rangeId);
 		return sc.list();
     }
 
 	@Override
     public List<StorageNetworkIpRangeVO> listByDataCenterId(long dcId) {
-		GenericQueryBuilder<StorageNetworkIpRangeVO, StorageNetworkIpRangeVO> sc = GenericQueryBuilder.create(StorageNetworkIpRangeVO.class);
+        QueryBuilder<StorageNetworkIpRangeVO> sc = QueryBuilder.create(StorageNetworkIpRangeVO.class);
 	    sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
 		return sc.list();
     }

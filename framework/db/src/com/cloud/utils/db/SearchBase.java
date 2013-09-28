@@ -20,7 +20,20 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria.SelectType;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public abstract class SearchBase<T, K> {
+/**
+ * SearchBase contains the methods that are used to build up search
+ * queries.  While this class is public it's not really meant for public
+ * consumption.  Unfortunately, it has to be public for methods to be mocked.
+ * 
+ * @see GenericSearchBuilder
+ * @see GenericQueryBuilder
+ *
+ * @param <J> Child class that inherited from SearchBase
+ * @param <T> Entity Type to perform the searches on
+ * @param <K> Type to place the search results.  This can be a native type,
+ *            composite object, or the entity type itself.
+ */
+public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
 
     final Map<String, Attribute> _attrs;
     final Class<T> _entityBeanType;
@@ -30,9 +43,9 @@ public abstract class SearchBase<T, K> {
     final ArrayList<Condition> _conditions;
     final ArrayList<Attribute> _specifiedAttrs;
 
-    protected HashMap<String, JoinBuilder<SearchBase<?, ?>>> _joins;
+    protected HashMap<String, JoinBuilder<SearchBase<?, ?, ?>>> _joins;
     protected ArrayList<Select> _selects;
-    protected GroupBy<? extends SearchBase<T, K>, T, K> _groupBy = null;
+    protected GroupBy<J, T, K> _groupBy = null;
     protected SelectType _selectType;
     T _entity;
 
@@ -52,6 +65,134 @@ public abstract class SearchBase<T, K> {
         _specifiedAttrs = new ArrayList<Attribute>();
     }
 
+    /**
+     * Specifies how the search query should be grouped
+     * 
+     * @param fields fields of the entity object that should be grouped on.  The order is important.
+     * @return GroupBy object to perform more operations on.
+     * @see GroupBy
+     */
+    @SuppressWarnings("unchecked")
+    public GroupBy<J, T, K> groupBy(Object... fields) {
+        assert _groupBy == null : "Can't do more than one group bys";
+        _groupBy = new GroupBy<J, T, K>((J)this);
+        return _groupBy;
+    }
+
+    /**
+     * Specifies what to select in the search.
+     * 
+     * @param fieldName The field name of the result object to put the value of the field selected.  This can be null if you're selecting only one field and the result is not a complex object.
+     * @param func function to place.
+     * @param field column to select.  Call this with this.entity() method.
+     * @param params parameters to the function.
+     * @return itself to build more search parts.
+     */
+    @SuppressWarnings("unchecked")
+    public J select(String fieldName, Func func, Object field, Object... params) {
+        if (_entity == null) {
+            throw new RuntimeException("SearchBuilder cannot be modified once it has been setup");
+        }
+        if (_specifiedAttrs.size() > 1) {
+            throw new RuntimeException("You can't specify more than one field to search on");
+        }
+        if (func.getCount() != -1 && (func.getCount() != (params.length + 1))) {
+            throw new RuntimeException("The number of parameters does not match the function param count for " + func);
+        }
+
+        if (_selects == null) {
+            _selects = new ArrayList<Select>();
+        }
+
+        Field declaredField = null;
+        if (fieldName != null) {
+            try {
+                declaredField = _resultType.getDeclaredField(fieldName);
+                declaredField.setAccessible(true);
+            } catch (SecurityException e) {
+                throw new RuntimeException("Unable to find " + fieldName, e);
+            } catch (NoSuchFieldException e) {
+                throw new RuntimeException("Unable to find " + fieldName, e);
+            }
+        } else {
+            if (_selects.size() != 0) {
+                throw new RuntimeException(
+                    "You're selecting more than one item and yet is not providing a container class to put these items in.  So what do you expect me to do.  Spin magic?");
+            }
+        }
+
+        Select select = new Select(func, _specifiedAttrs.size() == 0 ? null : _specifiedAttrs.get(0), declaredField, params);
+        _selects.add(select);
+
+        _specifiedAttrs.clear();
+
+        return (J)this;
+    }
+
+    /**
+     * Select fields from the entity object to be selected in the search query.
+     * 
+     * @param fields fields from the entity object
+     * @return itself
+     */
+    @SuppressWarnings("unchecked")
+    public J selectFields(Object... fields) {
+        if (_entity == null) {
+            throw new RuntimeException("SearchBuilder cannot be modified once it has been setup");
+        }
+        if (_specifiedAttrs.size() <= 0) {
+            throw new RuntimeException("You didn't specify any attributes");
+        }
+
+        if (_selects == null) {
+            _selects = new ArrayList<Select>();
+        }
+
+        for (Attribute attr : _specifiedAttrs) {
+            Field field = null;
+            try {
+                field = _resultType.getDeclaredField(attr.field.getName());
+                field.setAccessible(true);
+            } catch (SecurityException e) {
+            } catch (NoSuchFieldException e) {
+            }
+            _selects.add(new Select(Func.NATIVE, attr, field, null));
+        }
+
+        _specifiedAttrs.clear();
+
+        return (J)this;
+    }
+
+    /**
+     * joins this search with another search
+     * 
+     * @param name name given to the other search.  used for setJoinParameters.
+     * @param builder The other search
+     * @param joinField1 field of the first table used to perform the join
+     * @param joinField2 field of the second table used to perform the join
+     * @param joinType type of join
+     * @return itself
+     */
+    @SuppressWarnings("unchecked")
+    public J join(String name, SearchBase<?, ?, ?> builder, Object joinField1, Object joinField2, JoinBuilder.JoinType joinType) {
+        assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
+        assert _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
+        assert builder._entity != null : "SearchBuilder cannot be modified once it has been setup";
+        assert builder._specifiedAttrs.size() == 1 : "You didn't select the attribute.";
+        assert builder != this : "You can't add yourself, can you?  Really think about it!";
+
+        JoinBuilder<SearchBase<?, ?, ?>> t = new JoinBuilder<SearchBase<?, ?, ?>>(builder, _specifiedAttrs.get(0), builder._specifiedAttrs.get(0), joinType);
+        if (_joins == null) {
+            _joins = new HashMap<String, JoinBuilder<SearchBase<?, ?, ?>>>();
+        }
+        _joins.put(name, t);
+
+        builder._specifiedAttrs.clear();
+        _specifiedAttrs.clear();
+        return (J)this;
+    }
+
     public SelectType getSelectType() {
         return _selectType;
     }
@@ -62,6 +203,10 @@ public abstract class SearchBase<T, K> {
         _specifiedAttrs.add(attr);
     }
 
+    /**
+     * @return entity object.  This allows the caller to use the entity return
+     * to specify the field to be selected in many of the search parameters.
+     */
     public T entity() {
         return _entity;
     }
@@ -101,10 +246,68 @@ public abstract class SearchBase<T, K> {
     }
 
     /**
+     * Adds an OR condition to the search.  Normally you should use this to
+     * perform an 'OR' with a big conditional in parenthesis.  For example,
+     * 
+     * search.or().op(entity.getId(), Op.Eq, "abc").cp()
+     * 
+     * The above fragment produces something similar to
+     * 
+     * "OR (id = $abc) where abc is the token to be replaced by a value later.
+     * 
+     * @return this
+     */
+    @SuppressWarnings("unchecked")
+    public J or() {
+        constructCondition(null, " OR ", null, null);
+        return (J)this;
+    }
+
+    /**
+     * Adds an AND condition to the search.  Normally you should use this to
+     * perform an 'AND' with a big conditional in parenthesis.  For example,
+     * 
+     * search.and().op(entity.getId(), Op.Eq, "abc").cp()
+     * 
+     * The above fragment produces something similar to
+     * 
+     * "AND (id = $abc) where abc is the token to be replaced by a value later.
+     * 
+     * @return this
+     */
+    @SuppressWarnings("unchecked")
+    public J and() {
+        constructCondition(null, " AND ", null, null);
+        return (J)this;
+    }
+
+    /**
+     * Closes a parenthesis that's started by op()
+     * @return this
+     */
+    @SuppressWarnings("unchecked")
+    public J cp() {
+        Condition condition = new Condition(null, " ) ", null, Op.RP);
+        _conditions.add(condition);
+        return (J)this;
+    }
+
+    /**
+     * Writes an open parenthesis into the search
+     * @return this
+     */
+    @SuppressWarnings("unchecked")
+    public J op() {
+        Condition condition = new Condition(null, " ( ", null, Op.RP);
+        _conditions.add(condition);
+        return (J)this;
+    }
+
+    /**
      * Marks the SearchBuilder as completed in building the search conditions.
      */
     @Override
-    public synchronized void finalize() {
+    protected synchronized void finalize() {
         if (_entity != null) {
             Factory factory = (Factory)_entity;
             factory.setCallback(0, null);
@@ -112,7 +315,7 @@ public abstract class SearchBase<T, K> {
         }
 
         if (_joins != null) {
-            for (JoinBuilder<SearchBase<?, ?>> join : _joins.values()) {
+            for (JoinBuilder<SearchBase<?, ?, ?>> join : _joins.values()) {
                 join.getT().finalize();
             }
         }

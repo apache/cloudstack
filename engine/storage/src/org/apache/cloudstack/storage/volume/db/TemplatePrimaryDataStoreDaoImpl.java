@@ -20,18 +20,18 @@ package org.apache.cloudstack.storage.volume.db;
 
 import java.util.Date;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
+
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.GenericQueryBuilder;
-import com.cloud.utils.db.GenericQueryBuilder;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.UpdateBuilder;
 
 @Component
@@ -50,8 +50,7 @@ public class TemplatePrimaryDataStoreDaoImpl extends GenericDaoBase<TemplatePrim
 
     @Override
     public TemplatePrimaryDataStoreVO findByTemplateIdAndPoolId(long templateId, long poolId) {
-        GenericQueryBuilder<TemplatePrimaryDataStoreVO, TemplatePrimaryDataStoreVO> sc = GenericQueryBuilder
-                .create(TemplatePrimaryDataStoreVO.class);
+        QueryBuilder<TemplatePrimaryDataStoreVO> sc = QueryBuilder.create(TemplatePrimaryDataStoreVO.class);
         sc.and(sc.entity().getTemplateId(), Op.EQ, templateId);
         sc.and(sc.entity().getPoolId(), Op.EQ, poolId);
         return sc.find();
@@ -59,8 +58,7 @@ public class TemplatePrimaryDataStoreDaoImpl extends GenericDaoBase<TemplatePrim
 
     @Override
     public TemplatePrimaryDataStoreVO findByTemplateIdAndPoolIdAndReady(long templateId, long poolId) {
-        GenericQueryBuilder<TemplatePrimaryDataStoreVO, TemplatePrimaryDataStoreVO> sc = GenericQueryBuilder
-                .create(TemplatePrimaryDataStoreVO.class);
+        QueryBuilder<TemplatePrimaryDataStoreVO> sc = QueryBuilder.create(TemplatePrimaryDataStoreVO.class);
         sc.and(sc.entity().getTemplateId(), Op.EQ, templateId);
         sc.and(sc.entity().getPoolId(), Op.EQ, poolId);
         sc.and(sc.entity().getState(), Op.EQ, ObjectInDataStoreStateMachine.State.Ready);

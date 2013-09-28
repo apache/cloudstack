@@ -66,7 +66,7 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
         IpeventsSearch.and("networktype", IpeventsSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
         IpeventsSearch.and().op("assignEvent", IpeventsSearch.entity().getType(), SearchCriteria.Op.EQ);
         IpeventsSearch.or("releaseEvent", IpeventsSearch.entity().getType(), SearchCriteria.Op.EQ);
-        IpeventsSearch.closeParen();
+        IpeventsSearch.cp();
         IpeventsSearch.done();
     }
 

@@ -30,8 +30,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.AddUcsManagerCmd;
 import org.apache.cloudstack.api.AssociateUcsProfileToBladeCmd;
+import org.apache.cloudstack.api.DeleteUcsManagerCmd;
 import org.apache.cloudstack.api.ListUcsBladeCmd;
 import org.apache.cloudstack.api.ListUcsManagerCmd;
 import org.apache.cloudstack.api.ListUcsProfileCmd;
@@ -40,8 +43,6 @@ import org.apache.cloudstack.api.response.UcsBladeResponse;
 import org.apache.cloudstack.api.response.UcsManagerResponse;
 import org.apache.cloudstack.api.response.UcsProfileResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
-import org.apache.cloudstack.api.DeleteUcsManagerCmd;
 
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
@@ -60,9 +61,8 @@ import com.cloud.ucs.structure.UcsCookie;
 import com.cloud.ucs.structure.UcsProfile;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.GenericQueryBuilder;
-import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.xmlobject.XmlObject;
@@ -132,7 +132,7 @@ public class UcsManagerImpl implements UcsManager {
 		}
 
     	private void syncBlades(UcsManagerVO mgr) {
-    		GenericQueryBuilder<UcsBladeVO, UcsBladeVO> q = GenericQueryBuilder.create(UcsBladeVO.class);
+            QueryBuilder<UcsBladeVO> q = QueryBuilder.create(UcsBladeVO.class);
     		q.and(q.entity().getUcsManagerId(), Op.EQ, mgr.getId());
     		List<UcsBladeVO> pblades = q.list();
     		if (pblades.isEmpty()) {
@@ -210,7 +210,7 @@ public class UcsManagerImpl implements UcsManager {
     @Override
     @DB
     public UcsManagerResponse addUcsManager(AddUcsManagerCmd cmd) {
-        GenericQueryBuilder<UcsManagerVO, UcsManagerVO> q = GenericQueryBuilder.create(UcsManagerVO.class);
+        QueryBuilder<UcsManagerVO> q = QueryBuilder.create(UcsManagerVO.class);
         q.and(q.entity().getUrl(), Op.EQ, cmd.getUrl());
         UcsManagerVO mgrvo = q.find();
         if (mgrvo != null) {
@@ -342,7 +342,7 @@ public class UcsManagerImpl implements UcsManager {
 
     @Override
     public UcsBladeResponse associateProfileToBlade(AssociateUcsProfileToBladeCmd cmd) {
-        GenericQueryBuilder<UcsBladeVO, UcsBladeVO> q = GenericQueryBuilder.create(UcsBladeVO.class);
+        QueryBuilder<UcsBladeVO> q = QueryBuilder.create(UcsBladeVO.class);
         q.and(q.entity().getUcsManagerId(), Op.EQ, cmd.getUcsManagerId());
         q.and(q.entity().getId(), Op.EQ, cmd.getBladeId());
         UcsBladeVO bvo = q.find();
@@ -424,7 +424,7 @@ public class UcsManagerImpl implements UcsManager {
             return response;
     	}
     	
-        GenericQueryBuilder<UcsManagerVO, UcsManagerVO> serv = GenericQueryBuilder.create(UcsManagerVO.class);
+        QueryBuilder<UcsManagerVO> serv = QueryBuilder.create(UcsManagerVO.class);
         serv.and(serv.entity().getZoneId(), Op.EQ, cmd.getZoneId());
         List<UcsManagerVO> vos = serv.list();
 
@@ -454,7 +454,7 @@ public class UcsManagerImpl implements UcsManager {
     
     @Override
     public ListResponse<UcsBladeResponse> listUcsBlades(ListUcsBladeCmd cmd) {
-        GenericQueryBuilder<UcsBladeVO, UcsBladeVO> serv = GenericQueryBuilder.create(UcsBladeVO.class);
+        QueryBuilder<UcsBladeVO> serv = QueryBuilder.create(UcsBladeVO.class);
         serv.and(serv.entity().getUcsManagerId(), Op.EQ, cmd.getUcsManagerId());
         List<UcsBladeVO> vos = serv.list();
         
@@ -509,7 +509,7 @@ public class UcsManagerImpl implements UcsManager {
 
 	@Override
 	public void deleteUcsManager(Long id) {
-        GenericQueryBuilder<UcsBladeVO, UcsBladeVO> serv = GenericQueryBuilder.create(UcsBladeVO.class);
+        QueryBuilder<UcsBladeVO> serv = QueryBuilder.create(UcsBladeVO.class);
         serv.and(serv.entity().getUcsManagerId(), Op.EQ, id);
         List<UcsBladeVO> vos = serv.list();
         for (UcsBladeVO vo : vos) {

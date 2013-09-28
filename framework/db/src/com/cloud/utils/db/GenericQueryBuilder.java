@@ -17,16 +17,13 @@
 package com.cloud.utils.db;
 
 import java.io.Serializable;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 
-public class GenericQueryBuilder<T, K> extends SearchBase<T, K> {
+public class GenericQueryBuilder<T, K> extends SearchBase<GenericQueryBuilder<T, K>, T, K> {
     final HashMap<String, Object[]> _params = new HashMap<String, Object[]>();
 
     protected GenericQueryBuilder(Class<T> entityType, Class<K> resultType) {
@@ -40,79 +37,29 @@ public class GenericQueryBuilder<T, K> extends SearchBase<T, K> {
         return new GenericQueryBuilder<T, K>(entityType, resultType);
     }
 
-    static public <T> GenericQueryBuilder<T, T> create(Class<T> entityType) {
-        return create(entityType, entityType);
-    }
-
-    public GenericQueryBuilder<T, K> or() {
-        constructCondition(null, " OR ", null, null);
-        return this;
-    }
-
-    public void selectField(Object... useless) {
-        assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
-        assert _specifiedAttrs.size() > 0 : "You didn't specify any attributes";
-
-        if (_selects == null) {
-            _selects = new ArrayList<Select>();
-        }
-
-        for (Attribute attr : _specifiedAttrs) {
-            Field field = null;
-            try {
-                field = _resultType.getDeclaredField(attr.field.getName());
-                field.setAccessible(true);
-            } catch (SecurityException e) {
-            } catch (NoSuchFieldException e) {
-            }
-            _selects.add(new Select(Func.NATIVE, attr, field, null));
-        }
-
-        _specifiedAttrs.clear();
-    }
-
     public GenericQueryBuilder<T, K> and(Object useless, Op op, Object... values) {
         String uuid = UUID.randomUUID().toString();
-        Condition condition = constructCondition(uuid, " AND ", _specifiedAttrs.get(0), op);
-        condition.setPresets(values);
+        constructCondition(uuid, " AND ", _specifiedAttrs.get(0), op);
+        _params.put(uuid, values);
         return this;
     }
 
     public GenericQueryBuilder<T, K> or(Object useless, Op op, Object... values) {
         String uuid = UUID.randomUUID().toString();
-        Condition condition = constructCondition(uuid, " OR ", _specifiedAttrs.get(0), op);
-        condition.setPresets(values);
+        constructCondition(uuid, " OR ", _specifiedAttrs.get(0), op);
+        _params.put(uuid, values);
         return this;
     }
 
     protected GenericQueryBuilder<T, K> left(Object useless, Op op, Object... values) {
         String uuid = UUID.randomUUID().toString();
-        Condition condition = constructCondition(uuid, " ( ", _specifiedAttrs.get(0), op);
-        condition.setPresets(values);
+        constructCondition(uuid, " ( ", _specifiedAttrs.get(0), op);
+        _params.put(uuid, values);
         return this;
-    }
-
-    public GenericQueryBuilder<T, K> and() {
-        constructCondition(null, " AND ", null, null);
-        return this;
-    }
-
-    public GenericQueryBuilder<T, K> where() {
-        return and();
     }
 
     public GenericQueryBuilder<T, K> op(Object useless, Op op, Object... values) {
         return left(useless, op, values);
-    }
-
-    protected GenericQueryBuilder<T, K> right() {
-        Condition condition = new Condition("rp", " ) ", null, Op.RP);
-        _conditions.add(condition);
-        return this;
-    }
-
-    public GenericQueryBuilder<T, K> cp() {
-        return right();
     }
 
     @SuppressWarnings("unchecked")
@@ -126,6 +73,13 @@ public class GenericQueryBuilder<T, K> extends SearchBase<T, K> {
             SearchCriteria<K> sc1 = create();
             return _dao.customSearch(sc1, null);
         }
+    }
+
+    @Override
+    public SearchCriteria<K> create() {
+        SearchCriteria<K> sc = super.create();
+        sc.setParameters(_params);
+        return sc;
     }
 
     private boolean isSelectAll() {

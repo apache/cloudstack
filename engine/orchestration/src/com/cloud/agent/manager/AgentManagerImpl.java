@@ -97,9 +97,8 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.GenericQueryBuilder;
-import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.HypervisorVersionChangedException;
@@ -1448,7 +1447,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             try {
                 List<Long> behindAgents = findAgentsBehindOnPing();
                 for (Long agentId : behindAgents) {
-                    GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
+                    QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
                     sc.and(sc.entity().getId(), Op.EQ, agentId);
                     HostVO h = sc.find();
                     if (h != null) {
@@ -1470,7 +1469,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     }
                 }
 
-                GenericQueryBuilder<HostVO, HostVO> sc = GenericQueryBuilder.create(HostVO.class);
+                QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
                 sc.and(sc.entity().getResourceState(), Op.IN, ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
                 List<HostVO> hosts = sc.list();
 
