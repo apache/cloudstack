@@ -435,13 +435,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         if (oldElement instanceof IpDeployingRequester && newElement instanceof IpDeployingRequester) {
         	IpDeployer oldIpDeployer = ((IpDeployingRequester)oldElement).getIpDeployer(network);
         	IpDeployer newIpDeployer = ((IpDeployingRequester)newElement).getIpDeployer(network);
-			// if
-			// (!oldIpDeployer.getProvider().getName().equals(newIpDeployer.getProvider().getName()))
-			// {
-			// throw new
-			// InvalidParameterException("There would be multiple providers for IP "
-			// + publicIp.getAddress() + "!");
-			// }
+			// FIXME: I ignored this check
         } else {
             throw new InvalidParameterException("Ip cannot be applied for new provider!");
         }

@@ -247,14 +247,6 @@ public class OvsElement extends AdapterBase implements NetworkElement,
 		// L2 Support : SDN provisioning
 		capabilities.put(Service.Connectivity, null);
 
-		// L3 Support : SourceNat
-		// Map<Capability, String> sourceNatCapabilities = new
-		// HashMap<Capability, String>();
-		// sourceNatCapabilities.put(Capability.SupportedSourceNatTypes,
-		// "peraccount");
-		// sourceNatCapabilities.put(Capability.RedundantRouter, "false");
-		// capabilities.put(Service.SourceNat, sourceNatCapabilities);
-
 		// L3 Support : Port Forwarding
 		 capabilities.put(Service.PortForwarding, null);
 

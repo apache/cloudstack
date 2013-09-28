@@ -295,14 +295,6 @@ public enum Config {
             "false",
             "Direct Network Dhcp Server should not send a default route",
             "true/false"),
-    OvsTunnelNetwork(
-            "Network",
-            ManagementServer.class,
-            Boolean.class,
-            "sdn.ovs.controller",
-            "false",
-            "Enable/Disable Open vSwitch SDN controller for L2-in-L3 overlay networks",
-            null),
     OvsTunnelNetworkDefaultLabel(
             "Network",
             ManagementServer.class,
