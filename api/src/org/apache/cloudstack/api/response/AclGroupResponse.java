@@ -16,9 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
 import com.google.gson.annotations.SerializedName;
@@ -56,13 +54,14 @@ public class AclGroupResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ACL_ACCOUNT_IDS)
     @Param(description = "account Ids assigned to this acl group ")
-    private List<String> accountIdList;
+    private Set<String> accountIdList;
 
     @SerializedName(ApiConstants.ACL_ROLES)
     @Param(description = "acl roles granted to this acl group ")
     private Set<AclRoleResponse> roleList;
 
     public AclGroupResponse() {
+        accountIdList = new LinkedHashSet<String>();
         roleList = new LinkedHashSet<AclRoleResponse>();
     }
 
@@ -97,15 +96,11 @@ public class AclGroupResponse extends BaseResponse {
         this.domainName = domainName;
     }
 
-    public void setAccountIdList(List<String> acctIdList) {
+    public void setAccountIdList(Set<String> acctIdList) {
         accountIdList = acctIdList;
     }
 
     public void addAccountId(String acctId) {
-        if (accountIdList == null) {
-            accountIdList = new ArrayList<String>();
-        }
-
         accountIdList.add(acctId);
     }
 

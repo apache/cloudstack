@@ -39,6 +39,7 @@ public class AclGroupDaoImpl extends GenericDaoBase<AclGroupVO, Long> implements
 
         nameSearch = createSearchBuilder();
         nameSearch.and("name", nameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        nameSearch.and("domainId", nameSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         nameSearch.done();
 
 
@@ -46,9 +47,12 @@ public class AclGroupDaoImpl extends GenericDaoBase<AclGroupVO, Long> implements
     }
 
     @Override
-    public AclGroup findByName(String name) {
+    public AclGroup findByName(Long domainId, String name) {
         SearchCriteria<AclGroupVO> sc = nameSearch.create();
         sc.setParameters("name", name);
+        if (domainId != null) {
+            sc.setParameters("domainId", domainId);
+        }
         return findOneBy(sc);
     }
 

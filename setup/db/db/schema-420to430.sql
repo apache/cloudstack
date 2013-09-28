@@ -334,17 +334,17 @@ CREATE TABLE `cloud`.`acl_group_role_map` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;        
 
 
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, created) VALUES (1,'NORMAL', 'Domain user role', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, created) VALUES (2, 'ADMIN', 'Root admin role', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, created) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin role', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, created) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin role', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, created) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin role', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created) VALUES (1,'NORMAL', 'Domain user role', UUID(), 1, Now());
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created) VALUES (2, 'ADMIN', 'Root admin role', UUID(), 1, Now());
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin role', UUID(), 1, Now());
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin role', UUID(), 1, Now());
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin role', UUID(), 1, Now());
 
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, created) VALUES (1, 'NORMAL', 'Domain user group', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, created) VALUES (2, 'ADMIN', 'Root admin group', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, created) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin group', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, created) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin group', UUID(), Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, created) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin group', UUID(), Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, created) VALUES (1, 'NORMAL', 'Domain user group', UUID(), 1, Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, created) VALUES (2, 'ADMIN', 'Root admin group', UUID(), 1, Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, created) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin group', UUID(), 1, Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, created) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin group', UUID(), 1, Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, created) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin group', UUID(), 1, Now());
 
 CREATE TABLE `cloud`.`acl_api_permission` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
@@ -394,4 +394,37 @@ CREATE VIEW `cloud`.`acl_role_view` AS
         `cloud`.`acl_role` parent_role on parent_role.id = acl_role.parent_role_id    
             left join
         `cloud`.`acl_api_permission` ON acl_role.id = acl_api_permission.role_id;
+ 
+ 
+DROP VIEW IF EXISTS `cloud`.`acl_group_view`;
+CREATE VIEW `cloud`.`acl_group_view` AS
+    select 
+        acl_group.id id,
+        acl_group.uuid uuid,        
+        acl_group.name name,
+        acl_group.description description,
+        acl_group.removed removed,
+        acl_group.created created,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        acl_role.id role_id,
+        acl_role.uuid role_uuid,
+        acl_role.name role_name,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name account_name
+    from
+        `cloud`.`acl_group`
+            inner join
+        `cloud`.`domain` ON acl_group.domain_id = domain.id
+            left join
+        `cloud`.`acl_group_role_map` on acl_group.id = acl_group_role_map.group_id  
+            left join         
+        `cloud`.`acl_role` on acl_group_role_map.role_id = acl_role.id    
+            left join
+        `cloud`.`acl_group_account_map` ON acl_group.id = acl_group_account_map.group_id
+            left join
+        `cloud`.`account` ON acl_group_account_map.account_id = account.id;                   
  

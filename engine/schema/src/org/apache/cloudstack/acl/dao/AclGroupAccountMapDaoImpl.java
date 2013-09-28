@@ -79,4 +79,12 @@ public class AclGroupAccountMapDaoImpl extends GenericDaoBase<AclGroupAccountMap
         return findOneBy(sc);
     }
 
+    @Override
+    public AclGroupAccountMapVO findByGroupAndAccount(long groupId, long acctId) {
+        SearchCriteria<AclGroupAccountMapVO> sc = _findByAccountAndGroupId.create();
+        sc.setParameters("accountId", acctId);
+        sc.setParameters("groupId", groupId);
+        return findOneBy(sc);
+    }
+
 }

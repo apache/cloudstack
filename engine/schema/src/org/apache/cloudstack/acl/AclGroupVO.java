@@ -84,6 +84,10 @@ public class AclGroupVO implements AclGroup {
         return domainId;
     }
 
+    public void setDomainId(long domainId) {
+        this.domainId = domainId;
+    }
+
     @Override
     public String getUuid() {
     	return uuid;

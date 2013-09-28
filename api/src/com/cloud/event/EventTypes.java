@@ -451,6 +451,8 @@ public class EventTypes {
     public static final String EVENT_ACL_ROLE_REVOKE = "ACLROLE.REVOKE";
     
     public static final String EVENT_ACL_GROUP_UPDATE = "ACLGROUP.UPDATE";
+    public static final String EVENT_ACL_GROUP_CREATE = "ACLGROUP.CREATE";
+    public static final String EVENT_ACL_GROUP_DELETE = "ACLGROUP.DELETE";
 
     static {
 

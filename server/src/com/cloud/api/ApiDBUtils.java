@@ -25,6 +25,7 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.AclGroup;
 import org.apache.cloudstack.acl.AclRole;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -33,6 +34,7 @@ import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.AclGroupResponse;
 import org.apache.cloudstack.api.response.AclRoleResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
@@ -65,6 +67,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.api.query.dao.AccountJoinDao;
+import com.cloud.api.query.dao.AclGroupJoinDao;
 import com.cloud.api.query.dao.AclRoleJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
@@ -86,6 +89,7 @@ import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
+import com.cloud.api.query.vo.AclGroupJoinVO;
 import com.cloud.api.query.vo.AclRoleJoinVO;
 import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
@@ -405,6 +409,7 @@ public class ApiDBUtils {
     static ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     static AccountService _accountService;
     static AclRoleJoinDao _aclRoleJoinDao;
+    static AclGroupJoinDao _aclGroupJoinDao;
 
 
     @Inject
@@ -522,6 +527,8 @@ public class ApiDBUtils {
     private ConfigurationManager configMgr;
     @Inject
     private AclRoleJoinDao aclRoleJoinDao;
+    @Inject
+    private AclGroupJoinDao aclGroupJoinDao;
 
     @PostConstruct
     void init() {
@@ -1689,6 +1696,18 @@ public class ApiDBUtils {
 
     public static AclRoleResponse fillAclRoleDetails(AclRoleResponse resp, AclRoleJoinVO role) {
         return _aclRoleJoinDao.setAclRoleResponse(resp, role);
+    }
+
+    public static List<AclGroupJoinVO> newAclGroupView(AclGroup group) {
+        return _aclGroupJoinDao.newAclGroupView(group);
+    }
+
+    public static AclGroupResponse newAclGroupResponse(AclGroupJoinVO group) {
+        return _aclGroupJoinDao.newAclGroupResponse(group);
+    }
+
+    public static AclGroupResponse fillAclGroupDetails(AclGroupResponse resp, AclGroupJoinVO group) {
+        return _aclGroupJoinDao.setAclGroupResponse(resp, group);
     }
 
     public static List<? extends LoadBalancer> listSiteLoadBalancers(long gslbRuleId) {

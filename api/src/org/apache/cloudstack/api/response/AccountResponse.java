@@ -187,6 +187,9 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @SerializedName(ApiConstants.IS_DEFAULT) @Param(description="true if account is default, false otherwise", since="4.2.0")
     private Boolean isDefault;
 
+    @SerializedName(ApiConstants.ACL_GROUPS)
+    @Param(description = "the list of acl groups that account belongs to", responseObject = AclGroupResponse.class)
+    private List<AclGroupResponse> groups;
 
     @Override
     public String getObjectId() {

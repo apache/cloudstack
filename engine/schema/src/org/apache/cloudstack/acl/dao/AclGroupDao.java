@@ -23,6 +23,6 @@ import com.cloud.utils.db.GenericDao;
 
 public interface AclGroupDao extends GenericDao<AclGroupVO, Long> {
 
-    AclGroup findByName(String groupName);
+    AclGroup findByName(Long domainId, String groupName);
 
 }

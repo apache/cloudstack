@@ -18,8 +18,6 @@ package org.apache.cloudstack.acl;
 
 import java.util.List;
 
-import com.cloud.utils.Pair;
-
 public interface AclService {
 
     /**
@@ -48,6 +46,10 @@ public interface AclService {
 
     AclGroup removeAclRolesFromGroup(List<Long> roleIds, Long groupId);
 
+    AclGroup addAccountsToGroup(List<Long> acctIds, Long groupId);
+
+    AclGroup removeAccountsFromGroup(List<Long> acctIds, Long groupId);
+
     /**
      * Creates an acl group for the given domain.
      *
@@ -66,23 +68,5 @@ public interface AclService {
      */
     boolean deleteAclGroup(Long aclGroupId);
 
-    /** Lists Acl groups for a domain
-     * @param domainId
-     * @param aclGroupId
-     * @param aclGroupName
-     * @param startIndex
-     * @param pageSize
-     * @return
-     */
-    Pair<List<? extends AclRole>, Integer> listAclGroups(Long aclRoleId, String aclRoleName,
-            Long domainId, Long startIndex, Long pageSize);
-
-
-    /**
-     * Get the acl group for the given group id.
-     * @param groupId
-     * @return AclGroup
-     */
-    AclRole getAclGroup(Long groupId);
 
 }

@@ -524,6 +524,7 @@ public class ApiConstants {
     public static final String ACL_ROLES = "roles";
     public static final String ACL_ROLE_IDS = "roleids";
     public static final String ACL_APIS = "apis";
+    public static final String ACL_GROUPS = "groups";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

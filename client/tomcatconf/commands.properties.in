@@ -685,6 +685,11 @@ deleteAclRole=7
 listAclRoles=7
 grantPermissionToAclRole=7
 revokePermissionFromAclRole=7
+createAclGroup=7
+deleteAclGroup=7
+listAclGroups=7
 addAclRoleToAclGroup=7
 removeAclRoleFromAclGroup=7
+addAccountToAclGroup=7
+removeAccountFromAclGroup=7
 
