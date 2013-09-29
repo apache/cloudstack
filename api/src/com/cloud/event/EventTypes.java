@@ -188,6 +188,8 @@ public class EventTypes {
     public static final String EVENT_VOLUME_DETAIL_UPDATE = "VOLUME.DETAIL.UPDATE";
     public static final String EVENT_VOLUME_DETAIL_ADD = "VOLUME.DETAIL.ADD";
     public static final String EVENT_VOLUME_DETAIL_REMOVE = "VOLUME.DETAIL.REMOVE";
+    public static final String EVENT_VOLUME_UPDATE = "VOLUME.UPDATE";
+
 
     // Domains
     public static final String EVENT_DOMAIN_CREATE = "DOMAIN.CREATE";
