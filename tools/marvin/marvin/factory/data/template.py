@@ -17,7 +17,7 @@
 
 from marvin.factory.template import TemplateFactory
 
-class DefaultBuiltInTemplateFactory(TemplateFactory):
+class DefaultBuiltInTemplate(TemplateFactory):
     ostype = 'CentOS 5.3 (64-bit)'
     displaytext = 'CentOS 5.3 (64-bit)'
     name = 'CentOS 5.3 (64-bit)'

@@ -19,7 +19,7 @@ import factory
 from marvin.factory.serviceoffering import ServiceOfferingFactory
 from marvin.legacy.utils import random_gen
 
-class SmallServiceOfferingFactory(ServiceOfferingFactory):
+class SmallServiceOffering(ServiceOfferingFactory):
     cpunumber = 1
     cpuspeed = 100 #Mhz
     memory = 100 #MB

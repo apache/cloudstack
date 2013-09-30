@@ -20,7 +20,7 @@ from marvin.factory.networkoffering import NetworkOfferingFactory
 from marvin.legacy.utils import random_gen
 
 
-class DefaultIsolatedNetworkOfferingWithSourceNatServiceFactory(NetworkOfferingFactory):
+class DefaultIsolatedNetworkOfferingWithSourceNatService(NetworkOfferingFactory):
     #FIXME: Service Capability Lists with CapabilityTypes (ElasticIP, RvR etc) needs handling
 
     displaytext = factory.Sequence(lambda n : "DefaultIsolatedNetworkOfferingWithSourceNatService" + random_gen())
@@ -51,7 +51,7 @@ class DefaultIsolatedNetworkOfferingWithSourceNatServiceFactory(NetworkOfferingF
         self.update(apiclient=self.apiclient, id=self.id, state='Enabled')
 
 
-class DefaultSharedNetworkOfferingWithSGServiceFactory(NetworkOfferingFactory):
+class DefaultSharedNetworkOfferingWithSGService(NetworkOfferingFactory):
 
     displaytext = factory.Sequence(lambda n : "DefaultSharedNetworkOfferingWithSGService" + random_gen())
     name = factory.Sequence(lambda n : "DefaultSharedNetworkOfferingWithSGService" + random_gen())
@@ -86,7 +86,7 @@ class DefaultSharedNetworkOfferingWithSGServiceFactory(NetworkOfferingFactory):
         self.update(apiclient=self.apiclient, id=self.id, state='Enabled')
 
 
-class DefaultSharedNetworkOfferingFactory(NetworkOfferingFactory):
+class DefaultSharedNetworkOffering(NetworkOfferingFactory):
 
     displaytext = factory.Sequence(lambda n : "DefaultSharedNetworkOfferingFactory-%s" % random_gen())
     name = factory.Sequence(lambda n : "DefaultSharedNetworkOfferingFactory-%s" % random_gen())
@@ -106,6 +106,37 @@ class DefaultSharedNetworkOfferingFactory(NetworkOfferingFactory):
             {
                 'service': service,
                 'provider': 'VirtualRouter'
+            }
+        )
+
+    # enable the offering post generation
+    @factory.post_generation
+    def enable(self, create, extracted, **kwargs):
+        if not create:
+            return
+        self.update(apiclient=self.apiclient, id=self.id, state='Enabled')
+
+
+class DefaultIsolatedNetworkOfferingForVpc(NetworkOfferingFactory):
+
+    displaytext = factory.Sequence(lambda n : "DefaultIsolatedNetworkOfferingForVpc-%s" % random_gen())
+    name = factory.Sequence(lambda n : "DefaultIsolatedNetworkOfferingForVpc-%s" % random_gen())
+    availability = "Optional"
+    supportedservices = "SourceNat,Dns,Lb,PortForwarding,StaticNat,NetworkACL,Dhcp,Vpn,UserData"
+    guestiptype = "Isolated"
+    traffictype = "GUEST"
+
+    specifyVlan = False
+    specifyIpRanges = False
+    isPersistent = False
+    conserveMode = False
+
+    serviceProviderList = []
+    for service in map(lambda l: l.strip(' '), supportedservices.split(',')):
+        serviceProviderList.append(
+            {
+                'service': service,
+                'provider': 'VpcVirtualRouter'
             }
         )
 

@@ -19,7 +19,7 @@ import factory
 from marvin.factory.account import AccountFactory
 from marvin.legacy.utils import random_gen
 
-class UserAccountFactory(AccountFactory):
+class UserAccount(AccountFactory):
 
     accounttype = 0
     firstname = factory.Sequence(lambda n: random_gen())
@@ -29,10 +29,10 @@ class UserAccountFactory(AccountFactory):
     password = 'password'
 
 
-class AdminAccountFactory(UserAccountFactory):
+class AdminAccount(UserAccount):
     accounttype = 1
 
 
-class DomainAdminFactory(UserAccountFactory):
+class DomainAdmin(UserAccount):
     accounttype = 2
     domainid = None

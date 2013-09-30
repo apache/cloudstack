@@ -15,17 +15,21 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from marvin.factory.host import HostFactory
+import factory
+from marvin.factory.vpc import VpcFactory
+from marvin.factory.data.vpcoffering import DefaultVpcOffering
+from marvin.legacy.utils import random_gen
 
-class XenserverHost(HostFactory):
+class DefaultVpc(VpcFactory):
 
-    hypervisor = 'XenServer'
-    password = 'password'
-    username = 'root'
-
-
-class KvmHost(HostFactory):
-
-    hypervisor = 'KVM'
-    password = 'password'
-    username = 'root'
+    name = factory.Sequence(lambda e: "DefaultVpc" + random_gen())
+    cidr = '10.0.0.1/24'
+    displaytext = name
+    zoneid = None
+    apiclient = None
+    vpcoffering = \
+        factory.SubFactory(
+            DefaultVpcOffering,
+            apiclient=factory.SelfAttribute('..apiclient')
+        )
+    vpcofferingid = factory.LazyAttribute(lambda vo: vo.vpcoffering.id if vo.vpcoffering else vo.vpcoffering)

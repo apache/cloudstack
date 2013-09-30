@@ -19,14 +19,14 @@ import factory
 from marvin.factory.zone import ZoneFactory
 from marvin.legacy.utils import random_gen
 
-class AdvancedZoneFactory(ZoneFactory):
+class AdvancedZone(ZoneFactory):
     name = factory.Sequence(lambda n: "advzone" + random_gen())
     networktype = "Advanced"
     dns1 = "8.8.8.8"
     internaldns1 = "8.8.8.8"
 
 
-class BasicZoneFactory(ZoneFactory):
+class BasicZone(ZoneFactory):
     name = factory.Sequence(lambda n: "basiczone" + random_gen())
     networktype = "Basic"
     dns1 = "8.8.8.8"

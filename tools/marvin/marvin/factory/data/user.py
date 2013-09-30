@@ -17,17 +17,17 @@
 
 import factory
 from marvin.factory.user import UserFactory
-from marvin.factory.data.account import UserAccountFactory
+from marvin.factory.data.account import UserAccount
 from marvin.legacy.utils import random_gen
 
-class UserFactory(UserFactory):
+class User(UserFactory):
 
     firstname = factory.Sequence(lambda n: random_gen())
     lastname = factory.Sequence(lambda n: random_gen())
     email = factory.LazyAttribute(lambda e: '{0}.{1}@cloudstack.org'.format(e.firstname, e.lastname).lower())
     username = factory.Sequence(lambda n: random_gen())
     password = 'password'
-    account = factory.SubFactory(UserAccountFactory,
+    account = factory.SubFactory(UserAccount,
         apiclient=factory.SelfAttribute('..apiclient'),
         accounttype=0,
         firstname=factory.SelfAttribute('..firstname'),
@@ -37,9 +37,9 @@ class UserFactory(UserFactory):
         username=factory.SelfAttribute('..username'),
     )
 
-class AdminUserFactory(UserFactory):
+class AdminUser(UserFactory):
 
-    account = factory.SubFactory(UserAccountFactory,
+    account = factory.SubFactory(UserAccount,
         apiclient=factory.SelfAttribute('..apiclient'),
         accounttype=1,
         firstname=factory.SelfAttribute('..firstname'),

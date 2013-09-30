@@ -19,12 +19,12 @@ import factory
 from marvin.legacy.utils import random_gen
 from marvin.factory.cluster import ClusterFactory
 
-class XenClusterFactory(ClusterFactory):
+class XenCluster(ClusterFactory):
     clustername = factory.Sequence(lambda n: "xencluster" + random_gen())
     clustertype = "XenServer"
     hypervisor = "XenServer"
 
-class KvmClusterFactory(ClusterFactory):
+class KvmCluster(ClusterFactory):
     clustername = factory.Sequence(lambda n: "kvmcluster" + random_gen())
     clustertype = "KVM"
     hypervisor = "KVM"

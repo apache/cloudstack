@@ -18,31 +18,47 @@
 import factory
 from marvin.legacy.utils import random_gen
 from marvin.factory.network import NetworkFactory
-from marvin.factory.data.networkoffering import DefaultIsolatedNetworkOfferingWithSourceNatServiceFactory
-from marvin.factory.data.networkoffering import DefaultSharedNetworkOfferingFactory
+from marvin.factory.data.networkoffering import DefaultIsolatedNetworkOfferingWithSourceNatService
+from marvin.factory.data.networkoffering import DefaultSharedNetworkOffering
+from marvin.factory.data.networkoffering import DefaultIsolatedNetworkOfferingForVpc
 
-class GuestIsolatedNetworkFactory(NetworkFactory):
+class GuestIsolatedNetwork(NetworkFactory):
 
     displaytext = factory.Sequence(lambda n: 'GuestIsolatedNetwork-%s' % random_gen())
     name = factory.Sequence(lambda n: 'GuestIsolatedNetwork-%s' % random_gen())
     networkoffering =\
     factory.SubFactory(
-        DefaultIsolatedNetworkOfferingWithSourceNatServiceFactory,
+        DefaultIsolatedNetworkOfferingWithSourceNatService,
         apiclient=factory.SelfAttribute('..apiclient'),
         name=factory.Sequence(lambda n: 'GuestIsolatedNetworkOffering-%s' % random_gen()),
     )
     networkofferingid = factory.LazyAttribute(lambda no: no.networkoffering.id if no.networkoffering else no.networkoffering)
     zoneid = None
 
-class SharedNetworkFactory(NetworkFactory):
+class SharedNetwork(NetworkFactory):
 
     displaytext = factory.Sequence(lambda n: 'SharedNetwork-%s' % random_gen())
-    name = factory.Sequence(lambda n: 'SharedNetwork-%d' % random_gen())
+    name = factory.Sequence(lambda n: 'SharedNetwork-%s' % random_gen())
     networkoffering = \
         factory.SubFactory(
-            DefaultSharedNetworkOfferingFactory,
+            DefaultSharedNetworkOffering,
             apiclient=factory.SelfAttribute('..apiclient'),
             name=factory.Sequence(lambda n: 'SharedNetworkOffering-%s' % random_gen())
         )
-    networkofferingid = factory.LazyAttribute(lambda no: no.networkoffering.id if not no.networkoffering else no.networkoffering)
+    networkofferingid = factory.LazyAttribute(lambda no: no.networkoffering.id if no.networkoffering else no.networkoffering)
+    zoneid = None
+
+class DefaultVpcNetwork(NetworkFactory):
+
+    displaytext = factory.Sequence(lambda n: 'DefaultVpcNetwork-%s' % random_gen())
+    name = factory.Sequence(lambda n: 'DefaultVpcNetwork-%s' % random_gen())
+    networkoffering = \
+        factory.SubFactory(
+            DefaultIsolatedNetworkOfferingForVpc,
+            apiclient=factory.SelfAttribute('..apiclient'),
+            name=factory.Sequence(lambda n: 'DefaultVpcNetwork-%s' % random_gen())
+        )
+    gateway = '10.0.0.1'
+    netmask = '255.255.255.192'
+    networkofferingid = factory.LazyAttribute(lambda no: no.networkoffering.id if no.networkoffering else no.networkoffering)
     zoneid = None

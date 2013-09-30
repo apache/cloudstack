@@ -15,18 +15,77 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import factory
 from marvin.factory.virtualmachine import VirtualMachineFactory
+from marvin.entity.ipaddress import IpAddress
+from marvin.entity.network import Network
+from marvin.factory.data.firewallrule import SshFirewallRule
+from marvin.factory.data.vpc import DefaultVpc
+from marvin.factory.data.network import DefaultVpcNetwork
 
-class VirtualMachineIsolatedNetwork(VirtualMachineFactory):
+class VirtualMachineWithStaticNat(VirtualMachineFactory):
+    """VirtualMachine in an isolated network of an advanced zone
+
+    Open a static-nat rule to connect to the guest over port 22
     """
-    Creates a virtualmachine in an isolated network typically in an advanced zone inside a user account
 
-    Uses a serviceoffering of tinyInstance of the shared storage type
-    Uses a builtin template available
-    Deploys in the first zone available
+    @factory.post_generation
+    def staticNat(self, create, extracted, **kwargs):
+        if not create:
+            return
+        ipassoc = IpAddress(
+            apiclient=self.apiclient,
+            account=self.account,
+            domainid=self.domainid,
+            zoneid=self.zoneid,
+        )
+        ssh_fwrule = SshFirewallRule(
+            apiclient=self.apiclient,
+            ipaddressid=ipassoc.id
+        )
+        ntwks = Network.list(
+            apiclient=self.apiclient,
+            account=self.account,
+            domainid=self.domainid,
+        )
+        ntwks[0].enableStaticNat(
+            apiclient=self.apiclient,
+            ipaddressid=ipassoc.id,
+            virtualmachineid=self.id,
+        )
+        self.ssh_ip = ipassoc.ipaddress
+        self.public_ip = ipassoc.ipaddress
+
+
+class VirtualMachineWithIngress(VirtualMachineFactory):
+    """VirtualMachine created in a basic zone with security groups
+
+    Allow port 22 (ingress) into the guest
+    """
+    @factory.post_generation
+    def allowIngress(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+
+class VpcVirtualMachine(VirtualMachineFactory):
+    """
+    VirtualMachine within a VPC created by DefaultVPC offering
     """
 
-    apiclient = None
-    serviceofferingid = None
-    templateid = None
-    zoneid = None
+    vpc = factory.SubFactory(
+        DefaultVpc,
+        apiclient=factory.SelfAttribute('..apiclient'),
+        account=factory.SelfAttribute('..account'),
+        domainid=factory.SelfAttribute('..domainid'),
+        zoneid=factory.SelfAttribute('..zoneid')
+    )
+    ntwk = factory.SubFactory(
+        DefaultVpcNetwork,
+        apiclient=factory.SelfAttribute('..apiclient'),
+        account=factory.SelfAttribute('..account'),
+        domainid=factory.SelfAttribute('..domainid'),
+        zoneid=factory.SelfAttribute('..zoneid'),
+        vpcid=factory.SelfAttribute('..vpc.id')
+    )
+    networkid=factory.LazyAttribute(lambda n: n.ntwk.id if n else None)
