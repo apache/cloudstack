@@ -17,10 +17,10 @@
 
 grammar = ['create', 'list', 'delete', 'update', 'ldap', 'login', 'logout',
            'enable', 'activate', 'disable', 'add', 'remove',
-           'attach', 'detach', 'associate', 'generate', 'assign',
+           'attach', 'detach', 'associate', 'dissociate', 'generate', 'assign',
            'authorize', 'change', 'register', 'configure',
            'start', 'restart', 'reboot', 'stop', 'reconnect',
-           'cancel', 'destroy', 'revoke', 'mark', 'reset',
+           'cancel', 'destroy', 'revoke', 'mark', 'modify', 'reset',
            'copy', 'extract', 'migrate', 'restore', 'suspend',
            'get', 'query', 'prepare', 'deploy', 'upload', 'lock',
            'disassociate', 'scale', 'dedicate', 'archive', 'find',
