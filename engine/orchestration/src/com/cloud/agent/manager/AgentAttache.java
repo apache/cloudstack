@@ -31,6 +31,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.Listener;
@@ -497,14 +498,14 @@ public abstract class AgentAttache {
      */
     protected abstract boolean isClosed();
 
-    protected class Alarm implements Runnable {
+    protected class Alarm extends ManagedContextRunnable {
         long _seq;
         public Alarm(long seq) {
             _seq = seq;
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 Listener listener = unregisterListener(_seq);
                 if (listener != null) {

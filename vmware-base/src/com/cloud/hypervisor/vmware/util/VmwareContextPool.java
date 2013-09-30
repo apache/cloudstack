@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.log4j.Logger;
 
 public class VmwareContextPool {
@@ -117,9 +119,9 @@ public class VmwareContextPool {
 	}
 	
 	private TimerTask getTimerTask() {
-		return new TimerTask() {
-			@Override
-			public void run() {
+		return new ManagedContextTimerTask() {
+            @Override
+            protected void runInContext() {
 				try {
 					// doIdleCheck();
 					

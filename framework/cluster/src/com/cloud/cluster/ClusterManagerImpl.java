@@ -218,18 +218,18 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
     }
     
     private Runnable getClusterPduSendingTask() {
-        return new Runnable() {
+        return new ManagedContextRunnable() {
             @Override
-            public void run() {
+            protected void runInContext() {
                 onSendingClusterPdu();
             }
         };
     }
     
     private Runnable getClusterPduNotificationTask() {
-        return new Runnable() {
+        return new ManagedContextRunnable() {
             @Override
-            public void run() {
+            protected void runInContext() {
                 onNotifyingClusterPdu();
             }
         };
@@ -290,9 +290,9 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                 if(pdu == null)
                 	continue;
 
-                _executor.execute(new Runnable() {
+                _executor.execute(new ManagedContextRunnable() {
                     @Override
-                	public void run() {
+                    protected void runInContext() {
 		                if(pdu.getPduType() == ClusterServicePdu.PDU_TYPE_RESPONSE) {
 		                    ClusterServiceRequestPdu requestPdu = popRequestPdu(pdu.getAckSequenceId());
 		                    if(requestPdu != null) {
@@ -529,9 +529,9 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
     }
 
     private Runnable getHeartbeatTask() {
-        return new Runnable() {
+        return new ManagedContextRunnable() {
             @Override
-            public void run() {
+            protected void runInContext() {
                 Transaction txn = Transaction.open("ClusterHeartbeat");
                 try {
                     Profiler profiler = new Profiler();

@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.management.StandardMBean;
 
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -198,10 +199,9 @@ public class ConnectionConcierge {
 
             _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ConnectionConcierge"));
 
-            _executor.scheduleAtFixedRate(new Runnable() {
-
+            _executor.scheduleAtFixedRate(new ManagedContextRunnable() {
                 @Override
-                public void run() {
+                protected void runInContext() {
                     s_logger.trace("connection concierge keep alive task");
                     for (Map.Entry<String, ConnectionConcierge> entry : _conns.entrySet()) {
                         ConnectionConcierge concierge = entry.getValue();

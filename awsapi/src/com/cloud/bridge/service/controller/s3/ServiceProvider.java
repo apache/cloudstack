@@ -35,6 +35,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.axis2.AxisFault;
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.springframework.stereotype.Component;
@@ -280,10 +281,9 @@ public class ServiceProvider extends ManagerBase {
     }
 
     private TimerTask getHeartbeatTask() {
-        return new TimerTask() {
-
+        return new ManagedContextTimerTask() {
             @Override
-            public void run() {
+            protected void runInContext() {
                 try {
                     mhost.setLastHeartbeatTime(DateHelper.currentGMTTime());
                     mhostDao.updateHeartBeat(mhost);

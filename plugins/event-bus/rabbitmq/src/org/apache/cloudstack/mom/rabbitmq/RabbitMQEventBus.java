@@ -20,7 +20,9 @@
 package org.apache.cloudstack.mom.rabbitmq;
 
 import com.rabbitmq.client.*;
+
 import org.apache.cloudstack.framework.events.*;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.Ternary;
@@ -28,6 +30,7 @@ import com.cloud.utils.component.ManagerBase;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
+
 import java.io.IOException;
 import java.net.ConnectException;
 import java.util.Map;
@@ -493,12 +496,13 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
     }
 
     // retry logic to connect back to AMQP server after loss of connection
-    private class ReconnectionTask implements Runnable {
+    private class ReconnectionTask extends ManagedContextRunnable {
 
         boolean connected = false;
         Connection connection = null;
 
-        public void run() {
+        @Override
+        protected void runInContext() {
 
             while (!connected) {
                 try {

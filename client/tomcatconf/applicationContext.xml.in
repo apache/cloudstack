@@ -53,6 +53,22 @@
   </bean>
 
   <!--
+    Managed Context
+  -->
+  <bean id="ManagedContext" class="org.apache.cloudstack.managed.context.impl.DefaultManagedContext" >
+    <property name="listeners">
+        <list>
+            <bean class="org.apache.cloudstack.context.CallContextListener" />
+        </list>
+    </property>
+  </bean>
+
+  <bean class="org.apache.cloudstack.managed.context.ManagedContextRunnable" factory-method="initializeGlobalContext" 
+    autowire-candidate="false" >
+    <constructor-arg><ref bean="ManagedContext"/></constructor-arg>
+  </bean>
+
+  <!--
     RPC/Async/EventBus
   -->
 

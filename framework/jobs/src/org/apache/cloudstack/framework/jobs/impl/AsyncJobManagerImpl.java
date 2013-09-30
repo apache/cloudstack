@@ -490,9 +490,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     private Runnable getExecutorRunnable(final AsyncJob job) {
-        return new Runnable() {
+        return new ManagedContextRunnable() {
             @Override
-            public void run() {
+            protected void runInContext() {
                 Transaction txn = null;
                 long runNumber = getJobRunNumber();
 
@@ -687,9 +687,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     private Runnable getHeartbeatTask() {
-        return new Runnable() {
+        return new ManagedContextRunnable() {
             @Override
-            public void run() {
+            protected void runInContext() {
                 Transaction txn = Transaction.open("AsyncJobManagerImpl.getHeartbeatTask");
                 try {
                     List<SyncQueueItemVO> l = _queueMgr.dequeueFromAny(getMsid(), MAX_ONETIME_SCHEDULE_SIZE);

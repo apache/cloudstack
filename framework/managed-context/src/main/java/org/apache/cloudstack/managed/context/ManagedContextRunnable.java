@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.managed.context;
 
+import org.apache.cloudstack.managed.context.impl.DefaultManagedContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,13 +27,17 @@ public abstract class ManagedContextRunnable implements Runnable {
     private static final int SLEEP_COUNT = 120;
     
     private static final Logger log = LoggerFactory.getLogger(ManagedContextRunnable.class);
+    private static final ManagedContext DEFAULT_MANAGED_CONTEXT = new DefaultManagedContext();
     private static ManagedContext context;
+    private static boolean managedContext = false;
+    
     
     /* This is slightly dirty, but the idea is that we only save the ManagedContext
      * in a static global.  Any ManagedContextListener can be a fully managed object
      * and not have to rely on global statics
      */
     public static ManagedContext initializeGlobalContext(ManagedContext context) {
+        setManagedContext(true);
         return ManagedContextRunnable.context = context; 
     }
 
@@ -43,13 +48,15 @@ public abstract class ManagedContextRunnable implements Runnable {
             public void run() {
                 runInContext();
             }
-
         });
     }
  
     protected abstract void runInContext();
 
     protected ManagedContext getContext() {
+        if ( ! managedContext )
+            return DEFAULT_MANAGED_CONTEXT;
+        
         for ( int i = 0 ; i < SLEEP_COUNT ; i++ ) {
             if ( context == null ) {
                 try {
@@ -67,4 +74,13 @@ public abstract class ManagedContextRunnable implements Runnable {
         
         throw new RuntimeException("Failed to obtain ManagedContext");
     }
+
+    public static boolean isManagedContext() {
+        return managedContext;
+    }
+
+    public static void setManagedContext(boolean managedContext) {
+        ManagedContextRunnable.managedContext = managedContext;
+    }
+
 }

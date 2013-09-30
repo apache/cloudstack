@@ -200,14 +200,14 @@ public class CallContext {
                 s_logger.trace("Popping from NDC: " + contextId);
             }
         }
-        
+
         Stack<CallContext> stack = s_currentContextStack.get();
         stack.pop();
-        
+
         if ( ! stack.isEmpty() ) {
             s_currentContext.set(stack.peek());
         }
-        
+
         return context;
     }
 

@@ -32,6 +32,7 @@ import java.util.Properties;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.Agent.ExitStatus;
@@ -357,8 +358,9 @@ public class ConsoleProxyResource extends ServerResourceBase implements
     private void launchConsoleProxy(final byte[] ksBits, final String ksPassword, final String encryptorPassword) {
         final Object resource = this;
         if (_consoleProxyMain == null) {
-            _consoleProxyMain = new Thread(new Runnable() {
-                public void run() {
+            _consoleProxyMain = new Thread(new ManagedContextRunnable() {
+                @Override
+                protected void runInContext() {
                     try {
                         Class<?> consoleProxyClazz = Class.forName("com.cloud.consoleproxy.ConsoleProxy");
                         try {

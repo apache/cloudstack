@@ -1016,7 +1016,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return attache;
     }
 
-    protected class SimulateStartTask extends ManagedContextRunnable implements Runnable {
+    protected class SimulateStartTask extends ManagedContextRunnable {
         ServerResource resource;
         Map<String, String> details;
         long id;
@@ -1056,7 +1056,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
-    protected class HandleAgentConnectTask extends ManagedContextRunnable implements Runnable {
+    protected class HandleAgentConnectTask extends ManagedContextRunnable {
         Link _link;
         Command[] _cmds;
         Request _request;
