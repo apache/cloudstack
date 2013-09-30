@@ -31,10 +31,10 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
-
-import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContext;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
@@ -116,6 +116,9 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
     long _serverId;
+    
+    @Inject
+    ManagedContext _managedContext;
 
     List<Investigator> _investigators;
     public List<Investigator> getInvestigators() {
@@ -773,9 +776,9 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         return true;
     }
 
-    protected class CleanupTask implements Runnable {
+    protected class CleanupTask extends ManagedContextRunnable {
         @Override
-        public void run() {
+        protected void runInContext() {
             s_logger.info("HA Cleanup Thread Running");
 
             try {
@@ -793,71 +796,75 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
         @Override
         public void run() {
-            ServerContexts.registerSystemContext();
-            try {
-                s_logger.info("Starting work");
-                while (!_stopped) {
-                    HaWorkVO work = null;
-                        try {
-                        s_logger.trace("Checking the database");
-                        work = _haDao.take(_serverId);
-                        if (work == null) {
-                            try {
-                                synchronized (this) {
-                                    wait(_timeToSleep);
-                                }
-                                continue;
-                            } catch (final InterruptedException e) {
-                                s_logger.info("Interrupted");
-                                continue;
-                            }
-                        }
-
-                        NDC.push("work-" + work.getId());
-                        s_logger.info("Processing " + work);
-
-                        try {
-                            final WorkType wt = work.getWorkType();
-                            Long nextTime = null;
-                            if (wt == WorkType.Migration) {
-                                nextTime = migrate(work);
-                            } else if (wt == WorkType.HA) {
-                                nextTime = restart(work);
-                            } else if (wt == WorkType.Stop || wt == WorkType.CheckStop || wt == WorkType.ForceStop) {
-                                nextTime = stopVM(work);
-                            } else if (wt == WorkType.Destroy) {
-                                nextTime = destroyVM(work);
-                            } else {
-                                assert false : "How did we get here with " + wt.toString();
-                                continue;
-                            }
-
-                            if (nextTime == null) {
-                                s_logger.info("Completed " + work);
-                                work.setStep(Step.Done);
-                            } else {
-                                s_logger.info("Rescheduling " + work + " to try again at " + new Date(nextTime << 10));
-                                work.setTimeToTry(nextTime);
-                                work.setServerId(null);
-                                work.setDateTaken(null);
-                            }
-                        } catch (Exception e) {
-                            s_logger.error("Terminating " + work, e);
-                            work.setStep(Step.Error);
-                        }
-                        _haDao.update(work.getId(), work);
-                    } catch (final Throwable th) {
-                        s_logger.error("Caught this throwable, ", th);
-                    } finally {
-                        if (work != null) {
-                            NDC.pop();
-                            }
-                        }
+            s_logger.info("Starting work");
+            while (!_stopped) {
+                _managedContext.runWithContext(new Runnable() {
+                    @Override
+                    public void run() {
+                        runWithContext();
                     }
-                s_logger.info("Time to go home!");
-            } finally {
-                ServerContexts.unregisterSystemContext();
+                });
             }
+            s_logger.info("Time to go home!");
+        }
+
+        private void runWithContext() {
+            HaWorkVO work = null;
+                try {
+                s_logger.trace("Checking the database");
+                work = _haDao.take(_serverId);
+                if (work == null) {
+                    try {
+                        synchronized (this) {
+                            wait(_timeToSleep);
+                        }
+                        return;
+                    } catch (final InterruptedException e) {
+                        s_logger.info("Interrupted");
+                        return;
+                    }
+                }
+
+                NDC.push("work-" + work.getId());
+                s_logger.info("Processing " + work);
+
+                try {
+                    final WorkType wt = work.getWorkType();
+                    Long nextTime = null;
+                    if (wt == WorkType.Migration) {
+                        nextTime = migrate(work);
+                    } else if (wt == WorkType.HA) {
+                        nextTime = restart(work);
+                    } else if (wt == WorkType.Stop || wt == WorkType.CheckStop || wt == WorkType.ForceStop) {
+                        nextTime = stopVM(work);
+                    } else if (wt == WorkType.Destroy) {
+                        nextTime = destroyVM(work);
+                    } else {
+                        assert false : "How did we get here with " + wt.toString();
+                        return;
+                    }
+
+                    if (nextTime == null) {
+                        s_logger.info("Completed " + work);
+                        work.setStep(Step.Done);
+                    } else {
+                        s_logger.info("Rescheduling " + work + " to try again at " + new Date(nextTime << 10));
+                        work.setTimeToTry(nextTime);
+                        work.setServerId(null);
+                        work.setDateTaken(null);
+                    }
+                } catch (Exception e) {
+                    s_logger.error("Terminating " + work, e);
+                    work.setStep(Step.Error);
+                }
+                _haDao.update(work.getId(), work);
+            } catch (final Throwable th) {
+                s_logger.error("Caught this throwable, ", th);
+            } finally {
+                if (work != null) {
+                    NDC.pop();
+                    }
+                }
         }
 
         public synchronized void wakup() {

@@ -17,12 +17,12 @@
 package org.apache.cloudstack.framework.jobs;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobJoinMapVO;
 import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
 import org.apache.cloudstack.framework.jobs.impl.SyncQueueItem;
 import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -39,7 +39,7 @@ public class AsyncJobExecutionContext  {
         _joinMapDao = joinMapDao;
     }
 	
-	private static ThreadLocal<AsyncJobExecutionContext> s_currentExectionContext = new ThreadLocal<AsyncJobExecutionContext>();
+	private static ManagedThreadLocal<AsyncJobExecutionContext> s_currentExectionContext = new ManagedThreadLocal<AsyncJobExecutionContext>();
 
 	public AsyncJobExecutionContext() {
 	}

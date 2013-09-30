@@ -31,8 +31,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.ExternalNetworkResourceUsageAnswer;
@@ -331,14 +331,14 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
         }
     }
 
-    protected class ExternalDeviceNetworkUsageTask implements Runnable {
+    protected class ExternalDeviceNetworkUsageTask extends ManagedContextRunnable {
 
         public ExternalDeviceNetworkUsageTask() {
 
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             GlobalLock scanLock = GlobalLock.getInternLock("ExternalDeviceNetworkUsageManagerImpl");
             try {
                 if (scanLock.lock(20)) {

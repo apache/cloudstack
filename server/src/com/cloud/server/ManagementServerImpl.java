@@ -432,6 +432,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -2862,9 +2863,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return cmdList;
     }
 
-    protected class EventPurgeTask implements Runnable {
+    protected class EventPurgeTask extends ManagedContextRunnable {
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 GlobalLock lock = GlobalLock.getInternLock("EventPurge");
                 if (lock == null) {
@@ -2896,9 +2897,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
-    protected class AlertPurgeTask implements Runnable {
+    protected class AlertPurgeTask extends ManagedContextRunnable {
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 GlobalLock lock = GlobalLock.getInternLock("AlertPurge");
                 if (lock == null) {

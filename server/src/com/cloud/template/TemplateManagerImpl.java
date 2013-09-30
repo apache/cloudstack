@@ -73,6 +73,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.DettachCommand;
@@ -488,9 +489,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         for (final StoragePoolVO pool : pools) {
             if (pool.getDataCenterId() == zoneId) {
                 s_logger.info("Schedule to preload template " + template.getId() + " into primary storage " + pool.getId());
-                _preloadExecutor.execute(new Runnable() {
+                _preloadExecutor.execute(new ManagedContextRunnable() {
                     @Override
-                    public void run() {
+                    protected void runInContext() {
                         try {
                             reallyRun();
                         } catch (Throwable e) {

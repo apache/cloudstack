@@ -48,6 +48,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
@@ -636,9 +637,9 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
     }
 
     private Runnable getNotificationTask() {
-        return new Runnable() {
+        return new ManagedContextRunnable() {
             @Override
-            public void run() {
+            protected void runInContext() {
                 while(true) {
                     synchronized(_notificationMsgs) {
                         try {

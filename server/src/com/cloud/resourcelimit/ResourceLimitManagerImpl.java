@@ -32,9 +32,9 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -939,13 +939,13 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         return _resourceCountDao.getResourceCount(account.getId(), ResourceOwnerType.Account, type);
     }
 
-    protected class ResourceCountCheckTask implements Runnable {
+    protected class ResourceCountCheckTask extends ManagedContextRunnable {
         public ResourceCountCheckTask() {
 
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             s_logger.info("Running resource count check periodic task");
             List<DomainVO> domains = _domainDao.findImmediateChildrenForParent(DomainVO.ROOT_DOMAIN);
 

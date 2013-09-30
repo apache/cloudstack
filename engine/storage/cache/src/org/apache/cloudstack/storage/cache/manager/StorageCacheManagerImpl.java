@@ -45,6 +45,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.cache.allocator.StorageCacheAllocator;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
@@ -145,10 +146,10 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
         return true;
     }
 
-    protected class CacheReplacementRunner implements Runnable {
+    protected class CacheReplacementRunner extends ManagedContextRunnable {
 
         @Override
-        public void run() {
+        protected void runInContext() {
             GlobalLock replacementLock = null;
             try {
                 replacementLock = GlobalLock.getInternLock("storageCacheMgr.replacement");

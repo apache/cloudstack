@@ -98,7 +98,7 @@ public class UcsManagerImpl implements UcsManager {
     private ScheduledExecutorService syncBladesExecutor;
     private int syncBladeInterval;
 
-    private class SyncBladesThread implements Runnable {
+    private class SyncBladesThread extends ManagedContextRunnable {
 
 		private void discoverNewBlades(Map<String, UcsBladeVO> previous,
 				Map<String, ComputeBlade> now, UcsManagerVO mgr) {
@@ -156,7 +156,7 @@ public class UcsManagerImpl implements UcsManager {
     	}
 
 		@Override
-		public void run() {
+		protected void runInContext() {
 			try {
 				List<UcsManagerVO> mgrs = ucsDao.listAll();
 				for (UcsManagerVO mgr : mgrs) {

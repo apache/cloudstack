@@ -35,10 +35,9 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.usage.UsageTypes;
-
 import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
@@ -120,6 +119,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     @Inject protected UsageEventDao _usageEventDao;
     @Inject ConfigurationDao _configDao;
     @Inject private UsageVMSnapshotDao m_usageVMSnapshotDao;
+    @Inject ManagedContext _managedContext;
     
     private String m_version = null;
     private final Calendar m_jobExecTime = Calendar.getInstance();
@@ -279,7 +279,17 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         return true;
     }
 
+    @Override
     public void run() {
+        _managedContext.runWithContext(new Runnable() {
+            @Override
+            public void run() {
+                runInContext();
+            }
+        });
+    }
+    
+    protected void runInContext() {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("starting usage job...");
         }

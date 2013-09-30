@@ -26,12 +26,12 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 
 import com.cloud.utils.component.ManagerBase;
 
@@ -97,10 +97,9 @@ public class AsyncJobMonitor extends ManagerBase {
 			throws ConfigurationException {
 		
         _messageBus.subscribe(AsyncJob.Topics.JOB_HEARTBEAT, MessageDispatcher.getDispatcher(this));
-		_timer.scheduleAtFixedRate(new TimerTask() {
-
+		_timer.scheduleAtFixedRate(new ManagedContextTimerTask() {
 			@Override
-			public void run() {
+			protected void runInContext() {
 				heartbeat();
 			}
 			

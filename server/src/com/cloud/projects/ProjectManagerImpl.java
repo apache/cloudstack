@@ -42,7 +42,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -83,7 +83,6 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
@@ -1003,9 +1002,9 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         }
     }
 
-    public class ExpiredInvitationsCleanup implements Runnable {
+    public class ExpiredInvitationsCleanup extends ManagedContextRunnable {
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 TimeZone.getDefault();
                 List<ProjectInvitationVO> invitationsToExpire = _projectInvitationDao.listInvitationsToExpire(_invitationTimeOut);

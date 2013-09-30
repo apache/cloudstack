@@ -37,6 +37,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -230,9 +231,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
 	}
 
-	class HostCollector implements Runnable {
+	class HostCollector extends ManagedContextRunnable {
 		@Override
-        public void run() {
+        protected void runInContext() {
 			try {
 				s_logger.debug("HostStatsCollector is running...");
 
@@ -273,9 +274,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 		}
 	}
 
-	class VmStatsCollector implements Runnable {
+	class VmStatsCollector extends ManagedContextRunnable {
 		@Override
-        public void run() {
+        protected void runInContext() {
 			try {
 				s_logger.debug("VmStatsCollector is running...");
 
@@ -350,9 +351,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 		return _VmStats.get(id);
 	}
 
-    class VmDiskStatsUpdaterTask implements Runnable {
+    class VmDiskStatsUpdaterTask extends ManagedContextRunnable {
         @Override
-        public void run() {
+        protected void runInContext() {
             GlobalLock scanLock = GlobalLock.getInternLock("vm.disk.stats");
             try {
                 if(scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
@@ -397,9 +398,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
     }
 
-    class VmDiskStatsTask implements Runnable {
+    class VmDiskStatsTask extends ManagedContextRunnable {
         @Override
-        public void run() {
+        protected void runInContext() {
             // collect the vm disk statistics(total) from hypervisor. added by weizhou, 2013.03.
             Transaction txn = Transaction.open(Transaction.CLOUD_DB);
             try {
@@ -520,9 +521,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
     }
 
-	class StorageCollector implements Runnable {
+	class StorageCollector extends ManagedContextRunnable {
 		@Override
-        public void run() {
+        protected void runInContext() {
 			try {
 	            if (s_logger.isDebugEnabled()) {
 	            	s_logger.debug("StorageCollector is running...");
