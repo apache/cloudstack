@@ -25,13 +25,13 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.commons.lang.ObjectUtils;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.SystemIntegrityChecker;
@@ -97,10 +97,8 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, SystemInt
                     _configDao.persist(vo);
                 } else {
                     if (vo.isDynamic() != key.isDynamic() ||
-                        !vo.getDescription().equals(key.description()) ||
-                        ((vo.getDefaultValue() != null && key.defaultValue() == null) ||
-                         (vo.getDefaultValue() == null && key.defaultValue() != null) ||
-                        !vo.getDefaultValue().equals(key.defaultValue()))) {
+                        !ObjectUtils.equals(vo.getDescription(), vo.getDescription()) ||
+                        !ObjectUtils.equals(vo.getDefaultValue(), key.defaultValue())) {
                         vo.setDynamic(key.isDynamic());
                         vo.setDescription(key.description());
                         vo.setDefaultValue(key.defaultValue());
