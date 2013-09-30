@@ -250,7 +250,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Inject
     AlertManager _alertMgr;
     // @com.cloud.utils.component.Inject(adapter = SecurityChecker.class)
-    @Inject
     List<SecurityChecker> _secChecker;
 
     @Inject
@@ -4932,6 +4931,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
         return false;
+    }
+
+    public List<SecurityChecker> getSecChecker() {
+        return _secChecker;
+    }
+
+    @Inject
+    public void setSecChecker(List<SecurityChecker> secChecker) {
+        this._secChecker = secChecker;
     }
 
 

@@ -273,7 +273,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     protected VmDiskStatisticsDao _vmDiskStatsDao;
     @Inject
     protected VMSnapshotDao _vmSnapshotDao;
-    @Inject
     protected List<StoragePoolAllocator> _storagePoolAllocators;
     @Inject
     ConfigurationDao _configDao;
@@ -1691,6 +1690,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _customDiskOfferingMinSize = NumbersUtil.parseInt(_customDiskOfferingMinSizeStr, Integer.parseInt(Config.CustomDiskOfferingMinSize.getDefaultValue()));
 
         return true;
+    }
+
+    public List<StoragePoolAllocator> getStoragePoolAllocators() {
+        return _storagePoolAllocators;
+    }
+
+    @Inject
+    public void setStoragePoolAllocators(List<StoragePoolAllocator> storagePoolAllocators) {
+        this._storagePoolAllocators = storagePoolAllocators;
     }
 
 }

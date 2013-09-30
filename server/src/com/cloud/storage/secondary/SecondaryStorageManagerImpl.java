@@ -169,7 +169,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     private int _mgmt_port = 8250;
 
-    @Inject
     private List<SecondaryStorageVmAllocator> _ssVmAllocators;
 
     @Inject
@@ -1373,5 +1372,14 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     @Override
     public void prepareStop(VirtualMachineProfile profile) {
 
+    }
+
+    public List<SecondaryStorageVmAllocator> getSecondaryStorageVmAllocators() {
+        return _ssVmAllocators;
+    }
+
+    @Inject
+    public void setSecondaryStorageVmAllocators(List<SecondaryStorageVmAllocator> ssVmAllocators) {
+        this._ssVmAllocators = ssVmAllocators;
     }
 }

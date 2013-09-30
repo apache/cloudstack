@@ -230,7 +230,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     @Inject
     UsageEventDao _usageEventDao;
 
-    @Inject List<NetworkGuru> _networkGurus;
+    List<NetworkGuru> _networkGurus;
 
     @Inject
     NetworkDomainDao _networkDomainDao;
@@ -3942,6 +3942,15 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             }
         _accountMgr.checkAccess(caller, null, true, userVm);
         return _networkMgr.listVmNics(vmId, nicId);
+    }
+
+    public List<NetworkGuru> getNetworkGurus() {
+        return _networkGurus;
+    }
+
+    @Inject
+    public void setNetworkGurus(List<NetworkGuru> networkGurus) {
+        this._networkGurus = networkGurus;
     }
 
 }

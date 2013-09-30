@@ -291,7 +291,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     boolean _disableExtraction = false;
     ExecutorService _preloadExecutor;
 
-    @Inject
     protected List<TemplateAdapter> _adapters;
 
     @Inject
@@ -1822,5 +1821,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {AllowPublicUserTemplates};
+    }
+
+    public List<TemplateAdapter> getTemplateAdapters() {
+        return _adapters;
+    }
+
+    @Inject
+    public void setTemplateAdapters(List<TemplateAdapter> adapters) {
+        this._adapters = adapters;
     }
 }

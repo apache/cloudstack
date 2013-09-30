@@ -166,7 +166,6 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
 
     private int _mgmt_port = 8250;
 
-    @Inject
     private List<ConsoleProxyAllocator> _consoleProxyAllocators;
 
     @Inject
@@ -1700,6 +1699,15 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
 
     @Override
     public void prepareStop(VirtualMachineProfile profile) {
+    }
+
+    public List<ConsoleProxyAllocator> getConsoleProxyAllocators() {
+        return _consoleProxyAllocators;
+    }
+
+    @Inject
+    public void setConsoleProxyAllocators(List<ConsoleProxyAllocator> consoleProxyAllocators) {
+        this._consoleProxyAllocators = consoleProxyAllocators;
     }
 
 }
