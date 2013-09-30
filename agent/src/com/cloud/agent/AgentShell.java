@@ -19,14 +19,11 @@ package com.cloud.agent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -39,9 +36,7 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
-import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 
@@ -56,7 +51,6 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 public class AgentShell implements IAgentShell, Daemon {
     private static final Logger s_logger = Logger.getLogger(AgentShell.class
