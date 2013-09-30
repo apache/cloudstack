@@ -1,0 +1,21 @@
+@mixin csui-toolbar {
+    @include row;
+
+    padding: 5px;
+    background: #e0e0e0;
+
+    .search-bar {
+        @include span-columns(2);
+
+        input[type=text] {
+            padding: 5px;
+        }
+    }
+
+    .button.action {
+        @include csui-button;
+
+        float: right;
+        margin: 8px;
+    }
+}

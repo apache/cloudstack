@@ -240,7 +240,27 @@ body {
 
 // List view widget
 .list-view {
-    @include list;
+    @include csui-list;
+}
 
-    margin: 20px;
+.toolbar {
+    @include csui-toolbar;
+
+    .panel-controls {
+        display: none;
+    }
+
+    .section-select, .filters {
+        @include span-columns(3);
+
+        margin: 8px;
+
+        label {
+            top: 0px;
+            margin-right: 8px;
+        }
+
+        select {
+        }
+    }
 }
