@@ -641,6 +641,7 @@ public class ApiDBUtils {
         _serviceOfferingDetailsDao = serviceOfferingDetailsDao;
         _accountService = accountService;
         _aclRoleJoinDao = aclRoleJoinDao;
+        _aclGroupJoinDao = aclGroupJoinDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -1510,6 +1511,10 @@ public class ApiDBUtils {
 
     public static List<UserAccountJoinVO> findUserViewByAccountId(Long accountId){
         return _userAccountJoinDao.searchByAccountId(accountId);
+    }
+
+    public static List<AclGroupJoinVO> findAclGroupByAccountId(long accountId) {
+        return _aclGroupJoinDao.findAclGroupsByAccount(accountId);
     }
 
     public static ProjectAccountResponse newProjectAccountResponse(ProjectAccountJoinVO proj) {

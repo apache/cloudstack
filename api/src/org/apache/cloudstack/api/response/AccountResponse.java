@@ -438,4 +438,9 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     public void setIsDefault(Boolean isDefault) {
         this.isDefault = isDefault;
     }
+
+    public void setGroups(List<AclGroupResponse> groups) {
+        this.groups = groups;
+    }
+
 }

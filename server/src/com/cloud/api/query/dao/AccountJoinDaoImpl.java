@@ -21,15 +21,18 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.ResourceLimitAndCountResponse;
-import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.AclGroupResponse;
+import org.apache.cloudstack.api.response.ResourceLimitAndCountResponse;
+import org.apache.cloudstack.api.response.UserResponse;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
+import com.cloud.api.query.vo.AclGroupJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.user.Account;
@@ -43,7 +46,7 @@ import com.cloud.utils.db.SearchCriteria;
 public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> implements AccountJoinDao {
     public static final Logger s_logger = Logger.getLogger(AccountJoinDaoImpl.class);
 
-    private SearchBuilder<AccountJoinVO> acctIdSearch;
+    private final SearchBuilder<AccountJoinVO> acctIdSearch;
     @Inject
     public AccountManager _accountMgr;
 
@@ -53,7 +56,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         acctIdSearch.and("id", acctIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         acctIdSearch.done();
 
-        this._count = "select count(distinct id) from account_view WHERE ";
+        _count = "select count(distinct id) from account_view WHERE ";
     }
 
     @Override
@@ -100,6 +103,11 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         accountResponse.setDetails(ApiDBUtils.getAccountDetails(account.getId()));
         accountResponse.setObjectName("account");
         
+        // add all the acl groups for an account
+        List<AclGroupJoinVO> groupsForAccount = ApiDBUtils.findAclGroupByAccountId(account.getId());
+        List<AclGroupResponse> groupResponses = ViewResponseHelper.createAclGroupResponses(groupsForAccount);
+        accountResponse.setGroups(groupResponses);
+
         return accountResponse;
     }
 

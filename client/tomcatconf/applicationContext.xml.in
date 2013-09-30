@@ -376,7 +376,8 @@
   <bean id="AclGroupAccountMapDaoImpl" class="org.apache.cloudstack.acl.dao.AclGroupAccountMapDaoImpl"/>
   <bean id="AclGroupRoleMapDaoImpl" class="org.apache.cloudstack.acl.dao.AclGroupRoleMapDaoImpl"/> 
   <bean id="AclApiPermissionDaoImpl" class="org.apache.cloudstack.acl.dao.AclApiPermissionDaoImpl"/>
-  <bean id="AclEntityPermissionDaoImpl" class="org.apache.cloudstack.acl.dao.AclEntityPermissionDaoImpl"/>    
+  <bean id="AclEntityPermissionDaoImpl" class="org.apache.cloudstack.acl.dao.AclEntityPermissionDaoImpl"/>  
+  <bean id="AclServiceImpl" class="org.apache.cloudstack.acl.AclServiceImpl"/>      
   
    
   <!--
