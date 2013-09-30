@@ -172,6 +172,7 @@
     <module>test</module>
     <module>client</module>
     <module>services</module>
+    <module>maven-standard</module>
   </modules>
 
   <dependencyManagement>
