@@ -97,7 +97,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, SystemInt
                     _configDao.persist(vo);
                 } else {
                     if (vo.isDynamic() != key.isDynamic() ||
-                        !ObjectUtils.equals(vo.getDescription(), vo.getDescription()) ||
+                        !ObjectUtils.equals(vo.getDescription(), key.description()) ||
                         !ObjectUtils.equals(vo.getDefaultValue(), key.defaultValue())) {
                         vo.setDynamic(key.isDynamic());
                         vo.setDescription(key.description());
