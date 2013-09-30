@@ -49,6 +49,7 @@ public class ComponentContext implements ApplicationContextAware {
     private static final Logger s_logger = Logger.getLogger(ComponentContext.class);
 
     private static ApplicationContext s_appContext;
+    private static boolean s_initializeBeans = true;
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
@@ -61,6 +62,9 @@ public class ComponentContext implements ApplicationContextAware {
     }
 
     public static void initComponentsLifeCycle() {
+        if ( ! s_initializeBeans )
+            return;
+
         AutowireCapableBeanFactory beanFactory = s_appContext.getAutowireCapableBeanFactory();
 
         Map<String, ComponentMethodInterceptable> interceptableComponents = getApplicationContext().getBeansOfType(ComponentMethodInterceptable.class);
@@ -233,5 +237,13 @@ public class ComponentContext implements ApplicationContextAware {
         AutowireCapableBeanFactory beanFactory = s_appContext.getAutowireCapableBeanFactory();
         beanFactory.autowireBean(instance);
         return (T)instance;
+    }
+
+    public boolean isInitializeBeans() {
+        return s_initializeBeans;
+    }
+
+    public void setInitializeBeans(boolean initializeBeans) {
+        s_initializeBeans = initializeBeans;
     }
 }
