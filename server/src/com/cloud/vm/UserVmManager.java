@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.VmDiskStatsEntry;
@@ -110,4 +111,7 @@ public interface UserVmManager extends UserVmService {
     boolean setupVmForPvlan(boolean add, Long hostId, NicProfile nic);
 
     void collectVmDiskStatistics (UserVmVO userVm);
+
+    UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha, Boolean isDisplayVmEnabled, Long osTypeId, String userData,
+            Boolean isDynamicallyScalable, HTTPMethod httpMethod)throws ResourceUnavailableException, InsufficientCapacityException;
 }
