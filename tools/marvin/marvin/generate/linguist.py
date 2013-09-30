@@ -39,6 +39,14 @@ def transform_api(api):
         return 'login', 'CloudStack'
     elif api == 'logout':
         return 'logout', 'CloudStack'
+    elif api == 'authorizeSecurityGroupIngress':
+        return 'authorizeSecurityGroupIngress', 'SecurityGroup'
+    elif api == 'authorizeSecurityGroupEgress':
+        return 'authorizeSecurityGroupEgress', 'SecurityGroup'
+    elif api == 'revokeSecurityGroupIngress':
+        return 'revokeSecurityGroupIngress', 'SecurityGroup'
+    elif api == 'revokeSecurityGroupEgress':
+        return 'revokeSecurityGroupEgress', 'SecurityGroup'
     return api, None
 
 def verb_adjust(api, entity):
@@ -89,6 +97,8 @@ def entity_adjust(entity):
         return 'UserKeys'
     elif entity == 'FirewallRule':
         return 'Firewall'
+    elif entity == 'SecurityGroupRule':
+        return 'SecurityGroup'
     #Cloudstack maintains Template/ISO/Volume as single Image type
     #elif entity in ['Template', 'Volume']:
     #    return 'Image'

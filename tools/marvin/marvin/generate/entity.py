@@ -103,14 +103,32 @@ class Entity(object):
             #TODO: doc to explain what possible args go into **kwargs
             m.docstring = 'Placeholder for docstring\n' + 'optional arguments (**kwargs): [%s]"""' % ', '.join(
                 details['optionals'])
-            if not m.is_creator():
-                # remove the id arg as id is the self (object) itself
-                no_id_args = filter(lambda arg: arg != 'id', details['args'])
+            # remove the id arg as id is the self (object) itself
+            no_id_args = filter(lambda arg: arg != 'id', details['args'])
+            if m.is_enumerator():
+                m.signature = 'def %s(cls, apiclient=None, **kwargs):' % (action)
+                m.body.append(self.tabspace + 'cmd = %(module)s.%(command)s()' % {"module": details["apimodule"],
+                                                                                 "command": details["apicmd"]})
+                m.body.append(self.tabspace + '[setattr(cmd, key, value) for key, value in kwargs.iteritems()]')
+                m.body.append(self.tabspace + 'if apiclient:')
+                m.body.append(self.tabspace*2 + '%s = apiclient.%s(cmd)' % (entity.lower(), details['apimodule']))
+                m.body.append(self.tabspace + 'else:')
+                m.body.append(self.tabspace*2 + '%s = cls.apiclient.%s(cmd)' % (entity.lower(), details['apimodule']))
+                m.body.append(self.tabspace + '%s = map(lambda e: %s().__update__(e.__dict__), %s) '
+                                              'if %s and len(%s) > 0 else None' % ( entity.lower(),
+                                                                                    entity, entity.lower(),
+                                                                                    entity.lower(), entity.lower()))
+                m.body.append(
+                    self.tabspace + '%s = map(lambda e: e.__update__({\'apiclient\': apiclient if apiclient else cls.apiclient}), %s) if %s else None' % (
+                    entity.lower(), entity.lower(), entity.lower())
+                                  )
+                m.body.append(self.tabspace + 'return %s' % entity.lower())
+            elif not m.is_creator():
                 if len(no_id_args) > 0: # at least one required non-id argument
-                    m.signature = 'def %s(self, apiclient, %s, **kwargs):'\
+                    m.signature = 'def %s(self, %s, **kwargs):'\
                     % (action, ', '.join(list(set(no_id_args))))
                 else:
-                    m.signature = 'def %s(self, apiclient, **kwargs):' % (action)
+                    m.signature = 'def %s(self, **kwargs):' % (action)
                 m.body.append(self.tabspace + 'cmd = %(module)s.%(command)s()' % {"module": details["apimodule"],
                                                                                  "command": details["apicmd"]})
                 if 'id' in details['args']:
@@ -118,7 +136,7 @@ class Entity(object):
                 for arg in no_id_args:
                     m.body.append(self.tabspace + 'cmd.%s = %s' % (arg, arg))
                 m.body.append(self.tabspace + '[setattr(cmd, key, value) for key, value in kwargs.iteritems()]')
-                m.body.append(self.tabspace + '%s = apiclient.%s(cmd)' % (entity.lower(), details['apimodule']))
+                m.body.append(self.tabspace + '%s = self.apiclient.%s(cmd)' % (entity.lower(), details['apimodule']))
                 if m.is_enumerator():
                     m.body.append(self.tabspace +
                                   'return map(lambda e: %s().__update__(e.__dict__), %s) '
