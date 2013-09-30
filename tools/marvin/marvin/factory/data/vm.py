@@ -39,19 +39,10 @@ class VirtualMachineWithStaticNat(VirtualMachineFactory):
             domainid=self.domainid,
             zoneid=self.zoneid,
         )
-        ssh_fwrule = SshFirewallRule(
-            apiclient=self.apiclient,
-            ipaddressid=ipassoc.id
-        )
-        ntwks = Network.list(
-            apiclient=self.apiclient,
-            account=self.account,
-            domainid=self.domainid,
-        )
-        ntwks[0].enableStaticNat(
+        ipassoc.enableStaticNat(
             apiclient=self.apiclient,
             ipaddressid=ipassoc.id,
-            virtualmachineid=self.id,
+            virtualmachineid=self.id
         )
         self.ssh_ip = ipassoc.ipaddress
         self.public_ip = ipassoc.ipaddress

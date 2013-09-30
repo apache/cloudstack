@@ -15,8 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import marvin
-import unittest
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from time import sleep as delay

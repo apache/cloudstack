@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import unittest
+import unittest2 as unittest
 import logging
 from nose.plugins.attrib import attr
 from should_dsl import should, should_not

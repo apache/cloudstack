@@ -49,6 +49,7 @@ setup(name="Marvin",
               "marvin.test"],
     license="LICENSE.txt",
     install_requires=[
+        "unittest2",
         "mysql-connector-python",
         "requests",
         "paramiko",
