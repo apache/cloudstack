@@ -52,31 +52,31 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
         kvmAllFieldsSearch = createSearchBuilder(String.class);
         kvmAllFieldsSearch.and("physicalNetworkId", kvmAllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
         kvmAllFieldsSearch.and("trafficType", kvmAllFieldsSearch.entity().getTrafficType(), Op.EQ);
-        kvmAllFieldsSearch.selectField(kvmAllFieldsSearch.entity().getKvmNetworkLabel());
+        kvmAllFieldsSearch.selectFields(kvmAllFieldsSearch.entity().getKvmNetworkLabel());
         kvmAllFieldsSearch.done();
 
         xenAllFieldsSearch = createSearchBuilder(String.class);
         xenAllFieldsSearch.and("physicalNetworkId", xenAllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
         xenAllFieldsSearch.and("trafficType", xenAllFieldsSearch.entity().getTrafficType(), Op.EQ);
-        xenAllFieldsSearch.selectField(xenAllFieldsSearch.entity().getXenNetworkLabel());
+        xenAllFieldsSearch.selectFields(xenAllFieldsSearch.entity().getXenNetworkLabel());
         xenAllFieldsSearch.done();
 
         vmWareAllFieldsSearch = createSearchBuilder(String.class);
         vmWareAllFieldsSearch.and("physicalNetworkId", vmWareAllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
         vmWareAllFieldsSearch.and("trafficType", vmWareAllFieldsSearch.entity().getTrafficType(), Op.EQ);
-        vmWareAllFieldsSearch.selectField(vmWareAllFieldsSearch.entity().getVmwareNetworkLabel());
+        vmWareAllFieldsSearch.selectFields(vmWareAllFieldsSearch.entity().getVmwareNetworkLabel());
         vmWareAllFieldsSearch.done();
         
         simulatorAllFieldsSearch = createSearchBuilder(String.class);
         simulatorAllFieldsSearch.and("physicalNetworkId", simulatorAllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
         simulatorAllFieldsSearch.and("trafficType", simulatorAllFieldsSearch.entity().getTrafficType(), Op.EQ);
-        simulatorAllFieldsSearch.selectField(simulatorAllFieldsSearch.entity().getSimulatorNetworkLabel());
+        simulatorAllFieldsSearch.selectFields(simulatorAllFieldsSearch.entity().getSimulatorNetworkLabel());
         simulatorAllFieldsSearch.done();
         
         ovmAllFieldsSearch = createSearchBuilder(String.class);
         ovmAllFieldsSearch.and("physicalNetworkId", ovmAllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
         ovmAllFieldsSearch.and("trafficType", ovmAllFieldsSearch.entity().getTrafficType(), Op.EQ);
-        ovmAllFieldsSearch.selectField(ovmAllFieldsSearch.entity().getSimulatorNetworkLabel());
+        ovmAllFieldsSearch.selectFields(ovmAllFieldsSearch.entity().getSimulatorNetworkLabel());
         ovmAllFieldsSearch.done();
     }
 

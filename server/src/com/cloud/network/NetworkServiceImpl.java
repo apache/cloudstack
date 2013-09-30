@@ -97,7 +97,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork.BroadcastDomainRange;
-import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
+import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.AccountGuestVlanMapDao;
 import com.cloud.network.dao.AccountGuestVlanMapVO;
@@ -230,7 +230,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     @Inject
     UsageEventDao _usageEventDao;
 
-    @Inject List<NetworkGuru> _networkGurus;
+    List<NetworkGuru> _networkGurus;
 
     @Inject
     NetworkDomainDao _networkDomainDao;
@@ -3685,7 +3685,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         VirtualRouterElement element = (VirtualRouterElement)networkElement;
-        element.addElement(nsp.getId(), VirtualRouterProviderType.VirtualRouter);
+        element.addElement(nsp.getId(), Type.VirtualRouter);
 
         return nsp;
     }
@@ -3701,7 +3701,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         VpcVirtualRouterElement element = (VpcVirtualRouterElement)networkElement;
-        element.addElement(nsp.getId(), VirtualRouterProviderType.VPCVirtualRouter);
+        element.addElement(nsp.getId(), Type.VPCVirtualRouter);
 
         return nsp;
     }
@@ -3942,6 +3942,15 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             }
         _accountMgr.checkAccess(caller, null, true, userVm);
         return _networkMgr.listVmNics(vmId, nicId);
+    }
+
+    public List<NetworkGuru> getNetworkGurus() {
+        return _networkGurus;
+    }
+
+    @Inject
+    public void setNetworkGurus(List<NetworkGuru> networkGurus) {
+        this._networkGurus = networkGurus;
     }
 
 }

@@ -99,7 +99,6 @@ public class VMEntityManagerImpl implements VMEntityManager {
     @Inject
     protected VirtualMachineManager _itMgr;
 
-    @Inject
     protected List<DeploymentPlanner> _planners;
 
     @Inject
@@ -255,6 +254,15 @@ public class VMEntityManagerImpl implements VMEntityManager {
          VMInstanceVO vm = _vmDao.findByUuid(vmEntityVO.getUuid());
         _itMgr.destroy(vm.getUuid());
         return true;
+    }
+
+    public List<DeploymentPlanner> getPlanners() {
+        return _planners;
+    }
+
+    @Inject
+    public void setPlanners(List<DeploymentPlanner> planners) {
+        this._planners = planners;
     }
 
 }

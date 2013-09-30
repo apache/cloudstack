@@ -56,7 +56,7 @@ public class AffinityGroupVMMapDaoImpl extends GenericDaoBase<AffinityGroupVMMap
         ListVmIdByAffinityGroup = createSearchBuilder(Long.class);
         ListVmIdByAffinityGroup.and("affinityGroupId", ListVmIdByAffinityGroup.entity().getAffinityGroupId(),
                 SearchCriteria.Op.EQ);
-        ListVmIdByAffinityGroup.selectField(ListVmIdByAffinityGroup.entity().getInstanceId());
+        ListVmIdByAffinityGroup.selectFields(ListVmIdByAffinityGroup.entity().getInstanceId());
         ListVmIdByAffinityGroup.done();
 
         ListByAffinityGroup = createSearchBuilder();
@@ -89,7 +89,7 @@ public class AffinityGroupVMMapDaoImpl extends GenericDaoBase<AffinityGroupVMMap
         ListAffinityGroupIdByVm = createSearchBuilder(Long.class);
         ListAffinityGroupIdByVm.and("instanceId", ListAffinityGroupIdByVm.entity().getInstanceId(),
                 SearchCriteria.Op.EQ);
-        ListAffinityGroupIdByVm.selectField(ListAffinityGroupIdByVm.entity().getAffinityGroupId());
+        ListAffinityGroupIdByVm.selectFields(ListAffinityGroupIdByVm.entity().getAffinityGroupId());
         ListAffinityGroupIdByVm.done();
     }
 

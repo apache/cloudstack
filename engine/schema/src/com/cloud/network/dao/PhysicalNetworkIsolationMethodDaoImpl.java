@@ -35,7 +35,7 @@ public class PhysicalNetworkIsolationMethodDaoImpl extends GenericDaoBase<Physic
     protected PhysicalNetworkIsolationMethodDaoImpl() {
         super();
         IsolationMethodSearch = createSearchBuilder(String.class);
-        IsolationMethodSearch.selectField(IsolationMethodSearch.entity().getIsolationMethod());
+        IsolationMethodSearch.selectFields(IsolationMethodSearch.entity().getIsolationMethod());
         IsolationMethodSearch.and("physicalNetworkId", IsolationMethodSearch.entity().getPhysicalNetworkId(), Op.EQ);
         IsolationMethodSearch.done();
 

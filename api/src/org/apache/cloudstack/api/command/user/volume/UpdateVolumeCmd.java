@@ -23,15 +23,14 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.Volume;
-import com.cloud.user.Account;
 
 @APICommand(name = "updateVolume", description="Updates the volume.", responseObject=VolumeResponse.class)
 public class UpdateVolumeCmd extends BaseAsyncCmd {
@@ -42,13 +41,18 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class,
-            required=true, description="the ID of the disk volume")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class, description="the ID of the disk volume")
     private Long id;
 
-    @Parameter(name=ApiConstants.PATH, type=CommandType.STRING,
-            required=true, description="the path of the volume")
+    @Parameter(name=ApiConstants.PATH, type=CommandType.STRING, description="The path of the volume")
     private String path;
+    
+    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.UUID, entityType=StoragePoolResponse.class,
+            description="Destination storage pool UUID for the volume", since="4.3")
+    private Long storageId;
+    
+    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="The state of the volume", since="4.3")
+    private String state;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -61,6 +65,15 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
     public Long getId() {
         return id;
     }
+    
+    public Long getStorageId() {
+        return storageId;
+    }
+
+    public String getState() {
+        return state;
+    }
+    
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -83,25 +96,37 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
     public long getEntityOwnerId() {
         Volume volume = _responseGenerator.findVolumeById(getId());
         if (volume == null) {
-            return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
+            throw new InvalidParameterValueException("Invalid volume id was provided");
         }
         return volume.getAccountId();
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_VOLUME_ATTACH;
+        return EventTypes.EVENT_VOLUME_UPDATE;
     }
 
     @Override
     public String getEventDescription() {
-        return  "adding detail to the volume: " + getId();
+        StringBuffer desc = new StringBuffer();
+        desc.append(" with");
+        if (getPath() != null) {
+            desc.append(" path " + getPath());            
+        }
+        if (getStorageId() != null) {
+            desc.append(", storage id " + getStorageId());
+        }
+        
+        if (getState() != null) {
+            desc.append(", state " + getState());
+        }
+        return "Updating volume: " + getId() + desc.toString();
     }
 
     @Override
     public void execute(){
         CallContext.current().setEventDetails("Volume Id: "+getId());
-        Volume result = _volumeService.updateVolume(this);
+        Volume result = _volumeService.updateVolume(getId(), getPath(), getState(), getStorageId());
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(result);
             response.setResponseName(getCommandName());

@@ -46,7 +46,7 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
     private static Map<RoleType, Set<String>> s_roleBasedApisMap =
             new HashMap<RoleType, Set<String>>();
 
-    @Inject List<PluggableService> _services;
+    List<PluggableService> _services;
     @Inject AccountService _accountService;
 
     protected StaticRoleBasedAPIAccessChecker() {
@@ -94,5 +94,14 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
                 s_logger.info("Malformed key=value pair for entry: " + entry.toString());
             }
         }
+    }
+
+    public List<PluggableService> getServices() {
+        return _services;
+    }
+
+    @Inject
+    public void setServices(List<PluggableService> _services) {
+        this._services = _services;
     }
 }

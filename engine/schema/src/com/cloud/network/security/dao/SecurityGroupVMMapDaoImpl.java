@@ -59,7 +59,7 @@ public class SecurityGroupVMMapDaoImpl extends GenericDaoBase<SecurityGroupVMMap
 
         ListVmIdBySecurityGroup = createSearchBuilder(Long.class);
         ListVmIdBySecurityGroup.and("securityGroupId", ListVmIdBySecurityGroup.entity().getSecurityGroupId(), SearchCriteria.Op.EQ);
-        ListVmIdBySecurityGroup.selectField(ListVmIdBySecurityGroup.entity().getInstanceId());
+        ListVmIdBySecurityGroup.selectFields(ListVmIdBySecurityGroup.entity().getInstanceId());
         ListVmIdBySecurityGroup.done();
         
         ListBySecurityGroup = createSearchBuilder();

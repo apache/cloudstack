@@ -459,7 +459,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         _serverId = _msServer.getId();
 
         UpHostsInPoolSearch = _storagePoolHostDao.createSearchBuilder(Long.class);
-        UpHostsInPoolSearch.selectField(UpHostsInPoolSearch.entity().getHostId());
+        UpHostsInPoolSearch.selectFields(UpHostsInPoolSearch.entity().getHostId());
         SearchBuilder<HostVO> hostSearch = _hostDao.createSearchBuilder();
         hostSearch.and("status", hostSearch.entity().getStatus(), Op.EQ);
         hostSearch.and("resourceState", hostSearch.entity().getResourceState(), Op.EQ);

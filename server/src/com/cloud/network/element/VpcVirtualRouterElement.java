@@ -41,7 +41,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
-import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
+import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
@@ -63,7 +63,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = {NetworkElement.class, FirewallServiceProvider.class,
@@ -210,7 +210,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return false;
         }
 
-        if (vm.getType() == Type.User) {
+        if (vm.getType() == VirtualMachine.Type.User) {
             Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
             params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
             List<DomainRouterVO> routers = _vpcRouterMgr.deployVirtualRouterInVpc(vpc, dest,
@@ -434,8 +434,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
 
     @Override
-    protected VirtualRouterProviderType getVirtualRouterProvider() {
-        return VirtualRouterProviderType.VPCVirtualRouter;
+    protected Type getVirtualRouterProvider() {
+        return Type.VPCVirtualRouter;
     }
 
     @Override

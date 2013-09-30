@@ -25,8 +25,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -34,7 +32,6 @@ import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.UpdateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -67,6 +64,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -275,7 +273,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     protected VmDiskStatisticsDao _vmDiskStatsDao;
     @Inject
     protected VMSnapshotDao _vmSnapshotDao;
-    @Inject
     protected List<StoragePoolAllocator> _storagePoolAllocators;
     @Inject
     ConfigurationDao _configDao;
@@ -1108,16 +1105,32 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     @Override
-    public Volume updateVolume(UpdateVolumeCmd cmd) {
-        Long volumeId = cmd.getId();
-        String path = cmd.getPath();
-
-        if (path == null) {
-            throw new InvalidParameterValueException("Failed to update the volume as path was null");
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_UPDATE, eventDescription = "updating volume", async = true)
+    public Volume updateVolume(long volumeId, String path, String state, Long storageId) {
+        VolumeVO volume = _volumeDao.findById(volumeId);
+        
+        if (path != null) {
+            volume.setPath(path);
         }
-
-        VolumeVO volume = ApiDBUtils.findVolumeById(volumeId);
-        volume.setPath(path);
+        
+        if (state != null) {
+            try {
+                Volume.State volumeState = Volume.State.valueOf(state);
+                volume.setState(volumeState);
+            }
+            catch(IllegalArgumentException ex) {
+                throw new InvalidParameterValueException("Invalid volume state specified");
+            }
+        }
+        
+        if (storageId != null) {
+            StoragePool pool = _storagePoolDao.findById(storageId);
+            if (pool.getDataCenterId() != volume.getDataCenterId()) {
+                throw new InvalidParameterValueException("Invalid storageId specified; refers to the pool outside of the volume's zone");
+            }
+            volume.setPoolId(pool.getId());
+        }
+        
         _volumeDao.update(volumeId, volume);
 
         return volume;
@@ -1677,6 +1690,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _customDiskOfferingMinSize = NumbersUtil.parseInt(_customDiskOfferingMinSizeStr, Integer.parseInt(Config.CustomDiskOfferingMinSize.getDefaultValue()));
 
         return true;
+    }
+
+    public List<StoragePoolAllocator> getStoragePoolAllocators() {
+        return _storagePoolAllocators;
+    }
+
+    @Inject
+    public void setStoragePoolAllocators(List<StoragePoolAllocator> storagePoolAllocators) {
+        this._storagePoolAllocators = storagePoolAllocators;
     }
 
 }

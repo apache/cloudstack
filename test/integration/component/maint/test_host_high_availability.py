@@ -616,7 +616,7 @@ class TestHostHighAvailability(cloudstackTestCase):
             "The virtual machine is not ha enabled so check if VM is created on host which is also not ha enabled"
         )
 
-        #put the Host in maintainance mode
+        #put the Host in maintenance mode
         self.debug("Enabling maintenance mode for host %s" % vm_with_ha_enabled.hostid)
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
         cmd.id = vm_with_ha_enabled.hostid
@@ -748,7 +748,7 @@ class TestHostHighAvailability(cloudstackTestCase):
             "The virtual machine is not ha enabled so check if VM is created on host which is also not ha enabled"
         )
 
-        #put the Host in maintainance mode
+        #put the Host in maintenance mode
         self.debug("Enabling maintenance mode for host %s" % vm_with_ha_disabled.hostid)
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
         cmd.id = vm_with_ha_disabled.hostid

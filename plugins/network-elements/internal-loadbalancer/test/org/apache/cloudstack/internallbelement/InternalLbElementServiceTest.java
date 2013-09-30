@@ -33,7 +33,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.VirtualRouterProvider;
-import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
+import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.VirtualRouterProviderDao;
@@ -65,15 +65,15 @@ public class InternalLbElementServiceTest {
     public void setUp() {
         
         ComponentContext.initComponentsLifeCycle();
-        VirtualRouterProviderVO validElement = new VirtualRouterProviderVO(1, VirtualRouterProviderType.InternalLbVm);
-        VirtualRouterProviderVO invalidElement = new VirtualRouterProviderVO(1, VirtualRouterProviderType.VirtualRouter);
+        VirtualRouterProviderVO validElement = new VirtualRouterProviderVO(1, Type.InternalLbVm);
+        VirtualRouterProviderVO invalidElement = new VirtualRouterProviderVO(1, Type.VirtualRouter);
         
         Mockito.when(_vrProviderDao.findById(validElId)).thenReturn(validElement);
         Mockito.when(_vrProviderDao.findById(invalidElId)).thenReturn(invalidElement);
         
         Mockito.when(_vrProviderDao.persist(validElement)).thenReturn(validElement);
         
-        Mockito.when(_vrProviderDao.findByNspIdAndType(validProviderId, VirtualRouterProviderType.InternalLbVm)).thenReturn(validElement);
+        Mockito.when(_vrProviderDao.findByNspIdAndType(validProviderId, Type.InternalLbVm)).thenReturn(validElement);
         
         PhysicalNetworkServiceProviderVO validProvider = new PhysicalNetworkServiceProviderVO(1, "InternalLoadBalancerElement");
         PhysicalNetworkServiceProviderVO invalidProvider = new PhysicalNetworkServiceProviderVO(1, "Invalid name!");

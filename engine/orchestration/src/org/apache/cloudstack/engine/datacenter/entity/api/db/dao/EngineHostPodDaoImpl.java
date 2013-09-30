@@ -138,7 +138,7 @@ public class EngineHostPodDaoImpl extends GenericDaoBase<EngineHostPodVO, Long> 
     @Override
     public List<Long> listDisabledPods(long zoneId) {
         GenericSearchBuilder<EngineHostPodVO, Long> podIdSearch = createSearchBuilder(Long.class);
-        podIdSearch.selectField(podIdSearch.entity().getId());
+        podIdSearch.selectFields(podIdSearch.entity().getId());
         podIdSearch.and("dataCenterId", podIdSearch.entity().getDataCenterId(), Op.EQ);
         podIdSearch.and("allocationState", podIdSearch.entity().getAllocationState(), Op.EQ);
         podIdSearch.done();

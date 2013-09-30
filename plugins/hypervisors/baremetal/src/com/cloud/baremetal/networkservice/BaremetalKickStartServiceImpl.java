@@ -32,7 +32,6 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.AddBaremetalKickStartPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
 import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
@@ -57,9 +56,8 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
@@ -87,9 +85,9 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
     @Override
     public boolean prepare(VirtualMachineProfile profile, NicProfile nic, DeployDestination dest, ReservationContext context) {
         NetworkVO nwVO = _nwDao.findById(nic.getNetworkId());
-        SearchCriteriaService<BaremetalPxeVO, BaremetalPxeVO> sc = SearchCriteria2.create(BaremetalPxeVO.class);
-        sc.addAnd(sc.getEntity().getDeviceType(), Op.EQ, BaremetalPxeType.KICK_START.toString());
-        sc.addAnd(sc.getEntity().getPhysicalNetworkId(), Op.EQ, nwVO.getPhysicalNetworkId());
+        QueryBuilder<BaremetalPxeVO> sc = QueryBuilder.create(BaremetalPxeVO.class);
+        sc.and(sc.entity().getDeviceType(), Op.EQ, BaremetalPxeType.KICK_START.toString());
+        sc.and(sc.entity().getPhysicalNetworkId(), Op.EQ, nwVO.getPhysicalNetworkId());
         BaremetalPxeVO pxeVo = sc.find();
         if (pxeVo == null) {
             throw new CloudRuntimeException("No kickstart PXE server found in pod: " + dest.getPod().getId() + ", you need to add it before starting VM");

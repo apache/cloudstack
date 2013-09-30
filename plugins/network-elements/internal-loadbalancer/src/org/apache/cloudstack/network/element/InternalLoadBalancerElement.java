@@ -53,7 +53,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.VirtualRouterProvider;
-import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
+import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
@@ -73,9 +73,8 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
@@ -270,7 +269,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
         VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(),
-                VirtualRouterProviderType.InternalLbVm);
+                Type.InternalLbVm);
         if (element == null) {
             return false;
         }
@@ -282,7 +281,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException {
         VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(),
-                VirtualRouterProviderType.InternalLbVm);
+                Type.InternalLbVm);
         if (element == null) {
             return true;
         }
@@ -467,7 +466,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     @Override
     public VirtualRouterProvider configureInternalLoadBalancerElement(long id, boolean enable) {
         VirtualRouterProviderVO element = _vrProviderDao.findById(id);
-        if (element == null || element.getType() != VirtualRouterProviderType.InternalLbVm) {
+        if (element == null || element.getType() != Type.InternalLbVm) {
             throw new InvalidParameterValueException("Can't find " + getName() + " element with network service provider id " + id +
                     " to be used as a provider for " + getName());
         }
@@ -480,7 +479,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
 
     @Override
     public VirtualRouterProvider addInternalLoadBalancerElement(long ntwkSvcProviderId) {
-        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(ntwkSvcProviderId, VirtualRouterProviderType.InternalLbVm);
+        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(ntwkSvcProviderId, Type.InternalLbVm);
         if (element != null) {
             s_logger.debug("There is already an " + getName() + " with service provider id " + ntwkSvcProviderId);
             return null;
@@ -491,7 +490,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
             throw new InvalidParameterValueException("Invalid network service provider is specified");
         }
         
-        element = new VirtualRouterProviderVO(ntwkSvcProviderId, VirtualRouterProviderType.InternalLbVm);
+        element = new VirtualRouterProviderVO(ntwkSvcProviderId, Type.InternalLbVm);
         element = _vrProviderDao.persist(element);
         return element;
     }
@@ -500,7 +499,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     @Override
     public VirtualRouterProvider getInternalLoadBalancerElement(long id) {
         VirtualRouterProvider provider = _vrProviderDao.findById(id);
-        if (provider == null || provider.getType() != VirtualRouterProviderType.InternalLbVm) {
+        if (provider == null || provider.getType() != Type.InternalLbVm) {
             throw new InvalidParameterValueException("Unable to find " + getName() + " by id");
         }
         return provider;
@@ -509,19 +508,19 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     @Override
     public List<? extends VirtualRouterProvider> searchForInternalLoadBalancerElements(Long id, Long ntwkSvsProviderId, Boolean enabled) {
 
-        SearchCriteriaService<VirtualRouterProviderVO, VirtualRouterProviderVO> sc = SearchCriteria2.create(VirtualRouterProviderVO.class);
+        QueryBuilder<VirtualRouterProviderVO> sc = QueryBuilder.create(VirtualRouterProviderVO.class);
         if (id != null) {
-            sc.addAnd(sc.getEntity().getId(), Op.EQ, id);
+            sc.and(sc.entity().getId(), Op.EQ, id);
         }
         if (ntwkSvsProviderId != null) {
-            sc.addAnd(sc.getEntity().getNspId(), Op.EQ, ntwkSvsProviderId);
+            sc.and(sc.entity().getNspId(), Op.EQ, ntwkSvsProviderId);
         }
         if (enabled != null) {
-            sc.addAnd(sc.getEntity().isEnabled(), Op.EQ, enabled);
+            sc.and(sc.entity().isEnabled(), Op.EQ, enabled);
         }
         
         //return only Internal LB elements
-        sc.addAnd(sc.getEntity().getType(), Op.EQ, VirtualRouterProvider.VirtualRouterProviderType.InternalLbVm);
+        sc.and(sc.entity().getType(), Op.EQ, VirtualRouterProvider.Type.InternalLbVm);
         
         return sc.list();
     }

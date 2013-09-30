@@ -155,7 +155,7 @@ import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.SshKeysDistriMonitor;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VirtualRouterProvider;
-import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
+import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.VpnUser;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.addr.PublicIp;
@@ -202,7 +202,7 @@ import com.cloud.server.ConfigurationServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume.Type;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -1506,7 +1506,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             }
 
             // Check if providers are supported in the physical networks
-            VirtualRouterProviderType type = VirtualRouterProviderType.VirtualRouter;
+            Type type = Type.VirtualRouter;
                 Long physicalNetworkId = _networkModel.getPhysicalNetworkId(guestNetwork);
             PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(physicalNetworkId, type.toString());
             if (provider == null) {
@@ -1930,7 +1930,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         avoids[1] = new ExcludeList();
         avoids[1].addCluster(_hostDao.findById(routerToBeAvoid.getHostId()).getClusterId());
         avoids[2] = new ExcludeList();
-        List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(routerToBeAvoid.getId(), Type.ROOT);
+        List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(routerToBeAvoid.getId(), Volume.Type.ROOT);
         if (volumes != null && volumes.size() != 0) {
             avoids[2].addPool(volumes.get(0).getPoolId());
         }

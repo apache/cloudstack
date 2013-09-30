@@ -35,6 +35,7 @@ import javax.persistence.Transient;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.vm.VirtualMachine.State;
 
 @Entity
 @Table(name = "volumes")
@@ -572,5 +573,11 @@ public class VolumeVO implements Volume {
 
     public void setIsoId(long isoId) {
         this.isoId =isoId;
+    }
+    
+    // don't use this directly, use volume state machine instead
+    // This method is used by UpdateVolume as a part of "Better control over first class objects in CS"
+    public void setState(State state) {
+        this.state = state;
     }
 }

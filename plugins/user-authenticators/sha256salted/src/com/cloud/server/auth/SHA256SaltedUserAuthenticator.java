@@ -24,7 +24,6 @@ import java.util.Map;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
@@ -41,16 +40,6 @@ public class SHA256SaltedUserAuthenticator extends DefaultUserAuthenticator {
     @Inject
     private UserAccountDao _userAccountDao;
     private static final int s_saltlen = 32;
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params)
-            throws ConfigurationException {
-        if (name == null) {
-            name = "SHA256SALT";
-        }
-        super.configure(name, params);
-        return true;
-    }
 
     /* (non-Javadoc)
      * @see com.cloud.server.auth.UserAuthenticator#authenticate(java.lang.String, java.lang.String, java.lang.Long, java.util.Map)

@@ -226,7 +226,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         OfferingAccountNetworkSearch.done();
 
         GarbageCollectedSearch = createSearchBuilder(Long.class);
-        GarbageCollectedSearch.selectField(GarbageCollectedSearch.entity().getId());
+        GarbageCollectedSearch.selectFields(GarbageCollectedSearch.entity().getId());
         SearchBuilder<NetworkOpVO> join7 = _ntwkOpDao.createSearchBuilder();
         join7.and("activenics", join7.entity().getActiveNicsCount(), Op.EQ);
         join7.and("gc", join7.entity().isGarbageCollected(), Op.EQ);

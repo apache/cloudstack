@@ -57,7 +57,7 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
         DataCenterIdSearch.done();
 
         PodIdSearch = createSearchBuilder(Long.class);
-        PodIdSearch.selectField(PodIdSearch.entity().getId());
+        PodIdSearch.selectFields(PodIdSearch.entity().getId());
         PodIdSearch.and("dataCenterId", PodIdSearch.entity().getDataCenterId(), Op.EQ);
         PodIdSearch.and("allocationState", PodIdSearch.entity().getAllocationState(), Op.EQ);
         PodIdSearch.done();

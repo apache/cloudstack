@@ -169,8 +169,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Inject
     private EntityManager _entityMgr;
 
-    @Inject List<PluggableService> _pluggableServices;
-    @Inject List<APIChecker> _apiAccessCheckers;
+    List<PluggableService> _pluggableServices;
+    List<APIChecker> _apiAccessCheckers;
 
     @Inject
     protected ApiAsyncJobDispatcher _asyncDispatcher;
@@ -1095,5 +1095,23 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             s_logger.error("Exception responding to http request", e);
         }
         return responseText;
+    }
+
+    public List<PluggableService> getPluggableServices() {
+        return _pluggableServices;
+    }
+
+    @Inject
+    public void setPluggableServices(List<PluggableService> _pluggableServices) {
+        this._pluggableServices = _pluggableServices;
+    }
+
+    public List<APIChecker> getApiAccessCheckers() {
+        return _apiAccessCheckers;
+    }
+
+    @Inject
+    public void setApiAccessCheckers(List<APIChecker> _apiAccessCheckers) {
+        this._apiAccessCheckers = _apiAccessCheckers;
     }
 }

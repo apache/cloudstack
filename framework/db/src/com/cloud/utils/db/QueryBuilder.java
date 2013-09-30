@@ -4,9 +4,9 @@
 // regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// the License.  You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -16,14 +16,14 @@
 // under the License.
 package com.cloud.utils.db;
 
-import java.util.List;
+public class QueryBuilder<T> extends GenericQueryBuilder<T, T> {
 
-import com.cloud.utils.db.SearchCriteria.Op;
+    public static <T> QueryBuilder<T> create(Class<T> entityType) {
+        return new QueryBuilder<T>(entityType);
+    }
 
-public interface SearchCriteriaService<T, K> {
-	public void selectField(Object... useless);
-	public void addAnd(Object useless, Op op, Object...values);
-	public List<K> list();
-	public T getEntity();
-	public <K> K find();
+    protected QueryBuilder(Class<T> entityType) {
+        super(entityType, entityType);
+    }
+
 }

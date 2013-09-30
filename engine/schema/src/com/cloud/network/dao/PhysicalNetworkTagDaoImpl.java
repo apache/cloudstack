@@ -35,7 +35,7 @@ public class PhysicalNetworkTagDaoImpl extends GenericDaoBase<PhysicalNetworkTag
     protected PhysicalNetworkTagDaoImpl() {
         super();
         TagSearch = createSearchBuilder(String.class);
-        TagSearch.selectField(TagSearch.entity().getTag());
+        TagSearch.selectFields(TagSearch.entity().getTag());
         TagSearch.and("physicalNetworkId", TagSearch.entity().getPhysicalNetworkId(), Op.EQ);
         TagSearch.done();
 

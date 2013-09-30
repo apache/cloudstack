@@ -33,7 +33,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.GenericQueryBuilder;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -56,7 +56,7 @@ public class StorageNetworkIpAddressDaoImpl extends GenericDaoBase<StorageNetwor
 		countInUserIp.done();
 		
 		listInUseIp = createSearchBuilder(String.class);
-		listInUseIp.selectField(listInUseIp.entity().getIpAddress());
+		listInUseIp.selectFields(listInUseIp.entity().getIpAddress());
 		listInUseIp.and("rangeId", listInUseIp.entity().getRangeId(), Op.EQ);
 		listInUseIp.and("taken", listInUseIp.entity().getTakenAt(), Op.NNULL);
 		listInUseIp.done();

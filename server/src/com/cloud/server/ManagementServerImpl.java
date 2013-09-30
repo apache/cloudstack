@@ -675,7 +675,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     private List<HostAllocator> _hostAllocators;
-    @Inject
     private List<StoragePoolAllocator> _storagePoolAllocators;
     @Inject
     private ResourceTagDao _resourceTagDao;
@@ -3869,5 +3868,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         _dpMgr.cleanupVMReservations();
+    }
+
+    public List<StoragePoolAllocator> getStoragePoolAllocators() {
+        return _storagePoolAllocators;
+    }
+
+    @Inject
+    public void setStoragePoolAllocators(List<StoragePoolAllocator> storagePoolAllocators) {
+        this._storagePoolAllocators = storagePoolAllocators;
     }
 }

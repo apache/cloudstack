@@ -257,7 +257,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         this._hostAllocators = _hostAllocators;
     }
 
-    @Inject
     protected List<StoragePoolAllocator> _storagePoolAllocators;
 
     @Inject
@@ -3269,6 +3268,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {ClusterDeltaSyncInterval, StartRetry, VmDestroyForcestop, VmOpCancelInterval, VmOpCleanupInterval, VmOpCleanupWait, VmOpLockStateRetry,
                 VmOpWaitInterval};
+    }
+
+    public List<StoragePoolAllocator> getStoragePoolAllocators() {
+        return _storagePoolAllocators;
+    }
+
+    @Inject
+    public void setStoragePoolAllocators(List<StoragePoolAllocator> storagePoolAllocators) {
+        this._storagePoolAllocators = storagePoolAllocators;
     }
 
 }

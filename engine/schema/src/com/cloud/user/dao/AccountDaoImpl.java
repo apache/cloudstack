@@ -96,7 +96,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         NonProjectAccountSearch.done();
 
         AccountIdsSearch = createSearchBuilder(Long.class);
-        AccountIdsSearch.selectField(AccountIdsSearch.entity().getId());
+        AccountIdsSearch.selectFields(AccountIdsSearch.entity().getId());
         AccountIdsSearch.and("ids", AccountIdsSearch.entity().getDomainId(), Op.IN);
         AccountIdsSearch.done();
     }

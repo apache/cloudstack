@@ -59,6 +59,7 @@ import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.Factory;
+import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.NoOp;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
@@ -169,11 +170,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     @Override
     @SuppressWarnings("unchecked") @DB(txn=false)
     public <J> GenericSearchBuilder<T, J> createSearchBuilder(Class<J> resultType) {
-        final T entity = (T)_searchEnhancer.create();
-        final Factory factory = (Factory)entity;
-        GenericSearchBuilder<T, J> builder = new GenericSearchBuilder<T, J>(entity, resultType, _allAttributes);
-        factory.setCallback(0, builder);
-        return builder;
+        return new GenericSearchBuilder<T, J>(_entityBeanType, resultType);
     }
 
     @Override
@@ -181,6 +178,15 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return _allAttributes;
     }
     
+
+    @SuppressWarnings("unchecked")
+    public T createSearchEntity(MethodInterceptor interceptor) {
+        T entity = (T)_searchEnhancer.create();
+        final Factory factory = (Factory)entity;
+        factory.setCallback(0, interceptor);
+        return entity;
+    }
+
     @SuppressWarnings("unchecked")
     protected GenericDaoBase() {
         super();
@@ -922,7 +928,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @Override @DB(txn=false)
-    @SuppressWarnings("unchecked")
     public T findByUuid(final String uuid) {
         SearchCriteria<T> sc = createSearchCriteria();
         sc.addAnd("uuid", SearchCriteria.Op.EQ, uuid);
@@ -930,7 +935,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @Override @DB(txn=false)
-    @SuppressWarnings("unchecked")
     public T findByUuidIncludingRemoved(final String uuid) {
         SearchCriteria<T> sc = createSearchCriteria();
         sc.addAnd("uuid", SearchCriteria.Op.EQ, uuid);
@@ -1038,7 +1042,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @DB(txn=false)
     protected List<Object> addGroupBy(final StringBuilder sql, SearchCriteria<?> sc) {
-        Pair<GroupBy<?, ?>, List<Object>> groupBys = sc.getGroupBy();
+        Pair<GroupBy<?, ?, ?>, List<Object>> groupBys = sc.getGroupBy();
         if (groupBys != null) {
             groupBys.first().toSql(sql);
             return groupBys.second();
@@ -1362,7 +1366,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             Object obj = entry.getValue();
 
             EcInfo ec = (EcInfo)attr.attache;
-            Enumeration en = null;
+            Enumeration<?> en = null;
             if (ec.rawClass == null) {
                 en = Collections.enumeration(Arrays.asList((Object[])obj));
             } else {
@@ -1781,38 +1785,15 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return (UpdateBuilder)factory.getCallback(1);
     }
 
-    @SuppressWarnings("unchecked")
     @Override @DB(txn=false)
     public SearchBuilder<T> createSearchBuilder() {
-        final T entity = (T)_searchEnhancer.create();
-        final Factory factory = (Factory)entity;
-        SearchBuilder<T> builder = new SearchBuilder<T>(entity, _allAttributes);
-        factory.setCallback(0, builder);
-        return builder;
+        return new SearchBuilder<T>(_entityBeanType);
     }
 
     @Override @DB(txn=false)
     public SearchCriteria<T> createSearchCriteria() {
         SearchBuilder<T> builder = createSearchBuilder();
         return builder.create();
-    }
-
-    @Override @DB(txn=false)
-    public <K> SearchCriteria2 createSearchCriteria2(Class<K> resultType) {
-        final T entity = (T)_searchEnhancer.create();
-        final Factory factory = (Factory)entity;
-        SearchCriteria2 sc = new SearchCriteria2(entity, resultType, _allAttributes, this);
-        factory.setCallback(0, sc);
-        return sc;
-    }
-
-    @Override @DB(txn=false)
-    public SearchCriteria2 createSearchCriteria2() {
-        final T entity = (T)_searchEnhancer.create();
-        final Factory factory = (Factory)entity;
-        SearchCriteria2 sc = new SearchCriteria2(entity, entity.getClass(), _allAttributes, this);
-        factory.setCallback(0, sc);
-        return sc;
     }
 
     @Override

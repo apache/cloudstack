@@ -2681,8 +2681,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public VirtualRouterProviderResponse createVirtualRouterProviderResponse(VirtualRouterProvider result) {
         //generate only response of the VR/VPCVR provider type
-        if (!(result.getType() == VirtualRouterProvider.VirtualRouterProviderType.VirtualRouter
-                || result.getType() == VirtualRouterProvider.VirtualRouterProviderType.VPCVirtualRouter)) {
+        if (!(result.getType() == VirtualRouterProvider.Type.VirtualRouter
+                || result.getType() == VirtualRouterProvider.Type.VPCVirtualRouter)) {
             return null;
         }
         VirtualRouterProviderResponse response = new VirtualRouterProviderResponse();
@@ -3734,7 +3734,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public InternalLoadBalancerElementResponse createInternalLbElementResponse(VirtualRouterProvider result) {
-        if (result.getType() != VirtualRouterProvider.VirtualRouterProviderType.InternalLbVm) {
+        if (result.getType() != VirtualRouterProvider.Type.InternalLbVm) {
             return null;
         }
         InternalLoadBalancerElementResponse response = new InternalLoadBalancerElementResponse();

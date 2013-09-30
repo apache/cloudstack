@@ -39,7 +39,7 @@ public class NetworkOpDaoImpl extends GenericDaoBase<NetworkOpVO, Long> implemen
         super();
         
         ActiveNicsSearch = createSearchBuilder(Integer.class);
-        ActiveNicsSearch.selectField(ActiveNicsSearch.entity().getActiveNicsCount());
+        ActiveNicsSearch.selectFields(ActiveNicsSearch.entity().getActiveNicsCount());
         ActiveNicsSearch.and("network", ActiveNicsSearch.entity().getId(), Op.EQ);
         ActiveNicsSearch.done();
         

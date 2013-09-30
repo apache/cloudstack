@@ -198,7 +198,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         HostNameSearch.done();
 
         FindIdsOfVirtualRoutersByAccount = createSearchBuilder(Long.class);
-        FindIdsOfVirtualRoutersByAccount.selectField(FindIdsOfVirtualRoutersByAccount.entity().getId());
+        FindIdsOfVirtualRoutersByAccount.selectFields(FindIdsOfVirtualRoutersByAccount.entity().getId());
         FindIdsOfVirtualRoutersByAccount.and("account", FindIdsOfVirtualRoutersByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
         FindIdsOfVirtualRoutersByAccount.and("type", FindIdsOfVirtualRoutersByAccount.entity().getType(), SearchCriteria.Op.EQ);
         FindIdsOfVirtualRoutersByAccount.and("state", FindIdsOfVirtualRoutersByAccount.entity().getState(), SearchCriteria.Op.NIN);
@@ -233,7 +233,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
 
         DistinctHostNameSearch = createSearchBuilder(String.class);
-        DistinctHostNameSearch.selectField(DistinctHostNameSearch.entity().getHostName());
+        DistinctHostNameSearch.selectFields(DistinctHostNameSearch.entity().getHostName());
 
         DistinctHostNameSearch.and("types", DistinctHostNameSearch.entity().getType(), SearchCriteria.Op.IN);
         DistinctHostNameSearch.and("removed", DistinctHostNameSearch.entity().getRemoved(), SearchCriteria.Op.NULL);

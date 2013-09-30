@@ -1053,8 +1053,8 @@ class Host:
         return
 
     def enableMaintenance(self, apiclient):
-        """enables maintainance mode Host"""
-        
+        """enables maintenance mode Host"""
+
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
         cmd.id = self.id
         return apiclient.prepareHostForMaintenance(cmd)
@@ -1113,8 +1113,8 @@ class StoragePool:
         return
 
     def enableMaintenance(self, apiclient):
-        """enables maintainance mode Storage pool"""
-        
+        """enables maintenance mode Storage pool"""
+
         cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
         cmd.id = self.id
         return apiclient.enableStorageMaintenance(cmd)

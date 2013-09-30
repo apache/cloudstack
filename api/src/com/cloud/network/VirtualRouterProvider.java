@@ -20,14 +20,14 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface VirtualRouterProvider extends InternalIdentity, Identity {
-    public enum VirtualRouterProviderType {
+    public enum Type {
         VirtualRouter,
         ElasticLoadBalancerVm,
         VPCVirtualRouter,
         InternalLbVm
     }
 
-    public VirtualRouterProviderType getType();
+    public Type getType();
 
     public boolean isEnabled();
 

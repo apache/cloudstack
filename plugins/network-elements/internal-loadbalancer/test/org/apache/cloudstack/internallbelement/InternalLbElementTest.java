@@ -47,7 +47,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
+import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
@@ -91,18 +91,18 @@ public class InternalLbElementTest {
     public void setUp() {
         
         ComponentContext.initComponentsLifeCycle();
-        VirtualRouterProviderVO validElement = new VirtualRouterProviderVO(1, VirtualRouterProviderType.InternalLbVm);
+        VirtualRouterProviderVO validElement = new VirtualRouterProviderVO(1, Type.InternalLbVm);
         validElement.setEnabled(true);
-        VirtualRouterProviderVO invalidElement = new VirtualRouterProviderVO(1, VirtualRouterProviderType.VirtualRouter);
-        VirtualRouterProviderVO notEnabledElement = new VirtualRouterProviderVO(1, VirtualRouterProviderType.InternalLbVm);
+        VirtualRouterProviderVO invalidElement = new VirtualRouterProviderVO(1, Type.VirtualRouter);
+        VirtualRouterProviderVO notEnabledElement = new VirtualRouterProviderVO(1, Type.InternalLbVm);
  
-        Mockito.when(_vrProviderDao.findByNspIdAndType(validElId, VirtualRouterProviderType.InternalLbVm)).thenReturn(validElement);
-        Mockito.when(_vrProviderDao.findByNspIdAndType(invalidElId, VirtualRouterProviderType.InternalLbVm)).thenReturn(invalidElement);
-        Mockito.when(_vrProviderDao.findByNspIdAndType(notEnabledElId, VirtualRouterProviderType.InternalLbVm)).thenReturn(notEnabledElement);
+        Mockito.when(_vrProviderDao.findByNspIdAndType(validElId, Type.InternalLbVm)).thenReturn(validElement);
+        Mockito.when(_vrProviderDao.findByNspIdAndType(invalidElId, Type.InternalLbVm)).thenReturn(invalidElement);
+        Mockito.when(_vrProviderDao.findByNspIdAndType(notEnabledElId, Type.InternalLbVm)).thenReturn(notEnabledElement);
 
         Mockito.when(_vrProviderDao.persist(validElement)).thenReturn(validElement);
         
-        Mockito.when(_vrProviderDao.findByNspIdAndType(validProviderId, VirtualRouterProviderType.InternalLbVm)).thenReturn(validElement);
+        Mockito.when(_vrProviderDao.findByNspIdAndType(validProviderId, Type.InternalLbVm)).thenReturn(validElement);
         
         PhysicalNetworkServiceProviderVO validProvider = new PhysicalNetworkServiceProviderVO(1, "InternalLoadBalancerElement");
         PhysicalNetworkServiceProviderVO invalidProvider = new PhysicalNetworkServiceProviderVO(1, "Invalid name!");
