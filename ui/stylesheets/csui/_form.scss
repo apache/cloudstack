@@ -82,7 +82,7 @@
     .message {
         @include row;
     }
-    
+
     form {
         margin-top: 20px;
         margin-bottom: 20px;
@@ -93,7 +93,7 @@
     .form-item {
         @include row;
         @include span-columns(12);
-        
+
         display: inline-block; // Needed for legacy code in JS
         margin-top: 5px;
         margin-bottom: 5px;
@@ -108,7 +108,14 @@
         }
 
         input, select, .dynamic-input {
-            @include span-columns(7);
+            &:not([type=checkbox]) {
+                @include span-columns(7);
+            }
+
+            &[type=checkbox], [type=radio] {
+                @include span-columns(1);
+            }
+
             @include shift(0.2);
         }
     }
@@ -121,7 +128,7 @@
 
         .form-item {
             margin: 0;
-            
+
             label {
                 @include span-columns(4);
             }
