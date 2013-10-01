@@ -45,6 +45,9 @@
     };
 
     $(window).bind('resize scroll', function() {
-        $('.overlay').css('top', $(window).scrollTop());
+        $('.overlay').css({
+            width: $(window).width(),
+            height: $(window).height()
+        });
     });
 })(window.jQuery);
