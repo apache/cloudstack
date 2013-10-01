@@ -249,10 +249,4 @@ body {
     .panel-controls {
         display: none;
     }
-
-    .section-select, .filters {
-        @include span-columns(4);
-
-        margin: 8px;
-    }
 }

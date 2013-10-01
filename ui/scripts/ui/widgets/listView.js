@@ -839,7 +839,7 @@
         if (!filters) return false;
 
         var $filters = $('<div></div>').addClass('filters reduced-hide');
-        $filters.append($('<label>').html(_l('label.filterBy')));
+        $filters.append($('<label>').html(_l('label.filterBy') + ': '));
 
         var $filterSelect = $('<select id="filterBy"></select>').appendTo($filters);
 
