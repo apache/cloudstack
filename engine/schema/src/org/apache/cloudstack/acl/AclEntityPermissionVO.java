@@ -31,7 +31,10 @@ public class AclEntityPermissionVO implements AclEntityPermission {
     private String entityType;
 
     @Column(name = "entity_id")
-    private Long entityId;
+    private long entityId;
+    
+    @Column(name = "entity_uuid")
+    private String entityUuid;
 
     @Column(name = "access_type")
     @Enumerated(value = EnumType.STRING)
@@ -43,6 +46,18 @@ public class AclEntityPermissionVO implements AclEntityPermission {
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
+    public AclEntityPermissionVO() {
+
+    }
+
+    public AclEntityPermissionVO(long groupId, String entityType, long entityId, String entityUuid, AccessType atype) {
+        aclGroupId = groupId;
+        this.entityType = entityType;
+        this.entityId = entityId;
+        this.entityUuid = entityUuid;
+        accessType = atype;
+    }
+    
     @Override
     public long getId() {
         return id;
@@ -63,9 +78,34 @@ public class AclEntityPermissionVO implements AclEntityPermission {
         return entityId;
     }
 
+    public String getEntityUuid() {
+        return entityUuid;
+    }
+
     @Override
     public AccessType getAccessType() {
         return accessType;
+    }
+
+
+    public void setAclGroupId(long aclGroupId) {
+        this.aclGroupId = aclGroupId;
+    }
+
+    public void setEntityType(String entityType) {
+        this.entityType = entityType;
+    }
+
+    public void setEntityId(long entityId) {
+        this.entityId = entityId;
+    }
+
+    public void setEntityUuid(String entityUuid) {
+        this.entityUuid = entityUuid;
+    }
+
+    public void setAccessType(AccessType accessType) {
+        this.accessType = accessType;
     }
 
     public Date getRemoved() {

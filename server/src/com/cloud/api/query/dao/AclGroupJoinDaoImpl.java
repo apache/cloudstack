@@ -30,6 +30,7 @@ import org.springframework.stereotype.Component;
 import org.apache.cloudstack.acl.AclGroup;
 import org.apache.cloudstack.acl.AclGroupAccountMapVO;
 import org.apache.cloudstack.acl.dao.AclGroupAccountMapDao;
+import org.apache.cloudstack.api.response.AclEntityPermissionResponse;
 import org.apache.cloudstack.api.response.AclGroupResponse;
 import org.apache.cloudstack.api.response.AclRoleResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -88,6 +89,13 @@ public class AclGroupJoinDaoImpl extends GenericDaoBase<AclGroupJoinVO, Long> im
             roleResp.setName(group.getRoleName());
             response.addRole(roleResp);
         }
+        if (group.getEntityId() > 0) {
+            AclEntityPermissionResponse permResp = new AclEntityPermissionResponse();
+            permResp.setEntityId(group.getEntityUuid());
+            permResp.setEntityType(group.getEntityType());
+            permResp.setAccessType(group.getAccessType().toString());
+            response.addPermission(permResp);
+        }
         response.setObjectName("aclgroup");
         
 
@@ -104,6 +112,13 @@ public class AclGroupJoinDaoImpl extends GenericDaoBase<AclGroupJoinVO, Long> im
             roleResp.setId(group.getRoleUuid());
             roleResp.setName(group.getRoleName());
             response.addRole(roleResp);
+        }
+        if (group.getEntityId() > 0) {
+            AclEntityPermissionResponse permResp = new AclEntityPermissionResponse();
+            permResp.setEntityId(group.getEntityUuid());
+            permResp.setEntityType(group.getEntityType());
+            permResp.setAccessType(group.getAccessType().toString());
+            response.addPermission(permResp);
         }
         return response;
     }

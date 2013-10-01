@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
+import java.util.HashMap;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -23,24 +24,31 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.acl.dao.AclApiPermissionDao;
 import org.apache.cloudstack.acl.dao.AclEntityPermissionDao;
 import org.apache.cloudstack.acl.dao.AclGroupAccountMapDao;
 import org.apache.cloudstack.acl.dao.AclGroupDao;
 import org.apache.cloudstack.acl.dao.AclGroupRoleMapDao;
 import org.apache.cloudstack.acl.dao.AclRoleDao;
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Volume;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
 
 @Local(value = {AclService.class})
@@ -62,6 +70,9 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     AclGroupDao _aclGroupDao;
 
     @Inject
+    EntityManager _entityMgr;
+
+    @Inject
     AclGroupRoleMapDao _aclGroupRoleMapDao;
 
     @Inject
@@ -73,6 +84,15 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     @Inject
     AclEntityPermissionDao _entityPermissionDao;
 
+    public static HashMap<String, Class> entityClassMap = new HashMap<String, Class>();
+
+    static {
+        entityClassMap.put("VirtualMachine", UserVm.class);
+        entityClassMap.put("Volume", Volume.class);
+        entityClassMap.put("Template", VirtualMachineTemplate.class);
+        entityClassMap.put("Snapshot", Snapshot.class);
+        // To be filled in later depending on the entity permission grant scope
+    }
 
     @DB
     @Override
@@ -188,7 +208,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        // add entries in acl_api_permission table
+        // remove entries from acl_api_permission table
         for (String api : apiNames) {
             AclApiPermissionVO perm = _apiPermissionDao.findByRoleAndApi(aclRoleId, api);
             if (perm != null) {
@@ -198,6 +218,80 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         }
         txn.commit();
         return role;
+    }
+
+    @DB
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_GRANT, eventDescription = "Granting entity permission to Acl Group")
+    public AclGroup grantEntityPermissionToAclGroup(long aclGroupId, String entityType, long entityId, AccessType accessType) {
+        Account caller = CallContext.current().getCallingAccount();
+        // get the Acl Group entity
+        AclGroup group = _aclGroupDao.findById(aclGroupId);
+        if (group == null) {
+            throw new InvalidParameterValueException("Unable to find acl group: " + aclGroupId
+                    + "; failed to grant permission to group.");
+        }
+        // check permissions
+        _accountMgr.checkAccess(caller, null, true, group);
+
+        // get the entity and check permission
+        Class entityClass = entityClassMap.get(entityType);
+        if (entityClass == null) {
+            throw new InvalidParameterValueException("Entity type " + entityType + " permission granting is not supported yet");
+        }
+        ControlledEntity entity = (ControlledEntity)_entityMgr.findById(entityClass, entityId);
+        if (entity == null) {
+            throw new InvalidParameterValueException("Unable to find entity " + entityType + " by id: " + entityId);
+        }
+        _accountMgr.checkAccess(caller,null, true, entity);
+        
+        // add entry in acl_entity_permission table
+        AclEntityPermissionVO perm = _entityPermissionDao.findByGroupAndEntity(aclGroupId, entityType, entityId, accessType);
+        if (perm == null) {
+            // not there already
+            String entityUuid = String.valueOf(entityId);
+            if (entity instanceof Identity) {
+                entityUuid = ((Identity)entity).getUuid();
+            }
+            perm = new AclEntityPermissionVO(aclGroupId, entityType, entityId, entityUuid, accessType);
+            _entityPermissionDao.persist(perm);
+        }
+        return group;
+
+    }
+
+    @DB
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_REVOKE, eventDescription = "Revoking entity permission from Acl Group")
+    public AclGroup revokeEntityPermissionFromAclGroup(long aclGroupId, String entityType, long entityId, AccessType accessType) {
+        Account caller = CallContext.current().getCallingAccount();
+        // get the Acl Group entity
+        AclGroup group = _aclGroupDao.findById(aclGroupId);
+        if (group == null) {
+            throw new InvalidParameterValueException("Unable to find acl group: " + aclGroupId
+                    + "; failed to revoke permission from group.");
+        }
+        // check permissions
+        _accountMgr.checkAccess(caller, null, true, group);
+
+        // get the entity and check permission
+        Class entityClass = entityClassMap.get(entityType);
+        if (entityClass == null) {
+            throw new InvalidParameterValueException("Entity type " + entityType + " permission revoke is not supported yet");
+        }
+        ControlledEntity entity = (ControlledEntity)_entityMgr.findById(entityClass, entityId);
+        if (entity == null) {
+            throw new InvalidParameterValueException("Unable to find entity " + entityType + " by id: " + entityId);
+        }
+        _accountMgr.checkAccess(caller, null, true, entity);
+
+        // remove entry from acl_entity_permission table
+        AclEntityPermissionVO perm = _entityPermissionDao.findByGroupAndEntity(aclGroupId, entityType, entityId, accessType);
+        if (perm != null) {
+            // not removed yet
+            _entityPermissionDao.remove(perm.getId());
+        }
+        return group;
     }
 
     @DB
@@ -326,7 +420,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        // add entries in acl_group_account_map table
+        // remove entries from acl_group_account_map table
         for (Long acctId : acctIds) {
             // check account permissions
             Account account = _accountDao.findById(acctId);

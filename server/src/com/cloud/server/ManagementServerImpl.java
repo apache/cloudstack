@@ -63,11 +63,13 @@ import org.apache.cloudstack.api.command.admin.acl.CreateAclGroupCmd;
 import org.apache.cloudstack.api.command.admin.acl.CreateAclRoleCmd;
 import org.apache.cloudstack.api.command.admin.acl.DeleteAclGroupCmd;
 import org.apache.cloudstack.api.command.admin.acl.DeleteAclRoleCmd;
+import org.apache.cloudstack.api.command.admin.acl.GrantPermissionToAclGroupCmd;
 import org.apache.cloudstack.api.command.admin.acl.GrantPermissionToAclRoleCmd;
 import org.apache.cloudstack.api.command.admin.acl.ListAclGroupsCmd;
 import org.apache.cloudstack.api.command.admin.acl.ListAclRolesCmd;
 import org.apache.cloudstack.api.command.admin.acl.RemoveAccountFromAclGroupCmd;
 import org.apache.cloudstack.api.command.admin.acl.RemoveAclRoleFromAclGroupCmd;
+import org.apache.cloudstack.api.command.admin.acl.RevokePermissionFromAclGroupCmd;
 import org.apache.cloudstack.api.command.admin.acl.RevokePermissionFromAclRoleCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.DeleteCounterCmd;
@@ -2877,6 +2879,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListAclGroupsCmd.class);
         cmdList.add(AddAccountToAclGroupCmd.class);
         cmdList.add(RemoveAccountFromAclGroupCmd.class);
+        cmdList.add(GrantPermissionToAclGroupCmd.class);
+        cmdList.add(RevokePermissionFromAclGroupCmd.class);
         return cmdList;
     }
 

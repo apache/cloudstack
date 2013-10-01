@@ -18,6 +18,8 @@ package org.apache.cloudstack.acl;
 
 import java.util.List;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+
 public interface AclService {
 
     /**
@@ -49,6 +51,10 @@ public interface AclService {
     AclGroup addAccountsToGroup(List<Long> acctIds, Long groupId);
 
     AclGroup removeAccountsFromGroup(List<Long> acctIds, Long groupId);
+
+    AclGroup grantEntityPermissionToAclGroup(long aclGroupId, String entityType, long entityId, AccessType accessType);
+
+    AclGroup revokeEntityPermissionFromAclGroup(long aclGroupId, String entityType, long entityId, AccessType accessType);
 
     /**
      * Creates an acl group for the given domain.

@@ -361,6 +361,7 @@ CREATE TABLE `cloud`.`acl_entity_permission` (
   `group_id` bigint unsigned NOT NULL,
   `entity_type` varchar(100) NOT NULL,
   `entity_id` bigint unsigned NOT NULL,
+  `entity_uuid` varchar(40),  
   `access_type` varchar(40) NOT NULL,  
   `removed` datetime COMMENT 'date the permission was revoked',
   `created` datetime COMMENT 'date the permission was granted',   
@@ -414,7 +415,11 @@ CREATE VIEW `cloud`.`acl_group_view` AS
         acl_role.name role_name,
         account.id account_id,
         account.uuid account_uuid,
-        account.account_name account_name
+        account.account_name account_name,
+        acl_entity_permission.entity_id entity_id,
+        acl_entity_permission.entity_uuid entity_uuid,
+        acl_entity_permission.entity_type entity_type,
+        acl_entity_permission.access_type access_type
     from
         `cloud`.`acl_group`
             inner join
@@ -426,5 +431,7 @@ CREATE VIEW `cloud`.`acl_group_view` AS
             left join
         `cloud`.`acl_group_account_map` ON acl_group.id = acl_group_account_map.group_id
             left join
-        `cloud`.`account` ON acl_group_account_map.account_id = account.id;                   
+        `cloud`.`account` ON acl_group_account_map.account_id = account.id
+            left join
+         `cloud`.`acl_entity_permission` ON acl_group.id = acl_entity_permission.group_id;                         
  

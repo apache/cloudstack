@@ -20,10 +20,14 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
 import com.cloud.utils.db.GenericDao;
 
@@ -79,6 +83,19 @@ public class AclGroupJoinVO extends BaseViewVO {
 
     @Column(name = "account_name")
     private String accountName;
+
+    @Column(name = "entity_type")
+    private String entityType;
+
+    @Column(name = "entity_id")
+    private long entityId;
+
+    @Column(name = "entity_uuid")
+    private String entityUuid;
+
+    @Column(name = "access_type")
+    @Enumerated(value = EnumType.STRING)
+    AccessType accessType;
 
     public AclGroupJoinVO() {
     }
@@ -154,5 +171,20 @@ public class AclGroupJoinVO extends BaseViewVO {
         return accountName;
     }
 
+    public String getEntityType() {
+        return entityType;
+    }
+
+    public long getEntityId() {
+        return entityId;
+    }
+
+    public String getEntityUuid() {
+        return entityUuid;
+    }
+
+    public AccessType getAccessType() {
+        return accessType;
+    }
 
 }

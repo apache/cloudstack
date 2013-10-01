@@ -151,6 +151,7 @@ import org.apache.cloudstack.usage.UsageTypes;
 
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
+import com.cloud.api.query.vo.AclGroupJoinVO;
 import com.cloud.api.query.vo.AclRoleJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.ControlledViewEntity;
@@ -3683,19 +3684,10 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public AclGroupResponse createAclGroupResponse(AclGroup group) {
-        AclGroupResponse response = new AclGroupResponse();
-
-        response.setId(group.getUuid());
-        response.setName(group.getName());
-        response.setDescription(group.getDescription());
-        Domain domain = _entityMgr.findById(Domain.class, group.getDomainId());
-        if (domain != null) {
-            response.setDomainId(domain.getUuid());
-            response.setDomainName(domain.getName());
-        }
-
-        response.setObjectName("aclgroup");
-        return response;
+        List<AclGroupJoinVO> viewGroups = ApiDBUtils.newAclGroupView(group);
+        List<AclGroupResponse> listGroups = ViewResponseHelper.createAclGroupResponses(viewGroups);
+        assert listGroups != null && listGroups.size() == 1 : "There should be one acl role returned";
+        return listGroups.get(0);
     }
 
 

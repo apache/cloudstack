@@ -33,6 +33,11 @@ import com.cloud.utils.db.SearchCriteria;
 public class AclEntityPermissionDaoImpl extends GenericDaoBase<AclEntityPermissionVO, Long> implements AclEntityPermissionDao {
     private SearchBuilder<AclEntityPermissionVO> findByGroupEntity;
 
+    public AclEntityPermissionDaoImpl()
+    {
+
+    }
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);

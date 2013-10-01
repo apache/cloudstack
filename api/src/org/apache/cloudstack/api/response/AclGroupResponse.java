@@ -60,9 +60,14 @@ public class AclGroupResponse extends BaseResponse {
     @Param(description = "acl roles granted to this acl group ")
     private Set<AclRoleResponse> roleList;
 
+    @SerializedName(ApiConstants.ACL_PERMISSIONS)
+    @Param(description = "permissions granted to this acl group ")
+    private Set<AclEntityPermissionResponse> permList;
+
     public AclGroupResponse() {
         accountIdList = new LinkedHashSet<String>();
         roleList = new LinkedHashSet<AclRoleResponse>();
+        permList = new LinkedHashSet<AclEntityPermissionResponse>();
     }
 
     @Override
@@ -114,6 +119,18 @@ public class AclGroupResponse extends BaseResponse {
 
     public Set<AclRoleResponse> getRoleList() {
         return roleList;
+    }
+
+    public Set<AclEntityPermissionResponse> getPermissionList() {
+        return permList;
+    }
+
+    public void setPermissionList(Set<AclEntityPermissionResponse> perms) {
+        permList = perms;
+    }
+
+    public void addPermission(AclEntityPermissionResponse perm) {
+        permList.add(perm);
     }
 
     @Override
