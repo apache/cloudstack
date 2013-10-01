@@ -251,16 +251,8 @@ body {
     }
 
     .section-select, .filters {
-        @include span-columns(3);
+        @include span-columns(4);
 
         margin: 8px;
-
-        label {
-            top: 0px;
-            margin-right: 8px;
-        }
-
-        select {
-        }
     }
 }

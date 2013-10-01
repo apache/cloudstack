@@ -27,7 +27,8 @@
 
         width: 100%;
         background-color: white;
-        padding: 10px;
+        padding-top: 10px;
+        padding-bottom: 20px;
     }
 
     .ui-dialog-content {
@@ -41,6 +42,18 @@
 
     .ui-dialog-titlebar-close {
         float: right;
+    }
+
+    &.create-form {
+        max-height: 900px;
+        overflow: hidden;
+
+        @include csui-form;
+        
+        form {
+            max-height: 700px;
+            overflow: auto;
+        }
     }
 }
 

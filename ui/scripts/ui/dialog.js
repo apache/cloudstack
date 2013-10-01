@@ -76,7 +76,7 @@
                     dialogClass: 'create-form',
                     closeOnEscape: false,
                     draggable: false,
-                    width: 400,
+                    width: 800,
                     title: _l(args.form.title),
                     open: function() {
                         if (args.form.preFilter) {

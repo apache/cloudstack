@@ -30,8 +30,10 @@
     font-size: 14px;
     padding-right: 25px;
     padding-left: 10px;
-    padding-top: 5px;
-    padding-bottom: 5px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 @mixin csui-dropdown-dark {
@@ -51,8 +53,6 @@
 
 @mixin csui-label {
     font-size: 14px;
-    position: relative;
-    top: 7px;
 }
 
 @mixin csui-textfield {
@@ -73,8 +73,55 @@
     }
 }
 
+@mixin csui-checkbox {
+    margin-top: 25px;
+    margin-bottom: 10px;
+}
+
+@mixin csui-form {
+    .message {
+        @include row;
+    }
+    
+    form {
+        margin-top: 20px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #ccc;
+        border-top: 1px solid #ccc;
+    }
+
+    .form-item {
+        @include row;
+        @include span-columns(12);
+        
+        display: inline-block; // Needed for legacy code in JS
+        margin-top: 5px;
+        margin-bottom: 5px;
+
+        label {
+            @include span-columns(3);
+            @include shift(0.5);
+
+            text-align: right;
+            position: relative;
+            top: 20px;
+        }
+
+        input, select, .dynamic-input {
+            @include span-columns(7);
+            @include shift(0.2);
+        }
+    }
+
+    .dynamic-input {
+        display: inline-block;
+        border: 1px solid gray;
+        background: #ccc;
+    }
+}
 
 // Defaults
 label { @include csui-label; }
 select { @include csui-dropdown; }
 input[type=text], input[type=password] { @include csui-textfield; }
+input[type=checkbox], input[type=radio] { @include csui-checkbox; }
