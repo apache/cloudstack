@@ -41,7 +41,7 @@ body {
     .controls {
         position: relative;
 
-        * {
+        > * {
             float: left;
         }
 
@@ -84,12 +84,11 @@ body {
         @include span-columns(3);
         @include row;
 
-        padding: 5px;
-        top: 10px;
-
         label {
             @include csui-label;
             @include span-columns(3);
+
+            margin-top: 20px;
         }
 
         select {
@@ -105,6 +104,7 @@ body {
         height: 100%;
         cursor: pointer;
         padding: 5px;
+        margin-top: 10px;
 
         &:hover {
             .title {
@@ -125,7 +125,7 @@ body {
             @include csui-label;
 
             text-align: left;
-            ;
+            margin-top: 6px;
         }
     }
 
