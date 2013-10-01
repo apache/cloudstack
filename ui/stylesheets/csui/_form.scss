@@ -115,8 +115,17 @@
 
     .dynamic-input {
         display: inline-block;
-        border: 1px solid gray;
-        background: #ccc;
+        border: 1px solid #ccc;
+        background: lighten(#ccc, 15%);
+        border-radius: 3px;
+
+        .form-item {
+            margin: 0;
+            
+            label {
+                @include span-columns(4);
+            }
+        }
     }
 }
 
