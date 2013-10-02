@@ -221,6 +221,8 @@ body {
 // List view widget
 .list-view {
     @include csui-list;
+
+    max-height: 85%;
 }
 
 // Panel toolbars

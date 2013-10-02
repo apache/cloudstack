@@ -45,7 +45,7 @@ var md5Hashed = false;
 var md5HashedLogin = false;
 
 //page size for API call (e.g."listXXXXXXX&pagesize=N" )
-var pageSize = 20;
+var pageSize = 30;
 
 var rootAccountId = 1;
 

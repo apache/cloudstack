@@ -16,6 +16,7 @@
 // under the License.
 @mixin csui-list {
     margin: 20px;
+    overflow: auto;
     
     table {
         width: 100%;
@@ -36,17 +37,27 @@
 
         tr td {
             padding: 5px;
-            border-bottom: 1px solid #ccc;
+            border: 1px solid #ccc;
             font-size: 11px;
-            white-space: nowrap;
+            max-width: 100px;
 
             span {
                 float: left;
             }
         }
 
-        th.quick-view, td.quick-view {
-            width: 40px;
+        th, td {
+            &.quick-view {
+                width: 40px;
+            }
+
+            &.actions {
+                width: 80px;
+            }
+
+            &.reorder {
+                width: 150px;
+            }
         }
 
         td.quick-view {
