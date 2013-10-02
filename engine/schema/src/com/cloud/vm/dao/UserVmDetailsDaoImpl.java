@@ -22,6 +22,7 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
+import com.cloud.vm.NicDetailVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -95,5 +96,19 @@ public class UserVmDetailsDaoImpl extends GenericDaoBase<UserVmDetailVO, Long> i
         }
         txn.commit();		
 	}
+
+    @Override
+    public void removeDetails(Long vmId, String key) {
+        if(key != null){
+            UserVmDetailVO detail = findDetail(vmId, key);
+            if(detail != null){
+                remove(detail.getId());
+            }
+        }else {
+            deleteDetails(vmId);
+        }
+
+    }
+
 
 }
