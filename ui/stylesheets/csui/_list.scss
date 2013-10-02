@@ -35,9 +35,14 @@
             @include linear-gradient(#ffffff, #e2e2e2);
         }
 
+        tr {
+            &:not(.empty) {
+                border-bottom: 1px solid #ccc;
+            }
+        }
+
         tr td {
             padding: 5px;
-            border: 1px solid #ccc;
             font-size: 11px;
             max-width: 100px;
 
