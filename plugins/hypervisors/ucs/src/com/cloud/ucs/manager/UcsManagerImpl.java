@@ -31,7 +31,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.AddUcsManagerCmd;
 import org.apache.cloudstack.api.AssociateUcsProfileToBladeCmd;
 import org.apache.cloudstack.api.DeleteUcsManagerCmd;
@@ -43,6 +42,7 @@ import org.apache.cloudstack.api.response.UcsBladeResponse;
 import org.apache.cloudstack.api.response.UcsManagerResponse;
 import org.apache.cloudstack.api.response.UcsProfileResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
@@ -98,7 +98,7 @@ public class UcsManagerImpl implements UcsManager {
     private ScheduledExecutorService syncBladesExecutor;
     private int syncBladeInterval;
 
-    private class SyncBladesThread implements Runnable {
+    private class SyncBladesThread extends ManagedContextRunnable {
 
 		private void discoverNewBlades(Map<String, UcsBladeVO> previous,
 				Map<String, ComputeBlade> now, UcsManagerVO mgr) {
@@ -156,7 +156,7 @@ public class UcsManagerImpl implements UcsManager {
     	}
 
 		@Override
-		public void run() {
+		protected void runInContext() {
 			try {
 				List<UcsManagerVO> mgrs = ucsDao.listAll();
 				for (UcsManagerVO mgr : mgrs) {

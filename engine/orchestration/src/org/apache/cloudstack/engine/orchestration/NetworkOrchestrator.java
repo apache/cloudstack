@@ -37,15 +37,14 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.PortableIpDao;
 
 import com.cloud.agent.AgentManager;
@@ -2195,10 +2194,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return result;
     }
 
-    public class NetworkGarbageCollector implements Runnable {
+    public class NetworkGarbageCollector extends ManagedContextRunnable {
         @Override
-        public void run() {
-            ServerContexts.registerSystemContext();
+        protected void runInContext() {
             GlobalLock gcLock = GlobalLock.getInternLock("Network.GC.Lock");
             try {
                 if (gcLock.lock(3)) {
@@ -2210,7 +2208,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 }
             } finally {
                 gcLock.releaseRef();
-                ServerContexts.unregisterSystemContext();
             }
         }
 

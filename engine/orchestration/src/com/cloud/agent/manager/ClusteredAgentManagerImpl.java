@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -51,6 +50,8 @@ import com.google.gson.Gson;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.agent.AgentManager;
@@ -231,9 +232,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         }
     }
 
-    private class DirectAgentScanTimerTask extends TimerTask {
+    private class DirectAgentScanTimerTask extends ManagedContextTimerTask {
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 runDirectAgentScanTimerTask();
             } catch (Throwable e) {
@@ -746,7 +747,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         _timer.schedule(new AgentLoadBalancerTask(), 30000);
     }
 
-    public class AgentLoadBalancerTask extends TimerTask {
+    public class AgentLoadBalancerTask extends ManagedContextTimerTask {
         protected volatile boolean cancelled = false;
 
         public AgentLoadBalancerTask() {
@@ -764,7 +765,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         }
 
         @Override
-        public synchronized void run() {
+        protected synchronized void runInContext() {
         	try {
 	            if (!cancelled) {
 	                startRebalanceAgents();
@@ -925,9 +926,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     private Runnable getTransferScanTask() {
-        return new Runnable() {
+        return new ManagedContextRunnable() {
             @Override
-            public void run() {
+            protected void runInContext() {
                 try {
                     if (s_logger.isTraceEnabled()) {
                         s_logger.trace("Clustered agent transfer scan check, management server id:" + _nodeId);
@@ -1173,7 +1174,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
 
-    protected class RebalanceTask implements Runnable {
+    protected class RebalanceTask extends ManagedContextRunnable {
         Long hostId = null;
         Long currentOwnerId = null;
         Long futureOwnerId = null;
@@ -1186,7 +1187,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Rebalancing host id=" + hostId);

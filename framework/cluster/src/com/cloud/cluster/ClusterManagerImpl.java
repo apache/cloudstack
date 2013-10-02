@@ -48,6 +48,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
@@ -217,18 +218,18 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
     }
     
     private Runnable getClusterPduSendingTask() {
-        return new Runnable() {
+        return new ManagedContextRunnable() {
             @Override
-            public void run() {
+            protected void runInContext() {
                 onSendingClusterPdu();
             }
         };
     }
     
     private Runnable getClusterPduNotificationTask() {
-        return new Runnable() {
+        return new ManagedContextRunnable() {
             @Override
-            public void run() {
+            protected void runInContext() {
                 onNotifyingClusterPdu();
             }
         };
@@ -289,9 +290,9 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                 if(pdu == null)
                 	continue;
 
-                _executor.execute(new Runnable() {
+                _executor.execute(new ManagedContextRunnable() {
                     @Override
-                	public void run() {
+                    protected void runInContext() {
 		                if(pdu.getPduType() == ClusterServicePdu.PDU_TYPE_RESPONSE) {
 		                    ClusterServiceRequestPdu requestPdu = popRequestPdu(pdu.getAckSequenceId());
 		                    if(requestPdu != null) {
@@ -528,9 +529,9 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
     }
 
     private Runnable getHeartbeatTask() {
-        return new Runnable() {
+        return new ManagedContextRunnable() {
             @Override
-            public void run() {
+            protected void runInContext() {
                 Transaction txn = Transaction.open("ClusterHeartbeat");
                 try {
                     Profiler profiler = new Profiler();
@@ -636,9 +637,9 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
     }
 
     private Runnable getNotificationTask() {
-        return new Runnable() {
+        return new ManagedContextRunnable() {
             @Override
-            public void run() {
+            protected void runInContext() {
                 while(true) {
                     synchronized(_notificationMsgs) {
                         try {

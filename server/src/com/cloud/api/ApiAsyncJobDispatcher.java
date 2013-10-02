@@ -36,6 +36,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.cloudstack.managed.context.ManagedContext;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -51,12 +52,23 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
     @Inject private AsyncJobManager _asyncJobMgr;
     @Inject
     private EntityManager _entityMgr;
+    @Inject
+    ManagedContext _managedContext;
     
     public ApiAsyncJobDispatcher() {
     }
     
-	@Override
-    public void runJob(AsyncJob job) {
+    @Override
+    public void runJob(final AsyncJob job) {
+        _managedContext.runWithContext(new Runnable() {
+            @Override
+            public void run() {
+                runJobInContext(job);
+            }
+        });
+    }
+    
+	protected void runJobInContext(AsyncJob job) {
         BaseAsyncCmd cmdObj = null;
         try {
             Class<?> cmdClass = Class.forName(job.getCmd());

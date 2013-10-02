@@ -18,8 +18,10 @@ package org.apache.cloudstack.context;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Stack;
 import java.util.UUID;
 
+import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
@@ -37,7 +39,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
  */
 public class CallContext {
     private static final Logger s_logger = Logger.getLogger(CallContext.class);
-    private static final ThreadLocal<CallContext> s_currentContext = new ThreadLocal<CallContext>();
+    private static ManagedThreadLocal<CallContext> s_currentContext = new ManagedThreadLocal<CallContext>();
+    private static ManagedThreadLocal<Stack<CallContext>> s_currentContextStack = 
+            new ManagedThreadLocal<Stack<CallContext>>() {
+                @Override
+                protected Stack<CallContext> initialValue() {
+                    return new Stack<CallContext>();
+                }
+    };
 
     private String contextId;
     private Account account;
@@ -115,6 +124,9 @@ public class CallContext {
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Registered: " + callingContext);
         }
+        
+        s_currentContextStack.get().push(callingContext);
+        
         return callingContext;
     }
 
@@ -162,10 +174,15 @@ public class CallContext {
         return register(user, account);
     }
 
+    public static void unregisterAll() {
+        while ( unregister() != null ) {
+            // NOOP
+        }
+    }
+    
     public static CallContext unregister() {
         CallContext context = s_currentContext.get();
         if (context == null) {
-            s_logger.debug("No context to remove");
             return null;
         }
         s_currentContext.remove();
@@ -183,6 +200,14 @@ public class CallContext {
                 s_logger.trace("Popping from NDC: " + contextId);
             }
         }
+
+        Stack<CallContext> stack = s_currentContextStack.get();
+        stack.pop();
+
+        if ( ! stack.isEmpty() ) {
+            s_currentContext.set(stack.peek());
+        }
+
         return context;
     }
 

@@ -41,16 +41,15 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -852,14 +851,13 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
 
 
-    protected class NetworkUsageTask implements Runnable {
+    protected class NetworkUsageTask extends ManagedContextRunnable {
 
         public NetworkUsageTask() {
         }
 
         @Override
-        public void run() {
-            ServerContexts.registerSystemContext();
+        protected void runInContext() {
             try{
                 final List<DomainRouterVO> routers = _routerDao.listByStateAndNetworkType(State.Running, GuestType.Isolated, mgmtSrvrId);
                 s_logger.debug("Found " + routers.size() + " running routers. ");
@@ -957,19 +955,17 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 }
             } catch (Exception e) {
                 s_logger.warn("Error while collecting network stats", e);
-            } finally {
-                ServerContexts.unregisterSystemContext();
             }
         }
     }
 
-    protected class NetworkStatsUpdateTask implements Runnable {
+    protected class NetworkStatsUpdateTask extends ManagedContextRunnable {
 
         public NetworkStatsUpdateTask() {
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             GlobalLock scanLock = GlobalLock.getInternLock("network.stats");
             try {
                 if(scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
@@ -1201,7 +1197,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         return priority;
     }
 
-    protected class RvRStatusUpdateTask implements Runnable {
+    protected class RvRStatusUpdateTask extends ManagedContextRunnable {
 
         public RvRStatusUpdateTask() {
         }
@@ -1280,60 +1276,54 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
 
         @Override
-        public void run() {
-            ServerContexts.registerSystemContext();
-            try {
-                while (true) {
-                    try {
-                            Long networkId = _vrUpdateQueue.take();  // This is a blocking call so this thread won't run all the time if no work item in queue.
-                            List <DomainRouterVO> routers = _routerDao.listByNetworkAndRole(networkId, Role.VIRTUAL_ROUTER);
-        
-                            if (routers.size() != 2) {
-                                continue;
-                            }
-                            /*
-                             * We update the router pair which the lower id router owned by this mgmt server, in order
-                             * to prevent duplicate update of router status from cluster mgmt servers
-                             */
-                            DomainRouterVO router0 = routers.get(0);
-                            DomainRouterVO router1 = routers.get(1);
-                            DomainRouterVO router = router0;
-                            if ((router0.getId() < router1.getId()) && router0.getHostId() != null) {
-                            	router = router0;
-                            } else {
-                            	router = router1;
-                            }
-                            if (router.getHostId() == null) {
-                            	s_logger.debug("Skip router pair (" + router0.getInstanceName() + "," + router1.getInstanceName() + ") due to can't find host");
-                            	continue;
-                            }
-                            HostVO host = _hostDao.findById(router.getHostId());
-                            if (host == null || host.getManagementServerId() == null ||
-                                    host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
-                            	s_logger.debug("Skip router pair (" + router0.getInstanceName() + "," + router1.getInstanceName() + ") due to not belong to this mgmt server");
-                                continue;
-                            }
-                        updateRoutersRedundantState(routers);
-                        checkDuplicateMaster(routers);
-                        checkSanity(routers);
-                    } catch (Exception ex) {
-                        s_logger.error("Fail to complete the RvRStatusUpdateTask! ", ex);
-                    }
+        protected void runInContext() {
+            while (true) {
+                try {
+                        Long networkId = _vrUpdateQueue.take();  // This is a blocking call so this thread won't run all the time if no work item in queue.
+                        List <DomainRouterVO> routers = _routerDao.listByNetworkAndRole(networkId, Role.VIRTUAL_ROUTER);
+    
+                        if (routers.size() != 2) {
+                            continue;
+                        }
+                        /*
+                         * We update the router pair which the lower id router owned by this mgmt server, in order
+                         * to prevent duplicate update of router status from cluster mgmt servers
+                         */
+                        DomainRouterVO router0 = routers.get(0);
+                        DomainRouterVO router1 = routers.get(1);
+                        DomainRouterVO router = router0;
+                        if ((router0.getId() < router1.getId()) && router0.getHostId() != null) {
+                        	router = router0;
+                        } else {
+                        	router = router1;
+                        }
+                        if (router.getHostId() == null) {
+                        	s_logger.debug("Skip router pair (" + router0.getInstanceName() + "," + router1.getInstanceName() + ") due to can't find host");
+                        	continue;
+                        }
+                        HostVO host = _hostDao.findById(router.getHostId());
+                        if (host == null || host.getManagementServerId() == null ||
+                                host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
+                        	s_logger.debug("Skip router pair (" + router0.getInstanceName() + "," + router1.getInstanceName() + ") due to not belong to this mgmt server");
+                            continue;
+                        }
+                    updateRoutersRedundantState(routers);
+                    checkDuplicateMaster(routers);
+                    checkSanity(routers);
+                } catch (Exception ex) {
+                    s_logger.error("Fail to complete the RvRStatusUpdateTask! ", ex);
                 }
-            } finally {
-                ServerContexts.unregisterSystemContext();
             }
         }
     }
     
-    protected class CheckRouterTask implements Runnable {
+    protected class CheckRouterTask extends ManagedContextRunnable {
 
         public CheckRouterTask() {
         }
 
         @Override
-        public void run() {
-            ServerContexts.registerSystemContext();
+        protected void runInContext() {
             try {
                 final List<DomainRouterVO> routers = _routerDao.listIsolatedByHostId(null);
                 s_logger.debug("Found " + routers.size() + " routers to update status. ");
@@ -1350,8 +1340,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 }
             } catch (Exception ex) {
                 s_logger.error("Fail to complete the CheckRouterTask! ", ex);
-            } finally {
-                ServerContexts.unregisterSystemContext();
             }
         }
     }

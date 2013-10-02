@@ -21,23 +21,22 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import com.cloud.configuration.Config;
-import com.cloud.utils.component.ComponentContext;
+import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.resource.LocalNfsSecondaryStorageResource;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.configuration.Config;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.net.NetUtils;
-
-import javax.inject.Inject;
 
 public class LocalHostEndpoint implements EndPoint {
     private ScheduledExecutorService executor;
@@ -97,7 +96,7 @@ public class LocalHostEndpoint implements EndPoint {
         return new Answer(cmd, false, "unsupported command:" + cmd.toString());
     }
 
-    private class CmdRunner implements Runnable {
+    private class CmdRunner extends ManagedContextRunnable {
         final Command cmd;
         final AsyncCompletionCallback<Answer> callback;
 
@@ -107,7 +106,7 @@ public class LocalHostEndpoint implements EndPoint {
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             Answer answer = sendMessage(cmd);
             callback.complete(answer);
         }

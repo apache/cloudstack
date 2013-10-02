@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
@@ -36,6 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.AgentControlAnswer;
@@ -731,7 +731,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         }
     }
 
-    public class WatchTask extends TimerTask {
+    public class WatchTask extends ManagedContextTimerTask {
         protected Request _request;
         protected Agent   _agent;
         protected Link    _link;
@@ -744,7 +744,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Scheduling " + (_request instanceof Response ? "Ping" : "Watch Task"));
             }
@@ -760,7 +760,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         }
     }
 
-    public class StartupTask extends TimerTask {
+    public class StartupTask extends ManagedContextTimerTask {
         protected Link             _link;
         protected volatile boolean cancelled = false;
 
@@ -782,7 +782,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         }
 
         @Override
-        public synchronized void run() {
+        protected synchronized void runInContext() {
             if (!cancelled) {
                 if (s_logger.isInfoEnabled()) {
                     s_logger.info("The startup command is now cancelled");

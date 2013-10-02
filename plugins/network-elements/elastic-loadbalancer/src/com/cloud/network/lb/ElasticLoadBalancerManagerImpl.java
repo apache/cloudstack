@@ -36,11 +36,11 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -749,9 +749,9 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         _gcCandidateElbVmIds = currentGcCandidates;
     }
     
-    public class CleanupThread implements Runnable {
+    public class CleanupThread extends ManagedContextRunnable {
         @Override
-        public void run() {
+        protected void runInContext() {
             garbageCollectUnusedElbVms();
             
         }

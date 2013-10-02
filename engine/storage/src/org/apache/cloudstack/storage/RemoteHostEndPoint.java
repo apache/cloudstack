@@ -26,6 +26,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -104,7 +105,7 @@ public class RemoteHostEndPoint implements EndPoint {
         throw new CloudRuntimeException("Failed to send command, due to Agent:" + getId() + ", " + errMsg);
     }
 
-    private class CmdRunner implements Listener, Runnable {
+    private class CmdRunner extends ManagedContextRunnable implements Listener {
         final AsyncCompletionCallback<Answer> callback;
         Answer answer;
 
@@ -162,7 +163,7 @@ public class RemoteHostEndPoint implements EndPoint {
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             callback.complete(answer);
         }
     }

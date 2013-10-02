@@ -50,9 +50,9 @@ import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 
 import com.cloud.api.ApiDBUtils;
@@ -1492,18 +1492,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return _userDao.remove(id);
     }
 
-    public class ResourceCountCalculateTask implements Runnable {
+    protected class AccountCleanupTask extends ManagedContextRunnable {
         @Override
-        public void run() {
-
-        }
-    }
-
-    protected class AccountCleanupTask implements Runnable {
-        @Override
-        public void run() {
+        protected void runInContext() {
             try {
-                ServerContexts.registerSystemContext();
                 GlobalLock lock = GlobalLock.getInternLock("AccountCleanup");
                 if (lock == null) {
                     s_logger.debug("Couldn't get the global lock");
@@ -1585,7 +1577,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     s_logger.error("Exception ", e);
                 } finally {
                     lock.unlock();
-                    ServerContexts.unregisterSystemContext();
                 }
             } catch (Exception e) {
                 s_logger.error("Exception ", e);

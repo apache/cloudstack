@@ -36,7 +36,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -54,6 +53,7 @@ import org.apache.cloudstack.framework.messagebus.MessageDetector;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.jobs.JobInfo.Status;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.cluster.ClusterManagerListener;
@@ -490,9 +490,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     private Runnable getExecutorRunnable(final AsyncJob job) {
-        return new Runnable() {
+        return new ManagedContextRunnable() {
             @Override
-            public void run() {
+            protected void runInContext() {
                 Transaction txn = null;
                 long runNumber = getJobRunNumber();
 
@@ -687,9 +687,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     private Runnable getHeartbeatTask() {
-        return new Runnable() {
+        return new ManagedContextRunnable() {
             @Override
-            public void run() {
+            protected void runInContext() {
                 Transaction txn = Transaction.open("AsyncJobManagerImpl.getHeartbeatTask");
                 try {
                     List<SyncQueueItemVO> l = _queueMgr.dequeueFromAny(getMsid(), MAX_ONETIME_SCHEDULE_SIZE);
@@ -724,9 +724,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @DB
     private Runnable getGCTask() {
-        return new Runnable() {
+        return new ManagedContextRunnable() {
             @Override
-            public void run() {
+            protected void runInContext() {
                 GlobalLock scanLock = GlobalLock.getInternLock("AsyncJobManagerGC");
                 try {
                     if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {

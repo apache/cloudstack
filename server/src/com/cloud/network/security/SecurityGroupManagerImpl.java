@@ -40,7 +40,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupEgressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupIngressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.CreateSecurityGroupCmd;
@@ -50,6 +49,7 @@ import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupI
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.agent.AgentManager;
@@ -187,9 +187,9 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         }
     }
 
-    public class WorkerThread implements Runnable {
+    public class WorkerThread extends ManagedContextRunnable {
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 Transaction txn = Transaction.open("SG Work");
                 try {
@@ -210,9 +210,9 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         }
     }
 
-    public class CleanupThread implements Runnable {
+    public class CleanupThread extends ManagedContextRunnable {
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 Transaction txn = Transaction.open("SG Cleanup");
                 try {
