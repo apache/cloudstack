@@ -14,47 +14,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+@mixin csui-breadcrumbs {
+    box-shadow: 0px 3px 5px #ccc;
+    
+    ul {
+        @include row;
 
-// External libs
-@import "../lib/normalize";
-@import "../lib/animate";
-@import "../lib/bourbon/bourbon";
-@import "../lib/neat/neat";
+        padding-top: 0px;
+        padding-bottom: 10px;
+        
+        li {
+            color: #237AD7;
+            font-size: 12px;
+            list-style: none;
+            float: left;
 
-// Custom main UI font
-@font-face {
-    font-family: 'Noto Sans';
-    src: url('../fonts/Noto_Sans/NotoSans-Regular.ttf');
-}
-@font-face {
-    font-family: 'Noto Sans';
-    src: url('../fonts/Noto_Sans/NotoSans-Bold.ttf');
-    font-weight: bold;
-}
+            &:after {
+                content: ">";
+                color: #ccc;
+                margin-right: 10px;
+                margin-left: 10px;
+            }
 
-// Core style
-html, body {
-    height: 100%;
-    font-family: 'Noto Sans', sans-serif;
-    font-size: 13px;
-}
+            &.active {
+                color: darken(#ccc, 30%);
 
-@mixin csui-hyperlink {
-    color: black;
-    text-decoration: none;
-
-    &:hover {
-        text-decoration: underline;
+                &:after {
+                    content: "";
+                }
+            }
+        }
     }
 }
-
-// Sub-components
-@import "login";
-@import "button";
-@import "form";
-@import "header";
-@import "asset";
-@import "dialog";
-@import "list";
-@import "toolbar";
-@import "breadcrumbs";
