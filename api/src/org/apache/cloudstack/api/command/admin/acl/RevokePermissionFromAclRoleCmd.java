@@ -92,7 +92,7 @@ public class RevokePermissionFromAclRoleCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException,
             InsufficientCapacityException, ServerApiException {
         CallContext.current().setEventDetails("Acl role Id: " + getId());
-        AclRole result = _aclService.revokePermissionFromAclRole(id, apiList);
+        AclRole result = _aclService.revokeApiPermissionFromAclRole(id, apiList);
         if (result != null) {
             AclRoleResponse response = _responseGenerator.createAclRoleResponse(result);
             response.setResponseName(getCommandName());

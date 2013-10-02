@@ -92,7 +92,7 @@ public class GrantPermissionToAclRoleCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException,
             InsufficientCapacityException, ServerApiException {
         CallContext.current().setEventDetails("Acl role Id: " + getId());
-        AclRole result = _aclService.grantPermissionToAclRole(id, apiList);
+        AclRole result = _aclService.grantApiPermissionToAclRole(id, apiList);
         if (result != null) {
             AclRoleResponse response = _responseGenerator.createAclRoleResponse(result);
             response.setResponseName(getCommandName());
