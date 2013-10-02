@@ -5348,7 +5348,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (pool.getType() == StoragePoolType.NetworkFilesystem) {
                 getNfsSR(conn, pool);
             } else if (pool.getType() == StoragePoolType.IscsiLUN) {
-                getIscsiSR(conn, pool.getUuid(), pool.getHost(), pool.getPath(), null, null, new Boolean[1]);
+                getIscsiSR(conn, pool.getUuid(), pool.getHost(), pool.getPath(), null, null);
             } else if (pool.getType() == StoragePoolType.PreSetup) {
             } else {
                 return new Answer(cmd, false, "The pool type: " + pool.getType().name() + " is not supported.");
@@ -6166,17 +6166,27 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected VDI getVDIbyUuid(Connection conn, String uuid) {
+        return getVDIbyUuid(conn, uuid, true);
+    }
+
+    protected VDI getVDIbyUuid(Connection conn, String uuid, boolean throwExceptionIfNotFound) {
         try {
             return VDI.getByUuid(conn, uuid);
         } catch (Exception e) {
-            String msg = "Catch Exception " + e.getClass().getName() + " :VDI getByUuid for uuid: " + uuid + " failed due to " + e.toString();
-            s_logger.debug(msg);
-            throw new CloudRuntimeException(msg, e);
+            if (throwExceptionIfNotFound) {
+                String msg = "Catch Exception " + e.getClass().getName() + " :VDI getByUuid for uuid: " + uuid + " failed due to " + e.toString();
+
+                s_logger.debug(msg);
+
+                throw new CloudRuntimeException(msg, e);
+            }
+
+            return null;
         }
     }
 
     protected SR getIscsiSR(Connection conn, String srNameLabel, String target, String path,
-            String chapInitiatorUsername, String chapInitiatorPassword, Boolean[] created) {
+            String chapInitiatorUsername, String chapInitiatorPassword) {
         synchronized (srNameLabel.intern()) {
             Map<String, String> deviceConfig = new HashMap<String, String>();
             try {
@@ -6280,8 +6290,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 {
                     sr = SR.create(conn, host, deviceConfig, new Long(0), srNameLabel, srNameLabel, type, "user", true,
                             smConfig);
-
-                    created[0] = true; // note that the SR was created (as opposed to introduced)
                 } else {
                     sr = SR.introduce(conn, pooluuid, srNameLabel, srNameLabel,
                             type, "user", true, smConfig);
@@ -6459,54 +6467,41 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected VDI handleSrAndVdiAttach(String iqn, String storageHostName,
-            String chapInitiatorName, String chapInitiatorPassword) throws Types.XenAPIException, XmlRpcException {
+    protected VDI createVdi(SR sr, String vdiNameLabel, Long volumeSize) throws Types.XenAPIException, XmlRpcException {
         VDI vdi = null;
 
         Connection conn = getConnection();
 
-        Boolean[] created = { false };
+        VDI.Record vdir = new VDI.Record();
 
-        SR sr = getIscsiSR(conn, iqn,
-                storageHostName, iqn,
-                chapInitiatorName, chapInitiatorPassword, created);
+        vdir.nameLabel = vdiNameLabel;
+        vdir.SR = sr;
+        vdir.type = Types.VdiType.USER;
 
-        // if created[0] is true, this means the SR was actually created...as opposed to introduced
-        if (created[0]) {
-            VDI.Record vdir = new VDI.Record();
+        long totalSrSpace = sr.getPhysicalSize(conn);
+        long unavailableSrSpace = sr.getPhysicalUtilisation(conn);
+        long availableSrSpace = totalSrSpace - unavailableSrSpace;
 
-            vdir.nameLabel = iqn;
-            vdir.SR = sr;
-            vdir.type = Types.VdiType.USER;
-
-            long totalSpace = sr.getPhysicalSize(conn);
-            long unavailableSpace = sr.getPhysicalUtilisation(conn);
-
-            vdir.virtualSize = totalSpace - unavailableSpace;
-
-            if (vdir.virtualSize < 0) {
-                throw new CloudRuntimeException("VDI virtual size cannot be less than 0.");
-            }
-
-            long maxNumberOfTries = (totalSpace / unavailableSpace >= 1) ? (totalSpace / unavailableSpace) : 1;
-            long tryNumber = 0;
-
-            while (tryNumber <= maxNumberOfTries) {
-                try {
-                    vdi = VDI.create(conn, vdir);
-
-                    break;
-                }
-                catch (Exception ex) {
-                    tryNumber++;
-
-                    vdir.virtualSize -= unavailableSpace;
-                }
-            }
-
+        if (availableSrSpace < volumeSize) {
+            throw new CloudRuntimeException("Available space for SR cannot be less than " + volumeSize + ".");
         }
-        else {
-            vdi = sr.getVDIs(conn).iterator().next();
+
+        vdir.virtualSize = volumeSize;
+
+        long maxNumberOfTries = (totalSrSpace / unavailableSrSpace >= 1) ? (totalSrSpace / unavailableSrSpace) : 1;
+        long tryNumber = 0;
+
+        while (tryNumber <= maxNumberOfTries) {
+            try {
+                vdi = VDI.create(conn, vdir);
+
+                break;
+            }
+            catch (Exception ex) {
+                tryNumber++;
+
+                vdir.virtualSize -= unavailableSrSpace;
+            }
         }
 
         return vdi;
@@ -6534,12 +6529,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         try {
-            // Look up the VDI
             VDI vdi = null;
 
             if (cmd.getAttach() && cmd.isManaged()) {
-                vdi = handleSrAndVdiAttach(cmd.get_iScsiName(), cmd.getStorageHost(),
-                        cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword());
+                SR sr = getIscsiSR(conn, cmd.get_iScsiName(), cmd.getStorageHost(), cmd.get_iScsiName(),
+                            cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword());
+
+                vdi = getVDIbyUuid(conn, cmd.getVolumePath(), false);
+
+                if (vdi == null) {
+                    vdi = createVdi(sr, cmd.get_iScsiName(), cmd.getVolumeSize());
+                }
             }
             else {
                 vdi = getVDIbyUuid(conn, cmd.getVolumePath());

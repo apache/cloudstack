@@ -4439,7 +4439,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return str.replace('/', '-');
     }
 
-    private String trimIqn(String iqn) {
+    public static String trimIqn(String iqn) {
         String[] tmp = iqn.split("/");
 
         if (tmp.length != 3) {
@@ -4454,36 +4454,23 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     @Override
-    public ManagedObjectReference handleDatastoreAndVmdkAttach(Command cmd, String iqn, String storageHost, int storagePort,
-            String initiatorUsername, String initiatorPassword, String targetUsername, String targetPassword) throws Exception {
+    public void createVmdk(Command cmd, DatastoreMO dsMo, String vmdkDatastorePath, Long volumeSize) throws Exception {
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
 
-        ManagedObjectReference morDs = createVmfsDatastore(hyperHost, getDatastoreName(iqn),
-                                                           storageHost, storagePort, trimIqn(iqn),
-                                                           initiatorUsername, initiatorPassword,
-                                                           targetUsername, targetPassword);
+        String dummyVmName = getWorkerName(context, cmd, 0);
 
-        DatastoreMO dsMo = new DatastoreMO(context, morDs);
+        VirtualMachineMO vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName);
 
-        String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), dsMo.getName());
-
-        if (!dsMo.fileExists(volumeDatastorePath)) {
-            String dummyVmName = getWorkerName(context, cmd, 0);
-
-            VirtualMachineMO vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName);
-
-            if (vmMo == null) {
-                throw new Exception("Unable to create a dummy VM for volume creation");
-            }
-
-            vmMo.createDisk(volumeDatastorePath, getMBsFromBytes(dsMo.getSummary().getFreeSpace()),
-                    morDs, vmMo.getScsiDeviceControllerKey());
-            vmMo.detachDisk(volumeDatastorePath, false);
-            vmMo.destroy();
+        if (vmMo == null) {
+            throw new Exception("Unable to create a dummy VM for volume creation");
         }
 
-        return morDs;
+        Long volumeSizeToUse = volumeSize < dsMo.getSummary().getFreeSpace() ? volumeSize : dsMo.getSummary().getFreeSpace();
+
+        vmMo.createDisk(vmdkDatastorePath, getMBsFromBytes(volumeSizeToUse), dsMo.getMor(), vmMo.getScsiDeviceControllerKey());
+        vmMo.detachDisk(vmdkDatastorePath, false);
+        vmMo.destroy();
     }
 
     @Override
@@ -4516,9 +4503,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             ManagedObjectReference morDs = null;
 
             if (cmd.getAttach() && cmd.isManaged()) {
-                morDs = handleDatastoreAndVmdkAttach(cmd, cmd.get_iScsiName(), cmd.getStorageHost(), cmd.getStoragePort(),
-                        cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword(),
-                        cmd.getChapTargetUsername(), cmd.getChapTargetPassword());
+                morDs = getVmfsDatastore(hyperHost, getDatastoreName(cmd.get_iScsiName()), cmd.getStorageHost(), cmd.getStoragePort(), trimIqn(cmd.get_iScsiName()),
+                            cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword(), cmd.getChapTargetUsername(), cmd.getChapTargetPassword());
+
+                DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDs);
+
+                String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), dsMo.getName());
+
+                if (!dsMo.fileExists(volumeDatastorePath)) {
+                    createVmdk(cmd, dsMo, VmwareResource.getDatastoreName(cmd.get_iScsiName()), cmd.getVolumeSize());
+                }
             }
             else {
                 morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getPoolUuid());
@@ -4531,10 +4525,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDs);
-            VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dsMo.getOwnerDatacenter().first(), cmd.getVmName(), 
-            	dsMo, cmd.getVolumePath());
-            
-            String datastoreVolumePath = dsMo.searchFileInSubFolders(cmd.getVolumePath() + ".vmdk", true);
+
+            String datastoreVolumePath = null;
+
+            if (cmd.isManaged()) {
+                datastoreVolumePath = dsMo.getDatastorePath(dsMo.getName() + ".vmdk");
+            }
+            else {
+                VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dsMo.getOwnerDatacenter().first(), cmd.getVmName(), dsMo, cmd.getVolumePath());
+
+                datastoreVolumePath = dsMo.searchFileInSubFolders(cmd.getVolumePath() + ".vmdk", true);
+            }
+
             assert (datastoreVolumePath != null) : "Virtual disk file must exist in specified datastore for attach/detach operations.";
             if (datastoreVolumePath == null) {
                 throw new CloudRuntimeException("Unable to find file " + cmd.getVolumePath() + ".vmdk in datastore " + dsMo.getName());
@@ -4687,7 +4689,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    private ManagedObjectReference createVmfsDatastore(VmwareHypervisorHost hyperHost, String datastoreName, String storageIpAddress,
+    public ManagedObjectReference getVmfsDatastore(VmwareHypervisorHost hyperHost, String datastoreName, String storageIpAddress,
             int storagePortNumber, String iqn, String chapName, String chapSecret, String mutualChapName, String mutualChapSecret) throws Exception {
         VmwareContext context = getServiceContext();
         ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();

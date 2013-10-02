@@ -1191,8 +1191,16 @@ public class VmwareStorageProcessor implements StorageProcessor {
             ManagedObjectReference morDs = null;
 
             if (isAttach && isManaged) {
-                morDs = hostService.handleDatastoreAndVmdkAttach(cmd, iScsiName, storageHost, storagePort,
-                        initiatorUsername, initiatorPassword, targetUsername, targetPassword);
+                morDs = hostService.getVmfsDatastore(hyperHost, VmwareResource.getDatastoreName(iScsiName), storageHost, storagePort,
+                            VmwareResource.trimIqn(iScsiName), initiatorUsername, initiatorPassword, targetUsername, targetPassword);
+
+                DatastoreMO dsMo = new DatastoreMO(hostService.getServiceContext(null), morDs);
+
+                String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), dsMo.getName());
+
+                if (!dsMo.fileExists(volumeDatastorePath)) {
+                    hostService.createVmdk(cmd, dsMo, VmwareResource.getDatastoreName(iScsiName), volumeTO.getSize());
+                }
             }
             else {
                 morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, isManaged ? VmwareResource.getDatastoreName(iScsiName) : primaryStore.getUuid());
@@ -1207,24 +1215,35 @@ public class VmwareStorageProcessor implements StorageProcessor {
             DatastoreMO dsMo = new DatastoreMO(this.hostService.getServiceContext(null), morDs);
             String datastoreVolumePath;
 
-            if(isAttach) {
-                if(!isManaged)
-                    datastoreVolumePath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dsMo.getOwnerDatacenter().first(), vmName,
-                            dsMo, volumeTO.getPath());
-                else
+            if (isAttach) {
+                if (isManaged) {
                     datastoreVolumePath = dsMo.getDatastorePath(dsMo.getName() + ".vmdk");
-            } else {
-                datastoreVolumePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumeTO.getPath() + ".vmdk");
-                if(!dsMo.fileExists(datastoreVolumePath))
-                    datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, volumeTO.getPath() + ".vmdk");
+                }
+                else {
+                    datastoreVolumePath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dsMo.getOwnerDatacenter().first(), vmName, dsMo, volumeTO.getPath());
+                }
+            }
+            else {
+                if (isManaged) {
+                    datastoreVolumePath = dsMo.getDatastorePath(dsMo.getName() + ".vmdk");
+                }
+                else {
+                    datastoreVolumePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumeTO.getPath() + ".vmdk");
+
+                    if (!dsMo.fileExists(datastoreVolumePath)) {
+                        datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, volumeTO.getPath() + ".vmdk");
+                    }
+                }
             }
 
             disk.setVdiUuid(datastoreVolumePath);
 
             AttachAnswer answer = new AttachAnswer(disk);
+
             if (isAttach) {
                 vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs);
-            } else {
+            }
+            else {
                 vmMo.removeAllSnapshots();
                 vmMo.detachDisk(datastoreVolumePath, false);
 

@@ -167,12 +167,20 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
         try {
             Connection conn = this.hypervisorResource.getConnection();
-            // Look up the VDI
+
             VDI vdi = null;
 
             if (cmd.isManaged()) {
-                vdi = this.hypervisorResource.handleSrAndVdiAttach(cmd.get_iScsiName(), cmd.getStorageHost(),
-                        cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword());
+                SR sr = this.hypervisorResource.getIscsiSR(conn, cmd.get_iScsiName(), cmd.getStorageHost(), cmd.get_iScsiName(),
+                            cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword());
+
+                vdi = this.hypervisorResource.getVDIbyUuid(conn, data.getPath(), false);
+
+                if (vdi == null) {
+                    VolumeObjectTO volume = (VolumeObjectTO)data;
+
+                    vdi = this.hypervisorResource.createVdi(sr, cmd.get_iScsiName(), volume.getSize());
+                }
             }
             else {
                 vdi = this.hypervisorResource.mount(conn, null, null, data.getPath());
