@@ -20,6 +20,7 @@ from marvin.entity.zone import Zone
 from marvin.entity.serviceoffering import ServiceOffering
 from marvin.entity.domain import Domain
 
+
 def get_domain(apiclient):
     "Returns a default `ROOT` domain"
 
@@ -30,6 +31,7 @@ def get_domain(apiclient):
         return domains[0]
     else:
         raise Exception("Failed to find any domains")
+
 
 def get_zone(apiclient):
     "Returns the default enabled zone"
@@ -45,6 +47,7 @@ def get_zone(apiclient):
             raise Exception("No active zones found for deployment")
     else:
         raise Exception("Failed to find specified zone.")
+
 
 def get_service_offering(apiclient, storagetype='shared', scope=None):
     """Returns the service offering that is available in the zone
@@ -62,6 +65,7 @@ def get_service_offering(apiclient, storagetype='shared', scope=None):
                 return service
     raise Exception("No service offering for storagetype %s available")
 
+
 def get_template(apiclient, description=None):
     "Returns a featured template with a specific description"
     templates = Template.list(
@@ -74,6 +78,8 @@ def get_template(apiclient, description=None):
             if template.isready:
                 return template
         else:
-            raise Exception("None of the templates are ready in your deployment")
+            raise Exception(
+                "None of the templates are ready in your deployment")
     else:
-        raise Exception("Failed to find ready and featured template of : %s" % description)
+        raise Exception(
+            "Failed to find ready and featured template of : %s" % description)

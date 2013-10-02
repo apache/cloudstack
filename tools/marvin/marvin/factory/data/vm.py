@@ -39,7 +39,7 @@ class VirtualMachineWithStaticNat(VirtualMachineFactory):
             domainid=self.domainid,
             zoneid=self.zoneid,
         )
-        ipassoc.enableStaticNat(
+        self.enableStaticNat(
             apiclient=self.apiclient,
             ipaddressid=ipassoc.id,
             virtualmachineid=self.id

@@ -20,13 +20,16 @@ try:
     from mysql import connector
     from mysql.connector import errors
 except ImportError:
-    raise Exception("mysql-connector-python not installed. pip install mysql-connector-python to continue")
+    raise Exception(
+        "mysql-connector-python not installed. pip install \
+        mysql-connector-python to continue")
 import contextlib
 import cloudstackException
 import os
 
 
 class dbConnection(object):
+
     def __init__(self, host="localhost", port=3306, user='cloud',
                  passwd='cloud', db='cloud'):
         self.host = host
@@ -52,7 +55,7 @@ class dbConnection(object):
                 try:
                     resultRow = cursor.fetchall()
                 except errors.InterfaceError:
-                    #Raised on empty result - DML
+                    # Raised on empty result - DML
                     resultRow = []
         return resultRow
 

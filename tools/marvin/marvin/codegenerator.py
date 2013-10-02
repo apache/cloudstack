@@ -21,6 +21,7 @@ from argparse import ArgumentParser
 from generate.xmltoapi import codeGenerator
 from generate.apitoentity import generate
 
+
 def get_api_cmds():
     """ Returns the API cmdlet instances
 
@@ -28,13 +29,13 @@ def get_api_cmds():
     """
     namespace = {}
     execfile('cloudstackAPI/__init__.py', namespace)
-    api_classes = __import__('cloudstackAPI', globals().update(namespace), fromlist=['*'], level=-1)
-
+    api_classes = __import__(
+        'cloudstackAPI', globals().update(namespace), fromlist=['*'], level=-1)
 
     cmdlist = map(
         lambda f: getattr(api_classes, f),
         filter(
-            lambda t: t.startswith('__') == False,
+            lambda t: t.startswith('__') is False,
             dir(api_classes)
         )
     )
@@ -45,7 +46,8 @@ def get_api_cmds():
     clslist = map(
         lambda g: getattr(g, g.__name__.split('.')[-1] + 'Cmd'),
         filter(
-            lambda h: h.__name__.split('.')[-1] not in ['baseCmd', 'baseResponse', 'cloudstackAPIClient'],
+            lambda h: h.__name__.split('.')[-1] not in [
+                'baseCmd', 'baseResponse', 'cloudstackAPIClient'],
             cmdlist
         )
     )
@@ -55,16 +57,16 @@ def get_api_cmds():
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("-o", "--output", dest="output",
-                      help="The path to the generated code entities, default\
+                        help="The path to the generated code entities, default\
  is .")
     parser.add_argument("-s", "--specfile", dest="spec",
-                      help="The path and name of the api spec xml file,\
+                        help="The path and name of the api spec xml file,\
  default is /etc/cloud/cli/commands.xml")
     parser.add_argument("-e", "--endpoint", dest="endpoint",
-                      help="The endpoint mgmt server (with open 8096) where\
+                        help="The endpoint mgmt server (with open 8096) where\
  apis are discovered, default is localhost")
     parser.add_argument("-y", "--entity", dest="entity", action="store_true",
-                      help="Generate entity based classes")
+                        help="Generate entity based classes")
 
     options = parser.parse_args()
 

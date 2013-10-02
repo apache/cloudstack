@@ -22,7 +22,8 @@ try:
     from requests import Timeout
     from requests import RequestException
 except ImportError:
-    raise Exception("requests installation not found. use pip install requests to continue")
+    raise Exception("requests installation not found. use pip install \
+            requests to continue")
 import urllib
 import base64
 import hmac
