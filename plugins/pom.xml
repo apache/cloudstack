@@ -62,6 +62,7 @@
     <module>alert-handlers/snmp-alerts</module>
     <module>alert-handlers/syslog-alerts</module>
     <module>network-elements/internal-loadbalancer</module>
+	<module>acl/role-based-access-checkers</module>
   </modules>
 
   <dependencies>

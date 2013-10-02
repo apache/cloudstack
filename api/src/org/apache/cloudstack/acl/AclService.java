@@ -40,9 +40,9 @@ public interface AclService {
      */
     boolean deleteAclRole(long aclRoleId);
 
-    AclRole grantPermissionToAclRole(long aclRoleId, List<String> apiNames);
+    AclRole grantApiPermissionToAclRole(long aclRoleId, List<String> apiNames);
 
-    AclRole revokePermissionFromAclRole(long aclRoleId, List<String> apiNames);
+    AclRole revokeApiPermissionFromAclRole(long aclRoleId, List<String> apiNames);
 
     AclGroup addAclRolesToGroup(List<Long> roleIds, Long groupId);
 
@@ -74,5 +74,8 @@ public interface AclService {
      */
     boolean deleteAclGroup(Long aclGroupId);
 
+    List<AclRole> getAclRoles(long accountId);
+
+    boolean isAPIAccessibleForRoles(String apiName, List<AclRole> roles);
 
 }

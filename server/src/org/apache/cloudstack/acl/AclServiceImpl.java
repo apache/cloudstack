@@ -165,7 +165,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACL_ROLE_GRANT, eventDescription = "Granting permission to Acl Role")
-    public AclRole grantPermissionToAclRole(long aclRoleId, List<String> apiNames) {
+    public AclRole grantApiPermissionToAclRole(long aclRoleId, List<String> apiNames) {
         Account caller = CallContext.current().getCallingAccount();
         // get the Acl Role entity
         AclRole role = _aclRoleDao.findById(aclRoleId);
@@ -195,7 +195,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACL_ROLE_REVOKE, eventDescription = "Revoking permission from Acl Role")
-    public AclRole revokePermissionFromAclRole(long aclRoleId, List<String> apiNames) {
+    public AclRole revokeApiPermissionFromAclRole(long aclRoleId, List<String> apiNames) {
         Account caller = CallContext.current().getCallingAccount();
         // get the Acl Role entity
         AclRole role = _aclRoleDao.findById(aclRoleId);
@@ -505,5 +505,16 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         return true;
     }
 
+    @Override
+    public List<AclRole> getAclRoles(long accountId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean isAPIAccessibleForRoles(String apiName, List<AclRole> roles) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
 }

@@ -353,11 +353,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public boolean isRootAdmin(long accountId) {
-        // refer to account_group_map and check if account is in Root 'Admin'
-        // group
-        
-        AclGroupAccountMapVO adminGroupMember = _aclGroupAccountDao.findAccountInAdminGroup(accountId);
-        if (adminGroupMember != null) {
+        // refer to account_group_map and check if account is in Root 'Admin' group
+        AclGroupAccountMapVO rootAdminGroupMember = _aclGroupAccountDao.findAccountInAdminGroup(accountId);
+        if (rootAdminGroupMember != null) {
             return true;
         }
         return false;
