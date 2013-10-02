@@ -48,7 +48,7 @@ class TestCaseExecuteEngine(object):
 
         if testcaseLogFile is not None:
             self.logfile = testcaseLogFile
-            self.logger = logging.getLogger("TestCaseExecuteEngine")
+            self.logger = logging.getLogger("marvin.TestCaseExecuteEngine")
             fh = logging.FileHandler(self.logfile)
             fh.setFormatter(self.logformat)
             self.logger.addHandler(fh)
@@ -81,7 +81,7 @@ class TestCaseExecuteEngine(object):
                 self.injectTestCase(test)
             else:
                 #logger bears the name of the test class
-                testcaselogger = logging.getLogger("%s" % (test))
+                testcaselogger = logging.getLogger("marvin.%s" % (test))
                 fh = logging.FileHandler(self.logfile)
                 fh.setFormatter(self.logformat)
                 testcaselogger.addHandler(fh)

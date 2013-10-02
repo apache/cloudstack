@@ -48,7 +48,7 @@ class MarvinPlugin(Plugin):
                                            "%(name)s - %(message)s")
 
         if options.debug_log:
-            self.logger = logging.getLogger("NoseTestExecuteEngine")
+            self.logger = logging.getLogger("marvin.NoseTestExecuteEngine")
             self.debug_stream = logging.FileHandler(options.debug_log)
             self.debug_stream.setFormatter(self.logformat)
             self.logger.addHandler(self.debug_stream)
@@ -99,7 +99,7 @@ class MarvinPlugin(Plugin):
         Plugin.options(self, parser, env)
 
     def __init__(self):
-        self.identifier = None
+        self.identifier = ''
         Plugin.__init__(self)
 
     def prepareTestRunner(self, runner):
@@ -128,7 +128,7 @@ class MarvinPlugin(Plugin):
     def beforeTest(self, test):
         self.testName = test.__str__().split()[0]
         self.testclient.identifier = '-'.join([self.identifier, self.testName])
-        self.logger.name = test.__str__()
+        self.logger.name = "marvin.%s" % test.__str__()
 
     def startTest(self, test):
         """

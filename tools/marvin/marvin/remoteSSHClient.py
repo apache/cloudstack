@@ -32,7 +32,7 @@ class remoteSSHClient(object):
         self.keyPairFile = keyPairFileLocation
         self.ssh = paramiko.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.logger = logging.getLogger('sshClient')
+        self.logger = logging.getLogger('marvin.sshClient')
         ch = logging.StreamHandler()
         ch.setLevel(log_lvl)
         self.logger.addHandler(ch)

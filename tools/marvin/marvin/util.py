@@ -202,7 +202,7 @@ def fetch_api_client(config_file='datacenterCfg'):
     """Fetch the Cloudstack API Client"""
     config = marvin.configGenerator.get_setup_config(config_file)
     mgt = config.mgtSvr[0]
-    testClientLogger = logging.getLogger("testClient")
+    testClientLogger = logging.getLogger("marvin.testClient")
     asyncTimeout = 3600
     return cloudstackAPIClient.CloudStackAPIClient(
         marvin.cloudstackConnection.cloudConnection(

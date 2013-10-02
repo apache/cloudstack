@@ -77,6 +77,8 @@ class CloudConnection(object):
         """
         requests_log = logging.getLogger("requests")
         requests_log.setLevel(lvl)
+        factory_log = logging.getLogger("factory")
+        factory_log.setLevel(lvl)
 
     def poll(self, jobid, response):
         """
