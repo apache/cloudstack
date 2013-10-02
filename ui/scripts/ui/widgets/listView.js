@@ -1881,6 +1881,43 @@
 
         // Infinite scrolling event
         $listView.bind('scroll', function(event) {
+            var $fixedElems = $listView.find('.toolbar:first, thead:first');
+            var $fixedContainer = $('<div>').addClass('fixed-container');
+
+            $listView.find('.fixed-container').remove();
+            
+            if ($listView.scrollTop()) {
+                $fixedElems.addClass('hidden').css({ visibility: 'hidden' }).clone()
+                    .css({
+                        visibility: 'visible',
+                        width: $listView.width()
+                    })
+                    .appendTo($fixedContainer);
+                $fixedContainer.append($('<table>').append($fixedContainer.find('thead')));
+                $fixedElems.find('thead').wrap(
+                  $('<table>')
+                );
+                $fixedContainer.find('table').width($listView.find('table tbody').width());
+                $fixedContainer.find('.toolbar').width($listView.find('.toolbar.hidden').outerWidth());
+                $fixedContainer.find('thead th').each(function() {
+                    var $th = $(this);
+                    var $td = $listView.find('tbody tr:first td').filter(function() {
+                        return $(this).index() === $th.index();
+                    });
+
+                    $th.width($td.outerWidth());
+                });
+                $fixedContainer.css({
+                    position: 'absolute',
+                    width: $fixedElems.outerWidth()
+                }).prependTo($listView);
+            } else {
+                $fixedContainer.remove();
+                $fixedElems.removeClass('hidden');
+                $listView.find('.toolbar').css('visibility', 'visible');
+                $listView.find('thead').css('visibility', 'visible');
+            }
+            
             if (args.listView && args.listView.disableInfiniteScrolling) return false;
             if ($listView.find('tr.last, td.loading:visible').size()) return false;
 
