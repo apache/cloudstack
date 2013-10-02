@@ -970,22 +970,20 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
 	@Override
-	public List<? extends OvsProvider> searchForOvsElement(
-			ListOvsElementsCmd cmd) {
+	public List<? extends OvsProvider> searchForOvsElement(ListOvsElementsCmd cmd) {
 		Long id = cmd.getId();
 		Long nspId = cmd.getNspId();
 		Boolean enabled = cmd.getEnabled();
+		QueryBuilder<OvsProviderVO> sc = QueryBuilder.create(OvsProviderVO.class);
 
-		SearchCriteriaService<OvsProviderVO, OvsProviderVO> sc = SearchCriteria2
-				.create(OvsProviderVO.class);
 		if (id != null) {
-			sc.addAnd(sc.getEntity().getId(), Op.EQ, id);
+			sc.and(sc.entity().getId(), Op.EQ, id);
 		}
 		if (nspId != null) {
-			sc.addAnd(sc.getEntity().getNspId(), Op.EQ, nspId);
+			sc.and(sc.entity().getNspId(), Op.EQ, nspId);
 		}
 		if (enabled != null) {
-			sc.addAnd(sc.getEntity().isEnabled(), Op.EQ, enabled);
+			sc.and(sc.entity().isEnabled(), Op.EQ, enabled);
 		}
 
 		return sc.list();

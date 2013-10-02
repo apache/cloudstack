@@ -119,9 +119,7 @@ import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.usage.Usage;
 
-import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
-import com.cloud.configuration.Configuration;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.dc.DataCenter;
@@ -358,8 +356,6 @@ public interface ResponseGenerator {
     VirtualRouterProviderResponse createVirtualRouterProviderResponse(VirtualRouterProvider result);
 
 	OvsProviderResponse createOvsProviderResponse(OvsProvider result);
-
-    LDAPConfigResponse createLDAPConfigResponse(String hostname, Integer port, Boolean useSSL, String queryFilter, String baseSearch, String dn);
 
     StorageNetworkIpRangeResponse createStorageNetworkIpRangeResponse(StorageNetworkIpRange result);
 

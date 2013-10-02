@@ -303,6 +303,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
     NetworkACLDao _networkACLDao;
 	@Inject
 	OvsProviderDao _ovsProviderDao;
+	@Inject
+	IpAddressManager _ipAddrMgr;
+	@Inject
+	EntityManager _entityMgr;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;

@@ -12,6 +12,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.OvsProviderResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -21,7 +22,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.OvsProvider;
 import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @APICommand(name = "configureOvsElement", responseObject = OvsProviderResponse.class, description = "Configures an ovs element.")
 public class ConfigureOvsElementCmd extends BaseAsyncCmd {
@@ -101,7 +101,7 @@ public class ConfigureOvsElementCmd extends BaseAsyncCmd {
 	@Override
 	public void execute() throws ConcurrentOperationException,
 			ResourceUnavailableException, InsufficientCapacityException {
-		UserContext.current().setEventDetails("Ovs element: " + id);
+		CallContext.current().setEventDetails("Ovs element: " + id);
 		OvsProvider result = _service.get(0).configure(this);
 		if (result != null) {
 			OvsProviderResponse ovsResponse = _responseGenerator

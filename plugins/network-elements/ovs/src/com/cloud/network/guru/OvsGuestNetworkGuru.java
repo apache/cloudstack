@@ -20,8 +20,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.context.CallContext;
+import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -46,6 +46,7 @@ import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -162,7 +163,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 
 	@Override
 	public void reserve(NicProfile nic, Network network,
-			VirtualMachineProfile<? extends VirtualMachine> vm,
+			VirtualMachineProfile vm,
 			DeployDestination dest, ReservationContext context)
 			throws InsufficientVirtualNetworkCapcityException,
 			InsufficientAddressCapacityException {
@@ -172,7 +173,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 
 	@Override
 	public boolean release(NicProfile nic,
-			VirtualMachineProfile<? extends VirtualMachine> vm,
+			VirtualMachineProfile vm,
 			String reservationId) {
 		// TODO Auto-generated method stub
 		return super.release(nic, vm, reservationId);
@@ -192,9 +193,8 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 	}
 
 	@Override
-	public boolean trash(Network network, NetworkOffering offering,
-			Account owner) {
-		return super.trash(network, offering, owner);
+	public boolean trash(Network network, NetworkOffering offering) {
+		return super.trash(network, offering);
 	}
 
 	@Override
@@ -204,7 +204,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 		if (network.getBroadcastUri() == null) {
 			String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId,
 					network.getAccountId(), reservationId,
-					canUseSystemGuestVlan(network.getAccountId()));
+					UseSystemGuestVlans.valueIn(network.getAccountId()));
 			if (vnet == null) {
 				throw new InsufficientVirtualNetworkCapcityException(
 						"Unable to allocate vnet as a part of network "
@@ -214,7 +214,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 			implemented
 					.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(vnet));
 			ActionEventUtils.onCompletedActionEvent(
-					UserContext.current().getCallerUserId(),
+					CallContext.current().getCallingUserId(),
 					network.getAccountId(),
 					EventVO.LEVEL_INFO,
 					EventTypes.EVENT_ZONE_VLAN_ASSIGN,

@@ -272,7 +272,6 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.Swift;
 import com.cloud.storage.Upload;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
