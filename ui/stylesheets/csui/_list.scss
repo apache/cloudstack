@@ -15,12 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 @mixin csui-list {
-    margin: 20px;
     overflow: auto;
     
     table {
         width: 100%;
-
+        
         th, tr td {
             padding: 7px;
         }
