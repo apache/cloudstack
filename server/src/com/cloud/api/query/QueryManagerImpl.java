@@ -27,6 +27,8 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -294,6 +296,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Inject
     private NicDetailDao _nicDetailDao;
+
+    @Inject
+    UserVmDetailsDao _userVmDetailDao;
 
     @Inject
     private HighAvailabilityManager _haMgr;
@@ -3221,7 +3226,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
             return volumeDetailResponseList;
 
-        } else {
+        } else if (resourceType == ResourceTag.TaggedResourceType.Nic){
 
             List<NicDetailVO> nicDetailList;
             if (key == null) {
@@ -3245,6 +3250,28 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
             return nicDetailResponseList;
 
+        } else {
+
+            List<UserVmDetailVO> userVmDetailList;
+            if (key == null) {
+                userVmDetailList = _userVmDetailDao.findDetailsList(id);
+            } else {
+                UserVmDetailVO nicDetail = _userVmDetailDao.findDetail(id, key);
+                userVmDetailList = new LinkedList<UserVmDetailVO>();
+                userVmDetailList.add(nicDetail);
+            }
+
+            List<ResourceDetailResponse> nicDetailResponseList = new ArrayList<ResourceDetailResponse>();
+            for (UserVmDetailVO nicDetail : userVmDetailList) {
+                ResourceDetailResponse userVmDetailResponse = new ResourceDetailResponse();
+                userVmDetailResponse.setName(nicDetail.getName());
+                userVmDetailResponse.setValue(nicDetail.getValue());
+                userVmDetailResponse.setResourceType(ResourceTag.TaggedResourceType.Nic.toString());
+                userVmDetailResponse.setObjectName("uservmdetail");
+                nicDetailResponseList.add(userVmDetailResponse);
+            }
+
+            return nicDetailResponseList;
         }
 
     }

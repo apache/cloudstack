@@ -82,6 +82,15 @@ public class UserVmDetailsDaoImpl extends GenericDaoBase<UserVmDetailVO, Long> i
         return details;
 	}
 
+    @Override
+    public List<UserVmDetailVO> findDetailsList(long vmId) {
+        SearchCriteria<UserVmDetailVO> sc = VmSearch.create();
+        sc.setParameters("vmId", vmId);
+
+        List<UserVmDetailVO> results = search(sc, null);
+        return results;
+    }
+
 	@Override
 	public void persist(long vmId, Map<String, String> details) {
         Transaction txn = Transaction.currentTxn();
