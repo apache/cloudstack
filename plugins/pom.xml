@@ -40,6 +40,7 @@
     <module>event-bus/rabbitmq</module>
     <module>hypervisors/baremetal</module>
     <module>hypervisors/ucs</module>
+    <module>hypervisors/hyperv</module>
     <module>network-elements/elastic-loadbalancer</module>
     <module>network-elements/ovs</module>
     <module>network-elements/juniper-contrail</module>
@@ -117,6 +118,17 @@
       </activation>
       <modules>
         <module>hypervisors/kvm</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>hyperV</id>
+      <activation>
+        <property>
+          <name>hyperV</name>
+        </property>
+      </activation>
+      <modules>
+ 	   <module>hypervisors/hyperv</module>
       </modules>
     </profile>
     <profile>

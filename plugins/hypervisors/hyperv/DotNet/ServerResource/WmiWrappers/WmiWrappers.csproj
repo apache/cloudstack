@@ -1,0 +1,167 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{DB824727-BDC3-437C-A364-7A811D8A160F}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>CloudStack.Plugin.WmiWrappers</RootNamespace>
+    <AssemblyName>WmiWrappers</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'NoUnitTestsDebug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\NoUnitTestsDebug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'NoUnitTests|AnyCPU'">
+    <OutputPath>bin\NoUnitTests\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ROOT.CIMV2.Win32_OperatingSystem.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="root.CIMV2.Win32_PerfFormattedData_Counters_ProcessorInformation.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.CIMV2.Win32_Processor.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_ComputerSystem.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_ConcreteJob.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_ExternalEthernetPort.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_ImageManagementService.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_MemorySettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_ProcessorSettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_ResourceAllocationSettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_SummaryInformation.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_SwitchLANEndpoint.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_SwitchPort.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_SyntheticEthernetPort.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_SyntheticEthernetPortSettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_VirtualSwitch.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_VirtualSwitchManagementService.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_VirtualSystemGlobalSettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_VirtualSystemManagementService.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_VirtualSystemManagementServiceSettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_VirtualSystemSettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_VLANEndpoint.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_VLANEndpointSettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.Msvm_VmLANEndpoint.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_ComputerSystem.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_ConcreteJob.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_KvpExchangeComponent.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_KvpExchangeComponentSettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_KvpExchangeDataItem.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_VirtualSystemManagementService.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_VirtualSystemSettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Readme.txt" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
