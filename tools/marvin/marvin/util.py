@@ -19,7 +19,6 @@ from marvin.entity.template import Template
 from marvin.entity.zone import Zone
 from marvin.entity.serviceoffering import ServiceOffering
 from marvin.entity.domain import Domain
-from marvin.entity.guestos import GuestOS
 
 def get_domain(apiclient):
     "Returns a default `ROOT` domain"

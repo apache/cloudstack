@@ -15,13 +15,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import mysql
+try:
+    import mysql
+    from mysql import connector
+    from mysql.connector import errors
+except ImportError:
+    raise Exception("mysql-connector-python not installed. pip install mysql-connector-python to continue")
 import contextlib
-from mysql import connector
-from mysql.connector import errors
-from contextlib import closing
 import cloudstackException
-import sys
 import os
 
 

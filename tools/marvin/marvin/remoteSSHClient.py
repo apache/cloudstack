@@ -20,7 +20,6 @@ import time
 import cloudstackException
 import contextlib
 import logging
-from contextlib import closing
 
 
 class remoteSSHClient(object):

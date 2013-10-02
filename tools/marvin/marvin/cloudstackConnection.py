@@ -15,7 +15,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import requests
+try:
+    import requests
+    from requests import ConnectionError
+    from requests import HTTPError
+    from requests import Timeout
+    from requests import RequestException
+except ImportError:
+    raise Exception("requests installation not found. use pip install requests to continue")
 import urllib
 import base64
 import hmac
@@ -25,10 +32,6 @@ import time
 from marvin import cloudstackException
 from marvin.cloudstackAPI import *
 from marvin import jsonHelper
-from requests import ConnectionError
-from requests import HTTPError
-from requests import Timeout
-from requests import RequestException
 
 
 class CloudConnection(object):

@@ -15,7 +15,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import unittest2 as unittest
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 import os
 import sys
 import logging
