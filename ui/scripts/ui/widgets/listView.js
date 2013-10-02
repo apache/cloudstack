@@ -853,7 +853,12 @@
     var createSearchBar = function($toolbar, listViewData) {
         var $search = $('<div></div>').addClass('text-search reduced-hide');
         var $searchBar = $('<div></div>').addClass('search-bar reduced hide').appendTo($search);
-        $searchBar.append('<input type="text" />');
+        $searchBar.append($(
+            $('<input>').attr({
+                type: 'text',
+                placeholder: _l('label.search')
+            })
+        ));
         $search.append('<div id="basic_search" class="button search"></div>');
 
         if (listViewData.advSearchFields != null) {
