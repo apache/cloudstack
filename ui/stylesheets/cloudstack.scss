@@ -200,7 +200,7 @@ body {
 }
 
 .notification-box, #user-options, .region-selector {
-    @include dialog;
+    @include csui-dialog;
 
     display: none;
 }

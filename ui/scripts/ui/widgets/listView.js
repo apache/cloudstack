@@ -553,7 +553,6 @@
                 $label.fadeOut('fast', function() {
                     $edit.fadeIn();
                     $editInput.focus();
-                    $instanceRow.closest('div.data-table').dataTable('refresh');
                 });
             };
 
@@ -585,7 +584,6 @@
                         success: function(args) {
                             $edit.hide();
                             $label.fadeIn();
-                            $instanceRow.closest('div.data-table').dataTable('refresh');
 
                             if (options.success) options.success(args);
                         },
@@ -596,7 +594,6 @@
                                 });
                                 $edit.hide(),
                                 $label.html(_s(oldVal)).fadeIn();
-                                $instanceRow.closest('div.data-table').dataTable('refresh');
 
                                 if (options.error) options.error(args);
                             }
@@ -610,7 +607,6 @@
                 var oldVal = $label.html();
                 $edit.hide();
                 $label.fadeIn();
-                $instanceRow.closest('div.data-table').dataTable('refresh');
                 $editInput.val(_s(oldVal));
                 return false;
             }
@@ -652,12 +648,6 @@
     var rowActions = {
         _std: function($tr, action) {
             action();
-
-            $tr.closest('.data-table').dataTable('refresh');
-
-            setTimeout(function() {
-                $tr.closest('.data-table').dataTable('selectRow', $tr.index());
-            }, 0);
         },
 
         moveTop: function($tr) {
@@ -1176,7 +1166,6 @@
                                 $tr.closest('tbody').find('tr').each(function() {
                                     sort($(this), action);
                                 });
-                                $tr.closest('.data-table').dataTable('selectRow', $tr.index());
 
                                 return false;
                             });
@@ -1292,8 +1281,6 @@
                                     } else {
                                         $select.hide();
                                     }
-
-                                    $listView.find('.data-table').dataTable('refresh');
                                 }
                             }
                         });
@@ -1401,6 +1388,8 @@
                     }
                 );
             }
+
+            $tr.find('td:first').addClass('first');
         });
 
         return rows;
@@ -1451,7 +1440,6 @@
         var uiCustom = viewArgs.listView ? viewArgs.listView.uiCustom : false;
 
         setLoading($table, function(setLoadingArgs) {
-            $table.dataTable();
             $.extend(loadArgs, {
                 context: options.context,
                 response: {
@@ -1466,27 +1454,17 @@
                             'multiSelect': options.multiSelect,
                             noActionCol: options.noActionCol
                         });
-                        $table.dataTable(null, {
-                            noSelect: uiCustom
-                        });
 
                         if (args.data &&
                             args.data.length < pageSize &&
                             options.setEndTable) {
                             options.setEndTable();
                         }
-
-                        setTimeout(function() {
-                            $table.dataTable('refresh');
-                        });
                     },
                     error: function(args) {
                         setLoadingArgs.loadingCompleted();
                         addTableRows(preFilter, fields, [], $tbody, actions);
                         $table.find('td:first').html(_l('ERROR'));
-                        $table.dataTable(null, {
-                            noSelect: uiCustom
-                        });
                     }
                 }
             });
@@ -1965,14 +1943,14 @@
             var id = $target.closest('tr').data('list-view-item-id');
             var jsonObj = $target.closest('tr').data('jsonObj');
             var detailViewArgs;
-            var detailViewPresent = ($target.closest('div.data-table tr td.first').size() &&
+            var detailViewPresent = ($target.closest('table tr td.first').size() &&
                 listViewData.detailView && !$target.closest('div.edit').size());
             var uiCustom = args.uiCustom == true ? true : false;
 
             // Click on first item will trigger detail view (if present)
             if (detailViewPresent && !uiCustom && !$target.closest('.empty, .loading').size()) {
                 var $loading = $('<div>').addClass('loading-overlay');
-                $target.closest('div.data-table').prepend($loading); //overlay the whole listView, so users can't click another row until click-handling for this row is done (e.g. API response is back)
+                $target.closest('table').prepend($loading); //overlay the whole listView, so users can't click another row until click-handling for this row is done (e.g. API response is back)
 
                 listViewData.detailView.$browser = args.$browser;
                 detailViewArgs = {
@@ -2109,8 +2087,6 @@
                 noActionCol: targetArgs.noActionCol
             }
         )[0];
-        listView.find('table').dataTable('refresh');
-
         $tr.addClass('loading').find('td:last').prepend($('<div>').addClass('loading'));
         $tr.find('.action').remove();
 
@@ -2146,7 +2122,6 @@
 
         $newRow.data('json-obj', data);
         $row.replaceWith($newRow);
-        $table.dataTable('refresh');
 
         if (after) after($newRow);
 

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-@mixin dialog {
+@mixin csui-dialog {
     background: white;
     box-shadow: 0px 2px 10px black;
     position: absolute;
@@ -59,6 +59,6 @@
 
 // Defaults
 .ui-dialog { // jqUI dialog
-    @include dialog;
+    @include csui-dialog;
     @include animation-duration(300ms);
 }
