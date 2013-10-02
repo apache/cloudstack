@@ -1768,43 +1768,29 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
         Account caller = CallContext.current().getCallingAccount();
 
-        // Input validation
-        UserVmVO vmInstance = null;
-
-        // Verify input parameters
-        vmInstance = _vmDao.findById(id.longValue());
-
+        // Input validation and permission checks
+        UserVmVO vmInstance = _vmDao.findById(id.longValue());
         if (vmInstance == null) {
             throw new InvalidParameterValueException(
                     "unable to find virtual machine with id " + id);
         }
 
-        ServiceOffering offering = _serviceOfferingDao.findById(vmInstance
-                .getServiceOfferingId());
-        if (!offering.getOfferHA() && ha != null && ha) {
-            throw new InvalidParameterValueException(
-                    "Can't enable ha for the vm as it's created from the Service offering having HA disabled");
-        }
-
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true,
                 vmInstance);
-
-        if (displayName == null) {
-            displayName = vmInstance.getDisplayName();
-        }
-
-        if (ha == null) {
-            ha = vmInstance.isHaEnabled();
-        }
-
-        if (isDisplayVmEnabled == null) {
-            isDisplayVmEnabled = vmInstance.isDisplayVm();
-        } else{
+        
+        if (isDisplayVmEnabled != null) {
             if(!_accountMgr.isRootAdmin(caller.getType())){
                 throw new PermissionDeniedException( "Cannot update parameter displayvm, only admin permitted ");
             }
         }
 
+        return updateVirtualMachine(id, displayName, group, ha, isDisplayVmEnabled, osTypeId, userData, isDynamicallyScalable, cmd.getHttpMethod());
+    }
+
+    @Override
+    public UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha,
+            Boolean isDisplayVmEnabled, Long osTypeId, String userData, Boolean isDynamicallyScalable, HTTPMethod httpMethod)
+            throws ResourceUnavailableException, InsufficientCapacityException {
         UserVmVO vm = _vmDao.findById(id);
         if (vm == null) {
             throw new CloudRuntimeException(
@@ -1816,45 +1802,50 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Vm with id " + id
                     + " is not in the right state");
         }
+        
+        if (displayName == null) {
+            displayName = vm.getDisplayName();
+        }
+
+        if (ha == null) {
+            ha = vm.isHaEnabled();
+        }
+
+        ServiceOffering offering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
+        if (!offering.getOfferHA() && ha) {
+            throw new InvalidParameterValueException(
+                    "Can't enable ha for the vm as it's created from the Service offering having HA disabled");
+        }
+        
+        if (isDisplayVmEnabled == null) {
+            isDisplayVmEnabled = vm.isDisplayVm();
+        }
 
         boolean updateUserdata = false;
         if (userData != null) {
             // check and replace newlines
             userData = userData.replace("\\n", "");
-            validateUserData(userData, cmd.getHttpMethod());
+            validateUserData(userData, httpMethod);
             // update userData on domain router.
             updateUserdata = true;
         } else {
-            userData = vmInstance.getUserData();
-        }
-
-        String description = "";
-
-        if (displayName != null && !displayName.equals(vmInstance.getDisplayName())) {
-            description += "New display name: " + displayName + ". ";
-        }
-
-        if (ha != vmInstance.isHaEnabled()) {
-            if (ha) {
-                description += "Enabled HA. ";
-            } else {
-                description += "Disabled HA. ";
-            }
-        }
-        if (osTypeId == null) {
-            osTypeId = vmInstance.getGuestOSId();
-        } else {
-            description += "Changed Guest OS Type to " + osTypeId + ". ";
-        }
-
-        if (group != null) {
-            if (addInstanceToGroup(id, group)) {
-                description += "Added to group: " + group + ".";
-            }
+            userData = vm.getUserData();
         }
 
         if (isDynamicallyScalable == null) {
-            isDynamicallyScalable = vmInstance.isDynamicallyScalable();
+            isDynamicallyScalable = vm.isDynamicallyScalable();
+        }
+        
+        if (osTypeId == null) {
+            osTypeId = vm.getGuestOSId();
+        }
+
+        if (group != null) {
+            addInstanceToGroup(id, group);
+        }
+
+        if (isDynamicallyScalable == null) {
+            isDynamicallyScalable = vm.isDynamicallyScalable();
         }
 
         _vmDao.updateVM(id, displayName, ha, osTypeId, userData, isDisplayVmEnabled, isDynamicallyScalable);
