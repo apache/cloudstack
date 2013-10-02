@@ -25,14 +25,13 @@ from nose.plugins.attrib import attr
 
 class TestVpcLifeCycle(cloudstackTestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.apiclient = super(TestVpcLifeCycle, cls).getClsTestClient().getApiClient()
-        cls.zoneid = get_zone(cls.apiclient).id
-        cls.templateid = get_template(cls.apiclient).id,
-        cls.serviceofferingid = get_service_offering(cls.apiclient).id,
-        cls.account = UserAccount(
-            apiclient=cls.apiclient
+    def setUp(self):
+        self.apiclient = super(TestVpcLifeCycle, self).getClsTestClient().getApiClient()
+        self.zoneid = get_zone(self.apiclient).id
+        self.templateid = get_template(self.apiclient).id
+        self.serviceofferingid = get_service_offering(self.apiclient).id
+        self.account = UserAccount(
+            apiclient=self.apiclient
         )
 
     @attr(tags='debug')
@@ -96,6 +95,5 @@ class TestVpcLifeCycle(cloudstackTestCase):
         vm.destroy()
         vm.state | should | equal_to('Destroyed')
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.account.delete()
+    def tearDown(self):
+        self.account.delete()
