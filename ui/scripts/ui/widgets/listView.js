@@ -1895,9 +1895,9 @@
                     .appendTo($fixedContainer);
                 $fixedContainer.append($('<table>').append($fixedContainer.find('thead')));
                 $fixedElems.find('thead').wrap(
-                  $('<table>')
+                  $('<table>').addClass('fixed')
                 );
-                $fixedContainer.find('table').width($listView.find('table tbody').width());
+                $fixedContainer.find('table').width($listView.find('table:not(.fixed)').outerWidth());
                 $fixedContainer.find('.toolbar').width($listView.find('.toolbar.hidden').outerWidth());
                 $fixedContainer.find('thead th').each(function() {
                     var $th = $(this);
