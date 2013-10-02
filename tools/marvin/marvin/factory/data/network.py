@@ -22,7 +22,10 @@ from marvin.factory.data.networkoffering import DefaultIsolatedNetworkOfferingWi
 from marvin.factory.data.networkoffering import DefaultSharedNetworkOffering
 from marvin.factory.data.networkoffering import DefaultIsolatedNetworkOfferingForVpc
 
+
 class GuestIsolatedNetwork(NetworkFactory):
+
+    FACTORY_HIDDEN_ARGS = ('networkoffering', )
 
     displaytext = factory.Sequence(lambda n: 'GuestIsolatedNetwork-%s' % random_gen())
     name = factory.Sequence(lambda n: 'GuestIsolatedNetwork-%s' % random_gen())
@@ -35,7 +38,10 @@ class GuestIsolatedNetwork(NetworkFactory):
     networkofferingid = factory.LazyAttribute(lambda no: no.networkoffering.id if no.networkoffering else no.networkoffering)
     zoneid = None
 
+
 class SharedNetwork(NetworkFactory):
+
+    FACTORY_HIDDEN_ARGS = ('networkoffering', )
 
     displaytext = factory.Sequence(lambda n: 'SharedNetwork-%s' % random_gen())
     name = factory.Sequence(lambda n: 'SharedNetwork-%s' % random_gen())
@@ -48,7 +54,10 @@ class SharedNetwork(NetworkFactory):
     networkofferingid = factory.LazyAttribute(lambda no: no.networkoffering.id if no.networkoffering else no.networkoffering)
     zoneid = None
 
+
 class DefaultVpcNetwork(NetworkFactory):
+
+    FACTORY_HIDDEN_ARGS = ('networkoffering', )
 
     displaytext = factory.Sequence(lambda n: 'DefaultVpcNetwork-%s' % random_gen())
     name = factory.Sequence(lambda n: 'DefaultVpcNetwork-%s' % random_gen())

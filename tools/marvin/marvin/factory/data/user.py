@@ -20,7 +20,10 @@ from marvin.factory.user import UserFactory
 from marvin.factory.data.account import UserAccount
 from marvin.legacy.utils import random_gen
 
+
 class User(UserFactory):
+
+    FACTORY_HIDDEN_ARGS = ('account', )
 
     firstname = factory.Sequence(lambda n: random_gen())
     lastname = factory.Sequence(lambda n: random_gen())
@@ -37,7 +40,10 @@ class User(UserFactory):
         username=factory.SelfAttribute('..username'),
     )
 
+
 class AdminUser(UserFactory):
+
+    FACTORY_HIDDEN_ARGS = ('account', )
 
     account = factory.SubFactory(UserAccount,
         apiclient=factory.SelfAttribute('..apiclient'),

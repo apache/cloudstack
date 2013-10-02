@@ -22,6 +22,8 @@ from marvin.legacy.utils import random_gen
 
 class DefaultVpc(VpcFactory):
 
+    FACTORY_HIDDEN_ARGS = ('vpcoffering', )
+
     name = factory.Sequence(lambda e: "DefaultVpc" + random_gen())
     cidr = '10.0.0.1/24'
     displaytext = name

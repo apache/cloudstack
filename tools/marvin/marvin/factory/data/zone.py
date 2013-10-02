@@ -19,6 +19,7 @@ import factory
 from marvin.factory.zone import ZoneFactory
 from marvin.legacy.utils import random_gen
 
+
 class AdvancedZone(ZoneFactory):
     name = factory.Sequence(lambda n: "advzone" + random_gen())
     networktype = "Advanced"

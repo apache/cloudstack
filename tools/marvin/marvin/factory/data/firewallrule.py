@@ -17,11 +17,13 @@
 
 from marvin.factory.firewall import FirewallFactory
 
+
 class SshFirewallRule(FirewallFactory):
     protocol = 'tcp'
     startport = 22
     endport = 22
     cidrlist = '0.0.0.0/0'
+
 
 class HttpFirewallRule(FirewallFactory):
     protocol = 'tcp'

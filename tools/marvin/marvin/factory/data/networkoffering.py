@@ -48,7 +48,7 @@ class DefaultIsolatedNetworkOfferingWithSourceNatService(NetworkOfferingFactory)
     def enable(self, create, extracted, **kwargs):
         if not create:
             return
-        self.update(apiclient=self.apiclient, id=self.id, state='Enabled')
+        self.update(id=self.id, state='Enabled')
 
 
 class DefaultSharedNetworkOfferingWithSGService(NetworkOfferingFactory):
@@ -83,7 +83,7 @@ class DefaultSharedNetworkOfferingWithSGService(NetworkOfferingFactory):
     def enable(self, create, extracted, **kwargs):
         if not create:
             return
-        self.update(apiclient=self.apiclient, id=self.id, state='Enabled')
+        self.update(id=self.id, state='Enabled')
 
 
 class DefaultSharedNetworkOffering(NetworkOfferingFactory):
@@ -114,7 +114,7 @@ class DefaultSharedNetworkOffering(NetworkOfferingFactory):
     def enable(self, create, extracted, **kwargs):
         if not create:
             return
-        self.update(apiclient=self.apiclient, id=self.id, state='Enabled')
+        self.update(id=self.id, state='Enabled')
 
 
 class DefaultIsolatedNetworkOfferingForVpc(NetworkOfferingFactory):
@@ -145,4 +145,4 @@ class DefaultIsolatedNetworkOfferingForVpc(NetworkOfferingFactory):
     def enable(self, create, extracted, **kwargs):
         if not create:
             return
-        self.update(apiclient=self.apiclient, id=self.id, state='Enabled')
+        self.update(id=self.id, state='Enabled')

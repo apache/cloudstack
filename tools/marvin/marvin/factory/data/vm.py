@@ -63,6 +63,7 @@ class VpcVirtualMachine(VirtualMachineFactory):
     """
     VirtualMachine within a VPC created by DefaultVPC offering
     """
+    FACTORY_HIDDEN_ARGS = ('vpc', 'ntwk', )
 
     vpc = factory.SubFactory(
         DefaultVpc,
