@@ -317,7 +317,7 @@ cp awsapi/resource/Axis2/axis2.xml ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/w
 cp awsapi/target/WEB-INF/services/cloud-ec2.aar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/services
 
 
-for name in applicationContext.xml cloud-bridge.properties commons-logging.properties ec2-service.properties ; do
+for name in cloud-bridge.properties commons-logging.properties ec2-service.properties ; do
   mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/awsapi/WEB-INF/classes/$name \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
 done
@@ -522,7 +522,6 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat-users.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/web.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/environment.properties
-%config(noreplace) %{_sysconfdir}/%{name}/management/applicationContext.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/cloud-bridge.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/commons-logging.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/ec2-service.properties
