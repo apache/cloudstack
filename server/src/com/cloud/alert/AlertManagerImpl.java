@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -33,15 +35,21 @@ import javax.mail.Authenticator;
 import javax.mail.Message.RecipientType;
 import javax.mail.MessagingException;
 import javax.mail.PasswordAuthentication;
+import javax.mail.SendFailedException;
 import javax.mail.Session;
 import javax.mail.URLName;
 import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import com.sun.mail.smtp.SMTPMessage;
+import com.sun.mail.smtp.SMTPSSLTransport;
+import com.sun.mail.smtp.SMTPTransport;
+
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
@@ -75,11 +83,9 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
-import com.sun.mail.smtp.SMTPMessage;
-import com.sun.mail.smtp.SMTPSSLTransport;
-import com.sun.mail.smtp.SMTPTransport;
 
 @Component
 @Local(value={AlertManager.class})
@@ -110,6 +116,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
     @Inject private ConfigurationManager _configMgr;
     @Inject ConfigurationServer _configServer;
     private Timer _timer = null;
+    private final ExecutorService _executor;
     private float _cpuOverProvisioningFactor = 1;
     private long _capacityCheckPeriod = 60L * 60L * 1000L; // one hour by default
     private double _memoryCapacityThreshold = 0.75;
@@ -118,12 +125,15 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
     private double _storageAllocCapacityThreshold = 0.75;
     private double _publicIPCapacityThreshold = 0.75;
     private double _privateIPCapacityThreshold = 0.75;
-    private double _secondaryStorageCapacityThreshold = 0.75; 
+    private double _secondaryStorageCapacityThreshold = 0.75;
     private double _vlanCapacityThreshold = 0.75;
     private double _directNetworkPublicIpCapacityThreshold = 0.75;
     private double _localStorageCapacityThreshold = 0.75;
     Map<Short,Double> _capacityTypeThresholdMap = new HashMap<Short, Double>();
 
+    public AlertManagerImpl() {
+        _executor = Executors.newCachedThreadPool(new NamedThreadFactory("Email-Alerts-Sender"));
+    }
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
@@ -334,7 +344,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
         //        than this model right now, so when a VM is started, we update the amount allocated, and when a VM
         //        is stopped we updated the amount allocated, and when VM sync reports a changed state, we update
         //        the amount allocated.  Hopefully it's limited to 3 entry points and will keep the amount allocated
-        //        per host accurate.        
+        //        per host accurate.
 
         try {
 
@@ -345,7 +355,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
 
             // Calculate CPU and RAM capacities
             // 	get all hosts...even if they are not in 'UP' state
-            List<HostVO> hosts = _resourceMgr.listAllNotInMaintenanceHostsInOneZone(Host.Type.Routing, null);	        	        
+            List<HostVO> hosts = _resourceMgr.listAllNotInMaintenanceHostsInOneZone(Host.Type.Routing, null);
             for (HostVO host : hosts) {
                 _capacityMgr.updateCapacityForHost(host);
             }
@@ -375,13 +385,13 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
                 long dcId = datacenter.getId();
 
                 //NOTE
-                //What happens if we have multiple vlans? Dashboard currently shows stats 
+                //What happens if we have multiple vlans? Dashboard currently shows stats
                 //with no filter based on a vlan
                 //ideal way would be to remove out the vlan param, and filter only on dcId
                 //implementing the same
 
                 // Calculate new Public IP capacity for Virtual Network
-                if (datacenter.getNetworkType() == NetworkType.Advanced){        			
+                if (datacenter.getNetworkType() == NetworkType.Advanced){
                     createOrUpdateIpCapacity(dcId, null, CapacityVO.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP, datacenter.getAllocationState());
                 }
 
@@ -392,7 +402,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
                     //Calculate VLAN's capacity
                     createOrUpdateVlanCapacity(dcId, datacenter.getAllocationState());
                 }
-            }        
+            }
 
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Done capacity updates for public ip and Vlans");
@@ -413,7 +423,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
                 s_logger.debug("Done recalculating system capacity");
             }
 
-        } catch (Throwable t) {        	
+        } catch (Throwable t) {
             s_logger.error("Caught exception in recalculating capacity", t);
         }
     }
@@ -437,14 +447,14 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
             CapacityVO newVlanCapacity = new CapacityVO(null, dcId, null, null, allocatedVlans, totalVlans, Capacity.CAPACITY_TYPE_VLAN);
             if (capacityState == AllocationState.Disabled){
                 newVlanCapacity.setCapacityState(CapacityState.Disabled);
-            } 
+            }
             _capacityDao.persist(newVlanCapacity);
-        }else if ( !(capacities.get(0).getUsedCapacity() == allocatedVlans 
+        }else if ( !(capacities.get(0).getUsedCapacity() == allocatedVlans
                 && capacities.get(0).getTotalCapacity() == totalVlans) ){
             CapacityVO capacity = capacities.get(0);
             capacity.setUsedCapacity(allocatedVlans);
             capacity.setTotalCapacity(totalVlans);
-            _capacityDao.update(capacity.getId(), capacity);        	
+            _capacityDao.update(capacity.getId(), capacity);
         }
 
 
@@ -477,9 +487,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
             CapacityVO newPublicIPCapacity = new CapacityVO(null, dcId, podId, null, allocatedIPs, totalIPs, capacityType);
             if (capacityState == AllocationState.Disabled){
                 newPublicIPCapacity.setCapacityState(CapacityState.Disabled);
-            }        		
+            }
             _capacityDao.persist(newPublicIPCapacity);
-        }else if ( !(capacities.get(0).getUsedCapacity() == allocatedIPs 
+        }else if ( !(capacities.get(0).getUsedCapacity() == allocatedIPs
                 && capacities.get(0).getTotalCapacity() == totalIPs) ){
             CapacityVO capacity = capacities.get(0);
             capacity.setUsedCapacity(allocatedIPs);
@@ -529,9 +539,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
         List<ClusterVO> clusterList = _clusterDao.listAll();
         List<HostPodVO> podList = _podDao.listAll();
         //Get capacity types at different levels
-        List<Short> dataCenterCapacityTypes = getCapacityTypesAtZoneLevel();         
-        List<Short> podCapacityTypes = getCapacityTypesAtPodLevel();        
-        List<Short> clusterCapacityTypes = getCapacityTypesAtClusterLevel();        
+        List<Short> dataCenterCapacityTypes = getCapacityTypesAtZoneLevel();
+        List<Short> podCapacityTypes = getCapacityTypesAtPodLevel();
+        List<Short> clusterCapacityTypes = getCapacityTypesAtClusterLevel();
 
         // Generate Alerts for Zone Level capacities
         for(DataCenterVO dc : dataCenterList){
@@ -545,7 +555,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
                 if (capacity == null || capacity.size() == 0){
                     continue;
                 }
-                double totalCapacity = capacity.get(0).getTotalCapacity(); 
+                double totalCapacity = capacity.get(0).getTotalCapacity();
                 double usedCapacity =  capacity.get(0).getUsedCapacity();
                 if (totalCapacity != 0 && usedCapacity/totalCapacity > _capacityTypeThresholdMap.get(capacityType)){
                     generateEmailAlert(dc, null, null, totalCapacity, usedCapacity, capacityType);
@@ -560,10 +570,10 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
                 if (capacity == null || capacity.size() == 0){
                     continue;
                 }
-                double totalCapacity = capacity.get(0).getTotalCapacity(); 
+                double totalCapacity = capacity.get(0).getTotalCapacity();
                 double usedCapacity =  capacity.get(0).getUsedCapacity();
                 if (totalCapacity != 0 && usedCapacity/totalCapacity > _capacityTypeThresholdMap.get(capacityType)){
-                    generateEmailAlert(ApiDBUtils.findZoneById(pod.getDataCenterId()), pod, null, 
+                    generateEmailAlert(ApiDBUtils.findZoneById(pod.getDataCenterId()), pod, null,
                             totalCapacity, usedCapacity, capacityType);
                 }
             }
@@ -617,7 +627,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
             capacity = _storageMgr.getStoragePoolUsedStats(null, clusterId, podId, zoneId);
         }
         if (capacity != null){
-            return new SummedCapacity(capacity.getUsedCapacity(), 0, capacity.getTotalCapacity(), capacityType, clusterId, podId);	
+            return new SummedCapacity(capacity.getUsedCapacity(), 0, capacity.getTotalCapacity(), capacityType, clusterId, podId);
         }else{
             return null;
         }
@@ -674,8 +684,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
             alertType = ALERT_TYPE_LOCAL_STORAGE;
             break;
 
-            //Pod Level    
-        case CapacityVO.CAPACITY_TYPE_PRIVATE_IP:        	
+            //Pod Level
+        case CapacityVO.CAPACITY_TYPE_PRIVATE_IP:
             msgSubject = "System Alert: Number of unallocated private IPs is low in pod " +pod.getName()+ " of availability zone " + dc.getName();
             totalStr = Double.toString(totalCapacity);
             usedStr = Double.toString(usedCapacity);
@@ -684,7 +694,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
             break;
 
             //Zone Level
-        case CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE:        	
+        case CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE:
             msgSubject = "System Alert: Low Available Secondary Storage in availability zone " + dc.getName();
             totalStr = formatBytesToMegabytes(totalCapacity);
             usedStr = formatBytesToMegabytes(usedCapacity);
@@ -721,7 +731,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
             }
             _emailAlert.sendAlert(alertType, dc.getId(), podId, clusterId, msgSubject, msgContent);
         } catch (Exception ex) {
-            s_logger.error("Exception in CapacityChecker", ex);        
+            s_logger.error("Exception in CapacityChecker", ex);
         }
     }
 
@@ -739,7 +749,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
     private List<Short> getCapacityTypesAtPodLevel(){
 
         List<Short> podCapacityTypes = new ArrayList<Short>();
-        podCapacityTypes.add(Capacity.CAPACITY_TYPE_PRIVATE_IP);    	
+        podCapacityTypes.add(Capacity.CAPACITY_TYPE_PRIVATE_IP);
         return podCapacityTypes;
 
     }
@@ -790,6 +800,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
                 smtpProps.put("mail.smtp.host", smtpHost);
                 smtpProps.put("mail.smtp.port", smtpPort);
                 smtpProps.put("mail.smtp.auth", ""+smtpUseAuth);
+                smtpProps.put("mail.smtp.timeout", 30000);
+                smtpProps.put("mail.smtp.connectiontimeout", 30000);
                 if (smtpUsername != null) {
                     smtpProps.put("mail.smtp.user", smtpUsername);
                 }
@@ -797,6 +809,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
                 smtpProps.put("mail.smtps.host", smtpHost);
                 smtpProps.put("mail.smtps.port", smtpPort);
                 smtpProps.put("mail.smtps.auth", ""+smtpUseAuth);
+                smtpProps.put("mail.smtps.timeout", 30000);
+                smtpProps.put("mail.smtps.connectiontimeout", 30000);
                 if (smtpUsername != null) {
                     smtpProps.put("mail.smtps.user", smtpUsername);
                 }
@@ -869,10 +883,25 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
                 } else {
                     smtpTrans = new SMTPTransport(_smtpSession, new URLName("smtp", _smtpHost, _smtpPort, null, _smtpUsername, _smtpPassword));
                 }
-                smtpTrans.connect();
-                smtpTrans.sendMessage(msg, msg.getAllRecipients());
-                smtpTrans.close();
+                sendMessage(smtpTrans, msg);
             }
+        }
+
+        private void sendMessage(final SMTPTransport smtpTrans, final SMTPMessage msg) {
+            _executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        smtpTrans.connect();
+                        smtpTrans.sendMessage(msg, msg.getAllRecipients());
+                        smtpTrans.close();
+                    } catch (SendFailedException e) {
+                        s_logger.error(" Failed to send email alert " + e);
+                    } catch (MessagingException e) {
+                        s_logger.error(" Failed to send email alert " + e);
+                    }
+                }
+            });
         }
 
         public void clearAlert(short alertType, long dataCenterId, Long podId) {
