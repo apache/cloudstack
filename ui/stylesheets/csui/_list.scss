@@ -38,6 +38,10 @@
             &:not(.empty) {
                 border-bottom: 1px solid #ccc;
             }
+
+            &:nth-child(even) {
+                background: lighten(#ccc, 17%);
+            }
         }
 
         tr td {
