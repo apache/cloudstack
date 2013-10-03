@@ -768,6 +768,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
         Filter searchFilter = new Filter(UserVmJoinVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(),
                 c.getLimit());
+        boolean isRootAdmin = _accountMgr.isRootAdmin(caller.getType());
 
         // first search distinct vm id by using query criteria and pagination
         SearchBuilder<UserVmJoinVO> sb = _userVmJoinDao.createSearchBuilder();
@@ -829,6 +830,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (affinityGroupId != null) {
             sb.and("affinityGroupId", sb.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
+        }
+
+        if(!isRootAdmin){
+            sb.and("displayVm", sb.entity().isDisplayVm(), SearchCriteria.Op.EQ);
         }
 
         // populate the search criteria with the values passed in
@@ -936,6 +941,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sc.setParameters("affinityGroupId", affinityGroupId);
         }
 
+        if(!isRootAdmin){
+            sc.setParameters("displayVm", 1);
+        }
         // search vm details by ids
         Pair<List<UserVmJoinVO>, Integer> uniqueVmPair = _userVmJoinDao.searchAndCount(sc, searchFilter);
         Integer count = uniqueVmPair.second();
