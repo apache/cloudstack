@@ -236,6 +236,11 @@ body {
 
     .detail-group {
         @include csui-details;
+
+        .main-groups {
+            max-height: 400px;
+            overflow: auto;
+        }
     }
 
     .ui-tabs-hide {

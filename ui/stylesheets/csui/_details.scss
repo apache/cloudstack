@@ -41,5 +41,16 @@
 
 @mixin csui-details {
     background: lighten(#ccc, 10%);
-    padding: 15px;
+    padding: 10px;
+
+    &:not(.detail-actions) {
+        table {
+            background: lighten(#ccc, 15%);
+            width: 100%;
+
+            th, td {
+                padding: 10px;
+            }
+        }
+    }
 }
