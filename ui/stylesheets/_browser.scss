@@ -39,4 +39,10 @@
 
 #breadcrumbs {
     @include csui-breadcrumbs;
+
+    .home {
+        @include csui-breadcrumb;
+        
+        margin-left: 20px;
+    }
 }

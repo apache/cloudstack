@@ -247,7 +247,7 @@
                     $('<div>').attr({
                         id: 'breadcrumbs'
                     })
-                    .append($('<div>').addClass('home'))
+                    .append($('<div>').addClass('home').html(_l('label.home')))
                     .append($('<div>').addClass('end'))
             )
 
