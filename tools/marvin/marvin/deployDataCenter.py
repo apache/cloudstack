@@ -109,7 +109,6 @@ specify a valid config file" % cfgFile)
             sleep(timeout)
             retry = retry - 1
 
-
     def createPrimaryStorages(self, primaryStorages, zoneId, podId, clusterId):
         if primaryStorages is None:
             return

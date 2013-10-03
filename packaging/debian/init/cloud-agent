@@ -33,7 +33,7 @@
 
 . /lib/lsb/init-functions
 
-SHORTNAME="cloud-agent"
+SHORTNAME="cloudstack-agent"
 PIDFILE=/var/run/"$SHORTNAME".pid
 LOCKFILE=/var/lock/subsys/"$SHORTNAME"
 PROGNAME="CloudStack Agent"

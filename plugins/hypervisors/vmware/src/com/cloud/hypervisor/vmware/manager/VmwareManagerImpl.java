@@ -52,6 +52,8 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.cluster.ClusterManager;
+import com.cloud.cluster.ManagementServerHost;
+import com.cloud.cluster.dao.ManagementServerHostPeerDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
@@ -154,6 +156,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Inject VmwareDatacenterDao _vmwareDcDao;
     @Inject VmwareDatacenterZoneMapDao _vmwareDcZoneMapDao;
     @Inject LegacyZoneDao _legacyZoneDao;
+    @Inject ManagementServerHostPeerDao _mshostPeerDao;
 
     String _mountParent;
     StorageLayer _storage;
@@ -167,6 +170,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     String _managemetPortGroupName;
     String _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
     String _recycleHungWorker = "false";
+    long _hungWorkerTimeout = 7200000;		// 2 hour
     int _additionalPortRangeStart;
     int _additionalPortRangeSize;
     int _routerExtraPublicNics = 2;
@@ -285,6 +289,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         if(_recycleHungWorker == null || _recycleHungWorker.isEmpty()) {
             _recycleHungWorker = "false";
         }
+        
+        value = _configDao.getValue(Config.VmwareHungWorkerTimeout.key());
+        if(value != null)
+        	_hungWorkerTimeout = Long.parseLong(value) * 1000;
 
         _rootDiskController = _configDao.getValue(Config.VmwareRootDiskControllerType.key());
         if(_rootDiskController == null || _rootDiskController.isEmpty()) {
@@ -528,10 +536,53 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         return _storageMgr;
     }
 
-
     @Override
     public void gcLeftOverVMs(VmwareContext context) {
         VmwareCleanupMaid.gcLeftOverVMs(context);
+    }
+    
+    @Override
+    public boolean needRecycle(String workerTag) {
+    	if(s_logger.isInfoEnabled())
+    		s_logger.info("Check to see if a worker VM with tag " + workerTag + " needs to be recycled");
+    	
+    	if(workerTag == null || workerTag.isEmpty()) {
+    		s_logger.error("Invalid worker VM tag " + workerTag);
+    		return false;
+    	}
+    	
+    	String tokens[] = workerTag.split("-");
+    	if(tokens.length != 3) {
+    		s_logger.error("Invalid worker VM tag " + workerTag);
+    		return false;
+    	}
+    	
+    	long startTick = Long.parseLong(tokens[0]);
+    	long msid = Long.parseLong(tokens[1]);
+    	long runid = Long.parseLong(tokens[2]);
+    	
+        if(_mshostPeerDao.countStateSeenInPeers(msid, runid, ManagementServerHost.State.Down) > 0) {
+        	if(s_logger.isInfoEnabled())
+        		s_logger.info("Worker VM's owner management server node has been detected down from peer nodes, recycle it");
+        	return true;
+        }
+        
+        if(msid == _clusterMgr.getManagementNodeId() && runid != _clusterMgr.getCurrentRunId()) {
+        	if(s_logger.isInfoEnabled())
+        		s_logger.info("Worker VM's owner management server has changed runid, recycle it");
+        	return true;
+        }
+  
+        // disable time-out check until we have found out a VMware API that can check if
+        // there are pending tasks on the subject VM
+/*        
+        if(System.currentTimeMillis() - startTick > _hungWorkerTimeout) {
+        	if(s_logger.isInfoEnabled())
+        		s_logger.info("Worker VM expired, seconds elapsed: " + (System.currentTimeMillis() - startTick) / 1000);
+        	return true;
+        }
+*/        
+    	return false;
     }
 
     @Override

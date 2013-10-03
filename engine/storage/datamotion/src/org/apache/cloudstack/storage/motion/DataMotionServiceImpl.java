@@ -41,6 +41,9 @@ public class DataMotionServiceImpl implements DataMotionService {
 
     @Override
     public void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
+        if (srcData.getDataStore() == null || destData.getDataStore() == null) {
+            throw new CloudRuntimeException("can't find data store");
+        }
 
         if (srcData.getDataStore().getDriver().canCopy(srcData, destData)) {
             srcData.getDataStore().getDriver().copyAsync(srcData, destData, callback);

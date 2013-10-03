@@ -310,7 +310,7 @@ class VirtualMachine:
                     domainid=None, zoneid=None, networkids=None, serviceofferingid=None,
                     securitygroupids=None, projectid=None, startvm=None,
                     diskofferingid=None, affinitygroupnames=None, affinitygroupids=None, group=None,
-                    hostid=None, keypair=None, mode='default', method='GET'):
+                    hostid=None, keypair=None, ipaddress=None, mode='default', method='GET'):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -370,6 +370,11 @@ class VirtualMachine:
         elif "keypair" in services:
             cmd.keypair = services["keypair"]
 
+        if ipaddress:
+            cmd.ipaddress = ipaddress
+        elif ipaddress in services:
+            cmd.ipaddress = services["ipaddress"]
+
         if securitygroupids:
             cmd.securitygroupids = [str(sg_id) for sg_id in securitygroupids]
 
@@ -411,8 +416,13 @@ class VirtualMachine:
         if mode.lower() == 'advanced':
             cls.access_ssh_over_nat(apiclient, services, virtual_machine, allow_egress=allow_egress)
         elif mode.lower() == 'basic':
-            virtual_machine.ssh_ip = virtual_machine.nic[0].ipaddress
-            virtual_machine.public_ip = virtual_machine.nic[0].ipaddress
+            if virtual_machine.publicip is not None:
+                vm_ssh_ip = virtual_machine.publicip #EIP/ELB (netscaler) enabled zone
+            else:
+                vm_ssh_ip = virtual_machine.nic[0].ipaddress #regular basic zone with security group
+            virtual_machine.ssh_ip = vm_ssh_ip
+            virtual_machine.public_ip = vm_ssh_ip
+
         return VirtualMachine(virtual_machine.__dict__, services)
 
     def start(self, apiclient):
@@ -901,6 +911,17 @@ class Template:
 
         if isinstance(template, list):
             return Template(template[0].__dict__)
+
+    @classmethod
+    def extract(cls, apiclient, id, mode, zoneid=None):
+        "Extract template "
+
+        cmd = extractTemplate.extractTemplateCmd()
+        cmd.id = id
+        cmd.mode = mode
+        cmd.zoneid = zoneid
+
+        return apiclient.extractTemplate(cmd)
 
     @classmethod
     def create_from_snapshot(cls, apiclient, snapshot, services,
@@ -1493,6 +1514,10 @@ class NetworkOffering:
             cmd.specifyVlan = services["specifyVlan"]
         if "specifyIpRanges" in services:
             cmd.specifyIpRanges = services["specifyIpRanges"]
+
+        if "egress_policy" in services:
+            cmd.egressdefaultpolicy = services["egress_policy"]
+
         cmd.availability = 'Optional'
 
         [setattr(cmd, k, v) for k, v in kwargs.items()]
@@ -1778,7 +1803,7 @@ class Host:
         return
 
     def enableMaintenance(self, apiclient):
-        """enables maintainance mode Host"""
+        """enables maintenance mode Host"""
 
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
         cmd.id = self.id
@@ -1786,14 +1811,14 @@ class Host:
 
     @classmethod
     def enableMaintenance(cls, apiclient, id):
-        """enables maintainance mode Host"""
+        """enables maintenance mode Host"""
 
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
         cmd.id = id
         return apiclient.prepareHostForMaintenance(cmd)
 
     def cancelMaintenance(self, apiclient):
-        """Cancels maintainance mode Host"""
+        """Cancels maintenance mode Host"""
 
         cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
         cmd.id = self.id
@@ -1801,7 +1826,7 @@ class Host:
 
     @classmethod
     def cancelMaintenance(cls, apiclient, id):
-        """Cancels maintainance mode Host"""
+        """Cancels maintenance mode Host"""
 
         cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
         cmd.id = id
@@ -1870,7 +1895,7 @@ class StoragePool:
         return
 
     def enableMaintenance(self, apiclient):
-        """enables maintainance mode Storage pool"""
+        """enables maintenance mode Storage pool"""
 
         cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
         cmd.id = self.id
@@ -2340,7 +2365,9 @@ class PortablePublicIpRange:
         cmd.startip = services["startip"]
         cmd.endip = services["endip"]
         cmd.regionid = services["regionid"]
-        cmd.vlan = services["vlan"]
+
+        if "vlan" in services:
+            cmd.vlan = services["vlan"]
 
         return PortablePublicIpRange(apiclient.createPortableIpRange(cmd).__dict__)
 

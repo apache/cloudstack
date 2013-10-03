@@ -619,6 +619,36 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         return    
 
+    @attr(tags=["advanced","advancedns", "intervlan"])
+    def test_04_VPC_CreateLBRuleInMultipleNetworksVRStoppedState(self):
+        """ Test case no 222 : Create LB rules for a two/multiple virtual networks of a
+            VPC using a new Public IP Address available with the VPC when the Virtual Router is in Stopped State
+        """
+
+        # Validate the following
+        # 1. Create a VPC with cidr - 10.1.1.1/16
+        # 2. Create a Network offering - NO1 with all supported services
+        # 3. Add network1(10.1.1.1/24) using N01 to this VPC.
+        # 4. Add network2(10.1.2.1/24) using N01 to this VPC.
+        # 5. Deploy vm1, vm2 and vm3 in network1 on primary host.
+        # 7. Use the Create LB rule for vm1 and vm2 in network1.
+        # 8. Add vm3 to LB rule.
+        # 9. wget a file and check for LB rule.
+
+        network_1 = self.create_Network(self.services["network_offering"])
+        network_2 = self.create_Network(self.services["network_offering_no_lb"], '10.1.2.1')
+        vm_1 = self.create_VM_in_Network(network_1)
+        vm_2 = self.create_VM_in_Network(network_1)
+        vm_3 = self.create_VM_in_Network(network_2)
+        public_ip_1 = self.acquire_Public_IP(network_1)
+        lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_1, vm_2], self.services["lbrule_http"])
+        # In a VPC, the load balancing service is supported only on a single tier.
+        # http://cloudstack.apache.org/docs/en-US/Apache_CloudStack/4.0.2/html/Installation_Guide/configure-vpc.html
+        with self.assertRaises(Exception):
+            lb_rule.assign(self.apiclient, [vm_3])
+        self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
+        return
+
     @attr(tags=["advanced", "intervlan"])
     def test_05_VPC_CreateAndDeleteLBRule(self):
         """ Test case no 214 : Delete few(not all) LB rules for a single virtual network of a

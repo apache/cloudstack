@@ -526,6 +526,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     SwiftUtil.putObject(swift, properties, containterName, _tmpltpp);
                 }
 
+                //clean up template data on staging area
+                try {
+                    DeleteCommand deleteCommand = new DeleteCommand(newTemplate);
+                    execute(deleteCommand);
+                } catch (Exception e) {
+                    s_logger.debug("Failed to clean up staging area:", e);
+                }  
+                
                 TemplateObjectTO template = new TemplateObjectTO();
                 template.setPath(swiftPath);
                 template.setSize(templateFile.length());
@@ -543,7 +551,15 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 TemplateObjectTO newTemplate = (TemplateObjectTO)answer.getNewData();
                 newTemplate.setDataStore(srcDataStore);
                 CopyCommand newCpyCmd = new CopyCommand(newTemplate, destData, cmd.getWait(), cmd.executeInSequence());
-                return copyFromNfsToS3(newCpyCmd);
+                Answer result = copyFromNfsToS3(newCpyCmd);
+                //clean up template data on staging area
+                try {
+                    DeleteCommand deleteCommand = new DeleteCommand(newTemplate);
+                    execute(deleteCommand);
+                } catch (Exception e) {
+                    s_logger.debug("Failed to clean up staging area:", e);
+                }  
+                return result;
             }
         }
         s_logger.debug("Failed to create templat from snapshot");
@@ -1775,7 +1791,15 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 parent += File.separator;
             }
             String absoluteVolumePath = parent + relativeVolumePath;
-            File tmpltParent = new File(absoluteVolumePath).getParentFile();
+            File volPath = new File(absoluteVolumePath);
+            File tmpltParent = null;
+            if (volPath.exists() && volPath.isDirectory()) {
+                // for vmware, absoluteVolumePath represents a directory where volume files are located.
+                tmpltParent = volPath;
+            } else{
+                // for other hypervisors, the volume .vhd or .qcow2 file path is passed
+                tmpltParent = new File(absoluteVolumePath).getParentFile();
+            }
             String details = null;
             if (!tmpltParent.exists()) {
                 details = "volume parent directory " + tmpltParent.getName() + " doesn't exist";
@@ -1806,7 +1830,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
                     if (!f.delete()) {
                         return new Answer(cmd, false, "Unable to delete file " + f.getName() + " under Volume path "
-                                + relativeVolumePath);
+                                + tmpltParent.getPath());
                     }
                 }
                 if (!found) {
@@ -1816,7 +1840,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
             if (!tmpltParent.delete()) {
                 details = "Unable to delete directory " + tmpltParent.getName() + " under Volume path "
-                        + relativeVolumePath;
+                        + tmpltParent.getPath();
                 s_logger.debug(details);
                 return new Answer(cmd, false, details);
             }

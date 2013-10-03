@@ -1376,7 +1376,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public boolean tapLoadingAgents(Long hostId, TapAgentsAction action) {
         synchronized (_loadingAgents) {
             if (action == TapAgentsAction.Add) {
-                _loadingAgents.add(hostId);
+                if (_loadingAgents.contains(hostId))
+                    return false;
+                else
+                    _loadingAgents.add(hostId);
             } else if (action == TapAgentsAction.Del) {
                 _loadingAgents.remove(hostId);
             } else if (action == TapAgentsAction.Contains) {

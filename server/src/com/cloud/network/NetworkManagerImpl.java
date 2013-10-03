@@ -508,7 +508,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
         addr.setState(assign ? IpAddress.State.Allocated : IpAddress.State.Allocating);
 
-        if (vlanUse != VlanType.DirectAttached || zone.getNetworkType() == NetworkType.Basic) {
+        if (vlanUse != VlanType.DirectAttached) {
             addr.setAssociatedWithNetworkId(guestNetworkId);
             addr.setVpcId(vpcId);
         }
@@ -551,7 +551,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                         addr.getSystem(), addr.getClass().getName(), addr.getUuid());
             }
             // don't increment resource count for direct and dedicated ip addresses
-            if (addr.getAssociatedWithNetworkId() != null && !isIpDedicated(addr)) {
+            if (updateIpResourceCount(addr)) {
                 _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
             }
         }
@@ -2519,6 +2519,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     public boolean isDhcpAccrossMultipleSubnetsSupported(Network network) {
+        if (!_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)) {
+        	return false;
+        }
+    	
         DhcpServiceProvider dhcpServiceProvider = getDhcpServiceProvider(network);
         Map <Network.Capability, String> capabilities = dhcpServiceProvider.getCapabilities().get(Network.Service.Dhcp);
         String supportsMultipleSubnets = capabilities.get(Network.Capability.DhcpAccrossMultipleSubnets);
@@ -3779,7 +3783,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             txn.start();
 
             // don't decrement resource count for direct and dedicated ips
-            if (ip.getAssociatedWithNetworkId() != null && !isIpDedicated(ip)) {
+            if (updateIpResourceCount(ip)) {
                 _resourceLimitMgr.decrementResourceCount(_ipAddressDao.findById(addrId).getAllocatedToAccountId(), ResourceType.public_ip);
             }
 
@@ -3803,7 +3807,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         return ip;
     }
-
+    
+    protected boolean updateIpResourceCount(IPAddressVO ip) {
+        return (ip.getAssociatedWithNetworkId() != null || ip.getVpcId() != null) && !isIpDedicated(ip);
+    }
     
 
     Random _rand = new Random(System.currentTimeMillis());

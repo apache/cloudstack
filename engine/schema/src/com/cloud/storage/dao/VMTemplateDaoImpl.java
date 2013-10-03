@@ -30,6 +30,9 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
@@ -70,6 +73,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     VMTemplateZoneDao _templateZoneDao;
     @Inject
     VMTemplateDetailsDao _templateDetailsDao;
+    @Inject
+    DataStoreManager _dataStoreMgr;    
 
     @Inject
     ConfigurationDao _configDao;
@@ -338,6 +343,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         readySystemTemplateSearch.and("templateType", readySystemTemplateSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
         SearchBuilder<TemplateDataStoreVO>  templateDownloadSearch = _templateDataStoreDao.createSearchBuilder();
         templateDownloadSearch.and("downloadState", templateDownloadSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);
+        templateDownloadSearch.and("dataStoreId", templateDownloadSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         readySystemTemplateSearch.join("vmTemplateJoinTemplateStoreRef", templateDownloadSearch, templateDownloadSearch.entity().getTemplateId(),
                 readySystemTemplateSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         SearchBuilder<HostVO> hostHyperSearch2 = _hostDao.createSearchBuilder();
@@ -795,7 +801,13 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         sc.setJoinParameters("tmplHyper", "type", Host.Type.Routing);
         sc.setJoinParameters("tmplHyper", "zoneId", zoneId);
         sc.setJoinParameters("vmTemplateJoinTemplateStoreRef", "downloadState", VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
-
+        DataStore secStore = this._dataStoreMgr.getImageStore(zoneId);
+        if (secStore != null) {
+            sc.setJoinParameters("vmTemplateJoinTemplateStoreRef", "dataStoreId", secStore.getId());
+        } else{
+            s_logger.warn("No secondary storage is available in data center " + zoneId);
+        }
+        
         // order by descending order of id
         List<VMTemplateVO> tmplts = listBy(sc, new Filter(VMTemplateVO.class, "id", false, null, null));
 

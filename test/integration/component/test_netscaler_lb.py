@@ -163,7 +163,7 @@ class TestLbSourceNat(cloudstackTestCase):
                             cls.services["ostype"]
                            )
         try:
-           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services)
+           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
            cls._cleanup = [
                     cls.netscaler
                     ]
@@ -373,7 +373,7 @@ class TestLbOnIpWithPf(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         try:
-           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services)
+           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
            cls._cleanup = [
                     cls.netscaler
                     ]
@@ -587,7 +587,7 @@ class TestPfOnIpWithLb(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         try:
-           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services)
+           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
            cls._cleanup = [
                     cls.netscaler
                     ]
@@ -802,7 +802,7 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         try:
-           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services)
+           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
            cls._cleanup = [
                     cls.netscaler
                     ]
@@ -1020,7 +1020,7 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         try:
-           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services)
+           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
            cls._cleanup = [
                     cls.netscaler
                     ]
@@ -1300,7 +1300,7 @@ class TestMultipleLbRules(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         try:
-           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services)
+           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
            cls._cleanup = [
                     cls.netscaler
                     ]
@@ -1620,7 +1620,7 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         try:
-           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services)
+           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
            cls._cleanup = [
                     cls.netscaler
                     ]
@@ -1946,7 +1946,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         try:
-           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services)
+           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
            cls._cleanup.append(cls.netscaler)
            cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
@@ -2160,7 +2160,7 @@ class TestDeleteCreateLBRule(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         try:
-           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services)
+           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
            cls._cleanup.append(cls.netscaler)
            cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
@@ -2289,7 +2289,7 @@ class TestVmWithLb(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         try:
-           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services)
+           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
            cls._cleanup.append(cls.netscaler)
            cls.network_offering = NetworkOffering.create(
                                             cls.api_client,

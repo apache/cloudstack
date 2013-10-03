@@ -206,25 +206,25 @@ public class KVMStoragePoolManager {
     }
 
     public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name,
-                                                    KVMStoragePool destPool) {
+                                                    KVMStoragePool destPool, int timeout) {
         StorageAdaptor adaptor = getStorageAdaptor(destPool.getType());
 
         // LibvirtStorageAdaptor-specific statement
         if (destPool.getType() == StoragePoolType.RBD) {
             return adaptor.createDiskFromTemplate(template, name,
-                    PhysicalDiskFormat.RAW, template.getSize(), destPool);
+                    PhysicalDiskFormat.RAW, template.getSize(), destPool, timeout);
         } else if (destPool.getType() == StoragePoolType.CLVM) {
             return adaptor.createDiskFromTemplate(template, name,
                                        PhysicalDiskFormat.RAW, template.getSize(),
-                                       destPool);
+                                       destPool, timeout);
         } else if (template.getFormat() == PhysicalDiskFormat.DIR) {
             return adaptor.createDiskFromTemplate(template, name,
                     PhysicalDiskFormat.DIR,
-                    template.getSize(), destPool);
+                    template.getSize(), destPool, timeout);
         } else {
             return adaptor.createDiskFromTemplate(template, name,
                     PhysicalDiskFormat.QCOW2,
-            template.getSize(), destPool);
+            template.getSize(), destPool, timeout);
         }
     }
 
@@ -237,9 +237,9 @@ public class KVMStoragePoolManager {
     }
 
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name,
-            KVMStoragePool destPool) {
+            KVMStoragePool destPool, int timeout) {
         StorageAdaptor adaptor = getStorageAdaptor(destPool.getType());
-        return adaptor.copyPhysicalDisk(disk, name, destPool);
+        return adaptor.copyPhysicalDisk(disk, name, destPool, timeout);
     }
 
     public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot,

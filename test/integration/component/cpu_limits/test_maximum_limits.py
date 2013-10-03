@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -31,8 +31,7 @@ from marvin.integration.lib.base import (
 from marvin.integration.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
-                                        cleanup_resources,
-                                        get_updated_resource_count
+                                        cleanup_resources
                                         )
 
 class Services:
@@ -135,28 +134,28 @@ class TestMaxCPULimits(cloudstackTestCase):
                         project=None, networks=None, api_client=None):
         """Creates an instance in account"""
 
-	if api_client is None:
-    	    api_client = self.apiclient
+        if api_client is None:
+            api_client = self.apiclient
 
         self.debug("Deploying instance")
         try:
             if account:
                 vm = VirtualMachine.create(
-                                api_client,
-                                self.services["virtual_machine"],
-                                templateid=self.template.id,
-                                accountid=account.name,
-                                domainid=account.domainid,
-                                networkids=networks,
-                                serviceofferingid=service_off.id)
+                     api_client,
+                     self.services["virtual_machine"],
+                     templateid=self.template.id,
+                     accountid=account.name,
+                     domainid=account.domainid,
+                     networkids=networks,
+                     serviceofferingid=service_off.id)
             elif project:
                 vm = VirtualMachine.create(
-                                api_client,
-                                self.services["virtual_machine"],
-                                templateid=self.template.id,
-                                projectid=project.id,
-                                networkids=networks,
-                                serviceofferingid=service_off.id)
+                     api_client,
+                     self.services["virtual_machine"],
+                     templateid=self.template.id,
+                     projectid=project.id,
+                     networkids=networks,
+                     serviceofferingid=service_off.id)
             vms = VirtualMachine.list(api_client, id=vm.id, listall=True)
             self.assertIsInstance(vms,
                                   list,
@@ -165,67 +164,66 @@ class TestMaxCPULimits(cloudstackTestCase):
                              "Vm state should be running after deployment")
             return vm
         except Exception as e:
-            self.fail("Failed to deploy an instance: %s" % e) 
+            self.fail("Failed to deploy an instance: %s" % e)
 
     def setupAccounts(self, account_limit=2, domain_limit=2, project_limit=2):
 
-       	self.debug("Creating a domain under: %s" % self.domain.name)
-	self.child_domain = Domain.create(self.apiclient,
-	                                  services=self.services["domain"],
-               		                  parentdomainid=self.domain.id)
+        self.debug("Creating a domain under: %s" % self.domain.name)
+        self.child_domain = Domain.create(self.apiclient,
+            services=self.services["domain"],
+            parentdomainid=self.domain.id)
 
+        self.debug("domain crated with domain id %s" % self.child_domain.id)
 
-	self.debug("domain crated with domain id %s" % self.child_domain.id)
+        self.child_do_admin = Account.create(self.apiclient,
+            self.services["account"],
+            admin=True,
+            domainid=self.child_domain.id)
 
-	self.child_do_admin = Account.create(self.apiclient,
-			                     self.services["account"],
-			                     admin=True,
-		        	             domainid=self.child_domain.id)
+        self.debug("domain admin created for domain id %s" %
+                   self.child_do_admin.domainid)
 
-	self.debug("domain admin created for domain id %s" %
-                self.child_do_admin.domainid)
+        # Create project as a domain admin
+        self.project = Project.create(self.apiclient,
+            self.services["project"],
+            account=self.child_do_admin.name,
+            domainid=self.child_do_admin.domainid)
+        # Cleanup created project at end of test
+        self.cleanup.append(self.project)
 
-	# Create project as a domain admin
-	self.project = Project.create(self.apiclient,
-		                      self.services["project"],
-                 		      account=self.child_do_admin.name,
-		                      domainid=self.child_do_admin.domainid)
-	# Cleanup created project at end of test
-	self.cleanup.append(self.project)
+        # Cleanup accounts created
+        self.cleanup.append(self.child_do_admin)
+        self.cleanup.append(self.child_domain)
 
-	# Cleanup accounts created
-	self.cleanup.append(self.child_do_admin)
-	self.cleanup.append(self.child_domain)
+        self.debug("Updating the CPU resource count for domain: %s" %
+                   self.child_domain.name)
+        # Update resource limits for account 1
+        responses = Resources.updateLimit(self.apiclient,
+            resourcetype=8,
+            max=account_limit,
+            account=self.child_do_admin.name,
+            domainid=self.child_do_admin.domainid)
 
-	self.debug("Updating the CPU resource count for domain: %s" %
-                                                self.child_domain.name)
-	# Update resource limits for account 1
-	responses = Resources.updateLimit(self.apiclient,
-			                  resourcetype=8,
-                			  max=account_limit,
-		                	  account=self.child_do_admin.name,
-	                		  domainid=self.child_do_admin.domainid)
+        self.debug("CPU Resource count for child domain admin account is now: %s" %
+                   responses.max)
 
-	self.debug("CPU Resource count for child domain admin account is now: %s" %
-                                                                 responses.max)
+        self.debug("Updating the CPU limit for project")
+        responses = Resources.updateLimit(self.apiclient,
+            resourcetype=8,
+            max=project_limit,
+            projectid=self.project.id)
 
-	self.debug("Updating the CPU limit for project")
-	responses = Resources.updateLimit(self.apiclient,
-			                  resourcetype=8,
-                			  max=project_limit,
-		        	          projectid=self.project.id)
+        self.debug("CPU Resource count for project is now")
+        self.debug(responses.max)
 
-	self.debug("CPU Resource count for project is now")
-	self.debug(responses.max)
+        self.debug("Updating the CPU limit for domain only")
+        responses = Resources.updateLimit(self.apiclient,
+            resourcetype=8,
+            max=domain_limit,
+            domainid=self.child_domain.id)
 
-	self.debug("Updating the CPU limit for domain only")
-	responses = Resources.updateLimit(self.apiclient,
-        		                  resourcetype=8,
-			                  max=domain_limit,
-			                  domainid=self.child_domain.id)
-
-	self.debug("CPU Resource count for domain %s with id %s is now %s" %
-                    (responses.domain, responses.domainid, responses.max))
+        self.debug("CPU Resource count for domain %s with id %s is now %s" %
+                   (responses.domain, responses.domainid, responses.max))
 
         return
 
@@ -241,24 +239,25 @@ class TestMaxCPULimits(cloudstackTestCase):
         #    with "resource limit exceeds"
 
         self.debug("Creating service offering with 3 CPU cores")
-	self.services["service_offering"]["cpunumber"] = 3
+
+        self.services["service_offering"]["cpunumber"] = 3
         self.service_offering = ServiceOffering.create(
-                                            self.apiclient,
-                                            self.services["service_offering"]
-                                            )
+            self.apiclient,
+            self.services["service_offering"]
+        )
         # Adding to cleanup list after execution
         self.cleanup.append(self.service_offering)
 
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=4, domain_limit=2)
 
-	api_client_admin = self.testClient.createUserApiClient(
-                           UserName=self.child_do_admin.name,
-                           DomainName=self.child_do_admin.domain)	 
+        api_client_admin = self.testClient.createUserApiClient(
+            UserName=self.child_do_admin.name,
+            DomainName=self.child_do_admin.domain)
 
         with self.assertRaises(Exception):
             self.createInstance(account=self.child_do_admin,
-                                  service_off=self.service_offering, api_client=api_client_admin)
+                service_off=self.service_offering, api_client=api_client_admin)
         return
 
     @attr(tags=["advanced", "advancedns","simulator"])
@@ -273,35 +272,33 @@ class TestMaxCPULimits(cloudstackTestCase):
         #    with "resource limit exceeds"
 
         self.debug("Creating service offering with 4 CPU cores")
-	self.services["service_offering"]["cpunumber"] = 4
+
+        self.services["service_offering"]["cpunumber"] = 4
         self.service_offering = ServiceOffering.create(
-                                            self.apiclient,
-                                            self.services["service_offering"]
-                                            )
+            self.apiclient,
+            self.services["service_offering"]
+        )
         # Adding to cleanup list after execution
         self.cleanup.append(self.service_offering)
 
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=6, domain_limit=8)
-	
-	api_client_admin = self.testClient.createUserApiClient(
-                             UserName=self.child_do_admin.name,
-                             DomainName=self.child_do_admin.domain)
 
-	self.debug("Deploying instance with account: %s" %
-                                                    self.child_do_admin.name)
+        api_client_admin = self.testClient.createUserApiClient(
+            UserName=self.child_do_admin.name,
+            DomainName=self.child_do_admin.domain)
+
+        self.debug("Deploying instance with account: %s" %
+                   self.child_do_admin.name)
 
         self.createInstance(account=self.child_do_admin,
-                                  service_off=self.service_offering, api_client=api_client_admin)
+            service_off=self.service_offering, api_client=api_client_admin)
 
-        resource_count = get_updated_resource_count(self.apiclient, account=self.child_do_admin, rtype=8)#CPU
-        self.debug(resource_count)
-
-        self.debug("Deploying instance when CPU limit is reached in account") 
+        self.debug("Deploying instance when CPU limit is reached in account")
 
         with self.assertRaises(Exception):
             self.createInstance(account=self.chid_do_admin,
-                                  service_off=self.service_offering, api_client=api_client_admin)
+                service_off=self.service_offering, api_client=api_client_admin)
         return
 
     @attr(tags=["advanced", "advancedns","simulator"])
@@ -316,26 +313,27 @@ class TestMaxCPULimits(cloudstackTestCase):
         #    with "resource limit exceeds"
 
         self.debug("Creating service offering with 3 CPU cores")
-	self.services["service_offering"]["cpunumber"] = 3
+
+        self.services["service_offering"]["cpunumber"] = 3
         self.service_offering = ServiceOffering.create(
-                                            self.apiclient,
-                                            self.services["service_offering"]
-                                            )
+            self.apiclient,
+            self.services["service_offering"]
+        )
         # Adding to cleanup list after execution
         self.cleanup.append(self.service_offering)
 
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=4, domain_limit=4, project_limit=2)
 
-	api_client_admin = self.testClient.createUserApiClient(
-                             UserName=self.child_do_admin.name,
-                             DomainName=self.child_do_admin.domain) 
+        api_client_admin = self.testClient.createUserApiClient(
+            UserName=self.child_do_admin.name,
+            DomainName=self.child_do_admin.domain)
 
         self.debug("Deploying instance in account 2 when CPU limit is reached")
 
         with self.assertRaises(Exception):
             self.createInstance(project=self.project,
-                                  service_off=self.service_offering, api_client=api_client_admin)
+                service_off=self.service_offering, api_client=api_client_admin)
         return
 
     @attr(tags=["advanced", "advancedns","simulator"])
@@ -350,32 +348,30 @@ class TestMaxCPULimits(cloudstackTestCase):
         #    with "resource limit exceeds"
 
         self.debug("Creating service offering with 4 CPU cores")
-	self.services["service_offering"]["cpunumber"] = 4
+
+        self.services["service_offering"]["cpunumber"] = 4
         self.service_offering = ServiceOffering.create(
-                                            self.apiclient,
-                                            self.services["service_offering"]
-                                            )
+            self.apiclient,
+            self.services["service_offering"]
+        )
         # Adding to cleanup list after execution
         self.cleanup.append(self.service_offering)
 
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=6, domain_limit=6, project_limit=6)
 
-	api_client_admin = self.testClient.createUserApiClient(
-                             UserName=self.child_do_admin.name,
-                             DomainName=self.child_do_admin.domain)
+        api_client_admin = self.testClient.createUserApiClient(
+            UserName=self.child_do_admin.name,
+            DomainName=self.child_do_admin.domain)
 
         self.debug("Deploying instance with account: %s" %
-                                                    self.child_do_admin.name)
+                   self.child_do_admin.name)
         self.createInstance(account=self.child_do_admin,
-                                  service_off=self.service_offering, api_client=api_client_admin)
-
-        resource_count = get_updated_resource_count(self.apiclient, account=self.child_do_admin, rtype=8)#CPU
-        self.debug(resource_count)
+            service_off=self.service_offering, api_client=api_client_admin)
 
         self.debug("Deploying instance in project when CPU limit is reached in account")
 
         with self.assertRaises(Exception):
             self.createInstance(project=self.project,
-                                  service_off=self.service_offering)
+                service_off=self.service_offering)
         return

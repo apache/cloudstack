@@ -374,6 +374,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
             CommandExecLogVO execLog = new CommandExecLogVO(cmdTarget.first().getId(), cmdTarget.second().getId(), cmd.getClass().getSimpleName(), 1);
             _cmdExecLogDao.persist(execLog);
             cmd.setContextParam("execid", String.valueOf(execLog.getId()));
+    		cmd.setContextParam("noderuninfo", String.format("%d-%d", _clusterMgr.getManagementNodeId(), _clusterMgr.getCurrentRunId()));
 
             if(cmd instanceof BackupSnapshotCommand ||
                     cmd instanceof CreatePrivateTemplateFromVolumeCommand ||

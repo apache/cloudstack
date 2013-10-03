@@ -67,6 +67,29 @@ public class UcsCommands {
         return cmd.toString();
     }
 
+    public static String disassociateProfileFromBlade(String cookie, String profileDn) {
+        XmlObject cmd = new XmlObject("configConfMo");
+        cmd.putElement("cookie", cookie);
+        cmd.putElement("inHierarchical", "false")
+                .putElement("inConfig", new XmlObject("inConfig")
+                        .putElement("lsServer", new XmlObject("lsServer")
+                                .putElement("dn", profileDn).putElement("lsBinding", new XmlObject("lsBinding").putElement("rn", "pn").putElement("status", "deleted"))
+                        )
+                );
+
+        return cmd.dump();
+    }
+
+    public static String deleteProfile(String cookie, String profileDn) {
+        XmlObject cmd = new XmlObject("configConfMos");
+        cmd.putElement("cookie", cookie);
+        cmd.putElement("inHierarchical", "true")
+                .putElement("inConfigs", new XmlObject("inConfigs").putElement("pair", new XmlObject("pair").putElement("key", profileDn)
+                        .putElement("lsServer", new XmlObject("lsServer").putElement("dn", profileDn).putElement("status", "deleted"))
+                ));
+        return cmd.dump();
+    }
+
     public static String associateProfileToBlade(String cookie, String profileDn, String bladeDn) {
         XmlObject cmd = new XmlObject("configConfMos").putElement("cookie", cookie).putElement("inHierarchical", "true").putElement(
                 "inConfigs", new XmlObject("inConfigs").putElement(
@@ -95,10 +118,10 @@ public class UcsCommands {
                                 .putElement("uuid", "")
                                 .putElement("vconProfileName", "")
                                 .putElement("lsBinding", new XmlObject("lsBinding")
-                                            .putElement("pnDn", bladeDn)
-                                            .putElement("restrictMigration", "no")
-                                            .putElement("rn", "pn")
-                                        )
+                                        .putElement("pnDn", bladeDn)
+                                        .putElement("restrictMigration", "no")
+                                        .putElement("rn", "pn")
+                                )
                                 )
                         )
                 );

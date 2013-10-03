@@ -19,6 +19,7 @@ package com.cloud.ucs.manager;
 
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.URI;
 import org.apache.commons.httpclient.contrib.ssl.EasySSLProtocolSocketFactory;
 import org.apache.commons.httpclient.methods.PostMethod;
@@ -28,9 +29,13 @@ import org.apache.commons.httpclient.protocol.Protocol;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class UcsHttpClient {
-    private static HttpClient client = new HttpClient();
+    private static HttpClient client;
     private static Protocol ucsHttpsProtocol = new org.apache.commons.httpclient.protocol.Protocol("https", new EasySSLProtocolSocketFactory(), 443);
     private final String url;
+
+    static {
+        client = new HttpClient();
+    }
 
     public UcsHttpClient(String ip) {
         url = String.format("http://%s/nuova", ip);

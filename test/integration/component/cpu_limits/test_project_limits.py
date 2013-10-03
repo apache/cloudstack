@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -31,7 +31,6 @@ from marvin.integration.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
                                         cleanup_resources,
-                                        get_updated_resource_count,
                                         find_suitable_host,
                                         get_resource_type
                                         )
@@ -109,7 +108,7 @@ class TestProjectsCPULimits(cloudstackTestCase):
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
-                                            ) 
+                                            )
 
         cls._cleanup = [cls.service_offering, ]
         return
@@ -137,15 +136,15 @@ class TestProjectsCPULimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupProjectAccounts()
 
-	api_client = self.testClient.createUserApiClient(
-                             UserName=self.admin.name,
-                             DomainName=self.admin.domain)
+        api_client = self.testClient.createUserApiClient(
+            UserName=self.admin.name,
+            DomainName=self.admin.domain)
 
         self.debug("Creating an instance with service offering: %s" %
-                                                    self.service_offering.name)
+                   self.service_offering.name)
         self.vm = self.createInstance(project=self.project,
-                                  service_off=self.service_offering, api_client=api_client)
- 
+            service_off=self.service_offering, api_client=api_client)
+
         return
 
     def tearDown(self):
@@ -160,26 +159,26 @@ class TestProjectsCPULimits(cloudstackTestCase):
     def createInstance(self, project, service_off, networks=None, api_client=None):
         """Creates an instance in account"""
 
-	if api_client is None:
-	    api_client = self.api_client
- 
+        if api_client is None:
+            api_client = self.api_client
+
         try:
             self.vm = VirtualMachine.create(
-                                api_client,
-                                self.services["virtual_machine"],
-                                templateid=self.template.id,
-                                projectid=project.id, 
-                                networkids=networks,
-                                serviceofferingid=service_off.id)
+                        api_client,
+                        self.services["virtual_machine"],
+                        templateid=self.template.id,
+                        projectid=project.id,
+                        networkids=networks,
+                        serviceofferingid=service_off.id)
             vms = VirtualMachine.list(api_client, id=self.vm.id, listall=True)
             self.assertIsInstance(vms,
-                                  list,
-                                  "List VMs should return a valid response")
+                    list,
+                    "List VMs should return a valid response")
             self.assertEqual(vms[0].state, "Running",
-                             "Vm state should be running after deployment")
+                    "Vm state should be running after deployment")
             return self.vm
         except Exception as e:
-            self.fail("Failed to deploy an instance: %s" % e) 
+            self.fail("Failed to deploy an instance: %s" % e)
 
     def setupProjectAccounts(self):
 
@@ -217,20 +216,26 @@ class TestProjectsCPULimits(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "advancedns","simulator"])
-    @attr(configuration='max.projects.cpus') 
-    def test_01_project_counts_reboot_instance(self):
-        """Test max.projects.cpus global configuration"""
+    def test_01_project_counts_start_stop_instance(self):
 
         # Validate the following
-        # 1. Set (max.project.cpus=10) as the max limit to
-        #    Domain1 (max.account.cpus=10)
-        # 2. Assign account to projects and verify the resource updates
-        # 3. Deploy VM with the accounts added to the project
-        # 4. Stop VM of an accounts added to the project.
-        # 5. Resource count should list properly.  
+        # 1. Assign account to projects and verify the resource updates
+        # 2. Deploy VM with the accounts added to the project
+        # 3. Stop VM of an accounts added to the project.
+        # 4. Resource count should list properly.
 
-        resource_count = get_updated_resource_count(self.apiclient, account=self.admin, project=self.project, rtype=8)#CPU
-        self.debug(resource_count)
+        project_list = Project.list(self.apiclient, id=self.project.id, listall=True)
+        self.debug(project_list)
+        self.assertIsInstance(project_list,
+                              list,
+                              "List Projects should return a valid response"
+                              )
+        resource_count = project_list[0].cputotal
+
+        expected_resource_count = int(self.services["service_offering"]["cpunumber"])
+
+        self.assertEqual(resource_count, expected_resource_count,
+                         "Resource count should match with the expected resource count")
 
         self.debug("Stopping instance: %s" % self.vm.name)
         try:
@@ -238,8 +243,15 @@ class TestProjectsCPULimits(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to stop instance: %s" % e)
 
-        resource_count = get_updated_resource_count(self.apiclient, account=self.admin, project=self.project, rtype=8)#CPU
-        self.debug(resource_count)
+        project_list = Project.list(self.apiclient, id=self.project.id, listall=True)
+        self.assertIsInstance(project_list,
+                              list,
+                              "List Projects should return a valid response"
+                              )
+        resource_count_after_stop = project_list[0].cputotal
+
+        self.assertEqual(resource_count, resource_count_after_stop,
+                         "Resource count should be same after stopping the instance")
 
         self.debug("Starting instance: %s" % self.vm.name)
         try:
@@ -247,25 +259,37 @@ class TestProjectsCPULimits(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to start instance: %s" % e)
 
-        resource_count = get_updated_resource_count(self.apiclient, account=self.admin, project=self.project, rtype=8)#CPU
-        self.debug(resource_count) 
+        project_list = Project.list(self.apiclient, id=self.project.id, listall=True)
+        self.assertIsInstance(project_list,
+                              list,
+                              "List Projects should return a valid response"
+                              )
+        resource_count_after_start = project_list[0].cputotal
+
+        self.assertEqual(resource_count, resource_count_after_start,
+                         "Resource count should be same after starting the instance")
         return
 
     @attr(tags=["advanced", "advancedns","simulator"])
-    @attr(configuration='max.projects.cpus') 
     def test_02_project_counts_migrate_instance(self):
-        """Test max.projects.cpus global configuration"""
 
         # Validate the following
-        # 1. Set (max.project.cpus=10) as the max limit to
-        #    Domain1 (max.account.cpus=10)
-        # 2. Assign account to projects and verify the resource updates
-        # 3. Deploy VM with the accounts added to the project
-        # 4. Migrate VM of an accounts added to the project to a new host
-        # 5. Resource count should list properly.
+        # 1. Assign account to projects and verify the resource updates
+        # 2. Deploy VM with the accounts added to the project
+        # 3. Migrate VM of an accounts added to the project to a new host
+        # 4. Resource count should list properly.
 
-        resource_count = get_updated_resource_count(self.apiclient, account=self.admin, project=self.project, rtype=8)#CPU
-        self.debug(resource_count) 
+        project_list = Project.list(self.apiclient, id=self.project.id, listall=True)
+        self.assertIsInstance(project_list,
+                              list,
+                              "List Projects should return a valid response"
+                              )
+        resource_count = project_list[0].cputotal
+
+        expected_resource_count = int(self.services["service_offering"]["cpunumber"])
+
+        self.assertEqual(resource_count, expected_resource_count,
+                         "Resource count should match with the expected resource count")
 
         host = find_suitable_host(self.apiclient, self.vm)
         self.debug("Migrating instance: %s to host: %s" %
@@ -275,25 +299,37 @@ class TestProjectsCPULimits(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to migrate instance: %s" % e)
 
-        resource_count = get_updated_resource_count(self.apiclient, account=self.admin, project=self.project, rtype=8)#CPU
-        self.debug(resource_count) 
+        project_list = Project.list(self.apiclient, id=self.project.id, listall=True)
+        self.assertIsInstance(project_list,
+                              list,
+                              "List Projects should return a valid response"
+                              )
+        resource_count_after_migrate = project_list[0].cputotal
+
+        self.assertEqual(resource_count, resource_count_after_migrate,
+                         "Resource count should be same after migrating the instance")
         return
 
     @attr(tags=["advanced", "advancedns","simulator"])
-    @attr(configuration='max.projects.cpus') 
     def test_03_project_counts_delete_instance(self):
-        """Test max.projects.cpus global configuration"""
 
         # Validate the following
-        # 1. Set (max.project.cpus=10) as the max limit to
-        #    Domain1 (max.account.cpus=10)
-        # 2. Assign account to projects and verify the resource updates
-        # 3. Deploy VM with the accounts added to the project 
-        # 4. Destroy VM of an accounts added to the project to a new host  
-        # 5. Resource count should list properly.
+        # 1. Assign account to projects and verify the resource updates
+        # 2. Deploy VM with the accounts added to the project
+        # 3. Destroy VM of an accounts added to the project to a new host
+        # 4. Resource count should list properly.
 
-        resource_count = get_updated_resource_count(self.apiclient, account=self.admin, project=self.project, rtype=8)#CPU
-        self.debug(resource_count)
+        project_list = Project.list(self.apiclient, id=self.project.id, listall=True)
+        self.assertIsInstance(project_list,
+                              list,
+                              "List Projects should return a valid response"
+                              )
+        resource_count = project_list[0].cputotal
+
+        expected_resource_count = int(self.services["service_offering"]["cpunumber"])
+
+        self.assertEqual(resource_count, expected_resource_count,
+                         "Resource count should match with the expected resource count")
 
         self.debug("Destroying instance: %s" % self.vm.name)
         try:
@@ -301,7 +337,11 @@ class TestProjectsCPULimits(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to delete instance: %s" % e)
 
-        resource_count = get_updated_resource_count(self.apiclient, account=self.admin, project=self.project, rtype=8)#CPU
-        self.debug(resource_count)
-        self.assertEqual(resource_count, 0 , "Resource count for %s should be 0" % get_resource_type(resource_id=8))#CPU
+        project_list = Project.list(self.apiclient, id=self.project.id, listall=True)
+        self.assertIsInstance(project_list,
+                              list,
+                              "List Projects should return a valid response"
+                              )
+        resource_count_after_delete = project_list[0].cputotal
+        self.assertEqual(resource_count_after_delete, 0 , "Resource count for %s should be 0" % get_resource_type(resource_id=8))#CPU
         return

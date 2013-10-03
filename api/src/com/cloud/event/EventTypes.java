@@ -443,6 +443,7 @@ public class EventTypes {
     public static final String EVENT_CLEANUP_VM_RESERVATION = "VM.RESERVATION.CLEANUP";
     
     public static final String EVENT_UCS_ASSOCIATED_PROFILE = "UCS.ASSOCIATEPROFILE";
+    public static final String EVENT_UCS_DISASSOCIATED_PROFILE = "UCS.DISASSOCIATEPROFILE";
 
     static {
 

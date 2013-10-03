@@ -22,6 +22,7 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.cluster.ClusterManager;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -34,9 +35,11 @@ public class VmwareContextFactory {
 
 	private static volatile int s_seq = 1;
 	private static VmwareManager s_vmwareMgr;
+	private static ClusterManager s_clusterMgr;
 	private static VmwareContextPool s_pool;
 
 	@Inject VmwareManager _vmwareMgr;
+	@Inject ClusterManager _clusterMgr;
 
 	static {
 		// skip certificate check
@@ -47,6 +50,7 @@ public class VmwareContextFactory {
 	@PostConstruct
 	void init() {
 	    s_vmwareMgr = _vmwareMgr;
+	    s_clusterMgr = _clusterMgr;
 	}
 
 	public static VmwareContext create(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
@@ -66,6 +70,7 @@ public class VmwareContextFactory {
 
 		context.registerStockObject("serviceconsole", s_vmwareMgr.getServiceConsolePortGroupName());
 		context.registerStockObject("manageportgroup", s_vmwareMgr.getManagementPortGroupName());
+		context.registerStockObject("noderuninfo", String.format("%d-%d", s_clusterMgr.getManagementNodeId(), s_clusterMgr.getCurrentRunId()));
 
 		context.setPoolInfo(s_pool, VmwareContextPool.composePoolKey(vCenterAddress, vCenterUserName));
 		s_pool.registerOutstandingContext(context);
@@ -75,14 +80,22 @@ public class VmwareContextFactory {
 	
 	public static VmwareContext getContext(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
 		VmwareContext context = s_pool.getContext(vCenterAddress, vCenterUserName);
-		if(context == null)
+		if(context == null) {
 			context = create(vCenterAddress, vCenterUserName, vCenterPassword);
+		} else {
+			if(!context.validate()) {
+				s_logger.info("Validation of the context faild. dispose and create a new one");
+				context.close();
+				context = create(vCenterAddress, vCenterUserName, vCenterPassword);
+			}
+		}
 		
 		if(context != null) {
 			context.registerStockObject(VmwareManager.CONTEXT_STOCK_NAME, s_vmwareMgr);
 
 			context.registerStockObject("serviceconsole", s_vmwareMgr.getServiceConsolePortGroupName());
 			context.registerStockObject("manageportgroup", s_vmwareMgr.getManagementPortGroupName());
+			context.registerStockObject("noderuninfo", String.format("%d-%d", s_clusterMgr.getManagementNodeId(), s_clusterMgr.getCurrentRunId()));
 		}
 		
 		return context;

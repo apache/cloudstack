@@ -340,7 +340,6 @@ public class StoragePoolVO implements StoragePool {
 
     @Override
     public boolean isInMaintenance() {
-        // TODO Auto-generated method stub
-        return false;
+        return status == StoragePoolStatus.PrepareForMaintenance || status == StoragePoolStatus.Maintenance || status == StoragePoolStatus.ErrorInMaintenance || removed != null;
     }
 }

@@ -30,8 +30,7 @@ from marvin.integration.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
                                         cleanup_resources,
-					wait_for_cleanup,
-                                        get_updated_resource_count,
+					                    wait_for_cleanup,
                                         find_suitable_host,
                                         get_resource_type
                                         )
@@ -97,7 +96,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
-	cls.services["mode"] = cls.zone.networktype
+        cls.services["mode"] = cls.zone.networktype
 
         cls.template = get_template(
                             cls.api_client,
@@ -127,7 +126,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
- 
+
         self.cleanup = []
         return
 
@@ -144,8 +143,8 @@ class TestDomainMemoryLimits(cloudstackTestCase):
         self.debug("Deploying an instance in account: %s" %
                                                 self.account.name)
 
-	if api_client is None:
-	    api_client = self.apiclient	
+        if api_client is None:
+	        api_client = self.apiclient
         try:
             vm = VirtualMachine.create(
                                 api_client,
@@ -163,63 +162,60 @@ class TestDomainMemoryLimits(cloudstackTestCase):
                              "Vm state should be running after deployment")
             return vm
         except Exception as e:
-            self.fail("Failed to deploy an instance: %s" % e)   
+            self.fail("Failed to deploy an instance: %s" % e)
 
     def setupAccounts(self):
 
         self.debug("Creating a sub-domain under: %s" % self.domain.name)
-        self.child_domain = Domain.create(self.apiclient,
+        self.child_domain_1 = Domain.create(self.apiclient,
                                         services=self.services["domain"],
                                         parentdomainid=self.domain.id)
-        self.child_do_admin = Account.create(
+        self.child_do_admin_1 = Account.create(
                                         self.apiclient,
                                         self.services["account"],
                                         admin=True,
-                                        domainid=self.child_domain.id
+                                        domainid=self.child_domain_1.id
                                         )
         # Cleanup the resources created at end of test
-        self.cleanup.append(self.child_do_admin)
-        self.cleanup.append(self.child_domain)
+        self.cleanup.append(self.child_do_admin_1)
+        self.cleanup.append(self.child_domain_1)
 
         Resources.updateLimit(self.apiclient,
                               resourcetype=9,
-                              max=5120,
-                              account=self.child_do_admin.name,
-                              domainid=self.child_do_admin.domainid)
-	
-	self.domain = Domain.create(self.apiclient,
+                              max=15360,
+                              account=self.child_do_admin_1.name,
+                              domainid=self.child_do_admin_1.domainid)
+
+        self.child_domain_2 = Domain.create(self.apiclient,
                                 services=self.services["domain"],
                                 parentdomainid=self.domain.id)
 
-        self.admin = Account.create(
+        self.child_do_admin_2 = Account.create(
                                     self.apiclient,
                                     self.services["account"],
                                     admin=True,
-                                    domainid=self.domain.id)
-	
+                                    domainid=self.child_domain_2.id)
+
         # Cleanup the resources created at end of test
-        self.cleanup.append(self.admin)
-	self.cleanup.append(self.domain)
+        self.cleanup.append(self.child_do_admin_2)
+        self.cleanup.append(self.child_domain_2)
 
         Resources.updateLimit(self.apiclient,
                               resourcetype=9,
-                              max=5120,
-                              account=self.admin.name,
-                              domainid=self.admin.domainid)
+                              max=15360,
+                              account=self.child_do_admin_2.name,
+                              domainid=self.child_do_admin_2.domainid)
         return
 
     @attr(tags=["advanced", "advancedns","simulator"])
-    @attr(configuration='max.account.memory')
     def test_01_change_service_offering(self):
         """Test Deploy VM with 5 GB RAM & verify the usage"""
-	#Keep max account memory (configuration) as 5 GB
+
         # Validate the following
         # 1. Create compute offering with 5 GB RAM & Deploy VM in the created domain
-        # 2. Update Resource count for the root admin Memory usage
+        # 2. List Resource count for the root admin Memory usage
         # 3. Upgrade and downgrade service offering
-        # 4. Resource count should list properly for the domain 
- 
-	#Keep max account memory (configuration) as 5 GB
+        # 4. Resource count should list properly for the domain
 
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts()
@@ -232,21 +228,38 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.debug("Creating an instance with service offering: %s" %
                                                     self.service_offering.name)
 
- 	    api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.createUserApiClient(
                             UserName=self.account.name,
                             DomainName=self.account.domain)
- 		
+
             vm = self.createInstance(service_off=self.service_offering, api_client=api_client)
 
-            resource_count = get_updated_resource_count(self.apiclient, account=self.account, rtype=9)#RAM
-            self.debug(resource_count)
+            account_list = Account.list(self.apiclient, id=self.account.id)
+            self.assertIsInstance(account_list,
+                                  list,
+                                  "List Accounts should return a valid response"
+                                  )
+            resource_count = account_list[0].memorytotal
+
+            expected_resource_count = int(self.services["service_offering"]["memory"])
+
+            self.assertEqual(resource_count, expected_resource_count,
+                         "Resource count should match with the expected resource count")
+
             self.debug("Stopping instance: %s" % vm.name)
             try:
                 vm.stop(self.apiclient)
             except Exception as e:
                 self.fail("Failed to stop instance: %s" % e)
-            resource_count = get_updated_resource_count(self.apiclient, account=self.account, rtype=9)#RAM
-            self.debug(resource_count)
+            account_list = Account.list(self.apiclient, id=self.account.id)
+            self.assertIsInstance(account_list,
+                              list,
+                              "List Accounts should return a valid response"
+                              )
+            resource_count_after_stop = account_list[0].memorytotal
+
+            self.asserEqual(resource_count_after_stop, expected_resource_count,
+                         "Resource count should be same after stopping the instance")
 
             self.debug("Creating service offering with 7 GB RAM")
             self.services["service_offering"]["memory"] = 7168
@@ -269,8 +282,18 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             except Exception as e:
                 self.fail("Failed to change service offering of vm %s - %s" %
                                                                 (vm.name, e))
-            resource_count  = get_updated_resource_count(self.apiclient, account=self.account, rtype=9)#RAM
-            self.debug(resource_count)
+
+            account_list = Account.list(self.apiclient, id=self.account.id)
+            self.assertIsInstance(account_list,
+                              list,
+                              "List Accounts should return a valid response"
+                              )
+            resource_count_after_upgrade = account_list[0].memorytotal
+
+            self.debug(resource_count_after_upgrade)
+
+            self.assertTrue(resource_count_after_upgrade > resource_count_after_stop,
+                            "Resource count should be more than before, after upgrading service offering")
 
             self.debug(
                 "Down grade service offering of instance %s from %s to %s" %
@@ -284,30 +307,43 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             except Exception as e:
                 self.fail("Failed to change service offering of vm %s - %s" %
                                                                 (vm.name, e))
-            resource_count = get_updated_resource_count(self.apiclient, account=self.account, rtype=9)#RAM
-            self.debug(resource_count)
+
+            account_list = Account.list(self.apiclient, id=self.account.id)
+            self.assertIsInstance(account_list,
+                              list,
+                              "List Accounts should return a valid response"
+                              )
+            resource_count_after_downgrade = account_list[0].memorytotal
+
+            self.assertTrue(resource_count_after_downgrade < resource_count_after_upgrade,
+                            "Resource count should be less than before, after downgrading service offering")
 
             self.debug("Starting instance: %s" % vm.name)
             try:
                 vm.start(self.apiclient)
             except Exception as e:
                 self.fail("Failed to start instance: %s" % e)
-            resource_count = get_updated_resource_count(self.apiclient, account=self.account, rtype=9)#RAM
-            self.debug(resource_count)
- 
+            account_list = Account.list(self.apiclient, id=self.account.id)
+            self.assertIsInstance(account_list,
+                              list,
+                              "List Accounts should return a valid response"
+                              )
+            resource_count_after_start = account_list[0].memorytotal
+
+            self.assertTrue(resource_count_after_start == resource_count_after_downgrade,
+                            "Resource count should be same after starting the instance")
+
         return
 
     @attr(tags=["advanced", "advancedns","simulator"])
-    @attr(configuration='max.account.memory')
     def test_02_migrate_vm(self):
         """Test Deploy VM with 5 GB RAM & verify the usage"""
-	#Keep max account memory (configuration) as 5 GB
+
         # Validate the following
         # 1. Create compute offering with 5 GB RAM & Deploy VM in the created domain
-        # 2. Update Resource count for the root admin Memory usage
+        # 2. List Resource count for the root admin Memory usage
         # 3. Migrate vm to another host, resource count should list properly.
- 
-	#Keep max account memory (configuration) as 5 GB
+
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts()
         users =  { self.domain: self.admin,
@@ -319,14 +355,23 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.debug("Creating an instance with service offering: %s" %
                                                     self.service_offering.name)
 
- 	    api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.createUserApiClient(
                             UserName=self.account.name,
                             DomainName=self.account.domain)
- 		
+
             vm = self.createInstance(service_off=self.service_offering, api_client=api_client)
 
-            resource_count = get_updated_resource_count(self.apiclient, account=self.account, rtype=9)#RAM
-            self.debug(resource_count) 
+            account_list = Account.list(self.apiclient, id=self.account.id)
+            self.assertIsInstance(account_list,
+                              list,
+                              "List Accounts should return a valid response"
+                              )
+            resource_count = account_list[0].memorytotal
+
+            expected_resource_count = int(self.services["service_offering"]["memory"])
+
+            self.assertEqual(resource_count, expected_resource_count,
+                         "Resource count should match with the expected resource count")
 
             host = find_suitable_host(self.apiclient, vm)
             self.debug("Migrating instance: %s to host: %s" %
@@ -335,21 +380,25 @@ class TestDomainMemoryLimits(cloudstackTestCase):
                 vm.migrate(self.apiclient, host.id)
             except Exception as e:
                 self.fail("Failed to migrate instance: %s" % e)
-            resource_count = get_updated_resource_count(self.apiclient, account=self.account, rtype=9)#RAM
-            self.debug(resource_count) 
+            account_list = Account.list(self.apiclient, id=self.account.id)
+            self.assertIsInstance(account_list,
+                              list,
+                              "List Accounts should return a valid response"
+                              )
+            resource_count_after_migrate = account_list[0].memorytotal
+
+            self.assertTrue(resource_count_after_migrate == resource_count,
+                            "Resource count should be same after migrating the instance")
         return
 
     @attr(tags=["advanced", "advancedns","simulator"])
-    @attr(configuration='max.account.memory')
     def test_03_delete_vm(self):
         """Test Deploy VM with 5 GB RAM & verify the usage"""
-	#Keep max account memory (configuration) as 5 GB
+
         # Validate the following
         # 1. Create compute offering with 5 GB RAM & Deploy VM in the created domain
-        # 2. Update Resource count for the root admin Memory usage
+        # 2. List Resource count for the root admin Memory usage
         # 3. Delete vm, resource count should list as 0 after delete operation.
- 
-	#Keep max account memory (configuration) as 5 GB
 
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts()
@@ -362,14 +411,23 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.debug("Creating an instance with service offering: %s" %
                                                     self.service_offering.name)
 
- 	    api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.createUserApiClient(
                             UserName=self.account.name,
                             DomainName=self.account.domain)
- 		
+
             vm = self.createInstance(service_off=self.service_offering, api_client=api_client)
 
-            resource_count = get_updated_resource_count(self.apiclient, account=self.account, rtype=9)#RAM
-            self.debug(resource_count) 
+            account_list = Account.list(self.apiclient, id=self.account.id)
+            self.assertIsInstance(account_list,
+                              list,
+                              "List Accounts should return a valid response"
+                              )
+            resource_count = account_list[0].memorytotal
+
+            expected_resource_count = int(self.services["service_offering"]["memory"])
+
+            self.assertEqual(resource_count, expected_resource_count,
+                         "Resource count should match with the expected resource count")
 
             self.debug("Destroying instance: %s" % vm.name)
             try:
@@ -377,23 +435,26 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             except Exception as e:
                 self.fail("Failed to delete instance: %s" % e)
 
-	    # Wait for expunge interval to cleanup Memory
-	    wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
+            # Wait for expunge interval to cleanup Memory
+            wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
 
-            resource_count = get_updated_resource_count(self.apiclient, account=self.account, rtype=9)#RAM
-            self.debug(resource_count)
-            self.assertEqual(resource_count, 0 , "Resource count for %s should be 0" % get_resource_type(resource_id=9))#RAM
+            account_list = Account.list(self.apiclient, id=self.account.id)
+            self.assertIsInstance(account_list,
+                              list,
+                              "List Accounts should return a valid response"
+                              )
+            resource_count_after_delete = account_list[0].memorytotal
+            self.assertEqual(resource_count_after_delete, 0 , "Resource count for %s should be 0" % get_resource_type(resource_id=9))#RAM
         return
 
     @attr(tags=["advanced", "advancedns","simulator"])
-    @attr(configuration='max.account.memory')
     def test_04_deploy_multiple_vm(self):
         """Test Deploy multiple VM with 5 GB RAM & verify the usage"""
-	#Keep max account memory (configuration) as 5 GB
+
         # Validate the following
         # 1. Create compute offering with 5 GB RAM
         # 2. Deploy multiple VMs with this service offering
-        # 3. Update Resource count for the root admin Memory usage
+        # 3. List Resource count for the root admin Memory usage
         # 4. Memory usage should list properly
 
         self.debug("Setting up account and domain hierarchy")
@@ -407,39 +468,32 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.debug("Creating an instance with service offering: %s" %
                                                     self.service_offering.name)
 
-	    api_client = self.testClient.createUserApiClient(
+            api_client = self.testClient.createUserApiClient(
                             UserName=self.account.name,
                             DomainName=self.account.domain)
 
             vm_1 = self.createInstance(service_off=self.service_offering, api_client=api_client)
             vm_2 = self.createInstance(service_off=self.service_offering, api_client=api_client)
-            vm_3 = self.createInstance(service_off=self.service_offering, api_client=api_client) 
+            vm_3 = self.createInstance(service_off=self.service_offering, api_client=api_client)
 
             self.debug("Deploying instance - Memory capacity is fully utilized")
             with self.assertRaises(Exception):
                 self.createInstance(service_off=self.service_offering, api_client=api_client)
 
-            resource_count = get_updated_resource_count(self.apiclient, account=self.account, rtype=9)#RAM
-            self.debug(resource_count)
-            self.debug("Destroying instance: %s" % vm_1.name)
-            try:
-                vm_1.delete(self.apiclient)
-            except Exception as e:
-                self.fail("Failed to delete instance: %s" % e)
-            resource_count = get_updated_resource_count(self.apiclient, account=self.account, rtype=9)#RAM
-            self.debug(resource_count)
+            account_list = Account.list(self.apiclient, id=self.account.id)
+            self.assertIsInstance(account_list,
+                              list,
+                              "List Accounts should return a valid response"
+                              )
+            resource_count = account_list[0].memorytotal
 
-            host = find_suitable_host(self.apiclient, vm_2)
-            self.debug("Migrating instance: %s to host: %s" % (vm_2.name,
-                                                               host.name))
-            try:
-                vm_2.migrate(self.apiclient, host.id)
-            except Exception as e:
-                self.fail("Failed to migrate instance: %s" % e)
-            resource_count = get_updated_resource_count(self.apiclient, account=self.account, rtype=9)#RAM
-            self.debug(resource_count)
-	    vm_2.delete(self.apiclient)
-	    vm_3.delete(self.apiclient)
+            expected_resource_count = int(self.services["service_offering"]["memory"]) * 3 #Total 3 VMs
+
+            self.assertEqual(resource_count, expected_resource_count,
+                         "Resource count should match with the expected resource count")
+
+            vm_2.delete(self.apiclient)
+            vm_3.delete(self.apiclient)
         return
 
 
@@ -514,7 +568,7 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
                              "Vm state should be running after deployment")
             return vm
         except Exception as e:
-            self.fail("Failed to deploy an instance: %s" % e)  
+            self.fail("Failed to deploy an instance: %s" % e)
 
     def setupAccounts(self):
 
@@ -528,7 +582,7 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
                             admin=True,
                             domainid=self.domain.id
                             )
-         
+
         self.debug("Updating the Memory resource count for domain: %s" %
                                                             self.domain.name)
         Resources.updateLimit(self.apiclient,
@@ -552,12 +606,12 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
                                         admin=True,
                                         domainid=self.cdomain_1.id
                                         )
-                
+
         self.debug("Updating the Memory resource count for domain: %s" %
                                                         self.cdomain_1.name)
         Resources.updateLimit(self.apiclient,
                               resourcetype=9,
-                              max=5120, 
+                              max=5120,
                               domainid=self.cadmin_1.domainid)
 
         self.debug("Updating the Memory resource count for account: %s" %
@@ -579,7 +633,7 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
                                                         self.cdomain_2.name)
         Resources.updateLimit(self.apiclient,
                               resourcetype=9,
-                              max=5120, 
+                              max=5120,
                               domainid=self.cadmin_2.domainid)
 
         self.debug("Updating the Memory resource count for domain: %s" %
@@ -597,7 +651,7 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
 	self.cleanup.append(self.cdomain_2)
 	self.cleanup.append(self.parentd_admin)
         self.cleanup.append(self.parent_domain)
-	 
+
         users = {
                  self.parent_domain: self.parentd_admin,
                  self.cdomain_1: self.cadmin_1,
@@ -649,10 +703,20 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
         vm_2 = self.createInstance(account=self.cadmin_2,
                                   service_off=self.service_offering, api_client=api_client_cadmin_2)
 
-        resource_count_cadmin_1 = get_updated_resource_count(self.apiclient, account=self.cadmin_1, rtype=9)#RAM
+        account_list = Account.list(self.apiclient, id=self.cadmin_1.id)
+        self.assertIsInstance(account_list,
+                              list,
+                              "List Accounts should return a valid response"
+                              )
+        resource_count_cadmin_1 = account_list[0].memorytotal
         self.debug(resource_count_cadmin_1)
 
-        resource_count_cadmin_2 = get_updated_resource_count(self.apiclient, account=self.cadmin_2, rtype=9)#RAM
+        account_list = Account.list(self.apiclient, id=self.cadmin_2.id)
+        self.assertIsInstance(account_list,
+                              list,
+                              "List Accounts should return a valid response"
+                              )
+        resource_count_cadmin_2 = account_list[0].memorytotal
         self.debug(resource_count_cadmin_2)
 
         self.debug(
@@ -664,8 +728,8 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
         self.debug(
             "Creating instance when Memory limit is fully used in child domain")
         with self.assertRaises(Exception):
-            self.createInstance(account=self.cadmin_1,
-                                  service_off=self.service_offering, api_client=api_client_cadmin_1)
+            self.createInstance(account=self.cadmin_2,
+                                  service_off=self.service_offering, api_client=api_client_cadmin_2)
         self.debug("Destroying instances: %s, %s" % (vm_1.name, vm_2.name))
         try:
             vm_1.delete(self.apiclient)
@@ -675,15 +739,23 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
 
         self.debug("Checking resource count for account: %s" % self.cadmin_1.name)
 
-        resource_count_cadmin_1 = get_updated_resource_count(self.apiclient, account=self.cadmin_1, rtype=9)#RAM
-        self.debug(resource_count_cadmin_1)
+        account_list = Account.list(self.apiclient, id=self.cadmin_1.id)
+        self.assertIsInstance(account_list,
+                              list,
+                              "List Accounts should return a valid response"
+                              )
+        resource_count_cadmin_1 = account_list[0].memorytotal
 
         self.assertEqual(resource_count_cadmin_1, 0 , "Resource count for %s should be 0" % get_resource_type(resource_id=9))#RAM
 
         self.debug("Checking resource count for account: %s" % self.cadmin_2.name)
 
-        resource_count_cadmin_2 = get_updated_resource_count(self.apiclient, account=self.cadmin_2, rtype=9)#RAM
-        self.debug(resource_count_cadmin_2)
+        account_list = Account.list(self.apiclient, id=self.cadmin_1.id)
+        self.assertIsInstance(account_list,
+                              list,
+                              "List Accounts should return a valid response"
+                              )
+        resource_count_cadmin_2 = account_list[0].memorytotal
 
         self.assertEqual(resource_count_cadmin_2, 0 , "Resource count for %s should be 0" % get_resource_type(resource_id=9))#RAM
         return

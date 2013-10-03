@@ -37,11 +37,6 @@ class Services:
 
     def __init__(self):
         self.services = {
-                      "host": {
-                               "username": 'root', # Credentials for SSH
-                               "password": 'password',
-                               "publicport": 22,
-                               },
                        "sleep": 60,
                        "timeout": 10,
                       }
@@ -346,14 +341,18 @@ class TestSSVMs(cloudstackTestCase):
                                 hypervisor=self.apiclient.hypervisor
                                 )
         else:
-            result = get_process_status(
-                                host.ipaddress,
-                                self.services['host']["publicport"],
-                                self.services['host']["username"],
-                                self.services['host']["password"],
-                                ssvm.linklocalip,
-                                "/usr/local/cloud/systemvm/ssvm-check.sh |grep -e ERROR -e WARNING -e FAIL"
+            try:
+                host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
+                result = get_process_status(
+                                    host.ipaddress,
+                                    22,
+                                    host.user,
+                                    host.passwd,
+                                    ssvm.linklocalip,
+                                    "/usr/local/cloud/systemvm/ssvm-check.sh |grep -e ERROR -e WARNING -e FAIL"
                                 )
+            except KeyError:
+                self.skipTest("Marvin configuration has no host credentials to check router services")
         res = str(result)
         self.debug("SSVM script output: %s" % res)
 
@@ -382,14 +381,18 @@ class TestSSVMs(cloudstackTestCase):
                                 hypervisor=self.apiclient.hypervisor
                                 )
         else:
-            result = get_process_status(
-                                host.ipaddress,
-                                self.services['host']["publicport"],
-                                self.services['host']["username"],
-                                self.services['host']["password"],
-                                ssvm.linklocalip,
-                                "service cloud status"
-                                )
+            try:
+                host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
+                result = get_process_status(
+                                    host.ipaddress,
+                                    22,
+                                    host.user,
+                                    host.passwd,
+                                    ssvm.linklocalip,
+                                    "service cloud status"
+                                    )
+            except KeyError:
+                self.skipTest("Marvin configuration has no host credentials to check router services")
         res = str(result)
         self.debug("Cloud Process status: %s" % res)
         # cloud.com service (type=secstorage) is running: process id: 2346
@@ -462,14 +465,18 @@ class TestSSVMs(cloudstackTestCase):
                                 hypervisor=self.apiclient.hypervisor
                                 )
         else:
-            result = get_process_status(
-                                host.ipaddress,
-                                self.services['host']["publicport"],
-                                self.services['host']["username"],
-                                self.services['host']["password"],
-                                cpvm.linklocalip,
-                                "service cloud status"
-                                )
+            try:
+                host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
+                result = get_process_status(
+                                    host.ipaddress,
+                                    22,
+                                    host.user,
+                                    host.passwd,
+                                    cpvm.linklocalip,
+                                    "service cloud status"
+                                    )
+            except KeyError:
+                self.skipTest("Marvin configuration has no host credentials to check router services")
         res = str(result)
         self.debug("Cloud Process status: %s" % res)
         self.assertEqual(

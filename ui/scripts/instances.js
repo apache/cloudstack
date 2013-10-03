@@ -458,6 +458,12 @@
                             },
                             notification: function(args) {
                                 return 'label.action.reboot.instance';
+                            },
+                            complete: function(args) {
+                            	if (args.password != null && args.password.length > 0)
+                                    return 'Password has been reset to ' + args.password;
+                            	else
+                            		return null;
                             }
                         },
                         notification: {
@@ -605,6 +611,12 @@
                             },
                             notification: function(args) {
                                 return 'Reset VM';
+                            },
+                            complete: function(args) {
+                            	if (args.password != null && args.password.length > 0)
+                                    return 'Password has been reset to ' + args.password;
+                            	else
+                            		return null;
                             }
                         },
 
@@ -613,24 +625,26 @@
                                 url: createURL("restoreVirtualMachine&virtualmachineid=" + args.context.instances[0].id),
                                 dataType: "json",
                                 async: true,
-                                success: function(json) {
-                                    var item = json.restorevmresponse;
-                                    args.response.success({
-                                        data: item
-                                    });
+                                success: function(json) {                                    
+                                	var jid = json.restorevmresponse.jobid;                                    	
+                                	args.response.success({
+                                        _custom: {
+                                            jobId: jid,
+                                            getUpdatedItem: function(json) {                                         
+                                                return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                            },
+                                            getActionFilter: function() {
+                                                return vmActionfilter;
+                                            }
+                                        }
+                                    });                          	
                                 }
                             });
 
                         },
 
                         notification: {
-                            poll: function(args) {
-                                args.complete({
-                                    data: {
-                                        state: 'Stopped'
-                                    }
-                                });
-                            }
+                            poll: pollAsyncJobResult
                         }
 
                     },
@@ -811,10 +825,14 @@
                                     label: 'ISO',
                                     select: function(args) {
                                         var items = [];
-                                        var map = {};
+                                        var map = {};                                        
                                         $.ajax({
-                                            url: createURL("listIsos&isReady=true&isofilter=featured"),
-                                            dataType: "json",
+                                            url: createURL("listIsos"),
+                                            data: {
+                                            	isofilter: 'featured',
+                                            	isReady: true,
+                                            	zoneid: args.context.instances[0].zoneid
+                                            },
                                             async: false,
                                             success: function(json) {
                                                 var isos = json.listisosresponse.iso;
@@ -828,8 +846,12 @@
                                             }
                                         });
                                         $.ajax({
-                                            url: createURL("listIsos&isReady=true&isofilter=community"),
-                                            dataType: "json",
+                                            url: createURL("listIsos"),
+                                            data: {
+                                            	isofilter: 'community',
+                                            	isReady: true,
+                                            	zoneid: args.context.instances[0].zoneid
+                                            },
                                             async: false,
                                             success: function(json) {
                                                 var isos = json.listisosresponse.iso;
@@ -845,8 +867,12 @@
                                             }
                                         });
                                         $.ajax({
-                                            url: createURL("listIsos&isReady=true&isofilter=selfexecutable"),
-                                            dataType: "json",
+                                            url: createURL("listIsos"),
+                                            data: {
+                                            	isofilter: 'selfexecutable',
+                                            	isReady: true,
+                                            	zoneid: args.context.instances[0].zoneid
+                                            },
                                             async: false,
                                             success: function(json) {
                                                 var isos = json.listisosresponse.iso;

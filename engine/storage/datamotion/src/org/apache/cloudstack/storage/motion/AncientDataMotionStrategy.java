@@ -431,7 +431,9 @@ public class
         int _createprivatetemplatefromsnapshotwait = NumbersUtil.parseInt(value,
                 Integer.parseInt(Config.CreatePrivateTemplateFromSnapshotWait.getDefaultValue()));
 
+        boolean needCache = false;
         if (needCacheStorage(srcData, destData)) {
+            needCache = true;
             SnapshotInfo snapshot = (SnapshotInfo) srcData;
             srcData = cacheSnapshotChain(snapshot);
         }
@@ -439,6 +441,11 @@ public class
         CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _createprivatetemplatefromsnapshotwait, _mgmtServer.getExecuteInSequence());
         EndPoint ep = selector.select(srcData, destData);
         Answer answer = ep.sendMessage(cmd);
+        
+        // clean up snapshot copied to staging 
+        if (needCache && srcData != null) {
+            cacheMgr.deleteCacheObject(srcData);
+        }
         return answer;
     }
 

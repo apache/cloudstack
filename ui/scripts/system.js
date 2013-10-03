@@ -6096,30 +6096,40 @@
                                                     });
 
                                                     $.ajax({
-                                                        url: createURL('listVmwareDcs'), //listVmwareDcs API exists in only non-oss bild
-                                                        data: {
+                                                    	url: createURL('listClusters'),
+                                                    	data: {
                                                             zoneid: args.context.physicalResources[0].id
                                                         },
                                                         async: false,
-                                                        success: function(json) { //e.g. json == { "listvmwaredcsresponse" { "count":1 ,"VMwareDC" [ {"id":"c3c2562d-65e9-4fc7-92e2-773c2efe8f37","zoneid":1,"name":"datacenter","vcenter":"10.10.20.20"} ] } }
-                                                            var vmwaredcs = json.listvmwaredcsresponse.VMwareDC;
-                                                            if (vmwaredcs != null) {
-                                                                selectedZoneObj.vmwaredcName = vmwaredcs[0].name;
-                                                                selectedZoneObj.vmwaredcVcenter = vmwaredcs[0].vcenter;
-                                                                selectedZoneObj.vmwaredcId = vmwaredcs[0].id;
-                                                            }
-                                                        },
-                                                        error: function(XMLHttpResponse) {} //override default error handling: cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)});   
-                                                    });
-
-                                                    // for testing only (begin)
-                                                    /*
-						                            selectedZoneObj.vmwaredcName = "datacenter";
-						                            selectedZoneObj.vmwaredcVcenter = "10.10.20.20";
-						                            selectedZoneObj.vmwaredcId = "c3c2562d-65e9-4fc7-92e2-773c2efe8f37";
-						                            */
-                                                    // for testing only (end)
-
+                                                        success: function(json) {                                                        	
+                                                        	var clusters = json.listclustersresponse.cluster;
+                                                        	if (clusters != null) {
+                                                        		for (var i = 0; i < clusters.length; i++) {                                                        			
+                                                        			if (clusters[i].hypervisortype == 'VMware') {                                                        				
+                                                        				$.ajax({
+                                                                            url: createURL('listVmwareDcs'), //listVmwareDcs API exists in only non-oss bild
+                                                                            data: {
+                                                                                zoneid: args.context.physicalResources[0].id
+                                                                            },
+                                                                            async: false,
+                                                                            success: function(json) { //e.g. json == { "listvmwaredcsresponse" { "count":1 ,"VMwareDC" [ {"id":"c3c2562d-65e9-4fc7-92e2-773c2efe8f37","zoneid":1,"name":"datacenter","vcenter":"10.10.20.20"} ] } }
+                                                                                var vmwaredcs = json.listvmwaredcsresponse.VMwareDC;
+                                                                                if (vmwaredcs != null) {
+                                                                                    selectedZoneObj.vmwaredcName = vmwaredcs[0].name;
+                                                                                    selectedZoneObj.vmwaredcVcenter = vmwaredcs[0].vcenter;
+                                                                                    selectedZoneObj.vmwaredcId = vmwaredcs[0].id;
+                                                                                }
+                                                                            }
+                                                                            //, error: function(XMLHttpResponse) {} //override default error handling: cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)});   
+                                                                        });                                                        				
+                                                        				
+                                                        				break;
+                                                        			}
+                                                        		}                                                        		
+                                                        	}                                                        	
+                                                        }
+                                                    });                         
+                                                    
                                                     args.response.success({
                                                         actionFilter: zoneActionfilter,
                                                         data: selectedZoneObj
@@ -7039,7 +7049,7 @@
                             var listView = $.extend(true, {}, cloudStack.sections.system.subsections.virtualRouters.listView, {
                                 dataProvider: function(args) {
                                     var searchByArgs = args.filterBy.search.value.length ?
-                                        '&name=' + args.filterBy.search.value : '';
+                                        '&keyword=' + args.filterBy.search.value : '';
 
                                     var routers = [];
                                     $.ajax({
@@ -13621,7 +13631,7 @@
                                         }
                                     },
                                     url: {
-                                        label: 'label.url',
+                                        label: 'label.ip', //CLOUDSTACK-4629
                                         validation: {
                                             required: true
                                         }
@@ -13823,15 +13833,13 @@
                                             	*/
                                             	//for testing only (end)
                                             	
-                                            	var data = json.listucsbladeresponse.ucsblade ? json.listucsbladeresponse.ucsblade : [];
-                                                for (var i = 0; i < data.length; i++) {
-                                                    var array1 = data[i].bladedn.split('/');
-                                                    data[i].chassis = array1[1];
-                                                    data[i].bladeid = array1[2];
+                                            	var items = json.listucsbladeresponse.ucsblade ? json.listucsbladeresponse.ucsblade : [];
+                                                for (var i = 0; i < items.length; i++) {                                                    
+                                                	addExtraPropertiesToUcsBladeObject(items[i]);   
                                                 }
                                                 args.response.success({
                                                 	actionFilter: bladeActionfilter,
-                                                    data: data
+                                                    data: items
                                                 });
                                             }
                                         });
@@ -13971,7 +13979,8 @@
                                                                 		};
                                                                 	*/
                                                                 	//for testing only (end)
-                                                                	                                                                	                                  	    
+                                                                	 
+                                                                	addExtraPropertiesToUcsBladeObject(json.queryasyncjobresultresponse.jobresult.ucsblade);                                                                	
                                                                     return json.queryasyncjobresultresponse.jobresult.ucsblade;
                                                                 }
                                                             }
@@ -13982,7 +13991,79 @@
                                             notification: {
                                                 poll: pollAsyncJobResult
                                             }
-                                        }
+                                        },
+                                                                                
+                                        disassociateProfileFromBlade: {
+                                            label: 'Disassociate Profile from Blade',
+                                            addRow: 'false',
+                                            messages: {
+                                            	confirm: function(args) {
+                                            		return 'Please confirm that you want to disassociate Profile from Blade.';
+                                            	},
+                                                notification: function(args) {
+                                                    return 'Disassociate Profile from Blade';
+                                                }
+                                            },                                           
+                                            action: function(args) {                                            	
+                                                $.ajax({
+                                                    url: createURL('disassociateUcsProfileFromBlade'), 
+                                                    data: {
+                                                        //ucsmanagerid: args.context.ucsManagers[0].id,                                                        
+                                                        bladeid: args.context.blades[0].id
+                                                    },
+                                                    success: function(json) {   
+                                                    	//for testing only (begin)
+                                                    	/*
+                                                    	json = {
+                                                        	    "disassociateucsprofilefrombladeresponse": {
+                                                        	        "jobid": "e371592e-31be-4e53-9346-a5c565d420df"
+                                                        	    }
+                                                        	}
+                                                    	*/
+                                                    	//for testing only (end)
+                                                    	                                                    	
+                                                    	var jid = json.disassociateucsprofilefrombladeresponse.jobid;
+                                                        args.response.success({
+                                                            _custom: {
+                                                                jobId: jid,
+                                                                getUpdatedItem: function(json) {  
+                                                                	//for testing only (begin)
+                                                                	/*
+                                                                	json = {
+                                                                		    "queryasyncjobresultresponse": {
+                                                                		        "accountid": "835fb2d5-0b76-11e3-9350-f4f3e49b5dfe",
+                                                                		        "userid": "835fc0e5-0b76-11e3-9350-f4f3e49b5dfe",
+                                                                		        "cmd": "org.apache.cloudstack.api.DisassociateUcsProfileCmd",
+                                                                		        "jobstatus": 1,
+                                                                		        "jobprocstatus": 0,
+                                                                		        "jobresultcode": 0,
+                                                                		        "jobresulttype": "object",
+                                                                		        "jobresult": {
+                                                                		            "ucsblade": {
+                                                                		                "id": "f8d08575-7a1c-4f79-a588-d129c38bcc4f",
+                                                                		                "ucsmanagerid": "0d87c1a6-5664-425c-9024-2ddd9605d260",
+                                                                		                "bladedn": "sys/chassis-1/blade-1"
+                                                                		            }
+                                                                		        },
+                                                                		        "created": "2013-09-13T22:17:29-0700",
+                                                                		        "jobid": "2c3698a8-39ac-43e6-8ade-86eb2d3726a0"
+                                                                		    }
+                                                                		}; 
+                                                                	*/       
+                                                                	//for testing only (end)
+                                                                	 
+                                                                	addExtraPropertiesToUcsBladeObject(json.queryasyncjobresultresponse.jobresult.ucsblade);         
+                                                                    return json.queryasyncjobresultresponse.jobresult.ucsblade;
+                                                                }
+                                                            }
+                                                        });                                                    	
+                                                    }
+                                                });
+                                            },
+                                            notification: {
+                                                poll: pollAsyncJobResult
+                                            }
+                                        }                                        
                                     }                                 
                                 }
                             }                         
@@ -16074,7 +16155,9 @@
         var allowedActions = [];
         if(jsonObj.profiledn == null) {
         	allowedActions.push("associateProfileToBlade");
-        }        
+        } else {
+        	allowedActions.push("disassociateProfileFromBlade");
+        }     
         return allowedActions;
     }
 

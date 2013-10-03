@@ -102,7 +102,15 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                 TemplateObjectTO template = (TemplateObjectTO)answer.getNewData();
                 template.setDataStore(srcDataStore);
                 CopyCommand newCmd = new CopyCommand(template, destData, cmd.getWait(), cmd.executeInSequence());
-                return storageResource.defaultAction(newCmd);
+                Answer result = storageResource.defaultAction(newCmd);
+                //clean up template data on staging area
+                try {
+                    DeleteCommand deleteCommand = new DeleteCommand(template);
+                    storageResource.defaultAction(deleteCommand);
+                } catch (Exception e) {
+                    s_logger.debug("Failed to clean up staging area:", e);
+                }
+                return result;                
             }
             needDelegation = true;
         }

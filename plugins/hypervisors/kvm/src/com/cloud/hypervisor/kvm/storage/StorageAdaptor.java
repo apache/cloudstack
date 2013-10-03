@@ -40,7 +40,7 @@ public interface StorageAdaptor {
 
     public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template,
             String name, PhysicalDiskFormat format, long size,
-            KVMStoragePool destPool);
+            KVMStoragePool destPool, int timeout);
 
     public KVMPhysicalDisk createTemplateFromDisk(KVMPhysicalDisk disk,
             String name, PhysicalDiskFormat format, long size,
@@ -50,7 +50,7 @@ public interface StorageAdaptor {
             KVMStoragePool pool);
 
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name,
-            KVMStoragePool destPools);
+            KVMStoragePool destPools, int timeout);
 
     public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot,
             String snapshotName, String name, KVMStoragePool destPool);

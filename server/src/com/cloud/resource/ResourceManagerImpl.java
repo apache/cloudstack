@@ -1920,9 +1920,23 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags,
             boolean forRebalance) {
-        _agentMgr.tapLoadingAgents(hostId, TapAgentsAction.Add);
-        Host host = createHostAndAgent(resource, details, old, hostTags, forRebalance);
-        _agentMgr.tapLoadingAgents(hostId, TapAgentsAction.Del);
+        Host host = null;
+        if (_agentMgr.tapLoadingAgents(hostId, TapAgentsAction.Add)) {
+            try {
+                AgentAttache agentattache = _agentMgr.findAttache(hostId);
+                if (agentattache == null) {
+                    s_logger.debug("Creating agent for host " + hostId);
+                    host = createHostAndAgent(resource, details, old, hostTags, forRebalance);
+                    s_logger.debug("Completed creating agent for host " + hostId);
+                } else {
+                    s_logger.debug("Agent already created in another thread for host " + hostId + ", ignore this");
+                }
+            } finally {
+                _agentMgr.tapLoadingAgents(hostId, TapAgentsAction.Del);
+            }
+        } else {
+            s_logger.debug("Agent creation already getting processed in another thread for host " + hostId + ", ignore this");
+        }
         return host;
     }
 

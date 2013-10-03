@@ -160,6 +160,7 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         VM template = templates.iterator().next();
 
         VM.Record vmr = template.getRecord(conn);
+        vmr.platform.remove("device_id");
         vmr.affinity = host;
         vmr.otherConfig.remove("disks");
         vmr.otherConfig.remove("default_template");

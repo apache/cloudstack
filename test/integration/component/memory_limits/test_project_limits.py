@@ -30,8 +30,7 @@ from marvin.integration.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
                                         cleanup_resources,
-					wait_for_cleanup,
-                                        get_updated_resource_count,
+					                    wait_for_cleanup,
                                         find_suitable_host,
                                         get_resource_type
                                         )
@@ -97,7 +96,7 @@ class TestProjectsMemoryLimits(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
-	cls.services["mode"] = cls.zone.networktype
+        cls.services["mode"] = cls.zone.networktype
 
         cls.template = get_template(
                             cls.api_client,
@@ -127,7 +126,7 @@ class TestProjectsMemoryLimits(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
-	self.account = Account.create(
+        self.account = Account.create(
              self.apiclient,
              self.services["account"],
              admin=True
@@ -137,14 +136,14 @@ class TestProjectsMemoryLimits(cloudstackTestCase):
         self.debug("Setting up account and domain hierarchy")
         self.setupProjectAccounts()
 
-	api_client = self.testClient.createUserApiClient(
+        api_client = self.testClient.createUserApiClient(
                             UserName=self.admin.name,
                             DomainName=self.admin.domain)
 
         self.debug("Creating an instance with service offering: %s" %
                                                     self.service_offering.name)
         self.vm = self.createInstance(project=self.project,
-                                  service_off=self.service_offering, api_client=api_client) 
+                                  service_off=self.service_offering, api_client=api_client)
         return
 
     def tearDown(self):
@@ -160,8 +159,8 @@ class TestProjectsMemoryLimits(cloudstackTestCase):
         self.debug("Deploying an instance in account: %s" %
                                                 self.account.name)
 
-	if api_client is None:
-	    api_client = self.apiclient
+        if api_client is None:
+	        api_client = self.apiclient
 
         try:
             vm = VirtualMachine.create(
@@ -179,7 +178,7 @@ class TestProjectsMemoryLimits(cloudstackTestCase):
                              "Vm state should be running after deployment")
             return vm
         except Exception as e:
-            self.fail("Failed to deploy an instance: %s" % e)  
+            self.fail("Failed to deploy an instance: %s" % e)
 
     def setupProjectAccounts(self):
 
@@ -217,24 +216,27 @@ class TestProjectsMemoryLimits(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "advancedns","simulator"])
-    @attr(configuration='max.projects.memory')
-    def test_01_project_vmlifecycle_reboot_instance(self):
-        """Test max.projects.memory global configuration"""
+    def test_01_project_vmlifecycle_start_stop_instance(self):
 
         # Validate the following
-        # 1. Set (max.project.memory=10) as the max limit to
-        #    Domain1 (max.account.memory=10)
-        # 2. Assign account to projects and verify the resource updates
-        # 3. Deploy VM with the accounts added to the project
-        # 4. Stop VM of an accounts added to the project to a new host
-        # 5. Resource count should list properly
-        # 6. Start VM of an accounts added to the project to a new host
-        # 7. Resource count should list properly
+        # 1. Assign account to projects and verify the resource updates
+        # 2. Deploy VM with the accounts added to the project
+        # 3. Stop VM of an accounts added to the project to a new host
+        # 4. Resource count should list properly
+        # 5. Start VM of an accounts added to the project to a new host
+        # 6. Resource count should list properly
 
         self.debug("Checking memory resource count for project: %s" % self.project.name)
-        resource_count = get_updated_resource_count(self.apiclient, account=self.admin, project=self.project, rtype=9)#RAM
+        project_list = Project.list(self.apiclient, id=self.project.id, listall=True)
+        self.debug(project_list)
+        self.assertIsInstance(project_list,
+                              list,
+                              "List Projects should return a valid response"
+                              )
+        resource_count = project_list[0].memorytotal
+
         self.debug(resource_count)
-    
+
         self.debug("Stopping instance: %s" % self.vm.name)
         try:
             self.vm.stop(self.apiclient)
@@ -242,8 +244,15 @@ class TestProjectsMemoryLimits(cloudstackTestCase):
             self.fail("Failed to stop instance: %s" % e)
 
         self.debug("Checking memory resource count for project: %s" % self.project.name)
-        resource_count = get_updated_resource_count(self.apiclient, account=self.admin, project=self.project, rtype=9)#RAM
-        self.debug(resource_count)
+        project_list = Project.list(self.apiclient, id=self.project.id, listall=True)
+        self.assertIsInstance(project_list,
+                              list,
+                              "List Projects should return a valid response"
+                              )
+        resource_count_after_stop = project_list[0].memorytotal
+
+        self.assertEqual(resource_count, resource_count_after_stop,
+                         "Resource count should be same after stopping the instance")
 
         self.debug("Starting instance: %s" % self.vm.name)
         try:
@@ -252,26 +261,35 @@ class TestProjectsMemoryLimits(cloudstackTestCase):
             self.fail("Failed to start instance: %s" % e)
 
         self.debug("Checking memory resource count for project: %s" % self.project.name)
-        get_updated_resource_count(self.apiclient, account=self.admin, project=self.project, rtype=9)#RAM 
-        self.debug(resource_count)
+        project_list = Project.list(self.apiclient, id=self.project.id, listall=True)
+        self.assertIsInstance(project_list,
+                              list,
+                              "List Projects should return a valid response"
+                              )
+        resource_count_after_start = project_list[0].memorytotal
+
+        self.assertEqual(resource_count, resource_count_after_start,
+                         "Resource count should be same after starting the instance")
         return
 
     @attr(tags=["advanced", "advancedns","simulator"])
-    @attr(configuration='max.projects.memory')
     def test_02_project_vmlifecycle_migrate_instance(self):
-        """Test max.projects.memory global configuration"""
 
         # Validate the following
-        # 1. Set (max.project.memory=10) as the max limit to
-        #    Domain1 (max.account.memory=10)
-        # 2. Assign account to projects and verify the resource updates
-        # 3. Deploy VM with the accounts added to the project
-        # 4. Migrate VM of an accounts added to the project to a new host
-        # 5. Resource count should list properly.
+        # 1. Assign account to projects and verify the resource updates
+        # 2. Deploy VM with the accounts added to the project
+        # 3. Migrate VM of an accounts added to the project to a new host
+        # 4. Resource count should list properly.
 
         self.debug("Checking memory resource count for project: %s" % self.project.name)
-        resource_count = get_updated_resource_count(self.apiclient, account=self.admin, project=self.project, rtype=9)#RAM 
-        self.debug(resource_count)        
+        project_list = Project.list(self.apiclient, id=self.project.id, listall=True)
+        self.debug(project_list)
+        self.assertIsInstance(project_list,
+                              list,
+                              "List Projects should return a valid response"
+                              )
+        resource_count = project_list[0].memorytotal
+        self.debug(resource_count)
 
         host = find_suitable_host(self.apiclient, self.vm)
         self.debug("Migrating instance: %s to host: %s" %
@@ -280,28 +298,37 @@ class TestProjectsMemoryLimits(cloudstackTestCase):
             self.vm.migrate(self.apiclient, host.id)
         except Exception as e:
             self.fail("Failed to migrate instance: %s" % e)
-    
+
         self.debug("Checking memory resource count for project: %s" % self.project.name)
-        resource_count = get_updated_resource_count(self.apiclient, account=self.admin, project=self.project, rtype=9)#RAM 
-        self.debug(resource_count) 
+        project_list = Project.list(self.apiclient, id=self.project.id, listall=True)
+        self.assertIsInstance(project_list,
+                              list,
+                              "List Projects should return a valid response"
+                              )
+        resource_count_after_migrate = project_list[0].memorytotal
+
+        self.assertEqual(resource_count, resource_count_after_migrate,
+                         "Resource count should be same after migrating the instance")
         return
 
     @attr(tags=["advanced", "advancedns","simulator"])
-    @attr(configuration='max.projects.memory')
     def test_03_project_vmlifecycle_delete_instance(self):
-        """Test max.projects.memory global configuration"""
 
         # Validate the following
-        # 1. Set (max.project.memory=10) as the max limit to
-        #    Domain1 (max.account.memory=10)
-        # 2. Assign account to projects and verify the resource updates
-        # 3. Deploy VM with the accounts added to the project 
-        # 4. Destroy VM of an accounts added to the project
-        # 5. Resource count should list as 0 after destroying the instance
+        # 1. Assign account to projects and verify the resource updates
+        # 2. Deploy VM with the accounts added to the project
+        # 3. Destroy VM of an accounts added to the project
+        # 4. Resource count should list as 0 after destroying the instance
 
         self.debug("Checking memory resource count for project: %s" % self.project.name)
-        resource_count = get_updated_resource_count(self.apiclient, account=self.admin, project=self.project, rtype=9)#RAM 
-        self.debug(resource_count) 
+        project_list = Project.list(self.apiclient, id=self.project.id, listall=True)
+        self.debug(project_list)
+        self.assertIsInstance(project_list,
+                              list,
+                              "List Projects should return a valid response"
+                              )
+        resource_count = project_list[0].memorytotal
+        self.debug(resource_count)
 
         self.debug("Destroying instance: %s" % self.vm.name)
         try:
@@ -309,13 +336,15 @@ class TestProjectsMemoryLimits(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to delete instance: %s" % e)
 
-	# Wait for expunge interval to cleanup Memory
-	wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
+        # Wait for expunge interval to cleanup Memory
+        wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
 
         self.debug("Checking memory resource count for project: %s" % self.project.name)
-        resource_count = get_updated_resource_count(self.apiclient, account=self.admin, project=self.project, rtype=9)#RAM 
-        self.debug(resource_count)
-        self.assertEqual(resource_count, 0 , "Resource count for %s should be 0" % get_resource_type(resource_id=9))#RAM         
+        project_list = Project.list(self.apiclient, id=self.project.id, listall=True)
+        self.assertIsInstance(project_list,
+                              list,
+                              "List Projects should return a valid response"
+                              )
+        resource_count_after_delete = project_list[0].memorytotal
+        self.assertEqual(resource_count_after_delete, 0 , "Resource count for %s should be 0" % get_resource_type(resource_id=9))#RAM
         return
-
- 

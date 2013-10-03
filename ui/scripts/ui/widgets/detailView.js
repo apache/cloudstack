@@ -223,9 +223,11 @@
                                         }
 
                                         if (messages.complete) {
-                                            cloudStack.dialog.notice({
-                                                message: messages.complete(args2.data)
-                                            });
+                                        	if( messages.complete(args2.data) != null && messages.complete(args2.data).length > 0) {
+                                        		 cloudStack.dialog.notice({
+                                                     message: messages.complete(args2.data)
+                                                 });
+                                        	} 
                                         }
                                         if (additional && additional.complete) additional.complete($.extend(true, args, {
                                             $detailView: $detailView
