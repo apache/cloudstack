@@ -21,6 +21,7 @@
     font-size: 12px;
     list-style: none;
     float: left;
+    cursor: pointer;
 
     &:after {
         content: ">";
@@ -29,10 +30,10 @@
         margin-left: 10px;
     }
 
-    &.active {
+    &.active, &:hover {
         color: darken(#ccc, 30%);
 
-        &:after {
+        &:after:not(:hover) {
             content: "";
         }
     }
