@@ -71,6 +71,14 @@ class Services:
                                   "name": "Test Network - Portable IP",
                                   "displaytext": "Test Network - Portable IP",
                         },
+                        "network1": {
+                                  "name": "Test Network 1 - Portable IP",
+                                  "displaytext": "Test Network 1 - Portable IP",
+                        },
+                        "network2": {
+                                  "name": "Test Network 2 - Portable IP",
+                                  "displaytext": "Test Network 2 - Portable IP",
+                        },
                         "disk_offering": {
                                     "displaytext": "Small Disk",
                                     "name": "Small Disk",
@@ -86,6 +94,30 @@ class Services:
                                 # Create a small virtual machine instance with disk offering
                                 {
                                  "displayname": "testserver",
+                                  "username": "root", # VM creds for SSH
+                                  "password": "password",
+                                  "ssh_port": 22,
+                                  "hypervisor": 'XenServer',
+                                  "privateport": 22,
+                                  "publicport": 22,
+                                  "protocol": 'TCP',
+                        },
+                        "vm1":
+                                # Create a small virtual machine instance with disk offering
+                                {
+                                 "displayname": "vm1",
+                                  "username": "root", # VM creds for SSH
+                                  "password": "password",
+                                  "ssh_port": 22,
+                                  "hypervisor": 'XenServer',
+                                  "privateport": 22,
+                                  "publicport": 22,
+                                  "protocol": 'TCP',
+                        },
+                        "vm2":
+                                # Create a small virtual machine instance with disk offering
+                                {
+                                 "displayname": "vm2",
                                   "username": "root", # VM creds for SSH
                                   "password": "password",
                                   "ssh_port": 22,
@@ -726,7 +758,7 @@ class TestAssociatePublicIp(cloudstackTestCase):
 
         try:
 
-            self.debug("Deploying Virtual Machine")
+            self.debug("DeployingVirtual Machine")
             self.virtual_machine = VirtualMachine.create(
                                             self.apiclient,
                                             self.services["small"],
@@ -1307,3 +1339,214 @@ class TestDeleteAccount(cloudstackTestCase):
                                  id=portableip.ipaddress.id)
 
         return
+
+
+class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
+    """Test Transfer Portable IP Across Networks
+    """
+
+
+    @classmethod
+    def setUpClass(cls):
+        cls.api_client = super(TestPortableIpTransferAcrossNetworks, cls).getClsTestClient().getApiClient()
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.region = get_region(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.pod = get_pod(cls.api_client, cls.zone.id, cls.services)
+        cls.services['mode'] = cls.zone.networktype
+        cls.services["domainid"] = cls.domain.id
+        cls.services["zoneid"] = cls.zone.id
+        cls.services["regionid"] = cls.region.id
+
+        template = get_template(
+            cls.api_client,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
+        # Set Zones and disk offerings
+        cls.services["vm1"]["zoneid"] = cls.zone.id
+        cls.services["vm1"]["template"] = template.id
+        cls.services["vm2"]["zoneid"] = cls.zone.id
+        cls.services["vm2"]["template"] = template.id
+
+        # Set Zones and Network offerings
+        cls.account = Account.create(
+                            cls.api_client,
+                            cls.services["account"],
+                            domainid=cls.domain.id,
+                            admin=True
+                            )
+
+        cls.network_offering = NetworkOffering.create(
+                                            cls.api_client,
+                                            cls.services["network_offering"],
+                                            conservemode=False
+                                            )
+
+        # Enable Network offering
+        cls.network_offering.update(cls.api_client, state='Enabled')
+        cls.service_offering = ServiceOffering.create(
+            cls.api_client,
+            cls.services["service_offering"]
+        )
+
+        cls.debug("creating networks and virtual machines in each network for portable ip transfer tests: ")
+        cls.network1 = Network.create(
+                                    cls.api_client,
+                                    cls.services["network1"],
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
+                                    networkofferingid=cls.network_offering.id,
+                                    zoneid=cls.zone.id
+                                    )
+
+        cls.virtual_machine1 = VirtualMachine.create(
+                                            cls.api_client,
+                                            cls.services["vm1"],
+                                            accountid=cls.account.name,
+                                            domainid=cls.account.domainid,
+                                            serviceofferingid=cls.service_offering.id,
+                                            networkids = [cls.network1.id],
+                                          )
+        cls.network2 = Network.create(
+                                    cls.api_client,
+                                    cls.services["network2"],
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
+                                    networkofferingid=cls.network_offering.id,
+                                    zoneid=cls.zone.id
+                                    )
+        cls.virtual_machine2 = VirtualMachine.create(
+                                            cls.api_client,
+                                            cls.services["vm2"],
+                                            accountid=cls.account.name,
+                                            domainid=cls.account.domainid,
+                                            serviceofferingid=cls.service_offering.id,
+                                            networkids = [cls.network2.id],
+                                            )
+        cls._cleanup = [cls.account, cls.network_offering]
+
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            #Cleanup resources used
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+
+        #create new portable ip range
+        self.portable_ip_range_services = get_portable_ip_range_services(self.config)
+
+        if self.portable_ip_range_services is None:
+            self.skipTest('Failed to read config values related to portable ip range')
+
+        self.portable_ip_range_services["regionid"] = self.region.id
+
+        self.debug("Creating new portable IP range with startip:%s and endip:%s" %
+                    (str(self.portable_ip_range_services["startip"]),
+                     str(self.portable_ip_range_services["endip"])))
+
+        #create new portable ip range
+        self.portable_ip_range = PortablePublicIpRange.create(self.apiclient,
+                                                             self.portable_ip_range_services)
+
+        self.debug("Created new portable IP range with startip:%s and endip:%s and id:%s" %
+                    (self.portable_ip_range.startip,
+                     self.portable_ip_range.endip,
+                     self.portable_ip_range.id))
+
+        self.cleanup = [self.portable_ip_range, ]
+        return
+
+    def tearDown(self):
+        try:
+            #Clean up, terminate the resources created
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(tags=["advanced","swamy"])
+    def test_list_portable_ip_range_non_root_admin(self):
+        """Test list portable ip ranges with non admin root account
+        """
+        # 1. Create new network 1 and associate portable IP 1
+        # 2. Have at least 1 VM in network1
+        # 3. Create a new network 2 and at least 1 VM in network 2
+        # 2. enable static NAT on portable IP 1 with a VM in network 2
+        # 3. SSH to the VM in network 2
+
+        portableip = PublicIPAddress.create(
+                                    self.apiclient,
+                                    accountid=self.account.name,
+                                    zoneid=self.zone.id,
+                                    domainid=self.account.domainid,
+                                    networkid=self.network1.id,
+                                    isportable=True
+                                    )
+        self.debug("created public ip address (portable): %s" % portableip.ipaddress.ipaddress)
+        #Create NAT rule
+        self.debug("Creating NAT rule on the portable public ip")
+        # Enable Static NAT for VM
+        StaticNATRule.enable(
+                             self.apiclient,
+                             portableip.ipaddress.id,
+                             self.virtual_machine2.id,
+                             networkid=self.network2.id
+                            )
+        # Open up firewall port for SSH
+        self.debug("Opening firewall on the portable public ip")
+        fw_rule = FireWallRule.create(
+                            self.apiclient,
+                            ipaddressid=portableip.ipaddress.id,
+                            protocol=self.services["natrule"]["protocol"],
+                            cidrlist=[self.services["natrule"]["cidr"]],
+                            startport=self.services["natrule"]["publicport"],
+                            endport=self.services["natrule"]["publicport"]
+                            )
+        static_nat_list = PublicIPAddress.list(
+                                    self.apiclient,
+                                    associatednetworkid=self.network2.id,
+                                    listall=True,
+                                    isstaticnat=True,
+                                    ipaddress=portableip.ipaddress.ipaddress,
+                                    )
+        self.assertEqual(
+                         isinstance(static_nat_list, list),
+                         True,
+                         "List Public IP should return a valid static NAT info that was created on portable ip"
+                         )
+        self.assertTrue(
+                        static_nat_list[0].ipaddress == portableip.ipaddress.ipaddress and static_nat_list[0].virtualmachineid==self.virtual_machine2.id,
+                        "There is some issue in transferring portable ip {} across networks".format(portableip.ipaddress.ipaddress)
+                        )
+        try:
+
+            self.debug("Trying to SSH to ip: %s" % portableip.ipaddress.ipaddress)
+
+            remoteSSHClient(
+                        portableip.ipaddress.ipaddress,
+                        self.services['natrule']["publicport"],
+                        self.virtual_machine2.username,
+                        self.virtual_machine2.password
+                        )
+        except Exception as e:
+            self.fail("Exception while SSHing : %s" % e)
+
+        self.debug("disassociating portable ip: %s" % portableip.ipaddress.ipaddress)
+        portableip.delete(self.apiclient)
+
+
+
+
+
+
