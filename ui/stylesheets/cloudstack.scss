@@ -225,6 +225,24 @@ body {
     max-height: 85%;
 }
 
+.detail-view {
+    .ui-tabs-nav {
+        @include csui-tabs;
+
+        li.ui-state-active {
+            @include csui-tab-active;
+        }
+    }
+
+    .detail-group {
+        @include csui-details;
+    }
+
+    .ui-tabs-hide {
+        display: none;
+    }
+}
+
 // Panel toolbars
 .toolbar {
     @include csui-toolbar;
