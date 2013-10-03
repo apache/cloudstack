@@ -42,6 +42,7 @@ import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AclGroupResponse;
@@ -1085,16 +1086,26 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
+    public List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms) {
+        return createUserVmResponse(null, objectName, userVms);
+    }
+
+    @Override
     public List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVm... userVms) {
+        return createUserVmResponse(null, objectName, userVms);
+    }
+
+    @Override
+    public List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, UserVm... userVms) {
         List<UserVmJoinVO> viewVms = ApiDBUtils.newUserVmView(userVms);
-        return ViewResponseHelper.createUserVmResponse(objectName, details, viewVms.toArray(new UserVmJoinVO[viewVms.size()]));
+        return ViewResponseHelper.createUserVmResponse(view, objectName, details, viewVms.toArray(new UserVmJoinVO[viewVms.size()]));
 
     }
 
     @Override
-    public List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms) {
+    public List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, UserVm... userVms) {
         List<UserVmJoinVO> viewVms = ApiDBUtils.newUserVmView(userVms);
-        return ViewResponseHelper.createUserVmResponse(objectName, viewVms.toArray(new UserVmJoinVO[viewVms.size()]));
+        return ViewResponseHelper.createUserVmResponse(view, objectName, viewVms.toArray(new UserVmJoinVO[viewVms.size()]));
     }
 
     @Override

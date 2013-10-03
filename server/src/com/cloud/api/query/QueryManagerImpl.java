@@ -41,6 +41,7 @@ import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
@@ -48,6 +49,7 @@ import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
@@ -715,7 +717,11 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<UserVmResponse> searchForUserVMs(ListVMsCmd cmd) {
         Pair<List<UserVmJoinVO>, Integer> result = searchForUserVMsInternal(cmd);
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
-        List<UserVmResponse> vmResponses = ViewResponseHelper.createUserVmResponse("virtualmachine", cmd.getDetails(),
+        ResponseView respView = ResponseView.User;
+        if (cmd instanceof ListVMsCmdByAdmin) {
+            respView = ResponseView.Admin;
+        }
+        List<UserVmResponse> vmResponses = ViewResponseHelper.createUserVmResponse(respView, "virtualmachine", cmd.getDetails(),
                 result.first().toArray(new UserVmJoinVO[result.first().size()]));
         response.setResponses(vmResponses, result.second());
         return response;
@@ -764,10 +770,11 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         // ignore these search requests if it's not an admin
-        if (_accountMgr.isAdmin(caller.getType())) {
-            c.addCriteria(Criteria.PODID, cmd.getPodId());
-            c.addCriteria(Criteria.HOSTID, cmd.getHostId());
-            c.addCriteria(Criteria.STORAGE_ID, cmd.getStorageId());
+        if (cmd instanceof ListVMsCmdByAdmin) {
+            ListVMsCmdByAdmin adCmd = (ListVMsCmdByAdmin)cmd;
+            c.addCriteria(Criteria.PODID, adCmd.getPodId());
+            c.addCriteria(Criteria.HOSTID, adCmd.getHostId());
+            c.addCriteria(Criteria.STORAGE_ID, adCmd.getStorageId());
         }
 
         if (!permittedAccounts.isEmpty()) {

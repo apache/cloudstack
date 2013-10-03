@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AclGroupResponse;
 import org.apache.cloudstack.api.response.AclRoleResponse;
@@ -118,11 +119,11 @@ public class ViewResponseHelper {
     }
 
 
-    public static List<UserVmResponse> createUserVmResponse(String objectName, UserVmJoinVO... userVms) {
-        return createUserVmResponse(objectName, EnumSet.of(VMDetails.all), userVms);
+    public static List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, UserVmJoinVO... userVms) {
+        return createUserVmResponse(view, objectName, EnumSet.of(VMDetails.all), userVms);
     }
 
-    public static List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVmJoinVO... userVms) {
+    public static List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, UserVmJoinVO... userVms) {
         Account caller = CallContext.current().getCallingAccount();
 
         Hashtable<Long, UserVmResponse> vmDataList = new Hashtable<Long, UserVmResponse>();
@@ -133,10 +134,10 @@ public class ViewResponseHelper {
             UserVmResponse userVmData = vmDataList.get(userVm.getId());
             if ( userVmData == null ){
                 // first time encountering this vm
-                userVmData = ApiDBUtils.newUserVmResponse(objectName, userVm, details, caller);
+                userVmData = ApiDBUtils.newUserVmResponse(view, objectName, userVm, details, caller);
             } else{
                 // update nics, securitygroups, tags, affinitygroups for 1 to many mapping fields
-                userVmData = ApiDBUtils.fillVmDetails(userVmData, userVm);
+                userVmData = ApiDBUtils.fillVmDetails(view, userVmData, userVm);
             }
             vmDataList.put(userVm.getId(), userVmData);
         }

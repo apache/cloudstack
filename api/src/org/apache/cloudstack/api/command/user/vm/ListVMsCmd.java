@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -27,23 +29,20 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.IsoVmResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
-import org.apache.cloudstack.api.response.PodResponse;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 
 
-@APICommand(name = "listVirtualMachines", description="List the virtual machines owned by the account.", responseObject=UserVmResponse.class)
+@APICommand(name = "listVirtualMachines", description = "List the virtual machines owned by the account.", responseObject = UserVmResponse.class, responseView = ResponseView.User)
 public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
 
@@ -57,20 +56,12 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
             description="the group ID")
     private Long groupId;
 
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class,
-            description="the host ID")
-    private Long hostId;
-
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
             description="the ID of the virtual machine")
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="name of the virtual machine")
     private String name;
-
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class,
-            description="the pod ID")
-    private Long podId;
 
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="state of the virtual machine")
     private String state;
@@ -88,10 +79,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
 
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the target hypervisor for the template")
     private String hypervisor;
-
-    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.UUID, entityType=StoragePoolResponse.class,
-            description="the storage ID where vm's volumes belong to")
-    private Long storageId;
 
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.LIST, collectionType=CommandType.STRING,
             description="comma separated list of host details requested, " +
@@ -122,20 +109,12 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
         return groupId;
     }
 
-    public Long getHostId() {
-        return hostId;
-    }
-
     public Long getId() {
         return id;
     }
 
     public String getName() {
         return name;
-    }
-
-    public Long getPodId() {
-        return podId;
     }
 
     public String getState() {
@@ -162,9 +141,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
         return hypervisor;
     }
 
-    public Long getStorageId() {
-        return storageId;
-    }
 
     public Long getTemplateId() {
         return templateId;
@@ -219,6 +195,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     public void execute(){
         ListResponse<UserVmResponse> response = _queryService.searchForUserVMs(this);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

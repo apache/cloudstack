@@ -26,15 +26,16 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
@@ -46,8 +47,8 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.vm.VmStats;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VmStats;
 
 
 @Component
@@ -68,7 +69,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         VmDetailSearch.and("idIN", VmDetailSearch.entity().getId(), SearchCriteria.Op.IN);
         VmDetailSearch.done();
 
-        this._count = "select count(distinct id) from user_vm_view WHERE ";
+        _count = "select count(distinct id) from user_vm_view WHERE ";
 
         activeVmByIsoSearch = createSearchBuilder();
         activeVmByIsoSearch.and("isoId", activeVmByIsoSearch.entity().getIsoId(), SearchCriteria.Op.EQ);
@@ -89,7 +90,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
 
 
     @Override
-    public UserVmResponse newUserVmResponse(String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
+    public UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
         UserVmResponse userVmResponse = new UserVmResponse();
 
         if (userVm.getHypervisorType() != null){
@@ -123,7 +124,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         }
         userVmResponse.setZoneId(userVm.getDataCenterUuid());
         userVmResponse.setZoneName(userVm.getDataCenterName());
-        if ((caller == null) || (_accountMgr.isRootAdmin(caller.getId()))) {
+        if (view == ResponseView.Admin || ((view == null) && ((caller == null) || (_accountMgr.isRootAdmin(caller.getId()))))) {
             userVmResponse.setInstanceName(userVm.getInstanceName());
             userVmResponse.setHostId(userVm.getHostUuid());
             userVmResponse.setHostName(userVm.getHostName());
@@ -177,7 +178,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
 
                 userVmResponse.setNetworkKbsWrite((long) vmStats.getNetworkWriteKBs());
 
-                if ((userVm.getHypervisorType() != null) 
+                if ((userVm.getHypervisorType() != null)
                         && (userVm.getHypervisorType().equals(HypervisorType.KVM)
                         || userVm.getHypervisorType().equals(HypervisorType.XenServer))) { // support KVM and XenServer only util 2013.06.25
                     userVmResponse.setDiskKbsRead((long) vmStats.getDiskReadKBs());
@@ -274,7 +275,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
     }
 
     @Override
-    public UserVmResponse setUserVmResponse(UserVmResponse userVmData, UserVmJoinVO uvo) {
+    public UserVmResponse setUserVmResponse(ResponseView view, UserVmResponse userVmData, UserVmJoinVO uvo) {
         Long securityGroupId = uvo.getSecurityGroupId();
         if (securityGroupId != null && securityGroupId.longValue() != 0) {
             SecurityGroupResponse resp = new SecurityGroupResponse();

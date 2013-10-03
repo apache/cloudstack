@@ -22,6 +22,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ TYPE })
 public @interface APICommand {
@@ -36,4 +38,6 @@ public @interface APICommand {
     boolean includeInApiDoc() default true;
 
     String since() default "";
+    
+    ResponseView responseView() default ResponseView.Admin;
 }

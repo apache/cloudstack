@@ -28,6 +28,7 @@ import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AclGroupResponse;
@@ -218,6 +219,10 @@ public interface ResponseGenerator {
     List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms);
 
     List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVm... userVms);
+
+    List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, UserVm... userVms);
+
+    List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, UserVm... userVms);
 
     SystemVmResponse createSystemVmResponse(VirtualMachine systemVM);
 

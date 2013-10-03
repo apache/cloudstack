@@ -76,4 +76,9 @@ public interface ResponseObject {
      * @param jobStatus
      */
     void setJobStatus(Integer jobStatus);
+
+    public enum ResponseView {
+        Admin,
+        User
+    }
 }

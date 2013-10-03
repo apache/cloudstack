@@ -91,6 +91,7 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
@@ -176,7 +177,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     protected ApiAsyncJobDispatcher _asyncDispatcher;
     private static int _workerCount = 0;
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-    private static Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
+    private static Map<String, List<Class<?>>> _apiNameCmdClassMap = new HashMap<String, List<Class<?>>>();
 
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
@@ -232,11 +233,12 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 throw new CloudRuntimeException(String.format("%s is claimed as a API command, but it doesn't have @APICommand annotation", cmdClass.getName()));
             }
             String apiName = at.name();
-            if (_apiNameCmdClassMap.containsKey(apiName)) {
-                s_logger.error("API Cmd class " + cmdClass.getName() + " has non-unique apiname" + apiName);
-                continue;
+            List<Class<?>> apiCmdList = _apiNameCmdClassMap.get(apiName);
+            if (apiCmdList == null) {
+                apiCmdList = new ArrayList<Class<?>>();
+                _apiNameCmdClassMap.put(apiName, apiCmdList);
             }
-            _apiNameCmdClassMap.put(apiName, cmdClass);
+            apiCmdList.add(cmdClass);
         }
 
         encodeApiResponse = Boolean.valueOf(_configDao.getValue(Config.EncodeApiResponse.key()));
@@ -882,7 +884,31 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     }
 
     private Class<?> getCmdClass(String cmdName) {
-        return _apiNameCmdClassMap.get(cmdName);
+        List<Class<?>> cmdList = _apiNameCmdClassMap.get(cmdName);
+        if (cmdList == null || cmdList.size() == 0)
+            return null;
+        else if (cmdList.size() == 1)
+            return cmdList.get(0);
+        else {
+            // determine the cmd class based on calling context
+            ResponseView view = ResponseView.User;
+            if (_accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())) {
+                view = ResponseView.Admin;
+            }
+            for (Class<?> cmdClass : cmdList) {
+                APICommand at = cmdClass.getAnnotation(APICommand.class);
+                if (at == null) {
+                    throw new CloudRuntimeException(String.format("%s is claimed as a API command, but it doesn't have @APICommand annotation", cmdClass.getName()));
+                }
+                if (at.responseView() == null) {
+                    throw new CloudRuntimeException(String.format(
+                            "%s @APICommand annotation should specify responseView attribute to distinguish multiple command classes for a single api name", cmdClass.getName()));
+                } else if (at.responseView() == view) {
+                    return cmdClass;
+                }
+            }
+            return null;
+        }
     }
 
     // FIXME: rather than isError, we might was to pass in the status code to give more flexibility

@@ -33,6 +33,7 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AclGroupResponse;
 import org.apache.cloudstack.api.response.AclRoleResponse;
@@ -1423,12 +1424,12 @@ public class ApiDBUtils {
         return _domainRouterJoinDao.newDomainRouterView(vr);
     }
 
-    public static UserVmResponse newUserVmResponse(String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
-        return _userVmJoinDao.newUserVmResponse(objectName, userVm, details, caller);
+    public static UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
+        return _userVmJoinDao.newUserVmResponse(view, objectName, userVm, details, caller);
     }
 
-    public static UserVmResponse fillVmDetails(UserVmResponse vmData, UserVmJoinVO vm){
-        return _userVmJoinDao.setUserVmResponse(vmData, vm);
+    public static UserVmResponse fillVmDetails(ResponseView view, UserVmResponse vmData, UserVmJoinVO vm) {
+        return _userVmJoinDao.setUserVmResponse(view, vmData, vm);
     }
 
     public static List<UserVmJoinVO> newUserVmView(UserVm... userVms){
