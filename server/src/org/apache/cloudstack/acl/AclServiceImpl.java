@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -49,6 +50,11 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder.JoinType;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
 @Local(value = {AclService.class})
@@ -507,14 +513,53 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
 
     @Override
     public List<AclRole> getAclRoles(long accountId) {
-        // TODO Auto-generated method stub
-        return null;
+
+        SearchBuilder<AclGroupAccountMapVO> groupSB = _aclGroupAccountMapDao.createSearchBuilder();
+        groupSB.and("account", groupSB.entity().getAccountId(), Op.EQ);
+
+        GenericSearchBuilder<AclGroupRoleMapVO, Long> roleSB = _aclGroupRoleMapDao.createSearchBuilder(Long.class);
+        roleSB.selectField(roleSB.entity().getAclRoleId());
+        roleSB.join("accountgroupjoin", groupSB, groupSB.entity().getAclGroupId(), roleSB.entity().getAclGroupId(),
+                JoinType.INNER);
+        roleSB.done();
+        SearchCriteria<Long> roleSc = roleSB.create();
+        roleSc.setJoinParameters("accountgroupjoin", "account", accountId);
+
+        List<Long> roleIds = _aclGroupRoleMapDao.customSearch(roleSc, null);
+
+        SearchBuilder<AclRoleVO> sb = _aclRoleDao.createSearchBuilder();
+        sb.and("ids", sb.entity().getId(), Op.IN);
+        SearchCriteria<AclRoleVO> sc = sb.create();
+        sc.setParameters("ids", roleIds.toArray(new Object[roleIds.size()]));
+        List<AclRoleVO> roles = _aclRoleDao.customSearch(sc, null);
+
+        return new ArrayList<AclRole>(roles);
     }
 
     @Override
     public boolean isAPIAccessibleForRoles(String apiName, List<AclRole> roles) {
-        // TODO Auto-generated method stub
-        return false;
+
+        boolean accessible = false;
+
+        List<Long> roleIds = new ArrayList<Long>();
+        for (AclRole role : roles) {
+            roleIds.add(role.getId());
+        }
+
+        SearchBuilder<AclApiPermissionVO> sb = _apiPermissionDao.createSearchBuilder();
+        sb.and("apiName", sb.entity().getApiName(), Op.EQ);
+        sb.and("roleId", sb.entity().getAclRoleId(), Op.IN);
+
+        SearchCriteria<AclApiPermissionVO> sc = sb.create();
+        sc.setParameters("roleId", roleIds.toArray(new Object[roleIds.size()]));
+
+        List<AclApiPermissionVO> permissions = _apiPermissionDao.customSearch(sc, null);
+
+        if (permissions != null && !permissions.isEmpty()) {
+            accessible = true;
+        }
+
+        return accessible;
     }
 
 }
