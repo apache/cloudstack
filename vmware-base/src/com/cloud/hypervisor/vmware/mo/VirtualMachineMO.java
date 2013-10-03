@@ -908,8 +908,9 @@ public class VirtualMachineMO extends BaseMO {
 		assert(vmdkDatastorePath != null);
 		assert(morDs != null);
 
+		int ideControllerKey = getIDEDeviceControllerKey();
 		if(controllerKey < 0) {
-            controllerKey = getIDEDeviceControllerKey();
+            controllerKey = ideControllerKey;
         }
 
 		VirtualDisk newDisk = new VirtualDisk();
@@ -952,6 +953,8 @@ public class VirtualMachineMO extends BaseMO {
 		}
 
 		int deviceNumber = getNextDeviceNumber(controllerKey);
+		if(controllerKey != ideControllerKey && VmwareHelper.isReservedScsiDeviceNumber(deviceNumber))
+			deviceNumber++;
 
 		newDisk.setControllerKey(controllerKey);
 	    newDisk.setKey(-deviceNumber);
@@ -1714,9 +1717,13 @@ public class VirtualMachineMO extends BaseMO {
 
 	public int getNextScsiDiskDeviceNumber() throws Exception {
 		int scsiControllerKey = getScsiDeviceControllerKey();
-		return getNextDeviceNumber(scsiControllerKey);
+		int deviceNumber = getNextDeviceNumber(scsiControllerKey);
+		if(VmwareHelper.isReservedScsiDeviceNumber(deviceNumber))
+			deviceNumber++;
+		
+		return deviceNumber;
 	}
-
+	
 	public int getScsiDeviceControllerKey() throws Exception {
 	    List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
 	    	getDynamicProperty(_mor, "config.hardware.device");
@@ -1732,7 +1739,7 @@ public class VirtualMachineMO extends BaseMO {
 	    assert(false);
 	    throw new Exception("SCSI Controller Not Found");
 	}
-
+	
 	public int getScsiDeviceControllerKeyNoException() throws Exception {
 	    List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
 	    	getDynamicProperty(_mor, "config.hardware.device");
