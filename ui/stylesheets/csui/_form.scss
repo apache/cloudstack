@@ -27,7 +27,7 @@
 
     border-radius: 3px;
     border: 1px solid black;
-    font-size: 14px;
+    font-size: 12px;
     padding-right: 25px;
     padding-left: 10px;
     padding-top: 10px;
@@ -52,11 +52,11 @@
 }
 
 @mixin csui-label {
-    font-size: 14px;
+    font-size: 12px;
 }
 
 @mixin csui-textfield {
-    font-size: 13px;
+    font-size: 12px;
     padding: 10px;
     margin-top: 10px;
     margin-bottom: 10px;
@@ -95,8 +95,6 @@
         @include span-columns(12);
 
         display: inline-block; // Needed for legacy code in JS
-        margin-top: 5px;
-        margin-bottom: 5px;
 
         label {
             @include span-columns(3);
