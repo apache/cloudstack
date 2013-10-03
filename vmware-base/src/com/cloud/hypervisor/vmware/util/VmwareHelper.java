@@ -72,6 +72,10 @@ import com.cloud.utils.exception.ExceptionUtil;
 
 public class VmwareHelper {
     private static final Logger s_logger = Logger.getLogger(VmwareHelper.class);
+    
+	public static boolean isReservedScsiDeviceNumber(int deviceNumber) {
+		return deviceNumber == 7;
+	}
 
 	public static VirtualDevice prepareNicDevice(VirtualMachineMO vmMo, ManagedObjectReference morNetwork, VirtualEthernetCardType deviceType,
 		String portGroupName, String macAddress, int deviceNumber, int contextNumber, boolean conntected, boolean connectOnStart) throws Exception {
@@ -178,11 +182,15 @@ public class VmwareHelper {
         backingInfo.setFileName(vmdkDatastorePath);
         disk.setBacking(backingInfo);
 
+        int ideControllerKey = vmMo.getIDEDeviceControllerKey();
 		if(controllerKey < 0)
-			controllerKey = vmMo.getIDEDeviceControllerKey();
-        if(deviceNumber < 0)
+			controllerKey = ideControllerKey;
+        if(deviceNumber < 0) {
         	deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
-		disk.setControllerKey(controllerKey);
+        	if(controllerKey != ideControllerKey && isReservedScsiDeviceNumber(deviceNumber))
+        		deviceNumber++;
+        }
+        disk.setControllerKey(controllerKey);
 
 	    disk.setKey(-contextNumber);
 	    disk.setUnitNumber(deviceNumber);
@@ -246,12 +254,16 @@ public class VmwareHelper {
 			throw new Exception("Unsupported disk backing: " + parentBacking.getClass().getCanonicalName());
 		}
 
+		int ideControllerKey = vmMo.getIDEDeviceControllerKey();
 		if(controllerKey < 0)
-			controllerKey = vmMo.getIDEDeviceControllerKey();
+			controllerKey = ideControllerKey;
 		disk.setControllerKey(controllerKey);
-		if(deviceNumber < 0)
+		if(deviceNumber < 0) {
 			deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
-
+			if(controllerKey != ideControllerKey && isReservedScsiDeviceNumber(deviceNumber))
+				deviceNumber++;
+		}
+		
 	    disk.setKey(-contextNumber);
 	    disk.setUnitNumber(deviceNumber);
 	    disk.setCapacityInKB(sizeInMb*1024);
@@ -282,11 +294,15 @@ public class VmwareHelper {
 	        backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.value());
 			disk.setBacking(backingInfo);
 			
+			int ideControllerKey = vmMo.getIDEDeviceControllerKey();
 			if(controllerKey < 0)
-				controllerKey = vmMo.getIDEDeviceControllerKey();
-	        if(deviceNumber < 0)
+				controllerKey = ideControllerKey;
+	        if(deviceNumber < 0) {
 	        	deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
-
+	        	if(controllerKey != ideControllerKey && isReservedScsiDeviceNumber(deviceNumber))
+	        		deviceNumber++;
+	        }
+	        
 			disk.setControllerKey(controllerKey);
 		    disk.setKey(-contextNumber);
 		    disk.setUnitNumber(deviceNumber);
@@ -332,11 +348,15 @@ public class VmwareHelper {
 
         disk.setBacking(backingInfo);
 
+        int ideControllerKey = vmMo.getIDEDeviceControllerKey();
 		if(controllerKey < 0)
-			controllerKey = vmMo.getIDEDeviceControllerKey();
-        if(deviceNumber < 0)
+			controllerKey = ideControllerKey;
+        if(deviceNumber < 0) {
         	deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
-
+        	if(controllerKey != ideControllerKey && isReservedScsiDeviceNumber(deviceNumber))
+        		deviceNumber++;
+        }
+        
 		disk.setControllerKey(controllerKey);
 	    disk.setKey(-contextNumber);
 	    disk.setUnitNumber(deviceNumber);

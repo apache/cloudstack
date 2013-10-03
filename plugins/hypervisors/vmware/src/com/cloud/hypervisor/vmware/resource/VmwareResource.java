@@ -2827,7 +2827,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 String[] diskChain = syncDiskChain(dcMo, vmMo, vmSpec, 
                     	vol, matchingExistingDisk,
                     	dataStoresDetails);
-                
+                if(controllerKey == scsiControllerKey && VmwareHelper.isReservedScsiDeviceNumber(scsiUnitNumber))
+                	scsiUnitNumber++;
                 device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, 
                 	diskChain, 
                 	volumeDsDetails.first(),
