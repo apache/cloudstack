@@ -22,6 +22,7 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
@@ -129,8 +130,9 @@ public class ClusterServiceServletContainer {
                     final DefaultHttpServerConnection conn = new DefaultHttpServerConnection();
                     conn.bind(socket, _params);
 
-                    _executor.execute(new Runnable() {
-                    	public void run() {
+                    _executor.execute(new ManagedContextRunnable() {
+                    	@Override
+                        protected void runInContext() {
                             HttpContext context = new BasicHttpContext(null);
                             try {
                             	while(!Thread.interrupted() && conn.isOpen()) {

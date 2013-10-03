@@ -43,7 +43,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
@@ -74,6 +73,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeAp
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
@@ -1243,13 +1243,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return (PrimaryDataStoreInfo) dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
     }
 
-    protected class StorageGarbageCollector implements Runnable {
+    protected class StorageGarbageCollector extends ManagedContextRunnable {
 
         public StorageGarbageCollector() {
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 s_logger.trace("Storage Garbage Collection Thread is running.");
 

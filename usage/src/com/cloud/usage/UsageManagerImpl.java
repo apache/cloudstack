@@ -35,10 +35,10 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContext;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.usage.UsageTypes;
-
 import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
@@ -279,7 +279,17 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         return true;
     }
 
+    @Override
     public void run() {
+        new ManagedContextRunnable() {
+            @Override
+            protected void runInContext() {
+                runInContext();
+            }
+        };
+    }
+    
+    protected void runInContext() {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("starting usage job...");
         }
@@ -1651,8 +1661,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         m_usageVMSnapshotDao.persist(vsVO);
     }
 
-    private class Heartbeat implements Runnable {
-        public void run() {
+    private class Heartbeat extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
             Transaction usageTxn = Transaction.open(Transaction.USAGE_DB);
             try {
                 if(!m_heartbeatLock.lock(3)) { // 3 second timeout
@@ -1757,8 +1768,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
     }
     
-    private class SanityCheck implements Runnable {
-        public void run() {
+    private class SanityCheck extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
             UsageSanityChecker usc = new UsageSanityChecker();
             try {
                 String errors = usc.runSanityCheck();

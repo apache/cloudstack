@@ -18,12 +18,13 @@ package com.cloud.usage.parser;
 
 import java.util.Date;
 
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 
-public abstract class UsageParser implements Runnable {
+public abstract class UsageParser extends ManagedContextRunnable {
     public static final Logger s_logger = Logger.getLogger(UsageParser.class.getName());
     
-    public void run() {
+    protected void runInContext() {
         try {
             parse(null);
         } catch (Exception e) {

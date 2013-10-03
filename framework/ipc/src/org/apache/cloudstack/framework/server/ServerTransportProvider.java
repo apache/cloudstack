@@ -31,6 +31,7 @@ import org.apache.cloudstack.framework.transport.TransportEndpoint;
 import org.apache.cloudstack.framework.transport.TransportEndpointSite;
 import org.apache.cloudstack.framework.transport.TransportPdu;
 import org.apache.cloudstack.framework.transport.TransportProvider;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -132,11 +133,10 @@ public class ServerTransportProvider implements TransportProvider {
 	
 	@Override
 	public void requestSiteOutput(final TransportEndpointSite site) {
-		_executor.execute(new Runnable() {
-
-			@Override
-			public void run() {
-				try {
+		_executor.execute(new ManagedContextRunnable() {
+            @Override
+            protected void runInContext() {
+            	try {
 					site.processOutput();
 					site.ackOutputProcessSignal();
 				} catch(Throwable e) {

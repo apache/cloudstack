@@ -18,11 +18,12 @@ package com.cloud.storage.template;
 
 import java.io.File;
 
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 
 import com.cloud.storage.StorageLayer;
 
-public abstract class TemplateDownloaderBase implements TemplateDownloader {
+public abstract class TemplateDownloaderBase extends ManagedContextRunnable implements TemplateDownloader {
     private static final Logger s_logger = Logger.getLogger(TemplateDownloaderBase.class);
     
     protected String _downloadUrl;
@@ -123,7 +124,7 @@ public abstract class TemplateDownloaderBase implements TemplateDownloader {
 	}
     
     @Override
-    public void run() {
+    protected void runInContext() {
         try {
             download(_resume, _callback);
         } catch (Exception e) {

@@ -663,7 +663,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                     services.put("SecurityGroup", "SecurityGroupProvider");
                 }
 
-                if (uniqueName.equals(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService.toString()) || uniqueName.equalsIgnoreCase(externalOfferingName)) {
+                if (uniqueName.equals(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService.toString()) || uniqueName.equals(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService.toString() + "-redundant") || uniqueName.equalsIgnoreCase(externalOfferingName)) {
                     if (externalOfferingName != null && uniqueName.equalsIgnoreCase(externalOfferingName)) {
                         services.put("SourceNat", "JuniperSRX");
                         services.put("PortForwarding", "JuniperSRX");

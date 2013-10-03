@@ -119,6 +119,7 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.configuration.Config;
@@ -181,11 +182,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
     public ApiServer() {
-    }
-
-    @PostConstruct
-    void initComponent() {
-        CallContext.init(_entityMgr);
     }
 
     @Override
@@ -976,7 +972,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
     }
 
-    static class WorkerTask implements Runnable {
+    static class WorkerTask extends ManagedContextRunnable {
         private final HttpService _httpService;
         private final HttpServerConnection _conn;
 
@@ -986,7 +982,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             HttpContext context = new BasicHttpContext(null);
             try {
                 while (!Thread.interrupted() && _conn.isOpen()) {

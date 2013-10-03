@@ -21,8 +21,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.context.ServerContexts;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -64,17 +63,14 @@ public class SystemVmLoadScanner<T> {
     }
 
     private Runnable getCapacityScanTask() {
-        return new Runnable() {
+        return new ManagedContextRunnable() {
 
             @Override
-            public void run() {
-                ServerContexts.registerSystemContext();
+            protected void runInContext() {
                 try {
                     reallyRun();
                 } catch (Throwable e) {
                     s_logger.warn("Unexpected exception " + e.getMessage(), e);
-                } finally {
-                    ServerContexts.unregisterSystemContext();
                 }
             }
 

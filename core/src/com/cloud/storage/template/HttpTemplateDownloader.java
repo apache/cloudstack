@@ -40,7 +40,7 @@ import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 
 import com.cloud.agent.api.storage.Proxy;
@@ -52,7 +52,7 @@ import com.cloud.utils.UriUtils;
  * Download a template file using HTTP
  *
  */
-public class HttpTemplateDownloader implements TemplateDownloader {
+public class HttpTemplateDownloader extends ManagedContextRunnable implements TemplateDownloader {
     public static final Logger s_logger = Logger.getLogger(HttpTemplateDownloader.class.getName());
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
@@ -350,7 +350,7 @@ public class HttpTemplateDownloader implements TemplateDownloader {
     }
 
     @Override
-    public void run() {
+    protected void runInContext() {
         try {
             download(resume, completionCallback);
         } catch (Throwable t) {

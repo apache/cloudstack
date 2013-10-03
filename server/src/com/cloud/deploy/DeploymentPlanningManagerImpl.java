@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
-import java.util.TimerTask;
 import java.util.TreeSet;
 
 import javax.ejb.Local;
@@ -43,6 +42,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -688,9 +688,9 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         return false;
     }
 
-    class HostReservationReleaseChecker extends TimerTask {
+    class HostReservationReleaseChecker extends ManagedContextTimerTask {
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 s_logger.debug("Checking if any host reservation can be released ... ");
                 checkHostReservations();

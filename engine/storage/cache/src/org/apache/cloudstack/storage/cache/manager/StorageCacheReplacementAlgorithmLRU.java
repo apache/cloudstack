@@ -60,7 +60,10 @@ public class StorageCacheReplacementAlgorithmLRU implements StorageCacheReplacem
 
     @PostConstruct
     public void initialize() {
-        unusedTimeInterval = NumbersUtil.parseInt(configDao.getValue(Config.StorageCacheReplacementLRUTimeInterval.key()), 30);
+        /* Avoid using configDao at this time, we can't be sure that the database is already upgraded 
+         * and there might be fatal errors when using a dao.
+         */
+        //unusedTimeInterval = NumbersUtil.parseInt(configDao.getValue(Config.StorageCacheReplacementLRUTimeInterval.key()), 30);
     }
 
     public void setUnusedTimeInterval(Integer interval) {
@@ -69,6 +72,9 @@ public class StorageCacheReplacementAlgorithmLRU implements StorageCacheReplacem
 
     @Override
     public DataObject chooseOneToBeReplaced(DataStore store) {
+        if (unusedTimeInterval == null) {
+            unusedTimeInterval = NumbersUtil.parseInt(configDao.getValue(Config.StorageCacheReplacementLRUTimeInterval.key()), 30);
+        }
         Calendar cal = Calendar.getInstance();
         cal.setTime(DateUtil.now());
         cal.add(Calendar.DAY_OF_MONTH, -unusedTimeInterval.intValue());

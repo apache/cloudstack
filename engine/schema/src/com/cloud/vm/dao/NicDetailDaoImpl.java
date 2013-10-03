@@ -70,11 +70,6 @@ public class NicDetailDaoImpl extends GenericDaoBase<NicDetailVO, Long> implemen
         sc.setParameters("nicId", nicId);
 
         List<NicDetailVO> results = search(sc, null);
-        /*Map<String, String> details = new HashMap<String, String>(results.size());
-        for (NicDetailVO result : results) {
-            details.put(result.getName(), result.getValue());
-        } */
-
         return results;
     }
 

@@ -29,8 +29,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.configuration.Config;
 import com.cloud.exception.ResourceUnavailableException;
@@ -87,9 +87,9 @@ public class LBHealthCheckManagerImpl extends ManagerBase implements LBHealthChe
         return this.name;
     }
 
-    protected class UpdateLBHealthCheck implements Runnable {
+    protected class UpdateLBHealthCheck extends ManagedContextRunnable {
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 updateLBHealthCheck(Scheme.Public);
                 updateLBHealthCheck(Scheme.Internal);

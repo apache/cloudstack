@@ -23,6 +23,14 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.server.ResourceMetaDataService;
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.vm.NicDetailVO;
+import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicDetailDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -40,15 +48,12 @@ import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.dao.StaticRouteDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.projects.dao.ProjectDao;
-import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.server.TaggedResourceService;
-import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
@@ -57,12 +62,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.Transaction;
 import com.cloud.uuididentity.dao.IdentityDao;
-import com.cloud.vm.NicDetailVO;
-import com.cloud.vm.UserVmDetailVO;
-import com.cloud.vm.dao.NicDao;
-import com.cloud.vm.dao.NicDetailDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 
@@ -118,6 +118,8 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     protected VolumeDetailsDao _volumeDetailDao;
     @Inject
     NicDetailDao _nicDetailDao;
+    @Inject
+    UserVmDetailsDao _userVmDetailDao;
     @Inject
     NicDao _nicDao;
     @Inject
@@ -203,10 +205,10 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
                 } else if (resourceType == TaggedResourceType.Nic){
                     NicDetailVO n = new NicDetailVO(id, key, value);
                     _nicDetailDao.persist(n);
-                } else if (resourceType == TaggedResourceType.UserVm) {
-                    UserVmDetailVO v = new UserVmDetailVO(id, key, value);
-                    _userVmDetail.persist(v);
-                }else{
+                }else if (resourceType == TaggedResourceType.UserVm){
+                    UserVmDetailVO userVmDetail = new UserVmDetailVO(id, key, value);
+                    _userVmDetailDao.persist(userVmDetail);
+                } else {
                     throw new InvalidParameterValueException("The resource type " + resourceType + " is not supported by the API yet");
                 }
 
@@ -227,8 +229,12 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         // TODO - Have a better design here.
         if(resourceType == TaggedResourceType.Volume){
            _volumeDetailDao.removeDetails(id, key);
-        } else {
+        } else if(resourceType == TaggedResourceType.Nic){
             _nicDetailDao.removeDetails(id, key);
+        } else if(resourceType == TaggedResourceType.UserVm){
+            _userVmDetailDao.removeDetails(id, key);
+        } else {
+            throw new InvalidParameterValueException("The resource type " + resourceType + " is not supported by the API yet");
         }
 
         return true;

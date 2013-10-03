@@ -47,6 +47,7 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -1835,9 +1836,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    protected class CleanupTask implements Runnable {
+    protected class CleanupTask extends ManagedContextRunnable {
         @Override
-        public void run() {
+        protected void runInContext() {
             s_logger.trace("VM Operation Thread Running");
             try {
                 _workDao.cleanup(VmOpCleanupWait.value());
@@ -2588,9 +2589,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    protected class TransitionTask implements Runnable {
+    protected class TransitionTask extends ManagedContextRunnable {
         @Override
-        public void run() {
+        protected void runInContext() {
             GlobalLock lock = GlobalLock.getInternLock("TransitionChecking");
             if (lock == null) {
                 s_logger.debug("Couldn't get the global lock");

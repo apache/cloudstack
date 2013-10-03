@@ -38,13 +38,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -843,7 +842,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return true;
     }
 
-    protected class DisconnectTask implements Runnable {
+    protected class DisconnectTask extends ManagedContextRunnable {
         AgentAttache _attache;
         Status.Event _event;
         boolean _investigate;
@@ -855,7 +854,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 if (_investigate == true) {
                     handleDisconnectWithInvestigation(_attache, _event);
@@ -1017,7 +1016,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return attache;
     }
 
-    protected class SimulateStartTask implements Runnable {
+    protected class SimulateStartTask extends ManagedContextRunnable {
         ServerResource resource;
         Map<String, String> details;
         long id;
@@ -1029,8 +1028,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         @Override
-        public void run() {
-            ServerContexts.registerSystemContext();
+        protected void runInContext() {
             try {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Simulating start for resource " + resource.getName() + " id " + id);
@@ -1054,13 +1052,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 }
             } catch (Exception e) {
                 s_logger.warn("Unable to simulate start on resource " + id + " name " + resource.getName(), e);
-            } finally {
-                ServerContexts.unregisterSystemContext();
             }
         }
     }
 
-    protected class HandleAgentConnectTask implements Runnable {
+    protected class HandleAgentConnectTask extends ManagedContextRunnable {
         Link _link;
         Command[] _cmds;
         Request _request;
@@ -1071,22 +1067,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             _request = request;
         }
 
-        @Override
-        public void run() {
-            ServerContexts.registerSystemContext();
-            try {
-                _request.logD("Processing the first command ");
-                StartupCommand[] startups = new StartupCommand[_cmds.length];
-                for (int i = 0; i < _cmds.length; i++) {
-                    startups[i] = (StartupCommand)_cmds[i];
-                }
+        protected void runInContext() {
+            _request.logD("Processing the first command ");
+            StartupCommand[] startups = new StartupCommand[_cmds.length];
+            for (int i = 0; i < _cmds.length; i++) {
+                startups[i] = (StartupCommand)_cmds[i];
+            }
 
-                AgentAttache attache = handleConnectedAgent(_link, startups, _request);
-                if (attache == null) {
-                    s_logger.warn("Unable to create attache for agent: " + _request);
-                }
-            } finally {
-                ServerContexts.unregisterSystemContext();
+            AgentAttache attache = handleConnectedAgent(_link, startups, _request);
+            if (attache == null) {
+                s_logger.warn("Unable to create attache for agent: " + _request);
             }
         }
     }
@@ -1439,9 +1429,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         _pingMap.put(agentId, InaccurateClock.getTimeInSeconds());
     }
 
-    protected class MonitorTask implements Runnable {
+    protected class MonitorTask extends ManagedContextRunnable {
         @Override
-        public void run() {
+        protected void runInContext() {
             s_logger.trace("Agent Monitor is started.");
 
             try {

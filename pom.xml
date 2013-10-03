@@ -172,6 +172,7 @@
     <module>test</module>
     <module>client</module>
     <module>services</module>
+    <module>maven-standard</module>
   </modules>
 
   <dependencyManagement>
@@ -379,6 +380,16 @@
         <groupId>wsdl4j</groupId>
         <artifactId>wsdl4j</artifactId>
         <version>1.4</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>1.7.5</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-log4j12</artifactId>
+        <version>1.7.5</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

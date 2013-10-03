@@ -34,11 +34,11 @@ import javax.servlet.http.HttpSession;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
-
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.managed.context.ManagedContext;
 
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
@@ -57,6 +57,8 @@ public class ApiServlet extends HttpServlet {
     @Inject AccountService _accountMgr;
     @Inject
     EntityManager _entityMgr;
+    @Inject
+    ManagedContext _managedContext;
 
     public ApiServlet() {
     }
@@ -105,8 +107,16 @@ public class ApiServlet extends HttpServlet {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void processRequest(HttpServletRequest req, HttpServletResponse resp) {
+    private void processRequest(final HttpServletRequest req, final HttpServletResponse resp) {
+        _managedContext.runWithContext(new Runnable() {
+            @Override
+            public void run() {
+                processRequestInContext(req, resp);
+            }
+        });
+    }
+    
+    private void processRequestInContext(HttpServletRequest req, HttpServletResponse resp) {
         StringBuffer auditTrailSb = new StringBuffer();
         auditTrailSb.append(" " + req.getRemoteAddr());
         auditTrailSb.append(" -- " + req.getMethod() + " ");

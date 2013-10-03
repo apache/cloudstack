@@ -27,6 +27,7 @@ import org.apache.cloudstack.framework.serializer.MessageSerializer;
 import org.apache.cloudstack.framework.transport.TransportEndpoint;
 import org.apache.cloudstack.framework.transport.TransportEndpointSite;
 import org.apache.cloudstack.framework.transport.TransportProvider;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.utils.concurrency.NamedThreadFactory; 
 
@@ -62,10 +63,9 @@ public class ClientTransportProvider implements TransportProvider {
 		_executor = Executors.newFixedThreadPool(_poolSize, new NamedThreadFactory("Transport-Worker"));
 		_connection = new ClientTransportConnection(this);
 		
-		_executor.execute(new Runnable() {
-
-			@Override
-			public void run() {
+		_executor.execute(new ManagedContextRunnable() {
+            @Override
+            protected void runInContext() {
 				try {
 					_connection.connect(_serverAddress, _serverPort);
 				} catch(Throwable e) {

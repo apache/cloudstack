@@ -61,7 +61,6 @@ import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -72,6 +71,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -1708,13 +1708,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-    protected class ExpungeTask implements Runnable {
+    protected class ExpungeTask extends ManagedContextRunnable {
         public ExpungeTask() {
         }
 
         @Override
-        public void run() {
-            ServerContexts.registerSystemContext();
+        protected void runInContext() {
             GlobalLock scanLock = GlobalLock.getInternLock("UserVMExpunge");
             try {
                 if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
@@ -1748,7 +1747,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             } finally {
                 scanLock.releaseRef();
-                ServerContexts.unregisterSystemContext();
             }
         }
 

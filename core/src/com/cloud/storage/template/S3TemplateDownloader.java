@@ -50,6 +50,7 @@ import com.amazonaws.services.s3.model.StorageClass;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 
 import com.cloud.agent.api.storage.Proxy;
@@ -62,7 +63,7 @@ import com.cloud.utils.UriUtils;
  * Download a template file using HTTP
  *
  */
-public class S3TemplateDownloader implements TemplateDownloader {
+public class S3TemplateDownloader extends ManagedContextRunnable implements TemplateDownloader {
     public static final Logger s_logger = Logger.getLogger(S3TemplateDownloader.class.getName());
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
@@ -361,7 +362,7 @@ public class S3TemplateDownloader implements TemplateDownloader {
     }
 
     @Override
-    public void run() {
+    protected void runInContext() {
         try {
             download(resume, completionCallback);
         } catch (Throwable t) {

@@ -48,6 +48,7 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
@@ -455,9 +456,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     }
 
-    class CapacityChecker extends TimerTask {
+    class CapacityChecker extends ManagedContextTimerTask {
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 s_logger.debug("Running Capacity Checker ... ");
                 checkForAlerts();

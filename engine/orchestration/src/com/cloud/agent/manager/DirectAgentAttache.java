@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -127,9 +128,9 @@ public class DirectAgentAttache extends AgentAttache {
         }
     }
 
-    protected class PingTask implements Runnable {
+    protected class PingTask extends ManagedContextRunnable {
         @Override
-        public synchronized void run() {
+        protected synchronized void runInContext() {
             try {
                 ServerResource resource = _resource;
 
@@ -160,7 +161,7 @@ public class DirectAgentAttache extends AgentAttache {
     }
 
 
-    protected class Task implements Runnable {
+    protected class Task extends ManagedContextRunnable {
         Request _req;
 
         public Task(Request req) {
@@ -168,7 +169,7 @@ public class DirectAgentAttache extends AgentAttache {
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             long seq = _req.getSequence();
             try {
                 ServerResource resource = _resource;
