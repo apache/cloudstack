@@ -23,7 +23,7 @@
 }
 
 @mixin csui-tab-active {
-    background: lighten(#ccc, 10%);
+    background: lighten(#ccc, 15%);
     border-radius: 8px 8px 0 0;
     margin: 0;
 }
@@ -40,17 +40,28 @@
 }
 
 @mixin csui-details {
-    background: lighten(#ccc, 10%);
+    background: lighten(#ccc, 15%);
     padding: 10px;
+    border-bottom: 1px solid #ccc;
 
     &:not(.detail-actions) {
         table {
-            background: lighten(#ccc, 15%);
             width: 100%;
 
+            tr {
+                &:nth-child(even) {
+                    background: lighten(#ccc, 12%);
+                }
+            }
+            
             th, td {
                 padding: 10px;
             }
         }
+    }
+
+    .detail-actions {
+        background: white;
+        border-radius: 6px;
     }
 }
