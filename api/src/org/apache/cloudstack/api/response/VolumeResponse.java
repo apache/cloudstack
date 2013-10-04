@@ -178,11 +178,25 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     @Param(description="the status of the volume")
     private String status;
 
-    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with volume", responseObject = ResourceTagResponse.class)
+    @SerializedName(ApiConstants.TAGS)
+    @Param(description="the list of resource tags associated with volume", responseObject = ResourceTagResponse.class)
     private Set<ResourceTagResponse> tags;
 
-    @SerializedName(ApiConstants.DISPLAY_VOLUME) @Param(description="an optional field whether to the display the volume to the end user or not.")
+    @SerializedName(ApiConstants.DISPLAY_VOLUME)
+    @Param(description="an optional field whether to the display the volume to the end user or not.")
     private Boolean displayVm;
+
+    @SerializedName(ApiConstants.PATH)
+    @Param(description="The path of the volume")
+    private String path;
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
 
     public VolumeResponse(){
         tags = new LinkedHashSet<ResourceTagResponse>();

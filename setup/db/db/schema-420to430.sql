@@ -280,4 +280,113 @@ CREATE VIEW `cloud`.`template_view` AS
         `cloud`.`resource_tags` ON resource_tags.resource_id = vm_template.id
             and (resource_tags.resource_type = 'Template' or resource_tags.resource_type='ISO')
     where
-        vm_template.state='Active';	
+        vm_template.state='Active';
+DROP VIEW IF EXISTS `cloud`.`volume_view`;
+CREATE VIEW `cloud`.`volume_view` AS
+    select
+        volumes.id,
+        volumes.uuid,
+        volumes.name,
+        volumes.device_id,
+        volumes.volume_type,
+        volumes.size,
+        volumes.min_iops,
+        volumes.max_iops,
+        volumes.created,
+        volumes.state,
+        volumes.attached,
+        volumes.removed,
+        volumes.pod_id,
+	volumes.display_volume,
+        volumes.format,
+	volumes.path,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name account_name,
+        account.type account_type,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        projects.id project_id,
+        projects.uuid project_uuid,
+        projects.name project_name,
+        data_center.id data_center_id,
+        data_center.uuid data_center_uuid,
+        data_center.name data_center_name,
+	data_center.networktype data_center_type,
+        vm_instance.id vm_id,
+        vm_instance.uuid vm_uuid,
+        vm_instance.name vm_name,
+        vm_instance.state vm_state,
+        vm_instance.vm_type,
+        user_vm.display_name vm_display_name,
+        volume_store_ref.size volume_store_size,
+        volume_store_ref.download_pct,
+        volume_store_ref.download_state,
+        volume_store_ref.error_str,
+        volume_store_ref.created created_on_store,
+        disk_offering.id disk_offering_id,
+        disk_offering.uuid disk_offering_uuid,
+        disk_offering.name disk_offering_name,
+        disk_offering.display_text disk_offering_display_text,
+        disk_offering.use_local_storage,
+        disk_offering.system_use,
+        disk_offering.bytes_read_rate,
+        disk_offering.bytes_write_rate,
+        disk_offering.iops_read_rate,
+        disk_offering.iops_write_rate,
+        storage_pool.id pool_id,
+        storage_pool.uuid pool_uuid,
+        storage_pool.name pool_name,
+        cluster.hypervisor_type,
+        vm_template.id template_id,
+        vm_template.uuid template_uuid,
+        vm_template.extractable,
+        vm_template.type template_type,
+        resource_tags.id tag_id,
+        resource_tags.uuid tag_uuid,
+        resource_tags.key tag_key,
+        resource_tags.value tag_value,
+        resource_tags.domain_id tag_domain_id,
+        resource_tags.account_id tag_account_id,
+        resource_tags.resource_id tag_resource_id,
+        resource_tags.resource_uuid tag_resource_uuid,
+        resource_tags.resource_type tag_resource_type,
+        resource_tags.customer tag_customer,
+        async_job.id job_id,
+        async_job.uuid job_uuid,
+        async_job.job_status job_status,
+        async_job.account_id job_account_id
+    from
+        `cloud`.`volumes`
+            inner join
+        `cloud`.`account` ON volumes.account_id = account.id
+            inner join
+        `cloud`.`domain` ON volumes.domain_id = domain.id
+            left join
+        `cloud`.`projects` ON projects.project_account_id = account.id
+            left join
+        `cloud`.`data_center` ON volumes.data_center_id = data_center.id
+            left join
+        `cloud`.`vm_instance` ON volumes.instance_id = vm_instance.id
+            left join
+        `cloud`.`user_vm` ON user_vm.id = vm_instance.id
+            left join
+        `cloud`.`volume_store_ref` ON volumes.id = volume_store_ref.volume_id
+            left join
+        `cloud`.`disk_offering` ON volumes.disk_offering_id = disk_offering.id
+            left join
+        `cloud`.`storage_pool` ON volumes.pool_id = storage_pool.id
+            left join
+        `cloud`.`cluster` ON storage_pool.cluster_id = cluster.id
+            left join
+        `cloud`.`vm_template` ON volumes.template_id = vm_template.id OR volumes.iso_id = vm_template.id
+            left join
+        `cloud`.`resource_tags` ON resource_tags.resource_id = volumes.id
+            and resource_tags.resource_type = 'Volume'
+            left join
+        `cloud`.`async_job` ON async_job.instance_id = volumes.id
+            and async_job.instance_type = 'Volume'
+            and async_job.job_status = 0;
+
