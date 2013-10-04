@@ -58,6 +58,9 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
 
     @Override
     public DataStoreProvider getDataStoreProvider(String name) {
+        if (name == null)
+            return null;
+
         return providerMap.get(name);
     }
 
