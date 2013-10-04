@@ -454,6 +454,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         HypervisorType hType = null;
         if(hostPoolRecords.size() > 0 ){
             hType = getHypervisorType(hostPoolRecords.get(0).getHostId());
+        } else {
+            return false;
         }
 
         // Remove the SR associated with the Xenserver
