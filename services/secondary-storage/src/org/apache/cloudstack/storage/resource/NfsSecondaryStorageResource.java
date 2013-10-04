@@ -17,6 +17,7 @@
 package org.apache.cloudstack.storage.resource;
 
 import static com.cloud.utils.S3Utils.putFile;
+import static com.cloud.utils.S3Utils.mputFile;
 import static com.cloud.utils.StringUtils.join;
 import static com.cloud.utils.db.GlobalLock.executeWithNoWaitLock;
 import static java.lang.String.format;
@@ -821,7 +822,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
             ImageFormat format = this.getTemplateFormat(srcFile.getName());
             String key = destData.getPath() + S3Utils.SEPARATOR + srcFile.getName();
-            putFile(s3, srcFile, bucket, key);
+            if (s3.isMultipartEnabled()){
+                mputFile(s3, srcFile, bucket, key); 
+            } else{
+                putFile(s3, srcFile, bucket, key);
+            }
 
             DataTO retObj = null;
             if (destData.getObjectType() == DataObjectType.TEMPLATE) {
