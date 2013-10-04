@@ -24,6 +24,7 @@ import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.log4j.Logger;
 
@@ -55,6 +56,8 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             return execute((AttachCommand)command);
         } else if (command instanceof DettachCommand) {
             return execute((DettachCommand)command);
+        } else if (command instanceof IntroduceObjectCmd) {
+            return processor.introduceObject((IntroduceObjectCmd)command);
         }
         return new Answer((Command)command, false, "not implemented yet");
     }
@@ -65,7 +68,7 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
         DataStoreTO srcDataStore = srcData.getDataStore();
         DataStoreTO destDataStore = destData.getDataStore();
 
-        if ((srcData.getObjectType() == DataObjectType.TEMPLATE) && (srcDataStore instanceof NfsTO)  && (destData.getDataStore().getRole() == DataStoreRole.Primary)) {
+        if ((srcData.getObjectType() == DataObjectType.TEMPLATE) && (destData.getObjectType() == DataObjectType.TEMPLATE && destData.getDataStore().getRole() == DataStoreRole.Primary)) {
             //copy template to primary storage
             return processor.copyTemplateToPrimaryStorage(cmd);
         } else if (srcData.getObjectType() == DataObjectType.TEMPLATE && srcDataStore.getRole() == DataStoreRole.Primary && destDataStore.getRole() == DataStoreRole.Primary) {
@@ -80,18 +83,19 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             } else if (destData.getObjectType() == DataObjectType.TEMPLATE) {
                 return processor.createTemplateFromVolume(cmd);
             }
-        } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
+        } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.SNAPSHOT &&
+                destData.getDataStore().getRole() == DataStoreRole.Primary) {
             return processor.backupSnapshot(cmd);
         } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.VOLUME) {
-        	return processor.createVolumeFromSnapshot(cmd);
+            return processor.createVolumeFromSnapshot(cmd);
         } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.TEMPLATE) {
             return processor.createTemplateFromSnapshot(cmd);
         }
 
         return new Answer(cmd, false, "not implemented yet");
     }
-    
-    
+
+
     protected Answer execute(CreateObjectCommand cmd) {
         DataTO data = cmd.getData();
         try {
@@ -106,21 +110,21 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             return new CreateObjectAnswer(e.toString());
         }
     }
-    
+
     protected Answer execute(DeleteCommand cmd) {
         DataTO data = cmd.getData();
         Answer answer = null;
         if (data.getObjectType() == DataObjectType.VOLUME) {
             answer = processor.deleteVolume(cmd);
         } else if (data.getObjectType() == DataObjectType.SNAPSHOT) {
-        	answer = processor.deleteSnapshot(cmd);
+            answer = processor.deleteSnapshot(cmd);
         } else {
             answer = new Answer(cmd, false, "unsupported type");
         }
 
         return answer;
     }
-    
+
     protected Answer execute(AttachCommand cmd) {
         DiskTO disk = cmd.getDisk();
         if (disk.getType() == Volume.Type.ISO) {
@@ -129,7 +133,7 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             return processor.attachVolume(cmd);
         }
     }
-    
+
     protected Answer execute(DettachCommand cmd) {
         DiskTO disk = cmd.getDisk();
         if (disk.getType() == Volume.Type.ISO) {

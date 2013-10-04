@@ -59,7 +59,7 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
             description="the Zone ID for the storage pool")
     private Long zoneId;
-    
+
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = StoragePoolResponse.class,
             description="the ID of the storage pool")
     private Long id;
@@ -109,6 +109,7 @@ public class ListStoragePoolsCmd extends BaseListCmd {
         return s_name;
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.StoragePool;
     }

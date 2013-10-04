@@ -18,6 +18,36 @@
  */
 package com.cloud.hypervisor.xen.resource;
 
+import java.io.File;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import org.apache.cloudstack.storage.command.AttachAnswer;
+import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
+import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.CreateObjectAnswer;
+import org.apache.cloudstack.storage.command.CreateObjectCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DettachAnswer;
+import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.ForgetObjectCmd;
+import org.apache.cloudstack.storage.command.IntroduceObjectAnswer;
+import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
+import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.to.DataObjectType;
@@ -51,33 +81,6 @@ import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.VMGuestMetrics;
-import org.apache.cloudstack.storage.command.AttachAnswer;
-import org.apache.cloudstack.storage.command.AttachCommand;
-import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
-import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.CreateObjectAnswer;
-import org.apache.cloudstack.storage.command.CreateObjectCommand;
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DettachAnswer;
-import org.apache.cloudstack.storage.command.DettachCommand;
-import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-
-import java.io.File;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 
 import static com.cloud.utils.ReflectUtil.flattenProperties;
 import static com.google.common.collect.Lists.newArrayList;
@@ -841,8 +844,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
                 URI uri = new URI(storeUrl);
                 String tmplpath = uri.getHost() + ":" + uri.getPath() + "/" + srcData.getPath();
-                PrimaryDataStoreTO destStore = (PrimaryDataStoreTO)destData.getDataStore();
-                String poolName = destStore.getUuid();
+                String poolName = destData.getDataStore().getUuid();
                 Connection conn = hypervisorResource.getConnection();
 
                 SR poolsr = null;
@@ -892,8 +894,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
         try {
             Connection conn = hypervisorResource.getConnection();
-            PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)data.getDataStore();
-            SR poolSr = hypervisorResource.getStorageRepository(conn, primaryStore.getUuid());
+            SR poolSr = hypervisorResource.getStorageRepository(conn, data.getDataStore().getUuid());
             VDI.Record vdir = new VDI.Record();
             vdir.nameLabel = volume.getName();
             vdir.SR = poolSr;
@@ -921,7 +922,6 @@ public class XenServerStorageProcessor implements StorageProcessor {
         Connection conn = hypervisorResource.getConnection();
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
-        PrimaryDataStoreTO pool = (PrimaryDataStoreTO)destData.getDataStore();
         VolumeObjectTO volume = (VolumeObjectTO)destData;
         VDI vdi = null;
         try {
@@ -943,7 +943,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
             return new CopyCmdAnswer(newVol);
         } catch (Exception e) {
-            s_logger.warn("Unable to create volume; Pool=" + pool + "; Disk: ", e);
+            s_logger.warn("Unable to create volume; Pool=" + destData + "; Disk: ", e);
             return new CopyCmdAnswer(e.toString());
         }
     }
@@ -956,13 +956,12 @@ public class XenServerStorageProcessor implements StorageProcessor {
         int wait = cmd.getWait();
         VolumeObjectTO srcVolume = (VolumeObjectTO)srcData;
         VolumeObjectTO destVolume = (VolumeObjectTO)destData;
-        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)destVolume.getDataStore();
         DataStoreTO srcStore = srcVolume.getDataStore();
 
         if (srcStore instanceof NfsTO) {
             NfsTO nfsStore = (NfsTO)srcStore;
             try {
-                SR primaryStoragePool = hypervisorResource.getStorageRepository(conn, primaryStore.getUuid());
+                SR primaryStoragePool = hypervisorResource.getStorageRepository(conn, destVolume.getDataStore().getUuid());
                 String srUuid = primaryStoragePool.getUuid(conn);
                 URI uri = new URI(nfsStore.getUrl());
                 String volumePath = uri.getHost() + ":" + uri.getPath() + File.separator + srcVolume.getPath();
@@ -1179,8 +1178,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
         DataTO cacheData = cmd.getCacheTO();
         DataTO destData = cmd.getDestTO();
         int wait = cmd.getWait();
-        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)srcData.getDataStore();
-        String primaryStorageNameLabel = primaryStore.getUuid();
+        String primaryStorageNameLabel = srcData.getDataStore().getUuid();
         String secondaryStorageUrl = null;
         NfsTO cacheStore = null;
         String destPath = null;
@@ -1415,7 +1413,6 @@ public class XenServerStorageProcessor implements StorageProcessor {
         DataTO srcData = cmd.getSrcTO();
         SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
         DataTO destData = cmd.getDestTO();
-        PrimaryDataStoreTO pool = (PrimaryDataStoreTO)destData.getDataStore();
         DataStoreTO imageStore = srcData.getDataStore();
 
         if (!(imageStore instanceof NfsTO)) {
@@ -1423,7 +1420,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
         }
 
         NfsTO nfsImageStore = (NfsTO)imageStore;
-        String primaryStorageNameLabel = pool.getUuid();
+        String primaryStorageNameLabel = destData.getDataStore().getUuid();
         String secondaryStorageUrl = nfsImageStore.getUrl();
         int wait = cmd.getWait();
         boolean result = false;
@@ -1502,5 +1499,33 @@ public class XenServerStorageProcessor implements StorageProcessor {
             return new Answer(cmd, false, errMsg);
         }
         return new Answer(cmd, false, "unsupported storage type");
+    }
+
+    @Override
+    public Answer introduceObject(IntroduceObjectCmd cmd) {
+        try {
+            Connection conn = hypervisorResource.getConnection();
+            DataStoreTO store = cmd.getDataTO().getDataStore();
+            SR poolSr = hypervisorResource.getStorageRepository(conn, store.getUuid());
+            poolSr.scan(conn);
+            return new IntroduceObjectAnswer(cmd.getDataTO());
+        } catch (Exception e) {
+            s_logger.debug("Failed to introduce object", e);
+            return new Answer(cmd, false, e.toString());
+        }
+    }
+
+    @Override
+    public Answer forgetObject(ForgetObjectCmd cmd) {
+        try {
+            Connection conn = hypervisorResource.getConnection();
+            DataTO data = cmd.getDataTO();
+            VDI vdi = VDI.getByUuid(conn, data.getPath());
+            vdi.forget(conn);
+            return new IntroduceObjectAnswer(cmd.getDataTO());
+        } catch (Exception e) {
+            s_logger.debug("Failed to introduce object", e);
+            return new Answer(cmd, false, e.toString());
+        }
     }
 }

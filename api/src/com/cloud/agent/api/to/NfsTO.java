@@ -22,6 +22,7 @@ public class NfsTO implements DataStoreTO {
 
     private String _url;
     private DataStoreRole _role;
+    private String uuid;
 
     public NfsTO() {
 
@@ -55,6 +56,12 @@ public class NfsTO implements DataStoreTO {
         this._role = _role;
     }
 
+    @Override
+    public String getUuid() {
+        return uuid;
+    }
 
-
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 }

@@ -28,4 +28,6 @@ public interface EndPointSelector {
     EndPoint select(DataStore store);
 
     List<EndPoint> selectAll(DataStore store);
+
+    EndPoint select(Scope scope, Long storeId);
 }

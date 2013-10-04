@@ -26,6 +26,7 @@ public class ImageStoreTO implements DataStoreTO {
     private String uri;
     private String providerName;
     private DataStoreRole role;
+    private String uuid;
 
     public ImageStoreTO() {
 
@@ -75,5 +76,14 @@ public class ImageStoreTO implements DataStoreTO {
     public String toString() {
         return new StringBuilder("ImageStoreTO[type=").append(type).append("|provider=").append(providerName)
                 .append("|role=").append(role).append("|uri=").append(uri).append("]").toString();
+    }
+
+    @Override
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 }

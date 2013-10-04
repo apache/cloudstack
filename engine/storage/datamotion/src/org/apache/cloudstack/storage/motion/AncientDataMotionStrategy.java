@@ -47,7 +47,7 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
-
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -62,9 +62,9 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.Config;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
@@ -81,7 +81,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class
-        AncientDataMotionStrategy implements DataMotionStrategy {
+AncientDataMotionStrategy implements DataMotionStrategy {
     private static final Logger s_logger = Logger.getLogger(AncientDataMotionStrategy.class);
     @Inject
     EndPointSelector selector;
@@ -138,7 +138,8 @@ public class
         DataTO destTO = destData.getTO();
         DataStoreTO srcStoreTO = srcTO.getDataStore();
         DataStoreTO destStoreTO = destTO.getDataStore();
-        if (srcStoreTO instanceof NfsTO || srcStoreTO.getRole() == DataStoreRole.ImageCache) {
+        if (srcStoreTO instanceof NfsTO || srcStoreTO.getRole() == DataStoreRole.ImageCache ||
+                (srcStoreTO instanceof PrimaryDataStoreTO && ((PrimaryDataStoreTO)srcStoreTO).getPoolType() == StoragePoolType.NetworkFilesystem)) {
             return false;
         }
 
@@ -264,8 +265,14 @@ public class
             int _createVolumeFromSnapshotWait = NumbersUtil.parseInt(value,
                     Integer.parseInt(Config.CreateVolumeFromSnapshotWait.getDefaultValue()));
 
+            EndPoint ep = null;
+            if (srcData.getDataStore().getRole() == DataStoreRole.Primary) {
+                ep = selector.select(volObj);
+            } else {
+                ep = selector.select(snapObj, volObj);
+            }
+
             CopyCommand cmd = new CopyCommand(srcData.getTO(), volObj.getTO(), _createVolumeFromSnapshotWait, _mgmtServer.getExecuteInSequence());
-            EndPoint ep = selector.select(snapObj, volObj);
             Answer answer = ep.sendMessage(cmd);
 
             return answer;
@@ -433,11 +440,17 @@ public class
             srcData = cacheSnapshotChain(snapshot);
         }
 
+        EndPoint ep = null;
+        if (srcData.getDataStore().getRole() == DataStoreRole.Primary) {
+            ep = selector.select(destData);
+        } else {
+            ep = selector.select(srcData, destData);
+        }
+
         CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _createprivatetemplatefromsnapshotwait, _mgmtServer.getExecuteInSequence());
-        EndPoint ep = selector.select(srcData, destData);
         Answer answer = ep.sendMessage(cmd);
-        
-        // clean up snapshot copied to staging 
+
+        // clean up snapshot copied to staging
         if (needCache && srcData != null) {
             cacheMgr.deleteCacheObject(srcData);
         }
