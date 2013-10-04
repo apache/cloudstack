@@ -580,8 +580,8 @@ specify a valid config file" % cfgFile)
     def copyAttributesToCommand(self, source, command):
 
         map(lambda attr: setattr(command, attr, getattr(source, attr, None)),
-            filter(lambda attr: not attr.startswith("__") and
-            attr not in ["required", "isAsync"], dir(command)))
+            filter(lambda attr: not attr.startswith("__") and attr not in
+                   ["required", "isAsync"], dir(command)))
 
     def configureS3(self, s3):
         if s3 is None:
