@@ -35,7 +35,7 @@ import com.cloud.storage.Volume;
 @APICommand(name = "updateVolume", description="Updates the volume.", responseObject=VolumeResponse.class)
 public class UpdateVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVolumeCmd.class.getName());
-    private static final String s_name = "addVolumeresponse";
+    private static final String s_name = "updatevolumeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

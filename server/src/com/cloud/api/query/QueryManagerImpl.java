@@ -1630,6 +1630,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         String keyword = cmd.getKeyword();
         String type = cmd.getType();
         Map<String, String> tags = cmd.getTags();
+        boolean isRootAdmin = _accountMgr.isRootAdmin(caller.getType());
 
         Long zoneId = cmd.getZoneId();
         Long podId = null;
@@ -1671,6 +1672,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         // display UserVM volumes only
         sb.and().op("type", sb.entity().getVmType(), SearchCriteria.Op.NIN);
         sb.or("nulltype", sb.entity().getVmType(), SearchCriteria.Op.NULL);
+        if(!isRootAdmin){
+            sb.and("displayVolume", sb.entity().isDisplayVolume(), SearchCriteria.Op.EQ);
+        }
         sb.cp();
 
 
@@ -1719,6 +1723,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
         if (podId != null) {
             sc.setParameters("podId", podId);
+        }
+
+        if(!isRootAdmin){
+            sc.setParameters("displayVolume", 1);
         }
 
         // Don't return DomR and ConsoleProxy volumes
