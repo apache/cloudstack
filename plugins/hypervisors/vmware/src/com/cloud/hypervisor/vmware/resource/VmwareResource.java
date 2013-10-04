@@ -2629,6 +2629,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             DatacenterMO dcMo = new DatacenterMO(hyperHost.getContext(), hyperHost.getHyperHostDatacenter());
             VirtualMachineDiskInfoBuilder diskInfoBuilder = null;
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
+            boolean hasSnapshot = false;
             if (vmMo != null) {
                 s_logger.info("VM " + vmInternalCSName + " already exists, tear down devices for reconfiguration");
                 if (getVmState(vmMo) != State.Stopped)
@@ -2636,7 +2637,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
              
                 // retrieve disk information before we tear down
                 diskInfoBuilder = vmMo.getDiskInfoBuilder();
-                vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
+                hasSnapshot = vmMo.hasSnapshot();
+                if(!hasSnapshot)
+                	vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
+                else
+                	vmMo.tearDownDevices(new Class<?>[] { VirtualEthernetCard.class });
                 vmMo.ensureScsiDeviceController();
             } else {
                 ManagedObjectReference morDc = hyperHost.getHyperHostDatacenter();
@@ -2654,7 +2659,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         vmMo.safePowerOff(_shutdown_waitMs);
                     
                     diskInfoBuilder = vmMo.getDiskInfoBuilder();
-                    vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
+                    hasSnapshot = vmMo.hasSnapshot();
+                    if(!hasSnapshot)
+                    	vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
+                    else
+                    	vmMo.tearDownDevices(new Class<?>[] { VirtualEthernetCard.class });
                     vmMo.ensureScsiDeviceController();
                 } else {
                     int ramMb = (int) (vmSpec.getMinRam() / (1024 * 1024));
@@ -2810,37 +2819,45 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             //
             DiskTO[] sortedDisks = sortVolumesByDeviceId(disks);
             for (DiskTO vol : sortedDisks) {
-                deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
-
                 if (vol.getType() == Volume.Type.ISO)
                 	continue;
-                
+            
                 VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(diskInfoBuilder, vol);
                 controllerKey = getDiskController(matchingExistingDisk, vol, vmSpec, ideControllerKey, scsiControllerKey);
 
-                VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
-                PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
-                Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(primaryStore.getUuid());
-                assert (volumeDsDetails != null);
-                VirtualDevice device;
-                
-                String[] diskChain = syncDiskChain(dcMo, vmMo, vmSpec, 
-                    	vol, matchingExistingDisk,
-                    	dataStoresDetails);
-                if(controllerKey == scsiControllerKey && VmwareHelper.isReservedScsiDeviceNumber(scsiUnitNumber))
-                	scsiUnitNumber++;
-                device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, 
-                	diskChain, 
-                	volumeDsDetails.first(),
-                    (controllerKey == ideControllerKey) ? ideUnitNumber++ : scsiUnitNumber++, i + 1);
-                
-                deviceConfigSpecArray[i].setDevice(device);
-            	deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
-
-                if(s_logger.isDebugEnabled())
-                    s_logger.debug("Prepare volume at new device " + _gson.toJson(device));
-
-                i++;
+                if(!hasSnapshot) {
+                    deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
+                    
+	                VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
+	                PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
+	                Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(primaryStore.getUuid());
+	                assert (volumeDsDetails != null);
+	                
+	                String[] diskChain = syncDiskChain(dcMo, vmMo, vmSpec, 
+	                    	vol, matchingExistingDisk,
+	                    	dataStoresDetails);
+	                if(controllerKey == scsiControllerKey && VmwareHelper.isReservedScsiDeviceNumber(scsiUnitNumber))
+	                	scsiUnitNumber++;
+	                VirtualDevice device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, 
+	                	diskChain, 
+	                	volumeDsDetails.first(),
+	                    (controllerKey == ideControllerKey) ? ideUnitNumber++ : scsiUnitNumber++, i + 1);
+	                
+	                deviceConfigSpecArray[i].setDevice(device);
+	            	deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
+	
+	                if(s_logger.isDebugEnabled())
+	                    s_logger.debug("Prepare volume at new device " + _gson.toJson(device));
+	
+	                i++;
+                } else {
+	                if(controllerKey == scsiControllerKey && VmwareHelper.isReservedScsiDeviceNumber(scsiUnitNumber))
+	                	scsiUnitNumber++;
+	                if(controllerKey == ideControllerKey) 
+	                	ideUnitNumber++;
+	                else
+	                	scsiUnitNumber++;
+                }
             }
 
             //
@@ -2887,7 +2904,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 nicCount++;
             }
 
-            vmConfigSpec.getDeviceChange().addAll(Arrays.asList(deviceConfigSpecArray));
+            for(int j = 0; j < i; j++)
+            	vmConfigSpec.getDeviceChange().add(deviceConfigSpecArray[j]);
 
             //
             // Setup VM options
@@ -5412,7 +5430,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         // tear down all devices first before we destroy the VM to avoid accidently delete disk backing files
                         if (getVmState(vmMo) != State.Stopped)
                             vmMo.safePowerOff(_shutdown_waitMs);
-                        vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
+                        vmMo.tearDownDevices(new Class<?>[] { /* VirtualDisk.class, */ VirtualEthernetCard.class });
                         vmMo.destroy();
 
                         for (NetworkDetails netDetails : networks) {
