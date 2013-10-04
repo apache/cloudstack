@@ -36,7 +36,7 @@ import java.util.Map;
 
 @Component
 public class DataMotionServiceImpl implements DataMotionService {
-    @Inject
+
     List<DataMotionStrategy> strategies;
 
     @Override
@@ -74,7 +74,12 @@ public class DataMotionServiceImpl implements DataMotionService {
         throw new CloudRuntimeException("can't find strategy to move data");
     }
 
+    @Inject
     public void setStrategies(List<DataMotionStrategy> strategies) {
         this.strategies = strategies;
+    }
+
+    public List<DataMotionStrategy> getStrategies() {
+        return strategies;
     }
 }

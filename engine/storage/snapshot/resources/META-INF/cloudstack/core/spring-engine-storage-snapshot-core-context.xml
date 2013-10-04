@@ -31,9 +31,6 @@
         class="org.apache.cloudstack.storage.snapshot.SnapshotServiceImpl"
         depends-on="snapshotStateMachineManagerImpl, snapshotDataFactoryImpl, dataStoreManagerImpl, dataMotionServiceImpl, objectInDataStoreManagerImpl" />
 
-    <bean id="xenserverSnapshotStrategy"
-        class="org.apache.cloudstack.storage.snapshot.XenserverSnapshotStrategy" />
-
     <bean id="snapshotDataFactoryImpl"
         class="org.apache.cloudstack.storage.snapshot.SnapshotDataFactoryImpl"
         depends-on="dataStoreManagerImpl, snapshotDataStoreDaoImpl, volumeDataFactoryImpl" />

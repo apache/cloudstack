@@ -184,4 +184,14 @@
         </property>
     </bean>
 
+    <bean id="snapshotStrategiesRegistry"
+        class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="excludeKey" value="snapshot.strategies.exclude" />
+    </bean>
+
+    <bean id="dataMotionStrategiesRegistry"
+        class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="excludeKey" value="data.motion.strategies.exclude" />
+    </bean>
+    
 </beans>
