@@ -1,3 +1,9 @@
+cloudstack (4.2.1) unstable; urgency=low
+
+  * Update the version to 4.2.1 to be in sync with Maven (again)
+
+ -- Hugo Trippaers <hugo@apache.org>  Fri, 04 Oct 2013 10:54:00 +0200
+
 cloudstack (4.2.0) unstable; urgency=low
 
   * Update the version to 4.2.0 to be in sync with Maven (again)
