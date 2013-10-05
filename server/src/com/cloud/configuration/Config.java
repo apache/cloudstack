@@ -376,6 +376,7 @@ public enum Config {
 
     // object store
     S3EnableRRS("Advanced", ManagementServer.class, Boolean.class, "s3.rrs.enabled", "false", "enable s3 reduced redundancy storage", null),
+    S3EnableMultiPartUpload("Advanced", ManagementServer.class, Boolean.class, "s3.multipart.enabled", "true", "enable s3 multipart upload", null),
 
     // Ldap
     LdapBasedn("Advanced", ManagementServer.class, String.class, "ldap.basedn", null, "Sets the basedn for LDAP", null),

@@ -389,4 +389,6 @@ CREATE VIEW `cloud`.`volume_view` AS
         `cloud`.`async_job` ON async_job.instance_id = volumes.id
             and async_job.instance_type = 'Volume'
             and async_job.job_status = 0;
+            
+INSERT IGNORE INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Advanced', 'DEFAULT', 'management-server', 's3.multipart.enabled', 'true', 'enable s3 multipart upload', 'true');            
 

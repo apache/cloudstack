@@ -39,6 +39,7 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
     private Integer socketTimeout;
     private Date created;
     private boolean enableRRS;
+    private boolean multipartEnabled;
 
     public S3TO() {
 
@@ -50,7 +51,7 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
             final String secretKey, final String endPoint,
             final String bucketName, final Boolean httpsFlag,
             final Integer connectionTimeout, final Integer maxErrorRetry,
-            final Integer socketTimeout, final Date created, final boolean enableRRS) {
+            final Integer socketTimeout, final Date created, final boolean enableRRS, final boolean multipart) {
 
         super();
 
@@ -66,6 +67,7 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
         this.socketTimeout = socketTimeout;
         this.created = created;
         this.enableRRS = enableRRS;
+        this.multipartEnabled = multipart;
 
     }
 
@@ -268,7 +270,6 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
     }
 
 
-
     public boolean getEnableRRS() {
         return enableRRS;
     }
@@ -276,6 +277,15 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
     public void setEnableRRS(boolean enableRRS) {
         this.enableRRS = enableRRS;
     }
+
+    public boolean isMultipartEnabled() {
+        return multipartEnabled;
+    }
+
+    public void setMultipartEnabled(boolean multipartEnabled) {
+        this.multipartEnabled = multipartEnabled;
+    }
+
 
 
 }

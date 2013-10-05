@@ -16,6 +16,15 @@
 // under the License.
 package org.apache.cloudstack.storage.resource;
 
+
+import static com.cloud.utils.S3Utils.mputFile;
+import static com.cloud.utils.S3Utils.putFile;
+import static com.cloud.utils.StringUtils.join;
+import static com.cloud.utils.db.GlobalLock.executeWithNoWaitLock;
+import static java.lang.String.format;
+import static java.util.Arrays.asList;
+import static org.apache.commons.lang.StringUtils.substringAfterLast;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -40,21 +49,6 @@ import java.util.concurrent.Callable;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DownloadCommand;
-import org.apache.cloudstack.storage.command.DownloadProgressCommand;
-import org.apache.cloudstack.storage.template.DownloadManager;
-import org.apache.cloudstack.storage.template.DownloadManagerImpl;
-import org.apache.cloudstack.storage.template.DownloadManagerImpl.ZfsPathParser;
-import org.apache.cloudstack.storage.template.UploadManager;
-import org.apache.cloudstack.storage.template.UploadManagerImpl;
-import org.apache.cloudstack.storage.to.ImageStoreTO;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
@@ -67,6 +61,21 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Logger;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+import org.apache.cloudstack.storage.template.DownloadManager;
+import org.apache.cloudstack.storage.template.DownloadManagerImpl;
+import org.apache.cloudstack.storage.template.DownloadManagerImpl.ZfsPathParser;
+import org.apache.cloudstack.storage.template.UploadManager;
+import org.apache.cloudstack.storage.template.UploadManagerImpl;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
@@ -108,7 +117,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.template.Processor;
@@ -128,14 +136,6 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.SecondaryStorageVm;
-import com.google.common.io.Files;
-
-import static com.cloud.utils.S3Utils.putFile;
-import static com.cloud.utils.StringUtils.join;
-import static com.cloud.utils.db.GlobalLock.executeWithNoWaitLock;
-import static java.lang.String.format;
-import static java.util.Arrays.asList;
-import static org.apache.commons.lang.StringUtils.substringAfterLast;
 
 public class NfsSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
 
@@ -197,7 +197,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     public void setInSystemVM(boolean inSystemVM) {
-        this._inSystemVM = inSystemVM;
+        _inSystemVM = inSystemVM;
     }
 
     @Override
@@ -297,7 +297,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         String finalFileName = templateFilename;
         String finalDownloadPath = destPath + File.separator + templateFilename;
         // compute the size of
-        long size = this._storage.getSize(downloadPath + File.separator + templateFilename);
+        long size = _storage.getSize(downloadPath + File.separator + templateFilename);
 
         DataTO newDestTO = null;
 
@@ -374,7 +374,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     protected Answer copySnapshotToTemplateFromNfsToNfsXenserver(CopyCommand cmd, SnapshotObjectTO srcData,
             NfsTO srcDataStore, TemplateObjectTO destData, NfsTO destDataStore) {
-        String srcMountPoint = this.getRootDir(srcDataStore.getUrl());
+        String srcMountPoint = getRootDir(srcDataStore.getUrl());
         String snapshotPath = srcData.getPath();
         int index = snapshotPath.lastIndexOf("/");
         String snapshotName = snapshotPath.substring(index + 1);
@@ -384,16 +384,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         snapshotPath = snapshotPath.substring(0, index);
 
         snapshotPath = srcMountPoint + File.separator + snapshotPath;
-        String destMountPoint = this.getRootDir(destDataStore.getUrl());
+        String destMountPoint = getRootDir(destDataStore.getUrl());
         String destPath = destMountPoint + File.separator + destData.getPath();
 
         String errMsg = null;
         try {
-            this._storage.mkdir(destPath);
+            _storage.mkdir(destPath);
 
             String templateUuid = UUID.randomUUID().toString();
             String templateName = templateUuid + ".vhd";
-            Script command = new Script(this.createTemplateFromSnapshotXenScript, cmd.getWait() * 1000, s_logger);
+            Script command = new Script(createTemplateFromSnapshotXenScript, cmd.getWait() * 1000, s_logger);
             command.add("-p", snapshotPath);
             command.add("-s", snapshotName);
             command.add("-n", templateName);
@@ -468,7 +468,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 bufferWriter.write("\n");
                 bufferWriter.write("filename=" + fileName);
                 bufferWriter.write("\n");
-                long size = this._storage.getSize(destFileFullPath);
+                long size = _storage.getSize(destFileFullPath);
                 bufferWriter.write("size=" + size);
                 bufferWriter.close();
                 writer.close();
@@ -630,7 +630,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             NfsTO destImageStore = (NfsTO) destDataStore;
             if (srcDataStore instanceof S3TO) {
                 S3TO s3 = (S3TO) srcDataStore;
-                return this.copyFromS3ToNfs(cmd, srcData, s3, destData, destImageStore);
+                return copyFromS3ToNfs(cmd, srcData, s3, destData, destImageStore);
             } else if (srcDataStore instanceof SwiftTO) {
                 return copyFromSwiftToNfs(cmd, srcData, (SwiftTO)srcDataStore, destData, destImageStore);
             }
@@ -857,9 +857,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     }
                 }
             }
-            ImageFormat format = this.getTemplateFormat(srcFile.getName());
+            ImageFormat format = getTemplateFormat(srcFile.getName());
             String key = destData.getPath() + S3Utils.SEPARATOR + srcFile.getName();
-            putFile(s3, srcFile, bucket, key);
+            if (s3.isMultipartEnabled()){
+                mputFile(s3, srcFile, bucket, key);
+            } else{
+                putFile(s3, srcFile, bucket, key);
+            }
 
             DataTO retObj = null;
             if (destData.getObjectType() == DataObjectType.TEMPLATE) {
@@ -1271,9 +1275,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         int index = name.lastIndexOf(File.separator);
         String snapshotPath = name.substring(0, index);
         if (deleteAllFlag) {
-            lPath = this.getRootDir(secondaryStorageUrl) + File.separator + snapshotPath + File.separator + "*";
+            lPath = getRootDir(secondaryStorageUrl) + File.separator + snapshotPath + File.separator + "*";
         } else {
-            lPath = this.getRootDir(secondaryStorageUrl) + File.separator + name + "*";
+            lPath = getRootDir(secondaryStorageUrl) + File.separator + name + "*";
         }
 
         final String result = deleteLocalFile(lPath);
@@ -1461,7 +1465,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     Map<String, TemplateProp> s3ListTemplate(S3TO s3) {
         String bucket = s3.getBucketName();
         // List the objects in the source directory on S3
-        final List<S3ObjectSummary> objectSummaries = S3Utils.getDirectory(s3, bucket, this.TEMPLATE_ROOT_DIR);
+        final List<S3ObjectSummary> objectSummaries = S3Utils.getDirectory(s3, bucket, TEMPLATE_ROOT_DIR);
         if (objectSummaries == null) {
             return null;
         }
@@ -1470,7 +1474,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String key = objectSummary.getKey();
             // String installPath = StringUtils.substringBeforeLast(key,
             // S3Utils.SEPARATOR);
-            String uniqueName = this.determineS3TemplateNameFromKey(key);
+            String uniqueName = determineS3TemplateNameFromKey(key);
             // TODO: isPublic value, where to get?
             TemplateProp tInfo = new TemplateProp(uniqueName, key, objectSummary.getSize(), objectSummary.getSize(),
                     true, false);
@@ -1483,7 +1487,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     Map<Long, TemplateProp> s3ListVolume(S3TO s3) {
         String bucket = s3.getBucketName();
         // List the objects in the source directory on S3
-        final List<S3ObjectSummary> objectSummaries = S3Utils.getDirectory(s3, bucket, this.VOLUME_ROOT_DIR);
+        final List<S3ObjectSummary> objectSummaries = S3Utils.getDirectory(s3, bucket, VOLUME_ROOT_DIR);
         if (objectSummaries == null) {
             return null;
         }
@@ -1492,7 +1496,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String key = objectSummary.getKey();
             // String installPath = StringUtils.substringBeforeLast(key,
             // S3Utils.SEPARATOR);
-            Long id = this.determineS3VolumeIdFromKey(key);
+            Long id = determineS3VolumeIdFromKey(key);
             // TODO: how to get volume template name
             TemplateProp tInfo = new TemplateProp(id.toString(), key, objectSummary.getSize(), objectSummary.getSize(),
                     true, false);
