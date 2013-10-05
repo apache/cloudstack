@@ -26,6 +26,7 @@ import java.sql.SQLException;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 
 public class Upgrade420to421 implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade420to421.class);
@@ -33,7 +34,7 @@ public class Upgrade420to421 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "4.2.0" };
+        return new String[] { "4.2.0", "4.2.1" };
     }
 
     @Override
@@ -48,7 +49,12 @@ public class Upgrade420to421 implements DbUpgrade {
 
     @Override
     public File[] getPrepareScripts() {
-        return null;
+        String script = Script.findScript("", "db/schema-420to421.sql");
+        if (script == null) {
+            throw new CloudRuntimeException("Unable to find db/schema-420to421.sql");
+        }
+
+        return new File[] { new File(script) };
     }
 
     @Override
