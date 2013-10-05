@@ -2252,6 +2252,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
         Long domainId = cmd.getDomainId();
+        Boolean isRootAdmin = _accountMgr.isRootAdmin(account.getType());
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the disk offering
         // associated with this domain
@@ -2260,6 +2261,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 // check if the user's domain == do's domain || user's domain is
                 // a child of so's domain for non-root users
                 sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+                if(!isRootAdmin){
+                    sc.addAnd("displayOffering", SearchCriteria.Op.EQ, 1);
+                }
                 return _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
             } else {
                 throw new PermissionDeniedException("The account:" + account.getAccountName()
@@ -2292,6 +2296,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             spc.addOr("domainId", SearchCriteria.Op.NULL); // include public
             // offering as where
             sc.addAnd("domainId", SearchCriteria.Op.SC, spc);
+            sc.addAnd("displayOffering", SearchCriteria.Op.EQ, 1);
             sc.addAnd("systemUse", SearchCriteria.Op.EQ, false); // non-root
             // users should
             // not see

@@ -54,6 +54,9 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="The state of the volume", since="4.3")
     private String state;
 
+    @Parameter(name=ApiConstants.DISPLAY_VOLUME, type=CommandType.BOOLEAN, description="an optional field, whether to the display the volume to the end user or not.")
+    private Boolean displayVolume;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -73,9 +76,12 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
     public String getState() {
         return state;
     }
-    
 
-    /////////////////////////////////////////////////////
+    public Boolean getDisplayVolume() {
+        return displayVolume;
+    }
+
+/////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
@@ -126,7 +132,7 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         CallContext.current().setEventDetails("Volume Id: "+getId());
-        Volume result = _volumeService.updateVolume(getId(), getPath(), getState(), getStorageId());
+        Volume result = _volumeService.updateVolume(getId(), getPath(), getState(), getStorageId(), getDisplayVolume());
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(result);
             response.setResponseName(getCommandName());

@@ -49,6 +49,9 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
     @Parameter(name=ApiConstants.SORT_KEY, type=CommandType.INTEGER, description="sort key of the disk offering, integer")
     private Integer sortKey;
 
+    @Parameter(name=ApiConstants.DISPLAY_OFFERING, type=CommandType.BOOLEAN, description="an optional field, whether to display the offering to the end user or not.")
+    private Boolean displayOffering;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -69,8 +72,11 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
         return sortKey;
     }
 
+    public Boolean getDisplayOffering() {
+        return displayOffering;
+    }
 
-    /////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
