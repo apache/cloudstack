@@ -3022,6 +3022,100 @@
                                                         });
                                                         // ***** Virtual Router ***** (end) *****
 
+                                                         // ***** Ovs ***** (begin) *****
+                                                        var ovsProviderId =  null;
+                                                        $.ajax({
+                                                            url: createURL("listNetworkServiceProviders&name=Ovs&physicalNetworkId=" + thisPhysicalNetwork.id),
+                                                            dataType: "json",
+                                                            async: false,
+                                                            success: function (json) {
+                                                                var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+                                                                if (items != null && items.length > 0) {
+                                                                    ovsProviderId = items[0].id;
+                                                                }
+                                                            }
+                                                        });
+                                                        if (ovsProviderId != null) {
+                                                            var ovsElementId = null;
+                                                            $.ajax({
+                                                                url: createURL("listOvsElements&nspid=" + ovsProviderId),
+                                                                dataType: "json",
+                                                                async: false,
+                                                                success: function (json) {
+                                                                    var items = json.listovselementsresponse.ovselement;
+                                                                    if (items != null && items.length > 0) {
+                                                                        ovsElementId = items[0].id;
+                                                                    }
+                                                                }
+                                                            });
+                                                            if (ovsElementId != null) {
+                                                                $.ajax({
+                                                                    url: createURL("configureOvsElement&enabled=true&id=" + ovsElementId),
+                                                                    dataType: "json",
+                                                                    async: false,
+                                                                    success: function (json) {
+                                                                        var jobId = json.configureovselementresponse.jobid;
+                                                                        var enableOvsElementIntervalID = setInterval(function () {
+                                                                            $.ajax({
+                                                                                url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                                                dataType: "json",
+                                                                                success: function (json) {
+                                                                                    var result = json.queryasyncjobresultresponse;
+                                                                                    if (result.jobstatus == 0) {
+                                                                                        return; //Job has not completed
+                                                                                    } else {
+                                                                                        clearInterval(enableOvsElementIntervalID);
+
+                                                                                        if (result.jobstatus == 1) { //configureOvsElement succeeded
+                                                                                            $.ajax({
+                                                                                                url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + ovsProviderId),
+                                                                                                dataType: "json",
+                                                                                                async: false,
+                                                                                                success: function (json) {
+                                                                                                    var jobId = json.updatenetworkserviceproviderresponse.jobid;
+                                                                                                    var enableOvsProviderIntervalID = setInterval(function () {
+                                                                                                        $.ajax({
+                                                                                                            url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                                                                            dataType: "json",
+                                                                                                            success: function (json) {
+                                                                                                                var result = json.queryasyncjobresultresponse;
+                                                                                                                if (result.jobstatus == 0) {
+                                                                                                                    return; //Job has not completed
+                                                                                                                } else {
+                                                                                                                    clearInterval(enableOvsProviderIntervalID);
+
+                                                                                                                    if (result.jobstatus == 2) {
+                                                                                                                        alert("failed to enable Ovs Provider. Error: " + _s(result.jobresult.errortext));
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            },
+                                                                                                            error: function (XMLHttpResponse) {
+                                                                                                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                                                                                alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
+                                                                                                            }
+                                                                                                        });
+                                                                                                    }, g_queryAsyncJobResultInterval);
+                                                                                                }
+                                                                                            });
+                                                                                        } else if (result.jobstatus == 2) {
+                                                                                            alert("configureOvsElement failed. Error: " + _s(result.jobresult.errortext));
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                error: function (XMLHttpResponse) {
+                                                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                                                    alert("configureOvsElement failed. Error: " + errorMsg);
+                                                                                }
+                                                                            });
+                                                                        }, g_queryAsyncJobResultInterval);
+                                                                    }
+                                                                });
+                                                            }
+
+
+                                                        }
+                                                        // ***** Ovs ***** (end) *****
+
                                                         // ***** Internal LB ***** (begin) *****
                                                         var internalLbProviderId;
                                                         $.ajax({
