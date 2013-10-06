@@ -2382,26 +2382,16 @@ class TestVPCNetworkGc(cloudstackTestCase):
         self.debug("Waiting for network garbage collection thread to run")
         # Wait for the network garbage collection thread to run
         wait_for_cleanup(self.apiclient,
-                         ["network.gc.interval", "network.gc.wait"]*2)
-        self.debug("Check if the VPC router is in stopped state?")
-        routers = Router.list(
-                              self.apiclient,
-                              account=self.account.name,
-                              domainid=self.account.domainid,
-                              listall=True
-                              )
-        self.assertEqual(
-                         isinstance(routers, list),
-                         True,
-                         "List routers shall return a valid response"
-                         )
-        router = routers[0]
-        # TODO: Add some more assertions
-        self.assertEqual(
-                    router.state,
-                    "Stopped",
-                    "Router state should be stopped after network gc"
-                 )
+                         ["network.gc.interval", "network.gc.wait"])
+
+        #Bug???: Network Acls are not cleared
+        netacls = NetworkACL.list(self.apiclient, networkid=self.network_1.id)
+        self.debug("List of NetACLS %s" % netacls)
+        self.assertEqual(netacls, None, "Netacls were not cleared after network GC thread is run")
+
+        lbrules = LoadBalancerRule.list(self.apiclient, networkid=self.network_1.id)
+        self.debug("List of LB Rules %s" % lbrules)
+        self.assertEqual(lbrules, None, "LBrules were not cleared after network GC thread is run")
         return
 
     @attr(tags=["advanced", "intervlan"])
