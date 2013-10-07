@@ -24,17 +24,16 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import com.cloud.org.Cluster;
-import com.cloud.storage.ScopeType;
-import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.utils.db.GenericDao;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.org.Cluster;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StoragePoolStatus;
+import com.cloud.utils.db.GenericDao;
 
 /**
  * Storage Pool DB view.
@@ -136,6 +135,9 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     @Column(name = "hypervisor")
     @Enumerated(value = EnumType.STRING)
     private HypervisorType hypervisor;
+
+    @Column(name = "storage_provider_name")
+    private String storageProviderName;
 
     /**
      * @return the scope
@@ -378,5 +380,7 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
         this.jobStatus = jobStatus;
     }
 
-
+    public String getStorageProviderName() {
+        return storageProviderName;
+    }
 }
