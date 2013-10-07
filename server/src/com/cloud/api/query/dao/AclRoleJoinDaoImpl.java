@@ -70,8 +70,6 @@ public class AclRoleJoinDaoImpl extends GenericDaoBase<AclRoleJoinVO, Long> impl
         response.setId(role.getUuid());
         response.setName(role.getName());
         response.setDescription(role.getDescription());
-        response.setParentRoleId(role.getParentRoleUuid());
-        response.setParentRoleName(role.getParentRoleName());
         response.setDomainId(role.getDomainUuid());
         response.setDomainName(role.getName());
         if (role.getApiName() != null) {

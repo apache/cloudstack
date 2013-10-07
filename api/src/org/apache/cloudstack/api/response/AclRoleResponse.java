@@ -44,14 +44,6 @@ public class AclRoleResponse extends BaseResponse {
     @Param(description = "the description of the acl role")
     private String description;
 
-    @SerializedName(ApiConstants.ACL_PARENT_ROLE_ID)
-    @Param(description = "parent role id that this acl role is inherited from ")
-    private String parentRoleId;
-
-    @SerializedName(ApiConstants.ACL_PARENT_ROLE_NAME)
-    @Param(description = "parent role name that this acl role is inherited from ")
-    private String parentRoleName;
-
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain ID of the acl role")
     private String domainId;
@@ -91,13 +83,6 @@ public class AclRoleResponse extends BaseResponse {
         this.description = description;
     }
 
-    public void setParentRoleId(String parentId) {
-        parentRoleId = parentId;
-    }
-
-    public void setParentRoleName(String parentRoleName) {
-        this.parentRoleName = parentRoleName;
-    }
 
     public void setDomainId(String domainId) {
         this.domainId = domainId;

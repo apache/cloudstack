@@ -32,6 +32,7 @@ import org.apache.cloudstack.acl.dao.AclGroupAccountMapDao;
 import org.apache.cloudstack.acl.dao.AclGroupDao;
 import org.apache.cloudstack.acl.dao.AclGroupRoleMapDao;
 import org.apache.cloudstack.acl.dao.AclRoleDao;
+import org.apache.cloudstack.acl.dao.AclRolePermissionDao;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.context.CallContext;
 
@@ -88,6 +89,9 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     AclApiPermissionDao _apiPermissionDao;
 
     @Inject
+    AclRolePermissionDao _rolePermissionDao;
+
+    @Inject
     AclEntityPermissionDao _entityPermissionDao;
 
     public static HashMap<String, Class> entityClassMap = new HashMap<String, Class>();
@@ -118,14 +122,27 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
                     "Unable to create acl role with name " + aclRoleName
                             + " already exisits for domain " + domainId);
         }
+
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         AclRoleVO rvo = new AclRoleVO(aclRoleName, description);
         if (domainId != null) {
             rvo.setDomainId(domainId);
         }
+        AclRole role = _aclRoleDao.persist(rvo);
         if (parentRoleId != null) {
-            rvo.setParentRoleId(parentRoleId);
+            // copy parent role permissions
+            List<AclRolePermissionVO> perms = _rolePermissionDao.findByRole(parentRoleId);
+            if (perms != null) {
+                for (AclRolePermissionVO perm : perms) {
+                    perm.setAclRoleId(role.getId());
+                    _rolePermissionDao.persist(perm);
+                }
+            }
         }
-        return _aclRoleDao.persist(rvo);
+        txn.commit();
+
+        return role;
     }
 
     @DB

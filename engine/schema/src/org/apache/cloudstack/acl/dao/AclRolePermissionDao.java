@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.acl.dao;
 
+import java.util.List;
+
 import org.apache.cloudstack.acl.AclRolePermissionVO;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
@@ -24,5 +26,7 @@ import com.cloud.utils.db.GenericDao;
 public interface AclRolePermissionDao extends GenericDao<AclRolePermissionVO, Long> {
 
     AclRolePermissionVO findByRoleAndEntity(long roleId, String entityType, AccessType accessType);
+
+    List<AclRolePermissionVO> findByRole(long roleId);
 
 }

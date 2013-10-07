@@ -45,8 +45,6 @@ public class AclRoleVO implements AclRole {
     @Column(name = "uuid")
     private String uuid;
 
-    @Column(name = "parent_role_id")
-    private Long parentRoleId;
 
     @Column(name = "domain_id")
     private long domainId;
@@ -98,15 +96,6 @@ public class AclRoleVO implements AclRole {
 
     public Date getCreated() {
         return created;
-    }
-
-    @Override
-    public Long getParentRoleId() {
-        return parentRoleId;
-    }
-
-    public void setParentRoleId(long parentRoleId) {
-        this.parentRoleId = parentRoleId;
     }
 
     @Override

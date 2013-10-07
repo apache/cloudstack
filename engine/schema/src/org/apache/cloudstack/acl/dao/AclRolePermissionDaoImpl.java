@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.acl.dao;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -59,4 +60,12 @@ public class AclRolePermissionDaoImpl extends GenericDaoBase<AclRolePermissionVO
         sc.setParameters("accessType", accessType);
         return findOneBy(sc);
     }
+
+    @Override
+    public List<AclRolePermissionVO> findByRole(long roleId) {
+        SearchCriteria<AclRolePermissionVO> sc = findByRoleEntity.create();
+        sc.setParameters("roleId", roleId);
+        return listBy(sc);
+    }
+
 }

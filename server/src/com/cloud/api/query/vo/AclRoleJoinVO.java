@@ -44,15 +44,6 @@ public class AclRoleJoinVO extends BaseViewVO {
     @Column(name = "uuid")
     private String uuid;
 
-    @Column(name = "parent_role_id")
-    private Long parentRoleId;
-
-    @Column(name = "parent_role_uuid")
-    private String parentRoleUuid;
-
-    @Column(name = "parent_role_name")
-    private String parentRoleName;
-
     @Column(name = "domain_id")
     private long domainId;
 
@@ -99,10 +90,6 @@ public class AclRoleJoinVO extends BaseViewVO {
         return uuid;
     }
 
-    public Long getParentRoleId() {
-        return parentRoleId;
-    }
-
     public long getDomainId() {
         return domainId;
     }
@@ -129,14 +116,6 @@ public class AclRoleJoinVO extends BaseViewVO {
 
     public Date getCreated() {
         return created;
-    }
-
-    public String getParentRoleUuid() {
-        return parentRoleUuid;
-    }
-
-    public String getParentRoleName() {
-        return parentRoleName;
     }
 
 }

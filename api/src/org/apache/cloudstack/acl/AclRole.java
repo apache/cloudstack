@@ -27,5 +27,5 @@ public interface AclRole extends PartOf, InternalIdentity, Identity {
 
     String getDescription();
 
-    Long getParentRoleId();
+    // Long getParentRoleId();
 }
