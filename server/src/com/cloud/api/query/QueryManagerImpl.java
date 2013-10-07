@@ -27,6 +27,8 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.dc.DcDetailVO;
+import com.cloud.dc.dao.DcDetailsDao;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.log4j.Logger;
@@ -325,6 +327,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Inject
     private DedicatedResourceDao _dedicatedDao;
+
+    @Inject
+    DcDetailsDao _dcDetailsDao;
 
     @Inject
     DomainManager _domainMgr;
@@ -3271,7 +3276,31 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
             return nicDetailResponseList;
 
-        } else {
+        } else if (resourceType == ResourceTag.TaggedResourceType.Zone){
+
+            List<DcDetailVO> dcDetailList;
+            if (key == null) {
+                dcDetailList = _dcDetailsDao.findDetailsList(id);
+            } else {
+                DcDetailVO nicDetail = _dcDetailsDao.findDetail(id, key);
+                dcDetailList = new LinkedList<DcDetailVO>();
+                dcDetailList.add(nicDetail);
+            }
+
+            List<ResourceDetailResponse> dcDetailResponseList = new ArrayList<ResourceDetailResponse>();
+            for (DcDetailVO dcDetail : dcDetailList) {
+                ResourceDetailResponse dcDetailResponse = new ResourceDetailResponse();
+                // String uuid = ApiDBUtils.findN
+                dcDetailResponse.setName(dcDetail.getName());
+                dcDetailResponse.setValue(dcDetail.getValue());
+                dcDetailResponse.setResourceType(ResourceTag.TaggedResourceType.Nic.toString());
+                dcDetailResponse.setObjectName("zonedetail");
+                dcDetailResponseList.add(dcDetailResponse);
+            }
+
+            return dcDetailResponseList;
+
+        }else {
 
             List<UserVmDetailVO> userVmDetailList;
             if (key == null) {
@@ -3282,17 +3311,17 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 userVmDetailList.add(nicDetail);
             }
 
-            List<ResourceDetailResponse> nicDetailResponseList = new ArrayList<ResourceDetailResponse>();
+            List<ResourceDetailResponse> userVmDetailResponseList = new ArrayList<ResourceDetailResponse>();
             for (UserVmDetailVO nicDetail : userVmDetailList) {
                 ResourceDetailResponse userVmDetailResponse = new ResourceDetailResponse();
                 userVmDetailResponse.setName(nicDetail.getName());
                 userVmDetailResponse.setValue(nicDetail.getValue());
                 userVmDetailResponse.setResourceType(ResourceTag.TaggedResourceType.Nic.toString());
                 userVmDetailResponse.setObjectName("uservmdetail");
-                nicDetailResponseList.add(userVmDetailResponse);
+                userVmDetailResponseList.add(userVmDetailResponse);
             }
 
-            return nicDetailResponseList;
+            return userVmDetailResponseList;
         }
 
     }

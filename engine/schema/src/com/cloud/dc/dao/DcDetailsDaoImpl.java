@@ -22,6 +22,7 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
+import com.cloud.vm.UserVmDetailVO;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
@@ -69,7 +70,17 @@ public class DcDetailsDaoImpl extends GenericDaoBase<DcDetailVO, Long> implement
         }
         return details;
     }
-    
+
+    @Override
+    public List<DcDetailVO> findDetailsList(long dcId) {
+        SearchCriteria<DcDetailVO> sc = DcSearch.create();
+        sc.setParameters("dcId", dcId);
+
+        List<DcDetailVO> results = search(sc, null);
+        return results;
+    }
+
+
     @Override
     public void deleteDetails(long dcId) {
         SearchCriteria<DcDetailVO> sc = DcSearch.create();
@@ -78,6 +89,18 @@ public class DcDetailsDaoImpl extends GenericDaoBase<DcDetailVO, Long> implement
         List<DcDetailVO> results = search(sc, null);
         for (DcDetailVO result : results) {
         	remove(result.getId());
+        }
+    }
+
+    @Override
+    public void removeDetails(Long id, String key) {
+        if(key != null){
+            DcDetailVO detail = findDetail(id, key);
+            if(detail != null){
+                remove(detail.getId());
+            }
+        }else {
+            deleteDetails(id);
         }
     }
 

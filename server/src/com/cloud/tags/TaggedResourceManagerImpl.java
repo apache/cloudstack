@@ -25,6 +25,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.network.vpc.NetworkACLItemDao;
 
@@ -125,6 +126,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     NicDao _nicDao;
     @Inject
     NetworkACLItemDao _networkACLItemDao;
+    @Inject
+    DataCenterDao _dataCenterDao;
 
 
     @Override
@@ -147,6 +150,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         _daoMap.put(TaggedResourceType.StaticRoute, _staticRouteDao);
         _daoMap.put(TaggedResourceType.VMSnapshot, _vmSnapshotDao);
         _daoMap.put(TaggedResourceType.RemoteAccessVpn, _vpnDao);
+        _daoMap.put(TaggedResourceType.Zone, _dataCenterDao);
 
         return true;
     }

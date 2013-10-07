@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.dc.dao;
 
+import java.util.List;
 import java.util.Map;
 
 import com.cloud.dc.DcDetailVO;
@@ -29,4 +30,8 @@ public interface DcDetailsDao extends GenericDao<DcDetailVO, Long> {
     DcDetailVO findDetail(long dcId, String name);
 
 	void deleteDetails(long dcId);
+
+    void removeDetails(Long id, String key);
+
+    List<DcDetailVO> findDetailsList(long dcId);
 }
