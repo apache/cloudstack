@@ -84,16 +84,20 @@
                 width: 200px;
                 height: 200px;
                 margin: 15px;
-                padding: 20px;
                 list-style: none;
                 float: left;
                 border: 1px solid #ccc;
                 position: relative;
 
+                .label {
+                    background: lighten(#ccc, 10%);
+                    padding: 5px;
+                }
+
                 .pie-chart-container {
                     position: absolute;
-                    left: 15px;
-                    top: 50px;
+                    left: 50px;
+                    top: 40px;
                     width: 100px;
                     height: 100px;
 
@@ -111,6 +115,7 @@
                     white-space: nowrap;
                     position: absolute;
                     top: 150px;
+                    left: 8px;
 
                     .name {
                         color: darken(#ccc, 30%);
