@@ -135,8 +135,8 @@
          */
         var pieChart = function($container, data) {
             $container.css({
-                width: 70,
-                height: 66
+                width: 100,
+                height: 100
             });
             $.plot($container, data, {
                 width: 100,
