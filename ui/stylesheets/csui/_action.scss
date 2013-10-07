@@ -15,12 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 @mixin csui-action-button {
-    &:not(.button) {
-        width: 25px;
-        height: 25px;
-        margin: 4px;
-    }
-
     float: left;
     cursor: pointer;
 
@@ -30,6 +24,10 @@
     }
 
     a {
+        width: 25px;
+        height: 20px;
+        display: block;
+        float: left;
         text-decoration: none;
     }
 
@@ -48,5 +46,9 @@
         @include csui-button;
         
         float: right;
+
+        span {
+            float: right;
+        }
     }
 }
