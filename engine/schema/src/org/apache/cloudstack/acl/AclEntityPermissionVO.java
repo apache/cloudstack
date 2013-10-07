@@ -32,13 +32,16 @@ public class AclEntityPermissionVO implements AclEntityPermission {
 
     @Column(name = "entity_id")
     private long entityId;
-    
+
     @Column(name = "entity_uuid")
     private String entityUuid;
 
     @Column(name = "access_type")
     @Enumerated(value = EnumType.STRING)
     AccessType accessType;
+
+    @Column(name = "permission")
+    private boolean permission;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
@@ -50,14 +53,16 @@ public class AclEntityPermissionVO implements AclEntityPermission {
 
     }
 
-    public AclEntityPermissionVO(long groupId, String entityType, long entityId, String entityUuid, AccessType atype) {
+    public AclEntityPermissionVO(long groupId, String entityType, long entityId, String entityUuid, AccessType atype,
+            boolean permission) {
         aclGroupId = groupId;
         this.entityType = entityType;
         this.entityId = entityId;
         this.entityUuid = entityUuid;
         accessType = atype;
+        this.permission = permission;
     }
-    
+
     @Override
     public long getId() {
         return id;
@@ -115,4 +120,10 @@ public class AclEntityPermissionVO implements AclEntityPermission {
     public Date getCreated() {
         return created;
     }
+
+    @Override
+    public boolean isAllowed() {
+        return permission;
+    }
+
 }

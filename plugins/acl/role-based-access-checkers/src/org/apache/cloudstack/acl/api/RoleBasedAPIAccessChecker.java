@@ -16,15 +16,10 @@
 // under the License.
 package org.apache.cloudstack.acl.api;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.AclRole;
@@ -35,12 +30,10 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
-import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.PluggableService;
 
-// This is the default API access checker that grab's the user's account
-// based on the account type, access is granted
+// This is the Role Based API access checker that grab's the  account's roles
+// based on the set of roles, access is granted if any of the role has access to the api
 @Local(value=APIChecker.class)
 public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker {
 
