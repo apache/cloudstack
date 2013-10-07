@@ -12,4 +12,6 @@ public interface AclEntityPermission extends InternalIdentity {
     Long getEntityId();
 
     AccessType getAccessType();
+
+    boolean isAllowed();
 }

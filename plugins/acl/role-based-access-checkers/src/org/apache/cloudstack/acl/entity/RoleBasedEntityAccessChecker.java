@@ -20,11 +20,14 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.AclGroupAccountMapVO;
 import org.apache.cloudstack.acl.AclRole;
 import org.apache.cloudstack.acl.AclService;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.dao.AclGroupAccountMapDao;
+import org.apache.cloudstack.acl.dao.AclGroupDao;
 
 import com.cloud.acl.DomainChecker;
 import com.cloud.exception.PermissionDeniedException;
@@ -39,9 +42,18 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
     @Inject
     AclService _aclService;
 
+    @Inject
+    AclGroupAccountMapDao _aclGroupAccountMapDao;
+
     @Override
     public boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType)
             throws PermissionDeniedException {
+
+        // check if explicit allow/deny is present for this entity in
+        // acl_entity_permission
+
+        List<AclGroupAccountMapVO> acctGroups = _aclGroupAccountMapDao.listByAccountId(caller.getId());
+
 
         // Is Caller RootAdmin? Yes, granted true
         if (_accountService.isRootAdmin(caller.getId())) {

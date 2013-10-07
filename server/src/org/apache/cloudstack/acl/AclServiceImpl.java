@@ -259,7 +259,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
             if (entity instanceof Identity) {
                 entityUuid = ((Identity)entity).getUuid();
             }
-            perm = new AclEntityPermissionVO(aclGroupId, entityType, entityId, entityUuid, accessType);
+            perm = new AclEntityPermissionVO(aclGroupId, entityType, entityId, entityUuid, accessType, true);
             _entityPermissionDao.persist(perm);
         }
         return group;
