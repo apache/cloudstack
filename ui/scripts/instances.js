@@ -1324,8 +1324,6 @@
                                         });
                                     }
                                 }
-
-
                             }
                         },
 
@@ -1366,9 +1364,79 @@
                         notification: {
                             poll: pollAsyncJobResult
                         }
-
                     },
-
+                   
+                    assignVmToAnotherAccount: {
+                        label: 'Assign Instance to Another Account',
+                        createForm: {
+                            title: 'Assign Instance to Another Account',
+                            fields: {                                
+                            	domainid: {
+                				    label: 'label.domain',
+                				    validation: {
+                                        required: true
+                                    },
+                				    select: function(args) {	
+                				    	$.ajax({
+            				                url: createURL('listDomains'),
+            				                data: {
+            				                    listAll: true,
+            				                    details: 'min'
+            				                },
+            				                success: function(json) {
+            				                    var array1 = [];
+            				                    var domains = json.listdomainsresponse.domain;
+            				                    if (domains != null && domains.length > 0) {
+            				                        for (var i = 0; i < domains.length; i++) {
+            				                            array1.push({
+            				                                id: domains[i].id,
+            				                                description: domains[i].path
+            				                            });
+            				                        }
+            				                    }
+            				                    args.response.success({
+            				                        data: array1
+            				                    });
+            				                }
+            				            });				                   				                 
+                				    }
+                				},
+                				account: {
+                				    label: 'label.account',
+                				    validation: {
+                                        required: true
+                                    }
+                				}		
+                            }
+                        },
+                        action: function(args) {                            
+                            $.ajax({
+                                url: createURL('assignVirtualMachine&virtualmachine'),
+                                data: {
+                                    virtualmachineid: args.context.instances[0].id,
+                                    domainid: args.data.domainid,
+                                    account: args.data.account
+                                },                                
+                                success: function(json) {   
+                                    var item = json.virtualmachine.virtualmachine;                                     
+                                    args.response.success({
+                                        data: item
+                                    });                                    
+                                }
+                            });
+                        },
+                        messages: {
+                            notification: function(args) {
+                                return 'Assign Instance to Another Account';
+                            }
+                        },
+                        notification: {
+                            poll: function(args) {
+                                args.complete();
+                            }
+                        }
+                    },                    
+                    
                     viewConsole: {
                         label: 'label.view.console',
                         action: {
@@ -1924,6 +1992,11 @@
             if (jsonObj.hypervisor == "BareMetal") {
                 allowedActions.push("createTemplate");
             }
+            
+            if (isAdmin() || isDomainAdmin()) {
+                allowedActions.push("assignVmToAnotherAccount");
+            }
+            
         } else if (jsonObj.state == 'Starting') {
             //  allowedActions.push("stop");
         } else if (jsonObj.state == 'Error') {
