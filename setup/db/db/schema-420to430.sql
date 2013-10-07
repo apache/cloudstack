@@ -369,6 +369,15 @@ CREATE TABLE `cloud`.`acl_entity_permission` (
   CONSTRAINT `fk_acl_entity_permission__group_id` FOREIGN KEY(`group_id`) REFERENCES `acl_group` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`acl_role_permission` (
+  `id` bigint unsigned NOT NULL UNIQUE auto_increment,
+  `role_id` bigint unsigned NOT NULL,
+  `entity_type` varchar(100) NOT NULL,
+  `access_type` varchar(40) NOT NULL,
+  `permission` int(1) unsigned NOT NULL COMMENT '1 allowed, 0 for denied',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_acl_role_permission___role_id` FOREIGN KEY(`role_id`) REFERENCES `acl_role` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP VIEW IF EXISTS `cloud`.`acl_role_view`;
 CREATE VIEW `cloud`.`acl_role_view` AS
