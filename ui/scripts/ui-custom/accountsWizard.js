@@ -156,8 +156,9 @@
 
                 return $wizard.dialog({
                     title: _l('label.add.account'),
-                    width: ldapStatus ? 800 : 330,
-                    height: ldapStatus ? 500 : 500,
+                    dialogClass: 'create-form',
+                    width: 800,
+                    height: 800,
                     closeOnEscape: false,
                     zIndex: 5000
                 }).closest('.ui-dialog').overlay();
