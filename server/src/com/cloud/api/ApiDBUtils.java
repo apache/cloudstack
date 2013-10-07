@@ -713,8 +713,8 @@ public class ApiDBUtils {
         return _resourceLimitMgr.findCorrectResourceLimitForAccount(account, type);
     }
 
-    public static long findCorrectResourceLimit(Long limit, long accountId, ResourceType type) {
-        return _resourceLimitMgr.findCorrectResourceLimitForAccount(accountId, limit, type);
+    public static long findCorrectResourceLimit(Long limit, short accountType, ResourceType type) {
+        return _resourceLimitMgr.findCorrectResourceLimitForAccount(accountType, limit, type);
     }
 
     public static long getResourceCount(ResourceType type, long accountId) {
