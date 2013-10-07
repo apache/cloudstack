@@ -16,6 +16,7 @@
 // under the License.
 @import "csui/csui";
 @import "browser";
+@import "icons";
 
 html body > .login {
     @include csui-login;
@@ -246,6 +247,27 @@ body {
     .ui-tabs-hide {
         display: none;
     }
+
+    &:not(.detail-actions) {
+        table {
+            width: 100%;
+
+            tr {
+                &:nth-child(even) {
+                    background: lighten(#ccc, 12%);
+                }
+            }
+            
+            th, td {
+                padding: 10px;
+            }
+        }
+    }
+
+    .detail-actions {
+        background: white;
+        border-radius: 6px;
+    }
 }
 
 // Panel toolbars
@@ -254,5 +276,14 @@ body {
 
     .panel-controls {
         display: none;
+    }
+}
+
+// Action buttons
+.action {
+    @include csui-action-button;
+
+    .icon {
+        background-image: url(../images/sprites.png);
     }
 }

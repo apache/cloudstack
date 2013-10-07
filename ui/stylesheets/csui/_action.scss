@@ -14,33 +14,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-@mixin csui-tab {
+@mixin csui-action-button {
+    width: 25px;
+    height: 25px;
     float: left;
-    list-style: none;
-    padding: 15px 40px;
-    margin: 0px;
-}
+    margin: 4px;
+    cursor: pointer;
 
-@mixin csui-tab-active {
-    background: lighten(#ccc, 15%);
-    border-radius: 8px 8px 0 0;
-    margin: 0;
-}
-
-@mixin csui-tabs {
-    @include row;
-
-    margin: 0;
-    padding: 0;
-
-    li {
-        @include csui-tab;
+    a {
+        text-decoration: none;
     }
-}
 
-@mixin csui-details {
-    background: lighten(#ccc, 15%);
-    padding: 10px;
-    border-bottom: 1px solid #ccc;
+    .icon {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    &.text {
+        @include csui-button;
+        
+        float: right;
+    }
 }

@@ -1,0 +1,478 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+.action.edit .icon {
+    background-position: 1px -1px;
+}
+
+.action.edit:hover .icon {
+    background-position: 1px -583px;
+}
+
+.start .icon {
+    background-position: -169px -1px;
+}
+
+.start:hover .icon {
+    background-position: -169px -583px;
+}
+
+.stop .icon,
+.removeVmwareDc .icon,
+.release .icon {
+    background-position: 0px -31px;
+}
+
+.stop:hover .icon,
+.removeVmwareDc:hover .icon,
+.release:hover .icon {
+    background-position: 0px -613px;
+}
+
+.restart .icon,
+.releaseDedicatedZone .icon {
+    background-position: 0px -63px;
+}
+
+.restart:hover .icon,
+.releaseDedicatedZone:hover .icon {
+    background-position: 0px -645px;
+}
+
+.destroy .icon,
+.remove .icon,
+.delete .icon,
+.decline .icon,
+.deleteacllist .icon {
+    background-position: 1px -92px;
+}
+
+.destroy:hover .icon,
+.remove:hover .icon,
+.delete:hover .icon,
+.deleteacllist:hover .icon {
+    background-position: 1px -674px;
+}
+
+.migrate .icon,
+.migrateToAnotherStorage .icon {
+    background-position: 0px -125px;
+}
+
+.migrate:hover .icon,
+.migrateToAnotherStorage:hover .icon {
+    background-position: 0px -707px;
+}
+
+.migrate .icon,
+.migrateVolume .icon {
+    background-position: 0px -125px;
+}
+
+.migrate:hover .icon,
+.migrateVolume:hover .icon {
+    background-position: 0px -707px;
+}
+
+.attach .icon,
+.attachISO .icon,
+.attachDisk .icon,
+.associateProfileToBlade .icon {
+    background-position: -104px -3px;
+}
+
+.attach:hover .icon,
+.attachISO:hover .icon,
+.attachDisk:hover .icon {
+    background-position: -104px -585px;
+}
+
+.detach .icon,
+.detachISO .icon,
+.detachDisk .icon,
+.disassociateProfileFromBlade .icon {
+    background-position: -101px -65px;
+}
+
+.detach:hover .icon,
+.detachISO:hover .icon,
+.detachDisk:hover .icon,
+.disassociateProfileFromBlade:hover .icon {
+    background-position: -101px -647px;
+}
+
+.resetPassword .icon,
+.changePassword .icon {
+    background-position: -68px -30px;
+}
+
+.resetPassword:hover .icon,
+.changePassword:hover .icon {
+    background-position: -68px -612px;
+}
+
+.changeService .icon {
+    background-position: -38px -33px;
+}
+
+.changeService:hover .icon {
+    background-position: -38px -615px;
+}
+
+.snapshot .icon,
+.takeSnapshot .icon {
+    background-position: -36px -91px;
+}
+
+.snapshot:hover .icon,
+.takeSnapshot:hover .icon {
+    background-position: -36px -673px;
+}
+
+.recurringSnapshot .icon {
+    background-position: -69px -95px;
+}
+
+.recurringSnapshot:hover .icon {
+    background-position: -69px -677px;
+}
+
+.downloadVolume .icon,
+.downloadTemplate .icon,
+.downloadISO .icon,
+.replaceacllist .icon,
+.replaceACL .icon {
+    background-position: -35px -125px;
+}
+
+.downloadVolume:hover .icon,
+.downloadTemplate:hover .icon,
+.downloadISO:hover .icon,
+.replaceacllist:hover .icon,
+.replaceACL:hover .icon {
+    background-position: -35px -707px;
+}
+
+.createVolume .icon {
+    background-position: -70px -124px;
+}
+
+.createVolume:hover .icon {
+    background-position: -70px -706px;
+}
+
+.enable .icon,
+.enableStaticNAT .icon {
+    background-position: -102px -92px;
+}
+
+.enable:hover .icon,
+.enableStaticNAT:hover .icon {
+    background-position: -102px -676px;
+}
+
+.disable .icon,
+.disableStaticNAT .icon {
+    background-position: -136px -93px;
+}
+
+.disable:hover .icon,
+.disableStaticNAT:hover .icon {
+    background-position: -136px -677px;
+}
+
+.add .icon,
+.addNew .icon,
+.assignVm .icon {
+    background-position: -37px -61px;
+}
+
+.add:hover .icon,
+.addNew:hover .icon,
+.assignVm:hover .icon {
+    background-position: -37px -643px;
+}
+
+.create .icon,
+.createTemplate .icon,
+.enableSwift .icon,
+.addVM .icon,
+.dedicateZone .icon,
+.dedicate .icon {
+    background-position: -69px -63px;
+}
+
+.create:hover .icon,
+.createTemplate:hover .icon,
+.enableSwift:hover .icon,
+.addVM:hover .icon,
+.dedicateZone:hover .icon {
+    background-position: -69px -645px;
+}
+
+.copyTemplate .icon,
+.copyISO .icon {
+    background-position: -138px -2px;
+}
+
+.copyTemplate:hover .icon,
+.copyISO:hover .icon {
+    background-position: -138px -584px;
+}
+
+.createVM .icon {
+    background-position: -137px -32px;
+}
+
+.createVM:hover .icon {
+    background-position: -137px -614px;
+}
+
+.enableMaintenanceMode .icon {
+    background-position: -138px -65px;
+}
+
+.enableMaintenanceMode:hover .icon {
+    background-position: -138px -647px;
+}
+
+.cancelMaintenanceMode .icon {
+    background-position: -138px -123px;
+}
+
+.cancelMaintenanceMode:hover .icon {
+    background-position: -138px -705px;
+}
+
+.lock .icon {
+    background-position: -104px -124px;
+}
+
+.lock:hover .icon {
+    background-position: -104px -706px;
+}
+
+.updateResourceLimits .icon {
+    background-position: -100px -32px;
+}
+
+.updateResourceLimits:hover .icon {
+    background-position: -100px -614px;
+}
+
+.addVlanRange .icon,
+.addVmwareDc .icon {
+    background-position: -37px -62px;
+}
+
+.addVlanRange:hover .icon,
+.addVmwareDc:hover .icon {
+    background-position: -37px -62px;
+}
+
+.removeVlanRange .icon {
+    background-position: 1px -92px;
+}
+
+.removeVlanRange:hover .icon {
+    background-position: 1px -92px;
+}
+
+.resize .icon,
+.updateResourceCount .icon {
+    background-position: -167px -66px;
+}
+
+.resize:hover .icon,
+.updateResourceCount:hover .icon {
+    background-position: -167px -648px;
+}
+
+.generateKeys .icon,
+.networkACL .icon {
+    background-position: -167px -95px;
+}
+
+.generateKeys:hover .icon,
+.networkACL:hover .icon {
+    background-position: -167px -677px;
+}
+
+.restoreVM .icon,
+.restore .icon {
+    background-position: -168px -31px;
+}
+
+.reset .icon {
+    background-position: -168px -31px;
+}
+
+.scaleUp .icon {
+    background-position: -167px -66px;
+}
+
+.restoreVM:hover .icon,
+.restore:hover .icon {
+    background-position: -168px -613px;
+}
+
+.reset:hover .icon {
+    background-position: -168px -613px;
+}
+
+.enableVPN .icon {
+    background-position: -198px -3px;
+}
+
+.enableVPN:hover .icon {
+    background-position: -197px -586px;
+}
+
+.disableVPN .icon {
+    background-position: -198px -32px;
+}
+
+.disableVPN:hover .icon {
+    background-position: -197px -615px;
+}
+
+.addIpRange .icon {
+    background-position: -197px -65px;
+}
+
+.addIpRange:hover .icon {
+    background-position: -197px -647px;
+}
+
+.forceReconnect .icon {
+    background-position: -196px -95px;
+}
+
+.forceReconnect:hover .icon {
+    background-position: -196px -677px;
+}
+
+.manage .icon {
+    background-position: -165px -122px;
+}
+
+.manage:hover .icon {
+    background-position: -165px -704px;
+}
+
+.unmanage .icon {
+    background-position: -196px -122px;
+}
+
+.unmanage:hover .icon {
+    background-position: -196px -704px;
+}
+
+.viewConsole .icon {
+    background-position: -231px -2px;
+}
+
+.viewConsole:hover .icon {
+    background-position: -229px -586px;
+}
+
+.moveTop .icon {
+    background-position: -24px -161px;
+}
+
+.moveTop:hover .icon {
+    background-position: -24px -734px;
+}
+
+.moveBottom .icon {
+    background-position: -98px -161px;
+}
+
+.moveBottom:hover .icon {
+    background-position: -98px -734px;
+}
+
+.moveUp .icon {
+    background-position: -2px -161px;
+}
+
+.moveUp:hover .icon {
+    background-position: -2px -734px;
+}
+
+.moveDown .icon {
+    background-position: -55px -161px;
+}
+
+.moveDown:hover .icon {
+    background-position: -55px -734px;
+}
+
+.moveDrag .icon {
+    cursor: move;
+    /*+border-radius:10px;*/
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -khtml-border-radius: 10px;
+    border-radius: 10px;
+    border-radius: 10px 10px 10px 10px;
+    background-position: -74px -162px;
+}
+
+.moveDrag:hover .icon {
+    background-color: #FFFFFF;
+    cursor: move !important;
+}
+
+.uploadVolume .icon {
+    background-position: -232px -34px;
+}
+
+.uploadVolume:hover .icon {
+    background-position: -230px -615px;
+}
+
+.editTags .icon {
+    background-position: -228px -65px;
+}
+
+.editTags:hover .icon {
+    background-position: -228px -646px;
+}
+
+.changeAffinity .icon {
+    background-position: -264px -2px;
+}
+
+.changeAffinity:hover .icon {
+    background-position: -263px -583px;
+}
+
+.releaseFromAccount .icon {
+    background-position: -230px -123px;
+}
+
+.releaseFromAccount:hover .icon {
+    background-position: -229px -704px;
+}
+
+.addAccount .icon {
+    background-position: -231px -96px;
+}
+
+.addAccount:hover .icon {
+    background-position: -230px -677px;
+}
