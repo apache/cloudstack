@@ -17,10 +17,19 @@
 
 // Admin dashboard
 .dashboard.admin {
+    padding: 10px;
+    
     .sub.alerts {
-        width: 50%;
-        float: left;
-        padding: 15px;
+        width: 48%;
+        margin-top: 25px;
+
+        &.first {
+            float: left;
+        }
+
+        &.last {
+            float: right;
+        }
 
         ul {
             height: 200px;
@@ -72,6 +81,26 @@
         }
     }
 
+    .head {
+        float: left;
+        border: 1px solid #cfcfcf;
+
+        .top {
+            @include csui-toolbar;
+
+            .title {
+                float: left;
+                margin-top: 8px;
+            }
+            
+            .fetch-latest {
+                @include csui-button;
+                
+                float: right;
+            }
+        }
+    }
+
     .zone-stats {
         @include row;
 
@@ -79,11 +108,13 @@
 
         ul {
             padding: 0;
+            max-height: 230px;
+            overflow: auto;
             
             li {
                 width: 200px;
                 height: 200px;
-                margin: 15px;
+                margin: 13px;
                 list-style: none;
                 float: left;
                 border: 1px solid #ccc;
@@ -100,6 +131,10 @@
                     top: 40px;
                     width: 100px;
                     height: 100px;
+
+                    canvas.overlay {
+                        display: none;
+                    }
 
                     .percent-label {
                         position: absolute;

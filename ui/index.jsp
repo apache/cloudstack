@@ -1226,6 +1226,54 @@ under the License.
 
       <!-- Admin dashboard -->
       <div class="dashboard admin">
+          <!-- Capacity / stats -->
+          <div class="dashboard-container head">
+              <div class="top">
+                  <div class="title">
+                      <span></span>
+                  </div>
+
+                  <div class="button fetch-latest">
+                      <span><fmt:message key="label.fetch.latest"/></span>
+                  </div>
+
+                  <div class="selects" style="display:none;">
+                      <div class="select">
+                          <label><fmt:message key="label.zone"/>:</label>
+                          <select>
+                          </select>
+                      </div>
+                      <div class="select">
+                          <label><fmt:message key="label.pods"/>:</label>
+                          <select>
+                          </select>
+                      </div>
+                  </div>
+              </div>
+
+              <!-- Zone stat charts -->
+              <div class="zone-stats">
+                  <ul data-item="zoneCapacities">
+                      <li concat-value="25">
+                          <div class="label">
+                              <fmt:message key="label.zone"/>: <span data-list-item="zoneName"></span>
+                          </div>
+                          <div class="pie-chart-container">
+                              <div class="percent-label"><span data-list-item="percent"></span>%</div>
+                              <div class="pie-chart" data-list-item="percent"></div>
+                          </div>
+                          <div class="info">
+                              <div class="name" data-list-item="type"></div>
+                              <div class="value">
+                                  <span class="used" data-list-item="used"></span>
+                                  <span class="divider">/</span>
+                                  <span class="total" data-list-item="total"></span>
+                              </div>
+                          </div>
+                      </li>
+                  </ul>
+              </div>
+          </div>
         <!-- General alerts-->
         <div class="dashboard-container sub alerts first">
           <div class="top">
@@ -1256,55 +1304,7 @@ under the License.
               </div>
             </li>
           </ul>
-        </div>
-        <!-- Capacity / stats -->
-        <div class="dashboard-container head">
-          <div class="top">
-            <div class="title">
-              <span></span>
-            </div>
-
-             <div class="button fetch-latest">
-               <span><fmt:message key="label.fetch.latest"/></span>
-              </div>
-
-            <div class="selects" style="display:none;">
-              <div class="select">
-                <label><fmt:message key="label.zone"/>:</label>
-                <select>
-                </select>
-              </div>
-              <div class="select">
-                <label><fmt:message key="label.pods"/>:</label>
-                <select>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- Zone stat charts -->
-          <div class="zone-stats">
-            <ul data-item="zoneCapacities">
-              <li concat-value="25">
-                <div class="label">
-                  <fmt:message key="label.zone"/>: <span data-list-item="zoneName"></span>
-                </div>
-                <div class="pie-chart-container">
-                  <div class="percent-label"><span data-list-item="percent"></span>%</div>
-                  <div class="pie-chart" data-list-item="percent"></div>
-                </div>
-                <div class="info">
-                  <div class="name" data-list-item="type"></div>
-                  <div class="value">
-                    <span class="used" data-list-item="used"></span>
-                    <span class="divider">/</span>
-                    <span class="total" data-list-item="total"></span>
-                  </div>
-                </div>
-              </li>
-            </ul>
-          </div>
-        </div>
+        </div>        
       </div>
 
       <!-- User dashboard-->
