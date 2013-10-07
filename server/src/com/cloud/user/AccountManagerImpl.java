@@ -599,6 +599,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             //delete the account from project accounts
             _projectAccountDao.removeAccountFromProjects(accountId);
 
+            //delete the account from group
+            _aclGroupAccountDao.removeAccountFromGroups(accountId);
+
             // delete all vm groups belonging to accont
             List<InstanceGroupVO> groups = _vmGroupDao.listByAccountId(accountId);
             for (InstanceGroupVO group : groups) {
@@ -943,6 +946,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
             user.setRegistrationToken(registrationToken);
         }
+
+        // create correct account and group association based on accountType
+        if (accountType != Account.ACCOUNT_TYPE_PROJECT) {
+            AclGroupAccountMapVO grpAcct = new AclGroupAccountMapVO(accountType + 1, accountId);
+            _aclGroupAccountDao.persist(grpAcct);
+        }
+
         txn.commit();
 
         CallContext.current().putContextParameter(Account.class, account.getUuid());
