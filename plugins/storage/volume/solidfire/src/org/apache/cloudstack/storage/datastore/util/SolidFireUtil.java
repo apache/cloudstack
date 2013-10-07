@@ -78,13 +78,13 @@ public class SolidFireUtil
     public static final String USE_MUTUAL_CHAP_FOR_VMWARE = "useMutualChapForVMware";
 
     public static long createSolidFireVolume(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword,
-            String strSfVolumeName, long lSfAccountId, long lTotalSize, boolean bEnable512e,
+            String strSfVolumeName, long lSfAccountId, long lTotalSize, boolean bEnable512e, final String strCloudStackVolumeSize,
             long lMinIops, long lMaxIops, long lBurstIops)
     {
         final Gson gson = new GsonBuilder().create();
 
         VolumeToCreate volumeToCreate = new VolumeToCreate(strSfVolumeName, lSfAccountId, lTotalSize, bEnable512e,
-                lMinIops, lMaxIops, lBurstIops);
+                strCloudStackVolumeSize, lMinIops, lMaxIops, lBurstIops);
 
         String strVolumeToCreateJson = gson.toJson(volumeToCreate);
 
@@ -443,10 +443,10 @@ public class SolidFireUtil
         private final VolumeToCreateParams params;
 
         private VolumeToCreate(final String strVolumeName, final long lAccountId, final long lTotalSize,
-                final boolean bEnable512e, final long lMinIOPS, final long lMaxIOPS, final long lBurstIOPS)
+                final boolean bEnable512e, final String strCloudStackVolumeSize, final long lMinIOPS, final long lMaxIOPS, final long lBurstIOPS)
         {
             params = new VolumeToCreateParams(strVolumeName, lAccountId, lTotalSize, bEnable512e,
-                    lMinIOPS, lMaxIOPS, lBurstIOPS);
+                    strCloudStackVolumeSize, lMinIOPS, lMaxIOPS, lBurstIOPS);
         }
 
         private static final class VolumeToCreateParams
@@ -456,16 +456,28 @@ public class SolidFireUtil
             private final long totalSize;
             private final boolean enable512e;
             private final VolumeToCreateParamsQoS qos;
+            private final VolumeToCreateParamsAttributes attributes;
 
             private VolumeToCreateParams(final String strVolumeName, final long lAccountId, final long lTotalSize,
-                    final boolean bEnable512e, final long lMinIOPS, final long lMaxIOPS, final long lBurstIOPS)
+                    final boolean bEnable512e, final String strCloudStackVolumeSize, final long lMinIOPS, final long lMaxIOPS, final long lBurstIOPS)
             {
                 name = strVolumeName;
                 accountID = lAccountId;
                 totalSize = lTotalSize;
                 enable512e = bEnable512e;
 
+                attributes = new VolumeToCreateParamsAttributes(strCloudStackVolumeSize);
                 qos = new VolumeToCreateParamsQoS(lMinIOPS, lMaxIOPS, lBurstIOPS);
+            }
+
+            private static final class VolumeToCreateParamsAttributes
+            {
+                private final String CloudStackVolumeSize;
+
+                private VolumeToCreateParamsAttributes(final String strCloudStackVolumeSize)
+                {
+                    CloudStackVolumeSize = strCloudStackVolumeSize;
+                }
             }
 
             private static final class VolumeToCreateParamsQoS

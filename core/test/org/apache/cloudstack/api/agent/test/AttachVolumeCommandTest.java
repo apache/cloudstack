@@ -26,7 +26,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 
 public class AttachVolumeCommandTest {
     AttachVolumeCommand avc = new AttachVolumeCommand(true, false, "vmname",
-            StoragePoolType.Filesystem, "vPath", "vName",
+            StoragePoolType.Filesystem, "vPath", "vName", 1073741824L,
             123456789L, "chainInfo");
 
     @Test

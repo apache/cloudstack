@@ -30,7 +30,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value=NetScalerPodDao.class) @DB(txn=false)
+@Local(value=NetScalerPodDao.class) @DB
 public class NetScalerPodDaoImpl extends GenericDaoBase<NetScalerPodVO, Long> implements NetScalerPodDao {
 
     final SearchBuilder<NetScalerPodVO> podIdSearch;

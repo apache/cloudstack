@@ -66,7 +66,10 @@ public class S3ImageStoreDriverImpl extends  BaseImageStoreDriverImpl {
                 details.get(ApiConstants.S3_SOCKET_TIMEOUT) == null ? null : Integer.valueOf(details
                         .get(ApiConstants.S3_SOCKET_TIMEOUT)), imgStore.getCreated(),
                 _configDao.getValue(Config.S3EnableRRS.toString()) == null ? false : Boolean.parseBoolean(_configDao
-                        .getValue(Config.S3EnableRRS.toString())));
+                        .getValue(Config.S3EnableRRS.toString())),
+                _configDao.getValue(Config.S3EnableMultiPartUpload.toString()) == null ? true : Boolean.parseBoolean(_configDao
+                                .getValue(Config.S3EnableMultiPartUpload.toString()))                        
+                );
 
     }
 

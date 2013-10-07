@@ -30,7 +30,7 @@ import com.cloud.utils.db.Transaction;
 
 @Component
 @Local(value=ClusterVSMMapDao.class)
-@DB(txn = false)
+@DB
 public class ClusterVSMMapDaoImpl extends GenericDaoBase<ClusterVSMMapVO, Long> implements ClusterVSMMapDao {
 
     final SearchBuilder<ClusterVSMMapVO> ClusterSearch;

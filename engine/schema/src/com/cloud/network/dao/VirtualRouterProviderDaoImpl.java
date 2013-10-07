@@ -30,7 +30,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value=VirtualRouterProviderDao.class) @DB(txn=false)
+@Local(value=VirtualRouterProviderDao.class) @DB()
 public class VirtualRouterProviderDaoImpl extends GenericDaoBase<VirtualRouterProviderVO, Long> implements VirtualRouterProviderDao {
     final SearchBuilder<VirtualRouterProviderVO> AllFieldsSearch;
     

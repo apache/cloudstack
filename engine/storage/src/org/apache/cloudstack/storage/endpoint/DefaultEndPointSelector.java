@@ -27,9 +27,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -37,6 +34,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -248,6 +247,11 @@ public class DefaultEndPointSelector implements EndPointSelector {
         } else {
             throw new CloudRuntimeException("not implemented yet");
         }
+    }
+
+    @Override
+    public EndPoint select(Scope scope, Long storeId) {
+        return findEndPointInScope(scope, findOneHostOnPrimaryStorage, storeId);
     }
 
     @Override

@@ -577,6 +577,14 @@ public class VirtualMachineMO extends BaseMO {
 		}
 		return null;
 	}
+	
+	public boolean hasSnapshot() throws Exception {
+		VirtualMachineSnapshotInfo info = getSnapshotInfo();
+		if(info != null) {
+			return info.getCurrentSnapshot() != null;
+		}
+		return false;
+	}
 
 	public boolean createFullClone(String cloneName, ManagedObjectReference morFolder, ManagedObjectReference morResourcePool,
 		ManagedObjectReference morDs) throws Exception {
@@ -1629,6 +1637,7 @@ public class VirtualMachineMO extends BaseMO {
 
 	public void tearDownDevices(Class<?>[] deviceClasses) throws Exception {
 		VirtualDevice[] devices = getMatchedDevices(deviceClasses);
+
 		if(devices.length > 0) {
     		VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
     	    VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[devices.length];
@@ -1637,9 +1646,9 @@ public class VirtualMachineMO extends BaseMO {
     	    	deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
     	    	deviceConfigSpecArray[i].setDevice(devices[i]);
     	    	deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.REMOVE);
+    	    	vmConfigSpec.getDeviceChange().add(deviceConfigSpecArray[i]);
     	    }
 
-    	    vmConfigSpec.getDeviceChange().addAll(Arrays.asList(deviceConfigSpecArray));
     		if(!configureVm(vmConfigSpec)) {
                 throw new Exception("Failed to detach devices");
             }
@@ -2021,6 +2030,10 @@ public class VirtualMachineMO extends BaseMO {
 	    return detachedDiskFiles; 
 	}
 	
+	public List<VirtualDevice> getAllDeviceList() throws Exception {
+		return (List<VirtualDevice>)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
+	}
+	
 	public VirtualDisk[] getAllDiskDevice() throws Exception {
 		List<VirtualDisk> deviceList = new ArrayList<VirtualDisk>();
 		List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
@@ -2033,6 +2046,19 @@ public class VirtualMachineMO extends BaseMO {
 		}
 
 		return deviceList.toArray(new VirtualDisk[0]);
+	}
+	
+	public VirtualDisk getDiskDeviceByBusName(List<VirtualDevice> allDevices, String busName) throws Exception {
+		for(VirtualDevice device : allDevices ) {
+			if(device instanceof VirtualDisk) {
+				VirtualDisk disk = (VirtualDisk)device;
+				String diskBusName = getDeviceBusName(allDevices, (VirtualDevice)disk);
+				if(busName.equalsIgnoreCase(diskBusName))
+					return disk;
+			}
+		}
+		
+		return null;
 	}
 
 	public VirtualDisk[] getAllIndependentDiskDevice() throws Exception {

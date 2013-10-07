@@ -73,20 +73,24 @@ if __name__ == "__main__":
             n = 0
             while(n < iterates):
                 engine = \
-                    TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient,
-                                                            deploy.getCfg(),
-                                                            testCaseLogFile,
-                                                            testResultLogFile)
+                    TestCaseExecuteEngine.TestCaseExecuteEngine(
+                        deploy.testClient,
+                        deploy.getCfg(
+                        ),
+                        testCaseLogFile,
+                        testResultLogFile)
                 engine.loadTestsFromFile(options.module)
                 engine.run()
                 n = n + 1
     else:
         n = 0
-        while(n<iterates):
-            engine = TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient,
-                                                             deploy.getCfg(),
-                                                             testCaseLogFile,
-                                                             testResultLogFile)
+        while(n < iterates):
+            engine = TestCaseExecuteEngine.TestCaseExecuteEngine(
+                deploy.testClient,
+                deploy.getCfg(
+                ),
+                testCaseLogFile,
+                testResultLogFile)
             engine.loadTestsFromDir(options.testCaseFolder)
             engine.run()
             n = n + 1

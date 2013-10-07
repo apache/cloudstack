@@ -47,8 +47,6 @@ import com.amazonaws.services.s3.model.ProgressEvent;
 import com.amazonaws.services.s3.model.ProgressListener;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.StorageClass;
-import com.amazonaws.services.s3.transfer.TransferManager;
-import com.amazonaws.services.s3.transfer.Upload;
 
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
@@ -227,9 +225,6 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
             // compute s3 key
             s3Key = join(asList(installPath, fileName), S3Utils.SEPARATOR);
 
-            // multi-part upload using S3 api to handle > 5G input stream
-            TransferManager tm = new TransferManager(S3Utils.acquireClient(s3));
-
             // download using S3 API
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(remoteSize);
@@ -262,11 +257,19 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
                 }
 
             });
-            // TransferManager processes all transfers asynchronously,
-            // so this call will return immediately.
-            Upload upload = tm.upload(putObjectRequest);
-
-            upload.waitForCompletion();
+            
+            if ( s3.isMultipartEnabled()){
+                // use TransferManager to do multipart upload
+                S3Utils.mputObject(s3, putObjectRequest);
+            } else{
+                // single part upload, with 5GB limit in Amazon
+                S3Utils.putObject(s3, putObjectRequest);
+                while (status != TemplateDownloader.Status.DOWNLOAD_FINISHED &&
+                        status != TemplateDownloader.Status.UNRECOVERABLE_ERROR &&
+                        status != TemplateDownloader.Status.ABORTED) {
+                    // wait for completion
+                }
+            }
 
             // finished or aborted
             Date finish = new Date();

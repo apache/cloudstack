@@ -34,7 +34,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={ServiceOfferingDao.class}) @DB(txn=false)
+@Local(value={ServiceOfferingDao.class}) @DB()
 public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Long> implements ServiceOfferingDao {
     protected static final Logger s_logger = Logger.getLogger(ServiceOfferingDaoImpl.class);
 

@@ -19,14 +19,9 @@
 
 package com.cloud.resource;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.DiskTO;
-import com.cloud.agent.api.to.NfsTO;
-import com.cloud.agent.manager.SimulatorManager;
-import com.cloud.storage.Storage;
-import com.cloud.storage.resource.StorageProcessor;
+import java.io.File;
+import java.util.UUID;
+
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -36,13 +31,21 @@ import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachAnswer;
 import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.ForgetObjectCmd;
+import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 
-import java.io.File;
-import java.util.UUID;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.manager.SimulatorManager;
+import com.cloud.storage.Storage;
+import com.cloud.storage.resource.StorageProcessor;
 
 public class SimulatorStorageProcessor implements StorageProcessor {
 
@@ -213,5 +216,17 @@ public class SimulatorStorageProcessor implements StorageProcessor {
     @Override
     public Answer deleteSnapshot(DeleteCommand cmd) {
         return new Answer(cmd);
+    }
+
+    @Override
+    public Answer introduceObject(IntroduceObjectCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Answer forgetObject(ForgetObjectCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

@@ -142,6 +142,10 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
             }
         }
 
+        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN){
+            volResponse.setPath(volume.getPath());
+        }
+
         // populate owner.
         ApiResponseHelper.populateOwner(volResponse, volume);
 

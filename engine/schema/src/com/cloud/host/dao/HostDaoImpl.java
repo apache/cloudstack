@@ -65,7 +65,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 @Local(value = {HostDao.class})
-@DB(txn = false)
+@DB
 @TableGenerator(name = "host_req_sq", table = "op_host", pkColumnName = "id", valueColumnName = "sequence", allocationSize = 1)
 public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao { //FIXME: , ExternalIdDao {
     private static final Logger s_logger = Logger.getLogger(HostDaoImpl.class);

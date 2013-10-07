@@ -17,6 +17,7 @@
 package com.cloud.hypervisor.vmware.manager;
 
 import com.cloud.agent.api.Command;
+import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.ManagedObjectReference;
@@ -28,7 +29,8 @@ public interface VmwareHostService {
 
     String getWorkerName(VmwareContext context, Command cmd, int workerSequence);
 
-    ManagedObjectReference handleDatastoreAndVmdkAttach(Command cmd, String iqn, String storageHost, int storagePort,
-            String initiatorUsername, String initiatorPassword, String targetUsername, String targetPassword) throws Exception;
+    ManagedObjectReference getVmfsDatastore(VmwareHypervisorHost hyperHost, String datastoreName, String storageIpAddress, int storagePortNumber,
+            String iqn, String initiatorChapName, String initiatorChapSecret, String mutualChapName, String mutualChapSecret) throws Exception;
+    void createVmdk(Command cmd, DatastoreMO dsMo, String volumeDatastorePath, Long volumeSize) throws Exception;
     void handleDatastoreAndVmdkDetach(String iqn, String storageHost, int storagePort) throws Exception;
 }

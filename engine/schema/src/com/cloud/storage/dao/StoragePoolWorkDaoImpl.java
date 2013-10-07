@@ -36,7 +36,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 @Local(value = { StoragePoolWorkDao.class })
-@DB(txn = false)
+@DB()
 public class StoragePoolWorkDaoImpl extends GenericDaoBase<StoragePoolWorkVO, Long> implements StoragePoolWorkDao {
 
     protected final SearchBuilder<StoragePoolWorkVO> PendingWorkForPrepareForMaintenanceSearch;

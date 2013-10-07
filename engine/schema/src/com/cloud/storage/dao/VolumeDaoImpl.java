@@ -354,7 +354,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
-    @DB(txn = false)
+    @DB()
     public Pair<Long, Long> getCountAndTotalByPool(long poolId) {
         SearchCriteria<SumCount> sc = TotalSizeByPoolSearch.create();
         sc.setParameters("poolId", poolId);
@@ -506,7 +506,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
-    @DB(txn = false)
+    @DB()
     public Pair<Long, Long> getNonDestroyedCountAndTotalByPool(long poolId) {
         SearchCriteria<SumCount> sc = TotalSizeByPoolSearch.create();
         sc.setParameters("poolId", poolId);

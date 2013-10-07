@@ -23,8 +23,12 @@ import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.ForgetObjectCmd;
+import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 
 import com.cloud.agent.api.Answer;
+import org.apache.cloudstack.storage.command.ForgetObjectCmd;
+import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 
 public interface StorageProcessor {
     public Answer copyTemplateToPrimaryStorage(CopyCommand cmd);
@@ -43,4 +47,6 @@ public interface StorageProcessor {
     public Answer deleteVolume(DeleteCommand cmd);
     public Answer createVolumeFromSnapshot(CopyCommand cmd);
     public Answer deleteSnapshot(DeleteCommand cmd);
+    Answer introduceObject(IntroduceObjectCmd cmd);
+    Answer forgetObject(ForgetObjectCmd cmd);
 }

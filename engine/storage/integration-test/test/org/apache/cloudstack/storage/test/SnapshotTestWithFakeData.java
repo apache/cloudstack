@@ -18,7 +18,50 @@
  */
 package org.apache.cloudstack.storage.test;
 
-import com.cloud.cluster.LockMasterListener;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import javax.inject.Inject;
+
+import junit.framework.Assert;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.volume.VolumeObject;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -29,6 +72,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.org.Cluster;
 import com.cloud.org.Managed;
+import com.cloud.server.LockMasterListener;
 import com.cloud.storage.CreateSnapshotPayload;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
@@ -47,53 +91,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Merovingian2;
-import junit.framework.Assert;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.volume.VolumeObject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import javax.inject.Inject;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -317,7 +315,7 @@ public class SnapshotTestWithFakeData  {
         final VolumeInfo volumeInfo = createVolume(1L, store);
         Assert.assertTrue(volumeInfo.getState() == Volume.State.Ready);
         vol = volumeInfo;
-       // final SnapshotPolicyVO policyVO = createSnapshotPolicy(vol.getId());
+        // final SnapshotPolicyVO policyVO = createSnapshotPolicy(vol.getId());
 
 
         ExecutorService pool = Executors.newFixedThreadPool(2);
@@ -325,7 +323,7 @@ public class SnapshotTestWithFakeData  {
         List<Future<Boolean>> future = new ArrayList<Future<Boolean>>();
         for(int i = 0; i < 12; i++) {
             final int cnt = i;
-           Future<Boolean> task =  pool.submit(new Callable<Boolean>() {
+            Future<Boolean> task =  pool.submit(new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
                     boolean r = true;

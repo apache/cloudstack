@@ -18,10 +18,10 @@
  */
 package com.cloud.hypervisor.kvm.storage;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileNotFoundException;
 import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.DateFormat;
@@ -35,11 +35,6 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.storage.CopyVolumeAnswer;
-import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.agent.api.to.S3TO;
-import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.utils.S3Utils;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -49,6 +44,8 @@ import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachAnswer;
 import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.ForgetObjectCmd;
+import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -57,20 +54,28 @@ import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.log4j.Logger;
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
 import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 
+import com.ceph.rados.IoCTX;
+import com.ceph.rados.Rados;
+import com.ceph.rados.RadosException;
+import com.ceph.rbd.Rbd;
+import com.ceph.rbd.RbdException;
+import com.ceph.rbd.RbdImage;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
+import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.S3TO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
@@ -87,15 +92,9 @@ import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.TemplateLocation;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.S3Utils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-
-import com.ceph.rados.Rados;
-import com.ceph.rados.RadosException;
-import com.ceph.rados.IoCTX;
-import com.ceph.rbd.Rbd;
-import com.ceph.rbd.RbdImage;
-import com.ceph.rbd.RbdException;
 
 import static com.cloud.utils.S3Utils.putFile;
 
@@ -197,7 +196,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     primaryPool, cmd.getWaitInMillSeconds());
 
 
-             DataTO data = null;
+            DataTO data = null;
             /**
              * Force the ImageFormat for RBD templates to RAW
              *
@@ -370,7 +369,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             String srcVolumeName = srcVolumePath.substring(index + 1);
             secondaryStoragePool = storagePoolMgr.getStoragePoolByURI(
                     secondaryStorageUrl + File.separator + volumeDir
-                           );
+                    );
             if (!srcVolumeName.endsWith(".qcow2") && srcFormat == ImageFormat.QCOW2) {
                 srcVolumeName = srcVolumeName + ".qcow2";
             }
@@ -1206,5 +1205,15 @@ public class KVMStorageProcessor implements StorageProcessor {
     @Override
     public Answer deleteSnapshot(DeleteCommand cmd) {
         return new Answer(cmd);
+    }
+
+    @Override
+    public Answer introduceObject(IntroduceObjectCmd cmd) {
+        return new Answer(cmd, false, "not implememented yet");
+    }
+
+    @Override
+    public Answer forgetObject(ForgetObjectCmd cmd) {
+        return new Answer(cmd, false, "not implememented yet");
     }
 }

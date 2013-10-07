@@ -277,8 +277,10 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             iops = new Iops(volumeInfo.getMinIops(), volumeInfo.getMaxIops(), getDefaultBurstIops(storagePoolId, volumeInfo.getMaxIops()));
         }
 
+        long volumeSize = volumeInfo.getSize() * 2; // in reality, use a multiplier that's at cluster-level scope
+
         long sfVolumeId = SolidFireUtil.createSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword,
-                getSolidFireVolumeName(volumeInfo.getName()), sfAccountId, volumeInfo.getSize(), true,
+                getSolidFireVolumeName(volumeInfo.getName()), sfAccountId, volumeSize, true, volumeInfo.getSize().toString(),
                 iops.getMinIops(), iops.getMaxIops(), iops.getBurstIops());
 
         return SolidFireUtil.getSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword, sfVolumeId);

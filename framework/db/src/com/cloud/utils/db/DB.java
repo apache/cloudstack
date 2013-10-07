@@ -36,24 +36,8 @@ import java.lang.annotation.Target;
  *    _dao.acquireInLockTable(id);
  *    ...
  *    _dao.releaseFromLockTable(id);
- * 
- * 3. Annotate methods that are inside a DAO but doesn't use
- *    the Transaction class.  Generally, these are methods
- *    that are utility methods for setting up searches.  In
- *    this case use @DB(txn=false) to annotate the method.
- *    While this is not required, it helps when you're debugging
- *    the code and it saves on method calls during runtime.
- *
  */
 @Target({TYPE, METHOD})
 @Retention(RUNTIME)
 public @interface DB {
-    /**
-     * (Optional) Specifies that the method
-     * does not use transaction.  This is useful for
-     * utility methods within DAO classes which are
-     * automatically marked with @DB.  By marking txn=false,
-     * the method is not surrounded with transaction code.
-     */
-    boolean txn() default true;
 }

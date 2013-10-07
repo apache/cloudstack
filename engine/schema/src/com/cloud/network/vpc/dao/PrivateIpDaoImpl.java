@@ -36,7 +36,7 @@ import com.cloud.utils.db.Transaction;
 
 @Component
 @Local(value = PrivateIpDao.class)
-@DB(txn = false)
+@DB()
 public class PrivateIpDaoImpl extends GenericDaoBase<PrivateIpVO, Long> implements PrivateIpDao {
     private static final Logger s_logger = Logger.getLogger(PrivateIpDaoImpl.class);
 

@@ -38,7 +38,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 @Component
-@Local(value={DataCenterIpAddressDao.class}) @DB(txn=false)
+@Local(value={DataCenterIpAddressDao.class}) @DB
 public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddressVO, Long> implements DataCenterIpAddressDao {
     private static final Logger s_logger = Logger.getLogger(DataCenterIpAddressDaoImpl.class);
     

@@ -25,14 +25,12 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.exception.InvalidParameterValueException;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.network.dao.AccountGuestVlanMapDao;
 import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -48,7 +46,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  * data center/physical_network and the vnet that appears within the physical network.
  */
 @Component
-@DB(txn=false)
+@DB
 public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long> implements DataCenterVnetDao {
 
     private final SearchBuilder<DataCenterVnetVO> FreeVnetSearch;

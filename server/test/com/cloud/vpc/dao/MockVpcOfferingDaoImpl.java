@@ -24,7 +24,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 
 @Local(value = VpcOfferingDao.class)
-@DB(txn = false)
+@DB()
 public class MockVpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> implements VpcOfferingDao{
 
     /* (non-Javadoc)

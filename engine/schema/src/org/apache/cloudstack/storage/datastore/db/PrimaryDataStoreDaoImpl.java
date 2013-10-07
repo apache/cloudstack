@@ -44,7 +44,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value = { PrimaryDataStoreDao.class })
-@DB(txn = false)
+@DB()
 public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long> implements PrimaryDataStoreDao {
     protected final SearchBuilder<StoragePoolVO> AllFieldSearch;
     protected final SearchBuilder<StoragePoolVO> DcPodSearch;

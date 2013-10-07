@@ -24,7 +24,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import com.cloud.capacity.dao.CapacityDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
@@ -39,9 +38,11 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.storage.to.ImageStoreTO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -181,7 +182,16 @@ public class ImageStoreImpl implements ImageStoreEntity {
 
     @Override
     public DataStoreTO getTO() {
-        return getDriver().getStoreTO(this);
+        DataStoreTO to = getDriver().getStoreTO(this);
+        if (to == null) {
+            ImageStoreTO primaryTO = new ImageStoreTO();
+            primaryTO.setProviderName(getProviderName());
+            primaryTO.setRole(getRole());
+            primaryTO.setType(getProtocol());
+            primaryTO.setUri(getUri());
+            return primaryTO;
+        }
+        return to;
     }
 
     @Override

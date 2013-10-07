@@ -28,7 +28,7 @@ import java.util.List;
 
 @Component
 @Local(value = NetworkACLItemDao.class)
-@DB(txn = false)
+@DB()
 public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long> implements NetworkACLItemDao {
 
     protected final SearchBuilder<NetworkACLItemVO> AllFieldsSearch;

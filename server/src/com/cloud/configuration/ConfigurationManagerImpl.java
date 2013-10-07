@@ -2310,6 +2310,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String name = cmd.getDiskOfferingName();
         String displayText = cmd.getDisplayText();
         Integer sortKey = cmd.getSortKey();
+        Boolean displayDiskOffering = cmd.getDisplayOffering();
 
         // Check if diskOffering exists
         DiskOffering diskOfferingHandle = _entityMgr.findById(DiskOffering.class, diskOfferingId);
@@ -2318,7 +2319,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Unable to find disk offering by id " + diskOfferingId);
         }
 
-        boolean updateNeeded = (name != null || displayText != null || sortKey != null);
+        boolean updateNeeded = (name != null || displayText != null || sortKey != null || displayDiskOffering != null);
         if (!updateNeeded) {
             return _diskOfferingDao.findById(diskOfferingId);
         }
@@ -2335,6 +2336,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (sortKey != null) {
             diskOffering.setSortKey(sortKey);
+        }
+
+        if(displayDiskOffering != null){
+            diskOffering.setDisplayOffering(displayDiskOffering);
         }
 
         // Note: tag editing commented out for now;keeping the code intact,

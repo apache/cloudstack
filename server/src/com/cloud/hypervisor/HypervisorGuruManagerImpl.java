@@ -57,6 +57,10 @@ public class HypervisorGuruManagerImpl extends ManagerBase implements Hypervisor
 
     @Override
     public HypervisorGuru getGuru(HypervisorType hypervisorType) {
+        if (hypervisorType == null) {
+            return null;
+        }
+
         HypervisorGuru result = _hvGurus.get(hypervisorType);
 
         if ( result == null ) {

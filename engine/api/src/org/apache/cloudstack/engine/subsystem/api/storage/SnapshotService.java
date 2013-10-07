@@ -24,5 +24,5 @@ public interface SnapshotService {
 
     boolean deleteSnapshot(SnapshotInfo snapshot);
 
-    boolean revertSnapshot(SnapshotInfo snapshot);
+    boolean revertSnapshot(Long snapshotId);
 }

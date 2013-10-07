@@ -34,7 +34,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value=PortProfileDao.class) @DB(txn=false)
+@Local(value=PortProfileDao.class) @DB()
 public class PortProfileDaoImpl extends GenericDaoBase<PortProfileVO, Long> implements PortProfileDao {
 	protected static final Logger s_logger     = Logger.getLogger(PortProfileDaoImpl.class);
 	

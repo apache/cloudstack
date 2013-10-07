@@ -260,9 +260,11 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="tag_customer")
     private String tagCustomer;
 
-
     @Column(name="display_volume", updatable=true, nullable=false)
     protected boolean displayVolume;
+
+    @Column(name="path")
+    protected String path;
 
 
     public VolumeJoinVO() {
@@ -1091,6 +1093,13 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
 
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
 
 
 }

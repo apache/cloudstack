@@ -30,7 +30,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value=ExternalFirewallDeviceDao.class) @DB(txn=false)
+@Local(value=ExternalFirewallDeviceDao.class) @DB
 public class ExternalFirewallDeviceDaoImpl extends GenericDaoBase<ExternalFirewallDeviceVO, Long> implements ExternalFirewallDeviceDao {
     final SearchBuilder<ExternalFirewallDeviceVO> physicalNetworkServiceProviderSearch;
     final SearchBuilder<ExternalFirewallDeviceVO> physicalNetworkIdSearch;

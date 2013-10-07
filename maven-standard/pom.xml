@@ -19,7 +19,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>cloud-maven-standard</artifactId>
-  <name>Apache CloudStack Maven Contentions Parent</name>
+  <name>Apache CloudStack Maven Conventions Parent</name>
   <description>Historically ACS was built with a custom build system mixing ant and wscript.  When the conversion to maven was done the existing directory structure in git was kept.  So the src, testing, and resources folders in ACS don't follow the standard maven conventions.  This parent pom forces the folders back to the standard conventions</description>
   <packaging>pom</packaging>
   <parent>

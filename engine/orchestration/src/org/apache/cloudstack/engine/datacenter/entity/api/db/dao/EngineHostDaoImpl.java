@@ -60,7 +60,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component(value="EngineHostDao")
 @Local(value = { EngineHostDao.class })
-@DB(txn = false)
+@DB
 @TableGenerator(name = "host_req_sq", table = "op_host", pkColumnName = "id", valueColumnName = "sequence", allocationSize = 1)
 public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implements EngineHostDao {
     private static final Logger s_logger = Logger.getLogger(EngineHostDaoImpl.class);

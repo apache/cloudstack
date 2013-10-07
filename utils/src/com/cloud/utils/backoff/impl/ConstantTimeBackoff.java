@@ -19,16 +19,19 @@ package com.cloud.utils.backoff.impl;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import javax.ejb.Local;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 import com.cloud.utils.component.AdapterBase;
 
 /**
- * Implementation of the Agent Manager.  This class controls the connection
+ * An implementation of BackoffAlgorithm that waits for some seconds.
+ * After the time the client can try to perform the operation again.
  * 
  * @config
  * {@table 
@@ -38,27 +41,29 @@ import com.cloud.utils.component.AdapterBase;
  **/ 
 @Local(value={BackoffAlgorithm.class})
 public class ConstantTimeBackoff extends AdapterBase implements BackoffAlgorithm, ConstantTimeBackoffMBean {
-    int _count = 0;
     long _time;
-    ConcurrentHashMap<String, Thread> _asleep = new ConcurrentHashMap<String, Thread>();
+    private final ConcurrentHashMap<String, Thread> _asleep = new ConcurrentHashMap<String, Thread>();
+    private final static Log LOG = LogFactory.getLog(ConstantTimeBackoff.class);
 
     @Override
     public void waitBeforeRetry() {
-        _count++;
+        Thread current = Thread.currentThread();
         try {
-            Thread current = Thread.currentThread();
             _asleep.put(current.getName(), current);
             Thread.sleep(_time);
+        } catch (InterruptedException e) {
+            // JMX or other threads may interrupt this thread, but let's log it
+            // anyway, no exception to log as this is not an error
+            LOG.info("Thread " + current.getName()
+                    + " interrupted while waiting for retry");
+        } finally {
             _asleep.remove(current.getName());
-        } catch(InterruptedException e) {
-            
         }
         return;
     }
 
     @Override
     public void reset() {
-        _count = 0;
     }
 
     @Override
@@ -71,7 +76,7 @@ public class ConstantTimeBackoff extends AdapterBase implements BackoffAlgorithm
     public Collection<String> getWaiters() {
         return _asleep.keySet();
     }
-    
+
     @Override
     public boolean wakeup(String threadName) {
         Thread th = _asleep.get(threadName);
@@ -81,17 +86,6 @@ public class ConstantTimeBackoff extends AdapterBase implements BackoffAlgorithm
         }
         
         return false;
-    }
-
-    @Override
-    public boolean start() {
-        _count = 0;
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
     }
 
     @Override

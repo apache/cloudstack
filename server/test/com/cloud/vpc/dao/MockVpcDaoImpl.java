@@ -32,7 +32,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 
 @Local(value = VpcDao.class)
-@DB(txn = false)
+@DB()
 public class MockVpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
     private static final Logger s_logger = Logger.getLogger(MockNetworkOfferingDaoImpl.class);
 
