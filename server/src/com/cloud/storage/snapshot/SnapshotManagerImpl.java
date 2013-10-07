@@ -264,6 +264,18 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             throw new InvalidParameterValueException("No such snapshot");
         }
 
+        Volume volume = _volsDao.findById(snapshot.getVolumeId());
+        Long instanceId = volume.getInstanceId();
+
+        // If this volume is attached to an VM, then the VM needs to be in the stopped state
+        // in order to revert the volume
+        if (instanceId != null) {
+            UserVmVO vm = _vmDao.findById(instanceId);
+            if (vm.getState() != State.Stopped && vm.getState() != State.Shutdowned) {
+                throw new InvalidParameterValueException("The VM the specified disk is attached to is not in the shutdown state.");
+            }
+        }
+
         SnapshotStrategy snapshotStrategy = null;
         for (SnapshotStrategy strategy : snapshotStrategies) {
             if (strategy.canHandle(snapshot)) {
