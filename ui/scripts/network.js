@@ -1086,7 +1086,11 @@
                                     vlan: {
                                         label: 'label.vlan.id'
                                     },
-
+                                    
+                                    broadcasturi: {
+                                    	label: 'broadcasturi'
+                                    },
+                                    
                                     networkofferingid: {
                                         label: 'label.network.offering',
                                         isEditable: true,
