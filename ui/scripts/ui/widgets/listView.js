@@ -38,7 +38,7 @@
                     jsonObj: $.map($instanceRow, function(elem) { return $(elem).data('jsonObj'); })
                 };
                 messageArgs = {
-                    name: $.map($instanceRow, function(elem) { return $(elem).find('td.name span').html() })
+                    name: $.map($instanceRow, function(elem) { return $(elem).find('td.name span').html(); })
                 };
             } else {
                 data = {
@@ -1652,6 +1652,7 @@
                         .addClass('button action add reduced-hide')
                         .data('list-view-action-id', 'add')
                         .append(
+                            $('<span>').addClass('icon').html('&nbsp;'),
                             $('<span>').html(_l(listViewData.actions.add.label))
                         )
                 );
