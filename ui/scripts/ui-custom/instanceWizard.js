@@ -35,9 +35,6 @@
                 // Close instance wizard
                 var close = function() {
                     $wizard.dialog('destroy');
-                    $('div.overlay').fadeOut(function() {
-                        $('div.overlay').remove();
-                    });
                 };
 
                 // Save instance and close wizard
@@ -78,7 +75,6 @@
                             },
                             error: function(message) {
                                 $wizard.remove();
-                                $('div.overlay').remove();
 
                                 if (message) {
                                     cloudStack.dialog.notice({
@@ -1033,10 +1029,10 @@
                     title: _l('label.vm.add'),
                     width: 800,
                     height: 570,
+                    modal: true,
                     closeOnEscape: false,
                     zIndex: 5000
-                })
-                    .closest('.ui-dialog').overlay();
+                });
             };
 
             instanceWizard(args);

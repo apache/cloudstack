@@ -81,9 +81,6 @@
         var closeRegionSelector = function(args) {
             $regionSwitcherButton.removeClass('active');
             $regionSelector.fadeOut(args ? args.complete : null);
-            $('body > .overlay').fadeOut(function() {
-                $('body > .overlay').remove()
-            });
         };
 
         var switchRegion = function(url) {
@@ -116,9 +113,7 @@
                 closeRegionSelector();
             } else {
                 $regionSwitcherButton.addClass('active');
-                $regionSelector.fadeIn('fast').overlay({
-                    closeAction: closeRegionSelector
-                });
+                $regionSelector.fadeIn('fast');
             }
         });
 

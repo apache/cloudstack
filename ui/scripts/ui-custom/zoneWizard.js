@@ -968,9 +968,6 @@
             // Close wizard
             var close = function() {
                 $wizard.dialog('destroy');
-                $('div.overlay').fadeOut(function() {
-                    $('div.overlay').remove();
-                });
             };
 
             // Save and close wizard
@@ -1417,8 +1414,9 @@
                 width: 750,
                 height: 665,
                 zIndex: 5000,
+                modal: true,
                 resizable: false
-            }).closest('.ui-dialog').overlay();
+            });
         };
     };
 })(jQuery, cloudStack);

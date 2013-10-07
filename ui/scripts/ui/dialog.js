@@ -70,13 +70,12 @@
             });
 
             var ret = function() {
-                $('.overlay').remove();
-
                 return $formContainer.dialog({
                     dialogClass: 'create-form',
                     closeOnEscape: false,
                     draggable: false,
                     width: 800,
+                    modal: true,
                     title: _l(args.form.title),
                     open: function() {
                         if (args.form.preFilter) {
@@ -94,7 +93,6 @@
                                 return false;
                             }
 
-                            $('div.overlay').remove();
                             $('.tooltip-box').remove();
                             $formContainer.remove();
                             $(this).dialog('destroy');
@@ -107,7 +105,6 @@
                         text: _l('label.cancel'),
                         'class': 'cancel',
                         click: function() {
-                            $('div.overlay').remove();
                             $('.tooltip-box').remove();
                             $formContainer.remove();
                             $(this).dialog('destroy');
@@ -115,7 +112,7 @@
                             $('.hovered-elem').hide();
                         }
                     }]
-                }).closest('.ui-dialog').overlay();
+                });
             };
 
             var isLastAsync = function(idx) {
@@ -666,6 +663,7 @@
             $listView.dialog({
                 dialogClass: 'multi-edit-add-list panel',
                 width: 825,
+                modal: true,
                 title: _l('Select VM'),
                 buttons: [{
                     text: _l('label.apply'),
@@ -692,8 +690,6 @@
                         });
 
                         $listView.remove();
-
-                        $('div.overlay').remove();
                     }
                 }, {
                     text: _l('label.cancel'),
@@ -702,12 +698,9 @@
                         $listView.fadeOut(function() {
                             $listView.remove();
                         });
-                        $('div.overlay').fadeOut(function() {
-                            $('div.overlay').remove();
-                        });
                     }
                 }]
-            }).parent('.ui-dialog').overlay();
+            });
         },
 
         /**
@@ -761,13 +754,13 @@
                 title: _l('label.confirmation'),
                 dialogClass: 'confirm',
                 closeOnEscape: false,
+                modal: true,
                 zIndex: 5000,
                 buttons: [{
                     text: _l('label.no'),
                     'class': 'cancel',
                     click: function() {
                         $(this).dialog('destroy');
-                        $('div.overlay').remove();
                         if (args.cancelAction) {
                             args.cancelAction();
                         }
@@ -779,11 +772,10 @@
                     click: function() {
                         args.action();
                         $(this).dialog('destroy');
-                        $('div.overlay').remove();
                         $('.hovered-elem').hide();
                     }
                 }]
-            }).closest('.ui-dialog').overlay();
+            });
         },
 
         /**
@@ -800,6 +792,7 @@
                     dialogClass: 'notice',
                     closeOnEscape: false,
                     zIndex: 5000,
+                    modal: true,
                     buttons: [{
                         text: _l('Close'),
                         'class': 'close',

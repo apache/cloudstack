@@ -325,10 +325,10 @@
                         buttons: {
                             'Close': function() {
                                 $(this).dialog("close");
-                                $(':ui-dialog, .overlay').remove();
+                                $(':ui-dialog').remove();
                             }
                         }
-                    }).closest('.ui-dialog').overlay();
+                    });
 
                     return false;
                 });

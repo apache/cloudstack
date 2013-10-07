@@ -489,11 +489,11 @@
                                                 $saveButton.html(_l('label.save'));
                                                 $saveButton.click(function() {
                                                     $('#new-project-review-tabs-resouces').find('form').submit();
-                                                    $('.ui-dialog, .overlay').remove();
+                                                    $('.ui-dialog').remove();
                                                 });
 
                                                 $laterButton.click(function() {
-                                                    $(':ui-dialog, .overlay').remove();
+                                                    $(':ui-dialog').remove();
 
                                                     return false;
                                                 });
@@ -515,7 +515,7 @@
 
                                 var $laterButton = $('<div>').addClass('button later').html(_l('label.remind.later'));
                                 $laterButton.click(function() {
-                                    $(':ui-dialog, .overlay').remove();
+                                    $(':ui-dialog').remove();
 
                                     return false;
                                 });
@@ -537,7 +537,7 @@
             });
 
             $cancel.click(function() {
-                $(':ui-dialog, .overlay').remove();
+                $(':ui-dialog').remove();
             });
 
             return $newProject
@@ -627,7 +627,7 @@
 
             //Cancel button
             $cancel.click(function() {
-                $(':ui-dialog, .overlay').remove();
+                $(':ui-dialog').remove();
                 $('.select.default-view').click();
             });
 
@@ -638,15 +638,16 @@
                     cloudStack.dialog.notice({
                         message: isAdmin() || isDomainAdmin() || g_userProjectsEnabled ? _l('message.no.projects') : _l('message.no.projects.adminOnly')
                     }).closest('.ui-dialog');
-                    $.merge($selector, $('.overlay')).remove();
+                    $selector.remove();
                     $('.select.default-view').click();
                 } else {
                     $selector.dialog({
+                        modal: true,
                         title: _l('label.select.project'),
                         dialogClass: 'project-selector-dialog',
                         closeOnEscape: false,
                         width: 420
-                    }).closest('.ui-dialog').overlay();
+                    });
                 }
             });
 
@@ -668,9 +669,8 @@
 
                     // Put project name in header
                     $switcher.html('<span class="icon">&nbsp;</span>' + projectName);
-
-
-                    $.merge($selector, $('.overlay')).remove();
+                    
+                    $selector.remove();
 
                     // Select active project
                     $projectSelect
@@ -707,8 +707,9 @@
         pageElems.newProjectForm().dialog({
             title: 'New Project',
             closeOnEscape: false,
-            width: 760
-        }).closest('.ui-dialog').overlay();
+            width: 760,
+            modal: true
+        });
     };
 
     var deleteProject = function(args) {

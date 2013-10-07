@@ -62,3 +62,9 @@
     @include csui-dialog;
     @include animation-duration(300ms);
 }
+
+.ui-widget-overlay {
+    position: absolute;
+    top: 0px;
+    background: rgba(#000, 0.5);
+}

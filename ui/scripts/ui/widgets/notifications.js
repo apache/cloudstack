@@ -223,11 +223,6 @@
             show: function($popup, $attachTo) {
                 notifications.resetTotal($popup);
                 return notifications.popup.reposition($popup, $attachTo)
-                    .overlay({
-                        closeAction: function() {
-                            notifications.popup.hide($popup);
-                        }
-                    })
                     .fadeIn();
             },
             hide: function($popup) {
@@ -342,7 +337,6 @@
             $('#navigation ul li').filter(function() {
                 return $(this).hasClass($li.data('notification-section'));
             }).click();
-            $('div.overlay').click();
 
             return false;
         }
@@ -359,11 +353,6 @@
             // Remove instance item
             else if ($target.hasClass('remove')) {
                 notifications.removeItem($popup, $target.closest('li'));
-            }
-
-            // Close button
-            else if ($target.closest('.button.close')) {
-                $('div.overlay').click();
             }
 
             return false;

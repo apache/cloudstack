@@ -26,9 +26,6 @@
 
                 var close = function() {
                     $wizard.dialog('destroy');
-                    $('div.overlay').fadeOut(function() {
-                        $('div.overlay').remove();
-                    });
                 };
 
                 var completeAction = function() {
@@ -160,8 +157,9 @@
                     width: 800,
                     height: 800,
                     closeOnEscape: false,
-                    zIndex: 5000
-                }).closest('.ui-dialog').overlay();
+                    zIndex: 5000,
+                    modal: true
+                });
             };
 
             accountsWizard(args);
