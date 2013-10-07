@@ -21,6 +21,7 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.AclGroupAccountMapVO;
@@ -34,6 +35,8 @@ public class AclGroupAccountMapDaoImpl extends GenericDaoBase<AclGroupAccountMap
     private SearchBuilder<AclGroupAccountMapVO> ListByGroupId;
     private SearchBuilder<AclGroupAccountMapVO> ListByAccountId;
     private SearchBuilder<AclGroupAccountMapVO> _findByAccountAndGroupId;
+
+    public static final Logger s_logger = Logger.getLogger(AclGroupAccountMapDaoImpl.class.getName());
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -85,6 +88,17 @@ public class AclGroupAccountMapDaoImpl extends GenericDaoBase<AclGroupAccountMap
         sc.setParameters("accountId", acctId);
         sc.setParameters("groupId", groupId);
         return findOneBy(sc);
+    }
+
+    @Override
+    public void removeAccountFromGroups(long accountId) {
+        SearchCriteria<AclGroupAccountMapVO> sc = ListByAccountId.create();
+        sc.setParameters("accountId", accountId);
+
+        int rowsRemoved = remove(sc);
+        if (rowsRemoved > 0) {
+            s_logger.debug("Removed account id=" + accountId + " from " + rowsRemoved + " groups");
+        }
     }
 
 }
