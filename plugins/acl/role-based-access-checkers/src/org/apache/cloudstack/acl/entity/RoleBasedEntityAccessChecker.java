@@ -20,22 +20,29 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.AclEntityPermissionVO;
 import org.apache.cloudstack.acl.AclGroupAccountMapVO;
 import org.apache.cloudstack.acl.AclRole;
 import org.apache.cloudstack.acl.AclService;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.dao.AclEntityPermissionDao;
 import org.apache.cloudstack.acl.dao.AclGroupAccountMapDao;
 import org.apache.cloudstack.acl.dao.AclGroupDao;
+import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.log4j.Logger;
 
 import com.cloud.acl.DomainChecker;
+import com.cloud.api.ApiDispatcher;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.vm.VirtualMachine;
 
 public class RoleBasedEntityAccessChecker extends DomainChecker implements SecurityChecker {
+
+    private static final Logger s_logger = Logger.getLogger(RoleBasedEntityAccessChecker.class.getName());
 
     @Inject
     AccountService _accountService;
@@ -45,15 +52,41 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
     @Inject
     AclGroupAccountMapDao _aclGroupAccountMapDao;
 
+    @Inject
+    AclEntityPermissionDao _entityPermissionDao;
+
     @Override
     public boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType)
             throws PermissionDeniedException {
 
+        String entityType = "";
+
         // check if explicit allow/deny is present for this entity in
         // acl_entity_permission
 
-        List<AclGroupAccountMapVO> acctGroups = _aclGroupAccountMapDao.listByAccountId(caller.getId());
+        if (entity instanceof InternalIdentity) {
+            InternalIdentity entityWithId = (InternalIdentity) entity;
 
+            List<AclGroupAccountMapVO> acctGroups = _aclGroupAccountMapDao.listByAccountId(caller.getId());
+
+            for (AclGroupAccountMapVO groupMapping : acctGroups) {
+                AclEntityPermissionVO entityPermission = _entityPermissionDao.findByGroupAndEntity(
+                        groupMapping.getAclGroupId(), entityType, entityWithId.getId(), accessType);
+
+                if (entityPermission != null) {
+                    if (entityPermission.isAllowed()) {
+                        return true;
+                    } else {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Account " + caller + " does not have permission to access resource "
+                                    + entity + " for access type: " + accessType);
+                        }
+                        throw new PermissionDeniedException(caller + " does not have permission to access resource "
+                                + entity);
+                    }
+                }
+            }
+        }
 
         // Is Caller RootAdmin? Yes, granted true
         if (_accountService.isRootAdmin(caller.getId())) {
