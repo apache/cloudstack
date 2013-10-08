@@ -25,6 +25,8 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'message.select.compute.offering': '<fmt:message key="message.select.compute.offering" />',
+'message.select.disk.offering': '<fmt:message key="message.select.disk.offering" />',
 'label.home': '<fmt:message key="label.home" />',
 'label.use.default.language': '<fmt:message key="label.use.default.language" />',
 'label.delete.events': '<fmt:message key="label.delete.events" />',

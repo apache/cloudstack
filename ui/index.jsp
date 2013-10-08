@@ -187,6 +187,9 @@ under the License.
 
             <!-- Step 3: Service Offering -->
             <div class="step service-offering" wizard-step-id="service-offering">
+                <div class="main-desc">
+                    <p><fmt:message key="message.select.compute.offering"/></p>
+                </div>
               <div class="content">
                 <div class="select-container">
                 </div>
@@ -195,7 +198,10 @@ under the License.
 
             <!-- Step 4: Data Disk Offering -->
             <div class="step data-disk-offering" wizard-step-id="data-disk-offering">
-              <div class="content">
+                <div class="main-desc">
+                    <p><fmt:message key="message.select.disk.offering"/></p>
+                </div>
+                <div class="content">
                 <div class="section no-thanks">
                   <input type="radio" name="diskofferingid" value="0" />
                   <label><fmt:message key="label.no.thanks"/></label>
@@ -222,7 +228,11 @@ under the License.
 
             <!-- Step 5: Affinity groups -->
             <div class="step affinity" wizard-step-id="affinity">
-              <div class="content">
+                <div class="main-desc">
+                    <p><fmt:message key="message.select.affinity.groups"/></p>
+                </div>
+
+                <div class="content">
                 <!-- Existing offerings -->
                 <div class="select-container"></div>
               </div>
