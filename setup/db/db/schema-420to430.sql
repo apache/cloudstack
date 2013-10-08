@@ -396,6 +396,11 @@ INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_t
 INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (2, '*', 'ModifyEntry', 'REGION', 1);
 INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (2, '*', 'DeleteEntry', 'REGION', 1);
 INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (2, '*', 'OperateEntry', 'REGION', 1);
+INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (1, '*', 'CreateEntry', 'ACCOUNT', 1);
+INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (1, '*', 'ListEntry', 'ACCOUNT', 1);
+INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (1, '*', 'ModifyEntry', 'ACCOUNT', 1);
+INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (1, '*', 'DeleteEntry', 'ACCOUNT', 1);
+INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (1, '*', 'OperateEntry', 'ACCOUNT', 1);
 
 DROP VIEW IF EXISTS `cloud`.`acl_role_view`;
 CREATE VIEW `cloud`.`acl_role_view` AS

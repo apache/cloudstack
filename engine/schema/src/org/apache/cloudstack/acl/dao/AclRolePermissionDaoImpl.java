@@ -53,12 +53,12 @@ public class AclRolePermissionDaoImpl extends GenericDaoBase<AclRolePermissionVO
     }
 
     @Override
-    public AclRolePermissionVO findByRoleAndEntity(long roleId, String entityType, AccessType accessType) {
+    public List<AclRolePermissionVO> findByRoleAndEntity(long roleId, String entityType, AccessType accessType) {
         SearchCriteria<AclRolePermissionVO> sc = findByRoleEntity.create();
         sc.setParameters("roleId", roleId);
         sc.setParameters("entityType", entityType);
         sc.setParameters("accessType", accessType);
-        return findOneBy(sc);
+        return listBy(sc);
     }
 
     @Override
