@@ -21,6 +21,8 @@ import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -55,6 +57,10 @@ public class AclRoleVO implements AclRole {
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
+    @Column(name = "role_type")
+    @Enumerated(value = EnumType.STRING)
+    private AclRole.RoleType roleType;
+
     public AclRoleVO() {
     	uuid = UUID.randomUUID().toString();
     }
@@ -63,6 +69,7 @@ public class AclRoleVO implements AclRole {
         this.name = name;
         this.description = description;
     	uuid = UUID.randomUUID().toString();
+        this.roleType = AclRole.RoleType.Static;
     }
 
     @Override
@@ -107,4 +114,11 @@ public class AclRoleVO implements AclRole {
         this.domainId = domainId;
     }
 
+    public RoleType getRoleType() {
+        return roleType;
+    }
+
+    public void setRoleType(RoleType roleType) {
+        this.roleType = roleType;
+    }
 }

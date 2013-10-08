@@ -21,6 +21,7 @@ import java.util.List;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
 import com.cloud.utils.Pair;
+import com.cloud.user.Account;
 
 public interface AclService {
 
@@ -85,5 +86,7 @@ public interface AclService {
     Pair<List<Long>, List<Long>> getAclEntityPermission(long accountId, String entityType, AccessType accessType);
 
     boolean isAPIAccessibleForRoles(String apiName, List<AclRole> roles);
+
+    List<AclRole> getEffectiveRoles(Account caller, ControlledEntity entity);
 
 }

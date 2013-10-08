@@ -21,8 +21,10 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.AclEntityPermissionVO;
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.AclGroupAccountMapVO;
 import org.apache.cloudstack.acl.AclRole;
+import org.apache.cloudstack.acl.AclRolePermissionVO;
 import org.apache.cloudstack.acl.AclService;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -30,6 +32,7 @@ import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.acl.dao.AclEntityPermissionDao;
 import org.apache.cloudstack.acl.dao.AclGroupAccountMapDao;
 import org.apache.cloudstack.acl.dao.AclGroupDao;
+import org.apache.cloudstack.acl.dao.AclRolePermissionDao;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.log4j.Logger;
 
@@ -55,11 +58,14 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
     @Inject
     AclEntityPermissionDao _entityPermissionDao;
 
+    @Inject
+    AclRolePermissionDao _rolePermissionDao;
+
     @Override
     public boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType)
             throws PermissionDeniedException {
 
-        String entityType = "";
+        String entityType = AclEntityType.VM.toString();
 
         // check if explicit allow/deny is present for this entity in
         // acl_entity_permission
@@ -96,14 +102,35 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         if (caller.getId() == entity.getAccountId()) {
             return true;
         }
-        // Get the Roles of the Caller
-        List<AclRole> roles = _aclService.getAclRoles(caller.getId());
 
-        // Do you have DomainAdmin Role? If yes can access the entity in the
-        // domaintree
+        // get all Roles of this caller w.r.t the entity
+        List<AclRole> roles = _aclService.getEffectiveRoles(caller, entity);
 
-        // check the entity grant table
+        for (AclRole role : roles) {
+            AclRolePermissionVO permission = _rolePermissionDao.findByRoleAndEntity(role.getId(), entityType,
+                    accessType);
+            boolean operationAllowedForAll = true;
 
+            if (permission.getEntityType().equals(entityType)) {
+                if (permission.isAllowed()) {
+                    return true;
+                } else {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Account " + caller + " does not have permission to access resource " + entity
+                                + " for access type: " + accessType);
+                    }
+                    throw new PermissionDeniedException(caller + " does not have permission to access resource "
+                            + entity);
+                }
+            } else if (permission.getEntityType().equals("*")) {
+                if (permission.isAllowed()) {
+                    operationAllowedForAll = true;
+                } else {
+                    operationAllowedForAll = false;
+                }
+            }
+
+        }
 
 
         return false;

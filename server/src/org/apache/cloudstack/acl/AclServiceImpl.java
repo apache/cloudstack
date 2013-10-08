@@ -38,6 +38,7 @@ import org.apache.cloudstack.acl.dao.AclRolePermissionDao;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.domain.Domain;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -534,6 +535,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     @Override
     public List<AclRole> getAclRoles(long accountId) {
 
+        // static roles of the account
         SearchBuilder<AclGroupAccountMapVO> groupSB = _aclGroupAccountMapDao.createSearchBuilder();
         groupSB.and("account", groupSB.entity().getAccountId(), Op.EQ);
 
@@ -641,6 +643,22 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         }
 
         return accessible;
+    }
+
+    @Override
+    public List<AclRole> getEffectiveRoles(Account caller, ControlledEntity entity) {
+
+        // Get the static Roles of the Caller
+        List<AclRole> roles = getAclRoles(caller.getId());
+
+        // add any dynamic roles w.r.t the entity
+        if (caller.getId() == entity.getAccountId()) {
+            // The caller owns the entity
+            AclRole owner = _aclRoleDao.findByName(Domain.ROOT_DOMAIN, "RESOURCE_OWNER");
+            roles.add(owner);
+        }
+
+        return roles;
     }
 
 }
