@@ -132,7 +132,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         AclRole role = _aclRoleDao.persist(rvo);
         if (parentRoleId != null) {
             // copy parent role permissions
-            List<AclRolePermissionVO> perms = _rolePermissionDao.findByRole(parentRoleId);
+            List<AclRolePermissionVO> perms = _rolePermissionDao.listByRole(parentRoleId);
             if (perms != null) {
                 for (AclRolePermissionVO perm : perms) {
                     perm.setAclRoleId(role.getId());
