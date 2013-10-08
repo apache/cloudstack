@@ -30,6 +30,9 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.*;
+import com.cloud.utils.Pair;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
 
@@ -399,7 +402,20 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 			return null;
 		}
 
-		return new PingRoutingCommand(getType(), id, deltaSync(), getHostVmStateReport());
+        if (hostId != null) {
+            vmDao = ComponentContext.getComponent(VMInstanceDao.class);
+            final List<? extends VMInstanceVO> vms = vmDao.listByHostId(hostId);
+            if (vms.isEmpty()) {
+                return new PingRoutingCommand(getType(), id, deltaSync(), getHostVmStateReport());
+            } else {
+                VMInstanceVO vm = vms.get(0);
+                SecurityGroupHttpClient client = new SecurityGroupHttpClient();
+                HashMap<String, Pair<Long, Long>> nwGrpStates = client.sync(vm.getInstanceName(), vm.getId(), vm.getPrivateIpAddress());
+                return new PingRoutingWithNwGroupsCommand(getType(), id, null, getHostVmStateReport(), nwGrpStates);
+            }
+        } else {
+            return new PingRoutingCommand(getType(), id, deltaSync(), getHostVmStateReport());
+        }
 	}
 
 	protected Answer execute(IpmISetBootDevCommand cmd) {

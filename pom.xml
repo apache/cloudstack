@@ -747,7 +747,9 @@
       </properties>
       <modules>
         <module>developer</module>
+        <!--
         <module>tools</module>
+-->
       </modules>
     </profile>
     <profile>
