@@ -77,7 +77,10 @@ class Request(object):
     def from_cherrypy_request(creq):
         req = Request()
         req.headers = copy.copy(creq.headers)
-        req.body = creq.body.fp.read() if creq.body else None
+        if hasattr(creq.body, 'fp'):
+            req.body = creq.body.fp.read() if creq.body else None
+        else:
+            req.body = creq.body.read() if creq.body else None
         req.method = copy.copy(creq.method)
         req.query_string = copy.copy(creq.query_string) if creq.query_string else None
         return req
