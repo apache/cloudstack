@@ -530,7 +530,10 @@
                                     },
                                     deploymentplanner: {
                                         label: 'Deployment Planner'
-                                    },
+                                    },                                    
+                                    plannerMode: {
+                                        label: 'Planner Mode'
+                                    },                                    
                                     tags: {
                                         label: 'label.storage.tags'
                                     },
@@ -557,6 +560,13 @@
                                         async: true,
                                         success: function(json) {
                                             var item = json.listserviceofferingsresponse.serviceoffering[0];
+                                            
+                                            if (item.deploymentplanner != null && item.serviceofferingdetails != null) {
+                                            	if (item.deploymentplanner == 'ImplicitDedicationPlanner' && item.serviceofferingdetails.ImplicitDedicationMode != null) {
+                                            		item.plannerMode = item.serviceofferingdetails.ImplicitDedicationMode;
+                                            	}
+                                            }
+                                                                                       
                                             args.response.success({
                                                 actionFitler: serviceOfferingActionfilter,
                                                 data: item
