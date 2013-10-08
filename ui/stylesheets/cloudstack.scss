@@ -224,6 +224,66 @@ body {
 .list-view {
     @include csui-list;
 
+    // Advanced search field
+    #advanced_search {
+        float: right;
+        .icon {
+            @include csui-sprite(61, 167);
+
+            position: relative;
+            width: 15px;
+            height: 15px;
+            left: 215px;
+            top: 10px;
+            cursor: pointer;
+            z-index: 10000;
+        }
+
+        .form-container {
+            @include csui-dialog;
+            @include csui-form;
+
+            width: 400px;
+            margin-top: -15px;
+            margin-left: -160px;
+            opacity: 0.9;
+            padding-top: 0px;
+
+            form {
+                display: inline-block;
+                border: none;
+            }
+
+            .message { display: none; }
+
+            .form-item {
+                margin-top: 20px;
+            }
+
+            .name {
+                position: relative;
+                top: -20px;
+            }
+
+            input[type=submit], .button.cancel {
+                position: relative;
+                top: 25px;
+            }
+
+            input[type=submit] {
+                @include csui-button-cta;
+
+                float: right;
+            }
+
+            .button.cancel {
+                @include csui-button;
+
+                float: left;
+            }
+        }
+    }
+
     max-height: 85%;
 }
 
@@ -257,7 +317,7 @@ body {
                 background: lighten(#ccc, 12%);
             }
         }
-        
+
         th, td {
             padding: 10px;
         }

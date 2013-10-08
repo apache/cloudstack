@@ -14,6 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+@mixin csui-sprite($x, $y) {
+    background: url(../images/sprites.png) no-repeat -#{$x}px -#{$y}px;
+}
+
+
 .action.edit .icon {
     background-position: 1px -1px;
 }
