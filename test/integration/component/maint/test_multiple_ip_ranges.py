@@ -384,3 +384,210 @@ class TestMultipleIpRanges(cloudstackTestCase):
         time.sleep(wait_time)
         return
 
+    @attr(tags=["sg"])
+    def test_03_passwd_service_on_alias_IP(self):
+        """Deploy guest vm in new CIDR and verify passwd service on alias ip
+            1.Deploy guest vm in new cidr
+            2.Verify password service(socat) listens on alias ip in VR
+        """
+        #Deploy guest vm
+        try :
+            self.virtual_machine = VirtualMachine.create(
+                                            self.apiclient,
+                                            self.services["server_without_disk"],
+                                            templateid = self.template.id,
+                                            accountid = self.account.name,
+                                            domainid = self.services["domainid"],
+                                            zoneid = self.services["zoneid"],
+                                            serviceofferingid = self.service_offering.id,
+                                            mode = self.services["mode"],
+                                            )
+        except Exception as e :
+            raise Exception("Warning: Exception during vm deployment: {}".format(e))
+        self.vm_response = VirtualMachine.list(
+                                               self.apiclient,
+                                               id = self.virtual_machine.id
+                                               )
+        self.assertEqual(
+            isinstance(self.vm_response, list),
+            True,
+            "Check VM list response returned a valid list"
+            )
+        self.ip_range = list(netaddr.iter_iprange(unicode(self.services["vlan_ip_range"]["startip"]), unicode(self.services["vlan_ip_range"]["endip"])))
+        self.nic_ip = netaddr.IPAddress(unicode(self.vm_response[0].nic[0].ipaddress))
+        self.debug("vm got {} as ip address".format(self.nic_ip))
+        self.assertIn(
+              self.nic_ip,
+              self.ip_range,
+              "VM did not get the ip address from the new ip range"
+              )
+        ip_alias = self.dbclient.execute(
+                              "select ip4_address from nic_ip_alias;"
+                              )
+        alias_ip = str(ip_alias[0][0])
+        self.debug("alias ip : %s" % alias_ip)
+        list_router_response = list_routers(
+                                    self.apiclient,
+                                    zoneid=self.zone.id,
+                                    listall=True
+                                    )
+        self.assertEqual(
+                            isinstance(list_router_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        router = list_router_response[0]
+        hosts = list_hosts(
+                           self.apiclient,
+                           zoneid=router.zoneid,
+                           type='Routing',
+                           state='Up',
+                           id=router.hostid
+                           )
+        self.assertEqual(
+                            isinstance(hosts, list),
+                            True,
+                            "Check list host returns a valid list"
+                        )
+        host = hosts[0]
+        self.debug("Router ID: %s, state: %s" % (router.id, router.state))
+        self.assertEqual(
+                            router.state,
+                            'Running',
+                            "Check list router response for router state"
+                        )
+        proc = "socat"
+        result = get_process_status(
+                                host.ipaddress,
+                                self.services['host']["publicport"],
+                                self.services['host']["username"],
+                                self.services['host']["password"],
+                                router.linklocalip,
+                                "netstat -atnp | grep %s" % proc
+                                )
+        res = str(result)
+        self.debug("password process status on VR: %s" % res)
+        self.assertNotEqual(
+                         res.find(alias_ip)
+                         -1,
+                         "password service is not running on alias ip"
+                        )
+        self.virtual_machine.delete(self.apiclient)
+        expunge_del = Configurations.list(
+                                          self.apiclient,
+                                          name = 'expunge.delay'
+                                         )
+        expunge_int = Configurations.list(
+                                          self.apiclient,
+                                          name = 'expunge.interval'
+                                         )
+        wait_time = int(expunge_del[0].value) + int(expunge_int[0].value) + int(30)
+
+        self.debug("Waiting for {} seconds for the vm to expunge".format(wait_time))
+        #wait for the vm to expunge
+        time.sleep(wait_time)
+        return
+
+    @attr(tags=["sg"])
+    def test_04_userdata_service_on_alias_IP(self):
+        """Deploy guest vm in new CIDR and verify userdata service on alias ip
+            1.Deploy guest vm in new cidr
+            2.Verify userdata service(apache2) listens on alias ip in VR
+        """
+        #Deploy guest vm
+        try :
+            self.virtual_machine = VirtualMachine.create(
+                                            self.apiclient,
+                                            self.services["server_without_disk"],
+                                            templateid = self.template.id,
+                                            accountid = self.account.name,
+                                            domainid = self.services["domainid"],
+                                            zoneid = self.services["zoneid"],
+                                            serviceofferingid = self.service_offering.id,
+                                            mode = self.services["mode"],
+                                            )
+        except Exception as e :
+            raise Exception("Warning: Exception during vm deployment: {}".format(e))
+        self.vm_response = VirtualMachine.list(
+                                               self.apiclient,
+                                               id = self.virtual_machine.id
+                                               )
+        self.assertEqual(
+            isinstance(self.vm_response, list),
+            True,
+            "Check VM list response returned a valid list"
+            )
+        self.ip_range = list(netaddr.iter_iprange(unicode(self.services["vlan_ip_range"]["startip"]), unicode(self.services["vlan_ip_range"]["endip"])))
+        self.nic_ip = netaddr.IPAddress(unicode(self.vm_response[0].nic[0].ipaddress))
+        self.debug("vm got {} as ip address".format(self.nic_ip))
+        self.assertIn(
+              self.nic_ip,
+              self.ip_range,
+              "VM did not get the ip address from the new ip range"
+              )
+        ip_alias = self.dbclient.execute(
+                              "select ip4_address from nic_ip_alias;"
+                              )
+        alias_ip = str(ip_alias[0][0])
+        self.debug("alias ip : %s" % alias_ip)
+        list_router_response = list_routers(
+                                    self.apiclient,
+                                    zoneid=self.zone.id,
+                                    listall=True
+                                    )
+        self.assertEqual(
+                            isinstance(list_router_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        router = list_router_response[0]
+        hosts = list_hosts(
+                           self.apiclient,
+                           zoneid=router.zoneid,
+                           type='Routing',
+                           state='Up',
+                           id=router.hostid
+                           )
+        self.assertEqual(
+                            isinstance(hosts, list),
+                            True,
+                            "Check list host returns a valid list"
+                        )
+        host = hosts[0]
+        self.debug("Router ID: %s, state: %s" % (router.id, router.state))
+        self.assertEqual(
+                            router.state,
+                            'Running',
+                            "Check list router response for router state"
+                        )
+        proc = "apache2"
+        result = get_process_status(
+                                host.ipaddress,
+                                self.services['host']["publicport"],
+                                self.services['host']["username"],
+                                self.services['host']["password"],
+                                router.linklocalip,
+                                "netstat -atnp | grep %s" % proc
+                                )
+        res = str(result)
+        self.debug("userdata process status on VR: %s" % res)
+        self.assertNotEqual(
+                         res.find(alias_ip+":80 ")
+                         -1,
+                         "password service is not running on alias ip"
+                        )
+        self.virtual_machine.delete(self.apiclient)
+        expunge_del = Configurations.list(
+                                          self.apiclient,
+                                          name = 'expunge.delay'
+                                         )
+        expunge_int = Configurations.list(
+                                          self.apiclient,
+                                          name = 'expunge.interval'
+                                         )
+        wait_time = int(expunge_del[0].value) + int(expunge_int[0].value) + int(30)
+
+        self.debug("Waiting for {} seconds for the vm to expunge".format(wait_time))
+        #wait for the vm to expunge
+        time.sleep(wait_time)
+        return
