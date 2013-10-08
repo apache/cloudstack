@@ -29,35 +29,12 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.*;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CheckNetworkAnswer;
-import com.cloud.agent.api.CheckNetworkCommand;
-import com.cloud.agent.api.CheckVirtualMachineAnswer;
-import com.cloud.agent.api.CheckVirtualMachineCommand;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.MaintainAnswer;
-import com.cloud.agent.api.MaintainCommand;
-import com.cloud.agent.api.MigrateAnswer;
-import com.cloud.agent.api.MigrateCommand;
-import com.cloud.agent.api.PingCommand;
-import com.cloud.agent.api.PingRoutingCommand;
-import com.cloud.agent.api.PrepareForMigrationAnswer;
-import com.cloud.agent.api.PrepareForMigrationCommand;
-import com.cloud.agent.api.ReadyAnswer;
-import com.cloud.agent.api.ReadyCommand;
-import com.cloud.agent.api.RebootAnswer;
-import com.cloud.agent.api.RebootCommand;
-import com.cloud.agent.api.SecurityGroupRulesCmd;
-import com.cloud.agent.api.StartAnswer;
-import com.cloud.agent.api.StartCommand;
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.agent.api.StopAnswer;
-import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand.BootDev;
 import com.cloud.agent.api.baremetal.IpmiBootorResetCommand;
@@ -373,7 +350,21 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 			return null;
 		}
 
-		return new PingRoutingCommand(getType(), id, deltaSync());
+
+        if (hostId != null) {
+            vmDao = ComponentContext.getComponent(VMInstanceDao.class);
+            final List<? extends VMInstanceVO> vms = vmDao.listByHostId(hostId);
+            if (vms.isEmpty()) {
+                return new PingRoutingCommand(getType(), id, deltaSync());
+            } else {
+                VMInstanceVO vm = vms.get(0);
+                SecurityGroupHttpClient client = new SecurityGroupHttpClient();
+                HashMap<String, Pair<Long, Long>> nwGrpStates = client.sync(vm.getInstanceName(), vm.getId(), vm.getPrivateIpAddress());
+                return new PingRoutingWithNwGroupsCommand(getType(), id, null, nwGrpStates);
+            }
+        } else {
+            return new PingRoutingCommand(getType(), id, deltaSync());
+        }
 	}
 
 	protected Answer execute(IpmISetBootDevCommand cmd) {
