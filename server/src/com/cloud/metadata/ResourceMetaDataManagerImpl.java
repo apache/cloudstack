@@ -23,6 +23,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.DcDetailVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DcDetailsDao;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.VolumeDetailsDao;
@@ -95,6 +98,8 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     @Inject
     NetworkDao _networkDao;
     @Inject
+    DataCenterDao _dataCenterDao;
+    @Inject
     LoadBalancerDao _lbDao;
     @Inject
     PortForwardingRulesDao _pfDao;
@@ -123,6 +128,8 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     @Inject
     NicDao _nicDao;
     @Inject
+    DcDetailsDao _dcDetailsDao;
+    @Inject
     TaggedResourceService _taggedResourceMgr;
     @Inject
     UserVmDetailsDao _userVmDetail;
@@ -148,6 +155,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         _daoMap.put(TaggedResourceType.StaticRoute, _staticRouteDao);
         _daoMap.put(TaggedResourceType.VMSnapshot, _vmSnapshotDao);
         _daoMap.put(TaggedResourceType.RemoteAccessVpn, _vpnDao);
+        _daoMap.put(TaggedResourceType.Zone, _dataCenterDao);
         return true;
     }
 
@@ -208,6 +216,9 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
                 }else if (resourceType == TaggedResourceType.UserVm){
                     UserVmDetailVO userVmDetail = new UserVmDetailVO(id, key, value);
                     _userVmDetailDao.persist(userVmDetail);
+                } else if (resourceType == TaggedResourceType.Zone){
+                     DcDetailVO dataCenterDetail = new DcDetailVO(id, key, value);
+                     _dcDetailsDao.persist(dataCenterDetail);
                 } else {
                     throw new InvalidParameterValueException("The resource type " + resourceType + " is not supported by the API yet");
                 }
@@ -233,7 +244,10 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
             _nicDetailDao.removeDetails(id, key);
         } else if(resourceType == TaggedResourceType.UserVm){
             _userVmDetailDao.removeDetails(id, key);
-        } else {
+        } else if (resourceType == TaggedResourceType.Zone){
+            _dcDetailsDao.removeDetails(id, key);
+        }
+        else{
             throw new InvalidParameterValueException("The resource type " + resourceType + " is not supported by the API yet");
         }
 

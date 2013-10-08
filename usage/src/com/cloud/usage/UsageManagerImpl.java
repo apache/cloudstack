@@ -281,15 +281,15 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
     @Override
     public void run() {
-        new ManagedContextRunnable() {
+        (new ManagedContextRunnable() {
             @Override
             protected void runInContext() {
-                runInContext();
+                runInContextInternal();
             }
-        };
+        }).run();
     }
     
-    protected void runInContext() {
+    protected void runInContextInternal() {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("starting usage job...");
         }
