@@ -45,7 +45,9 @@ public class AclRolePermissionDaoImpl extends GenericDaoBase<AclRolePermissionVO
 
         findByRoleEntity = createSearchBuilder();
         findByRoleEntity.and("roleId", findByRoleEntity.entity().getAclRoleId(), SearchCriteria.Op.EQ);
-        findByRoleEntity.and("entityType", findByRoleEntity.entity().getEntityType(), SearchCriteria.Op.EQ);
+        findByRoleEntity.and().op("entityType", findByRoleEntity.entity().getEntityType(), SearchCriteria.Op.EQ);
+        findByRoleEntity.or("entityTypeStar", findByRoleEntity.entity().getEntityType(), SearchCriteria.Op.EQ);
+        findByRoleEntity.cp();
         findByRoleEntity.and("accessType", findByRoleEntity.entity().getAccessType(), SearchCriteria.Op.EQ);
         findByRoleEntity.done();
 
@@ -53,16 +55,17 @@ public class AclRolePermissionDaoImpl extends GenericDaoBase<AclRolePermissionVO
     }
 
     @Override
-    public List<AclRolePermissionVO> findByRoleAndEntity(long roleId, String entityType, AccessType accessType) {
+    public List<AclRolePermissionVO> listByRoleAndEntity(long roleId, String entityType, AccessType accessType) {
         SearchCriteria<AclRolePermissionVO> sc = findByRoleEntity.create();
         sc.setParameters("roleId", roleId);
         sc.setParameters("entityType", entityType);
         sc.setParameters("accessType", accessType);
+        sc.setParameters("entityTypeStar", "*");
         return listBy(sc);
     }
 
     @Override
-    public List<AclRolePermissionVO> findByRole(long roleId) {
+    public List<AclRolePermissionVO> listByRole(long roleId) {
         SearchCriteria<AclRolePermissionVO> sc = findByRoleEntity.create();
         sc.setParameters("roleId", roleId);
         return listBy(sc);

@@ -25,8 +25,8 @@ import com.cloud.utils.db.GenericDao;
 
 public interface AclRolePermissionDao extends GenericDao<AclRolePermissionVO, Long> {
 
-    List<AclRolePermissionVO> findByRoleAndEntity(long roleId, String entityType, AccessType accessType);
+    List<AclRolePermissionVO> listByRoleAndEntity(long roleId, String entityType, AccessType accessType);
 
-    List<AclRolePermissionVO> findByRole(long roleId);
+    List<AclRolePermissionVO> listByRole(long roleId);
 
 }
