@@ -162,7 +162,6 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.resource.ResourceManager;
-import com.cloud.server.Criteria;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
@@ -730,11 +729,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     private Pair<List<UserVmJoinVO>, Integer> searchForUserVMsInternal(ListVMsCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
-        String hypervisor = cmd.getHypervisor();
+
         boolean listAll = cmd.listAll();
         Long id = cmd.getId();
-        Map<String, String> tags = cmd.getTags();
-
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts,
@@ -743,54 +740,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
-        Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
-        // Criteria c = new Criteria(null, Boolean.FALSE, cmd.getStartIndex(),
-        // cmd.getPageSizeVal()); //version without default sorting
-        c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
-        c.addCriteria(Criteria.ID, cmd.getId());
-        c.addCriteria(Criteria.NAME, cmd.getName());
-        c.addCriteria(Criteria.STATE, cmd.getState());
-        c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
-        c.addCriteria(Criteria.GROUPID, cmd.getGroupId());
-        c.addCriteria(Criteria.FOR_VIRTUAL_NETWORK, cmd.getForVirtualNetwork());
-        c.addCriteria(Criteria.NETWORKID, cmd.getNetworkId());
-        c.addCriteria(Criteria.TEMPLATE_ID, cmd.getTemplateId());
-        c.addCriteria(Criteria.ISO_ID, cmd.getIsoId());
-        c.addCriteria(Criteria.VPC_ID, cmd.getVpcId());
-        c.addCriteria(Criteria.AFFINITY_GROUP_ID, cmd.getAffinityGroupId());
-
-        if (domainId != null) {
-            c.addCriteria(Criteria.DOMAINID, domainId);
-        }
-
-        if (HypervisorType.getType(hypervisor) != HypervisorType.None) {
-            c.addCriteria(Criteria.HYPERVISOR, hypervisor);
-        } else if (hypervisor != null) {
-            throw new InvalidParameterValueException("Invalid HypervisorType " + hypervisor);
-        }
-
-        // ignore these search requests if it's not an admin
-        if (cmd instanceof ListVMsCmdByAdmin) {
-            ListVMsCmdByAdmin adCmd = (ListVMsCmdByAdmin)cmd;
-            c.addCriteria(Criteria.PODID, adCmd.getPodId());
-            c.addCriteria(Criteria.HOSTID, adCmd.getHostId());
-            c.addCriteria(Criteria.STORAGE_ID, adCmd.getStorageId());
-        }
-
-        if (!permittedAccounts.isEmpty()) {
-            c.addCriteria(Criteria.ACCOUNTID, permittedAccounts.toArray());
-        }
-        c.addCriteria(Criteria.ISADMIN, _accountMgr.isAdmin(caller.getType()));
-
-        return searchForUserVMsByCriteria(c, caller, domainId, isRecursive, permittedAccounts, listAll,
-                listProjectResourcesCriteria, tags);
-    }
-
-    private Pair<List<UserVmJoinVO>, Integer> searchForUserVMsByCriteria(Criteria c, Account caller, Long domainId,
-            boolean isRecursive, List<Long> permittedAccounts, boolean listAll,
-            ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
-        Filter searchFilter = new Filter(UserVmJoinVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(),
-                c.getLimit());
+        Filter searchFilter = new Filter(UserVmJoinVO.class, "id", true, cmd.getStartIndex(),
+                cmd.getPageSizeVal());
 
         // first search distinct vm id by using query criteria and pagination
         SearchBuilder<UserVmJoinVO> sb = _userVmJoinDao.createSearchBuilder();
@@ -799,25 +750,35 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts,
                 listProjectResourcesCriteria);
 
-        Object id = c.getCriteria(Criteria.ID);
-        Object name = c.getCriteria(Criteria.NAME);
-        Object state = c.getCriteria(Criteria.STATE);
-        Object notState = c.getCriteria(Criteria.NOTSTATE);
-        Object zoneId = c.getCriteria(Criteria.DATACENTERID);
-        Object pod = c.getCriteria(Criteria.PODID);
-        Object hostId = c.getCriteria(Criteria.HOSTID);
-        Object hostName = c.getCriteria(Criteria.HOSTNAME);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
-        Object isAdmin = c.getCriteria(Criteria.ISADMIN);
-        assert c.getCriteria(Criteria.IPADDRESS) == null : "We don't support search by ip address on VM any more.  If you see this assert, it means we have to find a different way to search by the nic table.";
-        Object groupId = c.getCriteria(Criteria.GROUPID);
-        Object networkId = c.getCriteria(Criteria.NETWORKID);
-        Object hypervisor = c.getCriteria(Criteria.HYPERVISOR);
-        Object storageId = c.getCriteria(Criteria.STORAGE_ID);
-        Object templateId = c.getCriteria(Criteria.TEMPLATE_ID);
-        Object isoId = c.getCriteria(Criteria.ISO_ID);
-        Object vpcId = c.getCriteria(Criteria.VPC_ID);
-        Object affinityGroupId = c.getCriteria(Criteria.AFFINITY_GROUP_ID);
+        Map<String, String> tags = cmd.getTags();
+        String hypervisor = cmd.getHypervisor();
+        Object name = cmd.getName();
+        Object state = cmd.getState();
+        Object zoneId = cmd.getZoneId();
+        Object keyword = cmd.getKeyword();
+        boolean isAdmin = false;
+        if (_accountMgr.isAdmin(caller.getType())) {
+            isAdmin = true;
+        }
+        Object groupId = cmd.getGroupId();
+        Object networkId = cmd.getNetworkId();
+        if (HypervisorType.getType(hypervisor) == HypervisorType.None && hypervisor != null) {
+            // invalid hypervisor type input
+            throw new InvalidParameterValueException("Invalid HypervisorType " + hypervisor);
+        }
+        Object templateId = cmd.getTemplateId();
+        Object isoId = cmd.getIsoId();
+        Object vpcId = cmd.getVpcId();
+        Object affinityGroupId = cmd.getAffinityGroupId();
+        Object pod = null;
+        Object hostId = null;
+        Object storageId = null;
+        if (cmd instanceof ListVMsCmdByAdmin) {
+            ListVMsCmdByAdmin adCmd = (ListVMsCmdByAdmin)cmd;
+            pod = adCmd.getPodId();
+            hostId = adCmd.getHostId();
+            storageId = adCmd.getStorageId();
+        }
 
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -829,7 +790,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
-        sb.and("hostName", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
         sb.and("templateId", sb.entity().getTemplateId(), SearchCriteria.Op.EQ);
         sb.and("isoId", sb.entity().getIsoId(), SearchCriteria.Op.EQ);
         sb.and("instanceGroupId", sb.entity().getInstanceGroupId(), SearchCriteria.Op.EQ);
@@ -882,7 +842,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.EQ, keyword);
-
             sc.addAnd("displayName", SearchCriteria.Op.SC, ssc);
         }
 
@@ -911,11 +870,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         if (state != null) {
-            if (notState != null && (Boolean) notState == true) {
-                sc.setParameters("stateNEQ", state);
-            } else {
-                sc.setParameters("stateEQ", state);
-            }
+            sc.setParameters("stateEQ", state);
         }
 
         if (hypervisor != null) {
@@ -923,7 +878,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         // Don't show Destroyed and Expunging vms to the end user
-        if ((isAdmin != null) && ((Boolean) isAdmin != true)) {
+        if (!isAdmin) {
             sc.setParameters("stateNIN", "Destroyed", "Expunging");
         }
 
@@ -935,7 +890,13 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
         }
 
-        if (pod != null) {
+        if (affinityGroupId != null) {
+            sc.setParameters("affinityGroupId", affinityGroupId);
+        }
+
+        if (cmd instanceof ListVMsCmdByAdmin) {
+            ListVMsCmdByAdmin aCmd = (ListVMsCmdByAdmin)cmd;
+            if (aCmd.getPodId() != null) {
             sc.setParameters("podId", pod);
 
             if (state == null) {
@@ -945,18 +906,11 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (hostId != null) {
             sc.setParameters("hostIdEQ", hostId);
-        } else {
-            if (hostName != null) {
-                sc.setParameters("hostName", hostName);
-            }
         }
 
         if (storageId != null) {
             sc.setParameters("poolId", storageId);
         }
-
-        if (affinityGroupId != null) {
-            sc.setParameters("affinityGroupId", affinityGroupId);
         }
 
         // search vm details by ids

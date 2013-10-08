@@ -69,10 +69,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class, description="the availability zone ID")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN,
-            description="list by network type; true if need to list vms using Virtual Network, false otherwise")
-    private Boolean forVirtualNetwork;
-
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType=NetworkResponse.class,
             description="list by network id")
     private Long networkId;
@@ -125,13 +121,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
         return zoneId;
     }
 
-    public Boolean getForVirtualNetwork() {
-        return forVirtualNetwork;
-    }
-
-    public void setForVirtualNetwork(Boolean forVirtualNetwork) {
-        this.forVirtualNetwork = forVirtualNetwork;
-    }
 
     public Long getNetworkId() {
         return networkId;

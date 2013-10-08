@@ -93,7 +93,6 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.UserVmJoinDao;
-import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -174,12 +173,10 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
-import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ConfigurationServer;
-import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -235,11 +232,8 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.RSAHelper;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
@@ -3548,185 +3542,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
 
 
-    @Override
-    public Pair<List<UserVmJoinVO>, Integer> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive,
-            List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
-        Filter searchFilter = new Filter(UserVmJoinVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
-
-        //first search distinct vm id by using query criteria and pagination
-        SearchBuilder<UserVmJoinVO> sb = _vmJoinDao.createSearchBuilder();
-        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct ids
-        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
-        Object id = c.getCriteria(Criteria.ID);
-        Object name = c.getCriteria(Criteria.NAME);
-        Object state = c.getCriteria(Criteria.STATE);
-        Object notState = c.getCriteria(Criteria.NOTSTATE);
-        Object zone = c.getCriteria(Criteria.DATACENTERID);
-        Object pod = c.getCriteria(Criteria.PODID);
-        Object hostId = c.getCriteria(Criteria.HOSTID);
-        Object hostName = c.getCriteria(Criteria.HOSTNAME);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
-        Object isAdmin = c.getCriteria(Criteria.ISADMIN);
-        assert c.getCriteria(Criteria.IPADDRESS) == null : "We don't support search by ip address on VM any more.  If you see this assert, it means we have to find a different way to search by the nic table.";
-        Object groupId = c.getCriteria(Criteria.GROUPID);
-        Object networkId = c.getCriteria(Criteria.NETWORKID);
-        Object hypervisor = c.getCriteria(Criteria.HYPERVISOR);
-        Object storageId = c.getCriteria(Criteria.STORAGE_ID);
-        Object templateId = c.getCriteria(Criteria.TEMPLATE_ID);
-        Object isoId = c.getCriteria(Criteria.ISO_ID);
-        Object vpcId = c.getCriteria(Criteria.VPC_ID);
-
-        sb.and("displayName", sb.entity().getDisplayName(),
-                SearchCriteria.Op.LIKE);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
-        sb.and("stateEQ", sb.entity().getState(), SearchCriteria.Op.EQ);
-        sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
-        sb.and("stateNIN", sb.entity().getState(), SearchCriteria.Op.NIN);
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
-        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
-        sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
-        sb.and("hostName", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
-        sb.and("templateId", sb.entity().getTemplateId(), SearchCriteria.Op.EQ);
-        sb.and("isoId", sb.entity().getIsoId(), SearchCriteria.Op.EQ);
-        sb.and("instanceGroupId", sb.entity().getInstanceGroupId(), SearchCriteria.Op.EQ);
-
-        if (groupId != null && (Long) groupId != -1) {
-            sb.and("instanceGroupId", sb.entity().getInstanceGroupId(), SearchCriteria.Op.EQ);
-        }
-
-        if (tags != null && !tags.isEmpty()) {
-            for (int count=0; count < tags.size(); count++) {
-                sb.or().op("key" + String.valueOf(count), sb.entity().getTagKey(), SearchCriteria.Op.EQ);
-                sb.and("value" + String.valueOf(count), sb.entity().getTagValue(), SearchCriteria.Op.EQ);
-                sb.cp();
-            }
-        }
-
-        if (networkId != null) {
-            sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.EQ);
-        }
-
-        if(vpcId != null && networkId == null){
-            sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
-        }
-
-        if (storageId != null) {
-            sb.and("poolId", sb.entity().getPoolId(), SearchCriteria.Op.EQ);
-        }
-
-        // populate the search criteria with the values passed in
-        SearchCriteria<UserVmJoinVO> sc = sb.create();
-
-        // building ACL condition
-        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
-        if (tags != null && !tags.isEmpty()) {
-            int count = 0;
-            for (String key : tags.keySet()) {
-                sc.setParameters("key" + String.valueOf(count), key);
-                sc.setParameters("value" + String.valueOf(count), tags.get(key));
-                count++;
-            }
-        }
-
-        if (groupId != null && (Long)groupId != -1) {
-            sc.setParameters("instanceGroupId", groupId);
-        }
-
-        if (keyword != null) {
-            SearchCriteria<UserVmJoinVO> ssc = _vmJoinDao.createSearchCriteria();
-            ssc.addOr("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("hostName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword
-                    + "%");
-            ssc.addOr("state", SearchCriteria.Op.EQ, keyword);
-
-            sc.addAnd("displayName", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
-
-        if (templateId != null) {
-            sc.setParameters("templateId", templateId);
-        }
-
-        if (isoId != null) {
-            sc.setParameters("isoId", isoId);
-        }
-
-        if (networkId != null) {
-            sc.setParameters("networkId", networkId);
-        }
-
-        if(vpcId != null && networkId == null){
-            sc.setParameters("vpcId", vpcId);
-        }
-
-        if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
-        }
-
-        if (state != null) {
-            if (notState != null && (Boolean) notState == true) {
-                sc.setParameters("stateNEQ", state);
-            } else {
-                sc.setParameters("stateEQ", state);
-            }
-        }
-
-        if (hypervisor != null) {
-            sc.setParameters("hypervisorType", hypervisor);
-        }
-
-        // Don't show Destroyed and Expunging vms to the end user
-        if ((isAdmin != null) && ((Boolean) isAdmin != true)) {
-            sc.setParameters("stateNIN", "Destroyed", "Expunging");
-        }
-
-        if (zone != null) {
-            sc.setParameters("dataCenterId", zone);
-        }
-        if (pod != null) {
-            sc.setParameters("podId", pod);
-
-            if (state == null) {
-                sc.setParameters("stateNEQ", "Destroyed");
-            }
-        }
-
-        if (hostId != null) {
-            sc.setParameters("hostIdEQ", hostId);
-        } else {
-            if (hostName != null) {
-                sc.setParameters("hostName", hostName);
-            }
-        }
-
-        if (storageId != null) {
-            sc.setParameters("poolId", storageId);
-        }
-
-        // search vm details by ids
-        Pair<List<UserVmJoinVO>, Integer> uniqueVmPair =  _vmJoinDao.searchAndCount(sc, searchFilter);
-        Integer count = uniqueVmPair.second();
-        if ( count.intValue() == 0 ){
-            // handle empty result cases
-            return uniqueVmPair;
-        }
-        List<UserVmJoinVO> uniqueVms = uniqueVmPair.first();
-        Long[] vmIds = new Long[uniqueVms.size()];
-        int i = 0;
-        for (UserVmJoinVO v : uniqueVms ){
-            vmIds[i++] = v.getId();
-        }
-        List<UserVmJoinVO> vms = _vmJoinDao.searchByIds(vmIds);
-        return new Pair<List<UserVmJoinVO>, Integer>(vms, count);
-    }
 
     @Override
     public HypervisorType getHypervisorTypeOfUserVM(long vmId) {

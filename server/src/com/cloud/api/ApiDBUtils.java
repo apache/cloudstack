@@ -690,11 +690,6 @@ public class ApiDBUtils {
         return _ms.getVersion();
     }
 
-    public static List<UserVmJoinVO> searchForUserVMs(Criteria c, List<Long> permittedAccounts) {
-        return _userVmMgr.searchForUserVMs(c, _accountDao.findById(Account.ACCOUNT_ID_SYSTEM),
-                null, false, permittedAccounts, false, null, null).first();
-    }
-
     public static List<? extends StoragePoolVO> searchForStoragePools(Criteria c) {
         return _ms.searchForStoragePools(c).first();
     }
