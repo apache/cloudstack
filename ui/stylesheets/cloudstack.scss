@@ -18,6 +18,7 @@
 @import "browser";
 @import "dashboard";
 @import "icons";
+@import "instance-wizard";
 
 html body > .login {
     @include csui-login;
@@ -376,4 +377,9 @@ body {
     .icon {
         background-image: url(../images/sprites.png);
     }
+}
+
+// Wizards
+.multi-wizard {
+    @include csui-wizard;
 }
