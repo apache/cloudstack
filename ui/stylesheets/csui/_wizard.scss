@@ -60,15 +60,19 @@
 
         .button {
             @include csui-button;
+            @include span-columns(2);
 
-            float: left;
-            margin-right: 10px;
+            &.previous {
+                @include shift(6);
+            }
+
+            &.cancel {
+            }
 
             &.next {
                 @include csui-button-cta;
 
                 float: right;
-                margin-right: 0px;
             }
         }
     }
