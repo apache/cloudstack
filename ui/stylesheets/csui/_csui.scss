@@ -21,6 +21,11 @@
 @import "../lib/bourbon/bourbon";
 @import "../lib/neat/neat";
 
+// Font icons
+$FontAwesomePath: '/client/stylesheets/lib/font-awesome/font';
+@import "../lib/font-awesome/scss/font-awesome";
+
+
 // Custom main UI font
 @font-face {
     font-family: 'Noto Sans';
