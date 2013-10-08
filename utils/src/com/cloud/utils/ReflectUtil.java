@@ -106,7 +106,12 @@ public class ReflectUtil {
         return fields;
     }
 
-    // Returns all unique fields except excludeClasses for a cmd class
+    /**
+     * Returns all unique fields except excludeClasses for a cmd class
+     * @param cmdClass    the class in which fields should be collected
+     * @param excludeClasses the classes whose fields must be ignored
+     * @return list of fields
+     */
     public static Set<Field> getAllFieldsForClass(Class<?> cmdClass,
                                                   Class<?>[] excludeClasses) {
         Set<Field> fields = new HashSet<Field>();
@@ -116,14 +121,17 @@ public class ReflectUtil {
         while (superClass != null && superClass != Object.class) {
             String superName = superClass.getName();
             boolean isNameEqualToSuperName = false;
-            for (Class<?> baseClass: excludeClasses)
-                if (superName.equals(baseClass.getName()))
+            for (Class<?> baseClass: excludeClasses) {
+                if (superName.equals(baseClass.getName())) {
                     isNameEqualToSuperName = true;
+                }
+            }
 
             if (!isNameEqualToSuperName) {
                 Field[] superClassFields = superClass.getDeclaredFields();
-                if (superClassFields != null)
+                if (superClassFields != null) {
                     Collections.addAll(fields, superClassFields);
+                }
             }
             superClass = superClass.getSuperclass();
         }
