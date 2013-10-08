@@ -144,9 +144,9 @@ class cloudConnection(object):
 
         try:
             if method == 'POST':
-                response = requests.post(self.baseurl, params=payload)
+                response = requests.post(self.baseurl, params=payload, verify=False)
             else:
-                response = requests.get(self.baseurl, params=payload)
+                response = requests.get(self.baseurl, params=payload, verify=False)
         except ConnectionError, c:
             self.logging.debug("Connection refused. Reason: %s : %s" %
                                (self.baseurl, c))
