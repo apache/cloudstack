@@ -24,24 +24,48 @@
     .progress {
         @include span-columns(3);
 
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        box-shadow: inset 0px 0px 20px #ccc;
+        border-right: 1px solid #ccc;
+        box-shadow: 2px -1px 5px #ccc;
 
         ul {
             padding: 5px 0 0 20px;
             li {
                 list-style: none;
                 margin-top: 10px;
-
-                &.active {
-                    font-weight: bold;
-                }
+                color: gray;
 
                 .number {
-                    font-size: 18px;
+                    padding: 0 6px;
+                    border-radius: 100%;
+                    font-size: 14px;
                     margin-right: 10px;
-                    color: lighten(black, 25%);
+                    text-shadow: 0px 0px 1px black;
+                    color: white;
+                    background: #ccc;
+                }
+
+                &.active {
+                    color: black;
+
+                    .number {
+                        @include radial-gradient(circle at 90% 10%, darken(#ccc, 15%), darken(#ccc, 45%));
+                    }
+                }
+
+                &.done {
+                    color: black;
+
+                    &:before {
+                        @include icon($ok);
+
+                        margin: 0 10px 0px 5px;
+                        font-size: 14px;
+                        color: green;
+                    }
+
+                    .number {
+                        display: none;
+                    }
                 }
             }
         }

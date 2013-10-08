@@ -850,8 +850,12 @@
 
                     // Update progress bar
                     var $targetProgress = $progress.removeClass('active').filter(function() {
-                        return $(this).index() <= targetIndex;
+                        return $(this).index() === targetIndex;
                     }).toggleClass('active');
+
+                    $progress.removeClass('done').filter(function() {
+                        return $(this).index() < $targetProgress.index();
+                    }).toggleClass('done');
 
                     // Update diagram; show/hide as necessary
                     $diagramParts.filter(function() {
