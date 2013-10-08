@@ -471,8 +471,8 @@ under the License.
         </div>
         <!-- Buttons -->
         <div class="buttons">
-          <div class="button previous"><span><fmt:message key="label.previous"/></span></div>
           <div class="button cancel"><span><fmt:message key="label.cancel"/></span></div>
+          <div class="button previous"><span><fmt:message key="label.previous"/></span></div>
           <div class="button next"><span><fmt:message key="label.next"/></span></div>
         </div>
       </div>
