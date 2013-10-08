@@ -20,12 +20,25 @@
     list-style: none;
     padding: 15px 40px;
     margin: 0px;
+
+    a {
+        &:hover {
+            color: black;
+            text-decoration: none;
+        }
+    }
 }
 
 @mixin csui-tab-active {
     background: lighten(#ccc, 15%);
     border-radius: 8px 8px 0 0;
     margin: 0;
+
+    a {
+        color: black;
+        text-decoration: none;
+        cursor: default;
+    }
 }
 
 @mixin csui-tabs {
@@ -43,4 +56,23 @@
     background: lighten(#ccc, 15%);
     padding: 10px;
     border-bottom: 1px solid #ccc;
+}
+
+// jQuery UI tabs
+ul.ui-tabs-nav {
+    @include csui-tabs;
+
+    li {
+        @include csui-tab;
+
+        &.ui-state-active {
+            @include csui-tab-active;
+        }
+    }
+}
+
+.ui-tabs-panel {
+    &.ui-tabs-hide {
+        display: none;
+    }
 }
