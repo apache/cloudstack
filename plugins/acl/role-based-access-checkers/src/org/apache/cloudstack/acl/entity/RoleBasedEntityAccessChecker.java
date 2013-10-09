@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.acl.entity;
 
+import java.util.HashMap;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -39,6 +40,7 @@ import org.apache.log4j.Logger;
 import com.cloud.acl.DomainChecker;
 import com.cloud.api.ApiDispatcher;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.vm.VirtualMachine;
@@ -64,74 +66,66 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
     @Override
     public boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType)
             throws PermissionDeniedException {
+        if (entity instanceof VirtualMachine) {
 
-        String entityType = AclEntityType.VM.toString();
+            String entityType = AclEntityType.VM.toString();
 
-        // check if explicit allow/deny is present for this entity in
-        // acl_entity_permission
+            // check if explicit allow/deny is present for this entity in
+            // acl_entity_permission
 
-        if (entity instanceof InternalIdentity) {
-            InternalIdentity entityWithId = (InternalIdentity) entity;
+            if (entity instanceof InternalIdentity) {
+                InternalIdentity entityWithId = (InternalIdentity) entity;
 
-            List<AclGroupAccountMapVO> acctGroups = _aclGroupAccountMapDao.listByAccountId(caller.getId());
+                List<AclGroupAccountMapVO> acctGroups = _aclGroupAccountMapDao.listByAccountId(caller.getId());
 
-            for (AclGroupAccountMapVO groupMapping : acctGroups) {
-                AclEntityPermissionVO entityPermission = _entityPermissionDao.findByGroupAndEntity(
-                        groupMapping.getAclGroupId(), entityType, entityWithId.getId(), accessType);
+                for (AclGroupAccountMapVO groupMapping : acctGroups) {
+                    AclEntityPermissionVO entityPermission = _entityPermissionDao.findByGroupAndEntity(
+                            groupMapping.getAclGroupId(), entityType, entityWithId.getId(), accessType);
 
-                if (entityPermission != null) {
-                    if (entityPermission.isAllowed()) {
-                        return true;
-                    } else {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Account " + caller + " does not have permission to access resource "
-                                    + entity + " for access type: " + accessType);
+                    if (entityPermission != null) {
+                        if (entityPermission.isAllowed()) {
+                            return true;
+                        } else {
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Account " + caller + " does not have permission to access resource "
+                                        + entity + " for access type: " + accessType);
+                            }
+                            throw new PermissionDeniedException(caller
+                                    + " does not have permission to access resource " + entity);
                         }
-                        throw new PermissionDeniedException(caller + " does not have permission to access resource "
-                                + entity);
                     }
                 }
             }
-        }
 
-        // Is Caller RootAdmin? Yes, granted true
-        if (_accountService.isRootAdmin(caller.getId())) {
-            return true;
-        }
-        // Is Caller Owner of the entity? Yes, granted true
-        if (caller.getId() == entity.getAccountId()) {
-            return true;
-        }
+            // get all Roles of this caller w.r.t the entity
+            List<AclRole> roles = _aclService.getEffectiveRoles(caller, entity);
+            HashMap<AclRole, Boolean> rolePermissionMap = new HashMap<AclRole, Boolean>();
 
-        // get all Roles of this caller w.r.t the entity
-        List<AclRole> roles = _aclService.getEffectiveRoles(caller, entity);
-
-        for (AclRole role : roles) {
-            AclRolePermissionVO permission = _rolePermissionDao.findByRoleAndEntity(role.getId(), entityType,
-                    accessType);
-            boolean operationAllowedForAll = true;
-
-            if (permission.getEntityType().equals(entityType)) {
-                if (permission.isAllowed()) {
+            for (AclRole role : roles) {
+                List<AclRolePermissionVO> permissions = _rolePermissionDao.listByRoleAndEntity(role.getId(),
+                        entityType, accessType);
+                for (AclRolePermissionVO permission : permissions) {
+                    if (permission.getEntityType().equals(entityType)) {
+                        rolePermissionMap.put(role, permission.isAllowed());
+                        break;
+                    } else if (permission.getEntityType().equals("*")) {
+                        rolePermissionMap.put(role, permission.isAllowed());
+                    }
+                }
+                if (rolePermissionMap.containsKey(role) && rolePermissionMap.get(role)) {
                     return true;
-                } else {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Account " + caller + " does not have permission to access resource " + entity
-                                + " for access type: " + accessType);
-                    }
-                    throw new PermissionDeniedException(caller + " does not have permission to access resource "
-                            + entity);
-                }
-            } else if (permission.getEntityType().equals("*")) {
-                if (permission.isAllowed()) {
-                    operationAllowedForAll = true;
-                } else {
-                    operationAllowedForAll = false;
                 }
             }
 
+            if (!roles.isEmpty()) { // Since we reach this point, none of the
+                                    // roles granted access
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Account " + caller + " does not have permission to access resource " + entity
+                            + " for access type: " + accessType);
+                }
+                throw new PermissionDeniedException(caller + " does not have permission to access resource " + entity);
+            }
         }
-
 
         return false;
     }
