@@ -5709,10 +5709,14 @@
                                                 url: createURL('removeVmwareDc'),
                                                 data: data,
                                                 success: function(json) {
-                                                    var item = json.updatezoneresponse.zone;
-                                                    args.response.success({
-                                                        actionFilter: zoneActionfilter,
-                                                        data: item
+                                                	delete args.context.physicalResources[0].vmwaredcName;
+                                                	delete args.context.physicalResources[0].vmwaredcVcenter;
+                                                	delete args.context.physicalResources[0].vmwaredcId;
+                                                	
+                                                	selectedZoneObj = args.context.physicalResources[0];
+                                                	
+                                                    args.response.success({                                                        
+                                                        data: args.context.physicalResources[0]
                                                     });
                                                 }
                                             });
