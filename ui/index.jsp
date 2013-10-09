@@ -114,14 +114,14 @@ under the License.
                   <h3><fmt:message key="label.select.iso.or.template" /></h3>
                   <p></p>
                   <div class="select-area">
-                    <div class="desc"><fmt:message key="message.template.desc"/></div>
                     <input type="radio" name="select-template" value="select-template" />
                     <label><fmt:message key="label.template"/></label>
+                    <div class="desc"><fmt:message key="message.template.desc"/></div>
                   </div>
                   <div class="select-area">
-                    <div class="desc"><fmt:message key="message.iso.desc"/></div>
                     <input type="radio" name="select-template" value="select-iso" />
                     <label>ISO</label>
+                    <div class="desc"><fmt:message key="message.iso.desc"/></div>
                   </div>
                 </div>
               </div>

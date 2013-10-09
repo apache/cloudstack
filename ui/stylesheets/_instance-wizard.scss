@@ -15,6 +15,28 @@
 // specific language governing permissions and limitations
 // under the License.
 .multi-wizard.instance-wizard {
+    .select-area {
+        @include row;
+
+
+        input {
+            @include span-columns(1);
+        }
+
+        label {
+            @include span-columns(2);
+
+            font-size: 24px;
+            margin-top: 15px;
+        }
+
+        .desc {
+            @include span-columns(12);
+            @include shift(1);
+            color: darken(#ccc, 30%);
+        }
+    }
+
     .select-container {
         background: $csui-tab-bg;
         padding: 10px;
