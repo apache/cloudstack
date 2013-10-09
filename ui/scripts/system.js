@@ -11440,8 +11440,8 @@
                                 array1.push("&podid=" + args.context.pods[0].id);
                             if ("clusters" in args.context)
                                 array1.push("&clusterid=" + args.context.clusters[0].id);
-                        } else {
-                            array1.push("&hostid=" + args.context.instances[0].hostid);
+                        } else { //Instances menu > Instance detailView > View Hosts
+                            array1.push("&id=" + args.context.instances[0].hostid);
                         }
 
                         $.ajax({
