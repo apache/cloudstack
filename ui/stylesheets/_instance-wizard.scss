@@ -75,4 +75,38 @@
             }
         }
     }
+
+    .step.data-disk-offering {
+        &.custom-disk-size {
+            .select-container {
+                height: 200px;
+            }
+        }
+
+        .section.custom-size {
+            label:not(.size) {
+                @include span-columns(12);
+            }
+
+            label.size {
+                text-align: center;
+                margin-top: 20px;
+                float: left;
+            }
+
+            .ui-slider {
+                @include span-columns(7);
+            }
+
+            input[type=text] {
+                @include shift(2);
+
+                padding: 5px;
+                float: left;
+                margin-right: 25px;
+            }
+
+            margin-top: 20px;
+        }
+    }
 }
