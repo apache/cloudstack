@@ -155,7 +155,7 @@ public class VolumeVO implements Volume {
     private Long vmSnapshotChainSize;
 
     @Column(name = "iso_id")
-    private long isoId;
+    private Long isoId;
     
     @Transient
     // @Column(name="reservation")
@@ -571,7 +571,7 @@ public class VolumeVO implements Volume {
         return this.isoId;
     }
 
-    public void setIsoId(long isoId) {
+    public void setIsoId(Long isoId) {
         this.isoId =isoId;
     }
     
