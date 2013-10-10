@@ -137,7 +137,7 @@
                             });
 
                             if ($(this).val() == 'protocolnumber') {
-                                $icmpFields.hide();
+                                $icmpFields.show();
                                 $portFields.show();
                                 $protocolFields.show();
                                 $portFields.show();
@@ -191,7 +191,7 @@
                             });
 
                             if ($(this).val() == 'protocolnumber') {
-                                $icmpFields.hide();
+                                $icmpFields.show();
                                 $otherFields.hide();
                                 $protocolFields.show().addClass('required');
                                 $inputs.filter('[name=startport],[name=endport]').show().attr('disabled', false);
