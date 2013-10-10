@@ -323,6 +323,14 @@ class SGAgent(object):
     
     @staticmethod
     def start():
+
+        def create_rule_if_not_exists(rule):
+            out = sglib.ShellCmd('iptables-save')()
+            if rule in out:
+                return
+
+            sglib.ShellCmd('iptables %s' % rule)()
+
         def prepare_default_rules():
             sglib.ShellCmd('iptables --policy INPUT DROP')()
             name = 'default-chain'
@@ -330,7 +338,9 @@ class SGAgent(object):
                 sglib.ShellCmd('iptables -F %s' % name)()
             except Exception:
                 sglib.ShellCmd('iptables -N %s' % name)()
-            sglib.ShellCmd('iptables -I INPUT -p tcp --dport 9988 -j ACCEPT')()
+
+            create_rule_if_not_exists('-I INPUT -p tcp --dport 9988 -j ACCEPT')
+            create_rule_if_not_exists('-I INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT')
 
 
         prepare_default_rules()
