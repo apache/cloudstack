@@ -243,6 +243,7 @@
   <bean id="securityCheckers" class="com.cloud.utils.component.AdapterList">
     <property name="Adapters">
       <list>
+	      <ref bean="roleBasedEntityAccessChecker"/>
 	      <ref bean="affinityGroupAccessChecker"/>
           <ref bean="domainChecker"/>
       </list>

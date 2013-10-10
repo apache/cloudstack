@@ -28,6 +28,7 @@ import org.apache.cloudstack.acl.AclRole;
 import org.apache.cloudstack.acl.AclRolePermissionVO;
 import org.apache.cloudstack.acl.AclService;
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.acl.dao.AclEntityPermissionDao;
@@ -39,6 +40,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.acl.DomainChecker;
 import com.cloud.api.ApiDispatcher;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -53,6 +55,8 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
     AccountService _accountService;
     @Inject
     AclService _aclService;
+    
+    @Inject DomainDao _domainDao;
 
     @Inject
     AclGroupAccountMapDao _aclGroupAccountMapDao;
@@ -69,6 +73,10 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         if (entity instanceof VirtualMachine) {
 
             String entityType = AclEntityType.VM.toString();
+
+            if (accessType == null) {
+                accessType = AccessType.ListEntry;
+            }
 
             // check if explicit allow/deny is present for this entity in
             // acl_entity_permission
@@ -105,11 +113,13 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
                 List<AclRolePermissionVO> permissions = _rolePermissionDao.listByRoleAndEntity(role.getId(),
                         entityType, accessType);
                 for (AclRolePermissionVO permission : permissions) {
-                    if (permission.getEntityType().equals(entityType)) {
-                        rolePermissionMap.put(role, permission.isAllowed());
-                        break;
-                    } else if (permission.getEntityType().equals("*")) {
-                        rolePermissionMap.put(role, permission.isAllowed());
+                    if (checkPermissionScope(caller, permission.getScope(), entity)) {
+                        if (permission.getEntityType().equals(entityType)) {
+                            rolePermissionMap.put(role, permission.isAllowed());
+                            break;
+                        } else if (permission.getEntityType().equals("*")) {
+                            rolePermissionMap.put(role, permission.isAllowed());
+                        }
                     }
                 }
                 if (rolePermissionMap.containsKey(role) && rolePermissionMap.get(role)) {
@@ -127,6 +137,21 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
             }
         }
 
+        return false;
+    }
+
+    private boolean checkPermissionScope(Account caller, PermissionScope scope, ControlledEntity entity) {
+        
+        if(scope.equals(PermissionScope.ACCOUNT)){
+            if(caller.getAccountId() == entity.getAccountId()){
+                return true;
+            }
+        }else if(scope.equals(PermissionScope.DOMAIN)){
+            if (_domainDao.isChildDomain(caller.getDomainId(), entity.getDomainId())) {
+                return true;
+            }
+        }
+        
         return false;
     }
 }

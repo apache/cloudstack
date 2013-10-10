@@ -389,6 +389,7 @@
   <bean id="databaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker" />
   <bean id="domainChecker" class="com.cloud.acl.DomainChecker" />
   <bean id="affinityGroupAccessChecker" class="com.cloud.acl.AffinityGroupAccessChecker" />
+  <bean id="roleBasedEntityAccessChecker" class="org.apache.cloudstack.acl.entity.RoleBasedEntityAccessChecker" />
   
   <!--
     Authenticators

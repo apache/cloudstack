@@ -53,6 +53,7 @@ public class AclRolePermissionVO implements AclRolePermission {
     @Column(name = "permission")
     private boolean allowed;
 
+
     public AclRolePermissionVO() {
 
     }
@@ -114,4 +115,12 @@ public class AclRolePermissionVO implements AclRolePermission {
         this.allowed = allowed;
     }
 
+    @Override
+    public PermissionScope getScope() {
+        return scope;
+    }
+
+    public void setScope(PermissionScope scope) {
+        this.scope = scope;
+    }
 }
