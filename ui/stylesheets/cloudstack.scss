@@ -221,6 +221,35 @@ body {
     }
 }
 
+// Panel toolbars
+.toolbar {
+    @include csui-toolbar;
+
+    .panel-controls {
+        display: none;
+    }
+
+    .button.refresh {
+        @include csui-button-refresh;
+
+        float: right;
+    }
+}
+
+// Action buttons
+.action {
+    @include csui-action-button;
+
+    .icon {
+        background-image: url(../images/sprites.png);
+    }
+}
+
+// Wizards
+.multi-wizard {
+    @include csui-wizard;
+}
+
 // List view widget
 .list-view {
     @include csui-list;
@@ -289,6 +318,12 @@ body {
 }
 
 .detail-view {
+    .toolbar {
+        background: none;
+        float: right;
+        padding: 0;
+    }
+
     .ui-tabs-nav {
         @include csui-tabs;
 
@@ -359,27 +394,4 @@ body {
             }
         }
     }
-}
-
-// Panel toolbars
-.toolbar {
-    @include csui-toolbar;
-
-    .panel-controls {
-        display: none;
-    }
-}
-
-// Action buttons
-.action {
-    @include csui-action-button;
-
-    .icon {
-        background-image: url(../images/sprites.png);
-    }
-}
-
-// Wizards
-.multi-wizard {
-    @include csui-wizard;
 }

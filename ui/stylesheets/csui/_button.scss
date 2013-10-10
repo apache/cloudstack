@@ -34,6 +34,18 @@
     }
 }
 
+@mixin csui-button-simple {
+    @include csui-button;
+
+    background: none;
+    border-color: white;
+
+    &:hover {
+        box-shadow: none;
+        border-color: #ccc;
+    }
+}
+
 @mixin csui-button-cta {
     @include csui-button;
     @include linear-gradient(darkgray, lighten(black, 15%));
@@ -42,6 +54,16 @@
     color: white;
     font-weight: bold;
     text-shadow: 0px 1px 1px black;
+}
+
+@mixin csui-button-refresh {
+    @include csui-button-simple;
+
+    &:before {
+        @include icon($refresh);
+
+        margin-right: 10px;
+    }
 }
 
 // Defaults
