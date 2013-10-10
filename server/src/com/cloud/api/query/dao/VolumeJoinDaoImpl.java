@@ -182,6 +182,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
             Long poolId = volume.getPoolId();
             String poolName = (poolId == null) ? "none" : volume.getPoolName();
             volResponse.setStoragePoolName(poolName);
+            volResponse.setStoragePoolId(volume.getPoolUuid());
         }
 
         volResponse.setAttached(volume.getAttached());

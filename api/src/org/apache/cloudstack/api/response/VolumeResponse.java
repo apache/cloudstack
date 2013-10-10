@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -189,6 +188,10 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
     @SerializedName(ApiConstants.PATH)
     @Param(description="The path of the volume")
     private String path;
+    
+    @SerializedName(ApiConstants.STORAGE_ID)
+    @Param(description = "id of the primary storage hosting the disk volume; returned to admin user only", since="4.3")
+    private String storagePoolId;
 
     public String getPath() {
         return path;
@@ -402,4 +405,7 @@ public class VolumeResponse extends BaseResponse implements ControlledViewEntity
         this.displayVm = displayVm;
     }
 
+    public void setStoragePoolId(String storagePoolId) {
+        this.storagePoolId = storagePoolId;
+    }
 }
