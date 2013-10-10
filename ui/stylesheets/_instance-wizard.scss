@@ -59,8 +59,16 @@
                 margin: 5px 0;
             }
 
+            .secondary-input {
+                @include span-columns(3);
+
+                input {
+                    margin-right: 15px;
+                }
+            }
+
             .select-desc {
-                @include span-columns(11);
+                @include span-columns(7);
 
                 .name {
                     font-weight: bold;
@@ -108,5 +116,80 @@
 
             margin-top: 20px;
         }
+    }
+
+    .step.network {
+        table {
+            width: 100%;
+        }
+
+        .select.my-networks {
+            .select-container {
+                height: 250px;
+                overflow: auto;
+            }
+        }
+
+        .new-network {
+            .select-container {
+                height: 220px;
+            }
+
+            &.unselected {
+                .select-container {
+                    height: 100px;
+                }
+            }
+
+            .name {
+                @include span-columns(2);
+            }
+
+            .value {
+                @include span-columns(4);
+            }
+
+            .select {
+                @include row;
+
+                input[type=checkbox] {
+                    @include span-columns(1);
+                }
+                .field.name {
+                    @include span-columns(10);
+
+                    .name {
+                        @include span-columns(3);
+                    }
+
+                    .value {
+                        @include span-columns(9);
+
+                        input {
+                            width: 100%;
+
+                            padding: 5px;
+                        }
+                    }
+                }
+
+                .field.service-offering {
+                    @include span-columns(12);
+                }
+
+                .secondary-input {
+                    @include span-columns(2);
+                }
+            }
+        }
+    }
+
+    .hide-if-selected { display: none !important; }
+    .unselected .hide-if-selected {
+        display: block !important;
+    }
+
+     .unselected .hide-if-unselected {
+        display: none !important;
     }
 }

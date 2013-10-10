@@ -1032,7 +1032,6 @@
                 return $wizard.dialog({
                     title: _l('label.vm.add'),
                     width: 800,
-                    height: 570,
                     modal: true,
                     closeOnEscape: false,
                     zIndex: 5000
