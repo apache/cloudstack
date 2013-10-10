@@ -56,11 +56,10 @@ namespace HypervResource
             kvpItem.LateBoundObject["Source"] = 0;
             logger.Debug("VM " + vm.Name + " gets userdata " + userData);
 
-            String kvpStr = kvpItem.LateBoundObject.GetText(TextFormat.CimDtd20);
-
             // Update the resource settings for the VM.
-            ManagementPath jobPath;
-
+            System.Management.ManagementBaseObject kvpMgmtObj = kvpItem.LateBoundObject;
+            System.Management.ManagementPath jobPath;
+            String kvpStr = kvpMgmtObj.GetText(System.Management.TextFormat.CimDtd20);
             uint ret_val = vmMgmtSvc.AddKvpItems(new String[] { kvpStr }, vm.Path, out jobPath);
 
             // If the Job is done asynchronously
