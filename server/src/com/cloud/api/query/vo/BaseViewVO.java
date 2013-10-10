@@ -20,9 +20,6 @@ public abstract class BaseViewVO {
 
     public abstract long getId();
 
-    public abstract void setId(long id);
-
-
     @Override
     public int hashCode() {
         final int prime = 31;

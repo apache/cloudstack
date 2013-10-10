@@ -17,6 +17,7 @@
 package com.cloud.api.query.vo;
 
 import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -24,11 +25,11 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.utils.db.GenericDao;
-
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="async_job_view")
@@ -53,7 +54,6 @@ public class AsyncJobJoinVO extends BaseViewVO implements InternalIdentity, Iden
     @Column(name="account_type")
     private short accountType;
 
-
     @Column(name="domain_id")
     private long domainId;
 
@@ -65,7 +65,6 @@ public class AsyncJobJoinVO extends BaseViewVO implements InternalIdentity, Iden
 
     @Column(name="domain_path")
     private String domainPath = null;
-
 
     @Column(name="user_id")
     private long userId;
@@ -104,231 +103,96 @@ public class AsyncJobJoinVO extends BaseViewVO implements InternalIdentity, Iden
     @Column(name="instance_uuid")
     private String instanceUuid;
 
-
     public AsyncJobJoinVO() {
     }
-
 
     @Override
     public long getId() {
         return id;
     }
 
-
-    @Override
-    public void setId(long id) {
-        this.id = id;
-    }
-
-
     @Override
     public String getUuid() {
         return uuid;
     }
 
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
-
     public long getAccountId() {
         return accountId;
     }
-
-
-    public void setAccountId(long accountId) {
-        this.accountId = accountId;
-    }
-
 
     public String getAccountUuid() {
         return accountUuid;
     }
 
-
-    public void setAccountUuid(String accountUuid) {
-        this.accountUuid = accountUuid;
-    }
-
-
     public String getAccountName() {
         return accountName;
     }
-
-
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
-    }
-
 
     public short getAccountType() {
         return accountType;
     }
 
-
-    public void setAccountType(short accountType) {
-        this.accountType = accountType;
-    }
-
-
     public long getDomainId() {
         return domainId;
     }
-
-
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
-    }
-
 
     public String getDomainUuid() {
         return domainUuid;
     }
 
-
-    public void setDomainUuid(String domainUuid) {
-        this.domainUuid = domainUuid;
-    }
-
-
     public String getDomainName() {
         return domainName;
     }
-
-
-    public void setDomainName(String domainName) {
-        this.domainName = domainName;
-    }
-
 
     public String getDomainPath() {
         return domainPath;
     }
 
-
-    public void setDomainPath(String domainPath) {
-        this.domainPath = domainPath;
-    }
-
-
     public long getUserId() {
         return userId;
     }
-
-
-    public void setUserId(long userId) {
-        this.userId = userId;
-    }
-
 
     public String getUserUuid() {
         return userUuid;
     }
 
-
-    public void setUserUuid(String userUuid) {
-        this.userUuid = userUuid;
-    }
-
-
     public String getCmd() {
         return cmd;
     }
-
-
-    public void setCmd(String cmd) {
-        this.cmd = cmd;
-    }
-
 
     public int getStatus() {
         return status;
     }
 
-
-    public void setStatus(int status) {
-        this.status = status;
-    }
-
-
     public int getProcessStatus() {
         return processStatus;
     }
-
-
-    public void setProcessStatus(int processStatus) {
-        this.processStatus = processStatus;
-    }
-
 
     public int getResultCode() {
         return resultCode;
     }
 
-
-    public void setResultCode(int resultCode) {
-        this.resultCode = resultCode;
-    }
-
-
     public String getResult() {
         return result;
     }
-
-
-    public void setResult(String result) {
-        this.result = result;
-    }
-
 
     public Date getCreated() {
         return created;
     }
 
-
-    public void setCreated(Date created) {
-        this.created = created;
-    }
-
-
     public Date getRemoved() {
         return removed;
     }
-
-
-    public void setRemoved(Date removed) {
-        this.removed = removed;
-    }
-
 
     public ApiCommandJobType getInstanceType() {
         return instanceType;
     }
 
-
-    public void setInstanceType(ApiCommandJobType instanceType) {
-        this.instanceType = instanceType;
-    }
-
-
     public Long getInstanceId() {
         return instanceId;
     }
 
-
-    public void setInstanceId(Long instanceId) {
-        this.instanceId = instanceId;
-    }
-
-
     public String getInstanceUuid() {
         return instanceUuid;
     }
-
-
-    public void setInstanceUuid(String instanceUuid) {
-        this.instanceUuid = instanceUuid;
-    }
-
 }

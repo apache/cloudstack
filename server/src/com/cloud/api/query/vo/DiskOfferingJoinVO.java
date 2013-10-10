@@ -23,11 +23,11 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.storage.DiskOfferingVO.Type;
-import com.cloud.utils.db.GenericDao;
-
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.storage.DiskOfferingVO.Type;
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="disk_offering_view")
@@ -109,7 +109,6 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     @Column(name="display_offering")
     boolean displayOffering;
 
-
     public DiskOfferingJoinVO() {
     }
 
@@ -119,201 +118,99 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     }
 
     @Override
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    @Override
     public String getUuid() {
         return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getDisplayText() {
         return displayText;
-    }
-
-    public void setDisplayText(String displayText) {
-        this.displayText = displayText;
     }
 
     public long getDiskSize() {
         return diskSize;
     }
 
-    public void setDiskSize(long diskSize) {
-        this.diskSize = diskSize;
-    }
-
     public String getTags() {
         return tags;
-    }
-
-    public void setTags(String tags) {
-        this.tags = tags;
     }
 
     public boolean isUseLocalStorage() {
         return useLocalStorage;
     }
 
-    public void setUseLocalStorage(boolean useLocalStorage) {
-        this.useLocalStorage = useLocalStorage;
-    }
-
     public boolean isSystemUse() {
         return systemUse;
-    }
-
-    public void setSystemUse(boolean systemUse) {
-        this.systemUse = systemUse;
     }
 
     public boolean isCustomized() {
         return customized;
     }
 
-    public void setCustomized(boolean customized) {
-        this.customized = customized;
-    }
-
     public Boolean isCustomizedIops() {
         return customizedIops;
-    }
-
-    public void setCustomizedIops(Boolean customizedIops) {
-        this.customizedIops = customizedIops;
     }
 
     public Long getMinIops() {
         return minIops;
     }
 
-    public void setMinIops(Long minIops) {
-        this.minIops = minIops;
-    }
-
     public Long getMaxIops() {
         return maxIops;
-    }
-
-    public void setMaxIops(Long maxIops) {
-        this.maxIops = maxIops;
     }
 
     public boolean isDisplayOffering() {
         return displayOffering;
     }
 
-    public void setDisplayOffering(boolean displayOffering) {
-        this.displayOffering = displayOffering;
-    }
-
     public Date getCreated() {
         return created;
-    }
-
-    public void setCreated(Date created) {
-        this.created = created;
     }
 
     public Date getRemoved() {
         return removed;
     }
 
-    public void setRemoved(Date removed) {
-        this.removed = removed;
-    }
-
     public long getDomainId() {
         return domainId;
-    }
-
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
     }
 
     public String getDomainUuid() {
         return domainUuid;
     }
 
-    public void setDomainUuid(String domainUuid) {
-        this.domainUuid = domainUuid;
-    }
-
     public String getDomainName() {
         return domainName;
-    }
-
-    public void setDomainName(String domainName) {
-        this.domainName = domainName;
     }
 
     public String getDomainPath() {
         return domainPath;
     }
 
-    public void setDomainPath(String domainPath) {
-        this.domainPath = domainPath;
-    }
-
     public int getSortKey() {
         return sortKey;
-    }
-
-    public void setSortKey(int sortKey) {
-        this.sortKey = sortKey;
     }
 
     public Type getType() {
         return type;
     }
 
-    public void setType(Type type) {
-        this.type = type;
-    }
-
-    public void setBytesReadRate(Long bytesReadRate) {
-        this.bytesReadRate = bytesReadRate;
-    }
-
     public Long getBytesReadRate() {
         return bytesReadRate;
-    }
-
-    public void setBytesWriteRate(Long bytesWriteRate) {
-        this.bytesWriteRate = bytesWriteRate;
     }
 
     public Long getBytesWriteRate() {
         return bytesWriteRate;
     }
 
-    public void setIopsReadRate(Long iopsReadRate) {
-        this.iopsReadRate = iopsReadRate;
-    }
-
     public Long getIopsReadRate() {
         return iopsReadRate;
-    }
-
-    public void setIopsWriteRate(Long iopsWriteRate) {
-        this.iopsWriteRate = iopsWriteRate;
     }
 
     public Long getIopsWriteRate() {
         return iopsWriteRate;
     }
-
 }

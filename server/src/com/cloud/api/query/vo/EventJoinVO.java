@@ -25,8 +25,8 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.utils.db.GenericDao;
 import com.cloud.event.Event.State;
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="event_view")
@@ -70,7 +70,6 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="parameters", length=1024)
     private String parameters;
 
-
     @Column(name="account_id")
     private long accountId;
 
@@ -107,7 +106,6 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="archived")
     private boolean archived;
 
-
     public EventJoinVO() {
     }
 
@@ -117,28 +115,13 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
     @Override
-    public void setId(long id) {
-        this.id = id;
-
-    }
-
-    @Override
     public String getUuid() {
         return uuid;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
-
     @Override
     public long getAccountId() {
         return accountId;
-    }
-
-    public void setAccountId(long accountId) {
-        this.accountId = accountId;
     }
 
     @Override
@@ -146,17 +129,9 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
         return accountUuid;
     }
 
-    public void setAccountUuid(String accountUuid) {
-        this.accountUuid = accountUuid;
-    }
-
     @Override
     public String getAccountName() {
         return accountName;
-    }
-
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
     }
 
     @Override
@@ -164,17 +139,9 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
         return accountType;
     }
 
-    public void setAccountType(short accountType) {
-        this.accountType = accountType;
-    }
-
     @Override
     public long getDomainId() {
         return domainId;
-    }
-
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
     }
 
     @Override
@@ -182,17 +149,9 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
         return domainUuid;
     }
 
-    public void setDomainUuid(String domainUuid) {
-        this.domainUuid = domainUuid;
-    }
-
     @Override
     public String getDomainName() {
         return domainName;
-    }
-
-    public void setDomainName(String domainName) {
-        this.domainName = domainName;
     }
 
     @Override
@@ -200,16 +159,8 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
         return domainPath;
     }
 
-    public void setDomainPath(String domainPath) {
-        this.domainPath = domainPath;
-    }
-
     public long getProjectId() {
         return projectId;
-    }
-
-    public void setProjectId(long projectId) {
-        this.projectId = projectId;
     }
 
     @Override
@@ -217,110 +168,52 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
         return projectUuid;
     }
 
-    public void setProjectUuid(String projectUuid) {
-        this.projectUuid = projectUuid;
-    }
-
     @Override
     public String getProjectName() {
         return projectName;
     }
 
-    public void setProjectName(String projectName) {
-        this.projectName = projectName;
-    }
-
-
-
-
-
     public String getType() {
         return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 
     public State getState() {
         return state;
     }
 
-    public void setState(State state) {
-        this.state = state;
-    }
-
     public String getDescription() {
         return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public Date getCreateDate() {
         return createDate;
     }
 
-    public void setCreateDate(Date createDate) {
-        this.createDate = createDate;
-    }
-
     public long getUserId() {
         return userId;
-    }
-
-    public void setUserId(long userId) {
-        this.userId = userId;
     }
 
     public String getUserName() {
         return userName;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
-
     public String getLevel() {
         return level;
-    }
-
-    public void setLevel(String level) {
-        this.level = level;
     }
 
     public long getStartId() {
         return startId;
     }
 
-    public void setStartId(long startId) {
-        this.startId = startId;
-    }
-
-
     public String getStartUuid() {
         return startUuid;
-    }
-
-    public void setStartUuid(String startUuid) {
-        this.startUuid = startUuid;
     }
 
     public String getParameters() {
         return parameters;
     }
 
-    public void setParameters(String parameters) {
-        this.parameters = parameters;
-    }
-
     public boolean getArchived() {
         return archived;
     }
-
-    public void setArchived(Boolean archived) {
-        this.archived = archived;
-    }
-
 }

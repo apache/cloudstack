@@ -83,7 +83,6 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
     @Column (name="incorrect_login_attempts")
     int loginAttempts;
 
-
     @Column(name="account_id")
     private long accountId;
 
@@ -116,7 +115,7 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
 
     @Column(name="job_status")
     private int jobStatus;
-    
+
     @Column(name = "default")
     boolean isDefault;
 
@@ -129,232 +128,111 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
     }
 
     @Override
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    @Override
     public String getUuid() {
         return uuid;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
-
     public long getAccountId() {
         return accountId;
-    }
-
-    public void setAccountId(long accountId) {
-        this.accountId = accountId;
     }
 
     public String getAccountUuid() {
         return accountUuid;
     }
 
-    public void setAccountUuid(String accountUuid) {
-        this.accountUuid = accountUuid;
-    }
-
     public String getAccountName() {
         return accountName;
     }
-
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
-    }
-
 
     public short getAccountType() {
         return accountType;
     }
 
-    public void setAccountType(short accountType) {
-        this.accountType = accountType;
-    }
-
-
     public long getDomainId() {
         return domainId;
     }
-
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
-    }
-
 
     public String getDomainUuid() {
         return domainUuid;
     }
 
-    public void setDomainUuid(String domainUuid) {
-        this.domainUuid = domainUuid;
-    }
-
-
     public String getDomainName() {
         return domainName;
     }
 
-    public void setDomainName(String domainName) {
-        this.domainName = domainName;
-    }
-
-
     public String getDomainPath() {
         return domainPath;
-    }
-
-    public void setDomainPath(String domainPath) {
-        this.domainPath = domainPath;
     }
 
     public String getUsername() {
         return username;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
     public String getPassword() {
         return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public String getFirstname() {
         return firstname;
     }
 
-    public void setFirstname(String firstname) {
-        this.firstname = firstname;
-    }
-
     public String getLastname() {
         return lastname;
-    }
-
-    public void setLastname(String lastname) {
-        this.lastname = lastname;
     }
 
     public String getEmail() {
         return email;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
     public String getState() {
         return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
     }
 
     public String getApiKey() {
         return apiKey;
     }
 
-    public void setApiKey(String apiKey) {
-        this.apiKey = apiKey;
-    }
-
     public String getSecretKey() {
         return secretKey;
-    }
-
-    public void setSecretKey(String secretKey) {
-        this.secretKey = secretKey;
     }
 
     public Date getCreated() {
         return created;
     }
 
-    public void setCreated(Date created) {
-        this.created = created;
-    }
-
     public Date getRemoved() {
         return removed;
-    }
-
-    public void setRemoved(Date removed) {
-        this.removed = removed;
     }
 
     public String getTimezone() {
         return timezone;
     }
 
-    public void setTimezone(String timezone) {
-        this.timezone = timezone;
-    }
-
     public String getRegistrationToken() {
         return registrationToken;
-    }
-
-    public void setRegistrationToken(String registrationToken) {
-        this.registrationToken = registrationToken;
     }
 
     public boolean isRegistered() {
         return registered;
     }
 
-    public void setRegistered(boolean registered) {
-        this.registered = registered;
-    }
-
     public int getLoginAttempts() {
         return loginAttempts;
-    }
-
-    public void setLoginAttempts(int loginAttempts) {
-        this.loginAttempts = loginAttempts;
     }
 
     public Long getJobId() {
         return jobId;
     }
 
-    public void setJobId(Long jobId) {
-        this.jobId = jobId;
-    }
-
     public String getJobUuid() {
         return jobUuid;
-    }
-
-    public void setJobUuid(String jobUuid) {
-        this.jobUuid = jobUuid;
     }
 
     public int getJobStatus() {
         return jobStatus;
     }
 
-    public void setJobStatus(int jobStatus) {
-        this.jobStatus = jobStatus;
-    }
-
     public boolean isDefault() {
         return isDefault;
     }
-
-    public void setDefault(boolean isDefault) {
-        this.isDefault = isDefault;
-    }
-
-    
 }
