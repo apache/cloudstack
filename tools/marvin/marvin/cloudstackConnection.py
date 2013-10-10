@@ -32,8 +32,10 @@ from requests import RequestException
 
 
 class cloudConnection(object):
+
     """ Connections to make API calls to the cloudstack management server
     """
+
     def __init__(self, mgtSvr, port=8096, user=None, passwd=None,
                  apiKey=None, securityKey=None,
                  asyncTimeout=3600, logging=None, scheme='http',
@@ -144,9 +146,11 @@ class cloudConnection(object):
 
         try:
             if method == 'POST':
-                response = requests.post(self.baseurl, params=payload, verify=False)
+                response = requests.post(
+                    self.baseurl, params=payload, verify=False)
             else:
-                response = requests.get(self.baseurl, params=payload, verify=False)
+                response = requests.get(
+                    self.baseurl, params=payload, verify=False)
         except ConnectionError, c:
             self.logging.debug("Connection refused. Reason: %s : %s" %
                                (self.baseurl, c))
