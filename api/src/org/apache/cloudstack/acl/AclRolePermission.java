@@ -31,5 +31,4 @@ public interface AclRolePermission extends InternalIdentity {
 
     boolean isAllowed();
 
-    PermissionScope getScope();
 }
