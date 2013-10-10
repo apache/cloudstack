@@ -333,12 +333,12 @@ CREATE TABLE `cloud`.`acl_group_role_map` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;        
 
 
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created) VALUES (1, 'NORMAL', 'Domain user role', UUID(), 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created) VALUES (2, 'ADMIN', 'Root admin role', UUID(), 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin role', UUID(), 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin role', UUID(), 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin role', UUID(), 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created) VALUES (6, 'RESOURCE_OWNER', 'Resource owner role', UUID(), 1, Now(), 'Dynamic');
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created, role_type) VALUES (1, 'NORMAL', 'Domain user role', UUID(), 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created, role_type) VALUES (2, 'ADMIN', 'Root admin role', UUID(), 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created, role_type) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin role', UUID(), 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created, role_type) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin role', UUID(), 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created, role_type) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin role', UUID(), 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created, role_type) VALUES (6, 'RESOURCE_OWNER', 'Resource owner role', UUID(), 1, Now(), 'Dynamic');
 
 INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, created) VALUES (1, 'NORMAL', 'Domain user group', UUID(), 1, Now());
 INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, created) VALUES (2, 'ADMIN', 'Root admin group', UUID(), 1, Now());
