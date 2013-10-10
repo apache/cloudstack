@@ -27,12 +27,6 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.dc.DcDetailVO;
-import com.cloud.dc.dao.DcDetailsDao;
-import com.cloud.vm.UserVmDetailVO;
-import com.cloud.vm.dao.UserVmDetailsDao;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -90,6 +84,8 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
@@ -132,7 +128,9 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.dc.DcDetailVO;
 import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.dao.DcDetailsDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
@@ -141,10 +139,9 @@ import com.cloud.event.dao.EventJoinDao;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.dao.NetworkDomainVO;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.org.Grouping;
@@ -189,11 +186,13 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicDetailVO;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDetailDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 
 @Component
 @Local(value = { QueryService.class })
@@ -3222,108 +3221,90 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Override
     public List<ResourceDetailResponse> listResource(ListResourceDetailsCmd cmd) {
-
         String key = cmd.getKey();
         ResourceTag.TaggedResourceType resourceType = cmd.getResourceType();
         String resourceId = cmd.getResourceId();
         Long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
-
+        List<ResourceDetailResponse> responseList = new ArrayList<ResourceDetailResponse>();
+        
         if (resourceType == ResourceTag.TaggedResourceType.Volume) {
-
-            List<VolumeDetailVO> volumeDetailList;
+            List<VolumeDetailVO> detailList;
             if (key == null) {
-                volumeDetailList = _volumeDetailDao.findDetails(id);
+                detailList = _volumeDetailDao.findDetails(id);
             } else {
                 VolumeDetailVO volumeDetail = _volumeDetailDao.findDetail(id, key);
-                volumeDetailList = new LinkedList<VolumeDetailVO>();
-                volumeDetailList.add(volumeDetail);
+                detailList = new LinkedList<VolumeDetailVO>();
+                detailList.add(volumeDetail);
             }
 
-            List<ResourceDetailResponse> volumeDetailResponseList = new ArrayList<ResourceDetailResponse>();
-            for (VolumeDetailVO volumeDetail : volumeDetailList) {
-                ResourceDetailResponse volumeDetailResponse = new ResourceDetailResponse();
-                volumeDetailResponse.setResourceId(id.toString());
-                volumeDetailResponse.setName(volumeDetail.getName());
-                volumeDetailResponse.setValue(volumeDetail.getValue());
-                volumeDetailResponse.setResourceType(ResourceTag.TaggedResourceType.Volume.toString());
-                volumeDetailResponse.setObjectName("volumedetail");
-                volumeDetailResponseList.add(volumeDetailResponse);
+            for (VolumeDetailVO detail : detailList) {
+                ResourceDetailResponse detailResponse = createResourceDetailsResponse(id, detail.getName(), detail.getValue(),
+                        ResourceTag.TaggedResourceType.Volume);
+                responseList.add(detailResponse);
             }
-
-            return volumeDetailResponseList;
 
         } else if (resourceType == ResourceTag.TaggedResourceType.Nic){
-
-            List<NicDetailVO> nicDetailList;
+            List<NicDetailVO> detailList;
             if (key == null) {
-                nicDetailList = _nicDetailDao.findDetails(id);
+                detailList = _nicDetailDao.findDetails(id);
             } else {
                 NicDetailVO nicDetail = _nicDetailDao.findDetail(id, key);
-                nicDetailList = new LinkedList<NicDetailVO>();
-                nicDetailList.add(nicDetail);
+                detailList = new LinkedList<NicDetailVO>();
+                detailList.add(nicDetail);
             }
 
-            List<ResourceDetailResponse> nicDetailResponseList = new ArrayList<ResourceDetailResponse>();
-            for (NicDetailVO nicDetail : nicDetailList) {
-                ResourceDetailResponse nicDetailResponse = new ResourceDetailResponse();
-                // String uuid = ApiDBUtils.findN
-                nicDetailResponse.setName(nicDetail.getName());
-                nicDetailResponse.setValue(nicDetail.getValue());
-                nicDetailResponse.setResourceType(ResourceTag.TaggedResourceType.Nic.toString());
-                nicDetailResponse.setObjectName("nicdetail");
-                nicDetailResponseList.add(nicDetailResponse);
+            for (NicDetailVO detail : detailList) {
+                ResourceDetailResponse detailResponse = createResourceDetailsResponse(id, detail.getName(), detail.getValue(),
+                        ResourceTag.TaggedResourceType.Nic);
+                responseList.add(detailResponse);
             }
-
-            return nicDetailResponseList;
-
+        } else if (resourceType == ResourceTag.TaggedResourceType.UserVm){
+            List<UserVmDetailVO> detailList;
+            if (key == null) {
+                detailList = _userVmDetailDao.findDetailsList(id);
+            } else {
+                UserVmDetailVO vmDetail = _userVmDetailDao.findDetail(id, key);
+                detailList = new LinkedList<UserVmDetailVO>();
+                detailList.add(vmDetail);
+            }
+            for (UserVmDetailVO detail : detailList) {
+                ResourceDetailResponse detailResponse = createResourceDetailsResponse(id, detail.getName(), detail.getValue(),
+                        ResourceTag.TaggedResourceType.UserVm);
+                responseList.add(detailResponse);
+            }
         } else if (resourceType == ResourceTag.TaggedResourceType.Zone){
 
-            List<DcDetailVO> dcDetailList;
+            List<DcDetailVO> details;
             if (key == null) {
-                dcDetailList = _dcDetailsDao.findDetailsList(id);
+                details = _dcDetailsDao.findDetailsList(id);
             } else {
-                DcDetailVO nicDetail = _dcDetailsDao.findDetail(id, key);
-                dcDetailList = new LinkedList<DcDetailVO>();
-                dcDetailList.add(nicDetail);
+                DcDetailVO zoneDetail = _dcDetailsDao.findDetail(id, key);
+                details = new LinkedList<DcDetailVO>();
+                details.add(zoneDetail);
             }
 
             List<ResourceDetailResponse> dcDetailResponseList = new ArrayList<ResourceDetailResponse>();
-            for (DcDetailVO dcDetail : dcDetailList) {
-                ResourceDetailResponse dcDetailResponse = new ResourceDetailResponse();
-                // String uuid = ApiDBUtils.findN
-                dcDetailResponse.setName(dcDetail.getName());
-                dcDetailResponse.setValue(dcDetail.getValue());
-                dcDetailResponse.setResourceType(ResourceTag.TaggedResourceType.Nic.toString());
-                dcDetailResponse.setObjectName("zonedetail");
-                dcDetailResponseList.add(dcDetailResponse);
+            for (DcDetailVO detail : details) {
+                ResourceDetailResponse detailResponse = createResourceDetailsResponse(id, detail.getName(), detail.getValue(),
+                        ResourceTag.TaggedResourceType.Zone);
+                responseList.add(detailResponse);
             }
-
-            return dcDetailResponseList;
-
-        }else {
-
-            List<UserVmDetailVO> userVmDetailList;
-            if (key == null) {
-                userVmDetailList = _userVmDetailDao.findDetailsList(id);
-            } else {
-                UserVmDetailVO nicDetail = _userVmDetailDao.findDetail(id, key);
-                userVmDetailList = new LinkedList<UserVmDetailVO>();
-                userVmDetailList.add(nicDetail);
-            }
-
-            List<ResourceDetailResponse> userVmDetailResponseList = new ArrayList<ResourceDetailResponse>();
-            for (UserVmDetailVO nicDetail : userVmDetailList) {
-                ResourceDetailResponse userVmDetailResponse = new ResourceDetailResponse();
-                userVmDetailResponse.setName(nicDetail.getName());
-                userVmDetailResponse.setValue(nicDetail.getValue());
-                userVmDetailResponse.setResourceType(ResourceTag.TaggedResourceType.Nic.toString());
-                userVmDetailResponse.setObjectName("uservmdetail");
-                userVmDetailResponseList.add(userVmDetailResponse);
-            }
-
-            return userVmDetailResponseList;
+        } else {
+            throw new UnsupportedServiceException("Resource type " + resourceType + " is not supported by the cloudStack");
         }
+        
+        return responseList;
+    }
 
+    
+    protected ResourceDetailResponse createResourceDetailsResponse(long resourceId, String key, String value, ResourceTag.TaggedResourceType type) {
+        ResourceDetailResponse resourceDetailResponse = new ResourceDetailResponse();
+        resourceDetailResponse.setResourceId(String.valueOf(resourceId));
+        resourceDetailResponse.setName(key);
+        resourceDetailResponse.setValue(value);
+        resourceDetailResponse.setResourceType(type.toString());
+        resourceDetailResponse.setObjectName("resourcedetail");
+        return resourceDetailResponse;
     }
 
 }
