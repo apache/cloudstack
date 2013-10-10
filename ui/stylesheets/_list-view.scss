@@ -1,0 +1,81 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+.list-view {
+    @include csui-list;
+
+    // Advanced search field
+    #advanced_search {
+        float: right;
+        .icon {
+            @include csui-sprite(61, 167);
+
+            position: relative;
+            width: 15px;
+            height: 15px;
+            left: 215px;
+            top: 10px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .form-container {
+            @include csui-dialog;
+            @include csui-form;
+
+            width: 400px;
+            margin-top: -15px;
+            margin-left: -160px;
+            opacity: 0.9;
+            padding-top: 0px;
+
+            form {
+                display: inline-block;
+                border: none;
+            }
+
+            .message { display: none; }
+
+            .form-item {
+                margin-top: 20px;
+            }
+
+            .name {
+                position: relative;
+                top: -20px;
+            }
+
+            input[type=submit], .button.cancel {
+                position: relative;
+                top: 25px;
+            }
+
+            input[type=submit] {
+                @include csui-button-cta;
+
+                float: right;
+            }
+
+            .button.cancel {
+                @include csui-button;
+
+                float: left;
+            }
+        }
+    }
+
+    max-height: 85%;
+}
