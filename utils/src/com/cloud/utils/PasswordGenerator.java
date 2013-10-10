@@ -79,7 +79,7 @@ public class PasswordGenerator {
 	    }
 	    
 	    public static String rot13(final String password) {
-	        final StringBuffer newPassword = new StringBuffer("");
+	        final StringBuilder newPassword = new StringBuilder(password.length());
 
 	        for (int i = 0; i < password.length(); i++) {
 	            char c = password.charAt(i);
