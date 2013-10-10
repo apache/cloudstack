@@ -90,6 +90,9 @@ public interface AccountManager extends AccountService {
     void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId,
             boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
 
+    void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId,
+            boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria, List<Long> grantedIds, List<Long> revokedIds);
+
 	void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc,
 			Long domainId, boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
 
@@ -140,7 +143,7 @@ public interface AccountManager extends AccountService {
      * @param accountId
      * @return account object
      */
-    Account enableAccount(String accountName, Long domainId, Long accountId); 
+    Account enableAccount(String accountName, Long domainId, Long accountId);
     
     /**
      * Deletes user by Id
@@ -155,7 +158,7 @@ public interface AccountManager extends AccountService {
      * @param userId
      * @return UserAccount object
      */
-    UserAccount updateUser(UpdateUserCmd cmd);   
+    UserAccount updateUser(UpdateUserCmd cmd);
     
     /**
      * Disables a user by userId
@@ -187,5 +190,5 @@ public interface AccountManager extends AccountService {
      * @param accountId
      * @return account object
      */
-    Account lockAccount(String accountName, Long domainId, Long accountId);    
+    Account lockAccount(String accountName, Long domainId, Long accountId);
 }

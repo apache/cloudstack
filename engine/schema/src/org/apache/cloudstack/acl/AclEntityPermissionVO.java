@@ -41,7 +41,7 @@ public class AclEntityPermissionVO implements AclEntityPermission {
     AccessType accessType;
 
     @Column(name = "permission")
-    private boolean permission;
+    private boolean allowed;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
@@ -60,7 +60,7 @@ public class AclEntityPermissionVO implements AclEntityPermission {
         this.entityId = entityId;
         this.entityUuid = entityUuid;
         accessType = atype;
-        this.permission = permission;
+        allowed = permission;
     }
 
     @Override
@@ -123,7 +123,11 @@ public class AclEntityPermissionVO implements AclEntityPermission {
 
     @Override
     public boolean isAllowed() {
-        return permission;
+        return allowed;
+    }
+
+    public void setAllowed(boolean allowed) {
+        this.allowed = allowed;
     }
 
 }

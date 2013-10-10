@@ -18,7 +18,9 @@ package org.apache.cloudstack.acl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -47,6 +49,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -551,6 +554,67 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         List<AclRoleVO> roles = _aclRoleDao.customSearch(sc, null);
 
         return new ArrayList<AclRole>(roles);
+    }
+
+    @Override
+    public AclRolePermission getAclRolePermission(long accountId, String entityType, AccessType accessType) {
+        List<AclRole> roles = getAclRoles(accountId);
+        AclRolePermission curPerm = null;
+        for (AclRole role : roles) {
+            AclRolePermission perm = _rolePermissionDao.findByRoleEntityAndPermission(role.getId(), entityType, accessType, true);
+            if (perm == null)
+                continue;
+            if (curPerm == null) {
+                curPerm = perm;
+            } else if (perm.getScope().greaterThan(curPerm.getScope())) {
+                // pick the more relaxed allowed permission
+                curPerm = perm;
+            }
+        }
+
+        return curPerm;
+    }
+
+    @Override
+    public List<AclGroup> getAclGroups(long accountId) {
+
+        GenericSearchBuilder<AclGroupAccountMapVO, Long> groupSB = _aclGroupAccountMapDao.createSearchBuilder(Long.class);
+        groupSB.selectField(groupSB.entity().getAclGroupId());
+        groupSB.and("account", groupSB.entity().getAccountId(), Op.EQ);
+        SearchCriteria<Long> groupSc = groupSB.create();
+
+        List<Long> groupIds = _aclGroupAccountMapDao.customSearch(groupSc, null);
+
+        SearchBuilder<AclGroupVO> sb = _aclGroupDao.createSearchBuilder();
+        sb.and("ids", sb.entity().getId(), Op.IN);
+        SearchCriteria<AclGroupVO> sc = sb.create();
+        sc.setParameters("ids", groupIds.toArray(new Object[groupIds.size()]));
+        List<AclGroupVO> groups = _aclGroupDao.search(sc, null);
+
+        return new ArrayList<AclGroup>(groups);
+    }
+
+    @Override
+    public Pair<List<Long>, List<Long>> getAclEntityPermission(long accountId, String entityType, AccessType accessType) {
+        List<AclGroup> groups = getAclGroups(accountId);
+        if (groups == null || groups.size() == 0) {
+            return new Pair<List<Long>, List<Long>>(new ArrayList<Long>(), new ArrayList<Long>());
+        }
+        Set<Long> allowedIds = new HashSet<Long>();
+        Set<Long> deniedIds = new HashSet<Long>();
+        for (AclGroup grp : groups) {
+            // get allowed id  and denied list for each group
+            List<Long> allowedIdList = _entityPermissionDao.findEntityIdByGroupAndPermission(grp.getId(), entityType, accessType, true);
+            if (allowedIdList != null) {
+                allowedIds.addAll(allowedIdList);
+            }
+            List<Long> deniedIdList = _entityPermissionDao.findEntityIdByGroupAndPermission(grp.getId(), entityType, accessType, false);
+            if (deniedIdList != null) {
+                deniedIds.addAll(deniedIdList);
+            }
+        }
+        return new Pair<List<Long>, List<Long>>(new ArrayList<Long>(allowedIds), new ArrayList<Long>(deniedIds))
+        ;
     }
 
     @Override

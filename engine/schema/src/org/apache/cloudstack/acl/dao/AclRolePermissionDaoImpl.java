@@ -49,9 +49,31 @@ public class AclRolePermissionDaoImpl extends GenericDaoBase<AclRolePermissionVO
         findByRoleEntity.or("entityTypeStar", findByRoleEntity.entity().getEntityType(), SearchCriteria.Op.EQ);
         findByRoleEntity.cp();
         findByRoleEntity.and("accessType", findByRoleEntity.entity().getAccessType(), SearchCriteria.Op.EQ);
+        findByRoleEntity.and("allowed", findByRoleEntity.entity().isAllowed(), SearchCriteria.Op.EQ);
         findByRoleEntity.done();
 
         return true;
+    }
+
+    @Override
+    public AclRolePermissionVO findByRoleEntityAndPermission(long roleId, String entityType, AccessType accessType, boolean isAllowed) {
+        SearchCriteria<AclRolePermissionVO> sc = findByRoleEntity.create();
+        sc.setParameters("roleId", roleId);
+        sc.setParameters("entityType", entityType);
+        sc.setParameters("accessType", accessType);
+        sc.setParameters("entityTypeStar", "*");
+        sc.setParameters("allowed", isAllowed);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public AclRolePermissionVO findByRoleAndEntity(long roleId, String entityType, AccessType accessType) {
+        SearchCriteria<AclRolePermissionVO> sc = findByRoleEntity.create();
+        sc.setParameters("roleId", roleId);
+        sc.setParameters("entityType", entityType);
+        sc.setParameters("accessType", accessType);
+        sc.setParameters("entityTypeStar", "*");
+        return findOneBy(sc);
     }
 
     @Override

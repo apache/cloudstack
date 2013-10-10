@@ -30,9 +30,12 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.AclGroup;
 import org.apache.cloudstack.acl.AclRole;
+import org.apache.cloudstack.acl.AclService;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.acl.dao.AclGroupDao;
 import org.apache.cloudstack.acl.dao.AclRoleDao;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
@@ -348,6 +351,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Inject
     AclGroupDao _aclGroupDao;
+
+    @Inject
+    AclService _aclService;
 
     /*
      * (non-Javadoc)
@@ -730,6 +736,11 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
+        // get granted or denied entity instance permissions
+        Pair<List<Long>, List<Long>> idPair = _aclService.getAclEntityPermission(caller.getId(), AclEntityType.VM.toString(), AccessType.ListEntry);
+        List<Long> grantedIds = idPair.first();
+        List<Long> revokedIds = idPair.second();
+
         boolean listAll = cmd.listAll();
         Long id = cmd.getId();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
@@ -745,10 +756,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         // first search distinct vm id by using query criteria and pagination
         SearchBuilder<UserVmJoinVO> sb = _userVmJoinDao.createSearchBuilder();
-        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
-        // ids
+        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct ids
         _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria);
+                listProjectResourcesCriteria, grantedIds, revokedIds);
 
         Map<String, String> tags = cmd.getTags();
         String hypervisor = cmd.getHypervisor();

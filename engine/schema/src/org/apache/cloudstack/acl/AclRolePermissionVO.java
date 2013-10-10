@@ -46,8 +46,12 @@ public class AclRolePermissionVO implements AclRolePermission {
     @Enumerated(value = EnumType.STRING)
     AccessType accessType;
 
+    @Column(name = "scope")
+    @Enumerated(value = EnumType.STRING)
+    PermissionScope scope;
+
     @Column(name = "permission")
-    private boolean permission;
+    private boolean allowed;
 
     public AclRolePermissionVO() {
 
@@ -93,7 +97,21 @@ public class AclRolePermissionVO implements AclRolePermission {
     }
 
     @Override
-    public boolean isAllowed() {
-        return permission;
+    public PermissionScope getScope() {
+        return scope;
     }
+
+    public void setScope(PermissionScope scope) {
+        this.scope = scope;
+    }
+
+    @Override
+    public boolean isAllowed() {
+        return allowed;
+    }
+
+    public void setAllowed(boolean allowed) {
+        this.allowed = allowed;
+    }
+
 }

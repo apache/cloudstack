@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.acl.dao;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -47,6 +49,7 @@ public class AclEntityPermissionDaoImpl extends GenericDaoBase<AclEntityPermissi
         findByGroupEntity.and("entityType", findByGroupEntity.entity().getEntityType(), SearchCriteria.Op.EQ);
         findByGroupEntity.and("entityId", findByGroupEntity.entity().getEntityId(), SearchCriteria.Op.EQ);
         findByGroupEntity.and("accessType", findByGroupEntity.entity().getAccessType(), SearchCriteria.Op.EQ);
+        findByGroupEntity.and("allowed", findByGroupEntity.entity().isAllowed(), SearchCriteria.Op.EQ);
         findByGroupEntity.done();
 
         return true;
@@ -61,4 +64,22 @@ public class AclEntityPermissionDaoImpl extends GenericDaoBase<AclEntityPermissi
         sc.setParameters("accessType", accessType);
         return findOneBy(sc);
     }
+
+    @Override
+    public List<Long> findEntityIdByGroupAndPermission(long groupId, String entityType, AccessType accessType, boolean isAllowed) {
+        List<Long> idList = new ArrayList<Long>();
+        SearchCriteria<AclEntityPermissionVO> sc = findByGroupEntity.create();
+        sc.setParameters("groupId", groupId);
+        sc.setParameters("entityType", entityType);
+        sc.setParameters("allowed", isAllowed);
+        sc.setParameters("accessType", accessType);
+        List<AclEntityPermissionVO> permList = listBy(sc);
+        if (permList != null) {
+            for (AclEntityPermissionVO perm : permList) {
+                idList.add(perm.getEntityId());
+            }
+        }
+        return idList;
+    }
+
 }

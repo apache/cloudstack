@@ -40,12 +40,17 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.AclGroupAccountMapVO;
+import org.apache.cloudstack.acl.AclRolePermission;
+import org.apache.cloudstack.acl.AclService;
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.acl.dao.AclGroupAccountMapDao;
+import org.apache.cloudstack.acl.dao.AclRolePermissionDao;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
@@ -251,6 +256,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Inject
     private AclGroupAccountMapDao _aclGroupAccountDao;
+
+    @Inject
+    private AclService _aclService;
+
+    @Inject
+    private AclRolePermissionDao _aclRolePermissionDao;
 
     @Inject
     public com.cloud.region.ha.GlobalLoadBalancingRulesService _gslbService;
@@ -2194,6 +2205,93 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
     }
 
+//    @Override
+//    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long>
+//    permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject,
+//            boolean listAll, boolean forProjectInvitation) {
+//        Long domainId = domainIdRecursiveListProject.first();
+//        if (domainId != null) {
+//            Domain domain = _domainDao.findById(domainId);
+//            if (domain == null) {
+//                throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
+//            }
+//            // check permissions
+//            checkAccess(caller, domain);
+//        }
+//
+//        if (accountName != null) {
+//            if (projectId != null) {
+//                throw new InvalidParameterValueException("Account and projectId can't be specified together");
+//            }
+//
+//            Account userAccount = null;
+//            Domain domain = null;
+//            if (domainId != null) {
+//                userAccount = _accountDao.findActiveAccount(accountName, domainId);
+//                domain = _domainDao.findById(domainId);
+//            } else {
+//                userAccount = _accountDao.findActiveAccount(accountName, caller.getDomainId());
+//                domain = _domainDao.findById(caller.getDomainId());
+//            }
+//
+//            if (userAccount != null) {
+//                checkAccess(caller, null, false, userAccount);
+//                //check permissions
+//                permittedAccounts.add(userAccount.getId());
+//            } else {
+//                throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domain.getUuid());
+//            }
+//        }
+//
+//        // set project information
+//        if (projectId != null) {
+//            if (!forProjectInvitation) {
+//                if (projectId.longValue() == -1) {
+//                    if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+//                        permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+//                    } else {
+//                        domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.ListProjectResourcesOnly);
+//                    }
+//                } else {
+//                    Project project = _projectMgr.getProject(projectId);
+//                    if (project == null) {
+//                        throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+//                    }
+//                    if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+//                        throw new PermissionDeniedException("Account " + caller + " can't access project id=" + projectId);
+//                    }
+//                    permittedAccounts.add(project.getProjectAccountId());
+//                }
+//            }
+//        } else {
+//            if (id == null) {
+//                domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.SkipProjectResources);
+//            }
+//            if (permittedAccounts.isEmpty() && domainId == null) {
+//                if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+//                    permittedAccounts.add(caller.getId());
+//                } else if (!listAll) {
+//                    if (id == null) {
+//                        permittedAccounts.add(caller.getId());
+//                    } else if (!isRootAdmin(caller.getId())) {
+//                        domainIdRecursiveListProject.first(caller.getDomainId());
+//                        domainIdRecursiveListProject.second(true);
+//                    }
+//                } else if (domainId == null) {
+//                    if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+//                        domainIdRecursiveListProject.first(caller.getDomainId());
+//                        domainIdRecursiveListProject.second(true);
+//                    }
+//                }
+//            } else if (domainId != null) {
+//                if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+//                    permittedAccounts.add(caller.getId());
+//                }
+//            }
+//
+//        }
+//    }
+
     @Override
     public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long>
     permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject,
@@ -2206,6 +2304,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
             // check permissions
             checkAccess(caller, domain);
+        }
+
+        if (id != null) {
+            // look for an individual entity, no other permission criteria are needed
+            return;
         }
 
         if (accountName != null) {
@@ -2253,33 +2356,26 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
             }
         } else {
-            if (id == null) {
-                domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.SkipProjectResources);
+            domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.SkipProjectResources);
+            // get caller role permission on VM List
+            AclRolePermission rolePerm = _aclService.getAclRolePermission(caller.getId(), AclEntityType.VM.toString(), AccessType.ListEntry);
+            if (rolePerm == null) {
+                // no list entry permission
+                throw new PermissionDeniedException("Caller has no role permission assigned to list VM");
             }
-            if (permittedAccounts.isEmpty() && domainId == null) {
-                if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            if (permittedAccounts.isEmpty()) {
+                // no account name is specified
+                if (rolePerm.getScope() == PermissionScope.ACCOUNT || !listAll) {
+                    // only resource owner can see it, only match account
                     permittedAccounts.add(caller.getId());
-                } else if (!listAll) {
-                    if (id == null) {
-                        permittedAccounts.add(caller.getId());
-                    } else if (!isRootAdmin(caller.getId())) {
-                        domainIdRecursiveListProject.first(caller.getDomainId());
-                        domainIdRecursiveListProject.second(true);
-                    }
-                } else if (domainId == null) {
-                    if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-                        domainIdRecursiveListProject.first(caller.getDomainId());
-                        domainIdRecursiveListProject.second(true);
-                    }
-                }
-            } else if (domainId != null) {
-                if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                    permittedAccounts.add(caller.getId());
+                } else {
+                    // match domain tree based on cmd.isRecursive flag or not
+                    domainIdRecursiveListProject.first(caller.getDomainId());
                 }
             }
-
         }
     }
+
 
     @Override
     public void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId,
@@ -2300,6 +2396,35 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             } else if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.SkipProjectResources) {
                 sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.NEQ);
             }
+        }
+
+    }
+
+    @Override
+    public void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
+            ListProjectResourcesCriteria listProjectResourcesCriteria, List<Long> grantedIds, List<Long> revokedIds) {
+        sb.and().op("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+
+        if (((permittedAccounts.isEmpty()) && (domainId != null) && isRecursive)) {
+            // if accountId isn't specified, we can do a domain match for the
+            // admin case if isRecursive is true
+            sb.and("domainPath", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
+        }
+
+        if (listProjectResourcesCriteria != null) {
+            if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
+                sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.EQ);
+            } else if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.SkipProjectResources) {
+                sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.NEQ);
+            }
+        }
+        if (!grantedIds.isEmpty()) {
+            sb.or("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
+        }
+        sb.cp();
+        if (!revokedIds.isEmpty()) {
+            sb.and("idNIN", sb.entity().getId(), SearchCriteria.Op.NIN);
         }
 
     }

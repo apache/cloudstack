@@ -20,6 +20,8 @@ import java.util.List;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
+import com.cloud.utils.Pair;
+
 public interface AclService {
 
     /**
@@ -75,6 +77,12 @@ public interface AclService {
     boolean deleteAclGroup(Long aclGroupId);
 
     List<AclRole> getAclRoles(long accountId);
+
+    List<AclGroup> getAclGroups(long accountId);
+
+    AclRolePermission getAclRolePermission(long accountId, String entityType, AccessType accessType);
+
+    Pair<List<Long>, List<Long>> getAclEntityPermission(long accountId, String entityType, AccessType accessType);
 
     boolean isAPIAccessibleForRoles(String apiName, List<AclRole> roles);
 

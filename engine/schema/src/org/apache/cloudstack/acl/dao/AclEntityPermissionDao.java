@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.acl.dao;
 
+import java.util.List;
+
 import org.apache.cloudstack.acl.AclEntityPermissionVO;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
@@ -24,5 +26,7 @@ import com.cloud.utils.db.GenericDao;
 public interface AclEntityPermissionDao extends GenericDao<AclEntityPermissionVO, Long> {
 
     AclEntityPermissionVO findByGroupAndEntity(long groupId, String entityType, long entityId, AccessType accessType);
+
+    List<Long> findEntityIdByGroupAndPermission(long groupId, String entityType, AccessType accessType, boolean isAllowed);
 
 }
