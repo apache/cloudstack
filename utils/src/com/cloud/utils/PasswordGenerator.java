@@ -95,13 +95,4 @@ public class PasswordGenerator {
 
 	        return newPassword.toString();
 	    }
-	    
-	    public static void main(String [] args) {
-	    	for (int i=0; i < 100; i++) {
-	    		System.out.println("PSK: " + generatePresharedKey(24));
-	    	}
-	    	for (int i=0; i < 100; i++) {
-	    		System.out.println("Password: " + generateRandomPassword(6));
-	    	}
-	    }
 }
