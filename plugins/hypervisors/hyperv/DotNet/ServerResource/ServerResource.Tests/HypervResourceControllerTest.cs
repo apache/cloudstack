@@ -816,7 +816,7 @@ namespace ServerResource.Tests
 
                 if (existingKey == key && existingValue == value)
                 {
-                    WmiCallsV2.DeleteHostKvpItem(vm, existingKey);
+//                    WmiCallsV2.DeleteHostKvpItem(vm, existingKey);
                     userDataInPlace = true;
                     break;
                 }
