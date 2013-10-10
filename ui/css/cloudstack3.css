@@ -12265,6 +12265,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -230px -677px;
 }
 
+.assignVmToAnotherAccount .icon {
+  background-position: -270px -36px;
+}
+
+.assignVmToAnotherAccount:hover .icon {
+  background-position: -270px -615px;
+}
+
 .label-hovered {
   cursor: pointer;
   color: #0000FF !important;
