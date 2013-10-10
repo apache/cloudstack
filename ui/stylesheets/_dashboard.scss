@@ -94,8 +94,9 @@
             }
             
             .fetch-latest {
+                @include csui-button-refresh;
                 @include csui-button;
-                
+
                 float: right;
             }
         }
