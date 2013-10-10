@@ -11984,13 +11984,15 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .add .icon,
 .addNew .icon,
-.assignVm .icon {
+.assignVm .icon,
+.rootAdminAddGuestNetwork .icon {
   background-position: -37px -61px;
 }
 
 .add:hover .icon,
 .addNew:hover .icon,
-.assignVm:hover .icon {
+.assignVm:hover .icon,
+.rootAdminAddGuestNetwork:hover .icon {
   background-position: -37px -643px;
 }
 
