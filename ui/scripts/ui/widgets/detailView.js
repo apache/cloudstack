@@ -1360,7 +1360,7 @@
 
             // Create toolbar
             if (!compact) {
-                $toolbar.appendTo($detailView);
+                $toolbar.prependTo($detailView);
             }
         }
 
