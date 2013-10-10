@@ -754,7 +754,7 @@ namespace HypervResource
             }
         }
 
-        // POST api/HypervResource/StartCommand
+        // POST api/HypervResource/StopCommand
         [HttpPost]
         [ActionName(CloudStackTypes.StopCommand)]
         public JContainer StopCommand([FromBody]dynamic cmd)

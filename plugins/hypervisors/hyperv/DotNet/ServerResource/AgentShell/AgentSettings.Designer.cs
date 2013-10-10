@@ -367,5 +367,17 @@ namespace CloudStack.Plugin.AgentShell {
                 this["testCifsPath"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("CentOS64")]
+        public string testKvpVmName {
+            get {
+                return ((string)(this["testKvpVmName"]));
+            }
+            set {
+                this["testKvpVmName"] = value;
+            }
+        }
     }
 }

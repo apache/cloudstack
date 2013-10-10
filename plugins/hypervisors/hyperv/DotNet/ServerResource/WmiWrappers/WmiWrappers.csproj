@@ -131,6 +131,27 @@
     <Compile Include="ROOT.virtualization.Msvm_VmLANEndpoint.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_ComputerSystem.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_ConcreteJob.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_KvpExchangeComponent.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_KvpExchangeComponentSettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_KvpExchangeDataItem.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_VirtualSystemManagementService.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_VirtualSystemSettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Readme.txt" />

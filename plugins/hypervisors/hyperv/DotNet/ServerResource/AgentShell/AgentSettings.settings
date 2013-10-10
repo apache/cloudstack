@@ -98,5 +98,14 @@
     <Setting Name="dom0MinMemory" Type="System.UInt64" Scope="Application">
       <Value Profile="(Default)">2048</Value>
     </Setting>
+    <Setting Name="testCifsUrl" Type="System.String" Scope="User">
+      <Value Profile="(Default)">cifs://10.1.1.1/secondary?user\u003dadministrator\u0026password\u003d1pass%40word1</Value>
+    </Setting>
+    <Setting Name="testCifsPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">template/tmpl/2/201/61d5316a-3cc4-30cf-a557-78691ff5c143.vhd</Value>
+    </Setting>
+    <Setting Name="testKvpVmName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">CentOS64</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

@@ -25,6 +25,7 @@ using log4net;
 using HypervResource;
 using CloudStack.Plugin.AgentShell;
 using System.Collections.Generic;
+using System.Xml;
 
 namespace ServerResource.Tests
 {
@@ -758,6 +759,89 @@ namespace ServerResource.Tests
             // Assert
             dynamic ans = jsonResult[0][CloudStackTypes.SetupAnswer];
             Assert.IsTrue((bool)ans.result, (string)ans.details);  // always succeeds
+        }
+
+        [TestMethod]
+        public void TestPassingUserdataToVm()
+        {
+            // Sample data
+            String key = "cloudstack-vm-userdata";
+            String value = "username=root;password=1pass@word1";
+
+            // Find the VM
+            List<String> vmNames = WmiCallsV2.GetVmElementNames();
+
+            // Get associated WMI object
+            var vm = WmiCallsV2.GetComputerSystem(AgentSettings.Default.testKvpVmName);
+
+            // Get existing KVP
+            var vmSettings = WmiCallsV2.GetVmSettings(vm);
+            var kvpInfo = WmiCallsV2.GetKvpSettings(vmSettings);
+
+            // HostExchangesItems are embedded objects in the sense that the object value is stored and not a reference to the object.
+            string[] kvpProps = kvpInfo.HostExchangeItems;
+
+            // If the value already exists, delete it
+            foreach (var item in kvpProps)
+            {
+                String wmiObjectXml = item;
+                String existingKey;
+                String existingValue;
+                ParseKVP(wmiObjectXml, out existingKey, out existingValue);
+
+                if (existingKey == key)
+                {
+                    WmiCallsV2.DeleteHostKvpItem(vm, existingKey);
+                    break;
+                }
+            }
+
+            // Add new user data
+            WmiCallsV2.AddUserData(vm, value);
+
+            // Verify key added to subsystem
+            kvpInfo = WmiCallsV2.GetKvpSettings(vmSettings);
+
+            // HostExchangesItems are embedded objects in the sense that the object value is stored and not a reference to the object.
+            kvpProps = kvpInfo.HostExchangeItems;
+
+            // If the value already exists, delete it
+            bool userDataInPlace = false;
+            foreach (var item in kvpProps)
+            {
+                String wmiObjectXml = item;
+                String existingKey;
+                String existingValue;
+                ParseKVP(wmiObjectXml, out existingKey, out existingValue);
+
+                if (existingKey == key && existingValue == value)
+                {
+                    WmiCallsV2.DeleteHostKvpItem(vm, existingKey);
+                    userDataInPlace = true;
+                    break;
+                }
+            }
+
+            Assert.IsTrue(userDataInPlace, "User data key / value did no save properly");
+        }
+
+        private static void ParseKVP(String wmiObjectXml, out String existingKey, out String existingValue)
+        {
+            // Reference:  http://blogs.msdn.com/b/virtual_pc_guy/archive/2008/12/05/enumerating-parent-kvp-data.aspx
+
+            // Create XML parser
+            var xmlDoc = new XmlDocument();
+
+            // Load WMI object
+            xmlDoc.LoadXml(wmiObjectXml);
+
+            // Use xpath to get name and value
+            var namePropXpath = "/INSTANCE/PROPERTY[@NAME='Name']/VALUE";
+            var nameNode = xmlDoc.SelectSingleNode(namePropXpath);
+            existingKey = nameNode.InnerText;
+            var dataPropXpath = "/INSTANCE/PROPERTY[@NAME='Data']/VALUE";
+            var dataNode = xmlDoc.SelectSingleNode(dataPropXpath);
+            existingValue = dataNode.InnerText;
         }
 
         [TestMethod]
