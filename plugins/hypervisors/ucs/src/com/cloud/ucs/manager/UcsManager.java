@@ -17,15 +17,8 @@
 //
 package com.cloud.ucs.manager;
 
-import org.apache.cloudstack.api.AddUcsManagerCmd;
-import org.apache.cloudstack.api.AssociateUcsProfileToBladeCmd;
-import org.apache.cloudstack.api.ListUcsBladeCmd;
-import org.apache.cloudstack.api.ListUcsManagerCmd;
-import org.apache.cloudstack.api.ListUcsProfileCmd;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.UcsBladeResponse;
-import org.apache.cloudstack.api.response.UcsManagerResponse;
-import org.apache.cloudstack.api.response.UcsProfileResponse;
+import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.response.*;
 
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
@@ -35,13 +28,19 @@ public interface UcsManager extends Manager, PluggableService {
 
     ListResponse<UcsProfileResponse> listUcsProfiles(ListUcsProfileCmd cmd);
 
+    ListResponse<UcsTemplateResponse> listUcsTemplates(ListUcsTemplatesCmd cmd);
+
     ListResponse<UcsManagerResponse> listUcsManager(ListUcsManagerCmd cmd);
 
     UcsBladeResponse associateProfileToBlade(AssociateUcsProfileToBladeCmd cmd);
+
+    UcsBladeResponse instantiateTemplateAndAssociateToBlade(InstantiateUcsTemplateAndAssociateToBladeCmd cmd);
 
     ListResponse<UcsBladeResponse> listUcsBlades(ListUcsBladeCmd cmd);
     
     void deleteUcsManager(Long id);
 
-    UcsBladeResponse disassociateProfile(Long bladeId);
+    ListResponse<UcsBladeResponse> refreshBlades(Long mgrId);
+
+    UcsBladeResponse disassociateProfile(DisassociateUcsProfileCmd cmd);
 }

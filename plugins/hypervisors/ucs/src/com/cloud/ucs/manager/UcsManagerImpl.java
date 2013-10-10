@@ -30,11 +30,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.ucs.structure.UcsTemplate;
 import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.UcsBladeResponse;
-import org.apache.cloudstack.api.response.UcsManagerResponse;
-import org.apache.cloudstack.api.response.UcsProfileResponse;
+import org.apache.cloudstack.api.response.*;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
@@ -198,6 +196,9 @@ public class UcsManagerImpl implements UcsManager {
             vo.setDn(b.getDn());
             vo.setUcsManagerId(ucsMgrVo.getId());
             vo.setUuid(UUID.randomUUID().toString());
+            if (!"".equals(b.getAssignedToDn())) {
+                vo.setProfileDn(b.getAssignedToDn());
+            }
             bladeDao.persist(vo);
         }
     }
@@ -261,7 +262,7 @@ public class UcsManagerImpl implements UcsManager {
                     cmd = UcsCommands.refreshCmd(mgrvo.getUsername(), mgrvo.getPassword(), cookie);
                 }
             }
-            if(!(cmd == null)) {
+            if(cmd != null) {
                 String ret = client.call(cmd);
                 XmlObject xo = XmlObjectParser.parseFromString(ret);
                 String cookie = xo.get("outCookie");
@@ -284,21 +285,24 @@ public class UcsManagerImpl implements UcsManager {
         return ComputeBlade.fromXmString(ret);
     }
 
+    private List<UcsTemplate> getUcsTemplates(Long ucsMgrId) {
+        String cookie = getCookie(ucsMgrId);
+        UcsManagerVO mgrvo = ucsDao.findById(ucsMgrId);
+        String cmd = UcsCommands.listTemplates(cookie);
+        UcsHttpClient client = new UcsHttpClient(mgrvo.getUrl());
+        String res = client.call(cmd);
+        List<UcsTemplate> tmps = UcsTemplate.fromXmlString(res);
+        return tmps;
+    }
+
     private List<UcsProfile> getUcsProfiles(Long ucsMgrId) {
         String cookie = getCookie(ucsMgrId);
         UcsManagerVO mgrvo = ucsDao.findById(ucsMgrId);
-        String cmd = UcsCommands.listProfiles(cookie);
+        String cmd = UcsCommands.listTemplates(cookie);
         UcsHttpClient client = new UcsHttpClient(mgrvo.getUrl());
         String res = client.call(cmd);
-        List<UcsProfile> profiles = UcsProfile.fromXmlString(res);
-        List<UcsProfile> unassociated = new ArrayList<UcsProfile>();
-        for (UcsProfile p : profiles) {
-            if (isProfileAssociated(mgrvo.getId(), p.getDn())) {
-                continue;
-            }
-            unassociated.add(p);
-        }
-        return unassociated;
+        List<UcsTemplate> tmps = UcsTemplate.fromXmlString(res);
+        return null;
     }
 
     @Override
@@ -310,6 +314,21 @@ public class UcsManagerImpl implements UcsManager {
             UcsProfileResponse r = new UcsProfileResponse();
             r.setObjectName("ucsprofile");
             r.setDn(p.getDn());
+            rs.add(r);
+        }
+        response.setResponses(rs);
+        return response;
+    }
+
+    @Override
+    public ListResponse<UcsTemplateResponse> listUcsTemplates(ListUcsTemplatesCmd cmd) {
+        List<UcsTemplate> templates = getUcsTemplates(cmd.getUcsManagerId());
+        ListResponse<UcsTemplateResponse> response = new ListResponse<UcsTemplateResponse>();
+        List<UcsTemplateResponse> rs = new ArrayList<UcsTemplateResponse>();
+        for (UcsTemplate t : templates) {
+            UcsTemplateResponse r = new UcsTemplateResponse();
+            r.setObjectName("ucstemplate");
+            r.setDn(t.getDn());
             rs.add(r);
         }
         response.setResponses(rs);
@@ -350,8 +369,9 @@ public class UcsManagerImpl implements UcsManager {
         if (xo.get("outConfig.computeBlade.association").equals("none")) {
             throw new CloudRuntimeException(String.format("cannot associated a profile to blade[dn:%s]. please check your UCS manasger for detailed error information", dn));
         }
-        
-        return xo.get("outConfig.computeBlade.association").equals("associated");
+
+        return xo.get("outConfig.lsServer.assocState").equals("associated");
+        //return !xo.get("outConfig.computeBlade.assignedToDn").equals("");
     }
 
     @Override
@@ -400,6 +420,63 @@ public class UcsManagerImpl implements UcsManager {
         UcsBladeResponse rsp = bladeVOToResponse(bvo);
 
         s_logger.debug(String.format("successfully associated profile[%s] to blade[%s]", pdn, bvo.getDn()));
+        return rsp;
+    }
+
+    @Override
+    public UcsBladeResponse instantiateTemplateAndAssociateToBlade(InstantiateUcsTemplateAndAssociateToBladeCmd cmd) {
+        String profileName = cmd.getProfileName();
+        if (profileName == null || "".equals(profileName)) {
+            profileName = UUID.randomUUID().toString().replace("-", "");
+        }
+
+        SearchCriteriaService<UcsBladeVO, UcsBladeVO> q = SearchCriteria2.create(UcsBladeVO.class);
+        q.addAnd(q.getEntity().getUcsManagerId(), Op.EQ, cmd.getUcsManagerId());
+        q.addAnd(q.getEntity().getId(), Op.EQ, cmd.getBladeId());
+        UcsBladeVO bvo = q.find();
+        if (bvo == null) {
+            throw new IllegalArgumentException(String.format("cannot find UCS blade[id:%s, ucs manager id:%s]", cmd.getBladeId(), cmd.getUcsManagerId()));
+        }
+
+        if (bvo.getHostId() != null) {
+            throw new CloudRuntimeException(String.format("blade[id:%s,  dn:%s] has been associated with host[id:%s]", bvo.getId(), bvo.getDn(), bvo.getHostId()));
+        }
+
+        UcsManagerVO mgrvo = ucsDao.findById(cmd.getUcsManagerId());
+        String cookie = getCookie(cmd.getUcsManagerId());
+        String instantiateTemplateCmd = UcsCommands.instantiateTemplate(cookie, cmd.getTemplateDn(), profileName);
+        UcsHttpClient http = new UcsHttpClient(mgrvo.getUrl());
+        String res = http.call(instantiateTemplateCmd);
+        XmlObject xo = XmlObjectParser.parseFromString(res);
+        String profileDn = xo.get("outConfig.lsServer.dn");
+        String ucscmd = UcsCommands.associateProfileToBlade(cookie, profileDn, bvo.getDn());
+        res = http.call(ucscmd);
+        int count = 0;
+        int timeout = 3600;
+        while (count < timeout) {
+            if (isBladeAssociated(mgrvo.getId(), bvo.getDn())) {
+                break;
+            }
+
+            try {
+                TimeUnit.SECONDS.sleep(2);
+            } catch (InterruptedException e) {
+                throw new CloudRuntimeException(e);
+            }
+
+            count += 2;
+        }
+
+        if (count >= timeout) {
+            throw new CloudRuntimeException(String.format("associating profile[%s] to balde[%s] timeout after 600 seconds", profileDn, bvo.getDn()));
+        }
+
+        bvo.setProfileDn(profileDn);
+        bladeDao.update(bvo.getId(), bvo);
+
+        UcsBladeResponse rsp = bladeVOToResponse(bvo);
+
+        s_logger.debug(String.format("successfully associated profile[%s] to blade[%s]", profileDn, bvo.getDn()));
         return rsp;
     }
 
@@ -465,23 +542,27 @@ public class UcsManagerImpl implements UcsManager {
         rsp.setUcsManagerId(ucsManagerIdToUuid(vo.getUcsManagerId()));
         return rsp;
     }
-    
-    @Override
-    public ListResponse<UcsBladeResponse> listUcsBlades(ListUcsBladeCmd cmd) {
+
+    private ListResponse<UcsBladeResponse> listUcsBlades(long mgrId) {
         SearchCriteriaService<UcsBladeVO, UcsBladeVO> serv = SearchCriteria2.create(UcsBladeVO.class);
-        serv.addAnd(serv.getEntity().getUcsManagerId(), Op.EQ, cmd.getUcsManagerId());
+        serv.addAnd(serv.getEntity().getUcsManagerId(), Op.EQ, mgrId);
         List<UcsBladeVO> vos = serv.list();
-        
+
         List<UcsBladeResponse> rsps = new ArrayList<UcsBladeResponse>(vos.size());
         for (UcsBladeVO vo : vos) {
             UcsBladeResponse rsp = bladeVOToResponse(vo);
             rsps.add(rsp);
         }
-        
+
         ListResponse<UcsBladeResponse> response = new ListResponse<UcsBladeResponse>();
         response.setResponses(rsps);
 
         return response;
+    }
+
+    @Override
+    public ListResponse<UcsBladeResponse> listUcsBlades(ListUcsBladeCmd cmd) {
+        return listUcsBlades(cmd.getUcsManagerId());
     }
 
     @Override
@@ -519,6 +600,9 @@ public class UcsManagerImpl implements UcsManager {
         cmds.add(AssociateUcsProfileToBladeCmd.class);
         cmds.add(DeleteUcsManagerCmd.class);
         cmds.add(DisassociateUcsProfileCmd.class);
+        cmds.add(RefreshUcsBladesCmd.class);
+        cmds.add(ListUcsTemplatesCmd.class);
+        cmds.add(InstantiateUcsTemplateAndAssociateToBladeCmd.class);
         return cmds;
     }
 
@@ -534,16 +618,45 @@ public class UcsManagerImpl implements UcsManager {
 	}
 
     @Override
-    public UcsBladeResponse disassociateProfile(Long bladeId) {
-        UcsBladeVO blade = bladeDao.findById(bladeId);
+    public ListResponse<UcsBladeResponse> refreshBlades(Long mgrId) {
+        SyncBladesThread synct = new SyncBladesThread();
+        synct.run();
+
+        UcsManagerVO mgrvo = ucsDao.findById(mgrId);
+        List<ComputeBlade> blades = listBlades(mgrvo.getId());
+        for (ComputeBlade b : blades) {
+            SearchCriteria2<UcsBladeVO, UcsBladeVO> q = SearchCriteria2.create(UcsBladeVO.class, UcsBladeVO.class);
+            q.addAnd(q.getEntity().getDn(), Op.EQ, b.getDn());
+            UcsBladeVO vo = q.find();
+            if (vo == null) {
+                vo = new UcsBladeVO();
+                vo.setProfileDn("".equals(b.getAssignedToDn()) ? null : b.getAssignedToDn());
+                vo.setDn(b.getDn());
+                vo.setUuid(UUID.randomUUID().toString());
+                vo.setUcsManagerId(mgrId);
+                bladeDao.persist(vo);
+            } else {
+                vo.setProfileDn("".equals(b.getAssignedToDn()) ? null : b.getAssignedToDn());
+                bladeDao.update(vo.getId(), vo);
+            }
+        }
+
+        return listUcsBlades(mgrId);
+    }
+
+    @Override
+    public UcsBladeResponse disassociateProfile(DisassociateUcsProfileCmd cmd) {
+        UcsBladeVO blade = bladeDao.findById(cmd.getBladeId());
         UcsManagerVO mgrvo = ucsDao.findById(blade.getUcsManagerId());
         UcsHttpClient client = new UcsHttpClient(mgrvo.getUrl());
         String cookie = getCookie(mgrvo.getId());
-        String cmd = UcsCommands.disassociateProfileFromBlade(cookie, blade.getProfileDn());
-        client.call(cmd);
-        cmd = UcsCommands.deleteProfile(cookie, blade.getProfileDn());
-        client = new UcsHttpClient(mgrvo.getUrl());
-        client.call(cmd);
+        String call = UcsCommands.disassociateProfileFromBlade(cookie, blade.getProfileDn());
+        client.call(call);
+        if (cmd.isDeleteProfile()) {
+            call = UcsCommands.deleteProfile(cookie, blade.getProfileDn());
+            client = new UcsHttpClient(mgrvo.getUrl());
+            client.call(call);
+        }
         blade.setProfileDn(null);
         bladeDao.update(blade.getId(), blade);
         UcsBladeResponse rsp = bladeVOToResponse(blade);

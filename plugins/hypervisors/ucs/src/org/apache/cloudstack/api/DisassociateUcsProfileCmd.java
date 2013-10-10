@@ -27,6 +27,9 @@ public class DisassociateUcsProfileCmd extends  BaseAsyncCmd {
     @Parameter(name=ApiConstants.UCS_BLADE_ID, type=CommandType.UUID, entityType=UcsBladeResponse.class, description="blade id", required=true)
     private Long bladeId;
 
+    @Parameter(name=ApiConstants.UCS_DELETE_PROFILE, type=CommandType.BOOLEAN, description="is deleting profile after disassociating")
+    private boolean deleteProfile;
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_UCS_DISASSOCIATED_PROFILE;
@@ -37,10 +40,26 @@ public class DisassociateUcsProfileCmd extends  BaseAsyncCmd {
         return "disassociate a profile from blade";
     }
 
+    public Long getBladeId() {
+        return bladeId;
+    }
+
+    public void setBladeId(Long bladeId) {
+        this.bladeId = bladeId;
+    }
+
+    public boolean isDeleteProfile() {
+        return deleteProfile;
+    }
+
+    public void setDeleteProfile(boolean deleteProfile) {
+        this.deleteProfile = deleteProfile;
+    }
+
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            UcsBladeResponse rsp = mgr.disassociateProfile(bladeId);
+            UcsBladeResponse rsp = mgr.disassociateProfile(this);
             rsp.setResponseName(getCommandName());
             this.setResponseObject(rsp);
         } catch(Exception e) {

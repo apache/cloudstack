@@ -17,24 +17,31 @@
 //
 package com.cloud.ucs.manager;
 
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
-import org.apache.commons.httpclient.URI;
 import org.apache.commons.httpclient.contrib.ssl.EasySSLProtocolSocketFactory;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.httpclient.protocol.Protocol;
 
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.log4j.Logger;
+import org.springframework.http.*;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.RestTemplate;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 
 public class UcsHttpClient {
-    private static HttpClient client;
+    private static final Logger logger = Logger.getLogger(UcsHttpClient.class);
+    //private static HttpClient client;
     private static Protocol ucsHttpsProtocol = new org.apache.commons.httpclient.protocol.Protocol("https", new EasySSLProtocolSocketFactory(), 443);
     private final String url;
+    private static RestTemplate template;
 
     static {
-        client = new HttpClient();
+        //client = new HttpClient();
+        template = new RestTemplate();
     }
 
     public UcsHttpClient(String ip) {
@@ -42,7 +49,46 @@ public class UcsHttpClient {
         Protocol.registerProtocol("https", ucsHttpsProtocol);
     }
 
-    public String call(String xml) {
+
+    private String call(URI uri, String body) {
+        HttpHeaders requestHeaders = new HttpHeaders();
+        requestHeaders.setContentType(MediaType.APPLICATION_XML);
+        requestHeaders.setContentLength(body.length());
+        HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
+        logger.debug(String.format("UCS call: %s", body));
+        ResponseEntity<String> rsp = template.exchange(uri, HttpMethod.POST, req, String.class);
+        if (rsp.getStatusCode() == org.springframework.http.HttpStatus.OK) {
+            return rsp.getBody();
+        } else if (rsp.getStatusCode().value() == 302) {
+            // Handle HTTPS redirect
+            // Ideal way might be to configure from add manager API
+            // for using either HTTP / HTTPS
+            // Allow only one level of redirect
+            java.net.URI location = rsp.getHeaders().getLocation();
+            if (location == null) {
+                throw new CloudRuntimeException("Call failed: Bad redirect from UCS Manager");
+            }
+            call(location, body);
+        }
+        if (rsp.getStatusCode() != org.springframework.http.HttpStatus.OK) {
+            String err = String.format("http status: %s, response body:%s", rsp.getStatusCode().toString(), rsp.getBody());
+            throw new CloudRuntimeException(String.format("UCS API call failed, details: %s\n", err));
+        }
+
+        if (rsp.getBody().contains("errorCode")) {
+            String err = String.format("ucs call failed:\nsubmitted doc:%s\nresponse:%s\n", body, rsp.getBody());
+            throw new CloudRuntimeException(err);
+        }
+        return rsp.getBody();
+    }
+
+    public String call(String body) {
+        try {
+            return call(new URI(url), body);
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException(e);
+        }
+        /*
         PostMethod post = new PostMethod(url);
         post.setRequestEntity(new StringRequestEntity(xml));
         post.setRequestHeader("Content-type", "text/xml");
@@ -80,5 +126,6 @@ public class UcsHttpClient {
         } finally {
             post.releaseConnection();
         }
+        */
     }
 }
