@@ -1971,7 +1971,7 @@
                                                 fields: [{
                                                     guestvlanrange: {
                                                         label: 'VLAN Range(s)'
-                                                    },
+                                                    }
                                                 }, {
                                                     domain: {
                                                         label: 'label.domain'
