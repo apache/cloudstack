@@ -1,0 +1,83 @@
+package org.apache.cloudstack.engine.subsystem.api.storage;
+
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+
+import com.cloud.host.Host;
+import com.cloud.storage.Snapshot;
+
+public class StrategyPriority {
+    public enum Priority {
+        CANT_HANDLE,
+        DEFAULT,
+        HYPERVISOR,
+        PLUGIN,
+        HIGHEST
+    }
+
+    public static void sortStrategies(List<SnapshotStrategy> strategies, Snapshot snapshot) {
+        Collections.sort(strategies, new SnapshotStrategyComparator(snapshot));
+    }
+
+    public static void sortStrategies(List<DataMotionStrategy> strategies, DataObject srcData, DataObject destData) {
+        Collections.sort(strategies, new DataMotionStrategyComparator(srcData, destData));
+    }
+
+    public static void sortStrategies(List<DataMotionStrategy> strategies, Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
+        Collections.sort(strategies, new DataMotionStrategyHostComparator(volumeMap, srcHost, destHost));
+    }
+
+    static class SnapshotStrategyComparator implements Comparator<SnapshotStrategy> {
+
+        Snapshot snapshot;
+
+        public SnapshotStrategyComparator(Snapshot snapshot) {
+            this.snapshot = snapshot;
+        }
+
+        @Override
+        public int compare(SnapshotStrategy o1, SnapshotStrategy o2) {
+            int i1 = o1.canHandle(snapshot).ordinal();
+            int i2 = o2.canHandle(snapshot).ordinal();
+            return new Integer(i2).compareTo(new Integer(i1));
+        }
+    }
+
+    static class DataMotionStrategyComparator implements Comparator<DataMotionStrategy> {
+
+        DataObject srcData, destData;
+
+        public DataMotionStrategyComparator(DataObject srcData, DataObject destData) {
+            this.srcData = srcData;
+            this.destData = destData;
+        }
+
+        @Override
+        public int compare(DataMotionStrategy o1, DataMotionStrategy o2) {
+            int i1 = o1.canHandle(srcData, destData).ordinal();
+            int i2 = o2.canHandle(srcData, destData).ordinal();
+            return new Integer(i2).compareTo(new Integer(i1));
+        }
+    }
+
+    static class DataMotionStrategyHostComparator implements Comparator<DataMotionStrategy> {
+
+        Host srcHost, destHost;
+        Map<VolumeInfo, DataStore> volumeMap;
+
+        public DataMotionStrategyHostComparator(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
+            this.volumeMap = volumeMap;
+            this.srcHost = srcHost;
+            this.destHost = destHost;
+        }
+
+        @Override
+        public int compare(DataMotionStrategy o1, DataMotionStrategy o2) {
+            int i1 = o1.canHandle(volumeMap, srcHost, destHost).ordinal();
+            int i2 = o2.canHandle(volumeMap, srcHost, destHost).ordinal();
+            return new Integer(i2).compareTo(new Integer(i1));
+        }
+    }
+}

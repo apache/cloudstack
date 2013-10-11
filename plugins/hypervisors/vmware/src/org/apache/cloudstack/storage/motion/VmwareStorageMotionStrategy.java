@@ -21,12 +21,14 @@ package org.apache.cloudstack.storage.motion;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority.Priority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
@@ -62,17 +64,17 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
     @Inject VMInstanceDao instanceDao;
 
     @Override
-    public boolean canHandle(DataObject srcData, DataObject destData) {
-        return false;
+    public Priority canHandle(DataObject srcData, DataObject destData) {
+        return Priority.CANT_HANDLE;
     }
 
     @Override
-    public boolean canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
+    public Priority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
         if (srcHost.getHypervisorType() == HypervisorType.VMware && destHost.getHypervisorType() == HypervisorType.VMware) {
             s_logger.debug(this.getClass() + " can handle the request because the hosts have VMware hypervisor");
-            return true;
+            return Priority.HYPERVISOR;
         }
-        return false;
+        return Priority.CANT_HANDLE;
     }
 
     @Override

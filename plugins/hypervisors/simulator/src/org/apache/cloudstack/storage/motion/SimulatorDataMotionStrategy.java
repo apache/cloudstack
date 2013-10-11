@@ -18,22 +18,28 @@
  */
 package org.apache.cloudstack.storage.motion;
 
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.host.Host;
-import org.apache.cloudstack.engine.subsystem.api.storage.*;
+import java.util.Map;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority.Priority;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
-import java.util.Map;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.host.Host;
 
 public class SimulatorDataMotionStrategy implements DataMotionStrategy {
     @Override
-    public boolean canHandle(DataObject srcData, DataObject destData) {
-        return true;
+    public Priority canHandle(DataObject srcData, DataObject destData) {
+        return Priority.HYPERVISOR;
     }
 
     @Override
-    public boolean canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
-        return true;
+    public Priority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
+        return Priority.HYPERVISOR;
     }
 
     @Override

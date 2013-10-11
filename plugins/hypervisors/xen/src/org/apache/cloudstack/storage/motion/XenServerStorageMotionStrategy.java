@@ -24,18 +24,18 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority.Priority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -71,18 +71,18 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
     @Inject VMInstanceDao instanceDao;
 
     @Override
-    public boolean canHandle(DataObject srcData, DataObject destData) {
-        return false;
+    public Priority canHandle(DataObject srcData, DataObject destData) {
+        return Priority.CANT_HANDLE;
     }
 
     @Override
-    public boolean canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
-        boolean canHandle = false;
+    public Priority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
         if (srcHost.getHypervisorType() == HypervisorType.XenServer &&
                 destHost.getHypervisorType() == HypervisorType.XenServer) {
-            canHandle = true;
+            return Priority.HYPERVISOR;
         }
-        return canHandle;
+
+        return Priority.CANT_HANDLE;
     }
 
     @Override
