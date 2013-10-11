@@ -647,7 +647,7 @@ class TestDeployVM(cloudstackTestCase):
         self.debug("Successfully created ISO with ID: %s" % iso.id)
         try:
             iso.download(self.apiclient)
-            self.cleanup.append(iso)
+ 
         except Exception as e:
             self.fail("Exception while downloading ISO %s: %s"\
                       % (iso.id, e))
@@ -1092,9 +1092,9 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
                                 domainid=self.account.domainid
                                 )
         try:
-            # Dowanload the ISO
+            # Download the ISO
             self.iso.download(self.apiclient)
-            self.cleanup.append(self.iso)
+ 
         except Exception as e:
             raise Exception("Exception while downloading ISO %s: %s"\
                       % (self.iso.id, e))
