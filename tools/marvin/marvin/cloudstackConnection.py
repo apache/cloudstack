@@ -34,28 +34,27 @@ from requests import RequestException
 class cloudConnection(object):
     """ Connections to make API calls to the cloudstack management server
     """
-    def __init__(self, mgtSvr, port=8096, user=None, passwd=None,
-                 apiKey=None, securityKey=None,
-                 asyncTimeout=3600, logging=None, scheme='http',
-                 path='client/api'):
+    def __init__(self, mgmtDet,asyncTimeout=3600, logging=None, scheme='http',path='client/api'):
         self.loglevel()  # Turn off requests logs
-        self.apiKey = apiKey
-        self.securityKey = securityKey
-        self.mgtSvr = mgtSvr
-        self.port = port
-        self.user = user
-        self.passwd = passwd
+        self.apiKey = mgmtDet.apiKey
+        self.securityKey = mgmtDet.securityKey
+        self.mgtSvr = mgmtDet.mgtSvrIp
+        self.port = mgmtDet.port
+        self.user = mgmtDet.user
+        self.passwd = mgmtDet.passwd
+        self.certCAPath = mgmtDet.certCAPath
+        self.certPath = mgmtDet.certPath
         self.logging = logging
         self.path = path
         self.retries = 5
+        self.protocol = "http"
         self.asyncTimeout = asyncTimeout
         self.auth = True
-        if port == 8096 or \
+        if self.port == 8096 or \
            (self.apiKey is None and self.securityKey is None):
             self.auth = False
-        if scheme not in ['http', 'https']:
-                raise RequestException("Protocol must be HTTP")
-        self.protocol = scheme
+        if mgmtDet.useHttps == "True":
+           self.protocol = "https"
         self.baseurl = "%s://%s:%d/%s"\
                        % (self.protocol, self.mgtSvr, self.port, self.path)
 
@@ -143,13 +142,49 @@ class cloudConnection(object):
             payload["signature"] = signature
 
         try:
-            if method == 'POST':
-                response = requests.post(self.baseurl, params=payload)
+            '''
+            https_flag : Signifies whether to verify connection over http or https, 
+                         if set to true uses https otherwise http
+            cert_path  : Signifies ca and cert path required by requests library for the connection
+            '''
+            https_flag  = False
+            cert_path    = ()
+            if self.protocol == "https":
+                https_flag = True
+                if self.certCAPath != "NA" and self.certPath  != "NA":
+                    cert_path = ( self.certCAPath,self.certPath )
+
+            '''
+            Verify whether protocol is "http", then call the request over http
+            '''
+            if self.protocol == "http":
+               if method == 'POST':
+                   response = requests.post(self.baseurl, params=payload, verify=https_flag)
+               else:
+                   response = requests.get(self.baseurl, params=payload,  verify=https_flag)
             else:
-                response = requests.get(self.baseurl, params=payload)
+                '''
+                If protocol is https, then request the url with user provided certificates provided as part of cert
+                '''
+                try:
+                   if method == 'POST':
+                       response = requests.post(self.baseurl, params=payload, cert=cert_path, verify=https_flag)
+                   else:
+                       response = requests.get(self.baseurl, params=payload,  cert=cert_path, verify=https_flag)
+                except Exception,e:
+                    '''
+                    If an exception occurs with current CA certs,\
+                     then try with default certs path, we dont need \
+                    to mention here the cert path
+                    '''
+                    self.logging.debug( "Creating CS connection over https \
+                                        didnt worked with user provided certs %s"%e )
+                    if method == 'POST':
+                        response = requests.post(self.baseurl, params=payload, verify=https_flag)
+                    else:
+                        response = requests.get(self.baseurl, params=payload,  verify=https_flag)
         except ConnectionError, c:
-            self.logging.debug("Connection refused. Reason: %s : %s" %
-                               (self.baseurl, c))
+            self.logging.debug("Connection refused. Reason: %s : %s" %(self.baseurl, c))
             raise c
         except HTTPError, h:
             self.logging.debug("Server returned error code: %s" % h)
@@ -160,6 +195,9 @@ class cloudConnection(object):
         except RequestException, r:
             self.logging.debug("Error returned by server %s" % r)
             raise r
+        except Exception, e:
+            self.logging.debug("Error returned by server %s" % e)
+            raise e
         else:
             return response
 
