@@ -21,7 +21,6 @@ package org.apache.cloudstack.engine;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.utils.StringUtils;
 
 /**
  * Rules specifies all rules about developing and using CloudStack Orchestration
@@ -55,18 +54,7 @@ public class Rules {
 
     private static void printRule(String rule) {
         System.out.print("API Rule: ");
-        String skip = "";
-        int brk = 0;
-        while (true) {
-            int stop = StringUtils.formatForOutput(rule, brk, 75 - skip.length(), ' ');
-            if (stop < 0) {
-                break;
-            }
-            System.out.print(skip);
-            skip = "          ";
-            System.out.println(rule.substring(brk, stop).trim());
-            brk = stop;
-        } 
+        System.out.println(rule);
     }
 
     public static void main(String[] args) {
