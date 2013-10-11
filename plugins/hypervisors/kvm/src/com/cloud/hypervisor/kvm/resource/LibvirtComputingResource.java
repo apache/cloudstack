@@ -1457,19 +1457,18 @@ ServerResource {
 
             if (cmd.getTemplateUrl() != null) {
                 if(primaryPool.getType() == StoragePoolType.CLVM) {
-                    vol = templateToPrimaryDownload(cmd.getTemplateUrl(),primaryPool);
+                    vol = templateToPrimaryDownload(cmd.getTemplateUrl(),primaryPool, dskch.getPath());
                 } else {
                     BaseVol = primaryPool.getPhysicalDisk(cmd.getTemplateUrl());
-                    vol = _storagePoolMgr.createDiskFromTemplate(BaseVol, UUID
-                            .randomUUID().toString(), primaryPool, 0);
+                    vol = _storagePoolMgr.createDiskFromTemplate(BaseVol,
+                            dskch.getPath(), primaryPool, 0);
                 }
                 if (vol == null) {
                     return new Answer(cmd, false,
                             " Can't create storage volume on storage pool");
                 }
             } else {
-                vol = primaryPool.createPhysicalDisk(UUID.randomUUID()
-                        .toString(), dskch.getSize());
+                vol = primaryPool.createPhysicalDisk(dskch.getPath(), dskch.getSize());
             }
             VolumeTO volume = new VolumeTO(cmd.getVolumeId(), dskch.getType(),
                     pool.getType(), pool.getUuid(), pool.getPath(),
@@ -1486,7 +1485,7 @@ ServerResource {
     }
 
     // this is much like PrimaryStorageDownloadCommand, but keeping it separate
-    protected KVMPhysicalDisk templateToPrimaryDownload(String templateUrl, KVMStoragePool primaryPool) {
+    protected KVMPhysicalDisk templateToPrimaryDownload(String templateUrl, KVMStoragePool primaryPool, String volUuid) {
         int index = templateUrl.lastIndexOf("/");
         String mountpoint = templateUrl.substring(0, index);
         String templateName = null;
@@ -1522,7 +1521,7 @@ ServerResource {
 
             /* Copy volume to primary storage */
 
-            KVMPhysicalDisk primaryVol = _storagePoolMgr.copyPhysicalDisk(templateVol, UUID.randomUUID().toString(), primaryPool, 0);
+            KVMPhysicalDisk primaryVol = _storagePoolMgr.copyPhysicalDisk(templateVol, volUuid, primaryPool, 0);
             return primaryVol;
         } catch (CloudRuntimeException e) {
             s_logger.error("Failed to download template to primary storage",e);
