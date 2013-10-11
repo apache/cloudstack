@@ -370,7 +370,7 @@ public class UcsManagerImpl implements UcsManager {
             throw new CloudRuntimeException(String.format("cannot associated a profile to blade[dn:%s]. please check your UCS manasger for detailed error information", dn));
         }
 
-        return xo.get("outConfig.lsServer.assocState").equals("associated");
+        return xo.get("outConfig.computeBlade.association").equals("associated");
         //return !xo.get("outConfig.computeBlade.assignedToDn").equals("");
     }
 
@@ -618,6 +618,7 @@ public class UcsManagerImpl implements UcsManager {
 	}
 
     @Override
+    @DB
     public ListResponse<UcsBladeResponse> refreshBlades(Long mgrId) {
         SyncBladesThread synct = new SyncBladesThread();
         synct.run();
