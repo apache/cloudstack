@@ -736,17 +736,24 @@
                                     filterNetworkList(-1);
 
                                     // Security groups (alt. page)
-                                    $step.find('.security-groups .select-container').append(
-                                        makeSelects('security-groups', args.data.securityGroups, {
-                                            name: 'name',
-                                            desc: 'description',
-                                            id: 'id'
-                                        }, {
-                                            type: 'checkbox',
-                                            'wizard-field': 'security-groups'
-                                        })
-                                    );
-
+                                    var $sgSelects = makeSelects('security-groups', args.data.securityGroups, {
+                                        name: 'name',
+                                        desc: 'description',
+                                        id: 'id'
+                                    }, {
+                                        type: 'checkbox',
+                                        'wizard-field': 'security-groups'
+                                    });                                                                        
+                                    $step.find('.security-groups .select-container').append($sgSelects);
+	                               
+                                    //If there is only one security group and the only one is 'default', make it selected by default
+                                    if ($sgSelects.length == 1) {
+                                        var $firstCheckbox = $sgSelects.eq(0);	                                    
+	                                    if ($firstCheckbox.find('div .name').text() == 'default') {	                                    	
+	                                    	$firstCheckbox.find('input:checkbox').click();
+	                                    }
+	                                }
+	                                
                                     originalValues(formData);
                                     checkShowAddNetwork($newNetwork);
                                 }
