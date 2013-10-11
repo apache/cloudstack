@@ -27,6 +27,9 @@ class managementServer(object):
         self.port = 8096
         self.apiKey = None
         self.securityKey = None
+   self.useHttps = None
+   self.certCAPath = None
+   self.certPath = None
 
 
 class dbServer(object):
@@ -830,7 +833,7 @@ def generate_setup_config(config, file=None):
 def get_setup_config(file):
     if not os.path.exists(file):
         raise IOError("config file %s not found. \
-please specify a valid config file" % file)
+                      please specify a valid config file" % file)
     config = cloudstackConfiguration()
     configLines = []
     with open(file, 'r') as fp:
@@ -838,7 +841,9 @@ please specify a valid config file" % file)
             ws = line.strip()
             if not ws.startswith("#"):
                 configLines.append(ws)
-    config = json.loads("\n".join(configLines))
+    k = json.loads("\n".join(configLines))
+    #config = json.loads("\n".join(configLines))
+    config = k
     return jsonHelper.jsonLoader(config)
 
 if __name__ == "__main__":

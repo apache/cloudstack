@@ -512,11 +512,9 @@ specify a valid config file" % cfgFile)
         try:
             self.config = configGenerator.get_setup_config(self.configFile)
         except:
-            raise cloudstackException.InvalidParameterException(
-                "Failed to load config %s" % self.configFile)
+            raise cloudstackException.InvalidParameterException("Failed to load config %s" % self.configFile)
 
-        mgt = self.config.mgtSvr[0]
-
+        mgtDetails = self.config.mgtSvr[0]
         loggers = self.config.logger
         testClientLogFile = None
         self.testCaseLogFile = None
@@ -535,37 +533,34 @@ specify a valid config file" % cfgFile)
             testClientLogger = logging.getLogger("testclient.testengine.run")
             fh = logging.FileHandler(testClientLogFile)
             fh.setFormatter(logging.
-                            Formatter("%(asctime)s - %(levelname)s - %(name)s\
- - %(message)s"))
+            Formatter("%(asctime)s - %(levelname)s - %(name)s\
+           - %(message)s"))
             testClientLogger.addHandler(fh)
             testClientLogger.setLevel(logging.INFO)
         self.testClientLogger = testClientLogger
 
         self.testClient = \
             cloudstackTestClient.\
-            cloudstackTestClient(mgt.mgtSvrIp, mgt.port, mgt.user, mgt.passwd,
-                                 mgt.apiKey, mgt.securityKey,
-                                 logging=self.testClientLogger)
-        if mgt.apiKey is None:
-            apiKey, securityKey = self.registerApiKey()
-            self.testClient = cloudstackTestClient.cloudstackTestClient(
-                mgt.mgtSvrIp, 8080,
-                mgt.user, mgt.passwd,
-                apiKey, securityKey,
-                logging=self.testClientLogger)
+            cloudstackTestClient( mgtDetails,logging=self.testClientLogger)
+
+        if mgtDetails.apiKey is None:
+           mgtDetails.apiKey,mgtDetails.securityKey = self.registerApiKey()
+           mgtDetails.port  = 8080
+                self.testClient = cloudstackTestClient.cloudstackTestClient( mgtDetails,logging=self.testClientLogger)
 
         """config database"""
         dbSvr = self.config.dbSvr
         if dbSvr is not None:
-            self.testClient.dbConfigure(dbSvr.dbSvr, dbSvr.port, dbSvr.user,
+            self.testClient.dbConfigure(dbSvr.dbSvr, dbSvr.port, dbSvr.user, \
                                         dbSvr.passwd, dbSvr.db)
 
         self.apiClient = self.testClient.getApiClient()
         """set hypervisor"""
-        if mgt.hypervisor:
-            self.apiClient.hypervisor = mgt.hypervisor
+        if mgtDetails.hypervisor:
+            self.apiClient.hypervisor = mgtDetails.hypervisor
         else:
             self.apiClient.hypervisor = "XenServer"  # Defaults to Xenserver
+
 
     def updateConfiguration(self, globalCfg):
         if globalCfg is None:
@@ -578,7 +573,6 @@ specify a valid config file" % cfgFile)
             self.apiClient.updateConfiguration(updateCfg)
 
     def copyAttributesToCommand(self, source, command):
-
         map(lambda attr: setattr(command, attr, getattr(source, attr, None)),
             filter(lambda attr: not attr.startswith("__") and attr not in
                    ["required", "isAsync"], dir(command)))
@@ -586,7 +580,6 @@ specify a valid config file" % cfgFile)
     def configureS3(self, s3):
         if s3 is None:
             return
-
         command = addS3.addS3Cmd()
         self.copyAttributesToCommand(s3, command)
         self.apiClient.addS3(command)

@@ -25,13 +25,9 @@ import hashlib
 
 
 class cloudstackTestClient(object):
-    def __init__(self, mgtSvr=None, port=8096, user=None, passwd=None,
-                 apiKey=None, securityKey=None, asyncTimeout=3600,
-                 defaultWorkerThreads=10, logging=None):
+    def __init__(self,mgmtDetails,asyncTimeout=3600,defaultWorkerThreads=10, logging=None):
         self.connection = \
-            cloudstackConnection.cloudConnection(mgtSvr, port, user, passwd,
-                                                 apiKey, securityKey,
-                                                 asyncTimeout, logging)
+            cloudstackConnection.cloudConnection( mgmtDetails,asyncTimeout,logging)
         self.apiClient =\
             cloudstackAPIClient.CloudStackAPIClient(self.connection)
         self.dbConnection = None
