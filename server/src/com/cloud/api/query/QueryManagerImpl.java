@@ -26,6 +26,7 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.network.dao.NetworkDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -331,6 +332,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Inject
     AffinityGroupDomainMapDao _affinityGroupDomainMapDao;
+
+    @Inject
+    NetworkDetailsDao _networkDetailsDao;
 
     /*
      * (non-Javadoc)
@@ -3250,7 +3254,13 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             } else {
                 requestedDetail = _dcDetailsDao.findDetail(id, key);
             }
-        } else {
+        } else if (resourceType == TaggedResourceType.Network){
+            if (key == null) {
+                detailList = _networkDetailsDao.findDetails(id);
+            } else {
+                requestedDetail = _networkDetailsDao.findDetail(id, key);
+            }
+        }else {
             throw new UnsupportedServiceException("Resource type " + resourceType + " is not supported by the cloudStack");
         }
         

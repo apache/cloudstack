@@ -26,6 +26,8 @@ import javax.naming.ConfigurationException;
 import com.cloud.dc.DcDetailVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DcDetailsDao;
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.VolumeDetailsDao;
@@ -130,6 +132,8 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     @Inject
     DcDetailsDao _dcDetailsDao;
     @Inject
+    NetworkDetailsDao _networkDetailsDao;
+    @Inject
     TaggedResourceService _taggedResourceMgr;
     @Inject
     UserVmDetailsDao _userVmDetail;
@@ -219,6 +223,9 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
                 } else if (resourceType == TaggedResourceType.Zone){
                      DcDetailVO dataCenterDetail = new DcDetailVO(id, key, value);
                      _dcDetailsDao.persist(dataCenterDetail);
+                } else if (resourceType == TaggedResourceType.Network){
+                    NetworkDetailVO networkDetail = new NetworkDetailVO(id, key, value);
+                    _networkDetailsDao.persist(networkDetail);
                 } else {
                     throw new InvalidParameterValueException("The resource type " + resourceType + " is not supported by the API yet");
                 }
@@ -246,8 +253,9 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
             _userVmDetailDao.removeDetails(id, key);
         } else if (resourceType == TaggedResourceType.Zone){
             _dcDetailsDao.removeDetails(id, key);
-        }
-        else{
+        } else if (resourceType == TaggedResourceType.Network){
+            _networkDetailsDao.removeDetails(id, key);
+        } else{
             throw new InvalidParameterValueException("The resource type " + resourceType + " is not supported by the API yet");
         }
 
