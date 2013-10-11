@@ -151,6 +151,74 @@ namespace HypervResource
             }
         }
 
+        // POST api/HypervResource/AttachCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.AttachCommand)]
+        public JContainer AttachCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.AttachCommand + cmd.ToString());
+
+                string details = null;
+                bool result = false;
+
+                try
+                {
+                    string vmName = (string)cmd.vmName;
+                    string isoPath = "\\\\10.102.192.150\\SMB-Share\\202-2-305ed1f7-1be8-345e-86c3-a976f7f57f10.iso";
+                    WmiCalls.AttachIso(vmName, isoPath);
+
+                    result = true;
+                }
+                catch (Exception sysEx)
+                {
+                    details = CloudStackTypes.AttachCommand + " failed due to " + sysEx.Message;
+                    logger.Error(details, sysEx);
+                }
+
+                object ansContent = new
+                {
+                    result = result,
+                    details = details
+                };
+
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.AttachAnswer);
+            }
+        }
+
+        // POST api/HypervResource/DetachCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.DettachCommand)]
+        public JContainer DetachCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.DettachCommand + cmd.ToString());
+
+                string details = null;
+                bool result = false;
+
+                try
+                {
+                    string vmName = (string)cmd.vmName;
+                    result = true;
+                }
+                catch (Exception sysEx)
+                {
+                    details = CloudStackTypes.DettachCommand + " failed due to " + sysEx.Message;
+                    logger.Error(details, sysEx);
+                }
+
+                object ansContent = new
+                {
+                    result = result,
+                    details = details
+                };
+
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.DettachAnswer);
+            }
+        }
 
         // POST api/HypervResource/DestroyCommand
         [HttpPost]
@@ -1078,7 +1146,7 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
-                    newData = newData
+                    newData = cmd.destTO 
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CopyCmdAnswer);
             }

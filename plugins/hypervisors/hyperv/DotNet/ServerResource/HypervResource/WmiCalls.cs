@@ -400,6 +400,48 @@ namespace HypervResource
             return newDrivePaths[0];
         }
 
+        /// <summary>
+        /// Attach iso to the vm
+        /// </summary>
+        /// <param name="vm"></param>
+        /// <param name="isoPath"></param>
+        private static void AttachIsoToVm(ComputerSystem vm, string isoPath)
+        {
+            // Disk drives are attached to a 'Parent' IDE controller.  We IDE Controller's settings for the 'Path', which our new Disk drive will use to reference it.
+            VirtualSystemSettingData vmSettings = GetVmSettings(vm);
+            var ctrller = GetDvdDriveSettings(vmSettings);
+
+            // A description of the drive is created by modifying a clone of the default ResourceAllocationSettingData for that drive type
+            string defaultDiskQuery = String.Format("ResourceSubType LIKE \"{0}\" AND InstanceID LIKE \"%Default\"", IDE_ISO_DISK);
+            var newDiskSettings = CloneResourceAllocationSetting(defaultDiskQuery);
+
+            // Set IDE controller and address on the controller for the new drive
+            newDiskSettings.LateBoundObject["Parent"] = ctrller.Path.ToString();
+            newDiskSettings.LateBoundObject["Connection"] = new string[] { isoPath };
+            newDiskSettings.CommitObject();
+
+            // Add the new vhd object as a virtual hard disk to the vm.
+            string[] newDiskResource = new string[] { newDiskSettings.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20) };
+            ManagementPath[] newDiskPaths = AddVirtualResource(newDiskResource, vm);
+            // assert
+            if (newDiskPaths.Length != 1)
+            {
+                var errMsg = string.Format(
+                    "Failed to add disk image to VM {0} (GUID {1}): number of resource created {2}",
+                    vm.ElementName,
+                    vm.Name,
+                    newDiskPaths.Length);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+            logger.InfoFormat("Created disk {2} for VM {0} (GUID {1}), image {3} ",
+                    vm.ElementName,
+                    vm.Name,
+                    newDiskPaths[0].Path,
+                    isoPath);
+        }
+
         private static void InsertDiskImage(ComputerSystem vm, string vhdfile, string diskResourceSubType, ManagementPath drivePath)
         {
             // A description of the disk is created by modifying a clone of the default ResourceAllocationSettingData for that disk type
@@ -449,6 +491,22 @@ namespace HypervResource
 
             ResourceAllocationSettingData defaultDiskDriveSettings = defaultDiskDriveSettingsObjs.OfType<ResourceAllocationSettingData>().First();
             return new ResourceAllocationSettingData((ManagementBaseObject)defaultDiskDriveSettings.LateBoundObject.Clone());
+        }
+
+        public static void AttachIso(string displayName, string iso)
+        {
+            logger.DebugFormat("Got request to attach iso {0} to vm {1}", iso, displayName);
+
+            ComputerSystem vm = GetComputerSystem(displayName);
+            if (vm == null)
+            {
+                logger.DebugFormat("VM {0} not found", displayName);
+                return;
+            }
+            else
+            {
+                AttachIsoToVm(vm, iso);
+            }
         }
 
         public static void DestroyVm(dynamic jsonObj)
@@ -1068,6 +1126,26 @@ namespace HypervResource
             }
 
             var errMsg = string.Format("No MemorySettingData in VirtualSystemSettingData {0}", vmSettings.Path.Path);
+            var ex = new WmiException(errMsg);
+            logger.Error(errMsg, ex);
+            throw ex;
+        }
+
+        public static ResourceAllocationSettingData GetDvdDriveSettings(VirtualSystemSettingData vmSettings)
+        {
+            var wmiObjCollection = GetResourceAllocationSettings(vmSettings);
+
+            foreach (ResourceAllocationSettingData wmiObj in wmiObjCollection)
+            {
+                if (wmiObj.ResourceType == 16)
+                {
+                    return wmiObj;
+                }
+            }
+
+            var errMsg = string.Format(
+                                "Cannot find the Dvd drive in VirtualSystemSettingData {0}",
+                                vmSettings.Path.Path);
             var ex = new WmiException(errMsg);
             logger.Error(errMsg, ex);
             throw ex;
