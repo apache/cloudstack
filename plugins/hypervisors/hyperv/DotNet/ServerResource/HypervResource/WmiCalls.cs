@@ -167,6 +167,7 @@ namespace HypervResource
             int memSize = vmInfo.maxRam / 1048576;
             string errMsg = vmName;
             var diskDrives = vmInfo.disks;
+            var bootArgs = vmInfo.bootArgs;
 
             // assert
             errMsg = vmName + ": missing disk information, array empty or missing, agent expects *at least* one disk for a VM";
@@ -283,33 +284,92 @@ namespace HypervResource
                 AddDiskDriveToVm(newVm, vhdFile, ideCtrllr, driveResourceType);
             }
 
-            // add nics
-            foreach (var nic in nicInfo)
+            // Add the Nics to the VM in the deviceId order.
+            for (int i = 0; i <= 2; i++)
             {
-                string mac = nic.mac;
-                string vlan = null;
-                string isolationUri = nic.isolationUri;
-                if (isolationUri != null && isolationUri.StartsWith("vlan://") && !isolationUri.Equals("vlan://untagged"))
+                foreach (var nic in nicInfo)
                 {
-                    vlan = isolationUri.Substring("vlan://".Length);
-                    int tmp;
-                    if (!int.TryParse(vlan, out tmp))
+
+                    int nicid = nic.deviceId;
+                    string mac = nic.mac;
+                    string vlan = null;
+                    string isolationUri = nic.isolationUri;
+                    if (isolationUri != null && isolationUri.StartsWith("vlan://") && !isolationUri.Equals("vlan://untagged"))
                     {
-                        // TODO: double check exception type
-                        errMsg = string.Format("Invalid VLAN value {0} for on vm {1} for nic uuid {2}", isolationUri, vmName, nic.uuid);
-                        var ex = new WmiException(errMsg);
-                        logger.Error(errMsg, ex);
-                        throw ex;
+                        vlan = isolationUri.Substring("vlan://".Length);
+                        int tmp;
+                        if (!int.TryParse(vlan, out tmp))
+                        {
+                            // TODO: double check exception type
+                            errMsg = string.Format("Invalid VLAN value {0} for on vm {1} for nic uuid {2}", isolationUri, vmName, nic.uuid);
+                            var ex = new WmiException(errMsg);
+                            logger.Error(errMsg, ex);
+                            throw ex;
+                        }
+                    }
+                    
+                    if (nicid == i)
+                    {
+                        CreateNICforVm(newVm, mac, vlan);
+                        break;
                     }
                 }
-                CreateNICforVm(newVm, mac, vlan);
+            }
+
+            // pass the boot args for the VM using KVP component.
+            // We need to pass the boot args to system vm's to get them configured with cloudstack configuration.
+            // Add new user data
+            var vm = WmiCallsV2.GetComputerSystem(vmName);
+            if (bootArgs != null)
+            {
+               
+                String bootargs = bootArgs;
+                WmiCallsV2.AddUserData(vm, bootargs);
+
+
+                // Get existing KVP
+                //var vmSettings = WmiCallsV2.GetVmSettings(vm);
+                //var kvpInfo = WmiCallsV2.GetKvpSettings(vmSettings);
+                //logger.DebugFormat("Boot Args presisted on the VM are ", kvpInfo);
+                //WmiCallsV2.AddUserData(vm, bootargs);
+
+                // Verify key added to subsystem
+                //kvpInfo = WmiCallsV2.GetKvpSettings(vmSettings);
+
+                // HostExchangesItems are embedded objects in the sense that the object value is stored and not a reference to the object.
+                //kvpProps = kvpInfo.HostExchangeItems;
+
+            }
+            // call patch systemvm iso only for systemvms
+            if (vmName.StartsWith("r-"))
+            {
+                patchSystemVmIso(vmName);
             }
 
             logger.DebugFormat("Starting VM {0}", vmName);
             SetState(newVm, RequiredState.Enabled);
+
+            // we need to reboot to get the hv kvp daemon get started vr gets configured.
+            if (vmName.StartsWith("r-"))
+            {
+                System.Threading.Thread.Sleep(90000);
+                SetState(newVm, RequiredState.Reboot);
+               // wait for the second boot and then return with suces
+                System.Threading.Thread.Sleep(50000);
+            }
             logger.InfoFormat("Started VM {0}", vmName);
             return newVm;
        }
+
+        /// this method is to add a dvd drive and attach the systemvm iso.
+        /// 
+
+        public static void patchSystemVmIso(String vmName)
+        {
+            ComputerSystem vmObject = WmiCalls.GetComputerSystem(vmName);
+            AddDiskDriveToVm(vmObject, "", "1", IDE_ISO_DRIVE);
+            WmiCalls.AttachIso(vmName, "c:\\systemvm.iso");
+        }
 
         /// <summary>
         /// Create a disk and attach it to the vm
