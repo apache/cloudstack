@@ -34,7 +34,6 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
-import com.cloud.agent.api.to.NfsTO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Volume;
 
@@ -84,7 +83,7 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
                 return processor.createTemplateFromVolume(cmd);
             }
         } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.SNAPSHOT &&
-                destData.getDataStore().getRole() == DataStoreRole.Primary) {
+                srcData.getDataStore().getRole() == DataStoreRole.Primary) {
             return processor.backupSnapshot(cmd);
         } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.VOLUME) {
             return processor.createVolumeFromSnapshot(cmd);
