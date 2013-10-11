@@ -757,6 +757,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         // first search distinct vm id by using query criteria and pagination
         SearchBuilder<UserVmJoinVO> sb = _userVmJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct ids
+
+        // build acl search builder condition
         _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts,
                 listProjectResourcesCriteria, grantedIds, revokedIds);
 
@@ -824,10 +826,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sb.and("affinityGroupId", sb.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
         }
 
+
+
         // populate the search criteria with the values passed in
         SearchCriteria<UserVmJoinVO> sc = sb.create();
 
-        // building ACL condition
+        // building ACL search criteria
         _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts,
                 listProjectResourcesCriteria);
 
