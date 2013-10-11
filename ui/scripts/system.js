@@ -13752,7 +13752,7 @@
                                     	data: {
                                     		id: args.context.ucsManagers[0].id 
                 			            },                                      
-                                        success: function(json) {
+                			            success: function(json) {
                                             //for testing only (begin)
               			            	    /*	            	  
               			            	    json = 
@@ -13849,24 +13849,24 @@
                                         });
                                     },
                                     actions: {
-                                        associateProfileToBlade: {
-                                            label: 'Associate Profile to Blade',
+                                        associateTemplateToBlade: {
+                                            label: 'Associate Template to Blade',
                                             addRow: 'false',
                                             messages: {
                                                 notification: function(args) {
-                                                    return 'Associate Profile to Blade';
+                                                    return 'Associate Template to Blade';
                                                 }
                                             },
                                             createForm: {
-                                                title: 'Associate Profile to Blade',
+                                                title: 'Associate Template to Blade',
                                                 fields: {
-                                                    profiledn: {
-                                                        label: 'Select Profile',
+                                                	templatedn: {
+                                                        label: 'Select Template',
                                                         select: function(args) {
                                                             var items = [];
 
                                                             $.ajax({
-                                                                url: createURL('listUcsProfiles'),
+                                                                url: createURL('listUcsTemplates'),
                                                                 data: {
                                                                     ucsmanagerid: args.context.ucsManagers[0].id
                                                                 },
@@ -13875,53 +13875,29 @@
                                                                     //for testing only (begin)
                                                                 	/*
                                                                 	json = {
-                                                                    	    "listucsprofileresponse": {
-                                                                    	        "count": 5,
-                                                                    	        "ucsprofile": [
-                                                                    	            {
-                                                                    	                "ucsdn": "org-root/ls-profile-for-blade-2"
-                                                                    	            },
-                                                                    	            {
-                                                                    	                "ucsdn": "org-root/ls-profile-for-blade-1"
-                                                                    	            },
-                                                                    	            {
-                                                                    	                "ucsdn": "org-root/ls-simpleProfile"
-                                                                    	            },
-                                                                    	            {
-                                                                    	                "ucsdn": "org-root/ls-testProfile"
-                                                                    	            },
-                                                                    	            {
-                                                                    	                "ucsdn": "org-root/ls-UCS_Test"
-                                                                    	            }
-                                                                    	        ]
-                                                                    	    }
-                                                                    	};
+                                                                		    "listucstemplatesresponse": {
+                                                                		        "count": 1,
+                                                                		        "ucstemplate": [
+                                                                		            {
+                                                                		                "ucsdn": "org-root/ls-test"
+                                                                		            }
+                                                                		        ]
+                                                                		    }
+                                                                		};  
                                                                     */
                                                                 	//for testing only (end)
                                                                 	
-                                                                	var ucsprofiles = json.listucsprofileresponse.ucsprofile;
-                                                                    if (ucsprofiles != null) {
-                                                                        for (var i = 0; i < ucsprofiles.length; i++) {
+                                                                	var ucstemplates = json.listucstemplatesresponse.ucstemplate;
+                                                                    if (ucstemplates != null) {
+                                                                        for (var i = 0; i < ucstemplates.length; i++) {
                                                                             items.push({
-                                                                                id: ucsprofiles[i].ucsdn,
-                                                                                description: ucsprofiles[i].ucsdn
+                                                                                id: ucstemplates[i].ucsdn,
+                                                                                description: ucstemplates[i].ucsdn
                                                                             });
                                                                         }
                                                                     }
                                                                 }
-                                                            });
-
-                                                            //for testing only (begin)
-                                                            /*
-								                            items.push({id: 'org-root/ls-testProfile1', description: 'org-root/ls-testProfile1'});
-								                            items.push({id: 'org-root/ls-testProfile2', description: 'org-root/ls-testProfile2'});
-								                            items.push({id: 'org-root/ls-testProfile3', description: 'org-root/ls-testProfile3'});
-								                            items.push({id: 'org-root/ls-testProfile4', description: 'org-root/ls-testProfile4'});
-								                            items.push({id: 'org-root/ls-testProfile5', description: 'org-root/ls-testProfile5'});
-								                            items.push({id: 'org-root/ls-testProfile6', description: 'org-root/ls-testProfile6'});
-								                            items.push({id: 'org-root/ls-testProfile7', description: 'org-root/ls-testProfile7'});
-								                            */
-                                                            //for testing only (end)
+                                                            });                                                            
 
                                                             args.response.success({
                                                                 data: items
@@ -13931,29 +13907,40 @@
                                                         validation: {
                                                             required: true
                                                         }
+                                                    },
+                                                    profilename: {
+                                                    	label: 'Profile'
                                                     }
                                                 }
                                             },
                                             action: function(args) {
+                                            	var data = {
+                                                    ucsmanagerid: args.context.ucsManagers[0].id,
+                                                    templatedn: args.data.templatedn,                                                    
+                                                    bladeid: args.context.blades[0].id
+                                                };
+                                            	
+                                            	if (args.data.profilename != null && args.data.profilename.length > 0) {
+                                            		$.extend(data, {
+                                            			profilename: args.data.profilename
+                                            		});
+                                            	}
+                                            	
                                                 $.ajax({
-                                                    url: createURL('associateUcsProfileToBlade'), //This API has been changed from sync to async at 7/25/2013
-                                                    data: {
-                                                        ucsmanagerid: args.context.ucsManagers[0].id,
-                                                        profiledn: args.data.profiledn,
-                                                        bladeid: args.context.blades[0].id
-                                                    },
+                                                    url: createURL('instantiateUcsTemplateAndAssocaciateToBlade'), 
+                                                    data: data,
                                                     success: function(json) {
                                                     	//for testing only (begin)
                                                     	/*
                                                     	json = {
-                                                        	    "associateucsprofiletobladeresponse": {
-                                                        	        "jobid": "770bec68-7739-4127-8609-4b87bd7867d2"
+                                                        	    "instantiateucstemplateandassociatetobladeresponse": {
+                                                        	        "jobid": "cd9d0282-4dae-463f-80b6-451e168e2e92"
                                                         	    }
                                                         	}
                                                     	*/
                                                     	//for testing only (end)
                                                     	                                                    	
-                                                    	var jid = json.associateucsprofiletobladeresponse.jobid;
+                                                    	var jid = json.instantiateucstemplateandassociatetobladeresponse.jobid;
                                                         args.response.success({
                                                             _custom: {
                                                                 jobId: jid,
@@ -13962,25 +13949,25 @@
                                                                 	/*
                                                                 	json = {
                                                                 		    "queryasyncjobresultresponse": {
-                                                                		        "accountid": "b24f6e36-f0ca-11e2-8c16-d637902e3581",
-                                                                		        "userid": "b24f7d8d-f0ca-11e2-8c16-d637902e3581",
-                                                                		        "cmd": "org.apache.cloudstack.api.AssociateUcsProfileToBladeCmd",
+                                                                		        "accountid": "970b694a-2f8c-11e3-a77d-000c29b36ff5",
+                                                                		        "userid": "970b7b4f-2f8c-11e3-a77d-000c29b36ff5",
+                                                                		        "cmd": "org.apache.cloudstack.api.InstantiateUcsTemplateAndAssociateToBladeCmd",
                                                                 		        "jobstatus": 1,
                                                                 		        "jobprocstatus": 0,
                                                                 		        "jobresultcode": 0,
                                                                 		        "jobresulttype": "object",
                                                                 		        "jobresult": {
                                                                 		            "ucsblade": {
-                                                                		                "id": "80ab25c8-3dcf-400e-8849-84dc5e1e6594",
-                                                                		                "ucsmanagerid": "07b5b813-83ed-4859-952c-c95cafb63ac4",
-                                                                		                "bladedn": "sys/chassis-1/blade-4",
-                                                                		                "profiledn": "org-root/ls-profile-for-blade-4"
+                                                                		                "id": "3d491c6e-f0b6-40b0-bf6e-f89efdd73c30",
+                                                                		                "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
+                                                                		                "bladedn": "sys/chassis-1/blade-3",
+                                                                		                "profiledn": "org-root/ls-xxxx"
                                                                 		            }
                                                                 		        },
-                                                                		        "created": "2013-07-26T13:53:01-0700",
-                                                                		        "jobid": "770bec68-7739-4127-8609-4b87bd7867d2"
+                                                                		        "created": "2013-10-10T17:29:00-0700",
+                                                                		        "jobid": "cd9d0282-4dae-463f-80b6-451e168e2e92"
                                                                 		    }
-                                                                		};
+                                                                		};                                                                	                                                               	
                                                                 	*/
                                                                 	//for testing only (end)
                                                                 	 
@@ -14000,20 +13987,28 @@
                                         disassociateProfileFromBlade: {
                                             label: 'Disassociate Profile from Blade',
                                             addRow: 'false',
-                                            messages: {
-                                            	confirm: function(args) {
-                                            		return 'Please confirm that you want to disassociate Profile from Blade.';
-                                            	},
+                                            messages: {                                            	
                                                 notification: function(args) {
                                                     return 'Disassociate Profile from Blade';
                                                 }
-                                            },                                           
-                                            action: function(args) {                                            	
+                                            },  
+                                            createForm: {
+                                            	title: 'Disassociate Profile from Blade',
+                                            	fields: {
+                                            		deleteprofile: {
+                                                        label: 'Delete Profile',
+                                                        isBoolean: true,
+                                                        isChecked: true
+                                                    }
+                                            	}
+                                            },
+                                            action: function(args) {   
+                                            	debugger;
                                                 $.ajax({
                                                     url: createURL('disassociateUcsProfileFromBlade'), 
-                                                    data: {
-                                                        //ucsmanagerid: args.context.ucsManagers[0].id,                                                        
-                                                        bladeid: args.context.blades[0].id
+                                                    data: {                                                                                                              
+                                                        bladeid: args.context.blades[0].id,
+                                                        deleteprofile: (args.data.deleteprofile == 'on'? true: false)
                                                     },
                                                     success: function(json) {   
                                                     	//for testing only (begin)
@@ -16158,7 +16153,7 @@
         var jsonObj = args.context.item;
         var allowedActions = [];
         if(jsonObj.profiledn == null) {
-        	allowedActions.push("associateProfileToBlade");
+        	allowedActions.push("associateTemplateToBlade");
         } else {
         	allowedActions.push("disassociateProfileFromBlade");
         }     
