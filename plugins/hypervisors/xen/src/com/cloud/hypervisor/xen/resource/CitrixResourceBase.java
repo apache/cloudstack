@@ -734,7 +734,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private Answer execute(RevertToVMSnapshotCommand cmd) {
         String vmName = cmd.getVmName();
-        List<VolumeTO> listVolumeTo = cmd.getVolumeTOs();
+        List<VolumeObjectTO> listVolumeTo = cmd.getVolumeTOs();
         VMSnapshot.Type vmSnapshotType = cmd.getTarget().getType();
         Boolean snapshotMemory = vmSnapshotType == VMSnapshot.Type.DiskAndMemory;
         Connection conn = getConnection();
@@ -786,7 +786,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
             // after revert, VM's volumes path have been changed, need to report to manager
-            for (VolumeTO volumeTo : listVolumeTo) {
+            for (VolumeObjectTO volumeTo : listVolumeTo) {
                 Long deviceId = volumeTo.getDeviceId();
                 VDI vdi = vdiMap.get(deviceId.toString());
                 volumeTo.setPath(vdi.getUuid(conn));
@@ -6633,7 +6633,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     }
 
-    private long getVMSnapshotChainSize(Connection conn, VolumeTO volumeTo, String vmName) 
+    private long getVMSnapshotChainSize(Connection conn, VolumeObjectTO volumeTo, String vmName)
             throws BadServerResponse, XenAPIException, XmlRpcException {
         Set<VDI> allvolumeVDIs = VDI.getByNameLabel(conn, volumeTo.getName());
         long size = 0;
@@ -6657,7 +6657,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 continue;
             }
         }
-        if (volumeTo.getType() == Volume.Type.ROOT) {
+        if (volumeTo.getVolumeType() == Volume.Type.ROOT) {
             Map<VM, VM.Record> allVMs = VM.getAllRecords(conn);
             // add size of memory snapshot vdi
             if (allVMs.size() > 0) {
@@ -6690,7 +6690,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected Answer execute(final CreateVMSnapshotCommand cmd) {
         String vmName = cmd.getVmName();
         String vmSnapshotName = cmd.getTarget().getSnapshotName();
-        List<VolumeTO> listVolumeTo = cmd.getVolumeTOs();
+        List<VolumeObjectTO> listVolumeTo = cmd.getVolumeTOs();
         VirtualMachine.State vmState = cmd.getVmState();
         String guestOSType = cmd.getGuestOSType();
 
@@ -6770,9 +6770,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             }
             // calculate used capacity for this VM snapshot
-            for (VolumeTO volumeTo : cmd.getVolumeTOs()){
+            for (VolumeObjectTO volumeTo : cmd.getVolumeTOs()){
                 long size = getVMSnapshotChainSize(conn,volumeTo,cmd.getVmName());
-                volumeTo.setChainSize(size);
+                volumeTo.setSize(size);
             }
             
             success = true;
@@ -6821,7 +6821,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     private VM createWorkingVM(Connection conn, String vmName,
-            String guestOSType, List<VolumeTO> listVolumeTo)
+            String guestOSType, List<VolumeObjectTO> listVolumeTo)
                     throws BadServerResponse, VmBadPowerState, SrFull,
                     OperationNotAllowed, XenAPIException, XmlRpcException {
         String guestOsTypeName = getGuestOsType(guestOSType, false);
@@ -6835,8 +6835,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         VM template = getVM(conn, guestOsTypeName);
         VM vm = template.createClone(conn, vmName);
         vm.setIsATemplate(conn, false);
-        Map<VDI, VolumeTO> vdiMap = new HashMap<VDI, VolumeTO>();
-        for (VolumeTO volume : listVolumeTo) {
+        Map<VDI, VolumeObjectTO> vdiMap = new HashMap<VDI, VolumeObjectTO>();
+        for (VolumeObjectTO volume : listVolumeTo) {
             String vdiUuid = volume.getPath();
             try {
                 VDI vdi = VDI.getByUuid(conn, vdiUuid);
@@ -6847,11 +6847,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
         }
         for (VDI vdi : vdiMap.keySet()) {
-            VolumeTO volumeTO = vdiMap.get(vdi);
+            VolumeObjectTO volumeTO = vdiMap.get(vdi);
             VBD.Record vbdr = new VBD.Record();
             vbdr.VM = vm;
             vbdr.VDI = vdi;
-            if (volumeTO.getType() == Volume.Type.ROOT) {
+            if (volumeTO.getVolumeType() == Volume.Type.ROOT) {
                 vbdr.bootable = true;
                 vbdr.unpluggable = false;
             } else {
@@ -6898,9 +6898,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             }
             // re-calculate used capacify for this VM snapshot
-            for (VolumeTO volumeTo : cmd.getVolumeTOs()){
+            for (VolumeObjectTO volumeTo : cmd.getVolumeTOs()){
                 long size = getVMSnapshotChainSize(conn,volumeTo,cmd.getVmName());
-                volumeTo.setChainSize(size);
+                volumeTo.setSize(size);
             }
             
             return new DeleteVMSnapshotAnswer(cmd, cmd.getVolumeTOs());

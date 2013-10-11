@@ -365,6 +365,7 @@
   <bean id="vMReservationDaoImpl" class="org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDaoImpl" />
   <bean id="vMRootDiskTagDaoImpl" class="org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMRootDiskTagDaoImpl" />
   <bean id="vMSnapshotDaoImpl" class="com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl" />
+  <bean id="vMSnapshotDetailsDaoImpl" class="com.cloud.vm.snapshot.dao.VMSnapshotDetailsDaoImpl" />
   <bean id="vMTemplateDetailsDaoImpl" class="com.cloud.storage.dao.VMTemplateDetailsDaoImpl" />
   <bean id="vMTemplateHostDaoImpl" class="com.cloud.storage.dao.VMTemplateHostDaoImpl" />
   <bean id="vMTemplatePoolDaoImpl" class="com.cloud.storage.dao.VMTemplatePoolDaoImpl" />
@@ -882,8 +883,17 @@
   <bean id="ApplicationLoadBalancerService" class="org.apache.cloudstack.network.lb.ApplicationLoadBalancerManagerImpl" />
   <bean id="InternalLoadBalancerVMManager" class="org.apache.cloudstack.network.lb.InternalLoadBalancerVMManagerImpl" />
 
-  <bean id="vMSnapshotManagerImpl" class="com.cloud.vm.snapshot.VMSnapshotManagerImpl" />
+  <!--VM snapshot Strategies-->
+  <bean id='vmSnapshotHelper' class="org.apache.cloudstack.storage.vmsnapshot.VMSnapshotHelperImpl" />
+  <bean id='defaultVMSnapshotStrategy' class="org.apache.cloudstack.storage.vmsnapshot.DefaultVMSnapshotStrategy"/>
 
+  <bean id="vMSnapshotManagerImpl" class="com.cloud.vm.snapshot.VMSnapshotManagerImpl">
+    <property name="vmSnapshotStrategies">
+      <list>
+        <ref local="defaultVMSnapshotStrategy"/>
+      </list>
+    </property>
+  </bean>
 
 <!--=======================================================================================================-->
 <!--                                                                                                       -->

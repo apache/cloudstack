@@ -19,10 +19,11 @@ package com.cloud.agent.api;
 import java.util.List;
 
 import com.cloud.agent.api.to.VolumeTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 public class RevertToVMSnapshotCommand extends VMSnapshotBaseCommand {
 
-    public RevertToVMSnapshotCommand(String vmName, VMSnapshotTO snapshot, List<VolumeTO> volumeTOs, String guestOSType) {
+    public RevertToVMSnapshotCommand(String vmName, VMSnapshotTO snapshot, List<VolumeObjectTO> volumeTOs, String guestOSType) {
         super(vmName, snapshot, volumeTOs, guestOSType);
     }
 

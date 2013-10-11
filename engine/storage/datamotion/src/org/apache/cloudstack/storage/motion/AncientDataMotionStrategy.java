@@ -87,37 +87,11 @@ AncientDataMotionStrategy implements DataMotionStrategy {
     @Inject
     EndPointSelector selector;
     @Inject
-    TemplateManager templateMgr;
-    @Inject
-    VolumeDataStoreDao volumeStoreDao;
-    @Inject
-    HostDao hostDao;
-    @Inject
     ConfigurationDao configDao;
-    @Inject
-    StorageManager storageMgr;
     @Inject
     VolumeDao volDao;
     @Inject
-    VMTemplateDao templateDao;
-    @Inject
-    SnapshotManager snapshotMgr;
-    @Inject
-    SnapshotDao snapshotDao;
-    @Inject
-    SnapshotDataStoreDao _snapshotStoreDao;
-    @Inject
-    PrimaryDataStoreDao primaryDataStoreDao;
-    @Inject
     DataStoreManager dataStoreMgr;
-    @Inject
-    TemplateDataStoreDao templateStoreDao;
-    @Inject
-    DiskOfferingDao diskOfferingDao;
-    @Inject
-    VMTemplatePoolDao templatePoolDao;
-    @Inject
-    VolumeOrchestrationService volumeMgr;
     @Inject
     StorageCacheManager cacheMgr;
     @Inject

@@ -39,6 +39,15 @@ ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `power_state_update_count` INT DEFA
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `power_host` bigint unsigned;
 ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__power_host` FOREIGN KEY (`power_host`) REFERENCES `cloud`.`host`(`id`);
 
+DROP TABLE IF EXISTS `cloud`.`vm_snapshot_details`;
+CREATE TABLE `cloud`.`vm_snapshot_details` (
+  `id` bigint unsigned UNIQUE NOT NULL,
+  `vm_snapshot_id` bigint unsigned NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `cloud`.`vm_work_job` (
   `id` bigint unsigned UNIQUE NOT NULL,
   `step` char(32) NOT NULL COMMENT 'state',
