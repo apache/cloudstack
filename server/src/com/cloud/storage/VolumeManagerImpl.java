@@ -331,6 +331,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
     private final int _customDiskOfferingMaxSize = 1024;
     private long _maxVolumeSizeInGb;
     private boolean _recreateSystemVmEnabled;
+    private boolean _storageHAMigrationEnabled;    
 
     public VolumeManagerImpl() {
         _volStateMachine = Volume.State.getStateMachine();
@@ -2461,15 +2462,20 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                                 }
                                 throw new CloudRuntimeException("Local volume " + vol + " cannot be recreated on storagepool " + assignedPool + " assigned by deploymentPlanner");
                             } else {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Shared volume "
-                                            + vol
-                                            + " will be migrated on storage pool "
-                                            + assignedPool
-                                            + " assigned by deploymentPlanner");
+                                //Check if storage migration is enabled in config
+                                if (_storageHAMigrationEnabled) {
+                                    if (s_logger.isDebugEnabled()) {
+                                        s_logger.debug("Shared volume "
+                                                + vol
+                                                + " will be migrated on storage pool "
+                                                + assignedPool
+                                                + " assigned by deploymentPlanner");
+                                    }
+                                    VolumeTask task = new VolumeTask(VolumeTaskType.MIGRATE, vol, assignedPool);
+                                    tasks.add(task);
+                                } else {
+                                    throw new CloudRuntimeException("Cannot migrate volumes. Volume Migration is disabled");
                                 }
-                                VolumeTask task = new VolumeTask(VolumeTaskType.MIGRATE, vol, assignedPool);
-                                tasks.add(task);
                             }
                         } else {
                             StoragePoolVO pool = _storagePoolDao
@@ -2682,9 +2688,13 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
 
         String value = _configDao.getValue(Config.RecreateSystemVmEnabled.key());
         _recreateSystemVmEnabled = Boolean.parseBoolean(value);
+        
+        String storageMigrationEnabled = _configDao.getValue(Config.HAStorageMigration.key());
+        _storageHAMigrationEnabled = (storageMigrationEnabled == null) ? true : Boolean.parseBoolean(storageMigrationEnabled);       
+        
         _copyvolumewait = NumbersUtil.parseInt(value,
                 Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
-
+        
         return true;
     }
 

@@ -22,3 +22,5 @@
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 's3.multipart.enabled', 'true', 'enable s3 multipart upload');
 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Storage", 'DEFAULT', 'management-server', "enable.ha.storage.migration", "true", "Enable/disable storage migration across primary storage during HA"); 
+
