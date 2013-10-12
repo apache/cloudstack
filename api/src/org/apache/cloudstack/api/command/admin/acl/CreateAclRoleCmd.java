@@ -29,10 +29,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AclRoleResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.user.Account;
 
 @APICommand(name = "createAclRole", responseObject = AclRoleResponse.class, description = "Creates an acl role")
 public class CreateAclRoleCmd extends BaseAsyncCreateCmd {
@@ -90,7 +90,7 @@ public class CreateAclRoleCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
+        return CallContext.current().getCallingAccount().getId();
     }
 
     @Override

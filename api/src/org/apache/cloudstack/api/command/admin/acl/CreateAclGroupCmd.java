@@ -28,10 +28,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AclGroupResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.user.Account;
 
 @APICommand(name = "createAclGroup", responseObject = AclGroupResponse.class, description = "Creates an acl group")
 public class CreateAclGroupCmd extends BaseAsyncCreateCmd {
@@ -82,7 +82,7 @@ public class CreateAclGroupCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
+        return CallContext.current().getCallingAccount().getId();
     }
 
     @Override

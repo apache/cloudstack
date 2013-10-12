@@ -113,9 +113,12 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     @ActionEvent(eventType = EventTypes.EVENT_ACL_ROLE_CREATE, eventDescription = "Creating Acl Role", create = true)
     public AclRole createAclRole(Long domainId, String aclRoleName, String description, Long parentRoleId) {
         Account caller = CallContext.current().getCallingAccount();
+        if (domainId == null) {
+            domainId = caller.getDomainId();
+        }
         if (!_accountMgr.isRootAdmin(caller.getAccountId())) {
             // domain admin can only create role for his domain
-            if (domainId != null && caller.getDomainId() != domainId.longValue()) {
+            if (caller.getDomainId() != domainId.longValue()) {
                 throw new PermissionDeniedException("Can't create acl role in domain " + domainId + ", permission denied");
             }
         }
@@ -130,9 +133,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         AclRoleVO rvo = new AclRoleVO(aclRoleName, description);
-        if (domainId != null) {
-            rvo.setDomainId(domainId);
-        }
+        rvo.setDomainId(domainId);
         AclRole role = _aclRoleDao.persist(rvo);
         if (parentRoleId != null) {
             // copy parent role permissions
@@ -472,9 +473,12 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_CREATE, eventDescription = "Creating Acl Group", create = true)
     public AclGroup createAclGroup(Long domainId, String aclGroupName, String description) {
         Account caller = CallContext.current().getCallingAccount();
+        if (domainId == null) {
+            domainId = caller.getDomainId(); // use caller's domain id
+        }
         if (!_accountMgr.isRootAdmin(caller.getAccountId())) {
             // domain admin can only create role for his domain
-            if (domainId != null && caller.getDomainId() != domainId.longValue()) {
+            if (caller.getDomainId() != domainId.longValue()) {
                 throw new PermissionDeniedException("Can't create acl group in domain " + domainId + ", permission denied");
             }
         }
@@ -486,9 +490,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
                             + " already exisits for domain " + domainId);
         }
         AclGroupVO rvo = new AclGroupVO(aclGroupName, description);
-        if (domainId != null) {
-            rvo.setDomainId(domainId);
-        }
+        rvo.setDomainId(domainId);
 
         return _aclGroupDao.persist(rvo);
     }
