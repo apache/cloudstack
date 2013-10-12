@@ -302,65 +302,6 @@ public abstract class BaseCmd {
         return lowercaseParams;
     }
 
-    public String buildResponse(ServerApiException apiException, String responseType) {
-        StringBuffer sb = new StringBuffer();
-        if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-            // JSON response
-            sb.append("{ \"" + getCommandName() + "\" : { " + "\"@attributes\":{\"cloud-stack-version\":\"" + _mgr.getVersion() + "\"},");
-            sb.append("\"errorcode\" : \"" + apiException.getErrorCode() + "\", \"description\" : \"" + apiException.getDescription() + "\" } }");
-        } else {
-            sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            sb.append("<" + getCommandName() + ">");
-            sb.append("<errorcode>" + apiException.getErrorCode() + "</errorcode>");
-            sb.append("<description>" + escapeXml(apiException.getDescription()) + "</description>");
-            sb.append("</" + getCommandName() + " cloud-stack-version=\"" + _mgr.getVersion() + "\">");
-        }
-        return sb.toString();
-    }
-
-    public String buildResponse(List<Pair<String, Object>> tagList, String responseType) {
-        StringBuffer prefixSb = new StringBuffer();
-        StringBuffer suffixSb = new StringBuffer();
-
-        // set up the return value with the name of the response
-        if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-            prefixSb.append("{ \"" + getCommandName() + "\" : { \"@attributes\":{\"cloud-stack-version\":\"" + _mgr.getVersion() + "\"},");
-        } else {
-            prefixSb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            prefixSb.append("<" + getCommandName() + " cloud-stack-version=\"" + _mgr.getVersion() + "\">");
-        }
-
-        int i = 0;
-        for (Pair<String, Object> tagData : tagList) {
-            String tagName = tagData.first();
-            Object tagValue = tagData.second();
-            if (tagValue instanceof Object[]) {
-                Object[] subObjects = (Object[]) tagValue;
-                if (subObjects.length < 1) {
-                    continue;
-                }
-                writeObjectArray(responseType, suffixSb, i++, tagName, subObjects);
-            } else {
-                writeNameValuePair(suffixSb, tagName, tagValue, responseType, i++);
-            }
-        }
-
-        if (suffixSb.length() > 0) {
-            if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) { // append comma only if we have some suffix else
-                // not as per strict Json syntax.
-                prefixSb.append(",");
-            }
-            prefixSb.append(suffixSb);
-        }
-        // close the response
-        if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-            prefixSb.append("} }");
-        } else {
-            prefixSb.append("</" + getCommandName() + ">");
-        }
-        return prefixSb.toString();
-    }
-
     private void writeNameValuePair(StringBuffer sb, String tagName, Object tagValue, String responseType, int propertyCount) {
         if (tagValue == null) {
             return;
