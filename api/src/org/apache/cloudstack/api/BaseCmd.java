@@ -21,7 +21,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -77,7 +76,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.snapshot.VMSnapshotService;
@@ -300,113 +298,6 @@ public abstract class BaseCmd {
             }
         }
         return lowercaseParams;
-    }
-
-    private void writeNameValuePair(StringBuffer sb, String tagName, Object tagValue, String responseType, int propertyCount) {
-        if (tagValue == null) {
-            return;
-        }
-
-        if (tagValue instanceof Object[]) {
-            Object[] subObjects = (Object[]) tagValue;
-            if (subObjects.length < 1) {
-                return;
-            }
-            writeObjectArray(responseType, sb, propertyCount, tagName, subObjects);
-        } else {
-            if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-                String seperator = ((propertyCount > 0) ? ", " : "");
-                sb.append(seperator + "\"" + tagName + "\" : \"" + escapeJSON(tagValue.toString()) + "\"");
-            } else {
-                sb.append("<" + tagName + ">" + escapeXml(tagValue.toString()) + "</" + tagName + ">");
-            }
-        }
-    }
-
-    @SuppressWarnings("rawtypes")
-    private void writeObjectArray(String responseType, StringBuffer sb, int propertyCount, String tagName, Object[] subObjects) {
-        if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-            String separator = ((propertyCount > 0) ? ", " : "");
-            sb.append(separator);
-        }
-        int j = 0;
-        for (Object subObject : subObjects) {
-            if (subObject instanceof List) {
-                List subObjList = (List) subObject;
-                writeSubObject(sb, tagName, subObjList, responseType, j++);
-            }
-        }
-
-        if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-            sb.append("]");
-        }
-    }
-
-    @SuppressWarnings("rawtypes")
-    private void writeSubObject(StringBuffer sb, String tagName, List tagList, String responseType, int objectCount) {
-        if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-            sb.append(((objectCount == 0) ? "\"" + tagName + "\" : [  { " : ", { "));
-        } else {
-            sb.append("<" + tagName + ">");
-        }
-
-        int i = 0;
-        for (Object tag : tagList) {
-            if (tag instanceof Pair) {
-                Pair nameValuePair = (Pair) tag;
-                writeNameValuePair(sb, (String) nameValuePair.first(), nameValuePair.second(), responseType, i++);
-            }
-        }
-
-        if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-            sb.append("}");
-        } else {
-            sb.append("</" + tagName + ">");
-        }
-    }
-
-    /**
-     * Escape xml response set to false by default. API commands to override this method to allow escaping
-     */
-    public boolean requireXmlEscape() {
-        return true;
-    }
-
-    private String escapeXml(String xml) {
-        if (!requireXmlEscape()) {
-            return xml;
-        }
-        int iLen = xml.length();
-        if (iLen == 0) {
-            return xml;
-        }
-        StringBuffer sOUT = new StringBuffer(iLen + 256);
-        int i = 0;
-        for (; i < iLen; i++) {
-            char c = xml.charAt(i);
-            if (c == '<') {
-                sOUT.append("&lt;");
-            } else if (c == '>') {
-                sOUT.append("&gt;");
-            } else if (c == '&') {
-                sOUT.append("&amp;");
-            } else if (c == '"') {
-                sOUT.append("&quot;");
-            } else if (c == '\'') {
-                sOUT.append("&apos;");
-            } else {
-                sOUT.append(c);
-            }
-        }
-        return sOUT.toString();
-    }
-
-    private static String escapeJSON(String str) {
-        if (str == null) {
-            return str;
-        }
-
-        return str.replace("\"", "\\\"");
     }
 
     protected long getInstanceIdFromJobSuccessResult(String result) {
