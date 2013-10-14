@@ -916,7 +916,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             return false;
         }
         if (provider.get(0) == Provider.Netscaler || provider.get(0) == Provider.F5BigIp || 
-        		provider.get(0) == Provider.VirtualRouter || provider.get(0) == Provider.VPCVirtualRouter) {
+        		provider.get(0) == Provider.VirtualRouter) {
             return true;
         }
         return false;

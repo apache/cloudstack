@@ -5,7 +5,7 @@ import XenAPI
 import urllib
 from xml.dom import minidom
 import time
-
+import commands
 
 # Per VM dictionary (used by RRDUpdates to look up column numbers by variable names)
 class VMReport(dict):
@@ -179,6 +179,11 @@ class RRDUpdates:
         else:
             raise PerfMonException("Invalid string in <legend>: %s" % col_meta_data)
 
+def getuuid(vm_name):
+    status, output = commands.getstatusoutput("xe vm-list | grep "+vm_name+" -B 1 | head -n 1 | awk -F':' '{print $2}' | tr -d ' '")
+    if (status != 0):
+	raise PerfMonException("Invalid vm name: %s" % vm_name)
+    return output
 
 def get_vm_group_perfmon(args={}):
     #Release code
@@ -213,7 +218,8 @@ def get_vm_group_perfmon(args={}):
 
     #for uuid in rrd_updates.get_vm_list():
     for vm_count in xrange(1, total_vm + 1):
-        vm_uuid = args['vmuuid' + str(vm_count)]
+	vm_name = args['vmname' + str(vm_count)]
+        vm_uuid = getuuid(vm_name)
         #print "Got values for VM: " + str(vm_count) + " " + vm_uuid
         for counter_count in xrange(1, total_counter + 1):
             counter = args['counter' + str(counter_count)]
