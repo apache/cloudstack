@@ -767,7 +767,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 				AutoScalePolicyVO policyVO = _asPolicyDao.findById(asVmgPmap.getPolicyId());
 				if (policyVO != null) {
 					Integer quitetime = policyVO.getQuietTime();
-					long last_quitetime = policyVO.getLastQuiteTime().getTime();
+					Date quitetimeDate = policyVO.getLastQuiteTime();
+					long last_quitetime = 0L;
+					if (quitetimeDate != null) {
+						last_quitetime = policyVO.getLastQuiteTime().getTime();
+					}
 					long current_time = (new Date()).getTime();
 
 					// check quite time for this policy
@@ -779,16 +783,17 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 						if ((lstConditions != null) && (lstConditions.size() > 0)) {
 							// check whole conditions of this policy
 							for (ConditionVO conditionVO : lstConditions) {
-								long threholdValue = conditionVO.getThreshold();
+								long thresholdValue = conditionVO.getThreshold();
+								Double thresholdPercent = (double)thresholdValue / 100;
 								Double sum = avgCounter.get(conditionVO.getCounterid());
 								Double avg = sum/ currentVM;
 										
 								Operator op = conditionVO.getRelationalOperator();
-								boolean bConditionCheck = ((op == com.cloud.network.as.Condition.Operator.EQ) && (threholdValue == avg))
-										|| ((op == com.cloud.network.as.Condition.Operator.GE) && (avg >= threholdValue))
-										|| ((op == com.cloud.network.as.Condition.Operator.GT) && (avg > threholdValue))
-										|| ((op == com.cloud.network.as.Condition.Operator.LE) && (avg <= threholdValue))
-										|| ((op == com.cloud.network.as.Condition.Operator.LT) && (avg < threholdValue));
+								boolean bConditionCheck = ((op == com.cloud.network.as.Condition.Operator.EQ) && (thresholdPercent == avg))
+										|| ((op == com.cloud.network.as.Condition.Operator.GE) && (avg >= thresholdPercent))
+										|| ((op == com.cloud.network.as.Condition.Operator.GT) && (avg > thresholdPercent))
+										|| ((op == com.cloud.network.as.Condition.Operator.LE) && (avg <= thresholdPercent))
+										|| ((op == com.cloud.network.as.Condition.Operator.LT) && (avg < thresholdPercent));
 
 								if (!bConditionCheck) {
 									bValid = false;
