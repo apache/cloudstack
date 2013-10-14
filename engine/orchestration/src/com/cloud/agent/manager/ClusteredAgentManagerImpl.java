@@ -246,7 +246,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
     protected AgentAttache createAttache(long id) {
         s_logger.debug("create forwarding ClusteredAgentAttache for " + id);
-        final AgentAttache attache = new ClusteredAgentAttache(this, id);
+        HostVO host = _hostDao.findById(id);
+        final AgentAttache attache = new ClusteredAgentAttache(this, id, host.getName());
         AgentAttache old = null;
         synchronized (_agents) {
             old = _agents.get(id);
@@ -261,7 +262,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     @Override
     protected AgentAttache createAttacheForConnect(HostVO host, Link link) {
         s_logger.debug("create ClusteredAgentAttache for " + host.getId());
-        final AgentAttache attache = new ClusteredAgentAttache(this, host.getId(), link, host.isInMaintenanceStates());
+        final AgentAttache attache = new ClusteredAgentAttache(this, host.getId(), host.getName(), link, host.isInMaintenanceStates());
         link.attach(attache);
         AgentAttache old = null;
         synchronized (_agents) {
@@ -280,7 +281,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 //            return new DummyAttache(this, host.getId(), false);
 //        }
         s_logger.debug("create ClusteredDirectAgentAttache for " + host.getId());
-        final DirectAgentAttache attache = new ClusteredDirectAgentAttache(this, host.getId(), _nodeId, resource, host.isInMaintenanceStates(), this);
+        final DirectAgentAttache attache = new ClusteredDirectAgentAttache(this, host.getId(), host.getName(), _nodeId, resource, host.isInMaintenanceStates(), this);
         AgentAttache old = null;
         synchronized (_agents) {
             old = _agents.get(host.getId());

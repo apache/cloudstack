@@ -108,6 +108,7 @@ public class Request {
     protected long      _agentId;
     protected Command[] _cmds;
     protected String    _content;
+    protected String    _agentName;
 
     protected Request() {
     }
@@ -142,6 +143,11 @@ public class Request {
         setFromServer(fromServer);
     }
 
+    public Request(long agentId, String agentName, long mgmtId, Command[] cmds, boolean stopOnError, boolean fromServer) {
+        this(agentId, mgmtId, cmds, stopOnError, fromServer);
+        setAgentName(agentName);
+    }
+
     public void setSequence(long seq) {
         _seq = seq;
     }
@@ -172,6 +178,10 @@ public class Request {
 
     private final void setStopOnError(boolean stopOnError) {
         _flags |= (stopOnError ? FLAG_STOP_ON_ERROR : 0);
+    }
+
+    private final void setAgentName(String agentName) {
+        _agentName = agentName;
     }
 
     private final void setInSequence(boolean inSequence) {
@@ -422,7 +432,11 @@ public class Request {
 
         buf.append(msg);
         buf.append(" { ").append(getType());
-        buf.append(", MgmtId: ").append(_mgmtId).append(", via: ").append(_via);
+        if (_agentName != null) {
+            buf.append(", MgmtId: ").append(_mgmtId).append(", via: ").append(_via).append("(" + _agentName + ")");
+        } else {
+            buf.append(", MgmtId: ").append(_mgmtId).append(", via: ").append(_via);
+        }
         buf.append(", Ver: ").append(_ver.toString());
         buf.append(", Flags: ").append(Integer.toBinaryString(getFlags())).append(", ");
         buf.append(content);

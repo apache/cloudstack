@@ -50,14 +50,14 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
         s_clusteredAgentMgr = agentMgr;
     }
 
-    public ClusteredAgentAttache(AgentManagerImpl agentMgr, long id) {
-        super(agentMgr, id, null, false);
+    public ClusteredAgentAttache(AgentManagerImpl agentMgr, long id, String name) {
+        super(agentMgr, id, name, null, false);
         _forward = true;
         _transferRequests = new LinkedList<Request>();
     }
 
-    public ClusteredAgentAttache(AgentManagerImpl agentMgr, long id, Link link, boolean maintenance) {
-        super(agentMgr, id, link, maintenance);
+    public ClusteredAgentAttache(AgentManagerImpl agentMgr, long id, String name, Link link, boolean maintenance) {
+        super(agentMgr, id, name, link, maintenance);
         _forward = link == null;
         _transferRequests = new LinkedList<Request>();
     }
