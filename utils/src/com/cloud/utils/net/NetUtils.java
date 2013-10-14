@@ -199,7 +199,7 @@ public class NetUtils {
 
     public static String getDefaultEthDevice() {
         if (SystemUtils.IS_OS_MAC) {
-            String defDev = Script.runSimpleBashScript("/sbin/route -n get default | grep interface | awk '{print $2}'");
+            String defDev = Script.runSimpleBashScript("/sbin/route -n get default 2> /dev/null | grep interface | awk '{print $2}'");
             return defDev;
         }
         String defaultRoute = Script.runSimpleBashScript("/sbin/route | grep default");
