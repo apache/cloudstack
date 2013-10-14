@@ -13843,16 +13843,99 @@
                                         });
                                     },
                                     actions: {
+                                    	refreshUcsBlades: {
+                                    		isHeader: true,
+                                            label: 'Refresh Blades',
+                                            messages: {
+                                                confirm: function(args) {
+                                                    return 'Please confirm that you want to refresh blades.';
+                                                },
+                                                notification: function(args) {
+                                                    return 'Refresh Blades';
+                                                }
+                                            },
+                                            action: function(args) {                                            	                                            
+                                                $.ajax({
+                                                    url: createURL('refreshUcsBlades'),
+                                                    data: {
+                                                    	ucsmanagerid: args.context.ucsManagers[0].id
+                                                    },
+                                                    success: function(json) {                                                    	
+                                                    	//for testing only (begin)
+                                                    	/*
+                                                    	json = {
+                                                    		    "refreshucsbladesresponse": {
+                                                    		        "count": 7,
+                                                    		        "ucsblade": [
+                                                    		            {
+                                                    		                "id": "6c6a2d2c-575e-41ac-9782-eee51b0b80f8",
+                                                    		                "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
+                                                    		                "bladedn": "sys/chassis-1/blade-5"
+                                                    		            },
+                                                    		            {
+                                                    		                "id": "d371d470-a51f-489c-aded-54a63dfd76c7",
+                                                    		                "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
+                                                    		                "bladedn": "sys/chassis-1/blade-6"
+                                                    		            },
+                                                    		            {
+                                                    		                "id": "c0f64591-4a80-4083-bb7b-576220b436a2",
+                                                    		                "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
+                                                    		                "bladedn": "sys/chassis-1/blade-7"
+                                                    		            },
+                                                    		            {
+                                                    		                "id": "74b9b69a-cb16-42f5-aad6-06391ebdd759",
+                                                    		                "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
+                                                    		                "bladedn": "sys/chassis-1/blade-1"
+                                                    		            },
+                                                    		            {
+                                                    		                "id": "713a5adb-0136-484f-9acb-d9203af497be",
+                                                    		                "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
+                                                    		                "bladedn": "sys/chassis-1/blade-2"
+                                                    		            },
+                                                    		            {
+                                                    		                "id": "da633578-21cb-4678-9eb4-981a53198b41",
+                                                    		                "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
+                                                    		                "bladedn": "sys/chassis-1/blade-4"
+                                                    		            },
+                                                    		            {
+                                                    		                "id": "3d491c6e-f0b6-40b0-bf6e-f89efdd73c30",
+                                                    		                "ucsmanagerid": "9a34c186-12fa-4bbc-af04-5f1a2bf7ae4a",
+                                                    		                "bladedn": "sys/chassis-1/blade-3"
+                                                    		            }
+                                                    		        ]
+                                                    		    }
+                                                    		};
+                                                    	*/
+                                                    	//for testing only (end)
+                                                    	  
+                                                    	/*
+                                                        var item = json.refreshucsbladesresponse.ucsblade[0];                                                        
+                                                        addExtraPropertiesToUcsBladeObject(item);                                                        
+                                                        args.response.success({
+                                                            data: item
+                                                        });
+                                                        */                                                    	                                                    
+                                                    	$(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                });
+                                            },
+                                            notification: {
+                                                poll: function(args) {
+                                                    args.complete();
+                                                }
+                                            }                                            
+                                    	},
+                                    	
                                         associateTemplateToBlade: {
-                                            label: 'Associate Template to Blade',
+                                            label: 'Instanciate Template and Associate Profile to Blade',
                                             addRow: 'false',
                                             messages: {
                                                 notification: function(args) {
-                                                    return 'Associate Template to Blade';
+                                                    return 'Instanciate Template and Associate Profile to Blade';
                                                 }
                                             },
                                             createForm: {
-                                                title: 'Associate Template to Blade',
+                                                title: 'Instanciate Template and Associate Profile to Blade',
                                                 fields: {
                                                 	templatedn: {
                                                         label: 'Select Template',
