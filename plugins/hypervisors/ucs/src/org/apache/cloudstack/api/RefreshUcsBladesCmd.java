@@ -19,7 +19,7 @@ import javax.inject.Inject;
  * To change this template use File | Settings | File Templates.
  */
 @APICommand(name="refreshUcsBlades", description="refresh ucs blades to sync with UCS manager", responseObject=UcsBladeResponse.class)
-public class RefreshUcsBladesCmd  extends BaseAsyncCmd  {
+public class RefreshUcsBladesCmd  extends BaseListCmd  {
     private static Logger s_logger = Logger.getLogger(RefreshUcsBladesCmd.class);
 
     @Inject
@@ -34,16 +34,6 @@ public class RefreshUcsBladesCmd  extends BaseAsyncCmd  {
 
     public void setMgr(UcsManager mgr) {
         this.mgr = mgr;
-    }
-
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_UCS_REFRESH_BLADES;
-    }
-
-    @Override
-    public String getEventDescription() {
-        return "refresh ucs blades status to sync with UCS manager";
     }
 
     @Override
