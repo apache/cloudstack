@@ -56,6 +56,14 @@ public class AutoScalePolicyConditionMapDaoImpl extends GenericDaoBase<AutoScale
     public boolean removeByAutoScalePolicyId(long policyId) {
         SearchCriteria<AutoScalePolicyConditionMapVO> sc = createSearchCriteria();
         sc.addAnd("policyId", SearchCriteria.Op.EQ, policyId);
-        return expunge(sc) > 0;
-    }
+		return expunge(sc) > 0;
+	}
+
+	@Override
+	public List<AutoScalePolicyConditionMapVO> findByPolicyId(long policyId) {
+		SearchCriteria<AutoScalePolicyConditionMapVO> sc = createSearchCriteria();
+		sc.addAnd("policyId", SearchCriteria.Op.EQ, policyId);
+
+		return listBy(sc);
+	}
 }

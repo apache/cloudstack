@@ -30,11 +30,13 @@ import org.apache.log4j.Logger;
 import com.google.gson.Gson;
 
 import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
+
 import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.ListOvsElementsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.ConfigurationManager;
@@ -62,6 +64,8 @@ import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.VpnUser;
+import com.cloud.network.as.AutoScaleCounter;
+import com.cloud.network.as.AutoScaleCounter.AutoScaleCounterType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
@@ -99,6 +103,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.google.gson.Gson;
 
 import com.google.gson.Gson;
 
@@ -112,8 +117,9 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer,
         NetworkMigrationResponder {
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
-
-    protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
+	public static final AutoScaleCounterType AutoScaleCounterCpu = new AutoScaleCounterType("cpu");
+	public static final AutoScaleCounterType AutoScaleCounterMemory = new AutoScaleCounterType("memory");
+	protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
     @Inject
     NetworkDao _networksDao;
@@ -555,7 +561,17 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         lbCapabilities.put(Capability.SupportedProtocols, "tcp, udp");
         lbCapabilities.put(Capability.SupportedStickinessMethods, getHAProxyStickinessCapability());
         lbCapabilities.put(Capability.LbSchemes, LoadBalancerContainer.Scheme.Public.toString());
-
+        
+        //specifies that LB rules can support autoscaling and the list of counters it supports
+        AutoScaleCounter counter;
+        List<AutoScaleCounter> counterList = new ArrayList<AutoScaleCounter>();
+		counter = new AutoScaleCounter(AutoScaleCounterCpu);
+        counterList.add(counter);
+		counter = new AutoScaleCounter(AutoScaleCounterMemory);
+        counterList.add(counter);
+        Gson gson = new Gson();
+        String autoScaleCounterList = gson.toJson(counterList);
+        lbCapabilities.put(Capability.AutoScaleCounters, autoScaleCounterList);
         capabilities.put(Service.Lb, lbCapabilities);
 
         // Set capabilities for Firewall service

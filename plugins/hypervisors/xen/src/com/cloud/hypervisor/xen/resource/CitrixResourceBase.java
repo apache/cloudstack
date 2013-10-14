@@ -168,6 +168,9 @@ import com.cloud.agent.api.OvsSetTagAndFlowAnswer;
 import com.cloud.agent.api.OvsFetchInterfaceAnswer;
 import com.cloud.agent.api.OvsSetTagAndFlowCommand;
 import com.cloud.agent.api.OvsFetchInterfaceCommand;
+import com.cloud.agent.api.PerformanceMonitorAnswer;
+import com.cloud.agent.api.PerformanceMonitorCommand;
+
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
@@ -303,7 +306,6 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.snapshot.VMSnapshot;
 
 import com.cloud.utils.ssh.SSHCmdHelper;
-
 
 /**
  * CitrixResourceBase encapsulates the calls to the XenServer Xapi process
@@ -657,10 +659,87 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((PvlanSetupCommand)cmd);
         } else if (clazz == SetMonitorServiceCommand.class) {
             return execute((SetMonitorServiceCommand)cmd);
+		} else if (clazz == PerformanceMonitorCommand.class) {
+			return execute((PerformanceMonitorCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
+
+	private Answer execute(PerformanceMonitorCommand cmd) {
+		Connection conn = getConnection();
+		String perfMon = getPerfMon(conn, cmd.getParams(), cmd.getWait());
+		if (perfMon == null) {
+			return new PerformanceMonitorAnswer(cmd, false, perfMon);
+		} else
+			return new PerformanceMonitorAnswer(cmd, true, perfMon);
+	}
+
+	private String getPerfMon(Connection conn, Map<String, String> params,
+			int wait) {
+		String result = null;
+		try {
+			result = callHostPluginAsync(conn, "vmopspremium", "asmonitor", 60,
+					params);
+			if (result != null)
+				return result;
+		} catch (Exception e) {
+			s_logger.error("Can not get performance monitor for AS due to ", e);
+		}
+		return null;
+	}
+
+	protected String callHostPluginAsync(Connection conn, String plugin,
+			String cmd, int wait, Map<String, String> params) {
+		int timeout = wait * 1000;
+		Map<String, String> args = new HashMap<String, String>();
+		Task task = null;
+		try {
+			for (String key : params.keySet()) {
+				args.put(key, params.get(key));
+			}
+			if (s_logger.isTraceEnabled()) {
+				s_logger.trace("callHostPlugin executing for command " + cmd
+						+ " with " + getArgsString(args));
+			}
+			Host host = Host.getByUuid(conn, _host.uuid);
+			task = host.callPluginAsync(conn, plugin, cmd, args);
+			// poll every 1 seconds
+			waitForTask(conn, task, 1000, timeout);
+			checkForSuccess(conn, task);
+			String result = task.getResult(conn);
+			if (s_logger.isTraceEnabled()) {
+				s_logger.trace("callHostPlugin Result: " + result);
+			}
+			return result.replace("<value>", "").replace("</value>", "")
+					.replace("\n", "");
+		} catch (Types.HandleInvalid e) {
+			s_logger.warn("callHostPlugin failed for cmd: " + cmd
+					+ " with args " + getArgsString(args)
+					+ " due to HandleInvalid clazz:" + e.clazz + ", handle:"
+					+ e.handle);
+		} catch (XenAPIException e) {
+			s_logger.warn(
+					"callHostPlugin failed for cmd: " + cmd + " with args "
+							+ getArgsString(args) + " due to " + e.toString(),
+					e);
+		} catch (XmlRpcException e) {
+			s_logger.warn(
+					"callHostPlugin failed for cmd: " + cmd + " with args "
+							+ getArgsString(args) + " due to " + e.getMessage(),
+					e);
+		} finally {
+			if (task != null) {
+				try {
+					task.destroy(conn);
+				} catch (Exception e1) {
+					s_logger.warn("unable to destroy task(" + task.toString()
+							+ ") on host(" + _host.uuid + ") due to ", e1);
+				}
+			}
+		}
+		return null;
+	}
 
     protected void scaleVM(Connection conn, VM vm, VirtualMachineTO vmSpec, Host host) throws XenAPIException, XmlRpcException {
 

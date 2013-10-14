@@ -28,6 +28,7 @@ if os.path.exists("/usr/lib/xcp/sm"):
     sys.path.extend(["/usr/lib/xcp/sm/", "/usr/local/sbin/", "/sbin/"])
 import util
 import socket
+import perfmon
 
 def echo(fn):
     def wrapped(*v, **k):
@@ -142,6 +143,11 @@ def heartbeat(session, args):
        txt='fail'
     return txt
 
+@echo
+def asmonitor(session, args):
+	result = perfmon.get_vm_group_perfmon(args)
+	return result
+
 if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"forceShutdownVM":forceShutdownVM, "upgrade_snapshot":upgrade_snapshot, "create_privatetemplate_from_snapshot":create_privatetemplate_from_snapshot, "copy_vhd_to_secondarystorage":copy_vhd_to_secondarystorage, "copy_vhd_from_secondarystorage":copy_vhd_from_secondarystorage, "setup_heartbeat_sr":setup_heartbeat_sr, "setup_heartbeat_file":setup_heartbeat_file, "check_heartbeat":check_heartbeat, "heartbeat": heartbeat})
+    XenAPIPlugin.dispatch({"forceShutdownVM":forceShutdownVM, "upgrade_snapshot":upgrade_snapshot, "create_privatetemplate_from_snapshot":create_privatetemplate_from_snapshot, "copy_vhd_to_secondarystorage":copy_vhd_to_secondarystorage, "copy_vhd_from_secondarystorage":copy_vhd_from_secondarystorage, "setup_heartbeat_sr":setup_heartbeat_sr, "setup_heartbeat_file":setup_heartbeat_file, "check_heartbeat":check_heartbeat, "heartbeat": heartbeat, "asmonitor": asmonitor})
 
