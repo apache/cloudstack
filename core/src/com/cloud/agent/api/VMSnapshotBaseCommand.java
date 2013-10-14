@@ -19,27 +19,29 @@ package com.cloud.agent.api;
 
 import java.util.List;
 
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.VolumeTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 public class VMSnapshotBaseCommand extends Command{
-    protected List<VolumeTO> volumeTOs;
+    protected List<VolumeObjectTO> volumeTOs;
     protected VMSnapshotTO target;
     protected String vmName;
     protected String guestOSType;
     
     
-    public VMSnapshotBaseCommand(String vmName, VMSnapshotTO snapshot, List<VolumeTO> volumeTOs, String guestOSType) {
+    public VMSnapshotBaseCommand(String vmName, VMSnapshotTO snapshot, List<VolumeObjectTO> volumeTOs, String guestOSType) {
         this.vmName = vmName;
         this.target = snapshot;
         this.volumeTOs = volumeTOs;
         this.guestOSType = guestOSType;
     }
     
-    public List<VolumeTO> getVolumeTOs() {
+    public List<VolumeObjectTO> getVolumeTOs() {
         return volumeTOs;
     }
 
-    public void setVolumeTOs(List<VolumeTO> volumeTOs) {
+    public void setVolumeTOs(List<VolumeObjectTO> volumeTOs) {
         this.volumeTOs = volumeTOs;
     }
 

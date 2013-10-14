@@ -380,42 +380,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         return snapshot;
     }
 
-    protected List<VolumeTO> getVolumeTOList(Long vmId) {
-        List<VolumeTO> volumeTOs = new ArrayList<VolumeTO>();
-        List<VolumeVO> volumeVos = _volumeDao.findByInstance(vmId);
-        
-        for (VolumeVO volume : volumeVos) {
-            StoragePool pool = (StoragePool)dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
-            VolumeTO volumeTO = new VolumeTO(volume, pool);
-            volumeTOs.add(volumeTO);
-        }
-        return volumeTOs;
-    }
 
-    // get snapshot and its parents recursively
-    private VMSnapshotTO getSnapshotWithParents(VMSnapshotVO snapshot) {
-        Map<Long, VMSnapshotVO> snapshotMap = new HashMap<Long, VMSnapshotVO>();
-        List<VMSnapshotVO> allSnapshots = _vmSnapshotDao.findByVm(snapshot.getVmId());
-        for (VMSnapshotVO vmSnapshotVO : allSnapshots) {
-            snapshotMap.put(vmSnapshotVO.getId(), vmSnapshotVO);
-        }
 
-        VMSnapshotTO currentTO = convert2VMSnapshotTO(snapshot);
-        VMSnapshotTO result = currentTO;
-        VMSnapshotVO current = snapshot;
-        while (current.getParent() != null) {
-            VMSnapshotVO parent = snapshotMap.get(current.getParent());
-            currentTO.setParent(convert2VMSnapshotTO(parent));
-            current = snapshotMap.get(current.getParent());
-            currentTO = currentTO.getParent();
-        }
-        return result;
-    }
-
-    private VMSnapshotTO convert2VMSnapshotTO(VMSnapshotVO vo) {
-        return new VMSnapshotTO(vo.getId(), vo.getName(),  vo.getType(), vo.getCreated().getTime(), vo.getDescription(),
-                vo.getCurrent(), null);
-    }
 
     public VMSnapshotManagerImpl() {
         
