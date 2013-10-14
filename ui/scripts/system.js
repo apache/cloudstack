@@ -14002,8 +14002,7 @@
                                                     }
                                             	}
                                             },
-                                            action: function(args) {   
-                                            	debugger;
+                                            action: function(args) {                                               	
                                                 $.ajax({
                                                     url: createURL('disassociateUcsProfileFromBlade'), 
                                                     data: {                                                                                                              
