@@ -14,7 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.dc;
+package com.cloud.network.dao;
+
+import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.api.ResourceDetail;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -23,37 +26,37 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.InternalIdentity;
-import org.apache.cloudstack.api.ResourceDetail;
-
 @Entity
-@Table(name="data_center_details")
-public class DcDetailVO implements InternalIdentity, ResourceDetail {
+@Table(name="network_details")
+public class NetworkDetailVO implements InternalIdentity, ResourceDetail {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy= GenerationType.IDENTITY)
     @Column(name="id")
     private long id;
-    
-    @Column(name="dc_id")
-    private long dcId;
-    
+
+    @Column(name="network_id")
+    private long networkId;
+
     @Column(name="name")
     private String name;
-    
-    @Column(name="value")
+
+    @Column(name="value", length=1024)
     private String value;
-    
-    protected DcDetailVO() {
-    }
-    
-    public DcDetailVO(long dcId, String name, String value) {
-        this.dcId = dcId;
+
+    public NetworkDetailVO() {}
+
+    public NetworkDetailVO(long networkId, String name, String value) {
+        this.networkId = networkId;
         this.name = name;
         this.value = value;
     }
 
-    public long getDcId() {
-        return dcId;
+    public long getId() {
+        return id;
+    }
+
+    public long getNetworkId() {
+        return networkId;
     }
 
     public String getName() {
@@ -64,16 +67,24 @@ public class DcDetailVO implements InternalIdentity, ResourceDetail {
         return value;
     }
 
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public void setNetworkId(long networkId) {
+        this.networkId = networkId;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public void setValue(String value) {
         this.value = value;
     }
 
-    public long getId() {
-        return id;
-    }
-
     @Override
     public long getResourceDetail() {
-        return dcId;
+        return networkId;
     }
 }

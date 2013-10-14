@@ -2047,7 +2047,7 @@
                     },
                     nfsCacheNfsServer: {
                         dependsOn: 'createNfsCache',
-                        label: 'label.nfs.server',
+                        label: 'label.s3.nfs.server',
                         validation: {
                             required: true
                         },
@@ -2055,7 +2055,7 @@
                     },
                     nfsCachePath: {
                         dependsOn: 'createNfsCache',
-                        label: 'label.path',
+                        label: 'label.s3.nfs.path',
                         validation: {
                             required: true
                         },

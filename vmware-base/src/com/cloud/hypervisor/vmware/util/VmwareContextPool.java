@@ -119,9 +119,9 @@ public class VmwareContextPool {
 	}
 	
 	private TimerTask getTimerTask() {
-		return new ManagedContextTimerTask() {
+		return new TimerTask() {
             @Override
-            protected void runInContext() {
+            public void run() {
 				try {
 					// doIdleCheck();
 					

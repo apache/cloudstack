@@ -768,7 +768,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template,
             String name, PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout) {
 
-        String newUuid = UUID.randomUUID().toString();
+        String newUuid = name;
         KVMStoragePool srcPool = template.getPool();
         KVMPhysicalDisk disk = null;
 

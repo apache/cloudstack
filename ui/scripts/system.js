@@ -5709,10 +5709,14 @@
                                                 url: createURL('removeVmwareDc'),
                                                 data: data,
                                                 success: function(json) {
-                                                    var item = json.updatezoneresponse.zone;
-                                                    args.response.success({
-                                                        actionFilter: zoneActionfilter,
-                                                        data: item
+                                                	delete args.context.physicalResources[0].vmwaredcName;
+                                                	delete args.context.physicalResources[0].vmwaredcVcenter;
+                                                	delete args.context.physicalResources[0].vmwaredcId;
+                                                	
+                                                	selectedZoneObj = args.context.physicalResources[0];
+                                                	
+                                                    args.response.success({                                                        
+                                                        data: args.context.physicalResources[0]
                                                     });
                                                 }
                                             });
@@ -11436,8 +11440,8 @@
                                 array1.push("&podid=" + args.context.pods[0].id);
                             if ("clusters" in args.context)
                                 array1.push("&clusterid=" + args.context.clusters[0].id);
-                        } else {
-                            array1.push("&hostid=" + args.context.instances[0].hostid);
+                        } else { //Instances menu > Instance detailView > View Hosts
+                            array1.push("&id=" + args.context.instances[0].hostid);
                         }
 
                         $.ajax({

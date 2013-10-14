@@ -1356,7 +1356,7 @@ div.list-view td.state.off span {
 
 .quick-view-tooltip .detail-view .main-groups {
   width: 456px;
-  height: 132px;
+  height: 152px;
   position: absolute;
   top: 55px;
   padding-top: 7px;
@@ -11984,13 +11984,15 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .add .icon,
 .addNew .icon,
-.assignVm .icon {
+.assignVm .icon,
+.rootAdminAddGuestNetwork .icon {
   background-position: -37px -61px;
 }
 
 .add:hover .icon,
 .addNew:hover .icon,
-.assignVm:hover .icon {
+.assignVm:hover .icon,
+.rootAdminAddGuestNetwork:hover .icon {
   background-position: -37px -643px;
 }
 
@@ -12263,6 +12265,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .addAccount:hover .icon {
   background-position: -230px -677px;
+}
+
+.assignVmToAnotherAccount .icon {
+  background-position: -270px -36px;
+}
+
+.assignVmToAnotherAccount:hover .icon {
+  background-position: -270px -615px;
 }
 
 .label-hovered {

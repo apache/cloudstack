@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.vm;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,9 +23,12 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.api.ResourceDetail;
+
 @Entity
 @Table(name="user_vm_details")
-public class UserVmDetailVO implements InternalIdentity {
+public class UserVmDetailVO implements InternalIdentity, ResourceDetail {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -81,5 +82,10 @@ public class UserVmDetailVO implements InternalIdentity {
 	public void setValue(String value) {
 		this.value = value;
 	}
+
+    @Override
+    public long getResourceDetail() {
+        return vmId;
+    }
 	
 }
