@@ -55,10 +55,6 @@
         }
 
         th, td {
-            &.quick-view {
-                width: 40px;
-            }
-
             &.actions {
                 width: 80px;
             }
@@ -66,10 +62,6 @@
             &.reorder {
                 width: 150px;
             }
-        }
-
-        td.quick-view {
-            height: 50px;
         }
 
         td.first {
@@ -84,14 +76,4 @@
             margin-top: 0px;
         }
     }
-}
-
-.quick-view-tooltip {
-    width: 100px;
-    height: 100px;
-    overflow: hidden;
-    background: white;
-    position: absolute;
-    top: 0px;
-    left: 0px;
 }

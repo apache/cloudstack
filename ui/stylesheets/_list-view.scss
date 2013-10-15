@@ -77,5 +77,100 @@
         }
     }
 
+    th.quick-view {
+        width: 40px;
+    }
+
+    td.quick-view {
+        height: 50px;
+
+        .icon {
+            display: block;
+            width: 100%;
+            text-align: center;
+            cursor: pointer;
+
+            &:before {
+                @include icon($plus);
+
+                font-size: 18px;
+                color: lighten(black, 25%);
+            } 
+        }
+    }
+
     max-height: 85%;
+}
+
+.quick-view-tooltip {
+    $width: 600px;
+
+    width: $width;
+    overflow: hidden;
+    background: white;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    box-shadow: 0px 5px 10px lighten(black, 45%);
+    margin-top: 50px;
+    margin-left: -($width) + 125px;
+
+    .ui-tabs-nav { display: none !important; }
+
+    .detail-group .main-groups {
+        height: 175px;
+    }
+
+    > .title {
+        width: $width;
+        height: 30px;
+        position: absolute;
+        top: 15px;
+        font-size: 14px;
+        border-bottom: 1px solid #ccc;
+        text-indent: 30px;
+    }
+    
+    td.detail-actions {
+        padding-top: 40px;
+        background: none;
+        height: auto;
+
+        .buttons {
+            .action.text {
+                @include csui-button-simple;
+
+                width: 150px;
+                height: 50px;
+                border: none;
+                padding: 0;
+                float: left;
+                margin: 0;
+                padding: 0;
+                position: relative;
+
+                .label {
+                    position: absolute;
+                    top: 0;
+                    left: 25px; // Space for icon
+                    text-align: left;
+                }
+                
+                a {
+                    position: absolute;
+                    top: 0; left: 0;
+                }
+            }
+        }
+    }
+
+    &:before {
+        @include icon($plus);
+
+        font-size: 18px;
+        color: lighten(black, 25%);
+        position: absolute;
+        left: $width - 55px;
+        top: 16px;
+    } 
 }

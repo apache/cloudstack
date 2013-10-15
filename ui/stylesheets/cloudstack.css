@@ -5118,15 +5118,6 @@ input[type=checkbox], input[type=radio] {
 .ui-dialog-buttonpane {
   margin-top: 20px; }
 
-.quick-view-tooltip {
-  width: 100px;
-  height: 100px;
-  overflow: hidden;
-  background: white;
-  position: absolute;
-  top: 0px;
-  left: 0px; }
-
 ul.ui-tabs-nav {
   *zoom: 1;
   display: block;
@@ -6094,14 +6085,10 @@ ul.ui-tabs-nav {
       max-width: 100px; }
       .list-view table tr td span {
         float: left; }
-    .list-view table th.quick-view, .list-view table td.quick-view {
-      width: 40px; }
     .list-view table th.actions, .list-view table td.actions {
       width: 80px; }
     .list-view table th.reorder, .list-view table td.reorder {
       width: 150px; }
-    .list-view table td.quick-view {
-      height: 50px; }
     .list-view table td.first {
       cursor: pointer; }
       .list-view table td.first:hover {
@@ -6351,6 +6338,105 @@ ul.ui-tabs-nav {
         float: left; }
         .list-view #advanced_search .form-container .button.cancel:hover {
           box-shadow: inset 0 0 10px black; }
+  .list-view th.quick-view {
+    width: 40px; }
+  .list-view td.quick-view {
+    height: 50px; }
+    .list-view td.quick-view .icon {
+      display: block;
+      width: 100%;
+      text-align: center;
+      cursor: pointer; }
+      .list-view td.quick-view .icon:before {
+        font-family: FontAwesome;
+        font-weight: normal;
+        font-style: normal;
+        text-decoration: inherit;
+        -webkit-font-smoothing: antialiased;
+        *margin-right: .3em;
+        content: "\f067";
+        font-size: 18px;
+        color: #404040; }
+
+.quick-view-tooltip {
+  width: 600px;
+  overflow: hidden;
+  background: white;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  box-shadow: 0px 5px 10px #737373;
+  margin-top: 50px;
+  margin-left: -475px; }
+  .quick-view-tooltip .ui-tabs-nav {
+    display: none !important; }
+  .quick-view-tooltip .detail-group .main-groups {
+    height: 175px; }
+  .quick-view-tooltip > .title {
+    width: 600px;
+    height: 30px;
+    position: absolute;
+    top: 15px;
+    font-size: 14px;
+    border-bottom: 1px solid #ccc;
+    text-indent: 30px; }
+  .quick-view-tooltip td.detail-actions {
+    padding-top: 40px;
+    background: none;
+    height: auto; }
+    .quick-view-tooltip td.detail-actions .buttons .action.text {
+      background-color: white;
+      background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
+      background-image: -webkit-linear-gradient(white, gray);
+      background-image: linear-gradient(white, gray);
+      display: block;
+      padding-top: 8px;
+      padding-bottom: 8px;
+      padding-left: 12px;
+      padding-right: 12px;
+      min-width: 92px;
+      font-size: 12px;
+      border-radius: 3px;
+      border: 1px solid black;
+      cursor: pointer;
+      text-align: center;
+      background: none;
+      border-color: white;
+      width: 150px;
+      height: 50px;
+      border: none;
+      padding: 0;
+      float: left;
+      margin: 0;
+      padding: 0;
+      position: relative; }
+      .quick-view-tooltip td.detail-actions .buttons .action.text:hover {
+        box-shadow: inset 0 0 10px black; }
+      .quick-view-tooltip td.detail-actions .buttons .action.text:hover {
+        box-shadow: none;
+        border-color: #ccc; }
+      .quick-view-tooltip td.detail-actions .buttons .action.text .label {
+        position: absolute;
+        top: 0;
+        left: 25px;
+        text-align: left; }
+      .quick-view-tooltip td.detail-actions .buttons .action.text a {
+        position: absolute;
+        top: 0;
+        left: 0; }
+  .quick-view-tooltip:before {
+    font-family: FontAwesome;
+    font-weight: normal;
+    font-style: normal;
+    text-decoration: inherit;
+    -webkit-font-smoothing: antialiased;
+    *margin-right: .3em;
+    content: "\f067";
+    font-size: 18px;
+    color: #404040;
+    position: absolute;
+    left: 545px;
+    top: 16px; }
 
 .detail-view .toolbar {
   background: none;
