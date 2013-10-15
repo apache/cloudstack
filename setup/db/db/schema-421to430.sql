@@ -391,8 +391,6 @@ CREATE VIEW `cloud`.`volume_view` AS
             and async_job.instance_type = 'Volume'
             and async_job.job_status = 0;
             
-INSERT IGNORE INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Advanced', 'DEFAULT', 'management-server', 's3.multipart.enabled', 'true', 'enable s3 multipart upload', 'true');            
-
 DROP VIEW IF EXISTS `cloud`.`storage_pool_view`;
 CREATE VIEW `cloud`.`storage_pool_view` AS
     select
