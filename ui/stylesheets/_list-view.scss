@@ -109,11 +109,8 @@
     overflow: hidden;
     background: white;
     position: absolute;
-    top: 0px;
-    left: 0px;
     box-shadow: 0px 5px 10px lighten(black, 45%);
-    margin-top: 50px;
-    margin-left: -($width) + 125px;
+    margin: 0;
 
     .ui-tabs-nav { display: none !important; }
 
@@ -170,7 +167,7 @@
         font-size: 18px;
         color: lighten(black, 25%);
         position: absolute;
-        left: $width - 55px;
+        left: $width - 44px;
         top: 16px;
     } 
 }

@@ -6363,11 +6363,8 @@ ul.ui-tabs-nav {
   overflow: hidden;
   background: white;
   position: absolute;
-  top: 0px;
-  left: 0px;
   box-shadow: 0px 5px 10px #737373;
-  margin-top: 50px;
-  margin-left: -475px; }
+  margin: 0; }
   .quick-view-tooltip .ui-tabs-nav {
     display: none !important; }
   .quick-view-tooltip .detail-group .main-groups {
@@ -6435,7 +6432,7 @@ ul.ui-tabs-nav {
     font-size: 18px;
     color: #404040;
     position: absolute;
-    left: 545px;
+    left: 556px;
     top: 16px; }
 
 .detail-view .toolbar {
