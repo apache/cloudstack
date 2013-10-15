@@ -1881,8 +1881,8 @@
 
         // Infinite scrolling event
         $listView.bind('scroll', function(event) {
-            var $fixedElems = $listView.find('.toolbar:first, thead:first');
-            var $fixedContainer = $('<div>').addClass('fixed-container');
+            var $fixedElems = $listView.find('.toolbar:first, thead:first'); // Original elements to clone
+            var $fixedContainer = $('<div>').addClass('fixed-container'); // Fixed scroll container
 
             $listView.find('.fixed-container').remove();
             
@@ -1909,6 +1909,7 @@
                 });
                 $fixedContainer.css({
                     position: 'absolute',
+                    zIndex: $listView.zIndex() + 1,
                     width: $fixedElems.outerWidth()
                 }).prependTo($listView);
             } else {
