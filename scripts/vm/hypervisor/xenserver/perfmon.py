@@ -186,16 +186,10 @@ def getuuid(vm_name):
     return output
 
 def get_vm_group_perfmon(args={}):
-    #Release code
     login = XenAPI.xapi_local()
     login.login_with_password("","")
-    average_cpu = 0
-    average_memory = 0
     result = ""
 
-    #test code
-    #login = XenAPI.Session(url)
-    #login.login_with_password(username, password)
     total_vm = int(args['total_vm'])
     total_counter = int(args['total_counter'])
     now = int(time.time()) / 60
@@ -222,18 +216,19 @@ def get_vm_group_perfmon(args={}):
         vm_uuid = getuuid(vm_name)
         #print "Got values for VM: " + str(vm_count) + " " + vm_uuid
         for counter_count in xrange(1, total_counter + 1):
+	    #refresh average
+	    average_cpu = 0
+	    average_memory = 0
             counter = args['counter' + str(counter_count)]
             total_row = rrd_updates.get_nrows()
             duration = int(args['duration' + str(counter_count)]) / 60
             duration_diff = total_row - duration
-            #print "param: " + counter
             if counter == "cpu":
 		total_cpu = rrd_updates.get_total_cpu_core(vm_uuid)
                 for row in xrange(duration_diff, total_row):
                     for cpu in xrange(0, total_cpu):
                         average_cpu += rrd_updates.get_vm_data(vm_uuid, "cpu" + str(cpu), row)
                 average_cpu /= (duration * total_cpu)
-                #print "Average CPU: " + str(average_cpu)
                 if result == "":
                     result += str(vm_count) + '.' +  str(counter_count) + ':' + str(average_cpu)
                 else:
@@ -242,7 +237,6 @@ def get_vm_group_perfmon(args={}):
                 for row in xrange(duration_diff, total_row):
                     average_memory += rrd_updates.get_vm_data(vm_uuid, "memory_target", row) / 1048576 - rrd_updates.get_vm_data(vm_uuid, "memory_internal_free", row) / 1024
                 average_memory /= duration
-                #print "Average Memory: " + str(average_memory)
                 if result == "":
                     result += str(vm_count) +  '.' +  str(counter_count) + ':' + str(average_memory)
                 else:

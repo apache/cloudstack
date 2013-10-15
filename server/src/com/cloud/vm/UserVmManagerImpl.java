@@ -86,6 +86,8 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -3362,9 +3364,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public UserVm destroyVm(long vmId) throws ResourceUnavailableException, ConcurrentOperationException {
-        Account caller = CallContext.current().getCallingAccount();
-        Long userId = CallContext.current().getCallingUserId();
+
+    public UserVm destroyVm(long vmId) throws ResourceUnavailableException,
+    ConcurrentOperationException {
+		// Account caller = CallContext.current().getCallingAccount();
+		// Long userId = CallContext.current().getCallingUserId();
+		Long userId = 2L;
 
         // Verify input parameters
         UserVmVO vm = _vmDao.findById(vmId);
@@ -3378,8 +3383,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return vm;
         }
 
-        _accountMgr.checkAccess(caller, null, true, vm);
-        _userDao.findById(userId);
+
+		// _accountMgr.checkAccess(caller, null, true, vm);
+        User userCaller = _userDao.findById(userId);
 
         boolean status;
         State vmState = vm.getState();

@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -123,7 +124,7 @@ import com.google.gson.reflect.TypeToken;
 @Local(value = {AutoScaleService.class, AutoScaleManager.class})
 public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScaleManager, AutoScaleService {
     private static final Logger s_logger = Logger.getLogger(AutoScaleManagerImpl.class);
-    private ScheduledExecutorService _executor = null;
+    private ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1);
 
     @Inject
     EntityManager _entityMgr;
@@ -1423,6 +1424,20 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 		final long vmId = removeLBrule(asGroup);
 		if (vmId != -1) {
 			long profileId = asGroup.getProfileId();
+
+			// update group-vm mapping
+			_autoScaleVmGroupVmMapDao.remove(groupId, vmId);
+			// update last_quiettime
+			List<AutoScaleVmGroupPolicyMapVO> GroupPolicyVOs = _autoScaleVmGroupPolicyMapDao.listByVmGroupId(groupId);
+			for (AutoScaleVmGroupPolicyMapVO GroupPolicyVO : GroupPolicyVOs) {
+				AutoScalePolicyVO vo = _autoScalePolicyDao.findById(GroupPolicyVO.getPolicyId());
+				if (vo.getAction().equals("scaledown")) {
+					vo.setLastQuiteTime(new Date());
+					_autoScalePolicyDao.persist(vo);
+					break;
+				}
+			}
+
 			// get destroyvmgrace param
 			AutoScaleVmProfileVO asProfile = _autoScaleVmProfileDao.findById(profileId);
 			Integer destroyVmGracePeriod = asProfile.getDestroyVmGraceperiod();
@@ -1431,21 +1446,9 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 					@Override
 					public void run() {
 						try {
-							// destroy vm
+
 							_userVmManager.destroyVm(vmId);
-							// update group-vm mapping
-							_autoScaleVmGroupVmMapDao.remove(groupId, vmId);
-							// update last_quiettime
-							List<AutoScaleVmGroupPolicyMapVO> GroupPolicyVOs = _autoScaleVmGroupPolicyMapDao
-									.listByVmGroupId(groupId);
-							for (AutoScaleVmGroupPolicyMapVO GroupPolicyVO : GroupPolicyVOs) {
-								AutoScalePolicyVO vo = _autoScalePolicyDao
-										.findById(GroupPolicyVO.getPolicyId());
-								if (vo.getAction().equals("scaledown")) {
-									vo.setLastQuiteTime(new Date());
-									break;
-								}
-							}	
+
 						} catch (ResourceUnavailableException e) {
 							e.printStackTrace();
 						} catch (ConcurrentOperationException e) {
