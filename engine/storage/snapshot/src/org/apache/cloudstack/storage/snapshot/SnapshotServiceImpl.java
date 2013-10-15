@@ -17,11 +17,10 @@
 
 package org.apache.cloudstack.storage.snapshot;
 
-import java.util.concurrent.ExecutionException;
-
-import javax.inject.Inject;
-
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Snapshot;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
@@ -41,57 +40,26 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import javax.inject.Inject;
+import java.util.concurrent.ExecutionException;
 
 @Component
 public class SnapshotServiceImpl implements SnapshotService {
     private static final Logger s_logger = Logger.getLogger(SnapshotServiceImpl.class);
     @Inject
-    protected VolumeDao _volsDao;
-    @Inject
-    protected UserVmDao _vmDao;
-    @Inject
-    protected PrimaryDataStoreDao _storagePoolDao;
-    @Inject
-    protected ClusterDao _clusterDao;
-    @Inject
-    protected SnapshotDao _snapshotDao;
-    @Inject
     protected SnapshotDataStoreDao _snapshotStoreDao;
-
-    @Inject
-    protected SnapshotManager snapshotMgr;
-    @Inject
-    protected VolumeOrchestrationService volumeMgr;
-    @Inject
-    protected SnapshotStateMachineManager stateMachineManager;
     @Inject
     SnapshotDataFactory snapshotfactory;
     @Inject
     DataStoreManager dataStoreMgr;
     @Inject
     DataMotionService motionSrv;
-    @Inject
-    ObjectInDataStoreManager objInStoreMgr;
-    @Inject
-    VMSnapshotDao _vmSnapshotDao;
 
     static private class CreateSnapshotContext<T> extends AsyncRpcContext<T> {
         final SnapshotInfo snapshot;

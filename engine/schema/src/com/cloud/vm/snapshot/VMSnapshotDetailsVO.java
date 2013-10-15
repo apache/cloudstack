@@ -21,14 +21,20 @@ package com.cloud.vm.snapshot;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import javax.persistence.Column;
+import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.TableGenerator;
 
+@Entity
+@Table(name = "vm_snapshot_details")
 public class VMSnapshotDetailsVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
-    @Column(name="id")
+    @TableGenerator(name = "vm_snapshot_details_seq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "vm_snapshot_details_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.TABLE)
+    @Column(name = "id")
     private long id;
 
     @Column(name = "vm_snapshot_id")
