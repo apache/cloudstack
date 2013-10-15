@@ -4921,36 +4921,40 @@ html, body {
   float: left; }
   .ui-dialog button:not(.ok) {
     background-color: white;
-    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-    background-image: -webkit-linear-gradient(white, gray);
-    background-image: linear-gradient(white, gray);
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+    background-image: -webkit-linear-gradient(white, #cccccc);
+    background-image: linear-gradient(white, #cccccc);
     display: block;
     padding-top: 8px;
     padding-bottom: 8px;
     padding-left: 12px;
     padding-right: 12px;
     min-width: 92px;
-    font-size: 12px;
+    font-size: 11px;
     border-radius: 3px;
-    border: 1px solid black;
+    border: 1px solid #999999;
     cursor: pointer;
     text-align: center; }
     .ui-dialog button:not(.ok):hover {
-      box-shadow: inset 0 0 10px black; }
+      box-shadow: inset 0 0 10px #ccc;
+      background-color: white;
+      background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+      background-image: -webkit-linear-gradient(white, #f2f2f2);
+      background-image: linear-gradient(white, #f2f2f2); }
   .ui-dialog button.ok {
     background-color: white;
-    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-    background-image: -webkit-linear-gradient(white, gray);
-    background-image: linear-gradient(white, gray);
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+    background-image: -webkit-linear-gradient(white, #cccccc);
+    background-image: linear-gradient(white, #cccccc);
     display: block;
     padding-top: 8px;
     padding-bottom: 8px;
     padding-left: 12px;
     padding-right: 12px;
     min-width: 92px;
-    font-size: 12px;
+    font-size: 11px;
     border-radius: 3px;
-    border: 1px solid black;
+    border: 1px solid #999999;
     cursor: pointer;
     text-align: center;
     background-color: darkgrey;
@@ -4963,7 +4967,13 @@ html, body {
     text-shadow: 0px 1px 1px black;
     float: right; }
     .ui-dialog button.ok:hover {
-      box-shadow: inset 0 0 10px black; }
+      box-shadow: inset 0 0 10px #ccc;
+      background-color: white;
+      background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+      background-image: -webkit-linear-gradient(white, #f2f2f2);
+      background-image: linear-gradient(white, #f2f2f2); }
+    .ui-dialog button.ok:hover {
+      background: #2e2e2e; }
 
 label {
   font-size: 12px; }
@@ -5316,24 +5326,28 @@ ul.ui-tabs-nav {
         clear: both; }
       .dashboard.admin .sub.alerts .top .button.action {
         background-color: white;
-        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-        background-image: -webkit-linear-gradient(white, gray);
-        background-image: linear-gradient(white, gray);
+        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+        background-image: -webkit-linear-gradient(white, #cccccc);
+        background-image: linear-gradient(white, #cccccc);
         display: block;
         padding-top: 8px;
         padding-bottom: 8px;
         padding-left: 12px;
         padding-right: 12px;
         min-width: 92px;
-        font-size: 12px;
+        font-size: 11px;
         border-radius: 3px;
-        border: 1px solid black;
+        border: 1px solid #999999;
         cursor: pointer;
         text-align: center;
         float: right;
         margin-left: 10px; }
         .dashboard.admin .sub.alerts .top .button.action:hover {
-          box-shadow: inset 0 0 10px black; }
+          box-shadow: inset 0 0 10px #ccc;
+          background-color: white;
+          background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+          background-image: -webkit-linear-gradient(white, #f2f2f2);
+          background-image: linear-gradient(white, #f2f2f2); }
       .dashboard.admin .sub.alerts .top input, .dashboard.admin .sub.alerts .top label, .dashboard.admin .sub.alerts .top select {
         float: left;
         margin: 0 10px 0 10px;
@@ -5350,23 +5364,27 @@ ul.ui-tabs-nav {
         padding-top: 8px; }
       .dashboard.admin .sub.alerts .top .button.view-all {
         background-color: white;
-        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-        background-image: -webkit-linear-gradient(white, gray);
-        background-image: linear-gradient(white, gray);
+        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+        background-image: -webkit-linear-gradient(white, #cccccc);
+        background-image: linear-gradient(white, #cccccc);
         display: block;
         padding-top: 8px;
         padding-bottom: 8px;
         padding-left: 12px;
         padding-right: 12px;
         min-width: 92px;
-        font-size: 12px;
+        font-size: 11px;
         border-radius: 3px;
-        border: 1px solid black;
+        border: 1px solid #999999;
         cursor: pointer;
         text-align: center;
         float: right; }
         .dashboard.admin .sub.alerts .top .button.view-all:hover {
-          box-shadow: inset 0 0 10px black; }
+          box-shadow: inset 0 0 10px #ccc;
+          background-color: white;
+          background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+          background-image: -webkit-linear-gradient(white, #f2f2f2);
+          background-image: linear-gradient(white, #f2f2f2); }
   .dashboard.admin .head {
     float: left;
     border: 1px solid #cfcfcf; }
@@ -5382,24 +5400,28 @@ ul.ui-tabs-nav {
         clear: both; }
       .dashboard.admin .head .top .button.action {
         background-color: white;
-        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-        background-image: -webkit-linear-gradient(white, gray);
-        background-image: linear-gradient(white, gray);
+        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+        background-image: -webkit-linear-gradient(white, #cccccc);
+        background-image: linear-gradient(white, #cccccc);
         display: block;
         padding-top: 8px;
         padding-bottom: 8px;
         padding-left: 12px;
         padding-right: 12px;
         min-width: 92px;
-        font-size: 12px;
+        font-size: 11px;
         border-radius: 3px;
-        border: 1px solid black;
+        border: 1px solid #999999;
         cursor: pointer;
         text-align: center;
         float: right;
         margin-left: 10px; }
         .dashboard.admin .head .top .button.action:hover {
-          box-shadow: inset 0 0 10px black; }
+          box-shadow: inset 0 0 10px #ccc;
+          background-color: white;
+          background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+          background-image: -webkit-linear-gradient(white, #f2f2f2);
+          background-image: linear-gradient(white, #f2f2f2); }
       .dashboard.admin .head .top input, .dashboard.admin .head .top label, .dashboard.admin .head .top select {
         float: left;
         margin: 0 10px 0 10px;
@@ -5416,40 +5438,44 @@ ul.ui-tabs-nav {
         margin-top: 8px; }
       .dashboard.admin .head .top .fetch-latest {
         background-color: white;
-        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-        background-image: -webkit-linear-gradient(white, gray);
-        background-image: linear-gradient(white, gray);
+        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+        background-image: -webkit-linear-gradient(white, #cccccc);
+        background-image: linear-gradient(white, #cccccc);
         display: block;
         padding-top: 8px;
         padding-bottom: 8px;
         padding-left: 12px;
         padding-right: 12px;
         min-width: 92px;
-        font-size: 12px;
+        font-size: 11px;
         border-radius: 3px;
-        border: 1px solid black;
+        border: 1px solid #999999;
         cursor: pointer;
         text-align: center;
         background: none;
         border-color: transparent;
         background-color: white;
-        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-        background-image: -webkit-linear-gradient(white, gray);
-        background-image: linear-gradient(white, gray);
+        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+        background-image: -webkit-linear-gradient(white, #cccccc);
+        background-image: linear-gradient(white, #cccccc);
         display: block;
         padding-top: 8px;
         padding-bottom: 8px;
         padding-left: 12px;
         padding-right: 12px;
         min-width: 92px;
-        font-size: 12px;
+        font-size: 11px;
         border-radius: 3px;
-        border: 1px solid black;
+        border: 1px solid #999999;
         cursor: pointer;
         text-align: center;
         float: right; }
         .dashboard.admin .head .top .fetch-latest:hover {
-          box-shadow: inset 0 0 10px black; }
+          box-shadow: inset 0 0 10px #ccc;
+          background-color: white;
+          background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+          background-image: -webkit-linear-gradient(white, #f2f2f2);
+          background-image: linear-gradient(white, #f2f2f2); }
         .dashboard.admin .head .top .fetch-latest:hover {
           box-shadow: none;
           border-color: #ccc; }
@@ -5463,7 +5489,11 @@ ul.ui-tabs-nav {
           content: "\f021";
           margin-right: 10px; }
         .dashboard.admin .head .top .fetch-latest:hover {
-          box-shadow: inset 0 0 10px black; }
+          box-shadow: inset 0 0 10px #ccc;
+          background-color: white;
+          background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+          background-image: -webkit-linear-gradient(white, #f2f2f2);
+          background-image: linear-gradient(white, #f2f2f2); }
   .dashboard.admin .zone-stats {
     *zoom: 1;
     display: block;
@@ -5540,24 +5570,28 @@ ul.ui-tabs-nav {
         clear: both; }
       .system-dashboard ul li .header .button.action {
         background-color: white;
-        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-        background-image: -webkit-linear-gradient(white, gray);
-        background-image: linear-gradient(white, gray);
+        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+        background-image: -webkit-linear-gradient(white, #cccccc);
+        background-image: linear-gradient(white, #cccccc);
         display: block;
         padding-top: 8px;
         padding-bottom: 8px;
         padding-left: 12px;
         padding-right: 12px;
         min-width: 92px;
-        font-size: 12px;
+        font-size: 11px;
         border-radius: 3px;
-        border: 1px solid black;
+        border: 1px solid #999999;
         cursor: pointer;
         text-align: center;
         float: right;
         margin-left: 10px; }
         .system-dashboard ul li .header .button.action:hover {
-          box-shadow: inset 0 0 10px black; }
+          box-shadow: inset 0 0 10px #ccc;
+          background-color: white;
+          background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+          background-image: -webkit-linear-gradient(white, #f2f2f2);
+          background-image: linear-gradient(white, #f2f2f2); }
       .system-dashboard ul li .header input, .system-dashboard ul li .header label, .system-dashboard ul li .header select {
         float: left;
         margin: 0 10px 0 10px;
@@ -5585,18 +5619,18 @@ ul.ui-tabs-nav {
         clear: both; }
     .system-dashboard ul li .view-all {
       background-color: white;
-      background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-      background-image: -webkit-linear-gradient(white, gray);
-      background-image: linear-gradient(white, gray);
+      background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+      background-image: -webkit-linear-gradient(white, #cccccc);
+      background-image: linear-gradient(white, #cccccc);
       display: block;
       padding-top: 8px;
       padding-bottom: 8px;
       padding-left: 12px;
       padding-right: 12px;
       min-width: 92px;
-      font-size: 12px;
+      font-size: 11px;
       border-radius: 3px;
-      border: 1px solid black;
+      border: 1px solid #999999;
       cursor: pointer;
       text-align: center;
       background: none;
@@ -5604,7 +5638,11 @@ ul.ui-tabs-nav {
       margin: 60px auto;
       border-radius: 0px; }
       .system-dashboard ul li .view-all:hover {
-        box-shadow: inset 0 0 10px black; }
+        box-shadow: inset 0 0 10px #ccc;
+        background-color: white;
+        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+        background-image: -webkit-linear-gradient(white, #f2f2f2);
+        background-image: linear-gradient(white, #f2f2f2); }
       .system-dashboard ul li .view-all:hover {
         box-shadow: none;
         border-color: #ccc; }
@@ -6435,18 +6473,18 @@ ul.ui-tabs-nav {
         top: 25px; }
       .list-view #advanced_search .form-container input[type=submit] {
         background-color: white;
-        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-        background-image: -webkit-linear-gradient(white, gray);
-        background-image: linear-gradient(white, gray);
+        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+        background-image: -webkit-linear-gradient(white, #cccccc);
+        background-image: linear-gradient(white, #cccccc);
         display: block;
         padding-top: 8px;
         padding-bottom: 8px;
         padding-left: 12px;
         padding-right: 12px;
         min-width: 92px;
-        font-size: 12px;
+        font-size: 11px;
         border-radius: 3px;
-        border: 1px solid black;
+        border: 1px solid #999999;
         cursor: pointer;
         text-align: center;
         background-color: darkgrey;
@@ -6459,26 +6497,36 @@ ul.ui-tabs-nav {
         text-shadow: 0px 1px 1px black;
         float: right; }
         .list-view #advanced_search .form-container input[type=submit]:hover {
-          box-shadow: inset 0 0 10px black; }
+          box-shadow: inset 0 0 10px #ccc;
+          background-color: white;
+          background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+          background-image: -webkit-linear-gradient(white, #f2f2f2);
+          background-image: linear-gradient(white, #f2f2f2); }
+        .list-view #advanced_search .form-container input[type=submit]:hover {
+          background: #2e2e2e; }
       .list-view #advanced_search .form-container .button.cancel {
         background-color: white;
-        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-        background-image: -webkit-linear-gradient(white, gray);
-        background-image: linear-gradient(white, gray);
+        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+        background-image: -webkit-linear-gradient(white, #cccccc);
+        background-image: linear-gradient(white, #cccccc);
         display: block;
         padding-top: 8px;
         padding-bottom: 8px;
         padding-left: 12px;
         padding-right: 12px;
         min-width: 92px;
-        font-size: 12px;
+        font-size: 11px;
         border-radius: 3px;
-        border: 1px solid black;
+        border: 1px solid #999999;
         cursor: pointer;
         text-align: center;
         float: left; }
         .list-view #advanced_search .form-container .button.cancel:hover {
-          box-shadow: inset 0 0 10px black; }
+          box-shadow: inset 0 0 10px #ccc;
+          background-color: white;
+          background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+          background-image: -webkit-linear-gradient(white, #f2f2f2);
+          background-image: linear-gradient(white, #f2f2f2); }
   .list-view th.quick-view {
     width: 40px; }
   .list-view td.quick-view {
@@ -6524,18 +6572,18 @@ ul.ui-tabs-nav {
     height: auto; }
     .quick-view-tooltip td.detail-actions .buttons .action.text {
       background-color: white;
-      background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-      background-image: -webkit-linear-gradient(white, gray);
-      background-image: linear-gradient(white, gray);
+      background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+      background-image: -webkit-linear-gradient(white, #cccccc);
+      background-image: linear-gradient(white, #cccccc);
       display: block;
       padding-top: 8px;
       padding-bottom: 8px;
       padding-left: 12px;
       padding-right: 12px;
       min-width: 92px;
-      font-size: 12px;
+      font-size: 11px;
       border-radius: 3px;
-      border: 1px solid black;
+      border: 1px solid #999999;
       cursor: pointer;
       text-align: center;
       background: none;
@@ -6549,7 +6597,11 @@ ul.ui-tabs-nav {
       padding: 0;
       position: relative; }
       .quick-view-tooltip td.detail-actions .buttons .action.text:hover {
-        box-shadow: inset 0 0 10px black; }
+        box-shadow: inset 0 0 10px #ccc;
+        background-color: white;
+        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+        background-image: -webkit-linear-gradient(white, #f2f2f2);
+        background-image: linear-gradient(white, #f2f2f2); }
       .quick-view-tooltip td.detail-actions .buttons .action.text:hover {
         box-shadow: none;
         border-color: #ccc; }
@@ -6706,22 +6758,26 @@ ul.ui-tabs-nav {
       margin-top: 0px; }
   .multi-edit .button {
     background-color: white;
-    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-    background-image: -webkit-linear-gradient(white, gray);
-    background-image: linear-gradient(white, gray);
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+    background-image: -webkit-linear-gradient(white, #cccccc);
+    background-image: linear-gradient(white, #cccccc);
     display: block;
     padding-top: 8px;
     padding-bottom: 8px;
     padding-left: 12px;
     padding-right: 12px;
     min-width: 92px;
-    font-size: 12px;
+    font-size: 11px;
     border-radius: 3px;
-    border: 1px solid black;
+    border: 1px solid #999999;
     cursor: pointer;
     text-align: center; }
     .multi-edit .button:hover {
-      box-shadow: inset 0 0 10px black; }
+      box-shadow: inset 0 0 10px #ccc;
+      background-color: white;
+      background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+      background-image: -webkit-linear-gradient(white, #f2f2f2);
+      background-image: linear-gradient(white, #f2f2f2); }
   .multi-edit th, .multi-edit td {
     min-width: 100px;
     white-space: nowrap; }
@@ -6731,18 +6787,18 @@ ul.ui-tabs-nav {
     width: 100%; }
   .multi-edit td.add-vm .button {
     background-color: white;
-    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-    background-image: -webkit-linear-gradient(white, gray);
-    background-image: linear-gradient(white, gray);
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+    background-image: -webkit-linear-gradient(white, #cccccc);
+    background-image: linear-gradient(white, #cccccc);
     display: block;
     padding-top: 8px;
     padding-bottom: 8px;
     padding-left: 12px;
     padding-right: 12px;
     min-width: 92px;
-    font-size: 12px;
+    font-size: 11px;
     border-radius: 3px;
-    border: 1px solid black;
+    border: 1px solid #999999;
     cursor: pointer;
     text-align: center;
     background-color: darkgrey;
@@ -6754,7 +6810,13 @@ ul.ui-tabs-nav {
     font-weight: bold;
     text-shadow: 0px 1px 1px black; }
     .multi-edit td.add-vm .button:hover {
-      box-shadow: inset 0 0 10px black; }
+      box-shadow: inset 0 0 10px #ccc;
+      background-color: white;
+      background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+      background-image: -webkit-linear-gradient(white, #f2f2f2);
+      background-image: linear-gradient(white, #f2f2f2); }
+    .multi-edit td.add-vm .button:hover {
+      background: #2e2e2e; }
   .multi-edit .data-item {
     margin-top: 15px;
     margin-bottom: 15px; }
@@ -6774,6 +6836,25 @@ ul.ui-tabs-nav {
         font-size: 18px; }
       .multi-edit .data-item .expand:hover {
         color: black; }
+    .multi-edit .data-item .expandable-listing {
+      background: white; }
+      .multi-edit .data-item .expandable-listing table {
+        box-shadow: inset 0px 0px 10px darkgray; }
+        .multi-edit .data-item .expandable-listing table tr:nth-child(even) {
+          background: none; }
+        .multi-edit .data-item .expandable-listing table td.name {
+          padding: 15px; }
+          .multi-edit .data-item .expandable-listing table td.name span {
+            font-weight: bold; }
+            .multi-edit .data-item .expandable-listing table td.name span:before {
+              font-family: FontAwesome;
+              font-weight: normal;
+              font-style: normal;
+              text-decoration: inherit;
+              -webkit-font-smoothing: antialiased;
+              *margin-right: .3em;
+              content: "\f109";
+              margin-right: 15px; }
 
 html body > .login {
   height: 100%;
@@ -6825,18 +6906,18 @@ html body > .login {
         margin-right: 0; }
       html body > .login form .fields input[type=submit] {
         background-color: white;
-        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-        background-image: -webkit-linear-gradient(white, gray);
-        background-image: linear-gradient(white, gray);
+        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+        background-image: -webkit-linear-gradient(white, #cccccc);
+        background-image: linear-gradient(white, #cccccc);
         display: block;
         padding-top: 8px;
         padding-bottom: 8px;
         padding-left: 12px;
         padding-right: 12px;
         min-width: 92px;
-        font-size: 12px;
+        font-size: 11px;
         border-radius: 3px;
-        border: 1px solid black;
+        border: 1px solid #999999;
         cursor: pointer;
         text-align: center;
         background-color: darkgrey;
@@ -6848,7 +6929,13 @@ html body > .login {
         font-weight: bold;
         text-shadow: 0px 1px 1px black; }
         html body > .login form .fields input[type=submit]:hover {
-          box-shadow: inset 0 0 10px black; }
+          box-shadow: inset 0 0 10px #ccc;
+          background-color: white;
+          background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+          background-image: -webkit-linear-gradient(white, #f2f2f2);
+          background-image: linear-gradient(white, #f2f2f2); }
+        html body > .login form .fields input[type=submit]:hover {
+          background: #2e2e2e; }
       html body > .login form .fields input[type=text], html body > .login form .fields input[type=password] {
         width: 100%; }
       html body > .login form .fields select {
@@ -7218,24 +7305,28 @@ body {
     clear: both; }
   .toolbar .button.action {
     background-color: white;
-    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-    background-image: -webkit-linear-gradient(white, gray);
-    background-image: linear-gradient(white, gray);
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+    background-image: -webkit-linear-gradient(white, #cccccc);
+    background-image: linear-gradient(white, #cccccc);
     display: block;
     padding-top: 8px;
     padding-bottom: 8px;
     padding-left: 12px;
     padding-right: 12px;
     min-width: 92px;
-    font-size: 12px;
+    font-size: 11px;
     border-radius: 3px;
-    border: 1px solid black;
+    border: 1px solid #999999;
     cursor: pointer;
     text-align: center;
     float: right;
     margin-left: 10px; }
     .toolbar .button.action:hover {
-      box-shadow: inset 0 0 10px black; }
+      box-shadow: inset 0 0 10px #ccc;
+      background-color: white;
+      background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+      background-image: -webkit-linear-gradient(white, #f2f2f2);
+      background-image: linear-gradient(white, #f2f2f2); }
   .toolbar input, .toolbar label, .toolbar select {
     float: left;
     margin: 0 10px 0 10px;
@@ -7251,25 +7342,29 @@ body {
     display: none; }
   .toolbar .button.refresh {
     background-color: white;
-    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-    background-image: -webkit-linear-gradient(white, gray);
-    background-image: linear-gradient(white, gray);
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+    background-image: -webkit-linear-gradient(white, #cccccc);
+    background-image: linear-gradient(white, #cccccc);
     display: block;
     padding-top: 8px;
     padding-bottom: 8px;
     padding-left: 12px;
     padding-right: 12px;
     min-width: 92px;
-    font-size: 12px;
+    font-size: 11px;
     border-radius: 3px;
-    border: 1px solid black;
+    border: 1px solid #999999;
     cursor: pointer;
     text-align: center;
     background: none;
     border-color: transparent;
     float: right; }
     .toolbar .button.refresh:hover {
-      box-shadow: inset 0 0 10px black; }
+      box-shadow: inset 0 0 10px #ccc;
+      background-color: white;
+      background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+      background-image: -webkit-linear-gradient(white, #f2f2f2);
+      background-image: linear-gradient(white, #f2f2f2); }
     .toolbar .button.refresh:hover {
       box-shadow: none;
       border-color: #ccc; }
@@ -7306,23 +7401,27 @@ body {
     left: -5px; }
   .action.text {
     background-color: white;
-    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-    background-image: -webkit-linear-gradient(white, gray);
-    background-image: linear-gradient(white, gray);
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+    background-image: -webkit-linear-gradient(white, #cccccc);
+    background-image: linear-gradient(white, #cccccc);
     display: block;
     padding-top: 8px;
     padding-bottom: 8px;
     padding-left: 12px;
     padding-right: 12px;
     min-width: 92px;
-    font-size: 12px;
+    font-size: 11px;
     border-radius: 3px;
-    border: 1px solid black;
+    border: 1px solid #999999;
     cursor: pointer;
     text-align: center;
     float: right; }
     .action.text:hover {
-      box-shadow: inset 0 0 10px black; }
+      box-shadow: inset 0 0 10px #ccc;
+      background-color: white;
+      background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+      background-image: -webkit-linear-gradient(white, #f2f2f2);
+      background-image: linear-gradient(white, #f2f2f2); }
     .action.text span {
       float: right; }
   .action .icon {
@@ -7476,18 +7575,18 @@ body {
       clear: both; }
     .multi-wizard .buttons .button {
       background-color: white;
-      background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-      background-image: -webkit-linear-gradient(white, gray);
-      background-image: linear-gradient(white, gray);
+      background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+      background-image: -webkit-linear-gradient(white, #cccccc);
+      background-image: linear-gradient(white, #cccccc);
       display: block;
       padding-top: 8px;
       padding-bottom: 8px;
       padding-left: 12px;
       padding-right: 12px;
       min-width: 92px;
-      font-size: 12px;
+      font-size: 11px;
       border-radius: 3px;
-      border: 1px solid black;
+      border: 1px solid #999999;
       cursor: pointer;
       text-align: center;
       display: block;
@@ -7495,25 +7594,29 @@ body {
       margin-right: 2.35765%;
       width: 14.70196%; }
       .multi-wizard .buttons .button:hover {
-        box-shadow: inset 0 0 10px black; }
+        box-shadow: inset 0 0 10px #ccc;
+        background-color: white;
+        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+        background-image: -webkit-linear-gradient(white, #f2f2f2);
+        background-image: linear-gradient(white, #f2f2f2); }
       .multi-wizard .buttons .button:last-child {
         margin-right: 0; }
       .multi-wizard .buttons .button.previous {
         margin-left: 51.17883%; }
       .multi-wizard .buttons .button.next {
         background-color: white;
-        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
-        background-image: -webkit-linear-gradient(white, gray);
-        background-image: linear-gradient(white, gray);
+        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+        background-image: -webkit-linear-gradient(white, #cccccc);
+        background-image: linear-gradient(white, #cccccc);
         display: block;
         padding-top: 8px;
         padding-bottom: 8px;
         padding-left: 12px;
         padding-right: 12px;
         min-width: 92px;
-        font-size: 12px;
+        font-size: 11px;
         border-radius: 3px;
-        border: 1px solid black;
+        border: 1px solid #999999;
         cursor: pointer;
         text-align: center;
         background-color: darkgrey;
@@ -7526,4 +7629,10 @@ body {
         text-shadow: 0px 1px 1px black;
         float: right; }
         .multi-wizard .buttons .button.next:hover {
-          box-shadow: inset 0 0 10px black; }
+          box-shadow: inset 0 0 10px #ccc;
+          background-color: white;
+          background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+          background-image: -webkit-linear-gradient(white, #f2f2f2);
+          background-image: linear-gradient(white, #f2f2f2); }
+        .multi-wizard .buttons .button.next:hover {
+          background: #2e2e2e; }

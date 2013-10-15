@@ -62,5 +62,35 @@
                 color: black;
             }
         }
+
+        .expandable-listing {
+            background: white;
+            
+            table {
+                box-shadow: inset 0px 0px 10px darkgray;
+
+                tr {
+                    &:nth-child(even) {
+                        background: none;
+                    }
+
+                }
+                
+                td {
+                    &.name {
+                        padding: 15px;
+                        
+                        span {
+                            font-weight: bold;
+
+                            &:before {
+                                @include icon($laptop);
+                                margin-right: 15px;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
