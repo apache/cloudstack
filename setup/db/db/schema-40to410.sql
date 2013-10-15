@@ -417,8 +417,8 @@ INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (1,
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (2, UUID(), 'snmp','Linux System CPU - percentage', '1.3.6.1.4.1.2021.11.10.0', now());
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (3, UUID(), 'snmp','Linux CPU Idle - percentage', '1.3.6.1.4.1.2021.11.11.0', now());
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (100, UUID(), 'netscaler','Response Time - microseconds', 'RESPTIME', now());
-INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (1, UUID(), 'cpu','Linux User CPU - percentage', '1.3.6.1.4.1.2021.11.9.1', now());
-INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (2, UUID(), 'memory','Linux User RAM - percentage', '1.3.6.1.4.1.2021.11.10.1', now());
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (4, UUID(), 'cpu','Linux User CPU - percentage', '1.3.6.1.4.1.2021.11.9.1', now());
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (5, UUID(), 'memory','Linux User RAM - percentage', '1.3.6.1.4.1.2021.11.10.1', now());
 
 CREATE TABLE  `cloud`.`user_ipv6_address` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
