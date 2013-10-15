@@ -22,6 +22,7 @@
 @import "instance-wizard";
 @import "list-view";
 @import "detail-view";
+@import "multi-edit";
 
 html body > .login {
     @include csui-login;
