@@ -1031,9 +1031,6 @@ under the License.
 
         <!-- Zone dashboard -->
         <div class="system-dashboard zone">
-          <div class="head">
-            <span><fmt:message key="label.menu.infrastructure"/></span>
-          </div>
           <ul class="status_box good">
             <li class="block zones">
               <span class="header"><fmt:message key="label.zones"/></span>

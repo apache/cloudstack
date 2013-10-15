@@ -5419,7 +5419,7 @@ ul.ui-tabs-nav {
         cursor: pointer;
         text-align: center;
         background: none;
-        border-color: white;
+        border-color: transparent;
         background-color: white;
         background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
         background-image: -webkit-linear-gradient(white, gray);
@@ -5498,6 +5498,116 @@ ul.ui-tabs-nav {
             color: gray; }
           .dashboard.admin .zone-stats ul li .info .value {
             font-size: 18px; }
+
+.system-dashboard ul {
+  padding: 0;
+  margin: auto; }
+  .system-dashboard ul li {
+    list-style: none;
+    border: 1px solid #ccc;
+    float: left;
+    width: 200px;
+    height: 200px;
+    margin: 20px;
+    background-color: #ededed;
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(25%, #ededed), color-stop(100%, white));
+    background-image: -webkit-linear-gradient(#ededed 25%, white);
+    background-image: linear-gradient(#ededed 25%, white); }
+    .system-dashboard ul li .header {
+      *zoom: 1;
+      display: block;
+      background: #ededed;
+      padding: 10px;
+      padding-left: 20px;
+      font-weight: bold;
+      color: #6d6d6d; }
+      .system-dashboard ul li .header:before, .system-dashboard ul li .header:after {
+        content: " ";
+        display: table; }
+      .system-dashboard ul li .header:after {
+        clear: both; }
+      .system-dashboard ul li .header .button.action {
+        background-color: white;
+        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
+        background-image: -webkit-linear-gradient(white, gray);
+        background-image: linear-gradient(white, gray);
+        display: block;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        padding-left: 12px;
+        padding-right: 12px;
+        min-width: 92px;
+        font-size: 12px;
+        border-radius: 3px;
+        border: 1px solid black;
+        cursor: pointer;
+        text-align: center;
+        float: right;
+        margin-left: 10px; }
+        .system-dashboard ul li .header .button.action:hover {
+          box-shadow: inset 0 0 10px black; }
+      .system-dashboard ul li .header input, .system-dashboard ul li .header label, .system-dashboard ul li .header select {
+        float: left;
+        margin: 0 10px 0 10px;
+        padding-top: 6px;
+        padding-bottom: 6px;
+        font-size: 12px;
+        height: 35px; }
+      .system-dashboard ul li .header label {
+        margin-right: 0px; }
+      .system-dashboard ul li .header .search-bar {
+        float: right; }
+    .system-dashboard ul li .icon {
+      display: none; }
+    .system-dashboard ul li .total {
+      *zoom: 1;
+      display: block;
+      font-size: 48px;
+      color: black;
+      margin-left: 20px;
+      text-shadow: 0px 1px 1px white; }
+      .system-dashboard ul li .total:before, .system-dashboard ul li .total:after {
+        content: " ";
+        display: table; }
+      .system-dashboard ul li .total:after {
+        clear: both; }
+    .system-dashboard ul li .view-all {
+      background-color: white;
+      background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, gray));
+      background-image: -webkit-linear-gradient(white, gray);
+      background-image: linear-gradient(white, gray);
+      display: block;
+      padding-top: 8px;
+      padding-bottom: 8px;
+      padding-left: 12px;
+      padding-right: 12px;
+      min-width: 92px;
+      font-size: 12px;
+      border-radius: 3px;
+      border: 1px solid black;
+      cursor: pointer;
+      text-align: center;
+      background: none;
+      border-color: transparent;
+      margin: 60px auto;
+      border-radius: 0px; }
+      .system-dashboard ul li .view-all:hover {
+        box-shadow: inset 0 0 10px black; }
+      .system-dashboard ul li .view-all:hover {
+        box-shadow: none;
+        border-color: #ccc; }
+      .system-dashboard ul li .view-all:hover {
+        box-shadow: inset 0px 0px 10px #a6a6a6;
+        background: #e0e0e0; }
+      .system-dashboard ul li .view-all:after {
+        font-family: FontAwesome;
+        font-weight: normal;
+        font-style: normal;
+        text-decoration: inherit;
+        -webkit-font-smoothing: antialiased;
+        *margin-right: .3em;
+        content: "\f054";
+        margin-left: 10px; }
 
 .action.edit .icon {
   background-position: 1px -1px; }
@@ -6417,7 +6527,7 @@ ul.ui-tabs-nav {
       cursor: pointer;
       text-align: center;
       background: none;
-      border-color: white;
+      border-color: transparent;
       width: 150px;
       height: 50px;
       border: none;
@@ -7028,7 +7138,7 @@ body {
     cursor: pointer;
     text-align: center;
     background: none;
-    border-color: white;
+    border-color: transparent;
     float: right; }
     .toolbar .button.refresh:hover {
       box-shadow: inset 0 0 10px black; }

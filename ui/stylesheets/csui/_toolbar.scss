@@ -1,9 +1,10 @@
 $csui-toolbar-field-height: 35px;
+$csui-toolbar-color: lighten(#e0e0e0, 5%);
 
 @mixin csui-toolbar {
     @include row;
 
-    background: lighten(#e0e0e0, 5%);
+    background: $csui-toolbar-color;
     padding: 10px;
 
     .button.action {
