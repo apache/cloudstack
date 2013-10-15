@@ -910,7 +910,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 
         HostHardwareSummary hardwareSummary = getHostHardwareSummary();
 		// TODO: not sure how hyper-thread is counted in VMware resource pool
-        summary.setCpuCount(hardwareSummary.getNumCpuCores());
+        summary.setCpuCount(hardwareSummary.getNumCpuThreads());
 		summary.setMemoryBytes(hardwareSummary.getMemorySize());
 		summary.setCpuSpeed(hardwareSummary.getCpuMhz());
 
