@@ -21,31 +21,30 @@ package org.apache.cloudstack.storage.test;
 import java.util.Map;
 import java.util.UUID;
 
-import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.storage.Storage;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority.Priority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.host.Host;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.snapshot.SnapshotObject;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.host.Host;
+import com.cloud.storage.Storage;
 
 public class MockStorageMotionStrategy implements DataMotionStrategy {
 
     boolean success = true;
     @Override
-    public boolean canHandle(DataObject srcData, DataObject destData) {
-        // TODO Auto-generated method stub
-        return true;
+    public Priority canHandle(DataObject srcData, DataObject destData) {
+        return Priority.HIGHEST;
     }
 
     public void makeBackupSnapshotSucceed(boolean success) {
@@ -53,8 +52,8 @@ public class MockStorageMotionStrategy implements DataMotionStrategy {
     }
 
     @Override
-    public boolean canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
-        return true;
+    public Priority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
+        return Priority.HIGHEST;
     }
 
     @Override

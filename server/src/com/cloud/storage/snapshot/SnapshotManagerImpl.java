@@ -40,6 +40,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority.Priority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
@@ -264,9 +266,23 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             throw new InvalidParameterValueException("No such snapshot");
         }
 
+        Volume volume = _volsDao.findById(snapshot.getVolumeId());
+        Long instanceId = volume.getInstanceId();
+
+        // If this volume is attached to an VM, then the VM needs to be in the stopped state
+        // in order to revert the volume
+        if (instanceId != null) {
+            UserVmVO vm = _vmDao.findById(instanceId);
+            if (vm.getState() != State.Stopped && vm.getState() != State.Shutdowned) {
+                throw new InvalidParameterValueException("The VM the specified disk is attached to is not in the shutdown state.");
+            }
+        }
+
+        StrategyPriority.sortStrategies(snapshotStrategies, snapshot);
+
         SnapshotStrategy snapshotStrategy = null;
         for (SnapshotStrategy strategy : snapshotStrategies) {
-            if (strategy.canHandle(snapshot)) {
+            if (strategy.canHandle(snapshot) != Priority.CANT_HANDLE) {
                 snapshotStrategy = strategy;
                 break;
             }
@@ -366,7 +382,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 <<<<<<< HEAD
                 downloadSnapshotFromSwiftCommand cmd = new downloadSnapshotFromSwiftCommand(swift, secStore.getUri(), dcId, accountId, volumeId, parent, backupUuid, _backupsnapshotwait);
 =======
-                DownloadSnapshotFromSwiftCommand cmd = new DownloadSnapshotFromSwiftCommand(swift, secondaryStoragePoolUrl, dcId, accountId, volumeId, parent, backupUuid, _backupsnapshotwait);
+                 DownloadSnapshotFromSwiftCommand cmd = new DownloadSnapshotFromSwiftCommand(swift, secondaryStoragePoolUrl, dcId, accountId, volumeId, parent, backupUuid, _backupsnapshotwait);
 >>>>>>> master
                 Answer answer = _agentMgr.sendToSSVM(dcId, cmd);
                 if ((answer == null) || !answer.getResult()) {
@@ -501,10 +517,12 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
         }
 
+        StrategyPriority.sortStrategies(snapshotStrategies, snapshotCheck);
+
         _accountMgr.checkAccess(caller, null, true, snapshotCheck);
         SnapshotStrategy snapshotStrategy = null;
         for (SnapshotStrategy strategy : snapshotStrategies) {
-            if (strategy.canHandle(snapshotCheck)) {
+            if (strategy.canHandle(snapshotCheck) != Priority.CANT_HANDLE) {
                 snapshotStrategy = strategy;
                 break;
             }
@@ -695,8 +713,11 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             for (SnapshotVO snapshot : snapshots) {
                 SnapshotVO snap = _snapshotDao.findById(snapshot.getId());
                 SnapshotStrategy snapshotStrategy = null;
+
+                StrategyPriority.sortStrategies(snapshotStrategies, snapshot);
+
                 for (SnapshotStrategy strategy : snapshotStrategies) {
-                    if (strategy.canHandle(snap)) {
+                    if (strategy.canHandle(snap) != Priority.CANT_HANDLE) {
                         snapshotStrategy = strategy;
                         break;
                     }
@@ -1026,9 +1047,11 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotId, volume.getDataStore());
         boolean processed = false;
 
+        StrategyPriority.sortStrategies(snapshotStrategies, snapshot);
+
         try {
             for (SnapshotStrategy strategy : snapshotStrategies) {
-                if (strategy.canHandle(snapshot)) {
+                if (strategy.canHandle(snapshot) != Priority.CANT_HANDLE) {
                     processed = true;
                     snapshot = strategy.takeSnapshot(snapshot);
                     break;

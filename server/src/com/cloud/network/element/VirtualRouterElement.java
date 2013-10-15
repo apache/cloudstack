@@ -78,6 +78,7 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
@@ -662,8 +663,11 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             return true;
         }
         boolean result = true;
+        // NOTE that we need to pass caller account to destroyRouter, otherwise it will fail permission check there. Context passed in from deleteNetwork is the network account, 
+        // not caller account
+        Account callerAccount = _accountMgr.getAccount(context.getCaller().getAccountId());        
         for (DomainRouterVO router : routers) {
-            result = result && (_routerMgr.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId()) != null);
+            result = result && (_routerMgr.destroyRouter(router.getId(), callerAccount, context.getCaller().getId()) != null);
         }
         return result;
     }

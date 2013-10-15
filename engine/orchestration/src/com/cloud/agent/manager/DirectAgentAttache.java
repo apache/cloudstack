@@ -44,8 +44,8 @@ public class DirectAgentAttache extends AgentAttache {
     AgentManagerImpl _mgr;
     long _seq = 0;
 
-    public DirectAgentAttache(AgentManagerImpl agentMgr, long id, ServerResource resource, boolean maintenance, AgentManagerImpl mgr) {
-        super(agentMgr, id, maintenance);
+    public DirectAgentAttache(AgentManagerImpl agentMgr, long id, String name, ServerResource resource, boolean maintenance, AgentManagerImpl mgr) {
+        super(agentMgr, id, name, maintenance);
         _resource = resource;
         _mgr = mgr;
     }
@@ -53,7 +53,7 @@ public class DirectAgentAttache extends AgentAttache {
     @Override
     public void disconnect(Status state) {
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Processing disconnect " + _id);
+            s_logger.debug("Processing disconnect " + _id + "(" + _name + ")");
         }
 
         for (ScheduledFuture<?> future : _futures) {
@@ -119,7 +119,7 @@ public class DirectAgentAttache extends AgentAttache {
             assert _resource == null : "Come on now....If you're going to dabble in agent code, you better know how to close out our resources. Ever considered why there's a method called disconnect()?";
             synchronized (this) {
                 if (_resource != null) {
-                    s_logger.warn("Lost attache for " + _id);
+                    s_logger.warn("Lost attache for " + _id + "(" + _name + ")");
                     disconnect(Status.Alert);
                 }
             }
@@ -137,12 +137,12 @@ public class DirectAgentAttache extends AgentAttache {
                 if (resource != null) {
                     PingCommand cmd = resource.getCurrentStatus(_id);
                     if (cmd == null) {
-                        s_logger.warn("Unable to get current status on " + _id);
+                        s_logger.warn("Unable to get current status on " + _id + "(" + _name + ")");
                         _mgr.disconnectWithInvestigation(DirectAgentAttache.this, Event.AgentDisconnected);
                         return;
                     }
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Ping from " + _id);
+                        s_logger.debug("Ping from " + _id + "(" + _name + ")");
                     }
                     long seq = _seq++;
 
@@ -152,7 +152,7 @@ public class DirectAgentAttache extends AgentAttache {
 
                     _mgr.handleCommands(DirectAgentAttache.this, seq, new Command[]{cmd});
                 } else {
-                    s_logger.debug("Unable to send ping because agent is disconnected " + _id);
+                    s_logger.debug("Unable to send ping because agent is disconnected " + _id + "(" + _name + ")");
                 }
             } catch (Exception e) {
                 s_logger.warn("Unable to complete the ping task", e);

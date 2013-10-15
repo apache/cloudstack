@@ -1760,6 +1760,36 @@
                                 }
                             },
 
+                            revertSnapshot: {
+                                label: 'label.action.revert.snapshot',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.action.revert.snapshot';
+                                    },
+                                    notification: function(args) {
+                                        return 'label.action.revert.snapshot';
+                                    }
+                                },
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("revertSnapshot&id="+args.context.snapshots[0].id),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jid = json.revertsnapshotresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+
                             remove: {
                                 label: 'label.action.delete.snapshot',
                                 messages: {
@@ -1929,6 +1959,10 @@
         if (jsonObj.state == "BackedUp") {
             allowedActions.push("createTemplate");
             allowedActions.push("createVolume");
+
+            if (args.context.volumes[0].vmstate == "Stopped") {
+                allowedActions.push("revertSnapshot");
+            }
         }
         allowedActions.push("remove");
 

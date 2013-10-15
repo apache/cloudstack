@@ -944,11 +944,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                                 }
                                 throw new CloudRuntimeException("Local volume " + vol + " cannot be recreated on storagepool " + assignedPool + " assigned by deploymentPlanner");
                             } else {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Shared volume " + vol + " will be migrated on storage pool " + assignedPool + " assigned by deploymentPlanner");
+                                //Check if storage migration is enabled in config
+                                if (StorageHAMigrationEnabled.value()) {
+                                    if (s_logger.isDebugEnabled()) {
+                                        s_logger.debug("Shared volume " + vol + " will be migrated on storage pool " + assignedPool + " assigned by deploymentPlanner");
+                                    }
+                                    VolumeTask task = new VolumeTask(VolumeTaskType.MIGRATE, vol, assignedPool);
+                                    tasks.add(task);
+                                } else {
+                                    throw new CloudRuntimeException("Cannot migrate volumes. Volume Migration is disabled");
                                 }
-                                VolumeTask task = new VolumeTask(VolumeTaskType.MIGRATE, vol, assignedPool);
-                                tasks.add(task);
                             }
                         } else {
                             StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
@@ -1106,9 +1111,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         "If true, will recreate system vm root disk whenever starting system vm",
         true);
 
+    public static final ConfigKey<Boolean> StorageHAMigrationEnabled = new ConfigKey<Boolean>(Boolean.class,
+            "enable.ha.storage.migration",
+            "Storage",
+            "true",
+            "Enable/disable storage migration across primary storage during HA",
+            true);
+
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {RecreatableSystemVmEnabled, MaxVolumeSize};
+        return new ConfigKey<?>[] {RecreatableSystemVmEnabled, MaxVolumeSize, StorageHAMigrationEnabled};
     }
 
     @Override
@@ -1164,6 +1176,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return dataStoreMgr.getPrimaryDataStore(vol.getPoolId()).getUuid();
     }
     
+    @Override
     public void updateVolumeDiskChain(long volumeId, String path, String chainInfo) {
         VolumeVO vol = _volsDao.findById(volumeId);
         boolean needUpdate = false;
@@ -1174,7 +1187,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         	needUpdate = true;
         
         if(needUpdate) {
-        	s_logger.info("Update volume disk chain info. vol: " + vol.getId() + ", " + vol.getPath() + " -> " + path 
+        	s_logger.info("Update volume disk chain info. vol: " + vol.getId() + ", " + vol.getPath() + " -> " + path
         		+ ", " + vol.getChainInfo() + " -> " + chainInfo);
 	        vol.setPath(path);
 	        vol.setChainInfo(chainInfo);

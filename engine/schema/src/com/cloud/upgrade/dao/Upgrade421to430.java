@@ -25,12 +25,12 @@ import org.apache.log4j.Logger;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-public class Upgrade420to430 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade420to430.class);
+public class Upgrade421to430 implements DbUpgrade {
+    final static Logger s_logger = Logger.getLogger(Upgrade421to430.class);
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "4.2.0", "4.3.0" };
+        return new String[] {"4.2.1", "4.3.0"};
     }
 
     @Override
@@ -45,9 +45,9 @@ public class Upgrade420to430 implements DbUpgrade {
 
     @Override
     public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/schema-420to430.sql");
+        String script = Script.findScript("", "db/schema-421to430.sql");
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-420to430.sql");
+            throw new CloudRuntimeException("Unable to find db/schema-421to430.sql");
         }
 
         return new File[] { new File(script) };
@@ -59,9 +59,9 @@ public class Upgrade420to430 implements DbUpgrade {
 
     @Override
     public File[] getCleanupScripts() {
-        String script = Script.findScript("", "db/schema-420to430-cleanup.sql");
+        String script = Script.findScript("", "db/schema-421to430-cleanup.sql");
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-420to430-cleanup.sql");
+            throw new CloudRuntimeException("Unable to find db/schema-421to430-cleanup.sql");
         }
 
         return new File[] { new File(script) };

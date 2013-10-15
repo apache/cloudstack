@@ -27,5 +27,5 @@ public interface SnapshotStrategy {
 
     boolean revertSnapshot(Long snapshotId);
 
-    boolean canHandle(Snapshot snapshot);
+    StrategyPriority.Priority canHandle(Snapshot snapshot);
 }

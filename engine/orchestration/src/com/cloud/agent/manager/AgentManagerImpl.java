@@ -384,7 +384,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             throw new AgentUnavailableException("agent not logged into this management server", hostId);
         }
 
-        Request req = new Request(hostId, _nodeId, cmds, commands.stopOnError(), true);
+        Request req = new Request(hostId, agent.getName(), _nodeId, cmds, commands.stopOnError(), true);
         req.setSequence(agent.getNextSequence());
         Answer[] answers = agent.send(req, timeout);
         notifyAnswersToMonitors(hostId, req.getSequence(), answers);
@@ -437,7 +437,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         if (cmds.length == 0) {
             throw new AgentUnavailableException("Empty command set for agent " + agent.getId(), agent.getId());
         }
-        Request req = new Request(hostId, _nodeId, cmds, commands.stopOnError(), true);
+        Request req = new Request(hostId, agent.getName(), _nodeId, cmds, commands.stopOnError(), true);
         req.setSequence(agent.getNextSequence());
 
         agent.send(req, listener);
@@ -679,7 +679,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 //        }
 
         s_logger.debug("create DirectAgentAttache for " + host.getId());
-        DirectAgentAttache attache = new DirectAgentAttache(this, host.getId(), resource, host.isInMaintenanceStates(), this);
+        DirectAgentAttache attache = new DirectAgentAttache(this, host.getId(), host.getName(), resource, host.isInMaintenanceStates(), this);
 
         AgentAttache old = null;
         synchronized (_agents) {
@@ -969,7 +969,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     protected AgentAttache createAttacheForConnect(HostVO host, Link link) throws ConnectionException {
         s_logger.debug("create ConnectedAgentAttache for " + host.getId());
-        AgentAttache attache = new ConnectedAgentAttache(this, host.getId(), link, host.isInMaintenanceStates());
+        AgentAttache attache = new ConnectedAgentAttache(this, host.getId(), host.getName(), link, host.isInMaintenanceStates());
         link.attach(attache);
 
         AgentAttache old = null;

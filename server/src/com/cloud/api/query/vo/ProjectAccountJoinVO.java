@@ -23,8 +23,9 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.projects.ProjectAccount.Role;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.projects.ProjectAccount.Role;
 
 @Entity
 @Table(name="project_account_view")
@@ -71,7 +72,6 @@ public class ProjectAccountJoinVO extends BaseViewVO implements InternalIdentity
     @Column(name="project_name")
     private String projectName;
 
-
     public ProjectAccountJoinVO() {
     }
 
@@ -80,137 +80,51 @@ public class ProjectAccountJoinVO extends BaseViewVO implements InternalIdentity
         return id;
     }
 
-
-    @Override
-    public void setId(long id) {
-        this.id = id;
-
-    }
-
     public long getDomainId() {
         return domainId;
-    }
-
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
     }
 
     public String getDomainUuid() {
         return domainUuid;
     }
 
-    public void setDomainUuid(String domainUuid) {
-        this.domainUuid = domainUuid;
-    }
-
     public String getDomainName() {
         return domainName;
-    }
-
-    public void setDomainName(String domainName) {
-        this.domainName = domainName;
     }
 
     public String getDomainPath() {
         return domainPath;
     }
 
-    public void setDomainPath(String domainPath) {
-        this.domainPath = domainPath;
-    }
-
     public long getAccountId() {
         return accountId;
     }
-
-    public void setAccountId(long accountId) {
-        this.accountId = accountId;
-    }
-
-
 
     public String getAccountUuid() {
         return accountUuid;
     }
 
-
-
-    public void setAccountUuid(String accountUuid) {
-        this.accountUuid = accountUuid;
-    }
-
-
-
     public String getAccountName() {
         return accountName;
     }
-
-
-
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
-    }
-
-
 
     public short getAccountType() {
         return accountType;
     }
 
-
-
-    public void setAccountType(short accountType) {
-        this.accountType = accountType;
-    }
-
-
-
     public Role getAccountRole() {
         return accountRole;
     }
-
-
-
-    public void setAccountRole(Role accountRole) {
-        this.accountRole = accountRole;
-    }
-
-
 
     public long getProjectId() {
         return projectId;
     }
 
-
-
-    public void setProjectId(long projectId) {
-        this.projectId = projectId;
-    }
-
-
-
     public String getProjectUuid() {
         return projectUuid;
     }
 
-
-
-    public void setProjectUuid(String projectUuid) {
-        this.projectUuid = projectUuid;
-    }
-
-
-
     public String getProjectName() {
         return projectName;
     }
-
-
-
-    public void setProjectName(String projectName) {
-        this.projectName = projectName;
-    }
-
-
-
 }

@@ -27,15 +27,15 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import com.cloud.host.Status;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.host.Host.Type;
+import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.db.GenericDao;
-
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Host DB view.
@@ -54,7 +54,6 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
 
     @Column(name="name")
     private String name;
-
 
     @Column(name="status")
     private Status status = null;
@@ -139,7 +138,6 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
     @Column(name="pod_name")
     private String podName;
 
-
     @Column(name="guest_os_category_id")
     private long osCategoryId;
 
@@ -173,336 +171,165 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
     @Column(name="job_status")
     private int jobStatus;
 
-
-    /* (non-Javadoc)
-     * @see com.cloud.api.query.vo.BaseViewVO#getId()
-     */
     @Override
     public long getId() {
         return this.id;
     }
-
-    /* (non-Javadoc)
-     * @see com.cloud.api.query.vo.BaseViewVO#setId(long)
-     */
-    @Override
-    public void setId(long id) {
-        this.id = id;
-    }
-
 
     @Override
     public String getUuid() {
         return uuid;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
     public String getVersion() {
         return version;
-    }
-
-    public void setVersion(String version) {
-        this.version = version;
     }
 
     public long getZoneId() {
         return zoneId;
     }
 
-    public void setZoneId(long zoneId) {
-        this.zoneId = zoneId;
-    }
-
     public String getZoneUuid() {
         return zoneUuid;
-    }
-
-    public void setZoneUuid(String zoneUuid) {
-        this.zoneUuid = zoneUuid;
     }
 
     public String getZoneName() {
         return zoneName;
     }
 
-    public void setZoneName(String zoneName) {
-        this.zoneName = zoneName;
-    }
-
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public Status getStatus() {
         return status;
     }
 
-    public void setStatus(Status status) {
-        this.status = status;
-    }
-
     public Type getType() {
         return type;
-    }
-
-    public void setType(Type type) {
-        this.type = type;
     }
 
     public String getPrivateIpAddress() {
         return privateIpAddress;
     }
 
-    public void setPrivateIpAddress(String privateIpAddress) {
-        this.privateIpAddress = privateIpAddress;
-    }
-
     public Date getDisconnectedOn() {
         return disconnectedOn;
-    }
-
-    public void setDisconnectedOn(Date disconnectedOn) {
-        this.disconnectedOn = disconnectedOn;
     }
 
     public HypervisorType getHypervisorType() {
         return hypervisorType;
     }
 
-    public void setHypervisorType(HypervisorType hypervisorType) {
-        this.hypervisorType = hypervisorType;
-    }
-
     public String getHypervisorVersion() {
         return hypervisorVersion;
-    }
-
-    public void setHypervisorVersion(String hypervisorVersion) {
-        this.hypervisorVersion = hypervisorVersion;
     }
 
     public String getCapabilities() {
         return caps;
     }
 
-    public void setCapabilities(String caps) {
-        this.caps = caps;
-    }
-
     public long getLastPinged() {
         return lastPinged;
-    }
-
-    public void setLastPinged(long lastPinged) {
-        this.lastPinged = lastPinged;
     }
 
     public Date getCreated() {
         return created;
     }
 
-    public void setCreated(Date created) {
-        this.created = created;
-    }
-
     public Date getRemoved() {
         return removed;
-    }
-
-    public void setRemoved(Date removed) {
-        this.removed = removed;
     }
 
     public ResourceState getResourceState() {
         return resourceState;
     }
 
-    public void setResourceState(ResourceState resourceState) {
-        this.resourceState = resourceState;
-    }
-
     public Long getManagementServerId() {
         return managementServerId;
-    }
-
-    public void setManagementServerId(Long managementServerId) {
-        this.managementServerId = managementServerId;
     }
 
     public Integer getCpus() {
         return cpus;
     }
 
-    public void setCpus(Integer cpus) {
-        this.cpus = cpus;
-    }
-
     public Long getSpeed() {
         return speed;
-    }
-
-    public void setSpeed(Long speed) {
-        this.speed = speed;
     }
 
     public long getTotalMemory() {
         return totalMemory;
     }
 
-    public void setTotalMemory(long totalMemory) {
-        this.totalMemory = totalMemory;
-    }
-
     public long getClusterId() {
         return clusterId;
-    }
-
-    public void setClusterId(long clusterId) {
-        this.clusterId = clusterId;
     }
 
     public String getClusterUuid() {
         return clusterUuid;
     }
 
-    public void setClusterUuid(String clusterUuid) {
-        this.clusterUuid = clusterUuid;
-    }
-
     public String getClusterName() {
         return clusterName;
-    }
-
-    public void setClusterName(String clusterName) {
-        this.clusterName = clusterName;
     }
 
     public Cluster.ClusterType getClusterType() {
         return clusterType;
     }
 
-    public void setClusterType(Cluster.ClusterType clusterType) {
-        this.clusterType = clusterType;
-    }
-
     public long getOsCategoryId() {
         return osCategoryId;
-    }
-
-    public void setOsCategoryId(long osCategoryId) {
-        this.osCategoryId = osCategoryId;
     }
 
     public String getOsCategoryUuid() {
         return osCategoryUuid;
     }
 
-    public void setOsCategoryUuid(String osCategoryUuid) {
-        this.osCategoryUuid = osCategoryUuid;
-    }
-
     public String getOsCategoryName() {
         return osCategoryName;
-    }
-
-    public void setOsCategoryName(String osCategoryName) {
-        this.osCategoryName = osCategoryName;
     }
 
     public Long getJobId() {
         return jobId;
     }
 
-    public void setJobId(Long jobId) {
-        this.jobId = jobId;
-    }
-
     public String getJobUuid() {
         return jobUuid;
-    }
-
-    public void setJobUuid(String jobUuid) {
-        this.jobUuid = jobUuid;
     }
 
     public int getJobStatus() {
         return jobStatus;
     }
 
-    public void setJobStatus(int jobStatus) {
-        this.jobStatus = jobStatus;
-    }
-
     public long getPodId() {
         return podId;
-    }
-
-    public void setPodId(long podId) {
-        this.podId = podId;
     }
 
     public String getPodUuid() {
         return podUuid;
     }
 
-    public void setPodUuid(String podUuid) {
-        this.podUuid = podUuid;
-    }
-
     public String getPodName() {
         return podName;
-    }
-
-    public void setPodName(String podName) {
-        this.podName = podName;
     }
 
     public long getMemUsedCapacity() {
         return memUsedCapacity;
     }
 
-    public void setMemUsedCapacity(long memUsedCapacity) {
-        this.memUsedCapacity = memUsedCapacity;
-    }
-
     public long getMemReservedCapacity() {
         return memReservedCapacity;
-    }
-
-    public void setMemReservedCapacity(long memReservedCapacity) {
-        this.memReservedCapacity = memReservedCapacity;
     }
 
     public long getCpuUsedCapacity() {
         return cpuUsedCapacity;
     }
 
-    public void setCpuUsedCapacity(long cpuUsedCapacity) {
-        this.cpuUsedCapacity = cpuUsedCapacity;
-    }
-
     public long getCpuReservedCapacity() {
         return cpuReservedCapacity;
-    }
-
-    public void setCpuReservedCapacity(long cpuReservedCapacity) {
-        this.cpuReservedCapacity = cpuReservedCapacity;
     }
 
     public String getTag() {
         return tag;
     }
-
-    public void setTag(String tag) {
-        this.tag = tag;
-    }
-
-
 }

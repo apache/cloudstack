@@ -42,6 +42,7 @@ import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -127,6 +128,19 @@ public class SnapshotServiceImpl implements SnapshotService {
             super(callback);
             this.srcSnapshot = srcSnapshot;
             this.destSnapshot = destSnapshot;
+            this.future = future;
+        }
+
+    }
+
+    static private class RevertSnapshotContext<T> extends AsyncRpcContext<T> {
+        final SnapshotInfo snapshot;
+        final AsyncCallFuture<SnapshotResult> future;
+
+        public RevertSnapshotContext(AsyncCompletionCallback<T> callback, SnapshotInfo snapshot,
+                AsyncCallFuture<SnapshotResult> future) {
+            super(callback);
+            this.snapshot = snapshot;
             this.future = future;
         }
 
@@ -364,6 +378,28 @@ public class SnapshotServiceImpl implements SnapshotService {
         return null;
     }
 
+    protected Void revertSnapshotCallback(AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> callback,
+            RevertSnapshotContext<CommandResult> context) {
+
+        CommandResult result = callback.getResult();
+        AsyncCallFuture<SnapshotResult> future = context.future;
+        SnapshotResult res = null;
+        try {
+            if (result.isFailed()) {
+                s_logger.debug("revert snapshot failed" + result.getResult());
+                res = new SnapshotResult(context.snapshot, null);
+                res.setResult(result.getResult());
+            } else {
+                res = new SnapshotResult(context.snapshot, null);
+            }
+        } catch (Exception e) {
+            s_logger.debug("Failed to in revertSnapshotCallback", e);
+            res.setResult(e.toString());
+        }
+        future.complete(res);
+        return null;
+    }
+
     @Override
     public boolean deleteSnapshot(SnapshotInfo snapInfo) {
         snapInfo.processEvent(ObjectInDataStoreStateMachine.Event.DestroyRequested);
@@ -394,6 +430,29 @@ public class SnapshotServiceImpl implements SnapshotService {
 
     @Override
     public boolean revertSnapshot(Long snapshotId) {
+        SnapshotInfo snapshot = snapshotfactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+        PrimaryDataStore store = (PrimaryDataStore)snapshot.getDataStore();
+
+        AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
+        RevertSnapshotContext<CommandResult> context = new RevertSnapshotContext<CommandResult>(null, snapshot, future);
+        AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().revertSnapshotCallback(null, null)).setContext(context);
+
+        ((PrimaryDataStoreDriver)store.getDriver()).revertSnapshot(snapshot, caller);
+
+        SnapshotResult result = null;
+        try {
+            result = future.get();
+            if (result.isFailed()) {
+                throw new CloudRuntimeException(result.getResult());
+            }
+            return true;
+        } catch (InterruptedException e) {
+            s_logger.debug("revert snapshot is failed: " + e.toString());
+        } catch (ExecutionException e) {
+            s_logger.debug("revert snapshot is failed: " + e.toString());
+        }
+
         return false;
     }
 

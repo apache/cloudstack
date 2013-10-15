@@ -42,9 +42,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -339,6 +336,7 @@ import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
+import org.apache.cloudstack.api.command.user.snapshot.RevertSnapshotCmd;
 import org.apache.cloudstack.api.command.user.ssh.CreateSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.DeleteSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.ListSSHKeyPairsCmd;
@@ -438,6 +436,8 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -2731,6 +2731,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(DeleteSnapshotPoliciesCmd.class);
         cmdList.add(ListSnapshotPoliciesCmd.class);
         cmdList.add(ListSnapshotsCmd.class);
+        cmdList.add(RevertSnapshotCmd.class);
         cmdList.add(CreateSSHKeyPairCmd.class);
         cmdList.add(DeleteSSHKeyPairCmd.class);
         cmdList.add(ListSSHKeyPairsCmd.class);
@@ -3164,7 +3165,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    @ActionEvent(eventType = "", eventDescription = "", async = true)    
+    @ActionEvent(eventType = "", eventDescription = "", async = true)
     public VMInstanceVO destroySystemVM(DestroySystemVmCmd cmd) {
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(cmd.getId(), VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
 
@@ -3640,7 +3641,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         String password = vm.getDetail("Encrypted.Password");
         if (password == null || password.equals("")) {
             InvalidParameterValueException ex = new InvalidParameterValueException("No password for VM with specified id found. " +
-                "If VM is created from password enabled template and SSH keypair is assigned to VM then only password can be retrieved.");
+                    "If VM is created from password enabled template and SSH keypair is assigned to VM then only password can be retrieved.");
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }

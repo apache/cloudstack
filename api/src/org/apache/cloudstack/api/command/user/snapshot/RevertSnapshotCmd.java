@@ -18,9 +18,6 @@
  */
 package org.apache.cloudstack.api.command.user.snapshot;
 
-import com.cloud.event.EventTypes;
-import com.cloud.storage.Snapshot;
-import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -33,7 +30,11 @@ import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-@APICommand(name = "RevertSnapshot", description = "revert a volume snapshot.", responseObject = SnapshotResponse.class)
+import com.cloud.event.EventTypes;
+import com.cloud.storage.Snapshot;
+import com.cloud.user.Account;
+
+@APICommand(name = "revertSnapshot", description = "revert a volume snapshot.", responseObject = SnapshotResponse.class)
 public class RevertSnapshotCmd extends BaseAsyncCmd {
     private static final String s_name = "revertsnapshotresponse";
     @Parameter(name= ApiConstants.ID, type= BaseCmd.CommandType.UUID, entityType = SnapshotResponse.class,
@@ -70,10 +71,12 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
         return  "revert snapshot: " + getId();
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.Snapshot;
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }

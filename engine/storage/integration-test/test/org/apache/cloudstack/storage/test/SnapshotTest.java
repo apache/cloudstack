@@ -400,8 +400,11 @@ public class SnapshotTest extends CloudStackTestNGBase {
         SnapshotVO snapshotVO = createSnapshotInDb(vol);
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
         boolean result = false;
+
+        StrategyPriority.sortStrategies(snapshotStrategies, snapshot);
+
         for (SnapshotStrategy strategy : this.snapshotStrategies) {
-            if (strategy.canHandle(snapshot)) {
+            if (strategy.canHandle(snapshot) != Priority.CANT_HANDLE) {
                 snapshot = strategy.takeSnapshot(snapshot);
                 result = true;
             }
@@ -422,8 +425,11 @@ public class SnapshotTest extends CloudStackTestNGBase {
         SnapshotVO snapshotVO = createSnapshotInDb(vol);
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
         SnapshotInfo newSnapshot = null;
+
+        StrategyPriority.sortStrategies(snapshotStrategies, newSnapshot);
+
         for (SnapshotStrategy strategy : this.snapshotStrategies) {
-            if (strategy.canHandle(snapshot)) {
+            if (strategy.canHandle(snapshot) != Priority.CANT_HANDLE) {
                 newSnapshot = strategy.takeSnapshot(snapshot);
             }
         }
@@ -431,7 +437,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
 
         // create another snapshot
         for (SnapshotStrategy strategy : this.snapshotStrategies) {
-            if (strategy.canHandle(snapshot)) {
+            if (strategy.canHandle(snapshot) != Priority.CANT_HANDLE) {
                 strategy.deleteSnapshot(newSnapshot.getId());
             }
         }
@@ -444,8 +450,11 @@ public class SnapshotTest extends CloudStackTestNGBase {
         SnapshotVO snapshotVO = createSnapshotInDb(vol);
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
         boolean result = false;
+
+        StrategyPriority.sortStrategies(snapshotStrategies, snapshot);
+
         for (SnapshotStrategy strategy : this.snapshotStrategies) {
-            if (strategy.canHandle(snapshot)) {
+            if (strategy.canHandle(snapshot) != Priority.CANT_HANDLE) {
                 snapshot = strategy.takeSnapshot(snapshot);
                 result = true;
             }
@@ -467,15 +476,18 @@ public class SnapshotTest extends CloudStackTestNGBase {
             Mockito.when(epSelector.select(Matchers.any(DataObject.class), Matchers.any(DataObject.class))).thenReturn(remoteEp);
         }
     }
-    
+
     @Test
     public void createSnapshot() throws InterruptedException, ExecutionException {
         VolumeInfo vol = createCopyBaseImage();
         SnapshotVO snapshotVO = createSnapshotInDb(vol);
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
         SnapshotInfo newSnapshot = null;
+
+        StrategyPriority.sortStrategies(snapshotStrategies, newSnapshot);
+
         for (SnapshotStrategy strategy : this.snapshotStrategies) {
-            if (strategy.canHandle(snapshot)) {
+            if (strategy.canHandle(snapshot) != Priority.CANT_HANDLE) {
                 newSnapshot = strategy.takeSnapshot(snapshot);
             }
         }
@@ -487,7 +499,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
 
         try {
             for (SnapshotStrategy strategy : this.snapshotStrategies) {
-                if (strategy.canHandle(snapshot)) {
+                if (strategy.canHandle(snapshot) != Priority.CANT_HANDLE) {
                     boolean res = strategy.deleteSnapshot(newSnapshot.getId());
                     Assert.assertTrue(res);
                 }

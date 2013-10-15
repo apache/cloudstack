@@ -1389,6 +1389,9 @@ def setDNATRule(session, args):
 
 @echo
 def createISOVHD(session, args):
+    # Should not create the VDI if the systemvm.iso does not exist
+    if not os.path.exists('/usr/share/xcp/packages/iso/systemvm.iso'):
+        return "Failed"
     #hack for XCP on ubuntu 12.04, as can't attach iso to a vm
     vdis = session.xenapi.VDI.get_by_name_label("systemvm-vdi");
     util.SMlog(vdis)

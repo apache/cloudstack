@@ -91,7 +91,6 @@ public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     @Enumerated(value = EnumType.STRING)
     ControlledEntity.ACLType aclType;
 
-
     public AffinityGroupJoinVO() {
     }
 
@@ -101,34 +100,16 @@ public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     }
 
     @Override
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    @Override
     public String getUuid() {
         return uuid;
     }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getType() {
         return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 
     @Override
@@ -136,17 +117,9 @@ public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         return accountId;
     }
 
-    public void setAccountId(long accountId) {
-        this.accountId = accountId;
-    }
-
     @Override
     public String getAccountUuid() {
         return accountUuid;
-    }
-
-    public void setAccountUuid(String accountUuid) {
-        this.accountUuid = accountUuid;
     }
 
     @Override
@@ -154,17 +127,9 @@ public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         return accountName;
     }
 
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
-    }
-
     @Override
     public short getAccountType() {
         return accountType;
-    }
-
-    public void setAccountType(short accountType) {
-        this.accountType = accountType;
     }
 
     @Override
@@ -172,17 +137,9 @@ public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         return domainId;
     }
 
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
-    }
-
     @Override
     public String getDomainUuid() {
         return domainUuid;
-    }
-
-    public void setDomainUuid(String domainUuid) {
-        this.domainUuid = domainUuid;
     }
 
     @Override
@@ -190,65 +147,33 @@ public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         return domainName;
     }
 
-    public void setDomainName(String domainName) {
-        this.domainName = domainName;
-    }
-
     @Override
     public String getDomainPath() {
         return domainPath;
-    }
-
-    public void setDomainPath(String domainPath) {
-        this.domainPath = domainPath;
     }
 
     public String getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
     public long getVmId() {
         return vmId;
-    }
-
-    public void setVmId(long vmId) {
-        this.vmId = vmId;
     }
 
     public String getVmUuid() {
         return vmUuid;
     }
 
-    public void setVmUuid(String vmUuid) {
-        this.vmUuid = vmUuid;
-    }
-
     public String getVmName() {
         return vmName;
-    }
-
-    public void setVmName(String vmName) {
-        this.vmName = vmName;
     }
 
     public String getVmDisplayName() {
         return vmDisplayName;
     }
 
-    public void setVmDisplayName(String vmDisplayName) {
-        this.vmDisplayName = vmDisplayName;
-    }
-
     public VirtualMachine.State getVmState() {
         return vmState;
-    }
-
-    public void setVmState(VirtualMachine.State vmState) {
-        this.vmState = vmState;
     }
 
     @Override
@@ -265,10 +190,6 @@ public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
 
     public ControlledEntity.ACLType getAclType() {
         return aclType;
-    }
-
-    public void setAclType(ControlledEntity.ACLType aclType) {
-        this.aclType = aclType;
     }
 
 }

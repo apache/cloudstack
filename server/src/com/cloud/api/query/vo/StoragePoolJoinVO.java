@@ -146,19 +146,8 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
         return scope;
     }
 
-    /**
-     * @param scope the scope to set
-     */
-    public void setScope(ScopeType scope) {
-        this.scope = scope;
-    }
-
     public HypervisorType getHypervisor() {
         return hypervisor;
-    }
-
-    public void setHypervisor(HypervisorType hypervisor) {
-        this.hypervisor = hypervisor;
     }
 
     @Override
@@ -167,217 +156,108 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     }
 
     @Override
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    @Override
     public String getUuid() {
         return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getPath() {
         return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
     }
 
     public String getHostAddress() {
         return hostAddress;
     }
 
-    public void setHostAddress(String hostAddress) {
-        this.hostAddress = hostAddress;
-    }
-
     public StoragePoolStatus getStatus() {
         return status;
-    }
-
-    public void setStatus(StoragePoolStatus status) {
-        this.status = status;
     }
 
     public StoragePoolType getPoolType() {
         return poolType;
     }
 
-    public void setPoolType(StoragePoolType poolType) {
-        this.poolType = poolType;
-    }
-
     public Date getCreated() {
         return created;
-    }
-
-    public void setCreated(Date created) {
-        this.created = created;
     }
 
     public Date getRemoved() {
         return removed;
     }
 
-    public void setRemoved(Date removed) {
-        this.removed = removed;
-    }
-
     public long getCapacityBytes() {
         return capacityBytes;
-    }
-
-    public void setCapacityBytes(long capacityBytes) {
-        this.capacityBytes = capacityBytes;
     }
 
     public Long getCapacityIops() {
         return capacityIops;
     }
 
-    public void setCapacityIops(Long capacityIops) {
-        this.capacityIops = capacityIops;
-    }
-
     public long getClusterId() {
         return clusterId;
-    }
-
-    public void setClusterId(long clusterId) {
-        this.clusterId = clusterId;
     }
 
     public String getClusterUuid() {
         return clusterUuid;
     }
 
-    public void setClusterUuid(String clusterUuid) {
-        this.clusterUuid = clusterUuid;
-    }
-
     public String getClusterName() {
         return clusterName;
-    }
-
-    public void setClusterName(String clusterName) {
-        this.clusterName = clusterName;
     }
 
     public Cluster.ClusterType getClusterType() {
         return clusterType;
     }
 
-    public void setClusterType(Cluster.ClusterType clusterType) {
-        this.clusterType = clusterType;
-    }
-
     public long getZoneId() {
         return zoneId;
-    }
-
-    public void setZoneId(long zoneId) {
-        this.zoneId = zoneId;
     }
 
     public String getZoneUuid() {
         return zoneUuid;
     }
 
-    public void setZoneUuid(String zoneUuid) {
-        this.zoneUuid = zoneUuid;
-    }
-
     public String getZoneName() {
         return zoneName;
-    }
-
-    public void setZoneName(String zoneName) {
-        this.zoneName = zoneName;
     }
 
     public long getPodId() {
         return podId;
     }
 
-    public void setPodId(long podId) {
-        this.podId = podId;
-    }
-
     public String getPodUuid() {
         return podUuid;
-    }
-
-    public void setPodUuid(String podUuid) {
-        this.podUuid = podUuid;
     }
 
     public String getPodName() {
         return podName;
     }
 
-    public void setPodName(String podName) {
-        this.podName = podName;
-    }
-
     public String getTag() {
         return tag;
-    }
-
-    public void setTag(String tag) {
-        this.tag = tag;
     }
 
     public long getUsedCapacity() {
         return usedCapacity;
     }
 
-    public void setUsedCapacity(long usedCapacity) {
-        this.usedCapacity = usedCapacity;
-    }
-
     public long getReservedCapacity() {
         return reservedCapacity;
-    }
-
-    public void setReservedCapacity(long reservedCapacity) {
-        this.reservedCapacity = reservedCapacity;
     }
 
     public Long getJobId() {
         return jobId;
     }
 
-    public void setJobId(Long jobId) {
-        this.jobId = jobId;
-    }
-
     public String getJobUuid() {
         return jobUuid;
     }
 
-    public void setJobUuid(String jobUuid) {
-        this.jobUuid = jobUuid;
-    }
-
     public int getJobStatus() {
         return jobStatus;
-    }
-
-    public void setJobStatus(int jobStatus) {
-        this.jobStatus = jobStatus;
     }
 
     public String getStorageProviderName() {

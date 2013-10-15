@@ -149,26 +149,12 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     }
 
     @Override
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    @Override
     public String getUuid() {
         return uuid;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
-
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     @Override
@@ -176,17 +162,9 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         return accountId;
     }
 
-    public void setAccountId(long accountId) {
-        this.accountId = accountId;
-    }
-
     @Override
     public String getAccountUuid() {
         return accountUuid;
-    }
-
-    public void setAccountUuid(String accountUuid) {
-        this.accountUuid = accountUuid;
     }
 
     @Override
@@ -194,17 +172,9 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         return accountName;
     }
 
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
-    }
-
     @Override
     public short getAccountType() {
         return accountType;
-    }
-
-    public void setAccountType(short accountType) {
-        this.accountType = accountType;
     }
 
     @Override
@@ -212,17 +182,9 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         return domainId;
     }
 
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
-    }
-
     @Override
     public String getDomainUuid() {
         return domainUuid;
-    }
-
-    public void setDomainUuid(String domainUuid) {
-        this.domainUuid = domainUuid;
     }
 
     @Override
@@ -230,25 +192,13 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         return domainName;
     }
 
-    public void setDomainName(String domainName) {
-        this.domainName = domainName;
-    }
-
     @Override
     public String getDomainPath() {
         return domainPath;
     }
 
-    public void setDomainPath(String domainPath) {
-        this.domainPath = domainPath;
-    }
-
     public long getProjectId() {
         return projectId;
-    }
-
-    public void setProjectId(long projectId) {
-        this.projectId = projectId;
     }
 
     @Override
@@ -256,89 +206,45 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         return projectUuid;
     }
 
-    public void setProjectUuid(String projectUuid) {
-        this.projectUuid = projectUuid;
-    }
-
     @Override
     public String getProjectName() {
         return projectName;
-    }
-
-    public void setProjectName(String projectName) {
-        this.projectName = projectName;
     }
 
     public Long getJobId() {
         return jobId;
     }
 
-    public void setJobId(Long jobId) {
-        this.jobId = jobId;
-    }
-
     public String getJobUuid() {
         return jobUuid;
-    }
-
-    public void setJobUuid(String jobUuid) {
-        this.jobUuid = jobUuid;
     }
 
     public int getJobStatus() {
         return jobStatus;
     }
 
-    public void setJobStatus(int jobStatus) {
-        this.jobStatus = jobStatus;
-    }
-
     public String getDescription() {
         return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public Long getRuleId() {
         return ruleId;
     }
 
-    public void setRuleId(Long ruleId) {
-        this.ruleId = ruleId;
-    }
-
     public String getRuleUuid() {
         return ruleUuid;
-    }
-
-    public void setRuleUuid(String ruleUuid) {
-        this.ruleUuid = ruleUuid;
     }
 
     public int getRuleStartPort() {
         return ruleStartPort;
     }
 
-    public void setRuleStartPort(int ruleStartPort) {
-        this.ruleStartPort = ruleStartPort;
-    }
-
     public int getRuleEndPort() {
         return ruleEndPort;
     }
 
-    public void setRuleEndPort(int ruleEndPort) {
-        this.ruleEndPort = ruleEndPort;
-    }
-
     public String getRuleProtocol() {
         return ruleProtocol;
-    }
-
-    public void setRuleProtocol(String ruleProtocol) {
-        this.ruleProtocol = ruleProtocol;
     }
 
     public SecurityRuleType getRuleType() {
@@ -349,104 +255,51 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         }
     }
 
-    public void setRuleType(String ruleType) {
-        this.ruleType = ruleType;
-    }
-
     public Long getRuleAllowedNetworkId() {
         return ruleAllowedNetworkId;
-    }
-
-    public void setRuleAllowedNetworkId(Long ruleAllowedNetworkId) {
-        this.ruleAllowedNetworkId = ruleAllowedNetworkId;
     }
 
     public String getRuleAllowedSourceIpCidr() {
         return ruleAllowedSourceIpCidr;
     }
 
-    public void setRuleAllowedSourceIpCidr(String ruleAllowedSourceIpCidr) {
-        this.ruleAllowedSourceIpCidr = ruleAllowedSourceIpCidr;
-    }
-
     public long getTagId() {
         return tagId;
-    }
-
-    public void setTagId(long tagId) {
-        this.tagId = tagId;
     }
 
     public String getTagUuid() {
         return tagUuid;
     }
 
-    public void setTagUuid(String tagUuid) {
-        this.tagUuid = tagUuid;
-    }
-
     public String getTagKey() {
         return tagKey;
-    }
-
-    public void setTagKey(String tagKey) {
-        this.tagKey = tagKey;
     }
 
     public String getTagValue() {
         return tagValue;
     }
 
-    public void setTagValue(String tagValue) {
-        this.tagValue = tagValue;
-    }
-
     public long getTagDomainId() {
         return tagDomainId;
-    }
-
-    public void setTagDomainId(long tagDomainId) {
-        this.tagDomainId = tagDomainId;
     }
 
     public long getTagAccountId() {
         return tagAccountId;
     }
 
-    public void setTagAccountId(long tagAccountId) {
-        this.tagAccountId = tagAccountId;
-    }
-
     public long getTagResourceId() {
         return tagResourceId;
-    }
-
-    public void setTagResourceId(long tagResourceId) {
-        this.tagResourceId = tagResourceId;
     }
 
     public String getTagResourceUuid() {
         return tagResourceUuid;
     }
 
-    public void setTagResourceUuid(String tagResourceUuid) {
-        this.tagResourceUuid = tagResourceUuid;
-    }
-
     public TaggedResourceType getTagResourceType() {
         return tagResourceType;
-    }
-
-    public void setTagResourceType(TaggedResourceType tagResourceType) {
-        this.tagResourceType = tagResourceType;
     }
 
     public String getTagCustomer() {
         return tagCustomer;
     }
-
-    public void setTagCustomer(String tagCustomer) {
-        this.tagCustomer = tagCustomer;
-    }
-
 }
