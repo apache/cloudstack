@@ -5131,19 +5131,31 @@ ul.ui-tabs-nav {
   ul.ui-tabs-nav li {
     float: left;
     list-style: none;
-    padding: 15px 40px;
-    margin: 0px; }
-    ul.ui-tabs-nav li a:hover {
-      color: black;
-      text-decoration: none; }
+    padding: 15px 30px;
+    margin: 0px;
+    font-size: 12px;
+    font-weight: bold; }
+    ul.ui-tabs-nav li a {
+      color: #8c8c8c;
+      text-decoration: none;
+      text-shadow: 0px 2px 1px white; }
+      ul.ui-tabs-nav li a:hover {
+        color: black;
+        text-decoration: underline; }
   ul.ui-tabs-nav li {
     float: left;
     list-style: none;
-    padding: 15px 40px;
-    margin: 0px; }
-    ul.ui-tabs-nav li a:hover {
-      color: black;
-      text-decoration: none; }
+    padding: 15px 30px;
+    margin: 0px;
+    font-size: 12px;
+    font-weight: bold; }
+    ul.ui-tabs-nav li a {
+      color: #8c8c8c;
+      text-decoration: none;
+      text-shadow: 0px 2px 1px white; }
+      ul.ui-tabs-nav li a:hover {
+        color: black;
+        text-decoration: underline; }
     ul.ui-tabs-nav li.ui-state-active {
       background: #f2f2f2;
       border-radius: 8px 8px 0 0;
@@ -6581,11 +6593,17 @@ ul.ui-tabs-nav {
   .detail-view .ui-tabs-nav li {
     float: left;
     list-style: none;
-    padding: 15px 40px;
-    margin: 0px; }
-    .detail-view .ui-tabs-nav li a:hover {
-      color: black;
-      text-decoration: none; }
+    padding: 15px 30px;
+    margin: 0px;
+    font-size: 12px;
+    font-weight: bold; }
+    .detail-view .ui-tabs-nav li a {
+      color: #8c8c8c;
+      text-decoration: none;
+      text-shadow: 0px 2px 1px white; }
+      .detail-view .ui-tabs-nav li a:hover {
+        color: black;
+        text-decoration: underline; }
   .detail-view .ui-tabs-nav li.ui-state-active {
     background: #f2f2f2;
     border-radius: 8px 8px 0 0;
