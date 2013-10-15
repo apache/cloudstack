@@ -27,18 +27,16 @@ import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.RevertToVMSnapshotAnswer;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.VMSnapshotTO;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
@@ -47,14 +45,12 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 
@@ -78,6 +74,10 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     ConfigurationDao configurationDao;
     @Inject
     AgentManager agentMgr;
+    @Inject
+    VolumeDao volumeDao;
+    @Inject
+    DiskOfferingDao diskOfferingDao;
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         String value = configurationDao.getValue("vmsnapshot.create.wait");
@@ -96,13 +96,12 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         }
 
         CreateVMSnapshotAnswer answer = null;
+        boolean result = false;
         try {
             GuestOSVO guestOS = guestOSDao.findById(userVm.getGuestOSId());
 
-            // prepare snapshotVolumeTos
             List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(userVm.getId());
 
-            // prepare target snapshotTO and its parent snapshot (current snapshot)
             VMSnapshotTO current = null;
             VMSnapshotVO currentSnapshot = vmSnapshotDao.findCurrentSnapshotByVmId(userVm.getId());
             if (currentSnapshot != null)
@@ -121,34 +120,31 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             if (answer != null && answer.getResult()) {
                 processAnswer(vmSnapshotVO, userVm, answer, hostId);
                 s_logger.debug("Create vm snapshot " + vmSnapshot.getName() + " succeeded for vm: " + userVm.getInstanceName());
-            }else{
+                result = true;
+
+                for (VolumeObjectTO volumeTo : answer.getVolumeTOs()){
+                    publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_CREATE,vmSnapshot,userVm,volumeTo);
+                }
+                return vmSnapshot;
+            } else {
                 String errMsg = "Creating VM snapshot: " + vmSnapshot.getName() + " failed";
                 if(answer != null && answer.getDetails() != null)
                     errMsg = errMsg + " due to " + answer.getDetails();
                 s_logger.error(errMsg);
-                vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
                 throw new CloudRuntimeException(errMsg);
             }
-            return vmSnapshot;
-        } catch (Exception e) {
-            if(e instanceof AgentUnavailableException){
+        } catch (OperationTimedoutException e) {
+            s_logger.debug("Creating VM snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
+            throw new CloudRuntimeException("Creating VM snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
+        } catch (AgentUnavailableException e) {
+            s_logger.debug("Creating VM snapshot: " + vmSnapshot.getName() + " failed", e);
+            throw new CloudRuntimeException("Creating VM snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
+        } finally{
+            if (!result) {
                 try {
                     vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
                 } catch (NoTransitionException e1) {
                     s_logger.error("Cannot set vm snapshot state due to: " + e1.getMessage());
-                }
-            }
-            String msg = e.getMessage();
-            s_logger.error("Create vm snapshot " + vmSnapshot.getName() + " failed for vm: " + userVm.getInstanceName() + " due to " + msg);
-            throw new CloudRuntimeException(msg);
-        } finally{
-            if(vmSnapshot.getState() == VMSnapshot.State.Allocated){
-                s_logger.warn("Create vm snapshot " + vmSnapshot.getName() + " failed for vm: " + userVm.getInstanceName());
-                vmSnapshotDao.remove(vmSnapshot.getId());
-            }
-            if(vmSnapshot.getState() == VMSnapshot.State.Ready && answer != null){
-                for (VolumeTO volumeTo : answer.getVolumeTOs()){
-                    publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_CREATE,vmSnapshot,userVm,volumeTo);
                 }
             }
         }
@@ -158,15 +154,18 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     public boolean deleteVMSnapshot(VMSnapshot vmSnapshot) {
         UserVmVO userVm = userVmDao.findById(vmSnapshot.getVmId());
         VMSnapshotVO vmSnapshotVO = (VMSnapshotVO)vmSnapshot;
-        DeleteVMSnapshotAnswer answer = null;
         try {
             vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot,VMSnapshot.Event.ExpungeRequested);
+        } catch (NoTransitionException e) {
+            s_logger.debug("Failed to change vm snapshot state with event ExpungeRequested");
+            throw new CloudRuntimeException("Failed to change vm snapshot state with event ExpungeRequested: " + e.getMessage());
+        }
+
+        try {
             Long hostId = vmSnapshotHelper.pickRunningHost(vmSnapshot.getVmId());
 
-            // prepare snapshotVolumeTos
             List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmSnapshot.getVmId());
 
-            // prepare DeleteVMSnapshotCommand
             String vmInstanceName = userVm.getInstanceName();
             VMSnapshotTO parent = vmSnapshotHelper.getSnapshotWithParents(vmSnapshotVO).getParent();
             VMSnapshotTO vmSnapshotTO = new VMSnapshotTO(vmSnapshot.getId(), vmSnapshot.getName(), vmSnapshot.getType(),
@@ -174,26 +173,24 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             GuestOSVO guestOS = guestOSDao.findById(userVm.getGuestOSId());
             DeleteVMSnapshotCommand deleteSnapshotCommand = new DeleteVMSnapshotCommand(vmInstanceName, vmSnapshotTO, volumeTOs,guestOS.getDisplayName());
 
-            answer = (DeleteVMSnapshotAnswer) agentMgr.send(hostId, deleteSnapshotCommand);
+            Answer answer = agentMgr.send(hostId, deleteSnapshotCommand);
 
             if (answer != null && answer.getResult()) {
+                DeleteVMSnapshotAnswer deleteVMSnapshotAnswer = (DeleteVMSnapshotAnswer)answer;
                 processAnswer(vmSnapshotVO, userVm, answer, hostId);
-                s_logger.debug("Delete VM snapshot " + vmSnapshot.getName() + " succeeded for vm: " + userVm.getInstanceName());
-                return true;
-            } else {
-                s_logger.error("Delete vm snapshot " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " failed due to " + answer.getDetails());
-                return false;
-            }
-        } catch (Exception e) {
-            String msg = "Delete vm snapshot " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " failed due to " + e.getMessage();
-            s_logger.error(msg , e);
-            throw new CloudRuntimeException(e.getMessage());
-        } finally{
-            if(answer != null && answer.getResult()){
-                for (VolumeTO volumeTo : answer.getVolumeTOs()){
+                for (VolumeObjectTO volumeTo : deleteVMSnapshotAnswer.getVolumeTOs()){
                     publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_DELETE,vmSnapshot,userVm,volumeTo);
                 }
+                return true;
+            } else {
+                String errMsg = (answer == null) ? null : answer.getDetails();
+                s_logger.error("Delete vm snapshot " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " failed due to " + errMsg);
+                throw new  CloudRuntimeException("Delete vm snapshot " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " failed due to " + errMsg);
             }
+        } catch (OperationTimedoutException e) {
+            throw new CloudRuntimeException("Delete vm snapshot " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " failed due to " + e.getMessage());
+        } catch (AgentUnavailableException e) {
+            throw new CloudRuntimeException("Delete vm snapshot " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " failed due to " + e.getMessage());
         }
     }
 
@@ -226,7 +223,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         }
     }
 
-    protected void finalizeDelete(VMSnapshotVO vmSnapshot, List<VolumeTO> VolumeTOs) {
+    protected void finalizeDelete(VMSnapshotVO vmSnapshot, List<VolumeObjectTO> VolumeTOs) {
         // update volumes path
         updateVolumePath(VolumeTOs);
 
@@ -248,7 +245,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         vmSnapshotDao.persist(vmSnapshot);
     }
 
-    protected void finalizeCreate(VMSnapshotVO vmSnapshot, List<VolumeTO> VolumeTOs) {
+    protected void finalizeCreate(VMSnapshotVO vmSnapshot, List<VolumeObjectTO> VolumeTOs) {
         // update volumes path
         updateVolumePath(VolumeTOs);
 
@@ -263,7 +260,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         vmSnapshotDao.persist(vmSnapshot);
     }
 
-    protected void finalizeRevert(VMSnapshotVO vmSnapshot, List<VolumeTO> volumeToList) {
+    protected void finalizeRevert(VMSnapshotVO vmSnapshot, List<VolumeObjectTO> volumeToList) {
         // update volumes path
         updateVolumePath(volumeToList);
 
@@ -277,23 +274,23 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         vmSnapshotDao.persist(vmSnapshot);
     }
 
-    private void updateVolumePath(List<VolumeTO> volumeTOs) {
-        for (VolumeTO volume : volumeTOs) {
+    private void updateVolumePath(List<VolumeObjectTO> volumeTOs) {
+        for (VolumeObjectTO volume : volumeTOs) {
             if (volume.getPath() != null) {
                 VolumeVO volumeVO = volumeDao.findById(volume.getId());
                 volumeVO.setPath(volume.getPath());
-                volumeVO.setVmSnapshotChainSize(volume.getChainSize());
+                volumeVO.setVmSnapshotChainSize(volume.getSize());
                 volumeDao.persist(volumeVO);
             }
         }
     }
 
-    private void publishUsageEvent(String type, VMSnapshot vmSnapshot, UserVm userVm, VolumeTO volumeTo){
-        VolumeVO volume = _volumeDao.findById(volumeTo.getId());
+    private void publishUsageEvent(String type, VMSnapshot vmSnapshot, UserVm userVm, VolumeObjectTO volumeTo){
+        VolumeVO volume = volumeDao.findById(volumeTo.getId());
         Long diskOfferingId = volume.getDiskOfferingId();
         Long offeringId = null;
         if (diskOfferingId != null) {
-            DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
+            DiskOfferingVO offering = diskOfferingDao.findById(diskOfferingId);
             if (offering != null
                     && (offering.getType() == DiskOfferingVO.Type.Disk)) {
                 offeringId = offering.getId();
@@ -307,58 +304,59 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 vmSnapshot.getName(),
                 offeringId,
                 volume.getId(), // save volume's id into templateId field
-                volumeTo.getChainSize(),
+                volumeTo.getSize(),
                 VMSnapshot.class.getName(), vmSnapshot.getUuid());
     }
 
     @Override
     public boolean revertVMSnapshot(VMSnapshot vmSnapshot) {
-        userVm = _userVMDao.findById(userVm.getId());
+        VMSnapshotVO vmSnapshotVO = (VMSnapshotVO)vmSnapshot;
+        UserVmVO userVm = userVmDao.findById(vmSnapshot.getVmId());
         try {
-            vmSnapshotStateTransitTo(vmSnapshotVo, VMSnapshot.Event.RevertRequested);
+            vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshotVO, VMSnapshot.Event.RevertRequested);
         } catch (NoTransitionException e) {
             throw new CloudRuntimeException(e.getMessage());
         }
 
+        boolean result = false;
         try {
-            VMSnapshotVO snapshot = _vmSnapshotDao.findById(vmSnapshotVo.getId());
-            // prepare RevertToSnapshotCommand
-            List<VolumeTO> volumeTOs = getVolumeTOList(userVm.getId());
+            VMSnapshotVO snapshot = vmSnapshotDao.findById(vmSnapshotVO.getId());
+            List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(userVm.getId());
             String vmInstanceName = userVm.getInstanceName();
-            VMSnapshotTO parent = getSnapshotWithParents(snapshot).getParent();
+            VMSnapshotTO parent = vmSnapshotHelper.getSnapshotWithParents(snapshot).getParent();
             VMSnapshotTO vmSnapshotTO = new VMSnapshotTO(snapshot.getId(), snapshot.getName(), snapshot.getType(),
                     snapshot.getCreated().getTime(), snapshot.getDescription(), snapshot.getCurrent(), parent);
-
-            GuestOSVO guestOS = _guestOSDao.findById(userVm.getGuestOSId());
+            Long hostId = vmSnapshotHelper.pickRunningHost(vmSnapshot.getVmId());
+            GuestOSVO guestOS = guestOSDao.findById(userVm.getGuestOSId());
             RevertToVMSnapshotCommand revertToSnapshotCommand = new RevertToVMSnapshotCommand(vmInstanceName, vmSnapshotTO, volumeTOs, guestOS.getDisplayName());
 
-            RevertToVMSnapshotAnswer answer = (RevertToVMSnapshotAnswer) sendToPool(hostId, revertToSnapshotCommand);
+            RevertToVMSnapshotAnswer answer = (RevertToVMSnapshotAnswer) agentMgr.send(hostId, revertToSnapshotCommand);
             if (answer != null && answer.getResult()) {
-                processAnswer(vmSnapshotVo, userVm, answer, hostId);
-                s_logger.debug("RevertTo " + vmSnapshotVo.getName() + " succeeded for vm: " + userVm.getInstanceName());
+                processAnswer(vmSnapshotVO, userVm, answer, hostId);
+                result = true;
             } else {
-                String errMsg = "Revert VM: " + userVm.getInstanceName() + " to snapshot: "+ vmSnapshotVo.getName() + " failed";
+                String errMsg = "Revert VM: " + userVm.getInstanceName() + " to snapshot: "+ vmSnapshotVO.getName() + " failed";
                 if(answer != null && answer.getDetails() != null)
                     errMsg = errMsg + " due to " + answer.getDetails();
                 s_logger.error(errMsg);
-                // agent report revert operation fails
-                vmSnapshotStateTransitTo(vmSnapshotVo, VMSnapshot.Event.OperationFailed);
                 throw new CloudRuntimeException(errMsg);
             }
-        } catch (Exception e) {
-            if(e instanceof AgentUnavailableException){
+        } catch (OperationTimedoutException e) {
+            s_logger.debug("Failed to revert vm snapshot", e);
+            throw new CloudRuntimeException(e.getMessage());
+        } catch (AgentUnavailableException e) {
+            s_logger.debug("Failed to revert vm snapshot", e);
+            throw new CloudRuntimeException(e.getMessage());
+        } finally {
+            if (!result) {
                 try {
-                    vmSnapshotStateTransitTo(vmSnapshotVo, VMSnapshot.Event.OperationFailed);
+                    vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
                 } catch (NoTransitionException e1) {
                     s_logger.error("Cannot set vm snapshot state due to: " + e1.getMessage());
                 }
             }
-            // for other exceptions, do not change VM snapshot state, leave it for snapshotSync
-            String errMsg = "revert vm: " + userVm.getInstanceName() + " to snapshot " + vmSnapshotVo.getName() + " failed due to " + e.getMessage();
-            s_logger.error(errMsg);
-            throw new CloudRuntimeException(e.getMessage());
         }
-        return userVm;
+        return result;
     }
 
     @Override

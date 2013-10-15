@@ -342,8 +342,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         return snapshot;
     }
 
-
-
     @Override
     public Snapshot backupSnapshot(Long snapshotId) {
         SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Image);
@@ -353,97 +351,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         return snapshotSrv.backupSnapshot(snapshot);
     }
-
-    /*
-    @Override
-    public void downloadSnapshotsFromSwift(SnapshotVO ss) {
-
-        long volumeId = ss.getVolumeId();
-        VolumeVO volume = _volsDao.findById(volumeId);
-        Long dcId = volume.getDataCenterId();
-        Long accountId = volume.getAccountId();
-        DataStore secStore = this.dataStoreMgr.getImageStore(dcId);
-
-        Long swiftId = ss.getSwiftId();
-        SwiftTO swift = _swiftMgr.getSwiftTO(swiftId);
-        SnapshotVO tss = ss;
-        List<String> BackupUuids = new ArrayList<String>(30);
-        while (true) {
-            BackupUuids.add(0, tss.getBackupSnapshotId());
-            if (tss.getPrevSnapshotId() == 0)
-                break;
-            Long id = tss.getPrevSnapshotId();
-            tss = _snapshotDao.findById(id);
-            assert tss != null : " can not find snapshot " + id;
-        }
-        String parent = null;
-        try {
-            for (String backupUuid : BackupUuids) {
-<<<<<<< HEAD
-                downloadSnapshotFromSwiftCommand cmd = new downloadSnapshotFromSwiftCommand(swift, secStore.getUri(), dcId, accountId, volumeId, parent, backupUuid, _backupsnapshotwait);
-=======
-                 DownloadSnapshotFromSwiftCommand cmd = new DownloadSnapshotFromSwiftCommand(swift, secondaryStoragePoolUrl, dcId, accountId, volumeId, parent, backupUuid, _backupsnapshotwait);
->>>>>>> master
-                Answer answer = _agentMgr.sendToSSVM(dcId, cmd);
-                if ((answer == null) || !answer.getResult()) {
-                    throw new CloudRuntimeException("downloadSnapshotsFromSwift failed ");
-                }
-                parent = backupUuid;
-            }
-        } catch (Exception e) {
-            throw new CloudRuntimeException("downloadSnapshotsFromSwift failed due to " + e.toString());
-        }
-
-    }
-
-    private List<String> determineBackupUuids(final SnapshotVO snapshot) {
-
-        final List<String> backupUuids = new ArrayList<String>();
-        backupUuids.add(0, snapshot.getBackupSnapshotId());
-
-        SnapshotVO tempSnapshot = snapshot;
-        while (tempSnapshot.getPrevSnapshotId() != 0) {
-            tempSnapshot = _snapshotDao.findById(tempSnapshot
-                    .getPrevSnapshotId());
-            backupUuids.add(0, tempSnapshot.getBackupSnapshotId());
-        }
-
-        return Collections.unmodifiableList(backupUuids);
-    }
-
-    @Override
-    public void downloadSnapshotsFromS3(final SnapshotVO snapshot) {
-
-        final VolumeVO volume = _volsDao.findById(snapshot.getVolumeId());
-        final Long zoneId = volume.getDataCenterId();
-        final DataStore secStore = this.dataStoreMgr.getImageStore(zoneId);
-
-        final S3TO s3 = _s3Mgr.getS3TO(snapshot.getS3Id());
-        final List<String> backupUuids = determineBackupUuids(snapshot);
-
-        try {
-            String parent = null;
-            for (final String backupUuid : backupUuids) {
-                final DownloadSnapshotFromS3Command cmd = new DownloadSnapshotFromS3Command(
-                        s3, parent, secStore.getUri(), zoneId,
-                        volume.getAccountId(), volume.getId(), backupUuid,
-                        _backupsnapshotwait);
-                final Answer answer = _agentMgr.sendToSSVM(zoneId, cmd);
-                if ((answer == null) || !answer.getResult()) {
-                    throw new CloudRuntimeException(String.format(
-                            "S3 snapshot download failed due to %1$s.",
-                            answer != null ? answer.getDetails()
-                                    : "unspecified error"));
-                }
-                parent = backupUuid;
-            }
-        } catch (Exception e) {
-            throw new CloudRuntimeException(
-                    "Snapshot download from S3 failed due to " + e.toString(),
-                    e);
-        }
-
-    }*/
 
     @Override
     public SnapshotVO getParentSnapshot(VolumeInfo volume) {
@@ -545,7 +452,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             throw new CloudRuntimeException("Failed to delete snapshot:" + e.toString());
         }
     }
-
 
     @Override
     public String getSecondaryStorageURL(SnapshotVO snapshot) {
@@ -671,7 +577,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         Pair<List<SnapshotVO>, Integer> result = _snapshotDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends Snapshot>, Integer>(result.first(), result.second());
     }
-
 
     @Override
     public boolean deleteSnapshotDirsForAccount(long accountId) {
@@ -941,8 +846,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         }
         return null;
     }
-
-
 
     private boolean hostSupportSnapsthotForVolume(HostVO host, VolumeInfo volume) {
         if (host.getHypervisorType() != HypervisorType.KVM) {

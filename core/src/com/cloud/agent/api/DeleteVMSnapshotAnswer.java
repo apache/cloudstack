@@ -16,12 +16,12 @@
 // under the License.
 package com.cloud.agent.api;
 
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+
 import java.util.List;
 
-import com.cloud.agent.api.to.VolumeTO;
-
 public class DeleteVMSnapshotAnswer extends Answer {
-    private List<VolumeTO> volumeTOs;
+    private List<VolumeObjectTO> volumeTOs;
 
     public DeleteVMSnapshotAnswer() {
     }
@@ -32,16 +32,16 @@ public class DeleteVMSnapshotAnswer extends Answer {
     }
 
     public DeleteVMSnapshotAnswer(DeleteVMSnapshotCommand cmd,
-            List<VolumeTO> volumeTOs) {
+            List<VolumeObjectTO> volumeTOs) {
         super(cmd, true, "");
         this.volumeTOs = volumeTOs;
     }
 
-    public List<VolumeTO> getVolumeTOs() {
+    public List<VolumeObjectTO> getVolumeTOs() {
         return volumeTOs;
     }
 
-    public void setVolumeTOs(List<VolumeTO> volumeTOs) {
+    public void setVolumeTOs(List<VolumeObjectTO> volumeTOs) {
         this.volumeTOs = volumeTOs;
     }
 

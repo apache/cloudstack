@@ -17,83 +17,34 @@
 
 package com.cloud.vm.snapshot;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.CreateVMSnapshotAnswer;
-import com.cloud.agent.api.CreateVMSnapshotCommand;
-import com.cloud.agent.api.DeleteVMSnapshotAnswer;
-import com.cloud.agent.api.DeleteVMSnapshotCommand;
-import com.cloud.agent.api.RevertToVMSnapshotAnswer;
-import com.cloud.agent.api.RevertToVMSnapshotCommand;
-import com.cloud.agent.api.VMSnapshotTO;
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
-import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -101,8 +52,22 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 @Local(value = { VMSnapshotManager.class, VMSnapshotService.class })
@@ -112,22 +77,13 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     @Inject VMSnapshotDao _vmSnapshotDao;
     @Inject VolumeDao _volumeDao;
     @Inject AccountDao _accountDao;
-    @Inject VMInstanceDao _vmInstanceDao;
     @Inject UserVmDao _userVMDao;
-    @Inject HostDao _hostDao;
-    @Inject UserDao _userDao;
-    @Inject AgentManager _agentMgr;
-    @Inject HypervisorGuruManager _hvGuruMgr;
     @Inject AccountManager _accountMgr;
     @Inject GuestOSDao _guestOSDao;
-    @Inject PrimaryDataStoreDao _storagePoolDao;
     @Inject SnapshotDao _snapshotDao;
     @Inject VirtualMachineManager _itMgr;
-    @Inject DataStoreManager dataStoreMgr;
     @Inject ConfigurationDao _configDao;
     @Inject HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
-    @Inject DiskOfferingDao _diskOfferingDao;
-    @Inject ServiceOfferingDao _serviceOfferingDao;
     @Inject List<VMSnapshotStrategy> vmSnapshotStrategies;
 
     public List<VMSnapshotStrategy> getVmSnapshotStrategies() {
@@ -375,13 +331,15 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             throw new CloudRuntimeException("VM snapshot id: " + vmSnapshotId + " can not be found");
         }
 
-        VMSnapshotStrategy strategy = findVMSnapshotStrategy(vmSnapshot);
-        VMSnapshot snapshot = strategy.takeVMSnapshot(vmSnapshot);
-        return snapshot;
+        try {
+            VMSnapshotStrategy strategy = findVMSnapshotStrategy(vmSnapshot);
+            VMSnapshot snapshot = strategy.takeVMSnapshot(vmSnapshot);
+            return snapshot;
+        } catch (Exception e) {
+            s_logger.debug("Failed to create vm snapshot: " + vmSnapshotId ,e);
+            return null;
+        }
     }
-
-
-
 
     public VMSnapshotManagerImpl() {
         
@@ -423,8 +381,13 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         if(vmSnapshot.getState() == VMSnapshot.State.Allocated){
             return _vmSnapshotDao.remove(vmSnapshot.getId());
         } else{
-            VMSnapshotStrategy strategy = findVMSnapshotStrategy(vmSnapshot);
-            return strategy.deleteVMSnapshot(vmSnapshot);
+            try {
+                VMSnapshotStrategy strategy = findVMSnapshotStrategy(vmSnapshot);
+                return strategy.deleteVMSnapshot(vmSnapshot);
+            } catch (Exception e) {
+                s_logger.debug("Failed to delete vm snapshot: " + vmSnapshotId, e);
+                return false;
+            }
         }
     }
 
@@ -496,10 +459,15 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         if (hasActiveVMSnapshotTasks(userVm.getId())) {
             throw new InvalidParameterValueException("There is other active vm snapshot tasks on the instance, please try again later");
         }
-        
-        VMSnapshotStrategy strategy = findVMSnapshotStrategy(vmSnapshotVo);
-        strategy.revertVMSnapshot(vmSnapshotVo);
-        return userVm;
+
+        try {
+            VMSnapshotStrategy strategy = findVMSnapshotStrategy(vmSnapshotVo);
+            strategy.revertVMSnapshot(vmSnapshotVo);
+            return userVm;
+        } catch (Exception e) {
+            s_logger.debug("Failed to revert vmsnapshot: " + vmSnapshotId, e);
+            return null;
+        }
     }
 
     @Override
