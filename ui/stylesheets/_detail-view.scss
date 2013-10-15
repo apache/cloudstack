@@ -62,6 +62,11 @@
         display: inline-block;
         height: 50px;
         overflow: hidden;
+        position: relative;
+        float: left;
+        display: block;        
+
+        @include span-columns(12);
         @include row;
 
         .buttons {

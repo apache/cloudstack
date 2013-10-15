@@ -6489,8 +6489,17 @@ ul.ui-tabs-nav {
   display: inline-block;
   height: 50px;
   overflow: hidden;
+  position: relative;
+  float: left;
+  display: block;
+  display: block;
+  float: left;
+  margin-right: 2.35765%;
+  width: 100%;
   *zoom: 1;
   display: block; }
+  .detail-view .detail-actions:last-child {
+    margin-right: 0; }
   .detail-view .detail-actions:before, .detail-view .detail-actions:after {
     content: " ";
     display: table; }
