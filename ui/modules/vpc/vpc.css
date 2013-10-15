@@ -25,6 +25,10 @@
   position: relative;
 }
 
+.vpc-network-chart .toolbar {
+    padding: 0;
+}
+
 .vpc-network-chart .info-box {
   font-size: 12px;
   color: #6E6B6B;
@@ -48,7 +52,7 @@
 }
 
 .vpc-network-chart .tiers {
-  margin: 66px 46px 0 0;
+  margin: 0px 46px 0 0;
   width: 362px;
   float: right;
 }
@@ -116,7 +120,7 @@
 }
 
 .vpc-network-chart .tier-item .header .title span {
-  font-size: 20px;
+  font-size: 16px;
   color: #FFFFFF;
   /*+text-shadow:0px 1px 1px #000000;*/
   -moz-text-shadow: 0px 1px 1px #000000;
@@ -141,7 +145,7 @@
 }
 
 .vpc-network-chart .tier-item .content .dashboard-item {
-  width: 145px;
+  width: 140px;
   height: 54px;
   margin: 7px 9px 0;
   background: #C1E0FE;
@@ -173,7 +177,7 @@
 }
 
 .vpc-network-chart .tier-item .content .dashboard-item .total {
-  font-size: 30px;
+  font-size: 20px;
   /*+placement:shift 7px 5px;*/
   position: relative;
   left: 7px;
@@ -210,7 +214,6 @@
   /*+placement:shift 10px 5px;*/
   position: relative;
   left: 10px;
-  top: 5px;
 }
 
 .vpc-network-chart .tier-item .content .info .cidr-label {
@@ -280,10 +283,8 @@
   float: left;
   /*+placement:shift 10px 176px;*/
   position: relative;
-  left: 10px;
-  top: 176px;
   left: 0px;
-  top: 237px;
+  top: 169px;
 }
 
 .vpc-network-chart .tier-item.router .header {
