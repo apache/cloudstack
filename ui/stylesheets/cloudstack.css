@@ -4990,7 +4990,7 @@ input[type=text], input[type=password] {
   padding: 10px;
   margin-top: 10px;
   margin-bottom: 10px;
-  border: 2px solid gray;
+  border: 1px solid gray;
   text-indent: 15px;
   padding-right: 15px; }
   input[type=text]:focus, input[type=password]:focus {
@@ -5319,7 +5319,7 @@ ul.ui-tabs-nav {
         cursor: pointer;
         text-align: center;
         float: right;
-        margin-right: 10px; }
+        margin-left: 10px; }
         .dashboard.admin .sub.alerts .top .button.action:hover {
           box-shadow: inset 0 0 10px black; }
       .dashboard.admin .sub.alerts .top input, .dashboard.admin .sub.alerts .top label, .dashboard.admin .sub.alerts .top select {
@@ -5327,12 +5327,12 @@ ul.ui-tabs-nav {
         margin: 0 10px 0 10px;
         padding-top: 6px;
         padding-bottom: 6px;
-        font-size: 12px; }
+        font-size: 12px;
+        height: 35px; }
       .dashboard.admin .sub.alerts .top label {
         margin-right: 0px; }
       .dashboard.admin .sub.alerts .top .search-bar {
-        float: right;
-        margin-right: 25px; }
+        float: right; }
       .dashboard.admin .sub.alerts .top .title {
         float: left;
         padding-top: 8px; }
@@ -5385,7 +5385,7 @@ ul.ui-tabs-nav {
         cursor: pointer;
         text-align: center;
         float: right;
-        margin-right: 10px; }
+        margin-left: 10px; }
         .dashboard.admin .head .top .button.action:hover {
           box-shadow: inset 0 0 10px black; }
       .dashboard.admin .head .top input, .dashboard.admin .head .top label, .dashboard.admin .head .top select {
@@ -5393,12 +5393,12 @@ ul.ui-tabs-nav {
         margin: 0 10px 0 10px;
         padding-top: 6px;
         padding-bottom: 6px;
-        font-size: 12px; }
+        font-size: 12px;
+        height: 35px; }
       .dashboard.admin .head .top label {
         margin-right: 0px; }
       .dashboard.admin .head .top .search-bar {
-        float: right;
-        margin-right: 25px; }
+        float: right; }
       .dashboard.admin .head .top .title {
         float: left;
         margin-top: 8px; }
@@ -6098,24 +6098,43 @@ ul.ui-tabs-nav {
   .list-view #advanced_search {
     float: right; }
     .list-view #advanced_search .icon {
-      background: url(../images/sprites.png) no-repeat -61px -167px;
       position: relative;
-      width: 15px;
-      height: 15px;
-      left: 215px;
-      top: 10px;
+      width: 35px;
+      height: 35px;
+      left: -10px;
       cursor: pointer;
-      z-index: 10; }
+      z-index: 10;
+      border-radius: 0 3px 3px 0;
+      text-align: center;
+      border: 1px solid gray;
+      border-left: none;
+      background-color: white;
+      background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #9e9e9e));
+      background-image: -webkit-linear-gradient(white, #9e9e9e);
+      background-image: linear-gradient(white, #9e9e9e); }
+      .list-view #advanced_search .icon:hover {
+        box-shadow: inset 0px 0px 7px #4d4d4d; }
+      .list-view #advanced_search .icon:after {
+        font-family: FontAwesome;
+        font-weight: normal;
+        font-style: normal;
+        text-decoration: inherit;
+        -webkit-font-smoothing: antialiased;
+        *margin-right: .3em;
+        content: "\f0d7";
+        font-size: 15px;
+        position: relative;
+        top: 8.75px; }
     .list-view #advanced_search .form-container {
       background: white;
       box-shadow: 0px 2px 10px black;
       position: absolute;
       padding: 20px;
       width: 400px;
-      margin-top: -15px;
-      margin-left: -160px;
-      opacity: 0.9;
-      padding-top: 0px; }
+      margin-top: -35px;
+      margin-left: -410px;
+      padding-top: 0px;
+      border: 1px solid gray; }
       .list-view #advanced_search .form-container .ui-dialog-titlebar {
         *zoom: 1;
         display: block;
@@ -6976,7 +6995,7 @@ body {
     cursor: pointer;
     text-align: center;
     float: right;
-    margin-right: 10px; }
+    margin-left: 10px; }
     .toolbar .button.action:hover {
       box-shadow: inset 0 0 10px black; }
   .toolbar input, .toolbar label, .toolbar select {
@@ -6984,12 +7003,12 @@ body {
     margin: 0 10px 0 10px;
     padding-top: 6px;
     padding-bottom: 6px;
-    font-size: 12px; }
+    font-size: 12px;
+    height: 35px; }
   .toolbar label {
     margin-right: 0px; }
   .toolbar .search-bar {
-    float: right;
-    margin-right: 25px; }
+    float: right; }
   .toolbar .panel-controls {
     display: none; }
   .toolbar .button.refresh {

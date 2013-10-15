@@ -862,7 +862,7 @@
         $search.append('<div id="basic_search" class="button search"></div>');
 
         if (listViewData.advSearchFields != null) {
-            $search.append(
+            $search.prepend(
                 $('<div>').attr({
                     id: 'advanced_search'
                 })

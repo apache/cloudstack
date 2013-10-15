@@ -1,3 +1,5 @@
+$csui-toolbar-field-height: 35px;
+
 @mixin csui-toolbar {
     @include row;
 
@@ -8,7 +10,7 @@
         @include csui-button;
 
         float: right;
-        margin-right: 10px;
+        margin-left: 10px;
     }
 
     input, label, select {
@@ -17,6 +19,7 @@
         padding-top: 6px;
         padding-bottom: 6px;
         font-size: 12px;
+        height: $csui-toolbar-field-height;
     }
 
     label {
@@ -25,6 +28,5 @@
 
     .search-bar {
         float: right;
-        margin-right: 25px;
     }
 }

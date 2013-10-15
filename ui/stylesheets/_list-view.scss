@@ -20,27 +20,47 @@
     // Advanced search field
     #advanced_search {
         float: right;
-        .icon {
-            @include csui-sprite(61, 167);
 
+        $border: 1px solid #808080;
+        
+        .icon {
             position: relative;
-            width: 15px;
-            height: 15px;
-            left: 215px;
-            top: 10px;
+            width: $csui-toolbar-field-height;
+            height: $csui-toolbar-field-height;
+            left: -10px;
             cursor: pointer;
             z-index: 10;
+            border-radius: 0 3px 3px 0;
+            text-align: center;
+            border: $border;
+            border-left: none;
+
+            &:hover {
+                box-shadow: inset 0px 0px 7px lighten(black, 30%);
+            }
+
+            @include linear-gradient(white, #9E9E9E);
+
+            &:after {
+                @include icon($caret-down);
+
+                font-size: 15px;
+                position: relative;
+                top: $csui-toolbar-field-height / 4;
+            }
         }
 
         .form-container {
             @include csui-dialog;
             @include csui-form;
 
-            width: 400px;
-            margin-top: -15px;
-            margin-left: -160px;
-            opacity: 0.9;
+            $width: 400px;
+            
+            width: $width;
+            margin-top: -$csui-toolbar-field-height;
+            margin-left: -$width - 10;
             padding-top: 0px;
+            border: $border;
 
             form {
                 display: inline-block;
