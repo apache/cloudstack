@@ -46,6 +46,10 @@ import com.cloud.utils.fsm.NoTransitionException;
  * Manages allocating resources to vms.
  */
 public interface VirtualMachineManager extends Manager {
+	
+    public interface Topics {
+        public static final String VM_POWER_STATE = "vm.powerstate";
+    }
 
     /**
      * Allocates a new virtual machine instance in the CloudStack DB.  This

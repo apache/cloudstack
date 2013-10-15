@@ -206,6 +206,12 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
             return _isUsedBySystem;
         }
     }
+    
+    public enum PowerState {
+    	PowerUnknown,
+    	PowerOn,
+    	PowerOff,
+    }
 
     /**
      * @return The name of the vm instance used by the cloud stack to uniquely
