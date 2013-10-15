@@ -24,3 +24,6 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Storage", 'DEFAULT', 'management-server', "enable.ha.storage.migration", "true", "Enable/disable storage migration across primary storage during HA"); 
 
+-- Remove Windows Server 8 from guest_os_type dropdown to use Windows Server 2012
+DELETE FROM `cloud`.`guest_os_hypervisor` where guest_os_id=168;
+DELETE FROM `cloud`.`guest_os` where id=168;
