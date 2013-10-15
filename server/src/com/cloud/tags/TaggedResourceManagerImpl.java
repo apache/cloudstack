@@ -25,16 +25,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.vm.dao.NicDao;
-import com.cloud.network.vpc.NetworkACLItemDao;
-
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.context.CallContext;
-
 import com.cloud.api.query.dao.ResourceTagJoinDao;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -47,12 +43,14 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.vpc.NetworkACLItemDao;
 import com.cloud.network.vpc.dao.StaticRouteDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.server.TaggedResourceService;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -70,6 +68,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.uuididentity.dao.IdentityDao;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
@@ -128,6 +127,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     NetworkACLItemDao _networkACLItemDao;
     @Inject
     DataCenterDao _dataCenterDao;
+    @Inject
+    ServiceOfferingDao _serviceOffDao;
 
 
     @Override
@@ -151,6 +152,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         _daoMap.put(TaggedResourceType.VMSnapshot, _vmSnapshotDao);
         _daoMap.put(TaggedResourceType.RemoteAccessVpn, _vpnDao);
         _daoMap.put(TaggedResourceType.Zone, _dataCenterDao);
+        _daoMap.put(TaggedResourceType.ServiceOffering, _serviceOffDao);
 
         return true;
     }

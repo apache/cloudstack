@@ -41,7 +41,8 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         StaticRoute,
         VMSnapshot,
         RemoteAccessVpn,
-        Zone
+        Zone,
+        ServiceOffering
     }
 
     /**

@@ -110,7 +110,9 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
                 pstmt.setLong(1, identityId);
                 ResultSet rs = pstmt.executeQuery();
                 if (rs.next()) {
-                    domainId = rs.getLong(1);
+                    if (rs.getLong(1) != 0) {
+                        domainId = rs.getLong(1);
+                    }
                 }
             } catch (SQLException e) {
             }
@@ -125,7 +127,9 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
                 pstmt.setLong(1, identityId);
                 ResultSet rs = pstmt.executeQuery();
                 if (rs.next()) {
-                    accountId = rs.getLong(1);
+                    if (rs.getLong(1) != 0) {
+                        accountId = rs.getLong(1);
+                    }
                 }
             } catch (SQLException e) {
             }
