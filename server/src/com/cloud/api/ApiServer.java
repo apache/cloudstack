@@ -147,6 +147,7 @@ import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
 
@@ -705,6 +706,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 }
             }
 
+            TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            txn.close();
             User user = null;
             // verify there is a user with this api key
             Pair<User, Account> userAcctPair = _accountMgr.findUserByApiKey(apiKey);

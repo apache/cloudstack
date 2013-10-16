@@ -43,8 +43,6 @@ import javax.naming.ConfigurationException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
-import net.sf.ehcache.transaction.local.TransactionListener;
-
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -89,7 +87,6 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.Task;

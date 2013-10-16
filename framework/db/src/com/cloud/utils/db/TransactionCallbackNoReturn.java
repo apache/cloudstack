@@ -4,7 +4,7 @@ public abstract class TransactionCallbackNoReturn implements TransactionCallback
 
 	@Override
 	public Object doInTransaction(TransactionStatus status) {
-		doInTransaction(status);
+		doInTransactionWithoutResult(status);
 		return null;
 	}
 
