@@ -1591,15 +1591,25 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         }
 
         if (storeForRootStoreScope.getScopeType() != storeForDataStoreScope.getScopeType()) {
-            if (storeForDataStoreScope.getScopeType() == ScopeType.CLUSTER && storeForRootStoreScope.getScopeType() == ScopeType.HOST) {
-                HostScope hs = (HostScope)storeForRootStoreScope;
-                if (storeForDataStoreScope.getScopeId().equals(hs.getClusterId())) {
+            if (storeForDataStoreScope.getScopeType() == ScopeType.CLUSTER) {
+                Long vmClusterId = null;
+                if (storeForRootStoreScope.getScopeType() == ScopeType.HOST) {
+                    HostScope hs = (HostScope)storeForRootStoreScope;
+                    vmClusterId = hs.getClusterId();
+                } else if (storeForRootStoreScope.getScopeType() == ScopeType.ZONE) {
+                    Long hostId = _vmInstanceDao.findById(rootVolumeOfVm.getInstanceId()).getHostId();
+                    if (hostId != null) {
+                        HostVO host = _hostDao.findById(hostId);
+                        vmClusterId = host.getClusterId();
+                    }
+                }
+                if (storeForDataStoreScope.getScopeId().equals(vmClusterId)) {
                     return false;
                 }
-            }
-            if (storeForRootStoreScope.getScopeType() == ScopeType.CLUSTER && storeForDataStoreScope.getScopeType() == ScopeType.HOST) {
-                HostScope hs = (HostScope)storeForDataStoreScope;
-                if (storeForRootStoreScope.getScopeId().equals(hs.getClusterId())) {
+            } else if (storeForDataStoreScope.getScopeType() == ScopeType.HOST &&
+                    (storeForRootStoreScope.getScopeType() == ScopeType.CLUSTER || storeForRootStoreScope.getScopeType() == ScopeType.ZONE)) {
+                Long hostId = _vmInstanceDao.findById(rootVolumeOfVm.getInstanceId()).getHostId();
+                if (storeForDataStoreScope.getScopeId().equals(hostId)) {
                     return false;
                 }
             }
