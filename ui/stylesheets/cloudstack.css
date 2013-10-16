@@ -6257,7 +6257,9 @@ ul.ui-tabs-nav {
     .list-view table th.actions, .list-view table td.actions {
       width: 80px; }
     .list-view table th.reorder, .list-view table td.reorder {
-      width: 150px; }
+      width: 150px;
+      min-width: 150px;
+      max-width: 150px; }
     .list-view table td.first {
       cursor: pointer; }
       .list-view table td.first:hover {
@@ -6759,7 +6761,9 @@ ul.ui-tabs-nav {
     .multi-edit table th.actions, .multi-edit table td.actions {
       width: 80px; }
     .multi-edit table th.reorder, .multi-edit table td.reorder {
-      width: 150px; }
+      width: 150px;
+      min-width: 150px;
+      max-width: 150px; }
     .multi-edit table td.first {
       cursor: pointer; }
       .multi-edit table td.first:hover {
