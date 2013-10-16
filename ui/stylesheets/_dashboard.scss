@@ -17,7 +17,9 @@
 
 // Admin dashboard
 .dashboard.admin {
+    @include row;
     padding: 10px;
+    width: 100%;
     
     .sub.alerts {
         width: 48%;
@@ -82,8 +84,8 @@
     }
 
     .head {
-        float: left;
         border: 1px solid #cfcfcf;
+        width: 100%;
 
         .top {
             @include csui-toolbar;

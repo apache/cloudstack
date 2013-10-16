@@ -5266,7 +5266,15 @@ ul.ui-tabs-nav {
         content: ""; }
 
 .dashboard.admin {
-  padding: 10px; }
+  *zoom: 1;
+  display: block;
+  padding: 10px;
+  width: 100%; }
+  .dashboard.admin:before, .dashboard.admin:after {
+    content: " ";
+    display: table; }
+  .dashboard.admin:after {
+    clear: both; }
   .dashboard.admin .sub.alerts {
     width: 48%;
     margin-top: 25px; }
@@ -5387,8 +5395,8 @@ ul.ui-tabs-nav {
           background-image: -webkit-linear-gradient(white, #f2f2f2);
           background-image: linear-gradient(white, #f2f2f2); }
   .dashboard.admin .head {
-    float: left;
-    border: 1px solid #cfcfcf; }
+    border: 1px solid #cfcfcf;
+    width: 100%; }
     .dashboard.admin .head .top {
       *zoom: 1;
       display: block;
