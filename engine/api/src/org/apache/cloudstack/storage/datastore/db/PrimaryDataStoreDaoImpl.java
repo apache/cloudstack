@@ -32,10 +32,8 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePoolStatus;
-
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -184,7 +182,9 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     public StoragePoolVO findPoolByHostPath(long datacenterId, Long podId, String host, String path, String uuid) {
         SearchCriteria<StoragePoolVO> sc = AllFieldSearch.create();
         sc.setParameters("hostAddress", host);
-        sc.setParameters("path", path);
+        if (path != null) {
+            sc.setParameters("path", path);
+        }
         sc.setParameters("datacenterId", datacenterId);
         sc.setParameters("podId", podId);
         sc.setParameters("uuid", uuid);
