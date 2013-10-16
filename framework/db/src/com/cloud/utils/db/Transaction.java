@@ -57,9 +57,5 @@ public class Transaction {
             throw e;
         }
     }
-    
-    public static Object startTransaction() {
-    	return null;
-    }
-    
+
 }
