@@ -1040,7 +1040,7 @@ ServerResource {
             s_logger.debug("matchPifFileInDirectory: file name '"+fname+"'");
             if (fname.startsWith("eth") || fname.startsWith("bond")
                 || fname.startsWith("vlan") || fname.startsWith("em")
-                || fname.matches("^p\\d+p\\d+")) {
+                || fname.matches("^p\\d+p\\d+.*")) {
                 return fname;
             }
         }
