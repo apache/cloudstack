@@ -265,7 +265,7 @@ public class CallContext {
 
     @Override
     public String toString() {
-        return new StringBuffer("CCtxt[acct=").append(account.getId())
+        return new StringBuilder("CCtxt[acct=").append(account.getId())
                 .append("; user=").append(user.getId())
                 .append("; id=").append(contextId)
                 .append("]").toString();

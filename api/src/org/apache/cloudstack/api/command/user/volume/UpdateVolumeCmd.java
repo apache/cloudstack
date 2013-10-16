@@ -114,8 +114,8 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        StringBuffer desc = new StringBuffer();
-        desc.append(" with");
+        StringBuilder desc = new StringBuilder("Updating volume: ");
+        desc.append(getId()).append(" with");
         if (getPath() != null) {
             desc.append(" path " + getPath());            
         }
@@ -126,7 +126,7 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
         if (getState() != null) {
             desc.append(", state " + getState());
         }
-        return "Updating volume: " + getId() + desc.toString();
+        return desc.toString();
     }
 
     @Override

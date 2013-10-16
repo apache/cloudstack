@@ -153,9 +153,7 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        
-        
-        StringBuffer eventMsg = new StringBuffer("Updating network: " + getId());
+        StringBuilder eventMsg = new StringBuilder("Updating network: " + getId());
         if (getNetworkOfferingId() != null) {
             Network network = _networkService.getNetwork(getId());
             if (network == null) {
