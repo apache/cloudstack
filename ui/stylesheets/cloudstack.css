@@ -6967,6 +6967,7 @@ html body > .login {
         margin-top: 10px;
         margin-bottom: 10px;
         background-color: #333333;
+        border-color: black;
         background: url(csui/img/form/dropdown-arrow-white.png) no-repeat right 8px center, -webkit-linear-gradient( #4e4e4e, #242424);
         background: url(csui/img/form/dropdown-arrow-white.png) no-repeat right 8px center, linear-gradient( #4e4e4e, #242424);
         color: white;

@@ -40,6 +40,7 @@
     @include csui-dropdown;
 
     background-color: #333333;
+    border-color: black;
 
     @include background(
             url(csui/img/form/dropdown-arrow-white.png) no-repeat right 8px center,
