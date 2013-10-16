@@ -1314,7 +1314,7 @@
                                                 $(serviceofferings).each(function() {
                                                     items.push({
                                                         id: this.id,
-                                                        description: this.displaytext
+                                                        description: this.name
                                                     });
                                                 });
                                                 args.response.success({
