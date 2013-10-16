@@ -45,4 +45,9 @@ public class RegionDaoImpl extends GenericDaoBase<RegionVO, Integer> implements 
         sc.setParameters("name", name);
         return findOneBy(sc);
 	}
+
+    @Override
+    public int getRegionId(){
+        return 1;
+    }
 }

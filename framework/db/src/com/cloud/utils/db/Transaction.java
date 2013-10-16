@@ -83,7 +83,6 @@ public class Transaction {
     public static final short AWSAPI_DB = 2;
     public static final short SIMULATOR_DB = 3;
     public static final short CONNECTED_DB = -1;
-    public static int s_region_id;
 
     private static AtomicLong s_id = new AtomicLong();
     private static final TransactionMBeanImpl s_mbean = new TransactionMBeanImpl();
@@ -1079,12 +1078,6 @@ public class Transaction {
                 System.setProperty("javax.net.ssl.trustStorePassword", dbProps.getProperty("db.cloud.trustStorePassword"));
             }
 
-            String regionId = dbProps.getProperty("region.id");
-            if(regionId == null){
-            	s_region_id = 1;
-            } else {
-            	s_region_id = Integer.parseInt(regionId);
-            }
             final GenericObjectPool cloudConnectionPool = new GenericObjectPool(null, cloudMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
                     cloudMaxWait, cloudMaxIdle, cloudTestOnBorrow, false, cloudTimeBtwEvictionRunsMillis, 1, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle);
 

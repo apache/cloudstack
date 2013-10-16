@@ -1688,4 +1688,8 @@ public class ApiDBUtils {
     public static boolean isAdmin(Account account) {
         return _accountService.isAdmin(account.getType());
     }
+    
+    public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, TaggedResourceType resourceType){
+        return  _tagJoinDao.listBy(resourceUUID, resourceType);
+    }
 }

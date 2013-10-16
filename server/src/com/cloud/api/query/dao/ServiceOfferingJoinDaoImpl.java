@@ -17,22 +17,22 @@
 package com.cloud.api.query.dao;
 
 import java.util.List;
-import java.util.Map;
 
 import javax.ejb.Local;
 
+import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-
 import com.cloud.offering.ServiceOffering;
-import com.cloud.offering.NetworkOffering.Detail;
+import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import org.springframework.stereotype.Component;
 
 @Component
 @Local(value={ServiceOfferingJoinDao.class})
@@ -48,7 +48,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         sofIdSearch.and("id", sofIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         sofIdSearch.done();
 
-        this._count = "select count(distinct id) from service_offering_view WHERE ";
+        this._count = "select count(distinct service_offering_view.id) from service_offering_view WHERE ";
     }
 
 
@@ -84,6 +84,12 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setIopsWriteRate(offering.getIopsWriteRate());
         offeringResponse.setDetails(ApiDBUtils.getServiceOfferingDetails(offering.getId()));
         offeringResponse.setObjectName("serviceoffering");
+        
+        // update tag information
+        List<ResourceTagJoinVO> resourceTags = ApiDBUtils.listResourceTagViewByResourceUUID(offering.getUuid(), TaggedResourceType.ServiceOffering);
+        for (ResourceTagJoinVO resourceTag : resourceTags) {            
+            ResourceTagResponse tagResponse = ApiDBUtils.newResourceTagResponse(resourceTag, false);
+            offeringResponse.addTag(tagResponse);        }
 
         return offeringResponse;
     }

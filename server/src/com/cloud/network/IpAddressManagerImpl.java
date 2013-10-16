@@ -1198,12 +1198,23 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             }
         }
 
-        // In Advance zone only allow to do IP assoc
-        //      - for Isolated networks with source nat service enabled
-        //      - for shared networks with source nat service enabled
-        if (zone.getNetworkType() == NetworkType.Advanced && !(_networkModel.areServicesSupportedInNetwork(network.getId(), Service.SourceNat))) {
-            throw new InvalidParameterValueException("In zone of type " + NetworkType.Advanced + " ip address can be associated only to the network of guest type " +
-                                                     GuestType.Isolated + " with the " + Service.SourceNat.getName() + " enabled");
+        if (zone.getNetworkType() == NetworkType.Advanced) {
+            // In Advance zone allow to do IP assoc only for Isolated networks with source nat service enabled
+            if (network.getGuestType() == GuestType.Isolated &&
+                    !(_networkModel.areServicesSupportedInNetwork(network.getId(), Service.SourceNat))) {
+                throw new InvalidParameterValueException("In zone of type " + NetworkType.Advanced +
+                        " ip address can be associated only to the network of guest type " + GuestType.Isolated +
+                        " with the " + Service.SourceNat.getName() + " enabled");
+            }
+
+            // In Advance zone allow to do IP assoc only for shared networks with source nat/static nat/lb/pf services enabled
+            if (network.getGuestType() == GuestType.Shared &&
+                    !isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
+                throw new InvalidParameterValueException("In zone of type " + NetworkType.Advanced +
+                        " ip address can be associated with network of guest type " + GuestType.Shared + "only if at " +
+                        "least one of the services "  + Service.SourceNat.getName() + "/" + Service.StaticNat.getName() + "/" +
+                        Service.Lb.getName() + "/" + Service.PortForwarding.getName() + " is enabled");
+            }
         }
 
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());

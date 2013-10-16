@@ -265,8 +265,6 @@ public interface GenericDao<T, ID extends Serializable> {
      */
     Class<T> getEntityBeanType();
     
-    public int getRegionId();
-
     /**
      * @param sc
      * @param filter

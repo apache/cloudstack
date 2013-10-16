@@ -17,12 +17,9 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
-
-
-import com.google.gson.annotations.SerializedName;
-
+import java.util.LinkedHashSet;
 import java.util.Map;
-
+import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -30,6 +27,7 @@ import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.offering.ServiceOffering;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = ServiceOffering.class)
 public class ServiceOfferingResponse extends BaseResponse {
@@ -108,6 +106,15 @@ public class ServiceOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.SERVICE_OFFERING_DETAILS)
     @Param(description = "additional key/value details tied with this service offering", since = "4.2.0")
     private Map<String, String> details;
+    
+    @SerializedName(ApiConstants.RESOURCE_TAG)  @Param(description="the list of resource tags associated with service offering." +
+    		" The resource tags are not used for Volume/VM placement on the specific host.",
+            responseObject = ResourceTagResponse.class, since="4.3")
+    private Set<ResourceTagResponse> resourceTags;
+    
+    public ServiceOfferingResponse(){
+        resourceTags = new LinkedHashSet<ResourceTagResponse>();
+    }
 
     public String getId() {
         return id;
@@ -286,5 +293,9 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     public void setDetails(Map<String, String> details) {
         this.details = details;
+    }
+
+    public void addTag(ResourceTagResponse tag){
+        this.resourceTags.add(tag);
     }
 }
