@@ -17,16 +17,23 @@
 
 package com.cloud.upgrade.dao;
 
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import org.apache.log4j.Logger;
+import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
+import org.jasypt.properties.EncryptableProperties;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Properties;
 import java.util.UUID;
 
 public class Upgrade40to41 implements DbUpgrade {
@@ -74,7 +81,28 @@ public class Upgrade40to41 implements DbUpgrade {
     }
 
     private void updateRegionEntries(Connection conn) {
-        int region_id = Transaction.s_region_id;
+        File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
+        final Properties dbProps;
+        if (EncryptionSecretKeyChecker.useEncryption()) {
+            StandardPBEStringEncryptor encryptor = EncryptionSecretKeyChecker.getEncryptor();
+            dbProps = new EncryptableProperties(encryptor);
+        } else {
+            dbProps = new Properties();
+        }
+        try {
+            dbProps.load(new FileInputStream(dbPropsFile));
+        } catch (IOException e) {
+            s_logger.fatal("Unable to load db properties file, pl. check the classpath and file path configuration", e);
+            return;
+        } catch (NullPointerException e) {
+            s_logger.fatal("Unable to locate db properties file within classpath or absolute path: db.properties");
+            return;
+        }
+        int region_id = 1;
+        String regionId = dbProps.getProperty("region.id");
+        if(regionId != null){
+            region_id = Integer.parseInt(regionId);
+        }
         PreparedStatement pstmt = null;
         try {
             //Update regionId in region table
