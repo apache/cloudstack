@@ -34,7 +34,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -132,7 +132,7 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     @Override
     @Deprecated
     public boolean update(String name, String value) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareStatement(UPDATE_CONFIGURATION_SQL);
             stmt.setString(1, value);
@@ -147,7 +147,7 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
 
     @Override
     public boolean update(String name, String category, String value) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             value = ("Hidden".equals(category) || "Secure".equals(category)) ? DBEncryptionUtil.encrypt(value) : value;
             PreparedStatement stmt = txn.prepareStatement(UPDATE_CONFIGURATION_SQL);

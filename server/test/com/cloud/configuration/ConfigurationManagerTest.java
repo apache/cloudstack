@@ -40,7 +40,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -69,6 +68,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.net.Ip;
 
 public class ConfigurationManagerTest {
@@ -213,7 +213,7 @@ public class ConfigurationManagerTest {
     }
 
     void runDedicatePublicIpRangePostiveTest() throws Exception {
-        Transaction txn = Transaction.open("runDedicatePublicIpRangePostiveTest");
+        TransactionLegacy txn = TransactionLegacy.open("runDedicatePublicIpRangePostiveTest");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(vlan);
 
@@ -239,7 +239,7 @@ public class ConfigurationManagerTest {
     }
 
     void runDedicatePublicIpRangeInvalidRange() throws Exception {
-        Transaction txn = Transaction.open("runDedicatePublicIpRangeInvalidRange");
+        TransactionLegacy txn = TransactionLegacy.open("runDedicatePublicIpRangeInvalidRange");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(null);
         try {
@@ -252,7 +252,7 @@ public class ConfigurationManagerTest {
     }
 
     void runDedicatePublicIpRangeDedicatedRange() throws Exception {
-        Transaction txn = Transaction.open("runDedicatePublicIpRangeDedicatedRange");
+        TransactionLegacy txn = TransactionLegacy.open("runDedicatePublicIpRangeDedicatedRange");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(vlan);
 
@@ -281,7 +281,7 @@ public class ConfigurationManagerTest {
     }
 
     void runDedicatePublicIpRangeInvalidZone() throws Exception {
-        Transaction txn = Transaction.open("runDedicatePublicIpRangeInvalidZone");
+        TransactionLegacy txn = TransactionLegacy.open("runDedicatePublicIpRangeInvalidZone");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(vlan);
 
@@ -307,7 +307,7 @@ public class ConfigurationManagerTest {
     }
 
     void runDedicatePublicIpRangeIPAdressAllocated() throws Exception {
-        Transaction txn = Transaction.open("runDedicatePublicIpRangeIPAdressAllocated");
+        TransactionLegacy txn = TransactionLegacy.open("runDedicatePublicIpRangeIPAdressAllocated");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(vlan);
 
@@ -334,7 +334,7 @@ public class ConfigurationManagerTest {
     }
 
     void runReleasePublicIpRangePostiveTest1() throws Exception {
-        Transaction txn = Transaction.open("runReleasePublicIpRangePostiveTest1");
+        TransactionLegacy txn = TransactionLegacy.open("runReleasePublicIpRangePostiveTest1");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(vlan);
 
@@ -358,7 +358,7 @@ public class ConfigurationManagerTest {
     }
 
     void runReleasePublicIpRangePostiveTest2() throws Exception {
-        Transaction txn = Transaction.open("runReleasePublicIpRangePostiveTest2");
+        TransactionLegacy txn = TransactionLegacy.open("runReleasePublicIpRangePostiveTest2");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(vlan);
 
@@ -392,7 +392,7 @@ public class ConfigurationManagerTest {
     }
 
     void runReleasePublicIpRangeInvalidIpRange() throws Exception {
-        Transaction txn = Transaction.open("runReleasePublicIpRangeInvalidIpRange");
+        TransactionLegacy txn = TransactionLegacy.open("runReleasePublicIpRangeInvalidIpRange");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(null);
         try {
@@ -405,7 +405,7 @@ public class ConfigurationManagerTest {
     }
 
     void runReleaseNonDedicatedPublicIpRange() throws Exception {
-        Transaction txn = Transaction.open("runReleaseNonDedicatedPublicIpRange");
+        TransactionLegacy txn = TransactionLegacy.open("runReleaseNonDedicatedPublicIpRange");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(vlan);
 

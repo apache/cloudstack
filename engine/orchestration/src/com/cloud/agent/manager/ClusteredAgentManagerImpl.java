@@ -43,6 +43,8 @@ import javax.naming.ConfigurationException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
+import net.sf.ehcache.transaction.local.TransactionListener;
+
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -85,6 +87,7 @@ import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.QueryBuilder;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -591,7 +594,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
         @Override
         protected void doTask(final Task task) throws Exception {
-            Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+            TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             try {
                 if (task.getType() != Task.Type.DATA) {
                     super.doTask(task);

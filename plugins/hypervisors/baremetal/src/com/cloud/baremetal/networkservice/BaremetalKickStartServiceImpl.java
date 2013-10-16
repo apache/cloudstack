@@ -27,11 +27,10 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.AddBaremetalKickStartPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
 import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
@@ -58,7 +57,6 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -225,14 +223,11 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
         }
 
         BaremetalPxeVO vo = new BaremetalPxeVO();
-        Transaction txn = Transaction.currentTxn();
         vo.setHostId(pxeServer.getId());
         vo.setNetworkServiceProviderId(ntwkSvcProvider.getId());
         vo.setPhysicalNetworkId(kcmd.getPhysicalNetworkId());
         vo.setDeviceType(BaremetalPxeType.KICK_START.toString());
-        txn.start();
         _pxeDao.persist(vo);
-        txn.commit();
         return vo;
     }
 

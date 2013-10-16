@@ -30,7 +30,7 @@ import com.cloud.usage.UsageJobVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -42,7 +42,7 @@ public class UsageJobDaoImpl extends GenericDaoBase<UsageJobVO, Long> implements
 
     @Override
     public long getLastJobSuccessDateMillis() {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         String sql = GET_LAST_JOB_SUCCESS_DATE_MILLIS;
         try {
@@ -61,7 +61,7 @@ public class UsageJobDaoImpl extends GenericDaoBase<UsageJobVO, Long> implements
 
     @Override
     public void updateJobSuccess(Long jobId, long startMillis, long endMillis, long execTime, boolean success) {
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             txn.start();
 
@@ -115,7 +115,7 @@ public class UsageJobDaoImpl extends GenericDaoBase<UsageJobVO, Long> implements
 
     @Override
     public UsageJobVO isOwner(String hostname, int pid) {
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             if ((hostname == null) || (pid <= 0)) {
                 return null;

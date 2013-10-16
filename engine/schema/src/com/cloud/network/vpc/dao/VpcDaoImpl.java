@@ -38,7 +38,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = VpcDao.class)
@@ -107,7 +107,7 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
     @Override
     @DB
     public boolean remove(Long id) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         VpcVO entry = findById(id);
         if (entry != null) {
@@ -129,7 +129,7 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
     @Override
     @DB
     public VpcVO persist(VpcVO vpc, Map<String, List<String>> serviceProviderMap) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         VpcVO newVpc = super.persist(vpc);
         persistVpcServiceProviders(vpc.getId(), serviceProviderMap);
@@ -140,7 +140,7 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
     @Override
     @DB
     public void persistVpcServiceProviders(long vpcId, Map<String, List<String>> serviceProviderMap) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         for (String service : serviceProviderMap.keySet()) {
             for (String provider : serviceProviderMap.get(service)) {

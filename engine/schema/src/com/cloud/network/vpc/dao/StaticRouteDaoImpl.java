@@ -36,7 +36,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = StaticRouteDao.class)
@@ -106,7 +106,7 @@ public class StaticRouteDaoImpl extends GenericDaoBase<StaticRouteVO, Long> impl
     @Override
     @DB
     public boolean remove(Long id) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         StaticRouteVO entry = findById(id);
         if (entry != null) {

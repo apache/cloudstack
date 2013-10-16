@@ -50,7 +50,6 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
@@ -115,14 +114,11 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
             return false;
         }
         
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
         nic.setMacAddress(host.getPrivateMacAddress());
         NicVO vo = _nicDao.findById(nic.getId());
         assert vo != null : "Where ths nic " + nic.getId() + " going???";
         vo.setMacAddress(nic.getMacAddress());
         _nicDao.update(vo.getId(), vo);
-        txn.commit();
         return true;
     }
 

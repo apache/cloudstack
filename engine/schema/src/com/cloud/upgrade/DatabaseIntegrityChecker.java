@@ -29,12 +29,11 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.maint.Version;
 import com.cloud.upgrade.dao.VersionDao;
-
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -72,7 +71,7 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
 	}
 	
 	private Boolean checkDuplicateHostWithTheSameLocalStorage() {
-		Transaction txn = Transaction.open("Integrity");
+	    TransactionLegacy txn = TransactionLegacy.open("Integrity");
 		txn.start();
 		try {
 			Connection conn;
@@ -167,7 +166,7 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
 	}
 	
 	private boolean checkMissedPremiumUpgradeFor228() {
-		Transaction txn = Transaction.open("Integrity");
+	    TransactionLegacy txn = TransactionLegacy.open("Integrity");
 		txn.start();
 		try {
 		    String dbVersion = _dao.getCurrentVersion();

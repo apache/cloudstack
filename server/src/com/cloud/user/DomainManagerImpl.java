@@ -26,7 +26,6 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
@@ -65,6 +64,9 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ReservationContext;
@@ -158,7 +160,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
     @Override
     @DB
-    public Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain, String domainUUID) {
+    public Domain createDomain(final String name, final Long parentId, final Long ownerId, final String networkDomain, String domainUUID) {
         // Verify network domain
         if (networkDomain != null) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
@@ -181,11 +183,16 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             domainUUID = UUID.randomUUID().toString();
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, domainUUID));
-        _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
-        txn.commit();
+        final String domainUUIDFinal = domainUUID;
+        DomainVO domain = Transaction.execute(new TransactionCallback<DomainVO>() {
+            @Override
+            public DomainVO doInTransaction(TransactionStatus status) {
+                DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, domainUUIDFinal));
+                _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
+                return domain;
+            }
+        });
+
         CallContext.current().putContextParameter(Domain.class, domain.getUuid());
         return domain;
     }
@@ -544,12 +551,12 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_UPDATE, eventDescription = "updating Domain")
     @DB
     public DomainVO updateDomain(UpdateDomainCmd cmd) {
-        Long domainId = cmd.getId();
-        String domainName = cmd.getDomainName();
-        String networkDomain = cmd.getNetworkDomain();
+        final Long domainId = cmd.getId();
+        final String domainName = cmd.getDomainName();
+        final String networkDomain = cmd.getNetworkDomain();
 
         // check if domain exists in the system
-        DomainVO domain = _domainDao.findById(domainId);
+        final DomainVO domain = _domainDao.findById(domainId);
         if (domain == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find domain with specified domain id");
             ex.addProxyObject(domainId.toString(), "domainId");
@@ -587,27 +594,28 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             }
         }
 
-        Transaction txn = Transaction.currentTxn();
-
-        txn.start();
-
-        if (domainName != null) {
-            String updatedDomainPath = getUpdatedDomainPath(domain.getPath(), domainName);
-            updateDomainChildren(domain, updatedDomainPath);
-            domain.setName(domainName);
-            domain.setPath(updatedDomainPath);
-        }
-
-        if (networkDomain != null) {
-            if (networkDomain.isEmpty()) {
-                domain.setNetworkDomain(null);
-            } else {
-                domain.setNetworkDomain(networkDomain);
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                if (domainName != null) {
+                    String updatedDomainPath = getUpdatedDomainPath(domain.getPath(), domainName);
+                    updateDomainChildren(domain, updatedDomainPath);
+                    domain.setName(domainName);
+                    domain.setPath(updatedDomainPath);
+                }
+        
+                if (networkDomain != null) {
+                    if (networkDomain.isEmpty()) {
+                        domain.setNetworkDomain(null);
+                    } else {
+                        domain.setNetworkDomain(networkDomain);
+                    }
+                }
+                _domainDao.update(domainId, domain);
+                CallContext.current().putContextParameter(Domain.class, domain.getUuid());
             }
-        }
-        _domainDao.update(domainId, domain);
-        CallContext.current().putContextParameter(Domain.class, domain.getUuid());
-        txn.commit();
+        });
+
 
         return _domainDao.findById(domainId);
 

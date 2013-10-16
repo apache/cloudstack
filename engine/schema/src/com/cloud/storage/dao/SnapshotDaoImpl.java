@@ -47,7 +47,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -204,7 +204,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     @Override
     public Long getSecHostId(long volumeId) {
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         String sql = GET_SECHOST_ID;
         try {
@@ -221,7 +221,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
 
     @Override
     public long getLastSnapshot(long volumeId, DataStoreRole role) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         String sql = GET_LAST_SNAPSHOT;
         try {
@@ -240,7 +240,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
 
     @Override
     public long updateSnapshotVersion(long volumeId, String from, String to) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         String sql = UPDATE_SNAPSHOT_VERSION;
         try {
@@ -258,7 +258,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
 
     @Override
     public long updateSnapshotSecHost(long dcId, long secHostId) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         String sql = UPDATE_SECHOST_ID;
         try {
@@ -304,7 +304,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     @Override
     @DB
     public boolean remove(Long id) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         SnapshotVO entry = findById(id);
         if (entry != null) {
@@ -324,7 +324,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
 
     @Override
     public boolean updateState(State currentState, Event event, State nextState, SnapshotVO snapshot, Object data) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         SnapshotVO snapshotVO = (SnapshotVO) snapshot;
         snapshotVO.setState(nextState);

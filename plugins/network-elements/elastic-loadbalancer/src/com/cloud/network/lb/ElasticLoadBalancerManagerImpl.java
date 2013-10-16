@@ -123,6 +123,10 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
@@ -582,19 +586,21 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     }
     
     @DB
-    public PublicIp allocDirectIp(Account account, long guestNetworkId) throws InsufficientAddressCapacityException {
-        Network frontEndNetwork = _networkModel.getNetwork(guestNetworkId);
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        
-        PublicIp ip = _ipAddrMgr.assignPublicIpAddress(frontEndNetwork.getDataCenterId(), null, account, VlanType.DirectAttached, frontEndNetwork.getId(), null, true);
-        IPAddressVO ipvo = _ipAddressDao.findById(ip.getId());
-        ipvo.setAssociatedWithNetworkId(frontEndNetwork.getId());
-        _ipAddressDao.update(ipvo.getId(), ipvo);
-        txn.commit();
-        s_logger.info("Acquired frontend IP for ELB " + ip);
+    public PublicIp allocDirectIp(final Account account, final long guestNetworkId) throws InsufficientAddressCapacityException {
+        return Transaction.executeWithException(new TransactionCallbackWithException<PublicIp>() {
+            @Override
+            public PublicIp doInTransaction(TransactionStatus status) throws Exception {
+                Network frontEndNetwork = _networkModel.getNetwork(guestNetworkId);
 
-        return ip;
+                PublicIp ip = _ipAddrMgr.assignPublicIpAddress(frontEndNetwork.getDataCenterId(), null, account, VlanType.DirectAttached, frontEndNetwork.getId(), null, true);
+                IPAddressVO ipvo = _ipAddressDao.findById(ip.getId());
+                ipvo.setAssociatedWithNetworkId(frontEndNetwork.getId());
+                _ipAddressDao.update(ipvo.getId(), ipvo);
+                s_logger.info("Acquired frontend IP for ELB " + ip);
+
+                return ip;
+            }
+        }, InsufficientAddressCapacityException.class);
     }
     
     public void releaseIp(long ipId, long userId, Account caller) {

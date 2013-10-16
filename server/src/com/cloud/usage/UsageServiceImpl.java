@@ -34,7 +34,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -54,6 +53,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = { UsageService.class })
@@ -86,7 +86,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
 
     @Override
     public boolean generateUsageRecords(GenerateUsageRecordsCmd cmd) {
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             UsageJobVO immediateJob = _usageJobDao.getNextImmediateJob();
             if (immediateJob == null) {
@@ -104,7 +104,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             txn.close();
 
             // switch back to VMOPS_DB
-            Transaction swap = Transaction.open(Transaction.CLOUD_DB);
+            TransactionLegacy swap = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             swap.close();
         }
         return true;
@@ -199,14 +199,14 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         }
 
         List<UsageVO> usageRecords = null;
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             usageRecords = _usageDao.searchAllRecords(sc, usageFilter);
         } finally {
             txn.close();
 
             // switch back to VMOPS_DB
-            Transaction swap = Transaction.open(Transaction.CLOUD_DB);
+            TransactionLegacy swap = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             swap.close();
         }
 

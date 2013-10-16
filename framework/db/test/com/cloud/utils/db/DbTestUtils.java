@@ -33,7 +33,7 @@ public class DbTestUtils {
             throw new RuntimeException("Unable to clean the database because I can't find " + file);
         }
         
-        Connection conn = Transaction.getStandaloneConnection();
+        Connection conn = TransactionLegacy.getStandaloneConnection();
         
         ScriptRunner runner = new ScriptRunner(conn, autoCommit, stopOnError);
         FileReader reader;
@@ -63,7 +63,7 @@ public class DbTestUtils {
             throw new RuntimeException("Unable to clean the database because I can't find " + file);
         }
         
-        Connection conn = Transaction.getStandaloneUsageConnection();
+        Connection conn = TransactionLegacy.getStandaloneUsageConnection();
         
         ScriptRunner runner = new ScriptRunner(conn, autoCommit, stopOnError);
         FileReader reader;

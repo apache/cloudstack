@@ -29,6 +29,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={OfferingDao.class})
@@ -39,7 +40,7 @@ public class OfferingDaoImpl extends GenericDaoBase<OfferingBundleVO, Long> impl
 	
 	@Override
 	public int getOfferingCount() {
-       Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         try {
             txn.start();
             return listAll().size();
@@ -56,7 +57,7 @@ public class OfferingDaoImpl extends GenericDaoBase<OfferingBundleVO, Long> impl
        SearchBuilder <OfferingBundleVO> searchByAmazon = createSearchBuilder();
        searchByAmazon.and("AmazonEC2Offering", searchByAmazon.entity().getAmazonOffering() , SearchCriteria.Op.EQ);
        searchByAmazon.done();
-       Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+       TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
        try {
            txn.start();
            SearchCriteria<OfferingBundleVO> sc = searchByAmazon.create();
@@ -74,7 +75,7 @@ public class OfferingDaoImpl extends GenericDaoBase<OfferingBundleVO, Long> impl
 	       SearchBuilder <OfferingBundleVO> searchByAmazon = createSearchBuilder();
 	       searchByAmazon.and("CloudStackOffering", searchByAmazon.entity().getAmazonOffering() , SearchCriteria.Op.EQ);
 	       searchByAmazon.done();
-	       Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+	       TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
 	       try {
 	           txn.start();
 	           SearchCriteria<OfferingBundleVO> sc = searchByAmazon.create();
@@ -93,7 +94,7 @@ public class OfferingDaoImpl extends GenericDaoBase<OfferingBundleVO, Long> impl
         searchByAmazon.and("CloudStackOffering", searchByAmazon.entity().getAmazonOffering() , SearchCriteria.Op.EQ);
         searchByAmazon.and("AmazonEC2Offering", searchByAmazon.entity().getCloudstackOffering() , SearchCriteria.Op.EQ);
         searchByAmazon.done();
-        Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         OfferingBundleVO offering = null;
         try {
             txn.start();
@@ -122,7 +123,7 @@ public class OfferingDaoImpl extends GenericDaoBase<OfferingBundleVO, Long> impl
 	    SearchBuilder <OfferingBundleVO> searchByAmazon = createSearchBuilder();
         searchByAmazon.and("AmazonEC2Offering", searchByAmazon.entity().getAmazonOffering() , SearchCriteria.Op.EQ);
         searchByAmazon.done();
-        Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         try {
             txn.start();
             SearchCriteria<OfferingBundleVO> sc = searchByAmazon.create();

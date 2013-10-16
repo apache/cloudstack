@@ -88,6 +88,8 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -290,11 +292,11 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
             return false;
         }
 
-        private boolean collectDirectNetworkUsage(HostVO host){
+        private boolean collectDirectNetworkUsage(final HostVO host){
             s_logger.debug("Direct Network Usage stats collector is running...");
 
-            long zoneId = host.getDataCenterId();
-            DetailVO lastCollectDetail = _detailsDao.findDetail(host.getId(),"last_collection");
+            final long zoneId = host.getDataCenterId();
+            final DetailVO lastCollectDetail = _detailsDao.findDetail(host.getId(),"last_collection");
             if(lastCollectDetail == null){
                 s_logger.warn("Last collection time not available. Skipping direct usage collection for Traffic Monitor: "+host.getId());
                 return false;
@@ -309,7 +311,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
             // This coule be made configurable
 
             rightNow.add(Calendar.HOUR_OF_DAY, -2);
-            Date now = rightNow.getTime();  
+            final Date now = rightNow.getTime();  
             
             if(lastCollection.after(now)){
                 s_logger.debug("Current time is less than 2 hours after last collection time : " + lastCollection.toString() + ". Skipping direct network usage collection");
@@ -361,7 +363,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
 
             }
 
-            List<UserStatisticsVO> collectedStats = new ArrayList<UserStatisticsVO>();
+            final List<UserStatisticsVO> collectedStats = new ArrayList<UserStatisticsVO>();
             
             //Get usage for Ips which were assigned for the entire duration
             if(fullDurationIpUsage.size() > 0){
@@ -431,28 +433,26 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
             	return false;
             }
             //Persist all the stats and last_collection time in a single transaction
-            Transaction txn = Transaction.open(Transaction.CLOUD_DB);
-            try {
-                txn.start();
-                for(UserStatisticsVO stat : collectedStats){
-                    UserStatisticsVO stats = _statsDao.lock(stat.getAccountId(), stat.getDataCenterId(), 0L, null, host.getId(), "DirectNetwork");
-                    if (stats == null) {
-                        stats = new UserStatisticsVO(stat.getAccountId(), zoneId, null, host.getId(), "DirectNetwork", 0L);
-                        stats.setCurrentBytesSent(stat.getCurrentBytesSent());
-                        stats.setCurrentBytesReceived(stat.getCurrentBytesReceived());
-                        _statsDao.persist(stats);
-                    } else {
-                        stats.setCurrentBytesSent(stats.getCurrentBytesSent() + stat.getCurrentBytesSent());
-                        stats.setCurrentBytesReceived(stats.getCurrentBytesReceived() + stat.getCurrentBytesReceived());
-                        _statsDao.update(stats.getId(), stats);
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    for(UserStatisticsVO stat : collectedStats){
+                        UserStatisticsVO stats = _statsDao.lock(stat.getAccountId(), stat.getDataCenterId(), 0L, null, host.getId(), "DirectNetwork");
+                        if (stats == null) {
+                            stats = new UserStatisticsVO(stat.getAccountId(), zoneId, null, host.getId(), "DirectNetwork", 0L);
+                            stats.setCurrentBytesSent(stat.getCurrentBytesSent());
+                            stats.setCurrentBytesReceived(stat.getCurrentBytesReceived());
+                            _statsDao.persist(stats);
+                        } else {
+                            stats.setCurrentBytesSent(stats.getCurrentBytesSent() + stat.getCurrentBytesSent());
+                            stats.setCurrentBytesReceived(stats.getCurrentBytesReceived() + stat.getCurrentBytesReceived());
+                            _statsDao.update(stats.getId(), stats);
+                        }
                     }
+                    lastCollectDetail.setValue(""+now.getTime());
+                    _detailsDao.update(lastCollectDetail.getId(), lastCollectDetail);
                 }
-                lastCollectDetail.setValue(""+now.getTime());
-                _detailsDao.update(lastCollectDetail.getId(), lastCollectDetail);
-                txn.commit();
-            } finally {
-                txn.close();
-            }
+            });
 
             return true;
         }

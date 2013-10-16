@@ -36,7 +36,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -192,6 +191,10 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicIpAlias;
@@ -508,7 +511,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // Execute all updates in a single transaction
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
 
         if (!_configDao.update(name, category, value)) {
@@ -906,7 +909,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 selectSql += " and removed IS NULL";
             }
 
-            Transaction txn = Transaction.currentTxn();
+            TransactionLegacy txn = TransactionLegacy.currentTxn();
             try {
                 PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
                 stmt.setLong(1, podId);
@@ -992,9 +995,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     @DB
     public boolean deletePod(DeletePodCmd cmd) {
-        Long podId = cmd.getId();
-
-        Transaction txn = Transaction.currentTxn();
+        final Long podId = cmd.getId();
 
         // Make sure the pod exists
         if (!validPod(podId)) {
@@ -1003,50 +1004,52 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         checkIfPodIsDeletable(podId);
 
-        HostPodVO pod = _podDao.findById(podId);
+        final HostPodVO pod = _podDao.findById(podId);
 
-        txn.start();
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                // Delete private ip addresses for the pod if there are any
+                List<DataCenterIpAddressVO> privateIps = _privateIpAddressDao.listByPodIdDcId(Long.valueOf(podId),
+                        pod.getDataCenterId());
+                if (!privateIps.isEmpty()) {
+                    if (!(_privateIpAddressDao.deleteIpAddressByPod(podId))) {
+                        throw new CloudRuntimeException("Failed to cleanup private ip addresses for pod " + podId);
+                    }
+                }
 
-        // Delete private ip addresses for the pod if there are any
-        List<DataCenterIpAddressVO> privateIps = _privateIpAddressDao.listByPodIdDcId(Long.valueOf(podId),
-                pod.getDataCenterId());
-        if (!privateIps.isEmpty()) {
-            if (!(_privateIpAddressDao.deleteIpAddressByPod(podId))) {
-                throw new CloudRuntimeException("Failed to cleanup private ip addresses for pod " + podId);
+                // Delete link local ip addresses for the pod
+                List<DataCenterLinkLocalIpAddressVO> localIps = _LinkLocalIpAllocDao.listByPodIdDcId(podId,
+                        pod.getDataCenterId());
+                if (!localIps.isEmpty()) {
+                    if (!(_LinkLocalIpAllocDao.deleteIpAddressByPod(podId))) {
+                        throw new CloudRuntimeException("Failed to cleanup private ip addresses for pod " + podId);
+                    }
+                }
+
+                // Delete vlans associated with the pod
+                List<? extends Vlan> vlans = _networkModel.listPodVlans(podId);
+                if (vlans != null && !vlans.isEmpty()) {
+                    for (Vlan vlan : vlans) {
+                        _vlanDao.remove(vlan.getId());
+                    }
+                }
+
+                // Delete corresponding capacity records
+                _capacityDao.removeBy(null, null, podId, null, null);
+
+                // Delete the pod
+                if (!(_podDao.remove(podId))) {
+                    throw new CloudRuntimeException("Failed to delete pod " + podId);
+                }
+
+                // remove from dedicated resources
+                DedicatedResourceVO dr = _dedicatedDao.findByPodId(podId);
+                if (dr != null) {
+                    _dedicatedDao.remove(dr.getId());
+                }
             }
-        }
-
-        // Delete link local ip addresses for the pod
-        List<DataCenterLinkLocalIpAddressVO> localIps = _LinkLocalIpAllocDao.listByPodIdDcId(podId,
-                pod.getDataCenterId());
-        if (!localIps.isEmpty()) {
-            if (!(_LinkLocalIpAllocDao.deleteIpAddressByPod(podId))) {
-                throw new CloudRuntimeException("Failed to cleanup private ip addresses for pod " + podId);
-            }
-        }
-
-        // Delete vlans associated with the pod
-        List<? extends Vlan> vlans = _networkModel.listPodVlans(podId);
-        if (vlans != null && !vlans.isEmpty()) {
-            for (Vlan vlan : vlans) {
-                _vlanDao.remove(vlan.getId());
-            }
-        }
-
-        // Delete corresponding capacity records
-        _capacityDao.removeBy(null, null, podId, null, null);
-
-        // Delete the pod
-        if (!(_podDao.remove(podId))) {
-            throw new CloudRuntimeException("Failed to delete pod " + podId);
-        }
-
-        // remove from dedicated resources
-        DedicatedResourceVO dr = _dedicatedDao.findByPodId(podId);
-        if (dr != null) {
-            _dedicatedDao.remove(dr.getId());
-        }
-        txn.commit();
+        });
 
         return true;
     }
@@ -1059,12 +1062,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @DB
-    public Pod editPod(long id, String name, String startIp, String endIp, String gateway, String netmask,
+    public Pod editPod(final long id, String name, String startIp, String endIp, String gateway, String netmask,
             String allocationStateStr) {
 
         // verify parameters
-        HostPodVO pod = _podDao.findById(id);
-        ;
+        final HostPodVO pod = _podDao.findById(id);
+
         if (pod == null) {
             throw new InvalidParameterValueException("Unable to find pod by id " + id);
         }
@@ -1146,59 +1149,73 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // Verify pod's attributes
-        String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
+        final String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
         boolean checkForDuplicates = !oldPodName.equals(name);
         checkPodAttributes(id, name, pod.getDataCenterId(), gateway, cidr, startIp, endIp, allocationStateStr,
                 checkForDuplicates, false);
 
-        Transaction txn = Transaction.currentTxn();
         try {
-            txn.start();
-            long zoneId = pod.getDataCenterId();
 
-            if (!allowToDownsize) {
-                if (leftRangeToAdd != null) {
-                    _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), leftRangeToAdd[0], leftRangeToAdd[1]);
+            final String[] existingPodIpRangeFinal = existingPodIpRange;
+            final String[] leftRangeToAddFinal = leftRangeToAdd;
+            final String[] rightRangeToAddFinal = rightRangeToAdd;
+            final boolean allowToDownsizeFinal = allowToDownsize;
+            final String allocationStateStrFinal = allocationStateStr;
+            final String startIpFinal = startIp;
+            final String endIpFinal = endIp;
+            final String nameFinal = name;
+            final String gatewayFinal = gateway;
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    long zoneId = pod.getDataCenterId();
+
+                    String startIp = startIpFinal;
+                    String endIp = endIpFinal;
+
+                    if (!allowToDownsizeFinal) {
+                        if (leftRangeToAddFinal != null) {
+                            _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), leftRangeToAddFinal[0], leftRangeToAddFinal[1]);
+                        }
+
+                        if (rightRangeToAddFinal != null) {
+                            _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), rightRangeToAddFinal[0], rightRangeToAddFinal[1]);
+                        }
+
+                    } else {
+                        // delete the old range
+                        _zoneDao.deletePrivateIpAddressByPod(pod.getId());
+
+                        // add the new one
+                        if (startIp == null) {
+                            startIp = existingPodIpRangeFinal[0];
+                        }
+
+                        if (endIp == null) {
+                            endIp = existingPodIpRangeFinal[1];
+                        }
+
+                        _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIp);
+                    }
+
+                    pod.setName(nameFinal);
+                    pod.setDataCenterId(zoneId);
+                    pod.setGateway(gatewayFinal);
+                    pod.setCidrAddress(getCidrAddress(cidr));
+                    pod.setCidrSize(getCidrSize(cidr));
+
+                    String ipRange = startIp + "-" + endIp;
+                    pod.setDescription(ipRange);
+                    Grouping.AllocationState allocationState = null;
+                    if (allocationStateStrFinal != null && !allocationStateStrFinal.isEmpty()) {
+                        allocationState = Grouping.AllocationState.valueOf(allocationStateStrFinal);
+                        _capacityDao.updateCapacityState(null, pod.getId(), null, null, allocationStateStrFinal);
+                        pod.setAllocationState(allocationState);
+                    }
+        
+                    _podDao.update(id, pod);
                 }
-
-                if (rightRangeToAdd != null) {
-                    _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), rightRangeToAdd[0], rightRangeToAdd[1]);
-                }
-
-            } else {
-                // delete the old range
-                _zoneDao.deletePrivateIpAddressByPod(pod.getId());
-
-                // add the new one
-                if (startIp == null) {
-                    startIp = existingPodIpRange[0];
-                }
-
-                if (endIp == null) {
-                    endIp = existingPodIpRange[1];
-                }
-
-                _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIp);
-            }
-
-            pod.setName(name);
-            pod.setDataCenterId(zoneId);
-            pod.setGateway(gateway);
-            pod.setCidrAddress(getCidrAddress(cidr));
-            pod.setCidrSize(getCidrSize(cidr));
-
-            String ipRange = startIp + "-" + endIp;
-            pod.setDescription(ipRange);
-            Grouping.AllocationState allocationState = null;
-            if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
-                allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
-                _capacityDao.updateCapacityState(null, pod.getId(), null, null, allocationStateStr);
-                pod.setAllocationState(allocationState);
-            }
-
-            _podDao.update(id, pod);
-
-            txn.commit();
+            });
         } catch (Exception e) {
             s_logger.error("Unable to edit pod due to " + e.getMessage(), e);
             throw new CloudRuntimeException("Failed to edit pod. Please contact Cloud Support.");
@@ -1221,7 +1238,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @DB
-    public HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp,
+    public HostPodVO createPod(long userId, String podName, final long zoneId, String gateway, String cidr, final String startIp,
             String endIp, String allocationStateStr, boolean skipGatewayOverlapCheck) {
 
         // Check if the zone is valid
@@ -1260,31 +1277,33 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Start ip is required parameter");
         }
 
-        HostPodVO pod = new HostPodVO(podName, zoneId, gateway, cidrAddress, cidrSize, ipRange);
+        final HostPodVO podFinal = new HostPodVO(podName, zoneId, gateway, cidrAddress, cidrSize, ipRange);
 
         Grouping.AllocationState allocationState = null;
         if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
             allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
-            pod.setAllocationState(allocationState);
+            podFinal.setAllocationState(allocationState);
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        final String endIpFinal = endIp;
+        return Transaction.execute(new TransactionCallback<HostPodVO>() {
+            @Override
+            public HostPodVO doInTransaction(TransactionStatus status) {
 
-        pod = _podDao.persist(pod);
+                HostPodVO pod = _podDao.persist(podFinal);
 
-        if (startIp != null) {
-            _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIp);
-        }
+                if (startIp != null) {
+                    _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal);
+                }
 
-        String[] linkLocalIpRanges = getLinkLocalIPRange();
-        if (linkLocalIpRanges != null) {
-            _zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
-        }
+                String[] linkLocalIpRanges = getLinkLocalIPRange();
+                if (linkLocalIpRanges != null) {
+                    _zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
+                }
 
-        txn.commit();
-
-        return pod;
+                return pod;
+            }
+        });
     }
 
     @DB
@@ -1369,7 +1388,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 selectSql += " AND state != '" + VirtualMachine.State.Expunging.toString() + "'";
             }
 
-            Transaction txn = Transaction.currentTxn();
+            TransactionLegacy txn = TransactionLegacy.currentTxn();
             try {
                 PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
                 stmt.setLong(1, zoneId);
@@ -1504,11 +1523,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @ActionEvent(eventType = EventTypes.EVENT_ZONE_DELETE, eventDescription = "deleting zone", async = false)
     public boolean deleteZone(DeleteZoneCmd cmd) {
 
-        Transaction txn = Transaction.currentTxn();
-        boolean success = false;
-
         Long userId = CallContext.current().getCallingUserId();
-        Long zoneId = cmd.getId();
+        final Long zoneId = cmd.getId();
 
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -1521,38 +1537,38 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         checkIfZoneIsDeletable(zoneId);
 
-        txn.start();
-
-        // delete vlans for this zone
-        List<VlanVO> vlans = _vlanDao.listByZone(zoneId);
-        for (VlanVO vlan : vlans) {
-            _vlanDao.remove(vlan.getId());
-        }
-
-        success = _zoneDao.remove(zoneId);
-
-        if (success) {
-            // delete all capacity records for the zone
-            _capacityDao.removeBy(null, zoneId, null, null, null);
-            // remove from dedicated resources
-            DedicatedResourceVO dr = _dedicatedDao.findByZoneId(zoneId);
-            if (dr != null) {
-                _dedicatedDao.remove(dr.getId());
-                // find the group associated and check if there are any more
-                // resources under that group
-                List<DedicatedResourceVO> resourcesInGroup = _dedicatedDao.listByAffinityGroupId(dr
-                        .getAffinityGroupId());
-                if (resourcesInGroup.isEmpty()) {
-                    // delete the group
-                    _affinityGroupService.deleteAffinityGroup(dr.getAffinityGroupId(), null, null, null);
+        return Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
+                // delete vlans for this zone
+                List<VlanVO> vlans = _vlanDao.listByZone(zoneId);
+                for (VlanVO vlan : vlans) {
+                    _vlanDao.remove(vlan.getId());
                 }
+
+                boolean success = _zoneDao.remove(zoneId);
+
+                if (success) {
+                    // delete all capacity records for the zone
+                    _capacityDao.removeBy(null, zoneId, null, null, null);
+                    // remove from dedicated resources
+                    DedicatedResourceVO dr = _dedicatedDao.findByZoneId(zoneId);
+                    if (dr != null) {
+                        _dedicatedDao.remove(dr.getId());
+                        // find the group associated and check if there are any more
+                        // resources under that group
+                        List<DedicatedResourceVO> resourcesInGroup = _dedicatedDao.listByAffinityGroupId(dr
+                                .getAffinityGroupId());
+                        if (resourcesInGroup.isEmpty()) {
+                            // delete the group
+                            _affinityGroupService.deleteAffinityGroup(dr.getAffinityGroupId(), null, null, null);
+                        }
+                    }
+                }
+
+                return success;
             }
-        }
-
-        txn.commit();
-
-        return success;
-
+        });
     }
 
     @Override
@@ -1560,7 +1576,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @ActionEvent(eventType = EventTypes.EVENT_ZONE_EDIT, eventDescription = "editing zone", async = false)
     public DataCenter editZone(UpdateZoneCmd cmd) {
         // Parameter validation as from execute() method in V1
-        Long zoneId = cmd.getId();
+        final Long zoneId = cmd.getId();
         String zoneName = cmd.getZoneName();
         String dns1 = cmd.getDns1();
         String dns2 = cmd.getDns2();
@@ -1570,14 +1586,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String internalDns2 = cmd.getInternalDns2();
         String guestCidr = cmd.getGuestCidrAddress();
         List<String> dnsSearchOrder = cmd.getDnsSearchOrder();
-        Boolean isPublic = cmd.isPublic();
-        String allocationStateStr = cmd.getAllocationState();
-        String dhcpProvider = cmd.getDhcpProvider();
+        final Boolean isPublic = cmd.isPublic();
+        final String allocationStateStr = cmd.getAllocationState();
+        final String dhcpProvider = cmd.getDhcpProvider();
         Map<?, ?> detailsMap = cmd.getDetails();
         String networkDomain = cmd.getDomain();
         Boolean localStorageEnabled = cmd.getLocalStorageEnabled();
 
-        Map<String, String> newDetails = new HashMap<String, String>();
+        final Map<String, String> newDetails = new HashMap<String, String>();
         if (detailsMap != null) {
             Collection<?> zoneDetailsCollection = detailsMap.values();
             Iterator<?> iter = zoneDetailsCollection.iterator();
@@ -1611,7 +1627,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             newDetails.put(ZoneConfig.DnsSearchOrder.getName(), StringUtils.join(dnsSearchOrder, ","));
         }
 
-        DataCenterVO zone = _zoneDao.findById(zoneId);
+        final DataCenterVO zone = _zoneDao.findById(zoneId);
         if (zone == null) {
             throw new InvalidParameterValueException("unable to find zone by id " + zoneId);
         }
@@ -1698,93 +1714,94 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-
-        Map<String, String> updatedDetails = new HashMap<String, String>();
-        _zoneDao.loadDetails(zone);
-        if (zone.getDetails() != null) {
-            updatedDetails.putAll(zone.getDetails());
-        }
-        updatedDetails.putAll(newDetails);
-        zone.setDetails(updatedDetails);
-
-        if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
-            Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
-
-            if (allocationState == Grouping.AllocationState.Enabled) {
-                // check if zone has necessary trafficTypes before enabling
-                try {
-                    PhysicalNetwork mgmtPhyNetwork;
-                    // zone should have a physical network with management
-                    // traffiType
-                    mgmtPhyNetwork = _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId,
-                            TrafficType.Management);
-                    if (NetworkType.Advanced == zone.getNetworkType() && !zone.isSecurityGroupEnabled()) {
-                        // advanced zone without SG should have a physical
-                        // network with public Thpe
-                        _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Public);
-                    }
-
-                    try {
-                        _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Storage);
-                    } catch (InvalidParameterValueException noStorage) {
-                        PhysicalNetworkTrafficTypeVO mgmtTraffic = _trafficTypeDao.findBy(mgmtPhyNetwork.getId(),
-                                TrafficType.Management);
-                        _networkSvc.addTrafficTypeToPhysicalNetwork(mgmtPhyNetwork.getId(),
-                                TrafficType.Storage.toString(), mgmtTraffic.getXenNetworkLabel(),
-                                mgmtTraffic.getKvmNetworkLabel(), mgmtTraffic.getVmwareNetworkLabel(),
-                                mgmtTraffic.getSimulatorNetworkLabel(), mgmtTraffic.getVlan());
-                        s_logger.info("No storage traffic type was specified by admin, create default storage traffic on physical network "
-                                + mgmtPhyNetwork.getId() + " with same configure of management traffic type");
-                    }
-                } catch (InvalidParameterValueException ex) {
-                    throw new InvalidParameterValueException("Cannot enable this Zone since: " + ex.getMessage());
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                Map<String, String> updatedDetails = new HashMap<String, String>();
+                _zoneDao.loadDetails(zone);
+                if (zone.getDetails() != null) {
+                    updatedDetails.putAll(zone.getDetails());
                 }
-            }
-            _capacityDao.updateCapacityState(zone.getId(), null, null, null, allocationStateStr);
-            zone.setAllocationState(allocationState);
-        }
-
-        if (dhcpProvider != null) {
-            zone.setDhcpProvider(dhcpProvider);
-        }
+                updatedDetails.putAll(newDetails);
+                zone.setDetails(updatedDetails);
         
-        // update a private zone to public; not vice versa
-        if (isPublic != null && isPublic) {
-            zone.setDomainId(null);
-            zone.setDomain(null);
-
-            // release the dedication for this zone
-            DedicatedResourceVO resource = _dedicatedDao.findByZoneId(zoneId);
-            Long resourceId = null;
-            if (resource != null) {
-                resourceId = resource.getId();
-                if (!_dedicatedDao.remove(resourceId)) {
-                    throw new CloudRuntimeException("Failed to delete dedicated Zone Resource " + resourceId);
+                if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
+                    Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
+        
+                    if (allocationState == Grouping.AllocationState.Enabled) {
+                        // check if zone has necessary trafficTypes before enabling
+                        try {
+                            PhysicalNetwork mgmtPhyNetwork;
+                            // zone should have a physical network with management
+                            // traffiType
+                            mgmtPhyNetwork = _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId,
+                                    TrafficType.Management);
+                            if (NetworkType.Advanced == zone.getNetworkType() && !zone.isSecurityGroupEnabled()) {
+                                // advanced zone without SG should have a physical
+                                // network with public Thpe
+                                _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Public);
+                            }
+        
+                            try {
+                                _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Storage);
+                            } catch (InvalidParameterValueException noStorage) {
+                                PhysicalNetworkTrafficTypeVO mgmtTraffic = _trafficTypeDao.findBy(mgmtPhyNetwork.getId(),
+                                        TrafficType.Management);
+                                _networkSvc.addTrafficTypeToPhysicalNetwork(mgmtPhyNetwork.getId(),
+                                        TrafficType.Storage.toString(), mgmtTraffic.getXenNetworkLabel(),
+                                        mgmtTraffic.getKvmNetworkLabel(), mgmtTraffic.getVmwareNetworkLabel(),
+                                        mgmtTraffic.getSimulatorNetworkLabel(), mgmtTraffic.getVlan());
+                                s_logger.info("No storage traffic type was specified by admin, create default storage traffic on physical network "
+                                        + mgmtPhyNetwork.getId() + " with same configure of management traffic type");
+                            }
+                        } catch (InvalidParameterValueException ex) {
+                            throw new InvalidParameterValueException("Cannot enable this Zone since: " + ex.getMessage());
+                        }
+                    }
+                    _capacityDao.updateCapacityState(zone.getId(), null, null, null, allocationStateStr);
+                    zone.setAllocationState(allocationState);
                 }
-                // find the group associated and check if there are any more
-                // resources under that group
-                List<DedicatedResourceVO> resourcesInGroup = _dedicatedDao.listByAffinityGroupId(resource.getAffinityGroupId());
-                if (resourcesInGroup.isEmpty()) {
-                    // delete the group
-                    _affinityGroupService.deleteAffinityGroup(resource.getAffinityGroupId(), null, null, null);
+
+                if (dhcpProvider != null) {
+                    zone.setDhcpProvider(dhcpProvider);
+                }
+
+                // update a private zone to public; not vice versa
+                if (isPublic != null && isPublic) {
+                    zone.setDomainId(null);
+                    zone.setDomain(null);
+
+                    // release the dedication for this zone
+                    DedicatedResourceVO resource = _dedicatedDao.findByZoneId(zoneId);
+                    Long resourceId = null;
+                    if (resource != null) {
+                        resourceId = resource.getId();
+                        if (!_dedicatedDao.remove(resourceId)) {
+                            throw new CloudRuntimeException("Failed to delete dedicated Zone Resource " + resourceId);
+                        }
+                        // find the group associated and check if there are any more
+                        // resources under that group
+                        List<DedicatedResourceVO> resourcesInGroup = _dedicatedDao.listByAffinityGroupId(resource.getAffinityGroupId());
+                        if (resourcesInGroup.isEmpty()) {
+                            // delete the group
+                            _affinityGroupService.deleteAffinityGroup(resource.getAffinityGroupId(), null, null, null);
+                        }
+                    }
+                }
+
+                if (!_zoneDao.update(zoneId, zone)) {
+                    throw new CloudRuntimeException("Failed to edit zone. Please contact Cloud Support.");
                 }
             }
-        }
+        });
 
-        if (!_zoneDao.update(zoneId, zone)) {
-            throw new CloudRuntimeException("Failed to edit zone. Please contact Cloud Support.");
-        }
-
-        txn.commit();
         return zone;
     }
 
     @Override
     @DB
     public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1,
-            String internalDns2, String guestCidr, String domain, Long domainId, NetworkType zoneType,
+            String internalDns2, String guestCidr, String domain, final Long domainId, NetworkType zoneType,
             String allocationStateStr, String networkDomain, boolean isSecurityGroupEnabled,
             boolean isLocalStorageEnabled, String ip6Dns1, String ip6Dns2) {
 
@@ -1809,43 +1826,40 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         byte[] bytes = (zoneName + System.currentTimeMillis()).getBytes();
         String zoneToken = UUID.nameUUIDFromBytes(bytes).toString();
-        Transaction txn = Transaction.currentTxn();
-        try {
-            txn.start();
-            // Create the new zone in the database
-            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr,
-                    domain, domainId, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled,
-                    isLocalStorageEnabled,
-                    ip6Dns1, ip6Dns2);
-            if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
-                Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
-                zone.setAllocationState(allocationState);
-            } else {
-                // Zone will be disabled since 3.0. Admin should enable it after
-                // physical network and providers setup.
-                zone.setAllocationState(Grouping.AllocationState.Disabled);
-            }
-            zone = _zoneDao.persist(zone);
-            if (domainId != null) {
-                // zone is explicitly dedicated to this domain
-                // create affinity group associated and dedicate the zone.
-                AffinityGroup group = createDedicatedAffinityGroup(null, domainId, null);
-                DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(zone.getId(), null, null, null,
-                        domainId, null, group.getId());
-                _dedicatedDao.persist(dedicatedResource);
-            }
 
-            // Create default system networks
-            createDefaultSystemNetworks(zone.getId());
-            txn.commit();
-            return zone;
-        } catch (Exception ex) {
-            txn.rollback();
-            s_logger.warn("Exception: ", ex);
-            throw new CloudRuntimeException("Fail to create a network");
-        } finally {
-            txn.close();
+        // Create the new zone in the database
+        final DataCenterVO zoneFinal = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr,
+                domain, domainId, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled,
+                isLocalStorageEnabled,
+                ip6Dns1, ip6Dns2);
+        if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
+            Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
+            zoneFinal.setAllocationState(allocationState);
+        } else {
+            // Zone will be disabled since 3.0. Admin should enable it after
+            // physical network and providers setup.
+            zoneFinal.setAllocationState(Grouping.AllocationState.Disabled);
         }
+
+        return Transaction.execute(new TransactionCallback<DataCenterVO>() {
+            @Override
+            public DataCenterVO doInTransaction(TransactionStatus status) {
+                DataCenterVO zone = _zoneDao.persist(zoneFinal);
+                if (domainId != null) {
+                    // zone is explicitly dedicated to this domain
+                    // create affinity group associated and dedicate the zone.
+                    AffinityGroup group = createDedicatedAffinityGroup(null, domainId, null);
+                    DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(zone.getId(), null, null, null,
+                            domainId, null, group.getId());
+                    _dedicatedDao.persist(dedicatedResource);
+                }
+
+                // Create default system networks
+                createDefaultSystemNetworks(zone.getId());
+
+                return zone;
+            }
+        });
     }
 
     private AffinityGroup createDedicatedAffinityGroup(String affinityGroupName, Long domainId, Long accountId) {
@@ -2662,31 +2676,43 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (ipv4) {
             checkOverlapPrivateIpRange(zoneId, startIP, endIP);
         }
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
 
-        if ((sameSubnet == null || sameSubnet.first() == false) && (network.getTrafficType()== TrafficType.Guest) && (network.getGuestType() == GuestType.Shared) && (_vlanDao.listVlansByNetworkId(networkId) != null)) {
-            Map<Capability, String> dhcpCapabilities = _networkSvc.getNetworkOfferingServiceCapabilities(_networkOfferingDao.findById(network.getNetworkOfferingId()), Service.Dhcp);
-            String supportsMultipleSubnets = dhcpCapabilities.get(Capability.DhcpAccrossMultipleSubnets);
-            if (supportsMultipleSubnets == null || !Boolean.valueOf(supportsMultipleSubnets)) {
-                       throw new  InvalidParameterValueException("The Dhcp serivice provider for this network dose not support the dhcp  across multiple subnets");
+        return commitVlan(zoneId, podId, startIP, endIP, newVlanGateway, newVlanNetmask, vlanId,
+                forVirtualNetwork, networkId, physicalNetworkId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, vlanOwner,
+                network, sameSubnet);
+    }
+
+    private Vlan commitVlan(final Long zoneId, final Long podId, final String startIP, final String endIP, final String newVlanGatewayFinal,
+            final String newVlanNetmaskFinal, final String vlanId, final Boolean forVirtualNetwork, final Long networkId, final Long physicalNetworkId,
+            final String startIPv6, final String endIPv6, final String ip6Gateway, final String ip6Cidr, final Account vlanOwner, final Network network,
+            final Pair<Boolean, Pair<String, String>> sameSubnet) {
+        return Transaction.execute(new TransactionCallback<Vlan>() {
+            @Override
+            public Vlan doInTransaction(TransactionStatus status) {
+                String newVlanNetmask = newVlanNetmaskFinal;
+                String newVlanGateway = newVlanGatewayFinal;
+                
+                if ((sameSubnet == null || sameSubnet.first() == false) && (network.getTrafficType()== TrafficType.Guest) && (network.getGuestType() == GuestType.Shared) && (_vlanDao.listVlansByNetworkId(networkId) != null)) {
+                    Map<Capability, String> dhcpCapabilities = _networkSvc.getNetworkOfferingServiceCapabilities(_networkOfferingDao.findById(network.getNetworkOfferingId()), Service.Dhcp);
+                    String supportsMultipleSubnets = dhcpCapabilities.get(Capability.DhcpAccrossMultipleSubnets);
+                    if (supportsMultipleSubnets == null || !Boolean.valueOf(supportsMultipleSubnets)) {
+                               throw new  InvalidParameterValueException("The Dhcp serivice provider for this network dose not support the dhcp  across multiple subnets");
+                    }
+                    s_logger.info("adding a new subnet to the network " + network.getId());
+                } else if (sameSubnet != null)  {
+                    // if it is same subnet the user might not send the vlan and the
+                    // netmask details. so we are
+                    // figuring out while validation and setting them here.
+                    newVlanGateway = sameSubnet.second().first();
+                    newVlanNetmask = sameSubnet.second().second();
+                }
+                Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, podId, startIP,
+                        endIP, newVlanGateway, newVlanNetmask, vlanId, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
+                // create an entry in the nic_secondary table. This will be the new
+                // gateway that will be configured on the corresponding routervm.
+                return vlan;
             }
-            s_logger.info("adding a new subnet to the network " + network.getId());
-        } else if (sameSubnet != null)  {
-            // if it is same subnet the user might not send the vlan and the
-            // netmask details. so we are
-            // figuring out while validation and setting them here.
-            newVlanGateway = sameSubnet.second().first();
-            newVlanNetmask = sameSubnet.second().second();
-        }
-        Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, podId, startIP,
-                endIP, newVlanGateway, newVlanNetmask, vlanId, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
-        // create an entry in the nic_secondary table. This will be the new
-        // gateway that will be configured on the corresponding routervm.
-
-        txn.commit();
-
-        return vlan;
+        });
     }
 
     public NetUtils.supersetOrSubset checkIfSubsetOrSuperset(String newVlanGateway, String newVlanNetmask, VlanVO vlan, String startIP,
@@ -3014,52 +3040,62 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // Everything was fine, so persist the VLAN
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-
-        VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId,
-                physicalNetworkId, vlanIp6Gateway, vlanIp6Cidr, ipv6Range);
-        s_logger.debug("Saving vlan range " + vlan);
-        vlan = _vlanDao.persist(vlan);
-
-        // IPv6 use a used ip map, is different from ipv4, no need to save
-        // public ip range
-        if (ipv4) {
-            if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId(), networkId, physicalNetworkId)) {
-                throw new CloudRuntimeException("Failed to save IPv4 range. Please contact Cloud Support.");
-            }
-        }
-
-        if (vlanOwner != null) {
-            // This VLAN is account-specific, so create an AccountVlanMapVO
-            // entry
-            AccountVlanMapVO accountVlanMapVO = new AccountVlanMapVO(vlanOwner.getId(), vlan.getId());
-            _accountVlanMapDao.persist(accountVlanMapVO);
-
-            // generate usage event for dedication of every ip address in the
-            // range
-            List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlan.getId());
-            for (IPAddressVO ip : ips) {
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, vlanOwner.getId(), ip
-                        .getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(), vlan
-                        .getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
-            }
-            // increment resource count for dedicated public ip's
-            _resourceLimitMgr.incrementResourceCount(vlanOwner.getId(), ResourceType.public_ip, new Long(ips.size()));
-        } else if (podId != null) {
-            // This VLAN is pod-wide, so create a PodVlanMapVO entry
-            PodVlanMapVO podVlanMapVO = new PodVlanMapVO(podId, vlan.getId());
-            _podVlanMapDao.persist(podVlanMapVO);
-        }
-
-        txn.commit();
+        VlanVO vlan = commitVlanAndIpRange(zoneId, networkId, physicalNetworkId, podId, startIP, endIP, vlanGateway,
+                vlanNetmask, vlanId, vlanOwner, vlanIp6Gateway, vlanIp6Cidr, ipv4, zone, vlanType, ipv6Range, ipRange);
 
         return vlan;
     }
 
+    private VlanVO commitVlanAndIpRange(final long zoneId, final long networkId, final long physicalNetworkId, final Long podId,
+            final String startIP, final String endIP, final String vlanGateway, final String vlanNetmask, final String vlanId, final Account vlanOwner,
+            final String vlanIp6Gateway, final String vlanIp6Cidr, final boolean ipv4, final DataCenterVO zone, final VlanType vlanType,
+            final String ipv6Range, final String ipRange) {
+        return Transaction.execute(new TransactionCallback<VlanVO>() {
+            @Override
+            public VlanVO doInTransaction(TransactionStatus status) {
+                VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId,
+                        physicalNetworkId, vlanIp6Gateway, vlanIp6Cidr, ipv6Range);
+                s_logger.debug("Saving vlan range " + vlan);
+                vlan = _vlanDao.persist(vlan);
+
+                // IPv6 use a used ip map, is different from ipv4, no need to save
+                // public ip range
+                if (ipv4) {
+                    if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId(), networkId, physicalNetworkId)) {
+                        throw new CloudRuntimeException("Failed to save IPv4 range. Please contact Cloud Support.");
+                    }
+                }
+
+                if (vlanOwner != null) {
+                    // This VLAN is account-specific, so create an AccountVlanMapVO
+                    // entry
+                    AccountVlanMapVO accountVlanMapVO = new AccountVlanMapVO(vlanOwner.getId(), vlan.getId());
+                    _accountVlanMapDao.persist(accountVlanMapVO);
+
+                    // generate usage event for dedication of every ip address in the
+                    // range
+                    List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlan.getId());
+                    for (IPAddressVO ip : ips) {
+                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, vlanOwner.getId(), ip
+                                .getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(), vlan
+                                .getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                    }
+                    // increment resource count for dedicated public ip's
+                    _resourceLimitMgr.incrementResourceCount(vlanOwner.getId(), ResourceType.public_ip, new Long(ips.size()));
+                } else if (podId != null) {
+                    // This VLAN is pod-wide, so create a PodVlanMapVO entry
+                    PodVlanMapVO podVlanMapVO = new PodVlanMapVO(podId, vlan.getId());
+                    _podVlanMapDao.persist(podVlanMapVO);
+                }
+                return vlan;
+            }
+        });
+
+    }
+
     @Override
     @DB
-    public boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId, Account caller) {
+    public boolean deleteVlanAndPublicIpRange(long userId, final long vlanDbId, Account caller) {
         VlanVO vlanRange = _vlanDao.findById(vlanDbId);
         if (vlanRange == null) {
             throw new InvalidParameterValueException("Please specify a valid IP range id.");
@@ -3146,12 +3182,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        _publicIpAddressDao.deletePublicIPRange(vlanDbId);
-        _vlanDao.expunge(vlanDbId);
-        txn.commit();
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                _publicIpAddressDao.deletePublicIPRange(vlanDbId);
+                _vlanDao.expunge(vlanDbId);
+            }
+        });
 
         return true;
     }
@@ -3229,14 +3266,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-
         // Create an AccountVlanMapVO entry
         AccountVlanMapVO accountVlanMapVO = new AccountVlanMapVO(vlanOwner.getId(), vlan.getId());
         _accountVlanMapDao.persist(accountVlanMapVO);
-
-        txn.commit();
 
         // generate usage event for dedication of every ip address in the range
         for (IPAddressVO ip : ips) {
@@ -3332,16 +3364,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @DB
-    protected boolean savePublicIPRange(String startIP, String endIP, long zoneId, long vlanDbId, long sourceNetworkid,
-            long physicalNetworkId) {
-        long startIPLong = NetUtils.ip2Long(startIP);
-        long endIPLong = NetUtils.ip2Long(endIP);
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        IPRangeConfig config = new IPRangeConfig();
-        List<String> problemIps = config.savePublicIPRange(txn, startIPLong, endIPLong, zoneId, vlanDbId,
-                sourceNetworkid, physicalNetworkId);
-        txn.commit();
+    protected boolean savePublicIPRange(String startIP, String endIP, final long zoneId, final long vlanDbId, final long sourceNetworkid,
+            final long physicalNetworkId) {
+        final long startIPLong = NetUtils.ip2Long(startIP);
+        final long endIPLong = NetUtils.ip2Long(endIP);
+
+        List<String> problemIps = Transaction.execute(new TransactionCallback<List<String>>() {
+            @Override
+            public List<String> doInTransaction(TransactionStatus status) {
+                IPRangeConfig config = new IPRangeConfig();
+                return config.savePublicIPRange(TransactionLegacy.currentTxn(), startIPLong, endIPLong, zoneId, vlanDbId,
+                        sourceNetworkid, physicalNetworkId);
+            }
+        });
+
         return problemIps != null && problemIps.size() == 0;
     }
 
@@ -3957,10 +3993,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @DB
     public NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType,
             String tags, boolean specifyVlan, Availability availability, Integer networkRate,
-            Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type,
+            final Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type,
             boolean systemOnly, Long serviceOfferingId, boolean conserveMode,
             Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
-            Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn) {
+            final Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, final Integer maxconn) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
@@ -4100,13 +4136,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             publicLb = true;
         }
 
-        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan,
+        final NetworkOfferingVO offeringFinal = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan,
                 networkRate, multicastRate, isDefault, availability, tags, type, conserveMode, dedicatedLb,
                 sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges, inline, isPersistent,
                 associatePublicIp, publicLb, internalLb, egressDefaultPolicy);
 
         if (serviceOfferingId != null) {
-            offering.setServiceOfferingId(serviceOfferingId);
+            offeringFinal.setServiceOfferingId(serviceOfferingId);
         }
 
         // validate the details
@@ -4114,46 +4150,49 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             validateNtwkOffDetails(details, serviceProviderMap);
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        // 1) create network offering object
-        s_logger.debug("Adding network offering " + offering);
-        offering.setConcurrentConnections(maxconn);
-        offering = _networkOfferingDao.persist(offering, details);
-        // 2) populate services and providers
-        if (serviceProviderMap != null) {
-            for (Network.Service service : serviceProviderMap.keySet()) {
-                Set<Provider> providers = serviceProviderMap.get(service);
-                if (providers != null && !providers.isEmpty()) {
-                    boolean vpcOff = false;
-                    for (Network.Provider provider : providers) {
-                        if (provider == Provider.VPCVirtualRouter) {
-                            vpcOff = true;
+        return Transaction.execute(new TransactionCallback<NetworkOfferingVO>() {
+            @Override
+            public NetworkOfferingVO doInTransaction(TransactionStatus status) {
+                NetworkOfferingVO offering = offeringFinal;
+
+                // 1) create network offering object
+                s_logger.debug("Adding network offering " + offering);
+                offering.setConcurrentConnections(maxconn);
+                offering = _networkOfferingDao.persist(offering, details);
+                // 2) populate services and providers
+                if (serviceProviderMap != null) {
+                    for (Network.Service service : serviceProviderMap.keySet()) {
+                        Set<Provider> providers = serviceProviderMap.get(service);
+                        if (providers != null && !providers.isEmpty()) {
+                            boolean vpcOff = false;
+                            for (Network.Provider provider : providers) {
+                                if (provider == Provider.VPCVirtualRouter) {
+                                    vpcOff = true;
+                                }
+                                NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(),
+                                        service, provider);
+                                _ntwkOffServiceMapDao.persist(offService);
+                                s_logger.trace("Added service for the network offering: " + offService + " with provider "
+                                        + provider.getName());
+                            }
+
+                            if (vpcOff) {
+                                List<Service> supportedSvcs = new ArrayList<Service>();
+                                supportedSvcs.addAll(serviceProviderMap.keySet());
+                                _vpcMgr.validateNtwkOffForVpc(offering, supportedSvcs);
+                            }
+                        } else {
+                            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(), service,
+                                    null);
+                            _ntwkOffServiceMapDao.persist(offService);
+                            s_logger.trace("Added service for the network offering: " + offService + " with null provider");
                         }
-                        NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(),
-                                service, provider);
-                        _ntwkOffServiceMapDao.persist(offService);
-                        s_logger.trace("Added service for the network offering: " + offService + " with provider "
-                                + provider.getName());
                     }
-
-                    if (vpcOff) {
-                        List<Service> supportedSvcs = new ArrayList<Service>();
-                        supportedSvcs.addAll(serviceProviderMap.keySet());
-                        _vpcMgr.validateNtwkOffForVpc(offering, supportedSvcs);
-                    }
-                } else {
-                    NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(), service,
-                            null);
-                    _ntwkOffServiceMapDao.persist(offService);
-                    s_logger.trace("Added service for the network offering: " + offService + " with null provider");
                 }
+
+                return offering;
             }
-        }
-
-        txn.commit();
-
-        return offering;
+        });
     }
 
     protected void validateNtwkOffDetails(Map<Detail, String> details, Map<Service, Set<Provider>> serviceProviderMap) {
@@ -4680,27 +4719,29 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @DB
-    public boolean releaseAccountSpecificVirtualRanges(long accountId) {
-        List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(accountId);
-        boolean result = true;
+    public boolean releaseAccountSpecificVirtualRanges(final long accountId) {
+        final List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(accountId);
         if (maps != null && !maps.isEmpty()) {
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
-            for (AccountVlanMapVO map : maps) {
-                if (!releasePublicIpRange(map.getVlanDbId(), _accountMgr.getSystemUser().getId(),
-                        _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM))) {
-                    result = false;
-                }
-            }
-            if (result) {
-                txn.commit();
-            } else {
-                s_logger.error("Failed to release account specific virtual ip ranges for account id=" + accountId);
+            try {
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        for (AccountVlanMapVO map : maps) {
+                            if (!releasePublicIpRange(map.getVlanDbId(), _accountMgr.getSystemUser().getId(),
+                                    _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM))) {
+                                throw new CloudRuntimeException("Failed to release account specific virtual ip ranges for account id=" + accountId);
+                            }
+                        }
+                    }
+                });
+            } catch ( CloudRuntimeException e ) {
+                s_logger.error(e);
+                return false;
             }
         } else {
             s_logger.trace("Account id=" + accountId + " has no account specific virtual ip ranges, nothing to release");
         }
-        return result;
+        return true;
     }
 
     @Override
@@ -4771,14 +4812,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @ActionEvent(eventType = EventTypes.EVENT_PORTABLE_IP_RANGE_CREATE,
             eventDescription = "creating portable ip range", async = false)
     public PortableIpRange createPortableIpRange(CreatePortableIpRangeCmd cmd) throws ConcurrentOperationException {
-        Integer regionId = cmd.getRegionId();
-        String startIP = cmd.getStartIp();
-        String endIP = cmd.getEndIp();
-        String gateway = cmd.getGateway();
-        String netmask = cmd.getNetmask();
+        final Integer regionId = cmd.getRegionId();
+        final String startIP = cmd.getStartIp();
+        final String endIP = cmd.getEndIp();
+        final String gateway = cmd.getGateway();
+        final String netmask = cmd.getNetmask();
         String vlanId = cmd.getVlan();
 
-        RegionVO region = _regionDao.findById(regionId);
+        final RegionVO region = _regionDao.findById(regionId);
         if (region == null) {
             throw new InvalidParameterValueException("Invalid region ID: " + regionId);
         }
@@ -4822,28 +4863,33 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         GlobalLock portableIpLock = GlobalLock.getInternLock("PortablePublicIpRange");
         portableIpLock.lock(5);
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        try {
+            final String vlanIdFinal = vlanId;
+            return Transaction.execute(new TransactionCallback<PortableIpRangeVO>() {
+                @Override
+                public PortableIpRangeVO doInTransaction(TransactionStatus status) {
+                    PortableIpRangeVO portableIpRange = new PortableIpRangeVO(regionId, vlanIdFinal, gateway, netmask, startIP, endIP);
+                    portableIpRange = _portableIpRangeDao.persist(portableIpRange);
 
-        PortableIpRangeVO portableIpRange = new PortableIpRangeVO(regionId, vlanId, gateway, netmask, startIP, endIP);
-        portableIpRange = _portableIpRangeDao.persist(portableIpRange);
+                    long startIpLong = NetUtils.ip2Long(startIP);
+                    long endIpLong = NetUtils.ip2Long(endIP);
+                    while (startIpLong <= endIpLong) {
+                        PortableIpVO portableIP = new PortableIpVO(regionId, portableIpRange.getId(), vlanIdFinal, gateway, netmask,
+                                NetUtils.long2Ip(startIpLong));
+                        _portableIpDao.persist(portableIP);
+                        startIpLong++;
+                    }
 
-        long startIpLong = NetUtils.ip2Long(startIP);
-        long endIpLong = NetUtils.ip2Long(endIP);
-        while (startIpLong <= endIpLong) {
-            PortableIpVO portableIP = new PortableIpVO(regionId, portableIpRange.getId(), vlanId, gateway, netmask,
-                    NetUtils.long2Ip(startIpLong));
-            _portableIpDao.persist(portableIP);
-            startIpLong++;
+                    // implicitly enable portable IP service for the region
+                    region.setPortableipEnabled(true);
+                    _regionDao.update(region.getId(), region);
+                    
+                    return portableIpRange;
+                }
+            });
+        } finally {
+            portableIpLock.unlock();
         }
-
-        // implicitly enable portable IP service for the region
-        region.setPortableipEnabled(true);
-        _regionDao.update(region.getId(), region);
-
-        txn.commit();
-        portableIpLock.unlock();
-        return portableIpRange;
     }
 
     @Override

@@ -25,6 +25,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={MHostMountDao.class})
@@ -37,7 +38,7 @@ public class MHostMountDaoImpl extends GenericDaoBase<MHostMountVO, Long> implem
 	public MHostMountVO getHostMount(long mHostId, long sHostId) { 
 	    SearchByMHostID.and("MHostID", SearchByMHostID.entity().getmHostID(), SearchCriteria.Op.EQ);
 	    SearchByMHostID.and("SHostID", SearchByMHostID.entity().getsHostID(), SearchCriteria.Op.EQ);
-	    Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
 	    try {
 		txn.start();
 		SearchCriteria<MHostMountVO> sc = SearchByMHostID.create();

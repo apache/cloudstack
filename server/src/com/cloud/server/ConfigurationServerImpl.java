@@ -45,7 +45,6 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -107,6 +106,11 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
@@ -249,11 +253,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             // Create userIpAddress ranges
 
             // Update existing vlans with networkId
-            Transaction txn = Transaction.currentTxn();
-
             List<VlanVO> vlans = _vlanDao.listAll();
             if (vlans != null && !vlans.isEmpty()) {
-                for (VlanVO vlan : vlans) {
+                for (final VlanVO vlan : vlans) {
                     if (vlan.getNetworkId().longValue() == 0) {
                         updateVlanWithNetworkId(vlan);
                     }
@@ -261,15 +263,19 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     // Create vlan user_ip_address range
                     String ipPange = vlan.getIpRange();
                     String[] range = ipPange.split("-");
-                    String startIp = range[0];
-                    String endIp = range[1];
+                    final String startIp = range[0];
+                    final String endIp = range[1];
 
-                    txn.start();
-                    IPRangeConfig config = new IPRangeConfig();
-                    long startIPLong = NetUtils.ip2Long(startIp);
-                    long endIPLong = NetUtils.ip2Long(endIp);
-                    config.savePublicIPRange(txn, startIPLong, endIPLong, vlan.getDataCenterId(), vlan.getId(), vlan.getNetworkId(), vlan.getPhysicalNetworkId());
-                    txn.commit();
+                    Transaction.execute(new TransactionCallbackNoReturn() {
+                        @Override
+                        public void doInTransactionWithoutResult(TransactionStatus status) {
+                            IPRangeConfig config = new IPRangeConfig();
+                            long startIPLong = NetUtils.ip2Long(startIp);
+                            long endIPLong = NetUtils.ip2Long(endIp);
+                            config.savePublicIPRange(TransactionLegacy.currentTxn(), startIPLong, endIPLong, vlan.getDataCenterId(), vlan.getId(), vlan.getNetworkId(), vlan.getPhysicalNetworkId());
+                        }
+                    });
+
                 }
             }
         }
@@ -352,7 +358,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     protected void saveUser() {
         // insert system account
         String insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, account.default) VALUES (1, UUID(), 'system', '1', '1', 1)";
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
             stmt.executeUpdate();
@@ -361,7 +367,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         // insert system user
         insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created, user.default)" +
                 " VALUES (1, UUID(), 'system', RAND(), 1, 'system', 'cloud', now(), 1)";
-        txn = Transaction.currentTxn();
+        txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
             stmt.executeUpdate();
@@ -377,7 +383,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
         // create an account for the admin user first
         insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, account.default) VALUES (" + id + ", UUID(), '" + username + "', '1', '1', 1)";
-        txn = Transaction.currentTxn();
+        txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
             stmt.executeUpdate();
@@ -388,7 +394,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created, state, user.default) " +
                 "VALUES (" + id + ", UUID(), '" + username + "', RAND(), 2, '" + firstname + "','" + lastname + "',now(), 'disabled', 1)";
 
-        txn = Transaction.currentTxn();
+        txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
             stmt.executeUpdate();
@@ -419,7 +425,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                             "VALUES ('default', 'Default Security Group', 2, 1, 'admin')";
                 }
 
-                txn = Transaction.currentTxn();
+                txn = TransactionLegacy.currentTxn();
                 try {
                     stmt = txn.prepareAutoCloseStatement(insertSql);
                     stmt.executeUpdate();
@@ -559,7 +565,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
         String already = _configDao.getValue("system.vm.password");
         if (already == null) {
-            Transaction txn = Transaction.currentTxn();
+            TransactionLegacy txn = TransactionLegacy.currentTxn();
             try {
                 String rpassword = PasswordGenerator.generatePresharedKey(8);
                 String wSql = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) "
@@ -643,7 +649,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             String insertSql2 = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +
                     "VALUES ('Hidden','DEFAULT', 'management-server','ssh.publickey', '" + DBEncryptionUtil.encrypt(publicKey) + "','Public key for the entire CloudStack')";
 
-            Transaction txn = Transaction.currentTxn();
+            TransactionLegacy txn = TransactionLegacy.currentTxn();
             try {
                 PreparedStatement stmt1 = txn.prepareAutoCloseStatement(insertSql1);
                 stmt1.executeUpdate();
@@ -778,7 +784,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             String insertSql1 = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +
                     "VALUES ('Hidden','DEFAULT', 'management-server','secstorage.copy.password', '" + DBEncryptionUtil.encrypt(password) + "','Password used to authenticate zone-to-zone template copy requests')";
 
-            Transaction txn = Transaction.currentTxn();
+            TransactionLegacy txn = TransactionLegacy.currentTxn();
             try {
                 PreparedStatement stmt1 = txn.prepareAutoCloseStatement(insertSql1);
                 stmt1.executeUpdate();
@@ -806,7 +812,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     }
 
     @DB
-    protected HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp) throws InternalErrorException {
+    protected HostPodVO createPod(long userId, String podName, final long zoneId, String gateway, String cidr, final String startIp, String endIp) throws InternalErrorException {
         String[] cidrPair = cidr.split("\\/");
         String cidrAddress = cidrPair[0];
         int cidrSize = Integer.parseInt(cidrPair[1]);
@@ -828,37 +834,37 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             ipRange = "";
         }
 
-        HostPodVO pod = new HostPodVO(podName, zoneId, gateway, cidrAddress, cidrSize, ipRange);
-        Transaction txn = Transaction.currentTxn();
+        final HostPodVO pod = new HostPodVO(podName, zoneId, gateway, cidrAddress, cidrSize, ipRange);
         try {
-            txn.start();
-
-            if (_podDao.persist(pod) == null) {
-                txn.rollback();
-                throw new InternalErrorException("Failed to create new pod. Please contact Cloud Support.");
-            }
-
-            if (startIp != null) {
-                _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIp);
-            }
-
-            String ipNums = _configDao.getValue("linkLocalIp.nums");
-            int nums = Integer.parseInt(ipNums);
-            if (nums > 16 || nums <= 0) {
-                throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "is wrong, should be 1~16");
-            }
-            /* local link ip address starts from 169.254.0.2 - 169.254.(nums) */
-            String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(nums);
-            if (linkLocalIpRanges == null) {
-                throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "may be wrong, should be 1~16");
-            } else {
-                _zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
-            }
-
-            txn.commit();
-
+            final String endIpFinal = endIp;
+            Transaction.executeWithException(new TransactionCallbackWithException<Object>() {
+                @Override
+                public Object doInTransaction(TransactionStatus status) throws InternalErrorException {
+                    if (_podDao.persist(pod) == null) {
+                        throw new InternalErrorException("Failed to create new pod. Please contact Cloud Support.");
+                    }
+        
+                    if (startIp != null) {
+                        _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal);
+                    }
+        
+                    String ipNums = _configDao.getValue("linkLocalIp.nums");
+                    int nums = Integer.parseInt(ipNums);
+                    if (nums > 16 || nums <= 0) {
+                        throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "is wrong, should be 1~16");
+                    }
+                    /* local link ip address starts from 169.254.0.2 - 169.254.(nums) */
+                    String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(nums);
+                    if (linkLocalIpRanges == null) {
+                        throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "may be wrong, should be 1~16");
+                    } else {
+                        _zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
+                    }
+                    
+                    return null;
+                }
+            }, InternalErrorException.class);
         } catch (Exception e) {
-            txn.rollback();
             s_logger.error("Unable to create new pod due to " + e.getMessage(), e);
             throw new InternalErrorException("Failed to create new pod. Please contact Cloud Support.");
         }
@@ -919,20 +925,20 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         privateGatewayNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(privateGatewayNetworkOffering);
 
         //populate providers
-        Map<Network.Service, Network.Provider> defaultSharedNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
+        final Map<Network.Service, Network.Provider> defaultSharedNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
         defaultSharedNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
         defaultSharedNetworkOfferingProviders.put(Service.Dns, Provider.VirtualRouter);
         defaultSharedNetworkOfferingProviders.put(Service.UserData, Provider.VirtualRouter);
 
-        Map<Network.Service, Network.Provider> defaultIsolatedNetworkOfferingProviders = defaultSharedNetworkOfferingProviders;
+        final Map<Network.Service, Network.Provider> defaultIsolatedNetworkOfferingProviders = defaultSharedNetworkOfferingProviders;
 
-        Map<Network.Service, Network.Provider> defaultSharedSGNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
+        final Map<Network.Service, Network.Provider> defaultSharedSGNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
         defaultSharedSGNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
         defaultSharedSGNetworkOfferingProviders.put(Service.Dns, Provider.VirtualRouter);
         defaultSharedSGNetworkOfferingProviders.put(Service.UserData, Provider.VirtualRouter);
         defaultSharedSGNetworkOfferingProviders.put(Service.SecurityGroup, Provider.SecurityGroupProvider);
 
-        Map<Network.Service, Network.Provider> defaultIsolatedSourceNatEnabledNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
+        final Map<Network.Service, Network.Provider> defaultIsolatedSourceNatEnabledNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Dns, Provider.VirtualRouter);
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.UserData, Provider.VirtualRouter);
@@ -944,7 +950,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.PortForwarding, Provider.VirtualRouter);
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Vpn, Provider.VirtualRouter);
 
-        Map<Network.Service, Network.Provider> netscalerServiceProviders = new HashMap<Network.Service, Network.Provider>();
+        final Map<Network.Service, Network.Provider> netscalerServiceProviders = new HashMap<Network.Service, Network.Provider>();
         netscalerServiceProviders.put(Service.Dhcp, Provider.VirtualRouter);
         netscalerServiceProviders.put(Service.Dns, Provider.VirtualRouter);
         netscalerServiceProviders.put(Service.UserData, Provider.VirtualRouter);
@@ -954,182 +960,182 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
         // The only one diff between 1 and 2 network offerings is that the first one has SG enabled. In Basic zone only
         // first network offering has to be enabled, in Advance zone - the second one
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-
-        // Offering #1
-        NetworkOfferingVO defaultSharedSGNetworkOffering = new NetworkOfferingVO(
-                NetworkOffering.DefaultSharedNetworkOfferingWithSGService,
-                "Offering for Shared Security group enabled networks",
-                TrafficType.Guest,
-                false, true, null, null, true, Availability.Optional,
-                null, Network.GuestType.Shared, true, true, false, false, false);
-
-        defaultSharedSGNetworkOffering.setState(NetworkOffering.State.Enabled);
-        defaultSharedSGNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultSharedSGNetworkOffering);
-
-        for (Service service : defaultSharedSGNetworkOfferingProviders.keySet()) {
-            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultSharedSGNetworkOffering.getId(), service, defaultSharedSGNetworkOfferingProviders.get(service));
-            _ntwkOfferingServiceMapDao.persist(offService);
-            s_logger.trace("Added service for the network offering: " + offService);
-        }
-
-        // Offering #2
-        NetworkOfferingVO defaultSharedNetworkOffering = new NetworkOfferingVO(
-                NetworkOffering.DefaultSharedNetworkOffering,
-                "Offering for Shared networks",
-                TrafficType.Guest,
-                false, true, null, null, true, Availability.Optional,
-                null, Network.GuestType.Shared, true, true, false, false, false);
-
-        defaultSharedNetworkOffering.setState(NetworkOffering.State.Enabled);
-        defaultSharedNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultSharedNetworkOffering);
-
-        for (Service service : defaultSharedNetworkOfferingProviders.keySet()) {
-            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultSharedNetworkOffering.getId(), service, defaultSharedNetworkOfferingProviders.get(service));
-            _ntwkOfferingServiceMapDao.persist(offService);
-            s_logger.trace("Added service for the network offering: " + offService);
-        }
-
-        // Offering #3
-        NetworkOfferingVO defaultIsolatedSourceNatEnabledNetworkOffering = new NetworkOfferingVO(
-                NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService,
-                "Offering for Isolated networks with Source Nat service enabled",
-                TrafficType.Guest,
-                false, false, null, null, true, Availability.Required,
-                null, Network.GuestType.Isolated, true, false, false, false, true);
-
-        defaultIsolatedSourceNatEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
-        defaultIsolatedSourceNatEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedSourceNatEnabledNetworkOffering);
-
-        for (Service service : defaultIsolatedSourceNatEnabledNetworkOfferingProviders.keySet()) {
-            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
-                    (defaultIsolatedSourceNatEnabledNetworkOffering.getId(), service, defaultIsolatedSourceNatEnabledNetworkOfferingProviders.get(service));
-            _ntwkOfferingServiceMapDao.persist(offService);
-            s_logger.trace("Added service for the network offering: " + offService);
-        }
-
-        // Offering #4
-        NetworkOfferingVO defaultIsolatedEnabledNetworkOffering = new NetworkOfferingVO(
-                NetworkOffering.DefaultIsolatedNetworkOffering,
-                "Offering for Isolated networks with no Source Nat service",
-                TrafficType.Guest,
-                false, true, null, null, true, Availability.Optional,
-                null, Network.GuestType.Isolated, true, true, false, false, false);
-
-        defaultIsolatedEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
-        defaultIsolatedEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedEnabledNetworkOffering);
-
-        for (Service service : defaultIsolatedNetworkOfferingProviders.keySet()) {
-            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultIsolatedEnabledNetworkOffering.getId(), service, defaultIsolatedNetworkOfferingProviders.get(service));
-            _ntwkOfferingServiceMapDao.persist(offService);
-            s_logger.trace("Added service for the network offering: " + offService);
-        }
-
-        // Offering #5
-        NetworkOfferingVO defaultNetscalerNetworkOffering = new NetworkOfferingVO(
-                NetworkOffering.DefaultSharedEIPandELBNetworkOffering,
-                "Offering for Shared networks with Elastic IP and Elastic LB capabilities",
-                TrafficType.Guest,
-                false, true, null, null, true, Availability.Optional,
-                null, Network.GuestType.Shared, true, false, false, false, true, true, true, false, false, true, true, false, false);
-
-        defaultNetscalerNetworkOffering.setState(NetworkOffering.State.Enabled);
-        defaultNetscalerNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetscalerNetworkOffering);
-
-        for (Service service : netscalerServiceProviders.keySet()) {
-            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultNetscalerNetworkOffering.getId(), service, netscalerServiceProviders.get(service));
-            _ntwkOfferingServiceMapDao.persist(offService);
-            s_logger.trace("Added service for the network offering: " + offService);
-        }
-
-        // Offering #6
-        NetworkOfferingVO defaultNetworkOfferingForVpcNetworks = new NetworkOfferingVO(
-                NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
-                "Offering for Isolated Vpc networks with Source Nat service enabled",
-                TrafficType.Guest,
-                false, false, null, null, true, Availability.Optional,
-                null, Network.GuestType.Isolated, false, false, false, false, true);
-
-        defaultNetworkOfferingForVpcNetworks.setState(NetworkOffering.State.Enabled);
-        defaultNetworkOfferingForVpcNetworks = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetworkOfferingForVpcNetworks);
-
-        Map<Network.Service, Network.Provider> defaultVpcNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
-        defaultVpcNetworkOfferingProviders.put(Service.Dhcp, Provider.VPCVirtualRouter);
-        defaultVpcNetworkOfferingProviders.put(Service.Dns, Provider.VPCVirtualRouter);
-        defaultVpcNetworkOfferingProviders.put(Service.UserData, Provider.VPCVirtualRouter);
-        defaultVpcNetworkOfferingProviders.put(Service.NetworkACL, Provider.VPCVirtualRouter);
-        defaultVpcNetworkOfferingProviders.put(Service.Gateway, Provider.VPCVirtualRouter);
-        defaultVpcNetworkOfferingProviders.put(Service.Lb, Provider.VPCVirtualRouter);
-        defaultVpcNetworkOfferingProviders.put(Service.SourceNat, Provider.VPCVirtualRouter);
-        defaultVpcNetworkOfferingProviders.put(Service.StaticNat, Provider.VPCVirtualRouter);
-        defaultVpcNetworkOfferingProviders.put(Service.PortForwarding, Provider.VPCVirtualRouter);
-        defaultVpcNetworkOfferingProviders.put(Service.Vpn, Provider.VPCVirtualRouter);
-
-        for (Service service : defaultVpcNetworkOfferingProviders.keySet()) {
-            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
-                    (defaultNetworkOfferingForVpcNetworks.getId(), service, defaultVpcNetworkOfferingProviders.get(service));
-            _ntwkOfferingServiceMapDao.persist(offService);
-            s_logger.trace("Added service for the network offering: " + offService);
-        }
-
-        // Offering #7
-        NetworkOfferingVO defaultNetworkOfferingForVpcNetworksNoLB = new NetworkOfferingVO(
-                NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksNoLB,
-                "Offering for Isolated Vpc networks with Source Nat service enabled and LB service Disabled",
-                TrafficType.Guest,
-                false, false, null, null, true, Availability.Optional,
-                null, Network.GuestType.Isolated, false, false, false, false, false);
-
-        defaultNetworkOfferingForVpcNetworksNoLB.setState(NetworkOffering.State.Enabled);
-        defaultNetworkOfferingForVpcNetworksNoLB = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetworkOfferingForVpcNetworksNoLB);
-
-        Map<Network.Service, Network.Provider> defaultVpcNetworkOfferingProvidersNoLB = new HashMap<Network.Service, Network.Provider>();
-        defaultVpcNetworkOfferingProvidersNoLB.put(Service.Dhcp, Provider.VPCVirtualRouter);
-        defaultVpcNetworkOfferingProvidersNoLB.put(Service.Dns, Provider.VPCVirtualRouter);
-        defaultVpcNetworkOfferingProvidersNoLB.put(Service.UserData, Provider.VPCVirtualRouter);
-        defaultVpcNetworkOfferingProvidersNoLB.put(Service.NetworkACL, Provider.VPCVirtualRouter);
-        defaultVpcNetworkOfferingProvidersNoLB.put(Service.Gateway, Provider.VPCVirtualRouter);
-        defaultVpcNetworkOfferingProvidersNoLB.put(Service.SourceNat, Provider.VPCVirtualRouter);
-        defaultVpcNetworkOfferingProvidersNoLB.put(Service.StaticNat, Provider.VPCVirtualRouter);
-        defaultVpcNetworkOfferingProvidersNoLB.put(Service.PortForwarding, Provider.VPCVirtualRouter);
-        defaultVpcNetworkOfferingProvidersNoLB.put(Service.Vpn, Provider.VPCVirtualRouter);
-
-        for (Service service : defaultVpcNetworkOfferingProvidersNoLB.keySet()) {
-            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
-                    (defaultNetworkOfferingForVpcNetworksNoLB.getId(), service, defaultVpcNetworkOfferingProvidersNoLB.get(service));
-            _ntwkOfferingServiceMapDao.persist(offService);
-            s_logger.trace("Added service for the network offering: " + offService);
-        }
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                // Offering #1
+                NetworkOfferingVO defaultSharedSGNetworkOffering = new NetworkOfferingVO(
+                        NetworkOffering.DefaultSharedNetworkOfferingWithSGService,
+                        "Offering for Shared Security group enabled networks",
+                        TrafficType.Guest,
+                        false, true, null, null, true, Availability.Optional,
+                        null, Network.GuestType.Shared, true, true, false, false, false);
         
-        //offering #8 - network offering with internal lb service
-        NetworkOfferingVO internalLbOff = new NetworkOfferingVO(
-                NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB,
-                "Offering for Isolated Vpc networks with Internal LB support",
-                TrafficType.Guest,
-                false, false, null, null, true, Availability.Optional,
-                null, Network.GuestType.Isolated, false, false, false, true, false);
-
-        internalLbOff.setState(NetworkOffering.State.Enabled);
-        internalLbOff = _networkOfferingDao.persistDefaultNetworkOffering(internalLbOff);
-
-        Map<Network.Service, Network.Provider> internalLbOffProviders = new HashMap<Network.Service, Network.Provider>();
-        internalLbOffProviders.put(Service.Dhcp, Provider.VPCVirtualRouter);
-        internalLbOffProviders.put(Service.Dns, Provider.VPCVirtualRouter);
-        internalLbOffProviders.put(Service.UserData, Provider.VPCVirtualRouter);
-        internalLbOffProviders.put(Service.NetworkACL, Provider.VPCVirtualRouter);
-        internalLbOffProviders.put(Service.Gateway, Provider.VPCVirtualRouter);
-        internalLbOffProviders.put(Service.Lb, Provider.InternalLbVm);
-        internalLbOffProviders.put(Service.SourceNat, Provider.VPCVirtualRouter);
-
-        for (Service service : internalLbOffProviders.keySet()) {
-            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
-                    (internalLbOff.getId(), service, internalLbOffProviders.get(service));
-            _ntwkOfferingServiceMapDao.persist(offService);
-            s_logger.trace("Added service for the network offering: " + offService);
-        }
-
-        txn.commit();
+                defaultSharedSGNetworkOffering.setState(NetworkOffering.State.Enabled);
+                defaultSharedSGNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultSharedSGNetworkOffering);
+        
+                for (Service service : defaultSharedSGNetworkOfferingProviders.keySet()) {
+                    NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultSharedSGNetworkOffering.getId(), service, defaultSharedSGNetworkOfferingProviders.get(service));
+                    _ntwkOfferingServiceMapDao.persist(offService);
+                    s_logger.trace("Added service for the network offering: " + offService);
+                }
+        
+                // Offering #2
+                NetworkOfferingVO defaultSharedNetworkOffering = new NetworkOfferingVO(
+                        NetworkOffering.DefaultSharedNetworkOffering,
+                        "Offering for Shared networks",
+                        TrafficType.Guest,
+                        false, true, null, null, true, Availability.Optional,
+                        null, Network.GuestType.Shared, true, true, false, false, false);
+        
+                defaultSharedNetworkOffering.setState(NetworkOffering.State.Enabled);
+                defaultSharedNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultSharedNetworkOffering);
+        
+                for (Service service : defaultSharedNetworkOfferingProviders.keySet()) {
+                    NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultSharedNetworkOffering.getId(), service, defaultSharedNetworkOfferingProviders.get(service));
+                    _ntwkOfferingServiceMapDao.persist(offService);
+                    s_logger.trace("Added service for the network offering: " + offService);
+                }
+        
+                // Offering #3
+                NetworkOfferingVO defaultIsolatedSourceNatEnabledNetworkOffering = new NetworkOfferingVO(
+                        NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService,
+                        "Offering for Isolated networks with Source Nat service enabled",
+                        TrafficType.Guest,
+                        false, false, null, null, true, Availability.Required,
+                        null, Network.GuestType.Isolated, true, false, false, false, true);
+        
+                defaultIsolatedSourceNatEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
+                defaultIsolatedSourceNatEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedSourceNatEnabledNetworkOffering);
+        
+                for (Service service : defaultIsolatedSourceNatEnabledNetworkOfferingProviders.keySet()) {
+                    NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
+                            (defaultIsolatedSourceNatEnabledNetworkOffering.getId(), service, defaultIsolatedSourceNatEnabledNetworkOfferingProviders.get(service));
+                    _ntwkOfferingServiceMapDao.persist(offService);
+                    s_logger.trace("Added service for the network offering: " + offService);
+                }
+        
+                // Offering #4
+                NetworkOfferingVO defaultIsolatedEnabledNetworkOffering = new NetworkOfferingVO(
+                        NetworkOffering.DefaultIsolatedNetworkOffering,
+                        "Offering for Isolated networks with no Source Nat service",
+                        TrafficType.Guest,
+                        false, true, null, null, true, Availability.Optional,
+                        null, Network.GuestType.Isolated, true, true, false, false, false);
+        
+                defaultIsolatedEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
+                defaultIsolatedEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedEnabledNetworkOffering);
+        
+                for (Service service : defaultIsolatedNetworkOfferingProviders.keySet()) {
+                    NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultIsolatedEnabledNetworkOffering.getId(), service, defaultIsolatedNetworkOfferingProviders.get(service));
+                    _ntwkOfferingServiceMapDao.persist(offService);
+                    s_logger.trace("Added service for the network offering: " + offService);
+                }
+        
+                // Offering #5
+                NetworkOfferingVO defaultNetscalerNetworkOffering = new NetworkOfferingVO(
+                        NetworkOffering.DefaultSharedEIPandELBNetworkOffering,
+                        "Offering for Shared networks with Elastic IP and Elastic LB capabilities",
+                        TrafficType.Guest,
+                        false, true, null, null, true, Availability.Optional,
+                        null, Network.GuestType.Shared, true, false, false, false, true, true, true, false, false, true, true, false, false);
+        
+                defaultNetscalerNetworkOffering.setState(NetworkOffering.State.Enabled);
+                defaultNetscalerNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetscalerNetworkOffering);
+        
+                for (Service service : netscalerServiceProviders.keySet()) {
+                    NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultNetscalerNetworkOffering.getId(), service, netscalerServiceProviders.get(service));
+                    _ntwkOfferingServiceMapDao.persist(offService);
+                    s_logger.trace("Added service for the network offering: " + offService);
+                }
+        
+                // Offering #6
+                NetworkOfferingVO defaultNetworkOfferingForVpcNetworks = new NetworkOfferingVO(
+                        NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
+                        "Offering for Isolated Vpc networks with Source Nat service enabled",
+                        TrafficType.Guest,
+                        false, false, null, null, true, Availability.Optional,
+                        null, Network.GuestType.Isolated, false, false, false, false, true);
+        
+                defaultNetworkOfferingForVpcNetworks.setState(NetworkOffering.State.Enabled);
+                defaultNetworkOfferingForVpcNetworks = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetworkOfferingForVpcNetworks);
+        
+                Map<Network.Service, Network.Provider> defaultVpcNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
+                defaultVpcNetworkOfferingProviders.put(Service.Dhcp, Provider.VPCVirtualRouter);
+                defaultVpcNetworkOfferingProviders.put(Service.Dns, Provider.VPCVirtualRouter);
+                defaultVpcNetworkOfferingProviders.put(Service.UserData, Provider.VPCVirtualRouter);
+                defaultVpcNetworkOfferingProviders.put(Service.NetworkACL, Provider.VPCVirtualRouter);
+                defaultVpcNetworkOfferingProviders.put(Service.Gateway, Provider.VPCVirtualRouter);
+                defaultVpcNetworkOfferingProviders.put(Service.Lb, Provider.VPCVirtualRouter);
+                defaultVpcNetworkOfferingProviders.put(Service.SourceNat, Provider.VPCVirtualRouter);
+                defaultVpcNetworkOfferingProviders.put(Service.StaticNat, Provider.VPCVirtualRouter);
+                defaultVpcNetworkOfferingProviders.put(Service.PortForwarding, Provider.VPCVirtualRouter);
+                defaultVpcNetworkOfferingProviders.put(Service.Vpn, Provider.VPCVirtualRouter);
+        
+                for (Service service : defaultVpcNetworkOfferingProviders.keySet()) {
+                    NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
+                            (defaultNetworkOfferingForVpcNetworks.getId(), service, defaultVpcNetworkOfferingProviders.get(service));
+                    _ntwkOfferingServiceMapDao.persist(offService);
+                    s_logger.trace("Added service for the network offering: " + offService);
+                }
+        
+                // Offering #7
+                NetworkOfferingVO defaultNetworkOfferingForVpcNetworksNoLB = new NetworkOfferingVO(
+                        NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksNoLB,
+                        "Offering for Isolated Vpc networks with Source Nat service enabled and LB service Disabled",
+                        TrafficType.Guest,
+                        false, false, null, null, true, Availability.Optional,
+                        null, Network.GuestType.Isolated, false, false, false, false, false);
+        
+                defaultNetworkOfferingForVpcNetworksNoLB.setState(NetworkOffering.State.Enabled);
+                defaultNetworkOfferingForVpcNetworksNoLB = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetworkOfferingForVpcNetworksNoLB);
+        
+                Map<Network.Service, Network.Provider> defaultVpcNetworkOfferingProvidersNoLB = new HashMap<Network.Service, Network.Provider>();
+                defaultVpcNetworkOfferingProvidersNoLB.put(Service.Dhcp, Provider.VPCVirtualRouter);
+                defaultVpcNetworkOfferingProvidersNoLB.put(Service.Dns, Provider.VPCVirtualRouter);
+                defaultVpcNetworkOfferingProvidersNoLB.put(Service.UserData, Provider.VPCVirtualRouter);
+                defaultVpcNetworkOfferingProvidersNoLB.put(Service.NetworkACL, Provider.VPCVirtualRouter);
+                defaultVpcNetworkOfferingProvidersNoLB.put(Service.Gateway, Provider.VPCVirtualRouter);
+                defaultVpcNetworkOfferingProvidersNoLB.put(Service.SourceNat, Provider.VPCVirtualRouter);
+                defaultVpcNetworkOfferingProvidersNoLB.put(Service.StaticNat, Provider.VPCVirtualRouter);
+                defaultVpcNetworkOfferingProvidersNoLB.put(Service.PortForwarding, Provider.VPCVirtualRouter);
+                defaultVpcNetworkOfferingProvidersNoLB.put(Service.Vpn, Provider.VPCVirtualRouter);
+        
+                for (Service service : defaultVpcNetworkOfferingProvidersNoLB.keySet()) {
+                    NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
+                            (defaultNetworkOfferingForVpcNetworksNoLB.getId(), service, defaultVpcNetworkOfferingProvidersNoLB.get(service));
+                    _ntwkOfferingServiceMapDao.persist(offService);
+                    s_logger.trace("Added service for the network offering: " + offService);
+                }
+                
+                //offering #8 - network offering with internal lb service
+                NetworkOfferingVO internalLbOff = new NetworkOfferingVO(
+                        NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB,
+                        "Offering for Isolated Vpc networks with Internal LB support",
+                        TrafficType.Guest,
+                        false, false, null, null, true, Availability.Optional,
+                        null, Network.GuestType.Isolated, false, false, false, true, false);
+        
+                internalLbOff.setState(NetworkOffering.State.Enabled);
+                internalLbOff = _networkOfferingDao.persistDefaultNetworkOffering(internalLbOff);
+        
+                Map<Network.Service, Network.Provider> internalLbOffProviders = new HashMap<Network.Service, Network.Provider>();
+                internalLbOffProviders.put(Service.Dhcp, Provider.VPCVirtualRouter);
+                internalLbOffProviders.put(Service.Dns, Provider.VPCVirtualRouter);
+                internalLbOffProviders.put(Service.UserData, Provider.VPCVirtualRouter);
+                internalLbOffProviders.put(Service.NetworkACL, Provider.VPCVirtualRouter);
+                internalLbOffProviders.put(Service.Gateway, Provider.VPCVirtualRouter);
+                internalLbOffProviders.put(Service.Lb, Provider.InternalLbVm);
+                internalLbOffProviders.put(Service.SourceNat, Provider.VPCVirtualRouter);
+        
+                for (Service service : internalLbOffProviders.keySet()) {
+                    NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
+                            (internalLbOff.getId(), service, internalLbOffProviders.get(service));
+                    _ntwkOfferingServiceMapDao.persist(offService);
+                    s_logger.trace("Added service for the network offering: " + offService);
+                }
+            }
+        });
     }
 
     private void createDefaultNetworks() {
@@ -1243,8 +1249,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         List<ResourceCountVO> domainResourceCount = _resourceCountDao.listResourceCountByOwnerType(ResourceOwnerType.Domain);
         List<ResourceCountVO> accountResourceCount = _resourceCountDao.listResourceCountByOwnerType(ResourceOwnerType.Account);
 
-        List<ResourceType> accountSupportedResourceTypes = new ArrayList<ResourceType>();
-        List<ResourceType> domainSupportedResourceTypes = new ArrayList<ResourceType>();
+        final List<ResourceType> accountSupportedResourceTypes = new ArrayList<ResourceType>();
+        final List<ResourceType> domainSupportedResourceTypes = new ArrayList<ResourceType>();
 
         for (ResourceType resourceType : resourceTypes) {
             if (resourceType.supportsOwner(ResourceOwnerType.Account)) {
@@ -1255,59 +1261,63 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             }
         }
 
-        int accountExpectedCount = accountSupportedResourceTypes.size();
-        int domainExpectedCount = domainSupportedResourceTypes.size();
+        final int accountExpectedCount = accountSupportedResourceTypes.size();
+        final int domainExpectedCount = domainSupportedResourceTypes.size();
 
         if ((domainResourceCount.size() < domainExpectedCount * domains.size())) {
             s_logger.debug("resource_count table has records missing for some domains...going to insert them");
-            for (DomainVO domain : domains) {
+            for (final DomainVO domain : domains) {
                 // Lock domain
-                Transaction txn = Transaction.currentTxn();
-                txn.start();
-                _domainDao.lockRow(domain.getId(), true);
-                List<ResourceCountVO> domainCounts = _resourceCountDao.listByOwnerId(domain.getId(), ResourceOwnerType.Domain);
-                List<String> domainCountStr = new ArrayList<String>();
-                for (ResourceCountVO domainCount : domainCounts) {
-                    domainCountStr.add(domainCount.getType().toString());
-                }
-
-                if (domainCountStr.size() < domainExpectedCount) {
-                    for (ResourceType resourceType : domainSupportedResourceTypes) {
-                        if (!domainCountStr.contains(resourceType.toString())) {
-                            ResourceCountVO resourceCountVO = new ResourceCountVO(resourceType, 0, domain.getId(), ResourceOwnerType.Domain);
-                            s_logger.debug("Inserting resource count of type " + resourceType + " for domain id=" + domain.getId());
-                            _resourceCountDao.persist(resourceCountVO);
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        _domainDao.lockRow(domain.getId(), true);
+                        List<ResourceCountVO> domainCounts = _resourceCountDao.listByOwnerId(domain.getId(), ResourceOwnerType.Domain);
+                        List<String> domainCountStr = new ArrayList<String>();
+                        for (ResourceCountVO domainCount : domainCounts) {
+                            domainCountStr.add(domainCount.getType().toString());
+                        }
+        
+                        if (domainCountStr.size() < domainExpectedCount) {
+                            for (ResourceType resourceType : domainSupportedResourceTypes) {
+                                if (!domainCountStr.contains(resourceType.toString())) {
+                                    ResourceCountVO resourceCountVO = new ResourceCountVO(resourceType, 0, domain.getId(), ResourceOwnerType.Domain);
+                                    s_logger.debug("Inserting resource count of type " + resourceType + " for domain id=" + domain.getId());
+                                    _resourceCountDao.persist(resourceCountVO);
+                                }
+                            }
                         }
                     }
-                }
-                txn.commit();
+                });
+
             }
         }
 
         if ((accountResourceCount.size() < accountExpectedCount * accounts.size())) {
             s_logger.debug("resource_count table has records missing for some accounts...going to insert them");
-            for (AccountVO account : accounts) {
+            for (final AccountVO account : accounts) {
                 // lock account
-                Transaction txn = Transaction.currentTxn();
-                txn.start();
-                _accountDao.lockRow(account.getId(), true);
-                List<ResourceCountVO> accountCounts = _resourceCountDao.listByOwnerId(account.getId(), ResourceOwnerType.Account);
-                List<String> accountCountStr = new ArrayList<String>();
-                for (ResourceCountVO accountCount : accountCounts) {
-                    accountCountStr.add(accountCount.getType().toString());
-                }
-
-                if (accountCountStr.size() < accountExpectedCount) {
-                    for (ResourceType resourceType : accountSupportedResourceTypes) {
-                        if (!accountCountStr.contains(resourceType.toString())) {
-                            ResourceCountVO resourceCountVO = new ResourceCountVO(resourceType, 0, account.getId(), ResourceOwnerType.Account);
-                            s_logger.debug("Inserting resource count of type " + resourceType + " for account id=" + account.getId());
-                            _resourceCountDao.persist(resourceCountVO);
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        _accountDao.lockRow(account.getId(), true);
+                        List<ResourceCountVO> accountCounts = _resourceCountDao.listByOwnerId(account.getId(), ResourceOwnerType.Account);
+                        List<String> accountCountStr = new ArrayList<String>();
+                        for (ResourceCountVO accountCount : accountCounts) {
+                            accountCountStr.add(accountCount.getType().toString());
+                        }
+        
+                        if (accountCountStr.size() < accountExpectedCount) {
+                            for (ResourceType resourceType : accountSupportedResourceTypes) {
+                                if (!accountCountStr.contains(resourceType.toString())) {
+                                    ResourceCountVO resourceCountVO = new ResourceCountVO(resourceType, 0, account.getId(), ResourceOwnerType.Account);
+                                    s_logger.debug("Inserting resource count of type " + resourceType + " for account id=" + account.getId());
+                                    _resourceCountDao.persist(resourceCountVO);
+                                }
+                            }
                         }
                     }
-                }
-
-                txn.commit();
+                });
             }
         }
     }

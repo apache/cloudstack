@@ -27,6 +27,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={SObjectItemDao.class})
@@ -39,7 +40,7 @@ public class SObjectItemDaoImpl extends GenericDaoBase<SObjectItemVO, Long> impl
 	@Override
 	public SObjectItemVO getByObjectIdNullVersion(long id) {
 	    
-	    Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
 	    SearchBuilder <SObjectItemVO> SearchByID = createSearchBuilder();
 	    SearchByID.and("ID", SearchByID.entity().getId(), SearchCriteria.Op.EQ);
 	    
@@ -56,7 +57,7 @@ public class SObjectItemDaoImpl extends GenericDaoBase<SObjectItemVO, Long> impl
 	@Override
     public List<SObjectItemVO> getItems(long sobjectID) {
 
-        Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         SearchBuilder<SObjectItemVO> SearchBySobjectID = createSearchBuilder();
         SearchBySobjectID.and("SObjectID", SearchBySobjectID.entity().getId(), SearchCriteria.Op.EQ);
 

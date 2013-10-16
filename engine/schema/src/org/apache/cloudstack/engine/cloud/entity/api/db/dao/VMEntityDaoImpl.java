@@ -37,7 +37,7 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.NicProfile;
 
 
@@ -78,7 +78,7 @@ public class VMEntityDaoImpl extends GenericDaoBase<VMEntityVO, Long> implements
     @Override
     @DB
     public VMEntityVO persist(VMEntityVO vm) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
 
         VMEntityVO dbVO = super.persist(vm);

@@ -35,7 +35,7 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
@@ -54,7 +54,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
         sc.setParameters("pod", podId);
         sc.setParameters("taken", (Date)null);
         
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         
         DataCenterLinkLocalIpAddressVO  vo = lockOneRandomRow(sc, true);
@@ -84,7 +84,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
         long startIP = NetUtils.ip2Long(start);
         long endIP = NetUtils.ip2Long(end);
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
             stmt = txn.prepareAutoCloseStatement(insertSql);

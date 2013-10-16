@@ -28,7 +28,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value=FirewallRulesCidrsDao.class)
@@ -58,7 +58,7 @@ public class FirewallRulesCidrsDaoImpl extends GenericDaoBase<FirewallRulesCidrs
     
     @Override @DB
     public void persist(long firewallRuleId, List<String> sourceCidrs) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
 
         txn.start();
         for (String tag : sourceCidrs) {

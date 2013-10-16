@@ -33,6 +33,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={IdentityDao.class})
@@ -48,7 +49,7 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
 		assert(identityString != null);
 
         PreparedStatement pstmt = null;
-		Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
 		try {
 	        try {
 	            try {
@@ -100,7 +101,7 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
         assert(tableName != null);
         
         PreparedStatement pstmt = null;
-        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         try {
             Long domainId = null;
             Long accountId = null;
@@ -146,7 +147,7 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
 		assert(identityString != null);
 		
         PreparedStatement pstmt = null;
-		Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
 		try {
 	        try {
 	            pstmt = txn.prepareAutoCloseStatement(
@@ -187,7 +188,7 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
         assert(tableName != null);
         List<Long> l = getNullUuidRecords(tableName);
         
-        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         try {
             try {
                 txn.start();
@@ -209,7 +210,7 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
         List<Long> l = new ArrayList<Long>();
         
         PreparedStatement pstmt = null;
-        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         try {
             try {
                 pstmt = txn.prepareAutoCloseStatement(
@@ -231,7 +232,7 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
     
     @DB
     void setInitialUuid(String tableName, long id) throws SQLException {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         
         PreparedStatement pstmtUpdate = null;
         pstmtUpdate = txn.prepareAutoCloseStatement(

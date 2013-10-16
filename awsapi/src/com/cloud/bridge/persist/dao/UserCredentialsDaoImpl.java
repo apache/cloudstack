@@ -29,6 +29,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={UserCredentialsDao.class})
@@ -41,7 +42,7 @@ public class UserCredentialsDaoImpl extends GenericDaoBase<UserCredentialsVO, Lo
 	@Override
 	public UserCredentialsVO getByAccessKey( String cloudAccessKey ) {
 	        SearchBuilder<UserCredentialsVO> SearchByAccessKey = createSearchBuilder();
-	        Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+	        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
 	    try {
             txn.start();
             SearchByAccessKey.and("AccessKey", SearchByAccessKey.entity()
@@ -60,7 +61,7 @@ public class UserCredentialsDaoImpl extends GenericDaoBase<UserCredentialsVO, Lo
 	public UserCredentialsVO getByCertUniqueId( String certId ) {
 	    SearchBuilder<UserCredentialsVO> SearchByCertID = createSearchBuilder();
 	    SearchByCertID.and("CertUniqueId", SearchByCertID.entity().getCertUniqueId(), SearchCriteria.Op.EQ);
-	    Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
 	    try {
             txn.start();
             SearchCriteria<UserCredentialsVO> sc = SearchByCertID.create();

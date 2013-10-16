@@ -69,7 +69,6 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -278,10 +277,7 @@ public class BaremetalDhcpManagerImpl extends ManagerBase implements BaremetalDh
         vo.setHostId(dhcpServer.getId());
         vo.setNetworkServiceProviderId(ntwkSvcProvider.getId());
         vo.setPhysicalNetworkId(cmd.getPhysicalNetworkId());
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
         _extDhcpDao.persist(vo);
-        txn.commit();
         return vo;
     }
 

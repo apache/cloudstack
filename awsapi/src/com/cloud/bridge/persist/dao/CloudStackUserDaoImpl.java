@@ -26,6 +26,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 
 @Component
@@ -43,7 +44,7 @@ public class CloudStackUserDaoImpl extends GenericDaoBase<CloudStackUserVO, Stri
         SearchBuilder <CloudStackUserVO> searchByAccessKey = createSearchBuilder();
         searchByAccessKey.and("apiKey", searchByAccessKey.entity().getApiKey(), SearchCriteria.Op.EQ);
         searchByAccessKey.done();
-        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         try {
             txn.start();
             SearchCriteria<CloudStackUserVO> sc = searchByAccessKey.create();

@@ -44,7 +44,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -62,6 +61,9 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
@@ -532,7 +534,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         return new ManagedContextRunnable() {
             @Override
             protected void runInContext() {
-                Transaction txn = Transaction.open("ClusterHeartbeat");
+                TransactionLegacy txn = TransactionLegacy.open("ClusterHeartbeat");
                 try {
                     Profiler profiler = new Profiler();
                     Profiler profilerHeartbeatUpdate = new Profiler();
@@ -599,7 +601,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
                     invalidHeartbeatConnection();
                 } finally {
-                    txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);
+                    txn.transitToAutoManagedConnection(TransactionLegacy.CLOUD_DB);
                     txn.close("ClusterHeartbeat");
                 }
             }
@@ -620,7 +622,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
     private Connection getHeartbeatConnection() throws SQLException {
         if(_heartbeatConnection == null) {
-            Connection conn = Transaction.getStandaloneConnectionWithException();
+            Connection conn = TransactionLegacy.getStandaloneConnectionWithException();
             _heartbeatConnection = new ConnectionConcierge("ClusterManagerHeartbeat", conn, false);
         }
 
@@ -629,9 +631,9 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
     private void invalidHeartbeatConnection() {
         if(_heartbeatConnection != null) {
-            Connection conn = Transaction.getStandaloneConnection();
+            Connection conn = TransactionLegacy.getStandaloneConnection();
             if (conn != null) {
-                _heartbeatConnection.reset(Transaction.getStandaloneConnection());
+                _heartbeatConnection.reset(TransactionLegacy.getStandaloneConnection());
             }
         }
     }
@@ -942,58 +944,54 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
             s_logger.info("Starting cluster manager, msid : " + _msId);
         }
 
-        Transaction txn = Transaction.currentTxn();
-        try {
-            txn.start();
+        ManagementServerHostVO mshost = Transaction.execute(new TransactionCallback<ManagementServerHostVO>() {
+            @Override
+            public ManagementServerHostVO doInTransaction(TransactionStatus status) {
 
-            final Class<?> c = this.getClass();
-            String version = c.getPackage().getImplementationVersion();
-
-            ManagementServerHostVO mshost = _mshostDao.findByMsid(_msId);
-            if (mshost == null) {
-                mshost = new ManagementServerHostVO();
-                mshost.setMsid(_msId);
-                mshost.setRunid(getCurrentRunId());
-                mshost.setName(NetUtils.getHostName());
-                mshost.setVersion(version);
-                mshost.setServiceIP(_clusterNodeIP);
-                mshost.setServicePort(_currentServiceAdapter.getServicePort());
-                mshost.setLastUpdateTime(DateUtil.currentGMTTime());
-                mshost.setRemoved(null);
-                mshost.setAlertCount(0);
-                mshost.setState(ManagementServerHost.State.Up);
-                _mshostDao.persist(mshost);
-
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("New instance of management server msid " + _msId + " is being started");
+                final Class<?> c = this.getClass();
+                String version = c.getPackage().getImplementationVersion();
+    
+                ManagementServerHostVO mshost = _mshostDao.findByMsid(_msId);
+                if (mshost == null) {
+                    mshost = new ManagementServerHostVO();
+                    mshost.setMsid(_msId);
+                    mshost.setRunid(getCurrentRunId());
+                    mshost.setName(NetUtils.getHostName());
+                    mshost.setVersion(version);
+                    mshost.setServiceIP(_clusterNodeIP);
+                    mshost.setServicePort(_currentServiceAdapter.getServicePort());
+                    mshost.setLastUpdateTime(DateUtil.currentGMTTime());
+                    mshost.setRemoved(null);
+                    mshost.setAlertCount(0);
+                    mshost.setState(ManagementServerHost.State.Up);
+                    _mshostDao.persist(mshost);
+    
+                    if (s_logger.isInfoEnabled()) {
+                        s_logger.info("New instance of management server msid " + _msId + " is being started");
+                    }
+                } else {
+                    if (s_logger.isInfoEnabled()) {
+                        s_logger.info("Management server " + _msId + " is being started");
+                    }
+    
+                    _mshostDao.update(mshost.getId(), getCurrentRunId(), NetUtils.getHostName(), version, _clusterNodeIP, _currentServiceAdapter.getServicePort(), DateUtil.currentGMTTime());
                 }
-            } else {
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Management server " + _msId + " is being started");
-                }
-
-                _mshostDao.update(mshost.getId(), getCurrentRunId(), NetUtils.getHostName(), version, _clusterNodeIP, _currentServiceAdapter.getServicePort(), DateUtil.currentGMTTime());
+                
+                return mshost;
             }
+        });
 
-            txn.commit();
-
-            _mshostId = mshost.getId();
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Management server (host id : " + _mshostId + ") is being started at " + _clusterNodeIP + ":" + _currentServiceAdapter.getServicePort());
-            }
-            
-            _mshostPeerDao.clearPeerInfo(_mshostId);
-
-            // use seperate thread for heartbeat updates
-            _heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), HeartbeatInterval.value(), HeartbeatInterval.value(), TimeUnit.MILLISECONDS);
-            _notificationExecutor.submit(getNotificationTask());
-
-        } catch (Throwable e) {
-            s_logger.error("Unexpected exception : ", e);
-            txn.rollback();
-
-            throw new CloudRuntimeException("Unable to initialize cluster info into database");
+        _mshostId = mshost.getId();
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Management server (host id : " + _mshostId + ") is being started at " + _clusterNodeIP + ":" + _currentServiceAdapter.getServicePort());
         }
+        
+        _mshostPeerDao.clearPeerInfo(_mshostId);
+
+        // use seperate thread for heartbeat updates
+        _heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), HeartbeatInterval.value(), HeartbeatInterval.value(), TimeUnit.MILLISECONDS);
+        _notificationExecutor.submit(getNotificationTask());
+
 
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Cluster manager was started successfully");

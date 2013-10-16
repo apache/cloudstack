@@ -34,7 +34,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -157,7 +157,7 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 //
 //		Date cutDate = DateUtil.currentGMTTime();
 //
-//		Transaction txn = Transaction.currentTxn();
+//		TransactionLegacy txn = TransactionLegacy.currentTxn();
 //        PreparedStatement pstmt = null;
 //        try {
 //			txn.start();
@@ -213,7 +213,7 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
     public List<Long> findJobsToWake(long joinedJobId) {
         // TODO: We should fix this.  We shouldn't be crossing daos in a dao code.
         List<Long> standaloneList = new ArrayList<Long>();
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         String sql = "SELECT job_id FROM async_job_join_map WHERE join_job_id = ? AND job_id NOT IN (SELECT content_id FROM sync_queue_item)";
         try {
             PreparedStatement pstmt = txn.prepareStatement(sql);
@@ -231,7 +231,7 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
     @Override
     public List<Long> findJobsToWakeBetween(Date cutDate) {
         List<Long> standaloneList = new ArrayList<Long>();
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             String sql = "SELECT job_id FROM async_job_join_map WHERE next_wakeup < ? AND expiration > ? AND job_id NOT IN (SELECT content_id FROM sync_queue_item)";
             PreparedStatement pstmt = txn.prepareStatement(sql);
@@ -260,7 +260,7 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 //    public List<Long> wakeupByJoinedJobCompletion(long joinedJobId) {
 //        List<Long> standaloneList = new ArrayList<Long>();
 //
-//        Transaction txn = Transaction.currentTxn();
+//        TransactionLegacy txn = TransactionLegacy.currentTxn();
 //        PreparedStatement pstmt = null;
 //        try {
 //            txn.start();

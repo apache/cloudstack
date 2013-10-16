@@ -38,7 +38,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 
 @Component
@@ -150,7 +150,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     @Override
     public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId, long datacenterId,
             VMTemplateStoragePoolVO.Status downloadState) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<VMTemplateStoragePoolVO> result = new ArrayList<VMTemplateStoragePoolVO>();
         try {
@@ -173,7 +173,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     @Override
     public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId, long datacenterId, long podId,
             VMTemplateStoragePoolVO.Status downloadState) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<VMTemplateStoragePoolVO> result = new ArrayList<VMTemplateStoragePoolVO>();
         ResultSet rs = null;
@@ -210,7 +210,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     }
 
     public List<VMTemplateStoragePoolVO> listByHostTemplate(long hostId, long templateId) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<VMTemplateStoragePoolVO> result = new ArrayList<VMTemplateStoragePoolVO>();
         ResultSet rs = null;

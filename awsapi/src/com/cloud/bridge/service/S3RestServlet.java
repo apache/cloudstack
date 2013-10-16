@@ -67,6 +67,7 @@ import com.cloud.bridge.util.RestAuth;
 import com.cloud.bridge.util.S3SoapAuth;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 public class S3RestServlet extends HttpServlet {
     private static final long serialVersionUID = -6168996266762804877L;
     public static final String ENABLE_S3_API="enable.s3.api";
@@ -139,7 +140,7 @@ public class S3RestServlet extends HttpServlet {
      */
     private void processRequest( HttpServletRequest request, HttpServletResponse response, String method ) 
     {
-        Transaction txn = Transaction.open("cloudbridge", Transaction.AWSAPI_DB, true);
+        TransactionLegacy txn = TransactionLegacy.open("cloudbridge", TransactionLegacy.AWSAPI_DB, true);
         try {
             logRequest(request);
 
@@ -274,7 +275,7 @@ public class S3RestServlet extends HttpServlet {
             // -> use the keys to see if the account actually exists
             //ServiceProvider.getInstance().getEC2Engine().validateAccount( accessKey[0], secretKey[0] );
             //UserCredentialsDaoImpl credentialDao = new UserCredentialsDao();
-            Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+            TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
             txn.start();
             UserCredentialsVO user = new UserCredentialsVO(accessKey[0], secretKey[0]);
             user = ucDao.persist(user);

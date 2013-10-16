@@ -565,6 +565,9 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -2166,12 +2169,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     @DB
     public DomainVO updateDomain(UpdateDomainCmd cmd) {
-        Long domainId = cmd.getId();
-        String domainName = cmd.getDomainName();
-        String networkDomain = cmd.getNetworkDomain();
+        final Long domainId = cmd.getId();
+        final String domainName = cmd.getDomainName();
+        final String networkDomain = cmd.getNetworkDomain();
 
         // check if domain exists in the system
-        DomainVO domain = _domainDao.findById(domainId);
+        final DomainVO domain = _domainDao.findById(domainId);
         if (domain == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find domain with specified domain id");
             ex.addProxyObject(domainId.toString(), "domainId");
@@ -2212,27 +2215,26 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
-        Transaction txn = Transaction.currentTxn();
-
-        txn.start();
-
-        if (domainName != null) {
-            String updatedDomainPath = getUpdatedDomainPath(domain.getPath(), domainName);
-            updateDomainChildren(domain, updatedDomainPath);
-            domain.setName(domainName);
-            domain.setPath(updatedDomainPath);
-        }
-
-        if (networkDomain != null) {
-            if (networkDomain.isEmpty()) {
-                domain.setNetworkDomain(null);
-            } else {
-                domain.setNetworkDomain(networkDomain);
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                if (domainName != null) {
+                    String updatedDomainPath = getUpdatedDomainPath(domain.getPath(), domainName);
+                    updateDomainChildren(domain, updatedDomainPath);
+                    domain.setName(domainName);
+                    domain.setPath(updatedDomainPath);
+                }
+        
+                if (networkDomain != null) {
+                    if (networkDomain.isEmpty()) {
+                        domain.setNetworkDomain(null);
+                    } else {
+                        domain.setNetworkDomain(networkDomain);
+                    }
+                }
+                _domainDao.update(domainId, domain);
             }
-        }
-        _domainDao.update(domainId, domain);
-
-        txn.commit();
+        });
 
         return _domainDao.findById(domainId);
 
@@ -3651,7 +3653,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     @DB
-    public boolean updateHostPassword(UpdateHostPasswordCmd cmd) {
+    public boolean updateHostPassword(final UpdateHostPasswordCmd cmd) {
         if (cmd.getClusterId() == null && cmd.getHostId() == null) {
             throw new InvalidParameterValueException("You should provide one of cluster id or a host id.");
         } else if (cmd.getClusterId() == null) {
@@ -3668,35 +3670,30 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 throw new InvalidParameterValueException("This operation is not supported for this hypervisor type");
             }
             // get all the hosts in this cluster
-            List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cmd.getClusterId());
-            Transaction txn = Transaction.currentTxn();
-            try {
-                txn.start();
-                for (HostVO h : hosts) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Changing password for host name = " + h.getName());
-                    }
-                    // update password for this host
-                    DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
-                    if (nv.getValue().equals(cmd.getUsername())) {
-                        DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
-                        nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
-                        _detailsDao.persist(nvp);
-                    } else {
-                        // if one host in the cluster has diff username then
-                        // rollback to maintain consistency
-                        txn.rollback();
-                        throw new InvalidParameterValueException(
-                                "The username is not same for all hosts, please modify passwords for individual hosts.");
+            final List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cmd.getClusterId());
+
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    for (HostVO h : hosts) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Changing password for host name = " + h.getName());
+                        }
+                        // update password for this host
+                        DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
+                        if (nv.getValue().equals(cmd.getUsername())) {
+                            DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
+                            nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
+                            _detailsDao.persist(nvp);
+                        } else {
+                            // if one host in the cluster has diff username then
+                            // rollback to maintain consistency
+                            throw new InvalidParameterValueException(
+                                    "The username is not same for all hosts, please modify passwords for individual hosts.");
+                        }
                     }
                 }
-                txn.commit();
-                // if hypervisor is xenserver then we update it in
-                // CitrixResourceBase
-            } catch (Exception e) {
-                txn.rollback();
-                throw new CloudRuntimeException("Failed to update password " + e.getMessage());
-            }
+            });
         }
 
         return true;

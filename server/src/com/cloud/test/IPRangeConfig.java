@@ -29,6 +29,7 @@ import java.util.Vector;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.net.NetUtils;
 
 
@@ -303,7 +304,7 @@ public class IPRangeConfig {
             endIPLong = NetUtils.ip2Long(endIP);
         }
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         Vector<String> problemIPs = null;
         if (type.equals("public")) {
             problemIPs = deletePublicIPRange(txn, startIPLong, endIPLong, vlanDbId);
@@ -314,7 +315,7 @@ public class IPRangeConfig {
         return problemIPs;
     }
 
-    private Vector<String> deletePublicIPRange(Transaction txn, long startIP, long endIP, long vlanDbId) {
+    private Vector<String> deletePublicIPRange(TransactionLegacy txn, long startIP, long endIP, long vlanDbId) {
         String deleteSql = "DELETE FROM `cloud`.`user_ip_address` WHERE public_ip_address = ? AND vlan_id = ?";
         String isPublicIPAllocatedSelectSql = "SELECT * FROM `cloud`.`user_ip_address` WHERE public_ip_address = ? AND vlan_id = ?";
 
@@ -349,7 +350,7 @@ public class IPRangeConfig {
         return problemIPs;
     }
 
-    private Vector<String> deletePrivateIPRange(Transaction txn, long startIP, long endIP, long podId, long zoneId) {
+    private Vector<String> deletePrivateIPRange(TransactionLegacy txn, long startIP, long endIP, long podId, long zoneId) {
         String deleteSql = "DELETE FROM `cloud`.`op_dc_ip_address_alloc` WHERE ip_address = ? AND pod_id = ? AND data_center_id = ?";
         String isPrivateIPAllocatedSelectSql = "SELECT * FROM `cloud`.`op_dc_ip_address_alloc` WHERE ip_address = ? AND data_center_id = ? AND pod_id = ?";
 
@@ -429,7 +430,7 @@ public class IPRangeConfig {
             endIPLong = NetUtils.ip2Long(endIP);
         }
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         List<String> problemIPs = null;
 
         if (type.equals("public")) {
@@ -447,7 +448,7 @@ public class IPRangeConfig {
         return problemIPs;
     }
 
-    public Vector<String> savePublicIPRange(Transaction txn, long startIP, long endIP, long zoneId, long vlanDbId, Long sourceNetworkId, long physicalNetworkId) {
+    public Vector<String> savePublicIPRange(TransactionLegacy txn, long startIP, long endIP, long zoneId, long vlanDbId, Long sourceNetworkId, long physicalNetworkId) {
         String insertSql = "INSERT INTO `cloud`.`user_ip_address` (public_ip_address, data_center_id, vlan_db_id, mac_address, source_network_id, physical_network_id, uuid) VALUES (?, ?, ?, (select mac_address from `cloud`.`data_center` where id=?), ?, ?, ?)";
         String updateSql = "UPDATE `cloud`.`data_center` set mac_address = mac_address+1 where id=?";
         Vector<String> problemIPs = new Vector<String>();
@@ -485,7 +486,7 @@ public class IPRangeConfig {
         return problemIPs;
     }
 
-    public List<String> savePrivateIPRange(Transaction txn, long startIP, long endIP, long podId, long zoneId) {
+    public List<String> savePrivateIPRange(TransactionLegacy txn, long startIP, long endIP, long podId, long zoneId) {
         String insertSql = "INSERT INTO `cloud`.`op_dc_ip_address_alloc` (ip_address, data_center_id, pod_id, mac_address) VALUES (?, ?, ?, (select mac_address from `cloud`.`data_center` where id=?))";
         String updateSql = "UPDATE `cloud`.`data_center` set mac_address = mac_address+1 where id=?";
         Vector<String> problemIPs = new Vector<String>();
@@ -519,7 +520,7 @@ public class IPRangeConfig {
         return problemIPs;
     }
 
-    private Vector<String> saveLinkLocalPrivateIPRange(Transaction txn, long startIP, long endIP, long podId, long zoneId) {
+    private Vector<String> saveLinkLocalPrivateIPRange(TransactionLegacy txn, long startIP, long endIP, long podId, long zoneId) {
         String insertSql = "INSERT INTO `cloud`.`op_dc_link_local_ip_address_alloc` (ip_address, data_center_id, pod_id) VALUES (?, ?, ?)";
         Vector<String> problemIPs = new Vector<String>();
 

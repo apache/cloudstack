@@ -73,7 +73,7 @@ import com.cloud.upgrade.dao.VersionVO.Step;
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.ScriptRunner;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value = {SystemIntegrityChecker.class})
@@ -269,7 +269,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             s_logger.debug("Running upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-"
                     + upgrade.getUpgradableVersionRange()[1]
                     + " to " + upgrade.getUpgradedVersion());
-            Transaction txn = Transaction.open("Upgrade");
+            TransactionLegacy txn = TransactionLegacy.open("Upgrade");
             txn.start();
             try {
                 Connection conn;
@@ -339,7 +339,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 VersionVO version = _dao.findByVersion(upgradedVersion, Step.Upgrade);
                 s_logger.debug("Upgrading to version " + upgradedVersion + "...");
 
-                Transaction txn = Transaction.open("Cleanup");
+                TransactionLegacy txn = TransactionLegacy.open("Cleanup");
                 try {
                     if (version != null) {
                         for (DbUpgrade upgrade : versionUpgrades) {

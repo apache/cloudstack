@@ -27,7 +27,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -118,6 +117,9 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.net.UrlUtil;
@@ -196,11 +198,11 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     @Override
     @DB
     public ExternalLoadBalancerDeviceVO addExternalLoadBalancer(long physicalNetworkId, String url,
-            String username, String password, String deviceName, ServerResource resource, boolean gslbProvider,
-            String gslbSitePublicIp, String gslbSitePrivateIp) {
+            String username, String password, final String deviceName, ServerResource resource, final boolean gslbProvider,
+            final String gslbSitePublicIp, final String gslbSitePrivateIp) {
 
         PhysicalNetworkVO pNetwork = null;
-        NetworkDevice ntwkDevice = NetworkDevice.getNetworkDevice(deviceName);
+        final NetworkDevice ntwkDevice = NetworkDevice.getNetworkDevice(deviceName);
         long zoneId;
 
         if ((ntwkDevice == null) || (url == null) || (username == null) || (resource == null) || (password == null)) {
@@ -258,39 +260,41 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         UrlUtil.parseQueryParameters(uri.getQuery(), false, configParams);
         hostDetails.putAll(configParams);
 
-        Transaction txn = Transaction.currentTxn();
         try {
             resource.configure(hostName, hostDetails);
 
-            Host host = _resourceMgr.addHost(zoneId, resource, Host.Type.ExternalLoadBalancer, hostDetails);
+            final Host host = _resourceMgr.addHost(zoneId, resource, Host.Type.ExternalLoadBalancer, hostDetails);
             if (host != null) {
 
-                boolean dedicatedUse = (configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED) != null) ? Boolean.parseBoolean(configParams
+                final boolean dedicatedUse = (configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED) != null) ? Boolean.parseBoolean(configParams
                         .get(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED)) : false;
                 long capacity = NumbersUtil.parseLong(configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_CAPACITY), 0);
                 if (capacity == 0) {
                     capacity = _defaultLbCapacity;
                 }
 
-                ExternalLoadBalancerDeviceVO lbDeviceVO;
-                txn.start();
-                lbDeviceVO = new ExternalLoadBalancerDeviceVO(host.getId(), pNetwork.getId(), ntwkDevice.getNetworkServiceProvder(),
-                        deviceName, capacity, dedicatedUse, gslbProvider);
-                if (gslbProvider) {
-                    lbDeviceVO.setGslbSitePublicIP(gslbSitePublicIp);
-                    lbDeviceVO.setGslbSitePrivateIP(gslbSitePrivateIp);
-                }
-                _externalLoadBalancerDeviceDao.persist(lbDeviceVO);
-                DetailVO hostDetail = new DetailVO(host.getId(), ApiConstants.LOAD_BALANCER_DEVICE_ID, String.valueOf(lbDeviceVO.getId()));
-                _hostDetailDao.persist(hostDetail);
+                final long capacityFinal = capacity;
+                final PhysicalNetworkVO pNetworkFinal = pNetwork;
+                return Transaction.execute(new TransactionCallback<ExternalLoadBalancerDeviceVO>() {
+                    @Override
+                    public ExternalLoadBalancerDeviceVO doInTransaction(TransactionStatus status) {
+                        ExternalLoadBalancerDeviceVO lbDeviceVO = new ExternalLoadBalancerDeviceVO(host.getId(), pNetworkFinal.getId(), ntwkDevice.getNetworkServiceProvder(),
+                                deviceName, capacityFinal, dedicatedUse, gslbProvider);
+                        if (gslbProvider) {
+                            lbDeviceVO.setGslbSitePublicIP(gslbSitePublicIp);
+                            lbDeviceVO.setGslbSitePrivateIP(gslbSitePrivateIp);
+                        }
+                        _externalLoadBalancerDeviceDao.persist(lbDeviceVO);
+                        DetailVO hostDetail = new DetailVO(host.getId(), ApiConstants.LOAD_BALANCER_DEVICE_ID, String.valueOf(lbDeviceVO.getId()));
+                        _hostDetailDao.persist(hostDetail);
 
-                txn.commit();
-                return lbDeviceVO;
+                        return lbDeviceVO;
+                    }
+                });
             } else {
                 throw new CloudRuntimeException("Failed to add load balancer device due to internal error.");
             }
         } catch (ConfigurationException e) {
-            txn.rollback();
             throw new CloudRuntimeException(e.getMessage());
         }
     }
@@ -402,7 +406,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     }
 
     @DB
-    protected ExternalLoadBalancerDeviceVO allocateLoadBalancerForNetwork(Network guestConfig) throws InsufficientCapacityException {
+    protected ExternalLoadBalancerDeviceVO allocateLoadBalancerForNetwork(final Network guestConfig) throws InsufficientCapacityException {
         boolean retry = true;
         boolean tryLbProvisioning = false;
         ExternalLoadBalancerDeviceVO lbDevice = null;
@@ -412,34 +416,33 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
         while (retry) {
             GlobalLock deviceMapLock = GlobalLock.getInternLock("LoadBalancerAllocLock");
-            Transaction txn = Transaction.currentTxn();
             try {
                 if (deviceMapLock.lock(120)) {
                     try {
-                        boolean dedicatedLB = offering.getDedicatedLB(); // does network offering supports a dedicated
-// load balancer?
-                        long lbDeviceId;
+                        final boolean dedicatedLB = offering.getDedicatedLB(); // does network offering supports a dedicated load balancer?
 
-                        txn.start();
                         try {
-                            // FIXME: should the device allocation be done during network implement phase or do a
-                            // lazy allocation when first rule for the network is configured??
-
-                            // find a load balancer device for this network as per the network offering
-                            lbDevice = findSuitableLoadBalancerForNetwork(guestConfig, dedicatedLB);
-                            lbDeviceId = lbDevice.getId();
-
-                            // persist the load balancer device id that will be used for this network. Once a network
-                            // is implemented on a LB device then later on all rules will be programmed on to same
-// device
-                            NetworkExternalLoadBalancerVO networkLB = new NetworkExternalLoadBalancerVO(guestConfig.getId(), lbDeviceId);
-                            _networkExternalLBDao.persist(networkLB);
-
-                            // mark device to be either dedicated or shared use
-                            lbDevice.setAllocationState(dedicatedLB ? LBDeviceAllocationState.Dedicated : LBDeviceAllocationState.Shared);
-                            _externalLoadBalancerDeviceDao.update(lbDeviceId, lbDevice);
-
-                            txn.commit();
+                            lbDevice = Transaction.executeWithException(new TransactionCallbackWithException<ExternalLoadBalancerDeviceVO>() {
+                                @Override
+                                public ExternalLoadBalancerDeviceVO doInTransaction(TransactionStatus status) throws Exception {
+                                    // FIXME: should the device allocation be done during network implement phase or do a
+                                    // lazy allocation when first rule for the network is configured??
+        
+                                    // find a load balancer device for this network as per the network offering
+                                    ExternalLoadBalancerDeviceVO lbDevice = findSuitableLoadBalancerForNetwork(guestConfig, dedicatedLB);
+                                    long lbDeviceId = lbDevice.getId();
+        
+                                    // persist the load balancer device id that will be used for this network. Once a network
+                                    // is implemented on a LB device then later on all rules will be programmed on to same device
+                                    NetworkExternalLoadBalancerVO networkLB = new NetworkExternalLoadBalancerVO(guestConfig.getId(), lbDeviceId);
+                                    _networkExternalLBDao.persist(networkLB);
+        
+                                    // mark device to be either dedicated or shared use
+                                    lbDevice.setAllocationState(dedicatedLB ? LBDeviceAllocationState.Dedicated : LBDeviceAllocationState.Shared);
+                                    _externalLoadBalancerDeviceDao.update(lbDeviceId, lbDevice);
+                                    return lbDevice;
+                                }
+                            }, InsufficientCapacityException.class);
 
                             // allocated load balancer for the network, so skip retry
                             tryLbProvisioning = false;
@@ -448,28 +451,22 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                             // if already attempted to provision load balancer then throw out of capacity exception,
                             if (tryLbProvisioning) {
                                 retry = false;
-                                // TODO: throwing warning instead of error for now as its possible another provider can
-// service this network
+                                // TODO: throwing warning instead of error for now as its possible another provider can service this network
                                 s_logger.warn("There are no load balancer device with the capacity for implementing this network");
                                 throw exception;
                             } else {
-                                tryLbProvisioning = true; // if possible provision a LB appliance in to the physical
-// network
+                                tryLbProvisioning = true; // if possible provision a LB appliance in to the physical network
                             }
                         }
                     } finally {
                         deviceMapLock.unlock();
-                        if (lbDevice == null) {
-                            txn.rollback();
-                        }
                     }
                 }
             } finally {
                 deviceMapLock.releaseRef();
             }
 
-            // there are no LB devices or there is no free capacity on the devices in the physical network so provision
-// a new LB appliance
+            // there are no LB devices or there is no free capacity on the devices in the physical network so provision a new LB appliance
             if (tryLbProvisioning) {
                 // check if LB appliance can be dynamically provisioned
                 List<ExternalLoadBalancerDeviceVO> providerLbDevices = _externalLoadBalancerDeviceDao.listByProviderAndDeviceAllocationState(physicalNetworkId, provider,
@@ -477,8 +474,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 if ((providerLbDevices != null) && (!providerLbDevices.isEmpty())) {
                     for (ExternalLoadBalancerDeviceVO lbProviderDevice : providerLbDevices) {
                         if (lbProviderDevice.getState() == LBDeviceState.Enabled) {
-                            // acquire a private IP from the data center which will be used as management IP of
-// provisioned LB appliance,
+                            // acquire a private IP from the data center which will be used as management IP of provisioned LB appliance,
                             DataCenterIpAddressVO dcPrivateIp = _dcDao.allocatePrivateIpAddress(guestConfig.getDataCenterId(), lbProviderDevice.getUuid());
                             if (dcPrivateIp == null) {
                                 throw new InsufficientNetworkCapacityException("failed to acquire a priavate IP in the zone " + guestConfig.getDataCenterId() +
@@ -509,13 +505,11 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                             String publicIf = createLbAnswer.getPublicInterface();
                             String privateIf = createLbAnswer.getPrivateInterface();
 
-                            // we have provisioned load balancer so add the appliance as cloudstack provisioned external
-// load balancer
+                            // we have provisioned load balancer so add the appliance as cloudstack provisioned external load balancer
                             String dedicatedLb = offering.getDedicatedLB() ? "true" : "false";
                             String capacity = Long.toString(lbProviderDevice.getCapacity());
 
-                            // acquire a public IP to associate with lb appliance (used as subnet IP to make the
-// appliance part of private network)
+                            // acquire a public IP to associate with lb appliance (used as subnet IP to make the appliance part of private network)
                             PublicIp publicIp = _ipAddrMgr.assignPublicIpAddress(guestConfig.getDataCenterId(),
                                 null,
                                 _accountMgr.getSystemAccount(),
@@ -542,8 +536,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                             }
 
                             if (lbAppliance != null) {
-                                // mark the load balancer as cloudstack managed and set parent host id on which lb
-// appliance is provisioned
+                                // mark the load balancer as cloudstack managed and set parent host id on which lb appliance is provisioned
                                 ExternalLoadBalancerDeviceVO managedLb = _externalLoadBalancerDeviceDao.findById(lbAppliance.getId());
                                 managedLb.setIsManagedDevice(true);
                                 managedLb.setParentHostId(lbProviderDevice.getHostId());
@@ -557,8 +550,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                                     if (answer == null || !answer.getResult()) {
                                         s_logger.warn("Failed to destroy load balancer appliance created");
                                     } else {
-                                        // release the public & private IP back to dc pool, as the load balancer
-// appliance is now destroyed
+                                        // release the public & private IP back to dc pool, as the load balancer appliance is now destroyed
                                         _dcDao.releasePrivateIpAddress(lbIP, guestConfig.getDataCenterId(), null);
                                         _ipAddrMgr.disassociatePublicIpAddress(publicIp.getId(), _accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount());
                                     }
@@ -656,34 +648,40 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     }
 
     @DB
-    protected boolean freeLoadBalancerForNetwork(Network guestConfig) {
-        Transaction txn = Transaction.currentTxn();
+    protected boolean freeLoadBalancerForNetwork(final Network guestConfig) {
         GlobalLock deviceMapLock = GlobalLock.getInternLock("LoadBalancerAllocLock");
 
         try {
             if (deviceMapLock.lock(120)) {
-                txn.start();
-                // since network is shutdown remove the network mapping to the load balancer device
-                NetworkExternalLoadBalancerVO networkLBDevice = _networkExternalLBDao.findByNetworkId(guestConfig.getId());
-                long lbDeviceId = networkLBDevice.getExternalLBDeviceId();
-                _networkExternalLBDao.remove(networkLBDevice.getId());
+                ExternalLoadBalancerDeviceVO lbDevice = Transaction.execute(new TransactionCallback<ExternalLoadBalancerDeviceVO>() {
+                    @Override
+                    public ExternalLoadBalancerDeviceVO doInTransaction(TransactionStatus status) {
+                        // since network is shutdown remove the network mapping to the load balancer device
+                        NetworkExternalLoadBalancerVO networkLBDevice = _networkExternalLBDao.findByNetworkId(guestConfig.getId());
+                        long lbDeviceId = networkLBDevice.getExternalLBDeviceId();
+                        _networkExternalLBDao.remove(networkLBDevice.getId());
 
-                List<NetworkExternalLoadBalancerVO> ntwksMapped = _networkExternalLBDao.listByLoadBalancerDeviceId(networkLBDevice.getExternalLBDeviceId());
-                ExternalLoadBalancerDeviceVO lbDevice = _externalLoadBalancerDeviceDao.findById(lbDeviceId);
-                boolean lbInUse = !(ntwksMapped == null || ntwksMapped.isEmpty());
-                boolean lbCloudManaged = lbDevice.getIsManagedDevice();
+                        List<NetworkExternalLoadBalancerVO> ntwksMapped = _networkExternalLBDao.listByLoadBalancerDeviceId(networkLBDevice.getExternalLBDeviceId());
+                        ExternalLoadBalancerDeviceVO lbDevice = _externalLoadBalancerDeviceDao.findById(lbDeviceId);
+                        boolean lbInUse = !(ntwksMapped == null || ntwksMapped.isEmpty());
+                        boolean lbCloudManaged = lbDevice.getIsManagedDevice();
 
-                if (!lbInUse && !lbCloudManaged) {
-                    // this is the last network mapped to the load balancer device so set device allocation state to be
-// free
-                    lbDevice.setAllocationState(LBDeviceAllocationState.Free);
-                    _externalLoadBalancerDeviceDao.update(lbDevice.getId(), lbDevice);
-                }
+                        if (!lbInUse && !lbCloudManaged) {
+                            // this is the last network mapped to the load balancer device so set device allocation state to be free
+                            lbDevice.setAllocationState(LBDeviceAllocationState.Free);
+                            _externalLoadBalancerDeviceDao.update(lbDevice.getId(), lbDevice);
+                        }
 
-                // commit the changes before sending agent command to destroy cloudstack managed LB
-                txn.commit();
+                        // commit the changes before sending agent command to destroy cloudstack managed LB
+                        if (!lbInUse && lbCloudManaged) {
+                            return lbDevice;
+                        } else {
+                            return null;
+                        }
+                    }
+                });
 
-                if (!lbInUse && lbCloudManaged) {
+                if (lbDevice != null) {
                     // send DestroyLoadBalancerApplianceCommand to the host where load balancer appliance is provisioned
                     Host lbHost = _hostDao.findById(lbDevice.getHostId());
                     String lbIP = lbHost.getPrivateIpAddress();
@@ -723,7 +721,6 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 return false;
             }
         } catch (Exception exception) {
-            txn.rollback();
             s_logger.error("Failed to release load balancer device for the network" + guestConfig.getId() + " due to " + exception.getMessage());
         } finally {
             deviceMapLock.releaseRef();

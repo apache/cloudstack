@@ -32,6 +32,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={SAclDao.class})
@@ -46,7 +47,7 @@ public class SAclDaoImpl extends GenericDaoBase<SAclVO, Long> implements SAclDao
 	    SearchByTarget.and("TargetID", SearchByTarget.entity().getTargetId(), SearchCriteria.Op.EQ);
 	    SearchByTarget.done();
 	    Filter filter = new Filter(SAclVO.class, "grantOrder", Boolean.TRUE, null, null);
-	    Transaction txn = Transaction.open( Transaction.AWSAPI_DB);
+	    TransactionLegacy txn = TransactionLegacy.open( TransactionLegacy.AWSAPI_DB);
 	    try {
 		txn.start();
 		SearchCriteria<SAclVO> sc = SearchByTarget.create();
@@ -66,7 +67,7 @@ public class SAclDaoImpl extends GenericDaoBase<SAclVO, Long> implements SAclDao
 	    SearchByAcl.and("TargetID", SearchByAcl.entity().getTargetId(), SearchCriteria.Op.EQ);
 	    SearchByAcl.and("GranteeCanonicalID", SearchByAcl.entity().getGranteeCanonicalId(), SearchCriteria.Op.EQ);
 	    Filter filter = new Filter(SAclVO.class, "grantOrder", Boolean.TRUE, null, null);
-	    Transaction txn = Transaction.open( Transaction.AWSAPI_DB);
+	    TransactionLegacy txn = TransactionLegacy.open( TransactionLegacy.AWSAPI_DB);
 	    try {
     		txn.start();
     		SearchCriteria<SAclVO> sc = SearchByAcl.create();
@@ -85,7 +86,7 @@ public class SAclDaoImpl extends GenericDaoBase<SAclVO, Long> implements SAclDao
 	    SearchByTarget.and("Target", SearchByTarget.entity().getTarget(), SearchCriteria.Op.EQ);
 	    SearchByTarget.and("TargetID", SearchByTarget.entity().getTargetId(), SearchCriteria.Op.EQ);
 
-	    Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
 	    try {
 		txn.start();
 		SearchCriteria<SAclVO> sc = SearchByTarget.create();

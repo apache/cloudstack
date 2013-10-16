@@ -32,7 +32,7 @@ import com.cloud.usage.UsageIPAddressVO;
 import com.cloud.user.Account;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={UsageIPAddressDao.class})
@@ -56,7 +56,7 @@ public class UsageIPAddressDaoImpl extends GenericDaoBase<UsageIPAddressVO, Long
 	public UsageIPAddressDaoImpl() {}
 
 	public void update(UsageIPAddressVO usage) {
-	    Transaction txn = Transaction.open(Transaction.USAGE_DB);
+	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
 		PreparedStatement pstmt = null;
 		try {
 		    txn.start();
@@ -92,7 +92,7 @@ public class UsageIPAddressDaoImpl extends GenericDaoBase<UsageIPAddressVO, Long
             sql = GET_ALL_USAGE_RECORDS;
         }
 
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
 
         try {

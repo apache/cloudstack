@@ -31,7 +31,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.usage.UsageVPNUserVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={UsageVPNUserDao.class})
@@ -55,7 +55,7 @@ public class UsageVPNUserDaoImpl extends GenericDaoBase<UsageVPNUserVO, Long> im
 	public UsageVPNUserDaoImpl() {}
 
 	public void update(UsageVPNUserVO usage) {
-	    Transaction txn = Transaction.open(Transaction.USAGE_DB);
+	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
 		PreparedStatement pstmt = null;
 		try {
 		    txn.start();
@@ -99,7 +99,7 @@ public class UsageVPNUserDaoImpl extends GenericDaoBase<UsageVPNUserVO, Long> im
             sql += " LIMIT " + startIndex + ",500";
         }
 
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
 
         try {
