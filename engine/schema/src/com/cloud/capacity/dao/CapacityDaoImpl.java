@@ -360,7 +360,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
                 if(level == 3 && rs.getLong(7) != 0)
                     capacityClusterId = rs.getLong(7);                   
 
-                SummedCapacity summedCapacity = new SummedCapacity( rs.getLong(1), rs.getLong(3), rs.getFloat(4),
+                SummedCapacity summedCapacity = new SummedCapacity( rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getFloat(4),
                         (short)rs.getLong(5), rs.getLong(6),
                         capacityPodId, capacityClusterId);
 
@@ -563,6 +563,11 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             this.clusterId = clusterId;
             this.podId = podId;
             this.dcId = zoneId;
+        }
+
+        public SummedCapacity(long sumUsed, long sumReserved, long sumTotal, float percentUsed, short capacityType, Long zoneId, Long podId, Long clusterId) {
+            this(sumUsed, sumTotal, percentUsed, capacityType, zoneId, podId, clusterId);
+            this.sumReserved = sumReserved;
         }
 
         public Short getCapacityType() {				
