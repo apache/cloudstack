@@ -4962,6 +4962,7 @@ html, body {
     background-image: -webkit-linear-gradient(darkgrey, #262626);
     background-image: linear-gradient(darkgrey, #262626);
     background-color: #2e2e2e;
+    border: 1px solid black;
     color: white;
     font-weight: bold;
     text-shadow: 0px 1px 1px black;
@@ -4986,18 +4987,18 @@ select {
   background: url(csui/img/form/dropdown-arrow.png) no-repeat right 8px center, -webkit-linear-gradient( white, #b6b6b6);
   background: url(csui/img/form/dropdown-arrow.png) no-repeat right 8px center, linear-gradient( white, #b6b6b6);
   border-radius: 3px;
-  border: 1px solid black;
+  border: 1px solid #999999;
   font-size: 12px;
   padding-right: 25px;
   padding-left: 10px;
-  padding-top: 10px;
-  padding-bottom: 10px;
+  padding-top: 8px;
+  padding-bottom: 8px;
   margin-top: 10px;
   margin-bottom: 10px; }
 
 input[type=text], input[type=password] {
   font-size: 12px;
-  padding: 10px;
+  padding: 8px;
   margin-top: 10px;
   margin-bottom: 10px;
   border: 1px solid gray;
@@ -5312,7 +5313,7 @@ ul.ui-tabs-nav {
       *zoom: 1;
       display: block;
       background: #ededed;
-      padding: 10px;
+      padding: 8px;
       min-height: 55px; }
       .dashboard.admin .sub.alerts .top:before, .dashboard.admin .sub.alerts .top:after {
         content: " ";
@@ -5392,7 +5393,7 @@ ul.ui-tabs-nav {
       *zoom: 1;
       display: block;
       background: #ededed;
-      padding: 10px; }
+      padding: 8px; }
       .dashboard.admin .head .top:before, .dashboard.admin .head .top:after {
         content: " ";
         display: table; }
@@ -5559,7 +5560,7 @@ ul.ui-tabs-nav {
       *zoom: 1;
       display: block;
       background: #ededed;
-      padding: 10px;
+      padding: 8px;
       padding-left: 20px;
       font-weight: bold;
       color: #6d6d6d; }
@@ -6492,6 +6493,7 @@ ul.ui-tabs-nav {
         background-image: -webkit-linear-gradient(darkgrey, #262626);
         background-image: linear-gradient(darkgrey, #262626);
         background-color: #2e2e2e;
+        border: 1px solid black;
         color: white;
         font-weight: bold;
         text-shadow: 0px 1px 1px black;
@@ -6806,6 +6808,7 @@ ul.ui-tabs-nav {
     background-image: -webkit-linear-gradient(darkgrey, #262626);
     background-image: linear-gradient(darkgrey, #262626);
     background-color: #2e2e2e;
+    border: 1px solid black;
     color: white;
     font-weight: bold;
     text-shadow: 0px 1px 1px black; }
@@ -6925,6 +6928,7 @@ html body > .login {
         background-image: -webkit-linear-gradient(darkgrey, #262626);
         background-image: linear-gradient(darkgrey, #262626);
         background-color: #2e2e2e;
+        border: 1px solid black;
         color: white;
         font-weight: bold;
         text-shadow: 0px 1px 1px black; }
@@ -6946,12 +6950,12 @@ html body > .login {
         background: url(csui/img/form/dropdown-arrow.png) no-repeat right 8px center, -webkit-linear-gradient( white, #b6b6b6);
         background: url(csui/img/form/dropdown-arrow.png) no-repeat right 8px center, linear-gradient( white, #b6b6b6);
         border-radius: 3px;
-        border: 1px solid black;
+        border: 1px solid #999999;
         font-size: 12px;
         padding-right: 25px;
         padding-left: 10px;
-        padding-top: 10px;
-        padding-bottom: 10px;
+        padding-top: 8px;
+        padding-bottom: 8px;
         margin-top: 10px;
         margin-bottom: 10px;
         background-color: #333333;
@@ -7067,12 +7071,12 @@ body {
       background: url(csui/img/form/dropdown-arrow.png) no-repeat right 8px center, -webkit-linear-gradient( white, #b6b6b6);
       background: url(csui/img/form/dropdown-arrow.png) no-repeat right 8px center, linear-gradient( white, #b6b6b6);
       border-radius: 3px;
-      border: 1px solid black;
+      border: 1px solid #999999;
       font-size: 12px;
       padding-right: 25px;
       padding-left: 10px;
-      padding-top: 10px;
-      padding-bottom: 10px;
+      padding-top: 8px;
+      padding-bottom: 8px;
       margin-top: 10px;
       margin-bottom: 10px;
       display: block;
@@ -7297,7 +7301,7 @@ body {
   *zoom: 1;
   display: block;
   background: #ededed;
-  padding: 10px; }
+  padding: 8px; }
   .toolbar:before, .toolbar:after {
     content: " ";
     display: table; }
@@ -7624,6 +7628,7 @@ body {
         background-image: -webkit-linear-gradient(darkgrey, #262626);
         background-image: linear-gradient(darkgrey, #262626);
         background-color: #2e2e2e;
+        border: 1px solid black;
         color: white;
         font-weight: bold;
         text-shadow: 0px 1px 1px black;

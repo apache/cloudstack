@@ -5,7 +5,7 @@ $csui-toolbar-color: lighten(#e0e0e0, 5%);
     @include row;
 
     background: $csui-toolbar-color;
-    padding: 10px;
+    padding: 8px;
 
     .button.action {
         @include csui-button;

@@ -26,12 +26,12 @@
     );
 
     border-radius: 3px;
-    border: 1px solid black;
+    border: 1px solid #999999;
     font-size: 12px;
     padding-right: 25px;
     padding-left: 10px;
-    padding-top: 10px;
-    padding-bottom: 10px;
+    padding-top: 8px;
+    padding-bottom: 8px;
     margin-top: 10px;
     margin-bottom: 10px;
 }
@@ -57,7 +57,7 @@
 
 @mixin csui-textfield {
     font-size: 12px;
-    padding: 10px;
+    padding: 8px;
     margin-top: 10px;
     margin-bottom: 10px;
     border: 1px solid gray;
