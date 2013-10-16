@@ -809,7 +809,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             for (SummedCapacity capacity : capacities) {
                 CapacityResponse capacityResponse = new CapacityResponse();
                 capacityResponse.setCapacityType(capacity.getCapacityType());
-                capacityResponse.setCapacityUsed(capacity.getUsedCapacity());
+                capacityResponse.setCapacityUsed(capacity.getUsedCapacity() + capacity.getReservedCapacity());
                 if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED) {
                     List<SummedCapacity> c = ApiDBUtils.findNonSharedStorageForClusterPodZone(null, pod.getId(), null);
                     capacityResponse.setCapacityTotal(capacity.getTotalCapacity() - c.get(0).getTotalCapacity());
@@ -846,7 +846,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         for (SummedCapacity capacity : capacities) {
             CapacityResponse capacityResponse = new CapacityResponse();
             capacityResponse.setCapacityType(capacity.getCapacityType());
-            capacityResponse.setCapacityUsed(capacity.getUsedCapacity());
+            capacityResponse.setCapacityUsed(capacity.getUsedCapacity() + capacity.getReservedCapacity());
             if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED) {
                 List<SummedCapacity> c = ApiDBUtils.findNonSharedStorageForClusterPodZone(zoneId, null, null);
                 capacityResponse.setCapacityTotal(capacity.getTotalCapacity() - c.get(0).getTotalCapacity());
@@ -967,7 +967,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             for (SummedCapacity capacity : capacities) {
                 CapacityResponse capacityResponse = new CapacityResponse();
                 capacityResponse.setCapacityType(capacity.getCapacityType());
-                capacityResponse.setCapacityUsed(capacity.getUsedCapacity());
+                capacityResponse.setCapacityUsed(capacity.getUsedCapacity() + capacity.getReservedCapacity());
 
                 if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED) {
                     List<SummedCapacity> c = ApiDBUtils.findNonSharedStorageForClusterPodZone(null, null, cluster.getId());
