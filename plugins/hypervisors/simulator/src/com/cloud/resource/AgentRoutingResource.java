@@ -53,6 +53,7 @@ import com.cloud.simulator.MockVMVO;
 import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.Pair;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 
 public class AgentRoutingResource extends AgentStorageResource {
@@ -112,17 +113,29 @@ public class AgentRoutingResource extends AgentStorageResource {
 			_vms.putAll(_simMgr.getVmStates(hostGuid));
 		}
         }
-        final HashMap<String, State> newStates = sync();
+        final HashMap<String, PowerState> newStates = sync();
         HashMap<String, Pair<Long, Long>> nwGrpStates = _simMgr.syncNetworkGroups(hostGuid);
         return new PingRoutingWithNwGroupsCommand(getType(), id, newStates, nwGrpStates);
     }
 
+    private HashMap<String, PowerState> getVmStates() {
+    	Map<String, State> rawStates = _simMgr.getVmStates(this.hostGuid);
+    	if(rawStates != null) {
+    		HashMap<String, PowerState> states = new HashMap<String, PowerState>();
+    		for(Map.Entry<String, State> entry : rawStates.entrySet()) {
+    			states.put(entry.getKey(), entry.getValue() == State.Running ? PowerState.PowerOn : PowerState.PowerOff);
+    		}
+    		return states;
+    	}
+    	return new HashMap<String, PowerState>();
+    }
+    
     @Override
     public StartupCommand[] initialize() {
         synchronized (_vms) {
             _vms.clear();
         }
-        Map<String, State> changes = _simMgr.getVmStates(this.hostGuid);
+        Map<String, PowerState> changes = getVmStates();
         Map<String, MockVMVO> vmsMaps = _simMgr.getVms(this.hostGuid);
         totalCpu = agentHost.getCpuCount() * agentHost.getCpuSpeed();
         totalMem = agentHost.getMemorySize();
@@ -251,8 +264,8 @@ public class AgentRoutingResource extends AgentStorageResource {
     protected CheckVirtualMachineAnswer execute(final CheckVirtualMachineCommand cmd) {
         final String vmName = cmd.getVmName();
         CheckVirtualMachineAnswer result = (CheckVirtualMachineAnswer)_simMgr.simulate(cmd, hostGuid);
-        State state = result.getState();
-        if (state == State.Running) {
+        PowerState state = result.getState();
+        if (state == PowerState.PowerOn) {
             synchronized (_vms) {
                 _vms.put(vmName, State.Running);
             }
@@ -275,72 +288,9 @@ public class AgentRoutingResource extends AgentStorageResource {
 
         return info;
     }
-
-    protected HashMap<String, State> sync() {
-        Map<String, State> newStates;
-        Map<String, State> oldStates = null;
-
-        HashMap<String, State> changes = new HashMap<String, State>();
-
-        synchronized (_vms) {
-            oldStates = new HashMap<String, State>(_vms.size());
-            oldStates.putAll(_vms);
-            newStates = new HashMap<String, State>(_vms.size());
-            newStates.putAll(_vms);
-
-            for (Map.Entry<String, State> entry : newStates.entrySet()) {
-                String vm = entry.getKey();
-
-                State newState = entry.getValue();
-                State oldState = oldStates.remove(vm);
-
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("VM " + vm + ": has state " + newState + " and we have state " + (oldState != null ? oldState.toString() : "null"));
-                }
-
-                if (oldState == null) {
-                    _vms.put(vm, newState);
-                    changes.put(vm, newState);
-                } else if (oldState == State.Starting) {
-                    if (newState == State.Running) {
-                        _vms.put(vm, newState);
-                    } else if (newState == State.Stopped) {
-                        s_logger.debug("Ignoring vm " + vm + " because of a lag in starting the vm.");
-                    }
-                } else if (oldState == State.Stopping) {
-                    if (newState == State.Stopped) {
-                        _vms.put(vm, newState);
-                    } else if (newState == State.Running) {
-                        s_logger.debug("Ignoring vm " + vm + " because of a lag in stopping the vm. ");
-                    }
-                } else if (oldState != newState) {
-                    _vms.put(vm, newState);
-                    changes.put(vm, newState);
-                }
-            }
-
-            for (Map.Entry<String, State> entry : oldStates.entrySet()) {
-                String vm = entry.getKey();
-                State oldState = entry.getValue();
-
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("VM " + vm + " is now missing from simulator agent so reporting stopped");
-                }
-
-                if (oldState == State.Stopping) {
-                    s_logger.debug("Ignoring VM " + vm + " in transition state stopping.");
-                    _vms.remove(vm);
-                } else if (oldState == State.Starting) {
-                    s_logger.debug("Ignoring VM " + vm + " in transition state starting.");
-                } else if (oldState == State.Stopped) {
-                    _vms.remove(vm);
-                } else {
-                    changes.put(entry.getKey(), State.Stopped);
-                }
-            }
-        }
-
-        return changes;
+    
+    protected HashMap<String, PowerState> sync() {
+    	return this.getVmStates();
     }
 
     private Answer execute(ShutdownCommand cmd) {

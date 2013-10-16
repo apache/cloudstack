@@ -131,6 +131,7 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.trilead.ssh2.SCPClient;
 
@@ -154,16 +155,16 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
     static boolean _isHeartBeat = false;
     List<String> _bridges = null;
 	protected HashMap<String, State> _vms = new HashMap<String, State>(50);
-	static HashMap<String, State> _stateMaps;
+	static HashMap<String, PowerState> _stateMaps;
 	private final Map<String, Pair<Long, Long>> _vmNetworkStats= new ConcurrentHashMap<String, Pair<Long, Long>>();
 	private static String _ovsAgentPath = "/opt/ovs-agent-latest";
 	
 	static {
-		_stateMaps = new HashMap<String, State>();
-		_stateMaps.put("RUNNING", State.Running);
-		_stateMaps.put("DOWN", State.Stopped);
-		_stateMaps.put("ERROR", State.Error);
-		_stateMaps.put("SUSPEND", State.Stopped);
+		_stateMaps = new HashMap<String, PowerState>();
+		_stateMaps.put("RUNNING", PowerState.PowerOn);
+		_stateMaps.put("DOWN", PowerState.PowerOff);
+		_stateMaps.put("ERROR", PowerState.PowerUnknown);
+		_stateMaps.put("SUSPEND", PowerState.PowerOff);
 	}
 	
 	@Override
@@ -378,7 +379,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 		try {
 			StartupRoutingCommand cmd = new StartupRoutingCommand();
 			fillHostInfo(cmd);
-	        Map<String, State> changes = null;
+	        Map<String, PowerState> changes = null;
 	        synchronized (_vms) {
 	            _vms.clear();
 	            changes = sync();
@@ -396,7 +397,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 	public PingCommand getCurrentStatus(long id) {
 		try {
 			OvmHost.ping(_conn);
-			HashMap<String, State> newStates = sync();
+			HashMap<String, PowerState> newStates = sync();
 			return new PingRoutingCommand(getType(), id, newStates);
 		} catch (XmlRpcException e) {
 			s_logger.debug("Check agent status failed", e);
@@ -776,125 +777,35 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         }
     }
 
-    private State toState(String vmName, String s) {
-        State state = _stateMaps.get(s);
+    private PowerState toState(String vmName, String s) {
+        PowerState state = _stateMaps.get(s);
         if (state == null) {
             s_logger.debug("Unkown state " + s + " for " + vmName);
-            state = State.Unknown;
+            state = PowerState.PowerUnknown;
         }
         return state;
     }
 
-    protected HashMap<String, State> getAllVms() throws XmlRpcException {
-        final HashMap<String, State> vmStates = new HashMap<String, State>();
+    protected HashMap<String, PowerState> getAllVms() throws XmlRpcException {
+        final HashMap<String, PowerState> vmStates = new HashMap<String, PowerState>();
         Map<String, String> vms = OvmHost.getAllVms(_conn);
         for (final Map.Entry<String, String> entry : vms.entrySet()) {
-            State state = toState(entry.getKey(), entry.getValue());
+            PowerState state = toState(entry.getKey(), entry.getValue());
             vmStates.put(entry.getKey(), state);
         }
         return vmStates;
     }
 
-    protected HashMap<String, State> sync() {
-        HashMap<String, State> newStates;
-        HashMap<String, State> oldStates = null;
-
-        try {
-            final HashMap<String, State> changes = new HashMap<String, State>();
-            newStates = getAllVms();
-            if (newStates == null) {
-                s_logger.debug("Unable to get the vm states so no state sync at this point.");
-                return null;
-            }
-
-            synchronized (_vms) {
-                oldStates = new HashMap<String, State>(_vms.size());
-                oldStates.putAll(_vms);
-
-                for (final Map.Entry<String, State> entry : newStates
-                        .entrySet()) {
-                    final String vm = entry.getKey();
-
-                    State newState = entry.getValue();
-                    final State oldState = oldStates.remove(vm);
-
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("VM " + vm + ": ovm has state " + newState + " and we have state " + (oldState != null ? oldState.toString() : "null"));
-                    }
-
-                    /*
-                     * TODO: what is migrating ??? if
-                     * (vm.startsWith("migrating")) {
-                     * s_logger.debug("Migrating from xen detected.  Skipping");
-                     * continue; }
-                     */
-
-                    if (oldState == null) {
-                        _vms.put(vm, newState);
-                        s_logger.debug("Detecting a new state but couldn't find a old state so adding it to the changes: "
-                                + vm);
-                        changes.put(vm, newState);
-                    } else if (oldState == State.Starting) {
-                        if (newState == State.Running) {
-                            _vms.put(vm, newState);
-                        } else if (newState == State.Stopped) {
-                            s_logger.debug("Ignoring vm " + vm
-                                    + " because of a lag in starting the vm.");
-                        }
-                    } else if (oldState == State.Migrating) {
-                        if (newState == State.Running) {
-                            s_logger.debug("Detected that an migrating VM is now running: "
-                                    + vm);
-                            _vms.put(vm, newState);
-                        }
-                    } else if (oldState == State.Stopping) {
-                        if (newState == State.Stopped) {
-                            _vms.put(vm, newState);
-                        } else if (newState == State.Running) {
-                            s_logger.debug("Ignoring vm " + vm
-                                    + " because of a lag in stopping the vm. ");
-                        }
-                    } else if (oldState != newState) {
-                        _vms.put(vm, newState);
-                        if (newState == State.Stopped) {
-                            //TODO: need anything here?
-                        }
-                        changes.put(vm, newState);
-                    }
-                }
-
-                for (final Map.Entry<String, State> entry : oldStates.entrySet()) {
-                    final String vm = entry.getKey();
-                    final State oldState = entry.getValue();
-
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("VM " + vm + " is now missing from ovm server so reporting stopped");
-                    }
-
-                    if (oldState == State.Stopping) {
-                        s_logger.debug("Ignoring VM " + vm + " in transition state stopping.");
-                        _vms.remove(vm);
-                    } else if (oldState == State.Starting) {
-                        s_logger.debug("Ignoring VM " + vm + " in transition state starting.");
-                    } else if (oldState == State.Stopped) {
-                        _vms.remove(vm);
-                    } else if (oldState == State.Migrating) {
-                        s_logger.debug("Ignoring VM " + vm + " in migrating state.");
-                    } else {
-                        _vms.remove(vm);
-                        State state = State.Stopped;
-                        // TODO: need anything here???
-                        changes.put(entry.getKey(), state);
-                    }
-                }
-            }
-
-            return changes;
-        } catch (Exception e) {
-            s_logger.debug("Ovm full sync failed", e);
-            return null;
-        }
-    }
+	protected HashMap<String, PowerState> sync() {
+		try {
+			HashMap<String, PowerState>  newStates = getAllVms();
+			
+			if(newStates != null)
+				return newStates;
+		} catch(Exception e) {
+		}
+		return new HashMap<String, PowerState>();
+	}
 
     protected GetStorageStatsAnswer execute(final GetStorageStatsCommand cmd) {
         try {
@@ -1017,14 +928,14 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         try {
             Map<String, String> res = OvmVm.register(_conn, vmName);
             Integer vncPort = Integer.parseInt(res.get("vncPort"));
-            HashMap<String, State> states = getAllVms();
-            State vmState = states.get(vmName);
+            HashMap<String, PowerState> states = getAllVms();
+            PowerState vmState = states.get(vmName);
             if (vmState == null) {
                 s_logger.warn("Check state of " + vmName + " return null in CheckVirtualMachineCommand");
-                vmState = State.Stopped;
+                vmState = PowerState.PowerOff;
             }
 
-            if (vmState == State.Running) {
+            if (vmState == PowerState.PowerOn) {
                 synchronized (_vms) {
                     _vms.put(vmName, State.Running);
                 }
@@ -1033,7 +944,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             return new CheckVirtualMachineAnswer(cmd, vmState, vncPort);
         } catch (Exception e) {
             s_logger.debug("Check migration for " + vmName + " failed", e);
-            return new CheckVirtualMachineAnswer(cmd, State.Stopped, null);
+            return new CheckVirtualMachineAnswer(cmd, PowerState.PowerOff, null);
         }
     }
 

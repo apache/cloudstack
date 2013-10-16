@@ -16,24 +16,24 @@
 // under the License.
 package com.cloud.agent.api;
 
-import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.PowerState;
 
 public class CheckVirtualMachineAnswer extends Answer {
 
     Integer vncPort;
-    State state;
+    PowerState state;
 
 
     protected CheckVirtualMachineAnswer() {
     }
 
-    public CheckVirtualMachineAnswer(CheckVirtualMachineCommand cmd, State state, Integer vncPort, String detail) {
+    public CheckVirtualMachineAnswer(CheckVirtualMachineCommand cmd, PowerState state, Integer vncPort, String detail) {
         super(cmd, true, detail);
         this.state = state;
         this.vncPort = vncPort;
     }
 
-    public CheckVirtualMachineAnswer(CheckVirtualMachineCommand cmd, State state, Integer vncPort) {
+    public CheckVirtualMachineAnswer(CheckVirtualMachineCommand cmd, PowerState state, Integer vncPort) {
         this(cmd, state, vncPort, null);
     }
 
@@ -46,7 +46,7 @@ public class CheckVirtualMachineAnswer extends Answer {
         return vncPort;
     }
 
-    public State getState() {
+    public PowerState getState() {
         return state;
     }
 }

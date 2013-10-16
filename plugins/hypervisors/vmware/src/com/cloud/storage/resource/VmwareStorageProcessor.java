@@ -75,6 +75,7 @@ import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.script.Script;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.google.gson.Gson;
 import com.vmware.vim25.ManagedObjectReference;
@@ -1491,7 +1492,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         List<NetworkDetails> networks = vmMo.getNetworksWithDetails();
 
                         // tear down all devices first before we destroy the VM to avoid accidently delete disk backing files
-                        if (this.resource.getVmState(vmMo) != State.Stopped) {
+                        if (this.resource.getVmState(vmMo) != PowerState.PowerOff) {
                             vmMo.safePowerOff(_shutdown_waitMs);
                         }
 

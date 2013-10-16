@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine.State;
 
- 
 public class XenServerPoolVms {
     private static final Logger s_logger = Logger.getLogger(XenServerPoolVms.class);
     private final Map<String/* clusterId */, HashMap<String/* vm name */, Pair<String/* host uuid */, State/* vm state */>>> _cluster_vms =
@@ -83,4 +82,3 @@ public class XenServerPoolVms {
     }
     
 }
-

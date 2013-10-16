@@ -21,7 +21,7 @@ import java.util.Map;
 
 import com.cloud.host.Host;
 import com.cloud.utils.Pair;
-import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.PowerState;
 
 
 public class PingRoutingWithNwGroupsCommand extends PingRoutingCommand {
@@ -31,7 +31,7 @@ public class PingRoutingWithNwGroupsCommand extends PingRoutingCommand {
 		super();
 	}
 
-	public PingRoutingWithNwGroupsCommand(Host.Type type, long id, Map<String, State> states, HashMap<String, Pair<Long, Long>> nwGrpStates) {
+	public PingRoutingWithNwGroupsCommand(Host.Type type, long id, Map<String, PowerState> states, HashMap<String, Pair<Long, Long>> nwGrpStates) {
 		super(type, id, states);
 		newGroupStates = nwGrpStates;
 	}

@@ -74,6 +74,7 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -347,7 +348,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             }
 
             txn.commit();
-            return new CheckVirtualMachineAnswer(cmd, vm.getState(), vm.getVncPort());
+            return new CheckVirtualMachineAnswer(cmd, vm.getState() == State.Running ? PowerState.PowerOn : PowerState.PowerOff, vm.getVncPort());
         } catch (Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("unable to fetch vm state " + cmd.getVmName(), ex);

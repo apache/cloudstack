@@ -241,6 +241,7 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 
 import com.ceph.rados.Rados;
@@ -378,21 +379,21 @@ ServerResource {
     protected int _timeout;
     protected int _cmdsTimeout;
     protected int _stopTimeout;
-    protected static HashMap<DomainInfo.DomainState, State> s_statesTable;
+    protected static HashMap<DomainInfo.DomainState, PowerState> s_statesTable;
     static {
-        s_statesTable = new HashMap<DomainInfo.DomainState, State>();
+        s_statesTable = new HashMap<DomainInfo.DomainState, PowerState>();
         s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_SHUTOFF,
-                State.Stopped);
+                PowerState.PowerOff);
         s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_PAUSED,
-                State.Running);
+                PowerState.PowerOn);
         s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_RUNNING,
-                State.Running);
+                PowerState.PowerOn);
         s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_BLOCKED,
-                State.Running);
+        		PowerState.PowerOn);
         s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_NOSTATE,
-                State.Unknown);
+        		PowerState.PowerUnknown);
         s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_SHUTDOWN,
-                State.Stopping);
+        		PowerState.PowerOff);
     }
 
     protected HashMap<String, State> _vms = new HashMap<String, State>(20);
@@ -2778,18 +2779,18 @@ ServerResource {
         return new ReadyAnswer(cmd);
     }
 
-    protected State convertToState(DomainInfo.DomainState ps) {
-        final State state = s_statesTable.get(ps);
-        return state == null ? State.Unknown : state;
+    protected PowerState convertToState(DomainInfo.DomainState ps) {
+        final PowerState state = s_statesTable.get(ps);
+        return state == null ? PowerState.PowerUnknown : state;
     }
 
-    protected State getVmState(Connect conn, final String vmName) {
+    protected PowerState getVmState(Connect conn, final String vmName) {
         int retry = 3;
         Domain vms = null;
         while (retry-- > 0) {
             try {
                 vms = conn.domainLookupByName(vmName);
-                State s = convertToState(vms.getInfo().state);
+                PowerState s = convertToState(vms.getInfo().state);
                 return s;
             } catch (final LibvirtException e) {
                 s_logger.warn("Can't get vm state " + vmName + e.getMessage()
@@ -2804,15 +2805,15 @@ ServerResource {
                 }
             }
         }
-        return State.Stopped;
+        return PowerState.PowerOff;
     }
 
     private Answer execute(CheckVirtualMachineCommand cmd) {
         try {
             Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
-            final State state = getVmState(conn, cmd.getVmName());
+            final PowerState state = getVmState(conn, cmd.getVmName());
             Integer vncPort = null;
-            if (state == State.Running) {
+            if (state == PowerState.PowerOn) {
                 vncPort = getVncPort(conn, cmd.getVmName());
 
                 synchronized (_vms) {
@@ -3930,7 +3931,7 @@ ServerResource {
 
     @Override
     public PingCommand getCurrentStatus(long id) {
-        final HashMap<String, State> newStates = sync();
+        final HashMap<String, PowerState> newStates = sync();
 
         if (!_can_bridge_firewall) {
             return new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id,
@@ -3961,7 +3962,7 @@ ServerResource {
 
     @Override
     public StartupCommand[] initialize() {
-        Map<String, State> changes = null;
+        Map<String, PowerState> changes = null;
 
         synchronized (_vms) {
             _vms.clear();
@@ -4009,120 +4010,16 @@ ServerResource {
             return new StartupCommand[] { cmd };
         }
     }
-
-    protected HashMap<String, State> sync() {
-        HashMap<String, State> newStates;
-        HashMap<String, State> oldStates = null;
-
-        final HashMap<String, State> changes = new HashMap<String, State>();
-
-        synchronized (_vms) {
-            newStates = getAllVms();
-            if (newStates == null) {
-                s_logger.debug("Unable to get the vm states so no state sync at this point.");
-                return changes;
-            }
-
-            oldStates = new HashMap<String, State>(_vms.size());
-            oldStates.putAll(_vms);
-
-            for (final Map.Entry<String, State> entry : newStates.entrySet()) {
-                final String vm = entry.getKey();
-
-                State newState = entry.getValue();
-                final State oldState = oldStates.remove(vm);
-
-                if (newState == State.Stopped && oldState != State.Stopping
-                        && oldState != null && oldState != State.Stopped) {
-                    newState = getRealPowerState(vm);
-                }
-
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("VM " + vm + ": libvirt has state "
-                            + newState + " and we have state "
-                            + (oldState != null ? oldState.toString() : "null"));
-                }
-
-                if (vm.startsWith("migrating")) {
-                    s_logger.debug("Migration detected.  Skipping");
-                    continue;
-                }
-                if (oldState == null) {
-                    _vms.put(vm, newState);
-                    s_logger.debug("Detecting a new state but couldn't find a old state so adding it to the changes: "
-                            + vm);
-                    changes.put(vm, newState);
-                } else if (oldState == State.Starting) {
-                    if (newState == State.Running) {
-                        _vms.put(vm, newState);
-                    } else if (newState == State.Stopped) {
-                        s_logger.debug("Ignoring vm " + vm
-                                + " because of a lag in starting the vm.");
-                    }
-                } else if (oldState == State.Migrating) {
-                    if (newState == State.Running) {
-                        s_logger.debug("Detected that an migrating VM is now running: "
-                                + vm);
-                        _vms.put(vm, newState);
-                    }
-                } else if (oldState == State.Stopping) {
-                    if (newState == State.Stopped) {
-                        _vms.put(vm, newState);
-                    } else if (newState == State.Running) {
-                        s_logger.debug("Ignoring vm " + vm
-                                + " because of a lag in stopping the vm. ");
-                    }
-                } else if (oldState != newState) {
-                    _vms.put(vm, newState);
-                    if (newState == State.Stopped) {
-                        if (_vmsKilled.remove(vm)) {
-                            s_logger.debug("VM " + vm
-                                    + " has been killed for storage. ");
-                            newState = State.Error;
-                        }
-                    }
-                    changes.put(vm, newState);
-                }
-            }
-
-            for (final Map.Entry<String, State> entry : oldStates.entrySet()) {
-                final String vm = entry.getKey();
-                final State oldState = entry.getValue();
-
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("VM "
-                            + vm
-                            + " is now missing from libvirt so reporting stopped");
-                }
-
-                if (oldState == State.Stopping) {
-                    s_logger.debug("Ignoring VM " + vm
-                            + " in transition state stopping.");
-                    _vms.remove(vm);
-                } else if (oldState == State.Starting) {
-                    s_logger.debug("Ignoring VM " + vm
-                            + " in transition state starting.");
-                } else if (oldState == State.Stopped) {
-                    _vms.remove(vm);
-                } else if (oldState == State.Migrating) {
-                    s_logger.debug("Ignoring VM " + vm + " in migrating state.");
-                } else {
-                    _vms.remove(vm);
-                    State state = State.Stopped;
-                    if (_vmsKilled.remove(entry.getKey())) {
-                        s_logger.debug("VM " + vm
-                                + " has been killed by storage monitor");
-                        state = State.Error;
-                    }
-                    changes.put(entry.getKey(), state);
-                }
-            }
-        }
-
-        return changes;
+    
+    protected HashMap<String, PowerState> sync() {
+    	HashMap<String, PowerState> newStates = getAllVms();
+    	if(newStates != null)
+    		return newStates;
+    	
+    	return new HashMap<String, PowerState>();
     }
 
-    protected State getRealPowerState(String vm) {
+    protected PowerState getRealPowerState(String vm) {
         int i = 0;
         s_logger.trace("Checking on the HALTED State");
         Domain dm = null;
@@ -4154,7 +4051,7 @@ ServerResource {
                 s_logger.trace("Ignoring InterruptedException.", e);
             }
         }
-        return State.Stopped;
+        return PowerState.PowerOff;
     }
 
     protected List<String> getAllVmNames(Connect conn) {
@@ -4197,8 +4094,8 @@ ServerResource {
         return la;
     }
 
-    private HashMap<String, State> getAllVms() {
-        final HashMap<String, State> vmStates = new HashMap<String, State>();
+    private HashMap<String, PowerState> getAllVms() {
+        final HashMap<String, PowerState> vmStates = new HashMap<String, PowerState>();
         Connect conn = null;
 
         if (_hypervisorType == HypervisorType.LXC) {
@@ -4222,8 +4119,8 @@ ServerResource {
         return vmStates;
     }
 
-    private HashMap<String, State> getAllVms(Connect conn) {
-        final HashMap<String, State> vmStates = new HashMap<String, State>();
+    private HashMap<String, PowerState> getAllVms(Connect conn) {
+        final HashMap<String, PowerState> vmStates = new HashMap<String, PowerState>();
 
         String[] vms = null;
         int[] ids = null;
@@ -4248,7 +4145,7 @@ ServerResource {
 
                 DomainInfo.DomainState ps = dm.getInfo().state;
 
-                final State state = convertToState(ps);
+                final PowerState state = convertToState(ps);
 
                 s_logger.trace("VM " + dm.getName() + ": powerstate = " + ps
                         + "; vm state=" + state.toString());
@@ -4273,7 +4170,7 @@ ServerResource {
                 dm = conn.domainLookupByName(vms[i]);
 
                 DomainInfo.DomainState ps = dm.getInfo().state;
-                final State state = convertToState(ps);
+                final PowerState state = convertToState(ps);
                 String vmName = dm.getName();
                 s_logger.trace("VM " + vmName + ": powerstate = " + ps
                         + "; vm state=" + state.toString());
