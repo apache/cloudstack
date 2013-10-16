@@ -15,6 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 .detail-view {
+    .details {        
+        &.group-multiple {
+            th {
+                text-align: left;
+            }
+        }
+    }
+    
     .toolbar {
         background: none;
         float: right;
@@ -31,6 +39,18 @@
 
     .detail-group {
         @include csui-details;
+
+        .button {
+            @include csui-action-button;
+            @include csui-button;
+
+            float: right;
+
+            .icon {
+                @include csui-sprite(0, 0);
+                background-position: inherit;
+            }
+        }
 
         .main-groups {
             max-height: 400px;

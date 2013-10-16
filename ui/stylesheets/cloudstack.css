@@ -6640,6 +6640,8 @@ ul.ui-tabs-nav {
     left: 556px;
     top: 16px; }
 
+.detail-view .details.group-multiple th {
+  text-align: left; }
 .detail-view .toolbar {
   background: none;
   float: right;
@@ -6680,6 +6682,78 @@ ul.ui-tabs-nav {
   background: #f2f2f2;
   padding: 10px;
   border-bottom: 1px solid #ccc; }
+  .detail-view .detail-group .button {
+    float: left;
+    cursor: pointer;
+    background-color: white;
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+    background-image: -webkit-linear-gradient(white, #cccccc);
+    background-image: linear-gradient(white, #cccccc);
+    display: block;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-left: 12px;
+    padding-right: 12px;
+    min-width: 92px;
+    font-size: 11px;
+    border-radius: 3px;
+    border: 1px solid #999999;
+    cursor: pointer;
+    text-align: center;
+    float: right; }
+    .detail-view .detail-group .button span {
+      display: block;
+      float: left; }
+    .detail-view .detail-group .button a {
+      width: 25px;
+      height: 20px;
+      display: block;
+      float: left;
+      text-decoration: none; }
+    .detail-view .detail-group .button .icon {
+      display: block;
+      width: 25px;
+      height: 20px;
+      margin-bottom: -12px;
+      float: left;
+      position: relative;
+      top: -5px;
+      left: -5px; }
+    .detail-view .detail-group .button.text {
+      background-color: white;
+      background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #cccccc));
+      background-image: -webkit-linear-gradient(white, #cccccc);
+      background-image: linear-gradient(white, #cccccc);
+      display: block;
+      padding-top: 8px;
+      padding-bottom: 8px;
+      padding-left: 12px;
+      padding-right: 12px;
+      min-width: 92px;
+      font-size: 11px;
+      border-radius: 3px;
+      border: 1px solid #999999;
+      cursor: pointer;
+      text-align: center;
+      float: right; }
+      .detail-view .detail-group .button.text:hover {
+        box-shadow: inset 0 0 10px #ccc;
+        background-color: white;
+        background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+        background-image: -webkit-linear-gradient(white, #f2f2f2);
+        background-image: linear-gradient(white, #f2f2f2); }
+      .detail-view .detail-group .button.text span {
+        float: right; }
+    .detail-view .detail-group .button:hover {
+      box-shadow: inset 0 0 10px #ccc;
+      background-color: white;
+      background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f2f2f2));
+      background-image: -webkit-linear-gradient(white, #f2f2f2);
+      background-image: linear-gradient(white, #f2f2f2); }
+    .detail-view .detail-group .button .icon {
+      background: url(../images/sprites.png) no-repeat;
+      background-position: -0px -0px;
+      background-position: inherit; }
   .detail-view .detail-group .main-groups {
     max-height: 400px;
     overflow: auto; }
@@ -7123,7 +7197,8 @@ body {
       float: left;
       margin-right: 1.75788%;
       width: 17.32172%;
-      background: url(../images/sprites.png) no-repeat -142px -390px;
+      background: url(../images/sprites.png) no-repeat;
+      background-position: -142px -390px;
       height: 30px; }
       #header .region-switcher .icon:last-child {
         margin-right: 0; }
