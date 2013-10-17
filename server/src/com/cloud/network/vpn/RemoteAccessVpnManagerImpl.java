@@ -247,7 +247,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         boolean success = false;
         try {
             for (RemoteAccessVPNServiceProvider element : _vpnServiceProviders) {
-                if (element.stopVpn(network, vpn)) {
+                if (element.stopVpn(vpn)) {
                     success = true;
                     break;
                 }
@@ -397,7 +397,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
             if (firewallOpened) {
                 for (RemoteAccessVPNServiceProvider element : _vpnServiceProviders) {
-                    if (element.startVpn(network, vpn)) {
+                    if (element.startVpn(vpn)) {
                         started = true;
                         break;
                     }
