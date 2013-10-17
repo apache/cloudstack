@@ -563,7 +563,7 @@
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
               <exclude>tools/appliance/definitions/devcloud/*</exclude>
               <exclude>tools/appliance/definitions/systemvmtemplate/*</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate64/*</exclude>
+              <exclude>tools/appliance/definitions/systemvm64template/*</exclude>
               <exclude>tools/appliance/definitions/builtin/*</exclude>
               <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/definition.rb</exclude>
