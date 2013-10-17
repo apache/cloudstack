@@ -2245,7 +2245,11 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                             + storagePoolId);
         }
 
-        if (!volumeOnSharedStoragePool(vol)) {
+        if (volumeOnSharedStoragePool(vol)) {
+            if (destPool.isLocal()) {
+                throw new InvalidParameterValueException("Migration of volume from shared to local storage pool is not supported");
+            }
+        } else {
             throw new InvalidParameterValueException(
                     "Migration of volume from local storage pool is not supported");
         }
