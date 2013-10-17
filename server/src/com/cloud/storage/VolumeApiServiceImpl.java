@@ -1309,7 +1309,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Failed to find the destination storage pool: " + storagePoolId);
         }
 
-        if (!_volumeMgr.volumeOnSharedStoragePool(vol)) {
+        if (_volumeMgr.volumeOnSharedStoragePool(vol)) {
+            if (destPool.isLocal()) {
+                throw new InvalidParameterValueException("Migration of volume from shared to local storage pool is not supported");
+            }
+        } else {
             throw new InvalidParameterValueException("Migration of volume from local storage pool is not supported");
         }
 
@@ -1320,7 +1324,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             try {
                 newVol = _volumeMgr.migrateVolume(vol, destPool);
             } catch (StorageUnavailableException e) {
-               s_logger.debug("Failed to migrate volume", e);
+                s_logger.debug("Failed to migrate volume", e);
             }
         }
         return newVol;
