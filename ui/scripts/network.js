@@ -139,6 +139,7 @@
             var ipObj = args.context.item;
             var status = ipObj.state;
 
+            //***** apply to both Isolated Guest Network IP, VPC IP (begin) *****
             if (status == 'Destroyed' ||
                 status == 'Releasing' ||
                 status == 'Released' ||
@@ -149,90 +150,105 @@
                 return [];
             }
             
-            if (args.context.networks[0].networkofferingconservemode == false) {
-                /*
-				(1) If IP is SourceNat, no StaticNat/VPN/PortForwarding/LoadBalancer can be enabled/added.
-				*/
-                if (ipObj.issourcenat == true) {
-                    disallowedActions.push('enableStaticNAT');
-                    disallowedActions.push('enableVPN');
-                }
-
-                /*
-				(2) If IP is non-SourceNat, show StaticNat/VPN/PortForwarding/LoadBalancer at first.
-				1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
-				2. Once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
-				3. Once a PortForwarding rule is added, hide StaticNat/VPN/LoadBalancer.
-				4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
-				*/
-                else { //ipObj.issourcenat == false
-                    if (ipObj.isstaticnat) { //1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
-                        disallowedActions.push('enableVPN');
-                    }
-                    if (ipObj.vpnenabled) { //2. Once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
-                        disallowedActions.push('enableStaticNAT');
-                    }
-
-                    //3. Once a PortForwarding rule is added, hide StaticNat/VPN/LoadBalancer.
-                    $.ajax({
-                        url: createURL('listPortForwardingRules'),
-                        data: {
-                            ipaddressid: ipObj.id,
-                            listAll: true
-                        },
-                        dataType: 'json',
-                        async: false,
-                        success: function(json) {
-                            var rules = json.listportforwardingrulesresponse.portforwardingrule;
-                            if (rules != null && rules.length > 0) {
-                                disallowedActions.push('enableVPN');
-                                disallowedActions.push('enableStaticNAT');
-                            }
-                        }
-                    });
-
-                    //4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
-                    $.ajax({
-                        url: createURL('listLoadBalancerRules'),
-                        data: {
-                            publicipid: ipObj.id,
-                            listAll: true
-                        },
-                        dataType: 'json',
-                        async: false,
-                        success: function(json) {
-                            var rules = json.listloadbalancerrulesresponse.loadbalancerrule;
-                            if (rules != null && rules.length > 0) {
-                                disallowedActions.push('enableVPN');
-                                disallowedActions.push('enableStaticNAT');
-                            }
-                        }
-                    });
-                }
-            }
-
-            if (ipObj.isstaticnat) {
-                disallowedActions.push('enableStaticNAT');
-            } else {
-                disallowedActions.push('disableStaticNAT');
-            }
-
-            if (ipObj.networkOfferingHavingVpnService == true) {
-                if (ipObj.vpnenabled) {
-                    disallowedActions.push('enableVPN');
-                } else {
-                    disallowedActions.push('disableVPN');
-                }
-            } else { //ipObj.networkOfferingHavingVpnService == false
-                disallowedActions.push('disableVPN');
-                disallowedActions.push('enableVPN');
-            }
-
-            if (ipObj.issourcenat) {
+            if (ipObj.issourcenat) { //sourceNAT IP doesn't support staticNAT
                 disallowedActions.push('enableStaticNAT');
                 disallowedActions.push('disableStaticNAT');
                 disallowedActions.push('remove');
-            }
+            } else { //non-sourceNAT IP supports staticNAT
+            	 if (ipObj.isstaticnat) {
+                     disallowedActions.push('enableStaticNAT');
+                 } else {
+                     disallowedActions.push('disableStaticNAT');
+                 }
+            }              
+            //***** apply to both Isolated Guest Network IP, VPC IP (end) *****
+            
+                       
+            if (!('vpc' in args.context)) { //***** Guest Network section > Guest Network page > IP Address page *****
+	            if (args.context.networks[0].networkofferingconservemode == false) {
+	                /*
+					(1) If IP is SourceNat, no StaticNat/VPN/PortForwarding/LoadBalancer can be enabled/added.
+					*/
+	                if (ipObj.issourcenat == true) {
+	                    disallowedActions.push('enableStaticNAT');
+	                    disallowedActions.push('enableVPN');
+	                }
+	
+	                /*
+					(2) If IP is non-SourceNat, show StaticNat/VPN/PortForwarding/LoadBalancer at first.
+					1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
+					2. Once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
+					3. Once a PortForwarding rule is added, hide StaticNat/VPN/LoadBalancer.
+					4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
+					*/
+	                else { //ipObj.issourcenat == false
+	                    if (ipObj.isstaticnat) { //1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
+	                        disallowedActions.push('enableVPN');
+	                    }
+	                    if (ipObj.vpnenabled) { //2. Once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
+	                        disallowedActions.push('enableStaticNAT');
+	                    }
+	
+	                    //3. Once a PortForwarding rule is added, hide StaticNat/VPN/LoadBalancer.
+	                    $.ajax({
+	                        url: createURL('listPortForwardingRules'),
+	                        data: {
+	                            ipaddressid: ipObj.id,
+	                            listAll: true
+	                        },
+	                        dataType: 'json',
+	                        async: false,
+	                        success: function(json) {
+	                            var rules = json.listportforwardingrulesresponse.portforwardingrule;
+	                            if (rules != null && rules.length > 0) {
+	                                disallowedActions.push('enableVPN');
+	                                disallowedActions.push('enableStaticNAT');
+	                            }
+	                        }
+	                    });
+	
+	                    //4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
+	                    $.ajax({
+	                        url: createURL('listLoadBalancerRules'),
+	                        data: {
+	                            publicipid: ipObj.id,
+	                            listAll: true
+	                        },
+	                        dataType: 'json',
+	                        async: false,
+	                        success: function(json) {
+	                            var rules = json.listloadbalancerrulesresponse.loadbalancerrule;
+	                            if (rules != null && rules.length > 0) {
+	                                disallowedActions.push('enableVPN');
+	                                disallowedActions.push('enableStaticNAT');
+	                            }
+	                        }
+	                    });
+	                }
+	            }
+	
+	            if (ipObj.networkOfferingHavingVpnService == true) {
+	                if (ipObj.vpnenabled) {
+	                    disallowedActions.push('enableVPN');
+	                } else {
+	                    disallowedActions.push('disableVPN');
+	                }
+	            } else { //ipObj.networkOfferingHavingVpnService == false
+	                disallowedActions.push('disableVPN');
+	                disallowedActions.push('enableVPN');
+	            }
+            } else { //***** VPC section > Configuration VPC > Router > Public IP Addresses *****            	
+            	if (ipObj.issourcenat) { //VPC sourceNAT IP: supports VPN 
+            		if (ipObj.vpnenabled) {
+	                    disallowedActions.push('enableVPN');
+	                } else {
+	                    disallowedActions.push('disableVPN');
+	                }
+            	} else { //VPC non-sourceNAT IP: doesn't support VPN
+            		disallowedActions.push('enableVPN');
+            		disallowedActions.push('disableVPN');
+            	}
+            }                            
 
             allowedActions = $.grep(allowedActions, function(item) {
                 return $.inArray(item, disallowedActions) == -1;
@@ -444,9 +460,7 @@
                                                         })
                                                     });
                                                 }
-                                            });
-                                            //???
-                                            
+                                            });   
                                         }
                                     },
 
@@ -2121,28 +2135,7 @@
                     detailView: {
                         name: 'IP address detail',
                         tabFilter: function(args) {
-                            var item = args.context.ipAddresses[0];
-
-                            // Get VPN data
-                            $.ajax({
-                                url: createURL('listRemoteAccessVpns'),
-                                data: {
-                                    listAll: true,
-                                    publicipid: item.id
-                                },
-                                dataType: 'json',
-                                async: false,
-                                success: function(vpnResponse) {
-                                    var isVPNEnabled = vpnResponse.listremoteaccessvpnsresponse.count;
-                                    if (isVPNEnabled) {
-                                        item.vpnenabled = true;
-                                        item.remoteaccessvpn = vpnResponse.listremoteaccessvpnsresponse.remoteaccessvpn[0];
-                                    };
-                                },
-                                error: function(data) {
-                                    args.response.error(parseXMLHttpResponse(data));
-                                }
-                            });
+                            var item = args.context.ipAddresses[0];                           
 
                             var disabledTabs = [];
                             var ipAddress = args.context.ipAddresses[0];
@@ -5935,7 +5928,7 @@
     };
 
     function getExtaPropertiesForIpObj(ipObj, args) {	    
-        if (!('vpc' in args.context)) { //from Guest Network section            
+        if (!('vpc' in args.context)) { //***** Guest Network section > Guest Network page > IP Address page *****          
 			var services = args.context.networks[0].service;
 			if(services != null) {
 				for(var i = 0; i < services.length; i++) {                                    		
@@ -5959,12 +5952,32 @@
 						if (isVPNEnabled) {
 							ipObj.vpnenabled = true;
 							ipObj.remoteaccessvpn = vpnResponse.listremoteaccessvpnsresponse.remoteaccessvpn[0];
-						};
+						} else {
+							ipObj.vpnenabled = false;
+						}
 					}
 				});
 			}			
-        } else { //from VPC section            
-            ipObj.networkOfferingHavingVpnService = false; //VPN is not supported in IP in VPC, so hardcode it as false
+        } else { //***** VPC section > Configuration VPC > Router > Public IP Addresses *****    
+        	if (ipObj.issourcenat) { //VPC sourceNAT IP: supports VPN 
+        		$.ajax({
+					url: createURL('listRemoteAccessVpns'),
+					data: {
+						listAll: true,
+						publicipid: ipObj.id
+					},
+					async: false,
+					success: function(vpnResponse) {
+						var isVPNEnabled = vpnResponse.listremoteaccessvpnsresponse.count;
+						if (isVPNEnabled) {
+							ipObj.vpnenabled = true;
+							ipObj.remoteaccessvpn = vpnResponse.listremoteaccessvpnsresponse.remoteaccessvpn[0];
+						} else {
+							ipObj.vpnenabled = false;
+						}
+					}
+				});             		
+        	} 
         }
     }
 
