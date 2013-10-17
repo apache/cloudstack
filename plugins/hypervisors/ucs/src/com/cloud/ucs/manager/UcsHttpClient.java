@@ -59,7 +59,7 @@ public class UcsHttpClient {
         ResponseEntity<String> rsp = template.exchange(uri, HttpMethod.POST, req, String.class);
         if (rsp.getStatusCode() == org.springframework.http.HttpStatus.OK) {
             return rsp.getBody();
-        } else if (rsp.getStatusCode().value() == 302) {
+        } else if (rsp.getStatusCode() == org.springframework.http.HttpStatus.FOUND) {
             // Handle HTTPS redirect
             // Ideal way might be to configure from add manager API
             // for using either HTTP / HTTPS
@@ -68,7 +68,8 @@ public class UcsHttpClient {
             if (location == null) {
                 throw new CloudRuntimeException("Call failed: Bad redirect from UCS Manager");
             }
-            call(location, body);
+            //call(location, body);
+            rsp = template.exchange(location, HttpMethod.POST, req, String.class);
         }
         if (rsp.getStatusCode() != org.springframework.http.HttpStatus.OK) {
             String err = String.format("http status: %s, response body:%s", rsp.getStatusCode().toString(), rsp.getBody());
