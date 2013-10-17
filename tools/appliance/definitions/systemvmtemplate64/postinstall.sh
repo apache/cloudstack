@@ -203,12 +203,12 @@ configure_services() {
   cd /opt
   wget --no-check-certificate $snapshot_url -O cloudstack.tar.gz
   tar -zxvf cloudstack.tar.gz
-  cp -rv $snapshot_dir/patches/systemvm/debian/config/* /
-  cp -rv $snapshot_dir/patches/systemvm/debian/vpn/* /
+  cp -rv $snapshot_dir/systemvm/patches/debian/config/* /
+  cp -rv $snapshot_dir/systemvm/patches/debian/vpn/* /
   mkdir -p /usr/share/cloud/
-  cd $snapshot_dir/patches/systemvm/debian/config
+  cd $snapshot_dir/systemvm/patches/debian/config
   tar -cvf /usr/share/cloud/cloud-scripts.tar *
-  cd $snapshot_dir/patches/systemvm/debian/vpn
+  cd $snapshot_dir/systemvm/patches/debian/vpn
   tar -rvf /usr/share/cloud/cloud-scripts.tar *
   cd /opt
   rm -fr $snapshot_dir cloudstack.tar.gz
