@@ -2459,7 +2459,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             s_logger.debug("Found " + vpns.size() + " vpn(s) to apply as a part of domR " + router + " start.");
             if (!vpns.isEmpty()) {
                 for (RemoteAccessVpn vpn : vpns) {
-                    createApplyVpnCommands(vpn, router, cmds);
+                    createApplyVpnCommands(true, vpn, router, cmds);
                 }
             }
    
@@ -2661,7 +2661,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             }
 
             Commands cmds = new Commands(Command.OnError.Stop);
-            createApplyVpnCommands(vpn, router, cmds);
+            createApplyVpnCommands(true, vpn, router, cmds);
 
             try {
                 _agentMgr.send(router.getHostId(), cmds);
@@ -2705,19 +2705,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         for (VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
                 Commands cmds = new Commands(Command.OnError.Continue);
-                IpAddress ip = _networkModel.getIp(vpn.getServerAddressId());
-
-                RemoteAccessVpnCfgCommand removeVpnCmd = new RemoteAccessVpnCfgCommand(false, ip.getAddress().addr(),
-                        vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey());
-                removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
-                removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(network.getId(), router.getId()));
-                removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-
-                DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-                removeVpnCmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
-
-                cmds.addCommand(removeVpnCmd);
-
+                createApplyVpnCommands(false, vpn, router, cmds);
                 result = result && sendCommandsToRouter(router, cmds);
             } else if (router.getState() == State.Stopped) {
                 s_logger.debug("Router " + router + " is in Stopped state, not sending deleteRemoteAccessVpn command to it");
@@ -3018,6 +3006,28 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         });
     }
 
+    protected void createApplyVpnUsersCommand(List<? extends VpnUser> users, VirtualRouter router, Commands cmds)
+    {
+    	List<VpnUser> addUsers = new ArrayList<VpnUser>();
+    	List<VpnUser> removeUsers = new ArrayList<VpnUser>();
+    	for (VpnUser user : users) {
+    		if (user.getState() == VpnUser.State.Add || user.getState() == VpnUser.State.Active) {
+    			addUsers.add(user);
+    		} else if (user.getState() == VpnUser.State.Revoke) {
+    			removeUsers.add(user);
+    		}
+    	}
+
+    	VpnUsersCfgCommand cmd = new VpnUsersCfgCommand(addUsers, removeUsers);
+    	cmd.setAccessDetail(NetworkElementCommand.ACCOUNT_ID, String.valueOf(router.getAccountId()));
+    	cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
+    	cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+    	DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
+    	cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+    	
+    	cmds.addCommand("users", cmd);
+    }
+    
     @Override
     //FIXME add partial success and STOP state support
     public String[] applyVpnUsers(Network network, List<? extends VpnUser> users, List<DomainRouterVO> routers) throws ResourceUnavailableException {
@@ -3037,27 +3047,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             }
 
             Commands cmds = new Commands(Command.OnError.Continue);
-            List<VpnUser> addUsers = new ArrayList<VpnUser>();
-            List<VpnUser> removeUsers = new ArrayList<VpnUser>();
-            for (VpnUser user : users) {
-                if (user.getState() == VpnUser.State.Add || user.getState() == VpnUser.State.Active) {
-                    addUsers.add(user);
-                } else if (user.getState() == VpnUser.State.Revoke) {
-                    removeUsers.add(user);
-                }
-            }
-
-            VpnUsersCfgCommand cmd = new VpnUsersCfgCommand(addUsers, removeUsers);
-            cmd.setAccessDetail(NetworkElementCommand.ACCOUNT_ID, String.valueOf(router.getAccountId()));
-            cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, network.getCidr());
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(network.getId(), router.getId()));
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-            DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-            cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
-
-            cmds.addCommand(cmd);
-
+            createApplyVpnUsersCommand(users, router, cmds);
 
             // Currently we receive just one answer from the agent. In the future we have to parse individual answers and set
             // results accordingly
@@ -3333,34 +3323,20 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     }
 
-    private void createApplyVpnCommands(RemoteAccessVpn vpn, VirtualRouter router, Commands cmds) {
+    protected void createApplyVpnCommands(boolean isCreate, RemoteAccessVpn vpn, VirtualRouter router, Commands cmds) {
         List<VpnUserVO> vpnUsers = _vpnUsersDao.listByAccount(vpn.getAccountId());
-        List<VpnUser> addUsers = new ArrayList<VpnUser>();
-        List<VpnUser> removeUsers = new ArrayList<VpnUser>();
-        for (VpnUser user : vpnUsers) {
-            if (user.getState() == VpnUser.State.Add) {
-                addUsers.add(user);
-            } else if (user.getState() == VpnUser.State.Revoke) {
-                removeUsers.add(user);
-            }
-        }
 
-        VpnUsersCfgCommand addUsersCmd = new VpnUsersCfgCommand(addUsers, removeUsers);
-        addUsersCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
-        addUsersCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(vpn.getNetworkId(), router.getId()));
-        addUsersCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        createApplyVpnUsersCommand(vpnUsers, router, cmds);
 
         IpAddress ip = _networkModel.getIp(vpn.getServerAddressId());
 
-        RemoteAccessVpnCfgCommand startVpnCmd = new RemoteAccessVpnCfgCommand(true, ip.getAddress().addr(),
+        RemoteAccessVpnCfgCommand startVpnCmd = new RemoteAccessVpnCfgCommand(isCreate, ip.getAddress().addr(),
                 vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey());
         startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
-        startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(vpn.getNetworkId(), router.getId()));
         startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         startVpnCmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
-        cmds.addCommand("users", addUsersCmd);
         cmds.addCommand("startVpn", startVpnCmd);
     }
     
