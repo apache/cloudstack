@@ -13785,6 +13785,7 @@
                                 title: 'Blades',
                                 listView: {
                                     id: 'blades',
+                                    hideSearchBar: true,
                                     fields: {                                        
                                         chassis: {
                                             label: 'Chassis'

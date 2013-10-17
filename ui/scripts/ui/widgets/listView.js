@@ -1580,7 +1580,10 @@
                 detailView: listViewData.detailView
             });
         createFilters($toolbar, listViewData.filters);
-        createSearchBar($toolbar, listViewData);
+                
+        if (listViewData.hideSearchBar != true) {
+            createSearchBar($toolbar, listViewData);
+        }
 
         loadBody(
             $table,
