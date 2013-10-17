@@ -70,8 +70,12 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
             }
         }
 
-        if (!found) {
-            s_logger.debug("template " + templateId + " is not in store:" + store.getId() + ", type:" + store.getRole());
+        if (s_logger.isDebugEnabled()) {
+            if (!found) {
+                s_logger.debug("template " + templateId + " is not in store:" + store.getId() + ", type:" + store.getRole());
+            } else {
+                s_logger.debug("template " + templateId + " is already in store:" + store.getId() + ", type:" + store.getRole());
+            }
         }
 
         TemplateObject tmpl = TemplateObject.getTemplate(templ, store);

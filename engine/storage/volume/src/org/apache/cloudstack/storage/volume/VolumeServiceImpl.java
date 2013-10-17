@@ -400,8 +400,12 @@ public class VolumeServiceImpl implements VolumeService {
 
         VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.findByPoolTemplate(dataStore.getId(), template.getId());
         if (templatePoolRef == null) {
-            throw new CloudRuntimeException("Failed to find template " + template.getUniqueName()
-                    + " in VMTemplateStoragePool");
+            throw new CloudRuntimeException("Failed to find template " + template.getUniqueName() + " in storage pool " + dataStore.getId());
+        } else {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Found template " + template.getUniqueName() + " in storage pool " + dataStore.getId() + " with VMTemplateStoragePool id: "
+                        + templatePoolRef.getId());
+            }
         }
         long templatePoolRefId = templatePoolRef.getId();
         CreateBaseImageContext<CreateCmdResult> context = new CreateBaseImageContext<CreateCmdResult>(null, volume,
@@ -411,9 +415,15 @@ public class VolumeServiceImpl implements VolumeService {
 
         int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(
                 configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Acquire lock on VMTemplateStoragePool " + templatePoolRefId + " with timeout " + storagePoolMaxWaitSeconds + " seconds");
+        }
         templatePoolRef = _tmpltPoolDao.acquireInLockTable(templatePoolRefId, storagePoolMaxWaitSeconds);
 
         if (templatePoolRef == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.info("Unable to acquire lock on VMTemplateStoragePool " + templatePoolRefId);
+            }
             templatePoolRef = _tmpltPoolDao.findByPoolTemplate(dataStore.getId(), template.getId());
             if (templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready ) {
                 s_logger.info("Unable to acquire lock on VMTemplateStoragePool " + templatePoolRefId + ", But Template " + template.getUniqueName() + " is already copied to primary storage, skip copying");
@@ -423,17 +433,15 @@ public class VolumeServiceImpl implements VolumeService {
             throw new CloudRuntimeException("Unable to acquire lock on VMTemplateStoragePool: " + templatePoolRefId);
         }
 
+        if (s_logger.isDebugEnabled()) {
+            s_logger.info("lock is acquired for VMTemplateStoragePool " + templatePoolRefId);
+        }
         try {
-            // lock acquired
             if (templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready ) {
                 s_logger.info("Template " + template.getUniqueName() + " is already copied to primary storage, skip copying");
                 createVolumeFromBaseImageAsync(volume, templateOnPrimaryStoreObj, dataStore, future);
                 return;
             }
-            // remove the leftover hanging entry
-            dataStore.delete(templateOnPrimaryStoreObj);
-            // create a new entry to restart copying process
-            templateOnPrimaryStoreObj = dataStore.create(template);
             templateOnPrimaryStoreObj.processEvent(Event.CreateOnlyRequested);
             motionSrv.copyAsync(template, templateOnPrimaryStoreObj, caller);
         } catch (Throwable e) {
@@ -442,6 +450,10 @@ public class VolumeServiceImpl implements VolumeService {
             VolumeApiResult result = new VolumeApiResult(volume);
             result.setResult(e.toString());
             future.complete(result);
+        } finally {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.info("releasing lock for VMTemplateStoragePool " + templatePoolRefId);
+            }
             _tmpltPoolDao.releaseFromLockTable(templatePoolRefId);
         }
         return;
