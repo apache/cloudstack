@@ -191,7 +191,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
             if (e instanceof NetworkRuleConflictException) {
                 throw (NetworkRuleConflictException) e;
             }
-            throw new CloudRuntimeException("Unable to add lb rule for ip address " + newRule.getSourceIpAddressId(), e);
+            throw new CloudRuntimeException("Unable to add lb rule for ip address " + newRuleFinal.getSourceIpAddressId(), e);
         } finally {
             if (!success && newRule != null) {
                 _lbMgr.removeLBRule(newRule);

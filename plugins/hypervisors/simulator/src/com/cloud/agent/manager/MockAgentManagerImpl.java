@@ -42,8 +42,10 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+
 import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -51,6 +53,7 @@ import org.springframework.stereotype.Component;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.HashMap;
@@ -159,7 +162,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
             mockHost.setVersion(this.getClass().getPackage().getImplementationVersion());
             mockHost.setResource("com.cloud.agent.AgentRoutingResource");
 
-            Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+            TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
             try {
                 txn.start();
                 mockHost = _mockHostDao.persist(mockHost);
@@ -170,7 +173,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
                 throw new CloudRuntimeException("Error configuring agent", ex);
             } finally {
                 txn.close();
-                txn = Transaction.open(Transaction.CLOUD_DB);
+                txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
                 txn.close();
             }
 
@@ -256,7 +259,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
 
 
         private void handleSystemVMStop() {
-            Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+            TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
             try {
                 if (this.mode.equalsIgnoreCase("Stop")) {
                     txn.start();
@@ -279,7 +282,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
                 throw new CloudRuntimeException("Unable to get host " + guid + " due to " + ex.getMessage(), ex);
             } finally {
                 txn.close();
-                txn = Transaction.open(Transaction.CLOUD_DB);
+                txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
                 txn.close();
             }
 
@@ -323,7 +326,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
             mockHost.setVersion(this.getClass().getPackage().getImplementationVersion());
             mockHost.setResource(resource);
             mockHost.setVmId(vmId);
-            Transaction simtxn = Transaction.open(Transaction.SIMULATOR_DB);
+            TransactionLegacy simtxn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
             try {
                 simtxn.start();
                 mockHost = _mockHostDao.persist(mockHost);
@@ -334,7 +337,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
                         + ex.getMessage(), ex);
             } finally {
                 simtxn.close();
-                simtxn = Transaction.open(Transaction.CLOUD_DB);
+                simtxn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
                 simtxn.close();
             }
 
@@ -366,7 +369,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
 
     @Override
     public MockHost getHost(String guid) {
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
             MockHost _host = _mockHostDao.findByGuid(guid);
@@ -382,7 +385,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
             throw new CloudRuntimeException("Unable to get host " + guid + " due to " + ex.getMessage(), ex);
         } finally {
             txn.close();
-            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             txn.close();
         }
     }
@@ -391,7 +394,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
     public GetHostStatsAnswer getHostStatistic(GetHostStatsCommand cmd) {
         String hostGuid = cmd.getHostGuid();
         MockHost host = null;
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
             host = _mockHostDao.findByGuid(hostGuid);
@@ -404,11 +407,11 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
             throw new CloudRuntimeException("Unable to get host " + hostGuid + " due to " + ex.getMessage(), ex);
         } finally {
             txn.close();
-            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             txn.close();
         }
 
-        Transaction vmtxn = Transaction.open(Transaction.SIMULATOR_DB);
+        TransactionLegacy vmtxn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             vmtxn.start();
             List<MockVMVO> vms = _mockVmDao.findByHostId(host.getId());
@@ -435,7 +438,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
                     + ex.getMessage(), ex);
         } finally {
             vmtxn.close();
-            vmtxn = Transaction.open(Transaction.CLOUD_DB);
+            vmtxn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             vmtxn.close();
         }
     }

@@ -72,7 +72,7 @@ import com.cloud.simulator.dao.MockVMDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
 import org.apache.log4j.Logger;
@@ -111,7 +111,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             int cpuHz, long ramSize,
             String bootArgs, String hostGuid) {
 
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         MockHost host = null;
         MockVm vm = null;
         try {
@@ -128,7 +128,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             throw new CloudRuntimeException("Unable to start VM " + vmName, ex);
         } finally {
             txn.close();
-            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             txn.close();
         }
 
@@ -153,7 +153,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             } else if (vmName.startsWith("i-")) {
                 vm.setType("User");
             }
-            txn = Transaction.open(Transaction.SIMULATOR_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
             try {
                 txn.start();
                 vm = _mockVmDao.persist((MockVMVO) vm);
@@ -163,13 +163,13 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
                 throw new CloudRuntimeException("unable to save vm to db " + vm.getName(), ex);
             } finally {
                 txn.close();
-                txn = Transaction.open(Transaction.CLOUD_DB);
+                txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
                 txn.close();
             }
         } else {
             if(vm.getState() == State.Stopped) {
                 vm.setState(State.Running);
-                txn = Transaction.open(Transaction.SIMULATOR_DB);
+                txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
                 try {
                     txn.start();
                     _mockVmDao.update(vm.getId(), (MockVMVO)vm);
@@ -179,7 +179,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
                     throw new CloudRuntimeException("unable to update vm " + vm.getName(), ex);
                 } finally {
                     txn.close();
-                    txn = Transaction.open(Transaction.CLOUD_DB);
+                    txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
                     txn.close();
                 }
             }
@@ -230,7 +230,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
     @Override
     public Map<String, MockVMVO> getVms(String hostGuid) {
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
             List<MockVMVO> vms = _mockVmDao.findByHostGuid(hostGuid);
@@ -245,7 +245,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             throw new CloudRuntimeException("unable to fetch vms  from host " + hostGuid, ex);
         } finally {
             txn.close();
-            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             txn.close();
         }
     }
@@ -282,7 +282,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
     @Override
     public Map<String, State> getVmStates(String hostGuid) {
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
             Map<String, State> states = new HashMap<String, State>();
@@ -301,7 +301,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             throw new CloudRuntimeException("unable to fetch vms  from host " + hostGuid, ex);
         } finally {
             txn.close();
-            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             txn.close();
         }
     }
@@ -338,7 +338,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
     @Override
     public CheckVirtualMachineAnswer checkVmState(CheckVirtualMachineCommand cmd) {
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
             MockVMVO vm = _mockVmDao.findByVmName(cmd.getVmName());
@@ -353,7 +353,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             throw new CloudRuntimeException("unable to fetch vm state " + cmd.getVmName(), ex);
         } finally {
             txn.close();
-            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             txn.close();
         }
     }
@@ -378,7 +378,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
     @Override
     public MigrateAnswer Migrate(MigrateCommand cmd, SimulatorInfo info) {
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
             String vmName = cmd.getVmName();
@@ -405,14 +405,14 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             throw new CloudRuntimeException("unable to migrate vm " + cmd.getVmName(), ex);
         } finally {
             txn.close();
-            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             txn.close();
         }
     }
 
     @Override
     public PrepareForMigrationAnswer prepareForMigrate(PrepareForMigrationCommand cmd) {
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         VirtualMachineTO vmTo = cmd.getVirtualMachine();
         try {
             txn.start();
@@ -425,7 +425,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             throw new CloudRuntimeException("unable to find vm " + vmTo.getName(), ex);
         } finally {
             txn.close();
-            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             txn.close();
             return new PrepareForMigrationAnswer(cmd);
         }
@@ -438,7 +438,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
     @Override
     public Answer CleanupNetworkRules(CleanupNetworkRulesCmd cmd, SimulatorInfo info) {
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
             List<MockSecurityRulesVO> rules = _mockSecurityDao.findByHost(info.getHostUuid());
@@ -455,7 +455,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             throw new CloudRuntimeException("unable to clean up rules", ex);
         } finally {
             txn.close();
-            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             txn.close();
         }
     }
@@ -503,7 +503,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
     @Override
     public StopAnswer stopVM(StopCommand cmd) {
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
             String vmName = cmd.getVmName();
@@ -523,14 +523,14 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             throw new CloudRuntimeException("unable to stop vm " + cmd.getVmName(), ex);
         } finally {
             txn.close();
-            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             txn.close();
         }
     }
 
     @Override
     public RebootAnswer rebootVM(RebootCommand cmd) {
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
             MockVm vm = _mockVmDao.findByVmName(cmd.getVmName());
@@ -545,7 +545,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             throw new CloudRuntimeException("unable to stop vm " + cmd.getVmName(), ex);
         } finally {
             txn.close();
-            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             txn.close();
         }
     }
