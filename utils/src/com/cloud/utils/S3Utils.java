@@ -171,6 +171,10 @@ public final class S3Utils {
         assert clientOptions != null;
         assert req != null;
 
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(format("Sending stream as S3 object using PutObjectRequest"));
+        }
+        
         acquireClient(clientOptions).putObject(req);
 
     }

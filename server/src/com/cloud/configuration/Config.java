@@ -377,7 +377,8 @@ public enum Config {
 
     // object store
     S3EnableRRS("Advanced", ManagementServer.class, Boolean.class, "s3.rrs.enabled", "false", "enable s3 reduced redundancy storage", null),
-    S3EnableMultiPartUpload("Advanced", ManagementServer.class, Boolean.class, "s3.multipart.enabled", "true", "enable s3 multipart upload", null),
+    S3MaxSingleUploadSize("Advanced",  ManagementServer.class, Integer.class, "s3.singleupload.max.size", "5", "The maximum size limit for S3 single part upload API(in GB). If it is set to 0, then it means always use multi-part upload to upload object to S3. " +
+            "If it is set to -1, then it means always use single-part upload to upload object to S3. ", null),
 
     // Ldap
     LdapBasedn("Advanced", ManagementServer.class, String.class, "ldap.basedn", null, "Sets the basedn for LDAP", null),
