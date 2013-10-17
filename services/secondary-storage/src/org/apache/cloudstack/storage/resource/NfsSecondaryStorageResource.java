@@ -820,9 +820,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     }
                 }
             }
+
+            long srcSize = srcFile.length();
             ImageFormat format = this.getTemplateFormat(srcFile.getName());
             String key = destData.getPath() + S3Utils.SEPARATOR + srcFile.getName();
-            if (s3.isMultipartEnabled()){
+            if (!s3.getSingleUpload(srcSize)){
                 mputFile(s3, srcFile, bucket, key); 
             } else{
                 putFile(s3, srcFile, bucket, key);
