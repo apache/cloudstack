@@ -31,7 +31,6 @@ import com.cloud.host.Status;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
-import com.cloud.vm.VirtualMachine.State;
 
 @Local(value=Investigator.class)
 public class CheckOnAgentInvestigator extends AdapterBase implements Investigator {
