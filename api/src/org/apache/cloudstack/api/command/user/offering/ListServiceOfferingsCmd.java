@@ -25,12 +25,10 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -66,7 +64,7 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.SYSTEM_VM_TYPE, type=CommandType.STRING, description="the system VM type. Possible types are \"consoleproxy\", \"secondarystoragevm\" or \"domainrouter\".")
     private String systemVmType;
     
-    @Parameter(name = ApiConstants.RESOURCE_TAG, type = CommandType.MAP, description = "List service offerings by resource tags (key/value pairs)", since="4.3")
+    @Parameter(name = ApiConstants.RESOURCE_TAGS, type = CommandType.MAP, description = "List service offerings by resource tags (key/value pairs)", since="4.3")
     private Map resourceTag;
 
 

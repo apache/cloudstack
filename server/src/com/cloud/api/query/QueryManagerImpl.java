@@ -2536,9 +2536,23 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         String keyword = cmd.getKeyword();
         String name = cmd.getName();
         String networkType = cmd.getNetworkType();
-
+        Map<String, String> resourceTags = cmd.getTags();
+        
+        SearchBuilder<DataCenterJoinVO> sb = _dcJoinDao.createSearchBuilder();
+        if (resourceTags != null && !resourceTags.isEmpty()) {
+            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+            for (int count=0; count < resourceTags.size(); count++) {
+                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+                tagSearch.cp();
+            }
+            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+            sb.groupBy(sb.entity().getId());
+            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+        }
+        
         Filter searchFilter = new Filter(DataCenterJoinVO.class, null, false, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchCriteria<DataCenterJoinVO> sc = _dcJoinDao.createSearchCriteria();
+        SearchCriteria<DataCenterJoinVO> sc = sb.create();
 
         if (networkType != null) {
             sc.addAnd("networkType", SearchCriteria.Op.EQ, networkType);
@@ -2685,6 +2699,16 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                     }
 
                 }
+            }
+        }
+        
+        if (resourceTags != null && !resourceTags.isEmpty()) {
+            int count = 0;
+            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.Zone.toString());
+            for (String key : resourceTags.keySet()) {
+                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
+                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), resourceTags.get(key));
+                count++;
             }
         }
 

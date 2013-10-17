@@ -89,7 +89,8 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         List<ResourceTagJoinVO> resourceTags = ApiDBUtils.listResourceTagViewByResourceUUID(offering.getUuid(), TaggedResourceType.ServiceOffering);
         for (ResourceTagJoinVO resourceTag : resourceTags) {            
             ResourceTagResponse tagResponse = ApiDBUtils.newResourceTagResponse(resourceTag, false);
-            offeringResponse.addTag(tagResponse);        }
+            offeringResponse.addTag(tagResponse);
+        }
 
         return offeringResponse;
     }

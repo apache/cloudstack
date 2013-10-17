@@ -16,7 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -98,6 +100,15 @@ public class ZoneResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.LOCAL_STORAGE_ENABLED) @Param(description="true if local storage offering enabled, false otherwise")
     private boolean localStorageEnabled;
+    
+    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with zone.",
+            responseObject = ResourceTagResponse.class, since="4.3")
+    private Set<ResourceTagResponse> tags;
+    
+    
+    public ZoneResponse(){
+        tags = new LinkedHashSet<ResourceTagResponse>();
+    }
 
     public void setId(String id) {
         this.id = id;
@@ -198,4 +209,8 @@ public class ZoneResponse extends BaseResponse {
 	public void setIp6Dns2(String ip6Dns2) {
 		this.ip6Dns2 = ip6Dns2;
 	}
+	
+    public void addTag(ResourceTagResponse tag){
+        this.tags.add(tag);
+    }
 }
