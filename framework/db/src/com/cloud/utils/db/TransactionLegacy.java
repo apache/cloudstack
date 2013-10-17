@@ -117,10 +117,16 @@ public class TransactionLegacy {
     private TransactionLegacy _prev = null;
 
     public static TransactionLegacy currentTxn() {
+        return currentTxn(true);
+    }
+    
+    protected static TransactionLegacy currentTxn(boolean check) {
         TransactionLegacy txn = tls.get();
-        assert txn != null : "No Transaction on stack.  Did you mark the method with @DB?";
-
-        assert checkAnnotation(3, txn) : "Did you even read the guide to use Transaction...IOW...other people's code? Try method can't be private.  What about @DB? hmmm... could that be it? " + txn;
+        if (check) {
+            assert txn != null : "No Transaction on stack.  Did you mark the method with @DB?";
+    
+            assert checkAnnotation(4, txn) : "Did you even read the guide to use Transaction...IOW...other people's code? Try method can't be private.  What about @DB? hmmm... could that be it? " + txn;
+        }
         return txn;
     }
 
@@ -397,6 +403,10 @@ public class TransactionLegacy {
         return lockMaster.release(name);
     }
 
+    /**
+     * @deprecated Use {@link Transaction} for new code
+     */
+    @Deprecated
     public void start() {
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("txn: start requested by: " + buildName());
@@ -1170,5 +1180,13 @@ public class TransactionLegacy {
         return new PoolingDataSource(
            /* connectionPool */poolableConnectionFactory.getPool());
     }
-    
+
+    /**
+     * Used for unit testing primarily
+     * 
+     * @param conn
+     */
+    protected void setConnection(Connection conn) {
+        this._conn = conn;
+    }
 }

@@ -27,7 +27,12 @@ public class Transaction {
 
     public static <T> T execute(TransactionCallback<T> callback) {
         String name = "tx-" + counter.incrementAndGet();
-        TransactionLegacy txn = TransactionLegacy.open(name);
+        short databaseId = TransactionLegacy.CLOUD_DB;
+        TransactionLegacy currentTxn = TransactionLegacy.currentTxn(false);
+        if ( currentTxn != null ) {
+            databaseId = currentTxn.getDatabaseId();
+        }
+        TransactionLegacy txn = TransactionLegacy.open(name, databaseId, false);
         try {
             txn.start();
             T result = callback.doInTransaction(STATUS);
