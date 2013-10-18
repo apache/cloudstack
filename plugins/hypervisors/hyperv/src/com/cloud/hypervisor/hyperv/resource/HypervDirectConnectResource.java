@@ -64,13 +64,17 @@ import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
+import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.to.DhcpTO;
+import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.serializer.GsonHelper;
@@ -363,7 +367,9 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
             answer = execute((VmDataCommand) cmd);
         } else if (clazz == SavePasswordCommand.class) {
             answer = execute((SavePasswordCommand) cmd);
-        }
+        } else  if (clazz == SetFirewallRulesCommand.class) {
+            answer = execute((SetFirewallRulesCommand)cmd);
+        } 
 
         else {
 
@@ -430,6 +436,84 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
         return new Answer(cmd);
     }
 
+
+    protected SetFirewallRulesAnswer execute(SetFirewallRulesCommand cmd) {
+        String controlIp = getRouterSshControlIp(cmd);
+        String[] results = new String[cmd.getRules().length];
+        FirewallRuleTO[] allrules = cmd.getRules();
+        FirewallRule.TrafficType trafficType = allrules[0].getTrafficType();
+        String egressDefault = cmd.getAccessDetail(NetworkElementCommand.FIREWALL_EGRESS_DEFAULT);
+
+        String[][] rules = cmd.generateFwRules();
+        String args = "";
+        args += " -F ";
+        if (trafficType == FirewallRule.TrafficType.Egress){
+            args+= " -E ";
+            if (egressDefault.equals("true")) {
+                args+= " -P 1 ";
+            } else if (egressDefault.equals("System")) {
+                args+= " -P 2 ";
+            } else {
+                args+= " -P 0 ";
+            }
+        }
+
+        StringBuilder sb = new StringBuilder();
+        String[] fwRules = rules[0];
+        if (fwRules.length > 0) {
+            for (int i = 0; i < fwRules.length; i++) {
+                sb.append(fwRules[i]).append(',');
+            }
+            args += " -a " + sb.toString();
+        }
+
+        try {
+            Pair<Boolean, String> result = null;
+
+            if (trafficType == FirewallRule.TrafficType.Egress){
+                result = SshHelper.sshExecute(controlIp,
+                        DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(),
+                        null, "/root/firewallRule_egress.sh " + args);
+            } else {
+                result = SshHelper.sshExecute(controlIp,
+                        DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(),
+                        null, "/root/firewall_rule.sh " + args);
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                if (trafficType == FirewallRule.TrafficType.Egress){
+                    s_logger.debug("Executing script on domain router " + controlIp
+                            + ": /root/firewallRule_egress.sh " + args);
+                } else {
+                    s_logger.debug("Executing script on domain router " + controlIp
+                            + ": /root/firewall_rule.sh " + args);
+                }
+            }
+
+
+            if (!result.first()) {
+                s_logger.error("SetFirewallRulesCommand failure on setting one rule. args: "
+                        + args);
+                //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
+                for (int i=0; i < results.length; i++) {
+                    results[i] = "Failed";
+                }
+
+                return new SetFirewallRulesAnswer(cmd, false, results);
+            }
+        } catch (Throwable e) {
+            s_logger.error("SetFirewallRulesCommand(args: " + args
+                    + ") failed on setting one rule due to "
+                     ,e);
+            //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
+            for (int i=0; i < results.length; i++) {
+                results[i] = "Failed";
+            }
+            return new SetFirewallRulesAnswer(cmd, false, results);
+        }
+
+        return new SetFirewallRulesAnswer(cmd, true, results);
+    }
 
 
     protected Answer execute(VmDataCommand cmd) {
