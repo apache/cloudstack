@@ -932,15 +932,36 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             if (!allocatorAvoidOutput.shouldAvoid(host)) {
                 // there's some host in the cluster that is not yet in avoid set
                 avoidAllHosts = false;
+                break;
             }
         }
 
-        List<StoragePoolVO> allPoolsInCluster = _storagePoolDao.findPoolsByTags(clusterVO.getDataCenterId(),
-                clusterVO.getPodId(), clusterVO.getId(), null);
-        for (StoragePoolVO pool : allPoolsInCluster) {
-            if (!allocatorAvoidOutput.shouldAvoid(pool)) {
-                // there's some pool in the cluster that is not yet in avoid set
-                avoidAllPools = false;
+        // Cluster can be put in avoid set in following scenarios:
+        // 1. If storage allocators haven't put any pools in avoid set means either no pools in cluster 
+        // or pools not suitable for the allocators to handle.
+        // 2. If all 'shared' or 'local' pools are in avoid set
+        if  (allocatorAvoidOutput.getPoolsToAvoid() != null && !allocatorAvoidOutput.getPoolsToAvoid().isEmpty()) {
+            // check shared pools
+            List<StoragePoolVO> allPoolsInCluster = _storagePoolDao.findPoolsByTags(clusterVO.getDataCenterId(),
+                    clusterVO.getPodId(), clusterVO.getId(), null);
+            for (StoragePoolVO pool : allPoolsInCluster) {
+                if (!allocatorAvoidOutput.shouldAvoid(pool)) {
+                    // there's some pool in the cluster that is not yet in avoid set
+                    avoidAllPools = false;
+                    break;
+                }
+            }
+            if (avoidAllPools) {
+                // check local pools
+                List<StoragePoolVO> allLocalPoolsInCluster = _storagePoolDao.findLocalStoragePoolsByTags(clusterVO.getDataCenterId(),
+                        clusterVO.getPodId(), clusterVO.getId(), null);
+                for (StoragePoolVO pool : allLocalPoolsInCluster) {
+                    if (!allocatorAvoidOutput.shouldAvoid(pool)) {
+                        // there's some pool in the cluster that is not yet in avoid set
+                        avoidAllPools = false;
+                        break;
+                    }
+                }
             }
         }
 

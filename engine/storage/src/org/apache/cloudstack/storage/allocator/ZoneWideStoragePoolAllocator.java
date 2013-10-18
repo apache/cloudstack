@@ -57,21 +57,25 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
                storageMgr.storagePoolHasEnoughSpace(requestVolumes, pool);
     }
 
-	@Override
-	protected List<StoragePool> select(DiskProfile dskCh,
-			VirtualMachineProfile vmProfile,
-			DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
-	    s_logger.debug("ZoneWideStoragePoolAllocator to find storage pool");
-		List<StoragePool> suitablePools = new ArrayList<StoragePool>();
+
+    @Override
+    protected List<StoragePool> select(DiskProfile dskCh,
+            VirtualMachineProfile vmProfile,
+            DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+        s_logger.debug("ZoneWideStoragePoolAllocator to find storage pool");
+
+        if (dskCh.useLocalStorage()) {
+            return null;
+        }
+
+        List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 
         List<StoragePoolVO> storagePools = _storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), dskCh.getTags());
-
         if (storagePools == null) {
             storagePools = new ArrayList<StoragePoolVO>();
         }
 
         List<StoragePoolVO> anyHypervisorStoragePools = new ArrayList<StoragePoolVO>();
-
         for (StoragePoolVO storagePool : storagePools) {
             if (HypervisorType.Any.equals(storagePool.getHypervisor())) {
                 anyHypervisorStoragePools.add(storagePool);
@@ -79,9 +83,7 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
         }
 
         List<StoragePoolVO> storagePoolsByHypervisor = _storagePoolDao.findZoneWideStoragePoolsByHypervisor(plan.getDataCenterId(), dskCh.getHypervisorType());
-
         storagePools.retainAll(storagePoolsByHypervisor);
-
         storagePools.addAll(anyHypervisorStoragePools);
 
         // add remaining pools in zone, that did not match tags, to avoid set
@@ -95,15 +97,16 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
             if (suitablePools.size() == returnUpTo) {
                 break;
             }
-            StoragePool pol = (StoragePool) this.dataStoreMgr.getPrimaryDataStore(storage.getId());
-            if (filter(avoid, pol, dskCh, plan)) {
-                suitablePools.add(pol);
+            StoragePool storagePool = (StoragePool) this.dataStoreMgr.getPrimaryDataStore(storage.getId());
+            if (filter(avoid, storagePool, dskCh, plan)) {
+                suitablePools.add(storagePool);
             } else {
-                avoid.addPool(pol.getId());
+                avoid.addPool(storagePool.getId());
             }
         }
         return suitablePools;
     }
+
     @Override
     protected List<StoragePool> reorderPoolsByNumberOfVolumes(DeploymentPlan plan, List<StoragePool> pools,
                                                               Account account) {
