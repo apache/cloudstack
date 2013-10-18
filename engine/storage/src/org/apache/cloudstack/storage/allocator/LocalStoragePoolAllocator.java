@@ -67,14 +67,13 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
     @Override
     protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile,
             DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
-
-        List<StoragePool> suitablePools = new ArrayList<StoragePool>();
-
         s_logger.debug("LocalStoragePoolAllocator trying to find storage pool to fit the vm");
 
         if (!dskCh.useLocalStorage()) {
-            return suitablePools;
+            return null;
         }
+
+        List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 
         // data disk and host identified from deploying vm (attach volume case)
         if (dskCh.getType() == Volume.Type.DATADISK && plan.getHostId() != null) {
@@ -82,10 +81,10 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
             for (StoragePoolHostVO hostPool : hostPools) {
                 StoragePoolVO pool = _storagePoolDao.findById(hostPool.getPoolId());
                 if (pool != null && pool.isLocal()) {
-                    StoragePool pol = (StoragePool) this.dataStoreMgr.getPrimaryDataStore(pool.getId());
-                    if (filter(avoid, pol, dskCh, plan)) {
+                    StoragePool storagePool = (StoragePool) this.dataStoreMgr.getPrimaryDataStore(pool.getId());
+                    if (filter(avoid, storagePool, dskCh, plan)) {
                         s_logger.debug("Found suitable local storage pool " + pool.getId() + ", adding to list");
-                        suitablePools.add(pol);
+                        suitablePools.add(storagePool);
                     } else {
                         avoid.addPool(pool.getId());
                     }
@@ -106,9 +105,9 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 if (suitablePools.size() == returnUpTo) {
                     break;
                 }
-                StoragePool pol = (StoragePool) this.dataStoreMgr.getPrimaryDataStore(pool.getId());
-                if (filter(avoid, pol, dskCh, plan)) {
-                    suitablePools.add(pol);
+                StoragePool storagePool = (StoragePool) this.dataStoreMgr.getPrimaryDataStore(pool.getId());
+                if (filter(avoid, storagePool, dskCh, plan)) {
+                    suitablePools.add(storagePool);
                 } else {
                     avoid.addPool(pool.getId());
                 }
