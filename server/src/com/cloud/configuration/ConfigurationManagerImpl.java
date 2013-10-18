@@ -2922,6 +2922,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // Check if there are any errors with the IP range
             checkPublicIpRangeErrors(zoneId, vlanId, vlanGateway, vlanNetmask, startIP, endIP);
 
+            // check and throw exception if there is portable IP range that overlaps with ip range being configure
+            if (checkOverlapPortableIpRange(_regionDao.getRegionId(), startIP, endIP)) {
+                throw new InvalidParameterValueException("Ip  range: " + startIP + "-" + endIP +
+                        " overlaps with a portable" + " IP range already configured in the region " + _regionDao.getRegionId());
+            }
+
             // Throw an exception if this subnet overlaps with subnet on other VLAN,
             // if this is ip range extension, gateway, network mask should be same and ip range should not overlap
 
@@ -4809,13 +4815,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 throw new InvalidParameterValueException("Invalid vlan id " + vlanId);
             }
 
-            // check if there is zone vlan with same id
             List<DataCenterVO> zones= _zoneDao.listAllZones();
             if (zones != null && !zones.isEmpty()) {
                 for (DataCenterVO zone: zones) {
+                    // check if there is zone vlan with same id
                     if (_vlanDao.findByZoneAndVlanId(zone.getId(), vlanId) != null)
                         throw new InvalidParameterValueException("Found a VLAN id " + vlanId + " already existing in"
                                 + " zone " + zone.getUuid() + " that conflicts with VLAN id of the portable ip range being configured");
+                    //check if there is a public ip range that overlaps with portable ip range being created
+                    checkOverlapPublicIpRange(zone.getId(), startIP, endIP);
                 }
             }
 
@@ -4921,6 +4929,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         long newEndIp = NetUtils.ip2Long(newEndIpStr);
 
         List<PortableIpRangeVO> existingPortableIPRanges = _portableIpRangeDao.listByRegionId(regionId);
+
+        if (existingPortableIPRanges == null || existingPortableIPRanges.isEmpty()) {
+            return false;
+        }
+
         for (PortableIpRangeVO portableIpRange : existingPortableIPRanges) {
             String ipRangeStr = portableIpRange.getIpRange();
             String[] range = ipRangeStr.split("-");
