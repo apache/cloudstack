@@ -713,7 +713,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         // start or stop VM first, if revert from stopped state to running state, or from running to stopped
         if(userVm.getState() == VirtualMachine.State.Stopped && vmSnapshotVo.getType() == VMSnapshot.Type.DiskAndMemory){
             try {
-                vm = _itMgr.advanceStart(userVm, new HashMap<VirtualMachineProfile.Param, Object>(), callerUser, owner);
+                vm = _itMgr.advanceStart(userVm, new HashMap<VirtualMachineProfile.Param, Object>(), callerUser, owner, null);
                 hostId = vm.getHostId();
             } catch (Exception e) {
                 s_logger.error("Start VM " + userVm.getInstanceName() + " before reverting failed due to " + e.getMessage());

@@ -720,6 +720,10 @@
     <property name="name" value="FirstFitPlanner"/>
   </bean>
 
+  <bean id="SkipHeuresticsPlanner" class="com.cloud.deploy.SkipHeuresticsPlanner">
+    <property name="name" value="SkipHeuresticsPlanner"/>
+  </bean>
+
   <bean id="resourceManagerImpl" class="com.cloud.resource.ResourceManagerImpl" >
     <property name="PodAllocators" value="#{podAllocators.Adapters}" />
     <property name="Discoverers" value="#{resourceDiscoverers.Adapters}" />
@@ -728,6 +732,7 @@
   <bean id="highAvailabilityManagerExtImpl" class="com.cloud.ha.HighAvailabilityManagerExtImpl" >
     <property name="Investigators" value="#{haInvestigators.Adapters}" />
     <property name="FenceBuilders" value="#{haFenceBuilders.Adapters}" />
+    <property name="HAPlanners" value="#{haPlanners.Adapters}" />
   </bean>
 
   <bean id="clusteredVirtualMachineManagerImpl" class="com.cloud.vm.ClusteredVirtualMachineManagerImpl" >

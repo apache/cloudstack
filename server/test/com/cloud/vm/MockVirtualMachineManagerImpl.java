@@ -133,7 +133,7 @@ public class MockVirtualMachineManagerImpl extends ManagerBase implements Virtua
     }
 
     @Override
-    public boolean migrateAway(Type type, long vmid, long hostId) throws InsufficientServerCapacityException, VirtualMachineMigrationException {
+    public boolean migrateAway(Type type, long vmid, long hostId, DeploymentPlanner planner) throws InsufficientServerCapacityException, VirtualMachineMigrationException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -201,14 +201,14 @@ public class MockVirtualMachineManagerImpl extends ManagerBase implements Virtua
     }
 
     @Override
-    public <T extends VMInstanceVO> T advanceStart(T vm, Map<Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException,
+    public <T extends VMInstanceVO> T advanceStart(T vm, Map<Param, Object> params, User caller, Account account, DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
     ConcurrentOperationException, OperationTimedoutException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public <T extends VMInstanceVO> T advanceStart(T vm, Map<Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) throws InsufficientCapacityException,
+    public <T extends VMInstanceVO> T advanceStart(T vm, Map<Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy, DeploymentPlanner planner) throws InsufficientCapacityException,
     ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException {
         // TODO Auto-generated method stub
         return null;

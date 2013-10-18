@@ -29,6 +29,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.deploy.HAPlanner;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
@@ -131,6 +132,14 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 	public void setFenceBuilders(List<FenceBuilder> _fenceBuilders) {
 		this._fenceBuilders = _fenceBuilders;
 	}
+
+    List<HAPlanner> _haPlanners;
+    public List<HAPlanner> getHAPlanners() {
+        return _haPlanners;
+    }
+    public void setHAPlanners(List<HAPlanner> _haPlanners) {
+        this._haPlanners = _haPlanners;
+    }
 
 	@Inject
     AgentManager _agentMgr;
@@ -530,8 +539,18 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             if (_haTag != null) {
                 params.put(VirtualMachineProfile.Param.HaTag, _haTag);
             }
-            VMInstanceVO started = _itMgr.advanceStart(vm, params, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
 
+            // First try starting the vm with its original planner, if it doesn't succeed send HAPlanner as its an emergency.
+            VMInstanceVO started = null;
+            try{
+                started = _itMgr.advanceStart(vm, params, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), null);
+            }finally {
+                // Send HAPlanner.
+                if(started == null){
+                    s_logger.warn("Failed to deploy vm " + vmId + " with original planner, sending HAPlanner");
+                    started = _itMgr.advanceStart(vm, params, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), _haPlanners.get(0));
+                }
+            }
             if (started != null) {
                 s_logger.info("VM is now restarted: " + vmId + " on " + started.getHostId());
                 return null;
@@ -571,11 +590,21 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             work.setStep(Step.Migrating);
             _haDao.update(work.getId(), work);
 
-            if (!_itMgr.migrateAway(work.getType(), vmId, srcHostId)) {
-                s_logger.warn("Unable to migrate vm from " + srcHostId);
-                _resourceMgr.maintenanceFailed(srcHostId);
+            // First try starting the vm with its original planner, if it doesn't succeed send HAPlanner as its an emergency.
+            boolean result = false;
+            try {
+                result = _itMgr.migrateAway(work.getType(), vmId, srcHostId, null);
+            }finally{
+                if(!result){
+                    s_logger.warn("Failed to deploy vm " + vmId + " with original planner, sending HAPlanner");
+                    if (!_itMgr.migrateAway(work.getType(), vmId, srcHostId, _haPlanners.get(0))) {
+                        s_logger.warn("Unable to migrate vm from " + srcHostId);
+                        _resourceMgr.maintenanceFailed(srcHostId);
+                    }
+                }
+                return null;
             }
-            return null;
+
         } catch (InsufficientServerCapacityException e) {
             s_logger.warn("Insufficient capacity for migrating a VM.");
             _resourceMgr.maintenanceFailed(srcHostId);

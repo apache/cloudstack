@@ -74,7 +74,6 @@ import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.AlertManager;
@@ -575,7 +574,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public <T extends VMInstanceVO> T start(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) throws InsufficientCapacityException,
     ResourceUnavailableException {
         try {
-            return advanceStart(vm, params, caller, account, planToDeploy);
+            return advanceStart(vm, params, caller, account, planToDeploy, null);
         } catch (ConcurrentOperationException e) {
             throw new CloudRuntimeException("Unable to start a VM due to concurrent operation", e);
         }
@@ -708,13 +707,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException,
+    public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlanner planner) throws InsufficientCapacityException,
     ConcurrentOperationException, ResourceUnavailableException {
-        return advanceStart(vm, params, caller, account, null);
+        return advanceStart(vm, params, caller, account, null, planner);
     }
 
     @Override
-    public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
+    public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy, DeploymentPlanner planner)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         long vmId = vm.getId();
         VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
@@ -823,7 +822,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, account, params);
                 DeployDestination dest = null;
                 try {
-                    dest = _dpMgr.planDeployment(vmProfile, plan, avoids);
+                    dest = _dpMgr.planDeployment(vmProfile, plan, avoids, planner);
                 } catch (AffinityConflictException e2) {
                     s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
                     throw new CloudRuntimeException(
@@ -1876,7 +1875,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public boolean migrateAway(VirtualMachine.Type vmType, long vmId, long srcHostId) throws InsufficientServerCapacityException, VirtualMachineMigrationException {
+    public boolean migrateAway(VirtualMachine.Type vmType, long vmId, long srcHostId, DeploymentPlanner planner) throws InsufficientServerCapacityException, VirtualMachineMigrationException {
         VirtualMachineGuru<? extends VMInstanceVO> vmGuru = _vmGurus.get(vmType);
         VMInstanceVO vm = vmGuru.findById(vmId);
         if (vm == null) {
@@ -1902,7 +1901,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         while (true) {
 
             try {
-                dest = _dpMgr.planDeployment(profile, plan, excludes);
+                dest = _dpMgr.planDeployment(profile, plan, excludes, planner);
             } catch (AffinityConflictException e2) {
                 s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
                 throw new CloudRuntimeException(
@@ -3156,7 +3155,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         DeployDestination dest = null;
 
         try {
-            dest = _dpMgr.planDeployment(profile, plan, excludes);
+            dest = _dpMgr.planDeployment(profile, plan, excludes, null);
         } catch (AffinityConflictException e2) {
             s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
             throw new CloudRuntimeException(

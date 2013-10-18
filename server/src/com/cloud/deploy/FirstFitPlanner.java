@@ -263,7 +263,12 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
         return capacityList;
     }
 
-    private void removeClustersCrossingThreshold(List<Long> clusterListForVmAllocation, ExcludeList avoid,
+    /**
+     * This method should remove the clusters crossing capacity threshold
+     * to avoid further vm allocation on it
+     *
+     */
+    protected void removeClustersCrossingThreshold(List<Long> clusterListForVmAllocation, ExcludeList avoid,
             VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan) {
 
         List<Short> capacityList = getCapacitiesForCheckingThreshold();

@@ -68,7 +68,6 @@ import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -207,7 +206,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
     @Override
     public DeployDestination planDeployment(VirtualMachineProfile<? extends VirtualMachine> vmProfile,
-            DeploymentPlan plan, ExcludeList avoids) throws InsufficientServerCapacityException,
+                                            DeploymentPlan plan, ExcludeList avoids, DeploymentPlanner planner) throws InsufficientServerCapacityException,
             AffinityConflictException {
 
         // call affinitygroup chain
@@ -242,19 +241,21 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
 
         ServiceOffering offering = vmProfile.getServiceOffering();
-        String plannerName = offering.getDeploymentPlanner();
-        if (plannerName == null) {
-            if (vm.getHypervisorType() == HypervisorType.BareMetal) {
-                plannerName = "BareMetalPlanner";
-            } else {
-                plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
+        if(planner == null){
+            String plannerName = offering.getDeploymentPlanner();
+            if (plannerName == null) {
+                if (vm.getHypervisorType() == HypervisorType.BareMetal) {
+                    plannerName = "BareMetalPlanner";
+                } else {
+                    plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
+                }
             }
-        }
-        DeploymentPlanner planner = null;
-        for (DeploymentPlanner plannerInList : _planners) {
-            if (plannerName.equals(plannerInList.getName())) {
-                planner = plannerInList;
-                break;
+
+            for (DeploymentPlanner plannerInList : _planners) {
+                if (plannerName.equals(plannerInList.getName())) {
+                    planner = plannerInList;
+                    break;
+                }
             }
         }
 

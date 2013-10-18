@@ -33,10 +33,8 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.alert.AlertManager;
-import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -250,7 +248,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     if (restart) {
 
                         if (this.vmMgr.advanceStart(consoleProxy, null, user,
-                                account) == null) {
+                                account, null) == null) {
                             String errorMsg = "There was an error starting the console proxy id: "
                                     + vmInstance.getId()
                                     + " on another storage pool, cannot enable primary storage maintenance";
@@ -298,7 +296,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     }
 
                     if (restart) {
-                        if (vmMgr.advanceStart(secStrgVm, null, user, account) == null) {
+                        if (vmMgr.advanceStart(secStrgVm, null, user, account, null) == null) {
                             String errorMsg = "There was an error starting the ssvm id: "
                                     + vmInstance.getId()
                                     + " on another storage pool, cannot enable primary storage maintenance";
@@ -329,7 +327,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     }
 
                     if (restart) {
-                        if (vmMgr.advanceStart(domR, null, user, account) == null) {
+                        if (vmMgr.advanceStart(domR, null, user, account, null) == null) {
                             String errorMsg = "There was an error starting the domain router id: "
                                     + vmInstance.getId()
                                     + " on another storage pool, cannot enable primary storage maintenance";
@@ -413,7 +411,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
 
                     ConsoleProxyVO consoleProxy = _consoleProxyDao
                             .findById(vmInstance.getId());
-                    if (vmMgr.advanceStart(consoleProxy, null, user, account) == null) {
+                    if (vmMgr.advanceStart(consoleProxy, null, user, account, null) == null) {
                         String msg = "There was an error starting the console proxy id: "
                                 + vmInstance.getId()
                                 + " on storage pool, cannot complete primary storage maintenance";
@@ -431,7 +429,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                         VirtualMachine.Type.SecondaryStorageVm)) {
                     SecondaryStorageVmVO ssVm = _secStrgDao.findById(vmInstance
                             .getId());
-                    if (vmMgr.advanceStart(ssVm, null, user, account) == null) {
+                    if (vmMgr.advanceStart(ssVm, null, user, account, null) == null) {
                         String msg = "There was an error starting the ssvm id: "
                                 + vmInstance.getId()
                                 + " on storage pool, cannot complete primary storage maintenance";
@@ -448,7 +446,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 if (vmInstance.getType().equals(
                         VirtualMachine.Type.DomainRouter)) {
                     DomainRouterVO domR = _domrDao.findById(vmInstance.getId());
-                    if (vmMgr.advanceStart(domR, null, user, account) == null) {
+                    if (vmMgr.advanceStart(domR, null, user, account, null) == null) {
                         String msg = "There was an error starting the domR id: "
                                 + vmInstance.getId()
                                 + " on storage pool, cannot complete primary storage maintenance";
@@ -465,7 +463,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 if (vmInstance.getType().equals(VirtualMachine.Type.User)) {
                     UserVmVO userVm = userVmDao.findById(vmInstance.getId());
 
-                    if (vmMgr.advanceStart(userVm, null, user, account) == null) {
+                    if (vmMgr.advanceStart(userVm, null, user, account, null) == null) {
 
                         String msg = "There was an error starting the user vm id: "
                                 + vmInstance.getId()
