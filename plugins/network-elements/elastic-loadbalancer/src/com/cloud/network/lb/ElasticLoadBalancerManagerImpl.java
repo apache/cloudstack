@@ -536,7 +536,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     private DomainRouterVO start(DomainRouterVO elbVm, User user, Account caller, Map<Param, Object> params) throws StorageUnavailableException, InsufficientCapacityException,
     ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting ELB VM " + elbVm);
-        _itMgr.start(elbVm.getUuid(), params);
+        _itMgr.easyStart(elbVm.getUuid(), params);
         return _routerDao.findById(elbVm.getId());
     }
     

@@ -85,9 +85,9 @@ public interface VirtualMachineManager extends Manager {
         DeploymentPlan plan,
         HypervisorType hyperType) throws InsufficientCapacityException;
 
-    void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params);
+    void easyStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params);
 
-    void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy);
+    void easyStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy);
 
     void stop(String vmUuid) throws ResourceUnavailableException;
 

@@ -4832,7 +4832,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (needRestart) {
             try {
-                _itMgr.start(vm.getUuid(), null);
+                _itMgr.easyStart(vm.getUuid(), null);
             } catch (Exception e) {
                 s_logger.debug("Unable to start VM " + vm.getUuid(), e);
                 CloudRuntimeException ex = new CloudRuntimeException(

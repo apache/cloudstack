@@ -808,7 +808,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             throws StorageUnavailableException, InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting Internal LB VM " + internalLbVm);
-        _itMgr.start(internalLbVm.getUuid(), params, null);
+        _itMgr.easyStart(internalLbVm.getUuid(), params, null);
         if (internalLbVm.isStopPending()) {
             s_logger.info("Clear the stop pending flag of Internal LB VM " + internalLbVm.getHostName() + " after start router successfully!");
             internalLbVm.setStopPending(false);

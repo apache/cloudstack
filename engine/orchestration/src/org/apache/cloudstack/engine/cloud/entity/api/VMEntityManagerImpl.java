@@ -224,7 +224,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
             DataCenterDeployment reservedPlan = new DataCenterDeployment(vm.getDataCenterId(),
                     vmReservation.getPodId(), vmReservation.getClusterId(), vmReservation.getHostId(), null, null);
             try {
-                _itMgr.start(vm.getUuid(), params, reservedPlan);
+                _itMgr.easyStart(vm.getUuid(), params, reservedPlan);
             } catch (Exception ex) {
                 // Retry the deployment without using the reservation plan
                 DataCenterDeployment plan = new DataCenterDeployment(0, null, null, null, null, null);
@@ -233,11 +233,11 @@ public class VMEntityManagerImpl implements VMEntityManager {
                     plan.setAvoids(reservedPlan.getAvoids());
                 }
 
-                _itMgr.start(vm.getUuid(), params, plan);
+                _itMgr.easyStart(vm.getUuid(), params, plan);
             }
         } else {
             // no reservation found. Let VirtualMachineManager retry
-            _itMgr.start(vm.getUuid(), params, null);
+            _itMgr.easyStart(vm.getUuid(), params, null);
         }
 
     }

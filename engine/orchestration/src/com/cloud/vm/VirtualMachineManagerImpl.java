@@ -35,6 +35,7 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -53,9 +54,11 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.Outcome;
 import org.apache.cloudstack.framework.jobs.dao.VmWorkJobDao;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -291,10 +294,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     DeploymentPlanningManager _dpMgr;
 
-    @Inject protected MessageBus _messageBus;
-    @Inject protected VirtualMachinePowerStateSync _syncMgr;
-    @Inject protected VmWorkJobDao _workJobDao;
-    @Inject protected AsyncJobManager _jobMgr;
+    @Inject 
+    protected MessageBus _messageBus;
+    
+    @Inject 
+    protected VirtualMachinePowerStateSync _syncMgr;
+    
+    @Inject 
+    protected VmWorkJobDao _workJobDao;
+    
+    @Inject 
+    protected AsyncJobManager _jobMgr;
     
     Map<VirtualMachine.Type, VirtualMachineGuru> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru>();
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
@@ -315,9 +325,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         "On destroy, force-stop takes this value ", true);
     static final ConfigKey<Integer> ClusterDeltaSyncInterval = new ConfigKey<Integer>("Advanced", Integer.class, "sync.interval", "60", "Cluster Delta sync interval in seconds",
         false);
-    
-    protected static final ConfigKey<Long> PingInterval = new ConfigKey<Long>("Advanced",
-            Long.class, "ping.interval", "60", "Ping interval in seconds", false);
+
+    static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced",
+            Long.class, "vm.job.check.interval", "3000", "Interval in milliseconds to check if the job is complete", true);
+    static final ConfigKey<Long> VmJobTimeout = new ConfigKey<Long>("Advanced",
+            Long.class, "vm.job.timeout", "600000", "Time in milliseconds to wait before attempting to cancel a job", true);
+    static final ConfigKey<Long> PingInterval = new ConfigKey<Long>("Advanced",
+            Long.class, "ping.interval", "60", "Ping interval in seconds", true);
 
     ScheduledExecutorService _executor = null;
 
@@ -493,6 +507,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public boolean start() {
+        _executor.scheduleAtFixedRate(new TransitionTask(), PingInterval.value(), PingInterval.value(), TimeUnit.SECONDS);
         _executor.scheduleAtFixedRate(new CleanupTask(), VmOpCleanupInterval.value(), VmOpCleanupInterval.value(), TimeUnit.SECONDS);
         cancelWorkItems(_nodeId);
         return true;
@@ -512,6 +527,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         _nodeId = ManagementServerNode.getManagementServerId();
 
         _agentMgr.registerForHostEvents(this, true, true, true);
+        _messageBus.subscribe(Topics.VM_POWER_STATE, MessageDispatcher.getDispatcher(this));
 
         return true;
     }
@@ -521,20 +537,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) {
-        start(vmUuid, params, null);
+    public void easyStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) {
+        easyStart(vmUuid, params, null);
     }
 
     @Override
-    public void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy) {
+    public void easyStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy) {
+        Outcome<VirtualMachine> outcome = start(vmUuid, params, planToDeploy);
         try {
-            advanceStart(vmUuid, params, planToDeploy);
-        } catch (ConcurrentOperationException e) {
-            throw new CloudRuntimeException("Unable to start a VM due to concurrent operation", e).add(VirtualMachine.class, vmUuid);
-        } catch (InsufficientCapacityException e) {
-            throw new CloudRuntimeException("Unable to start a VM due to insufficient capacity", e).add(VirtualMachine.class, vmUuid);
-        } catch (ResourceUnavailableException e) {
-            throw new CloudRuntimeException("Unable to start a VM due to concurrent operation", e).add(VirtualMachine.class, vmUuid);
+            outcome.get(VmJobTimeout.value(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            // FIXME: What to do
+        } catch (java.util.concurrent.ExecutionException e) {
+            // FIXME: What to do
+        } catch (TimeoutException e) {
+            // FIXME: What to do
         }
     }
 
@@ -639,6 +656,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         throw new ConcurrentOperationException("Unable to change the state of " + vm);
     }
 
+/*    
     protected <T extends VMInstanceVO> boolean changeState(T vm, Event event, Long hostId, ItWorkVO work, Step step) throws NoTransitionException {
         // FIXME: We should do this better.
         Step previousStep = work.getStep();
@@ -653,7 +671,24 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
         }
     }
+*/
+    
+    protected boolean changeState(VMInstanceVO vm, Event event, Long hostId, VmWorkJobVO work, Step step) throws NoTransitionException {
+        VmWorkJobVO.Step previousStep = work.getStep();
+        
+        Transaction txn = Transaction.currentTxn();
 
+        txn.start();
+        work.setStep(step);
+        boolean result = stateTransitTo(vm, event, hostId);
+        if (!result) {
+            work.setStep(previousStep);
+        }
+        _workJobDao.update(work.getId(), work);
+        txn.commit();
+        return result;
+    }
+    
     protected boolean areAffinityGroupsAssociated(VirtualMachineProfile vmProfile) {
         VirtualMachine vm = vmProfile.getVirtualMachine();
         long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
