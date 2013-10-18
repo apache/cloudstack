@@ -549,13 +549,14 @@ public class VirtualRoutingResource implements Manager {
         final String vmIpAddress = cmd.getVmIpAddress();
         final String local =  vmName;
 
-        // Run save_password_to_domr.sh
-        final String result = savePassword(routerPrivateIPAddress, vmIpAddress, password, local);
+        String args = "-v " + vmIpAddress;
+        args += " -p " + password;
+        
+        String result = routerProxy("savepassword.sh", routerPrivateIPAddress, args);
         if (result != null) {
             return new Answer(cmd, false, "Unable to save password to DomR.");
-        } else {
-            return new Answer(cmd);
         }
+        return new Answer(cmd);
     }
 
     protected Answer execute (final DhcpEntryCommand cmd) {
@@ -1167,11 +1168,6 @@ public class VirtualRoutingResource implements Manager {
         _loadbPath = findScript("call_loadbalancer.sh");
         if (_loadbPath == null) {
             throw new ConfigurationException("Unable to find the call_loadbalancer.sh");
-        }
-
-        _savepasswordPath = findScript("save_password_to_domr.sh");
-        if(_savepasswordPath == null) {
-            throw new ConfigurationException("Unable to find save_password_to_domr.sh");
         }
 
         _dhcpEntryPath = findScript("dhcp_entry.sh");

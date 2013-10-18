@@ -25,10 +25,13 @@ then
     if [ $diff -lt 30 ]
     then
         echo Keepalived process is dead! >> [RROUTER_LOG]
+        [RROUTER_BIN_PATH]/services.sh stop >> [RROUTER_LOG] 2>&1
+        [RROUTER_BIN_PATH]/disable_pubip.sh >> [RROUTER_LOG] 2>&1
+        [RROUTER_BIN_PATH]/primary-backup.sh fault >> [RROUTER_LOG] 2>&1
         service keepalived stop >> [RROUTER_LOG] 2>&1
         service conntrackd stop >> [RROUTER_LOG] 2>&1
 	pkill -9 keepalived >> [RROUTER_LOG] 2>&1
-        [RROUTER_BIN_PATH]/disable_pubip.sh >> [RROUTER_LOG] 2>&1
+	pkill -9 conntrackd >> [RROUTER_LOG] 2>&1
         echo Status: FAULT \(keepalived process is dead\) >> [RROUTER_LOG]
         exit
     fi
