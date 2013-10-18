@@ -2890,7 +2890,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
 
             // Make sure the netmask is valid
-            if (!NetUtils.isValidIp(vlanNetmask)) {
+            if (!NetUtils.isValidNetmask(vlanNetmask)) {
                 throw new InvalidParameterValueException("Please specify a valid netmask");
             }
         }
@@ -2906,6 +2906,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (ipv4) {
             String newCidr = NetUtils.getCidrFromGatewayAndNetmask(vlanGateway, vlanNetmask);
+
+            //Make sure start and end ips are with in the range of cidr calculated for this gateway and netmask {
+            if(!NetUtils.isIpWithtInCidrRange(vlanGateway, newCidr) || !NetUtils.isIpWithtInCidrRange(startIP, newCidr) || !NetUtils.isIpWithtInCidrRange(endIP, newCidr)) {
+                throw new InvalidParameterValueException("Please specify a valid IP range or valid netmask or valid gateway");
+            }
 
             // Check if the new VLAN's subnet conflicts with the guest network
             // in

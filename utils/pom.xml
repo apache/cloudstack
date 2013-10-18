@@ -112,6 +112,11 @@
       <groupId>org.owasp.esapi</groupId>
       <artifactId>esapi</artifactId>
     </dependency>
+    <dependency>
+        <groupId>commons-net</groupId>
+        <artifactId>commons-net</artifactId>
+        <version>3.3</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
