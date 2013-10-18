@@ -1412,6 +1412,26 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         throw new CloudRuntimeException(errMsg);
     }
 
+    private void checkAndResetPriorityOfRedundantRouter(List<DomainRouterVO> routers) {
+    	boolean allStopped = true;
+    	for (DomainRouterVO router : routers) {
+    		if (!router.getIsRedundantRouter() || router.getState() != VirtualMachine.State.Stopped) {
+    			allStopped = false;
+    			break;
+    		}
+    	}
+    	if (!allStopped) {
+    		return;
+    	}
+    	
+    	for (DomainRouterVO router : routers) {
+    		// getUpdatedPriority() would update the value later
+    		router.setPriority(0);
+    		router.setIsPriorityBumpUp(false);
+    		_routerDao.update(router.getId(), router);
+    	}
+    }
+    
     @DB
     protected List<DomainRouterVO> findOrDeployVirtualRouterInGuestNetwork(Network guestNetwork, DeployDestination dest, Account owner,
             boolean isRedundant, Map<Param, Object> params) throws ConcurrentOperationException,
@@ -1482,6 +1502,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             int routerCount = 1;
             if (isRedundant) {
                 routerCount = 2;
+                //Check current redundant routers, if possible(all routers are stopped), reset the priority
+                if (routers.size() != 0) {
+              	    checkAndResetPriorityOfRedundantRouter(routers);
+                }
             }
         
                 // If old network is redundant but new is single router, then routers.size() = 2 but routerCount = 1
