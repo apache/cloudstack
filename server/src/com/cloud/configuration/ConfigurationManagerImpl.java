@@ -2927,11 +2927,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // Check if there are any errors with the IP range
             checkPublicIpRangeErrors(zoneId, vlanId, vlanGateway, vlanNetmask, startIP, endIP);
 
-            // check and throw exception if there is portable IP range that overlaps with ip range being configure
-            if (checkOverlapPortableIpRange(_regionDao.getRegionId(), startIP, endIP)) {
-                throw new InvalidParameterValueException("Ip  range: " + startIP + "-" + endIP +
-                        " overlaps with a portable" + " IP range already configured in the region " + _regionDao.getRegionId());
-            }
+            checkConflictsWithPortableIpRange(zoneId, vlanId, vlanGateway, vlanNetmask, startIP, endIP);
 
             // Throw an exception if this subnet overlaps with subnet on other VLAN,
             // if this is ip range extension, gateway, network mask should be same and ip range should not overlap
@@ -3390,6 +3386,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (endIP != null && !NetUtils.sameSubnet(endIP, vlanGateway, vlanNetmask)) {
             throw new InvalidParameterValueException(
                     "Please ensure that your end IP is in the same subnet as your IP range's gateway, as per the IP range's netmask.");
+        }
+    }
+
+    private void checkConflictsWithPortableIpRange(long zoneId, String vlanId, String vlanGateway, String vlanNetmask,
+                                          String startIP, String endIP) {
+        // check and throw exception if there is portable IP range that overlaps with public ip range being configured
+        if (checkOverlapPortableIpRange(_regionDao.getRegionId(), startIP, endIP)) {
+            throw new InvalidParameterValueException("Ip range: " + startIP + "-" + endIP
+                    + " overlaps with a portable" + " IP range already configured in the region " + _regionDao.getRegionId());
+        }
+
+        // verify and throw exception if the VLAN Id is used by any portable IP range
+        List<PortableIpRangeVO> existingPortableIPRanges = _portableIpRangeDao.listByRegionId(_regionDao.getRegionId());
+        if (existingPortableIPRanges != null && !existingPortableIPRanges.isEmpty()) {
+            for (PortableIpRangeVO portableIpRange : existingPortableIPRanges) {
+                if (portableIpRange.getVlanTag().equalsIgnoreCase(vlanId)) {
+                    throw new InvalidParameterValueException("The VLAN tag " + vlanId
+                            + " is already being used for portable ip range in this region");
+                }
+            }
         }
     }
 
