@@ -78,6 +78,9 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
             description="the ID of the zone")
     private Long zoneId;
 
+    @Parameter(name=ApiConstants.SHOW_REMOVED, type=CommandType.BOOLEAN, description="show removed ISOs as well")
+    private Boolean showRemoved;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -113,6 +116,10 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
 
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public Boolean getShowRemoved() {
+        return (showRemoved != null ? showRemoved : false);
     }
 
     public boolean listInReadyState() {

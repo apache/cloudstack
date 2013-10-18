@@ -82,7 +82,7 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name="created_on_store")
     private Date createdOnStore = null;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name=GenericDao.REMOVED)
     @Temporal(TemporalType.TIMESTAMP)
     private Date removed;
 
