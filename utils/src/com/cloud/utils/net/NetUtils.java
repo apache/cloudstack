@@ -170,8 +170,8 @@ public class NetUtils {
                     }
                     line = output.readLine();
                 }
-            } catch( Exception e ) { 
-            }    	
+            } catch( Exception e ) {
+            }
             return null;
         } else {
             NetworkInterface nic = null;
@@ -659,7 +659,7 @@ public class NetUtils {
     /**
      * Given a cidr, this method returns an ip address within the range but
      * is not in the avoid list.
-     * 
+     *
      * @param startIp ip that the cidr starts with
      * @param size size of the cidr
      * @param avoid set of ips to avoid
@@ -674,7 +674,7 @@ public class NetUtils {
      * Given a cidr, this method returns an ip address within the range but
      * is not in the avoid list. 
      * Note: the gateway address has to be specified in the avoid list
-     * 
+     *
      * @param cidr ip that the cidr starts with
      * @param size size of the cidr
      * @param avoid set of ips to avoid
@@ -825,7 +825,7 @@ public class NetUtils {
                 return supersetOrSubset.isSuperset;
             }
             else if (cidrALong[1] == cidrBLong[1]) {
-             //this implies both the cidrs are equal
+                //this implies both the cidrs are equal
                 return supersetOrSubset.sameSubnet;
             }
             // implies cidrA is subset of cidrB
@@ -1070,7 +1070,7 @@ public class NetUtils {
             s_logger.info("Invalid value of cidr " + cidrA);
             return false;
         }
-         if (!NetUtils.isValidCIDR(cidrB)) {
+        if (!NetUtils.isValidCIDR(cidrB)) {
             s_logger.info("Invalid value of cidr " + cidrB);
             return false;
         }
@@ -1120,7 +1120,7 @@ public class NetUtils {
         if (instanceName.contains("-") || instanceName.contains(" ") || instanceName.contains("+")) {
             s_logger.warn("Instance name can not contain hyphen, spaces and \"+\" char");
             return false;
-        } 
+        }
 
         return true;
     }
@@ -1199,172 +1199,172 @@ public class NetUtils {
         return true;
     }
 
-	public static boolean isValidIpv6(String ip) {
-		try {
-			IPv6Address address = IPv6Address.fromString(ip);
-		} catch (IllegalArgumentException ex) {
-			return false;
-		}
-		return true;
-	}
+    public static boolean isValidIpv6(String ip) {
+        try {
+            IPv6Address address = IPv6Address.fromString(ip);
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
+        return true;
+    }
 
-	public static boolean isValidIp6Cidr(String ip6Cidr) {
-		try {
-			IPv6Network network = IPv6Network.fromString(ip6Cidr);
-		} catch (IllegalArgumentException ex) {
-			return false;
-		}
-		return true;
-	}
+    public static boolean isValidIp6Cidr(String ip6Cidr) {
+        try {
+            IPv6Network network = IPv6Network.fromString(ip6Cidr);
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
+        return true;
+    }
 
-	public static int getIp6CidrSize(String ip6Cidr) {
-		IPv6Network network = null;
-		try {
-			network = IPv6Network.fromString(ip6Cidr);
-		} catch (IllegalArgumentException ex) {
-			return 0;
-		}
-		return network.getNetmask().asPrefixLength();
-	}
+    public static int getIp6CidrSize(String ip6Cidr) {
+        IPv6Network network = null;
+        try {
+            network = IPv6Network.fromString(ip6Cidr);
+        } catch (IllegalArgumentException ex) {
+            return 0;
+        }
+        return network.getNetmask().asPrefixLength();
+    }
 
-	// Can cover 127 bits
-	public static String getIp6FromRange(String ip6Range) {
-    	String[] ips = ip6Range.split("-");
-    	String startIp = ips[0];
-    	IPv6Address start = IPv6Address.fromString(startIp);
-    	BigInteger gap = countIp6InRange(ip6Range);
-    	BigInteger next = new BigInteger(gap.bitLength(), _rand);
-    	while (next.compareTo(gap) >= 0) {
-    		next = new BigInteger(gap.bitLength(), _rand);
-    	}
-    	BigInteger startInt = convertIPv6AddressToBigInteger(start);
-    	BigInteger resultInt = startInt.add(next);
-    	InetAddress resultAddr;
-		try {
-			resultAddr = InetAddress.getByAddress(resultInt.toByteArray());
-		} catch (UnknownHostException e) {
-			return null;
-		}
-    	IPv6Address ip = IPv6Address.fromInetAddress(resultAddr);
-    	return ip.toString();
-	}
+    // Can cover 127 bits
+    public static String getIp6FromRange(String ip6Range) {
+        String[] ips = ip6Range.split("-");
+        String startIp = ips[0];
+        IPv6Address start = IPv6Address.fromString(startIp);
+        BigInteger gap = countIp6InRange(ip6Range);
+        BigInteger next = new BigInteger(gap.bitLength(), _rand);
+        while (next.compareTo(gap) >= 0) {
+            next = new BigInteger(gap.bitLength(), _rand);
+        }
+        BigInteger startInt = convertIPv6AddressToBigInteger(start);
+        BigInteger resultInt = startInt.add(next);
+        InetAddress resultAddr;
+        try {
+            resultAddr = InetAddress.getByAddress(resultInt.toByteArray());
+        } catch (UnknownHostException e) {
+            return null;
+        }
+        IPv6Address ip = IPv6Address.fromInetAddress(resultAddr);
+        return ip.toString();
+    }
 
-	//RFC3315, section 9.4
-	public static String getDuidLL(String macAddress) {
-		String duid = "00:03:00:01:" + macAddress;
-		return duid;
-	}
-	
-	private static BigInteger convertIPv6AddressToBigInteger(IPv6Address addr) {
-		InetAddress inetAddr;
-		try {
-			inetAddr = addr.toInetAddress();
-		} catch (UnknownHostException e) {
-			return null;
-		}
-		return new BigInteger(inetAddr.getAddress());
-	}
-	
-	// Can cover 127 bits
-	public static BigInteger countIp6InRange(String ip6Range) {
-		if (ip6Range == null) {
-			return null;
-		}
-    	String[] ips = ip6Range.split("-");
-    	String startIp = ips[0];
-    	String endIp = ips[0];
-    	if (ips.length > 1) {
-    		endIp = ips[1];
-    	}
-    	IPv6Address start, end;
-    	try {
-    		start = IPv6Address.fromString(startIp);
-    		end = IPv6Address.fromString(endIp);
-		} catch (IllegalArgumentException ex) {
-			return null;
-		}
-    	BigInteger startInt = convertIPv6AddressToBigInteger(start);
-    	BigInteger endInt = convertIPv6AddressToBigInteger(end);
-    	if (startInt.compareTo(endInt) > 0) {
-    		return null;
-    	}
-    	return endInt.subtract(startInt).add(BigInteger.ONE);
-	}
+    //RFC3315, section 9.4
+    public static String getDuidLL(String macAddress) {
+        String duid = "00:03:00:01:" + macAddress;
+        return duid;
+    }
 
-	public static boolean isIp6InRange(String ip6, String ip6Range) {
-		if (ip6Range == null) {
-			return false;
-		}
-    	String[] ips = ip6Range.split("-");
-    	String startIp = ips[0];
-    	String endIp = null;
-    	if (ips.length > 1) {
-    		endIp = ips[1];
-    	}
-    	IPv6Address start = IPv6Address.fromString(startIp);
-    	IPv6Address end = IPv6Address.fromString(endIp);
-    	IPv6Address ip = IPv6Address.fromString(ip6);
-    	if (start.compareTo(ip) <= 0 && end.compareTo(ip) >= 0) {
-    		return true;
-    	}
-		return false;
-	}
-	
-	public static boolean isIp6InNetwork(String ip6, String ip6Cidr) {
-		IPv6Network network = null;
-		try {
-			network = IPv6Network.fromString(ip6Cidr);
-		} catch (IllegalArgumentException ex) {
-			return false;
-		}
-    	IPv6Address ip = IPv6Address.fromString(ip6);
-		return network.contains(ip);
-	}
-	
-	public static boolean isIp6RangeOverlap(String ipRange1, String ipRange2) {
-		String[] ips = ipRange1.split("-");
-    	String startIp1 = ips[0];
-    	String endIp1 = null;
-    	if (ips.length > 1) {
-    		endIp1 = ips[1];
-    	}
-    	IPv6Address start1 = IPv6Address.fromString(startIp1);
-    	IPv6Address end1 = IPv6Address.fromString(endIp1);
-    	IPv6AddressRange range1 = IPv6AddressRange.fromFirstAndLast(start1, end1);
-		ips = ipRange2.split("-");
-    	String startIp2 = ips[0];
-    	String endIp2 = null;
-    	if (ips.length > 1) {
-    		endIp2 = ips[1];
-    	}
-    	IPv6Address start2 = IPv6Address.fromString(startIp2);
-    	IPv6Address end2 = IPv6Address.fromString(endIp2);
-    	IPv6AddressRange range2 = IPv6AddressRange.fromFirstAndLast(start2, end2);
-    	return range1.overlaps(range2);
-	}
+    private static BigInteger convertIPv6AddressToBigInteger(IPv6Address addr) {
+        InetAddress inetAddr;
+        try {
+            inetAddr = addr.toInetAddress();
+        } catch (UnknownHostException e) {
+            return null;
+        }
+        return new BigInteger(inetAddr.getAddress());
+    }
 
-	public static String getNextIp6InRange(String currentIp, String ipRange) {
-		String[] ips = ipRange.split("-");
-    	String startIp = ips[0];
-    	String endIp = null;
-    	if (ips.length > 1) {
-    		endIp = ips[1];
-    	}
-    	IPv6Address start = IPv6Address.fromString(startIp);
-    	IPv6Address end = IPv6Address.fromString(endIp);
-    	IPv6Address current = IPv6Address.fromString(currentIp); 
-    	IPv6Address result = null;
-    	if (current.equals(end)) {
-    		result = start;
-    	} else{
-    		result = current.add(1);
-    	}
-    	String resultIp = null;
-    	if (result != null) {
-    		resultIp = result.toString();
-    	}
-		return resultIp;
-	}
+    // Can cover 127 bits
+    public static BigInteger countIp6InRange(String ip6Range) {
+        if (ip6Range == null) {
+            return null;
+        }
+        String[] ips = ip6Range.split("-");
+        String startIp = ips[0];
+        String endIp = ips[0];
+        if (ips.length > 1) {
+            endIp = ips[1];
+        }
+        IPv6Address start, end;
+        try {
+            start = IPv6Address.fromString(startIp);
+            end = IPv6Address.fromString(endIp);
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+        BigInteger startInt = convertIPv6AddressToBigInteger(start);
+        BigInteger endInt = convertIPv6AddressToBigInteger(end);
+        if (startInt.compareTo(endInt) > 0) {
+            return null;
+        }
+        return endInt.subtract(startInt).add(BigInteger.ONE);
+    }
+
+    public static boolean isIp6InRange(String ip6, String ip6Range) {
+        if (ip6Range == null) {
+            return false;
+        }
+        String[] ips = ip6Range.split("-");
+        String startIp = ips[0];
+        String endIp = null;
+        if (ips.length > 1) {
+            endIp = ips[1];
+        }
+        IPv6Address start = IPv6Address.fromString(startIp);
+        IPv6Address end = IPv6Address.fromString(endIp);
+        IPv6Address ip = IPv6Address.fromString(ip6);
+        if (start.compareTo(ip) <= 0 && end.compareTo(ip) >= 0) {
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean isIp6InNetwork(String ip6, String ip6Cidr) {
+        IPv6Network network = null;
+        try {
+            network = IPv6Network.fromString(ip6Cidr);
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
+        IPv6Address ip = IPv6Address.fromString(ip6);
+        return network.contains(ip);
+    }
+
+    public static boolean isIp6RangeOverlap(String ipRange1, String ipRange2) {
+        String[] ips = ipRange1.split("-");
+        String startIp1 = ips[0];
+        String endIp1 = null;
+        if (ips.length > 1) {
+            endIp1 = ips[1];
+        }
+        IPv6Address start1 = IPv6Address.fromString(startIp1);
+        IPv6Address end1 = IPv6Address.fromString(endIp1);
+        IPv6AddressRange range1 = IPv6AddressRange.fromFirstAndLast(start1, end1);
+        ips = ipRange2.split("-");
+        String startIp2 = ips[0];
+        String endIp2 = null;
+        if (ips.length > 1) {
+            endIp2 = ips[1];
+        }
+        IPv6Address start2 = IPv6Address.fromString(startIp2);
+        IPv6Address end2 = IPv6Address.fromString(endIp2);
+        IPv6AddressRange range2 = IPv6AddressRange.fromFirstAndLast(start2, end2);
+        return range1.overlaps(range2);
+    }
+
+    public static String getNextIp6InRange(String currentIp, String ipRange) {
+        String[] ips = ipRange.split("-");
+        String startIp = ips[0];
+        String endIp = null;
+        if (ips.length > 1) {
+            endIp = ips[1];
+        }
+        IPv6Address start = IPv6Address.fromString(startIp);
+        IPv6Address end = IPv6Address.fromString(endIp);
+        IPv6Address current = IPv6Address.fromString(currentIp);
+        IPv6Address result = null;
+        if (current.equals(end)) {
+            result = start;
+        } else{
+            result = current.add(1);
+        }
+        String resultIp = null;
+        if (result != null) {
+            resultIp = result.toString();
+        }
+        return resultIp;
+    }
 
     public static boolean isValidVlan(String vlan) {
         try {
@@ -1378,38 +1378,38 @@ public class NetUtils {
         }
     }
 
-	public static URI generateUriForPvlan(String primaryVlan, String isolatedPvlan) {
+    public static URI generateUriForPvlan(String primaryVlan, String isolatedPvlan) {
         return URI.create("pvlan://" + primaryVlan + "-i" + isolatedPvlan);
-	}
-	
-	public static String getPrimaryPvlanFromUri(URI uri) {
-		String[] vlans = uri.getHost().split("-");
-		if (vlans.length < 1) {
-			return null;
-		}
-		return vlans[0];
-	}
-	
-	public static String getIsolatedPvlanFromUri(URI uri) {
-		String[] vlans = uri.getHost().split("-");
-		if (vlans.length < 2) {
-			return null;
-		}
-		for (String vlan : vlans) {
-			if (vlan.startsWith("i")) {
-				return vlan.replace("i", " ").trim();
-			}
-		}
-		return null;
-	}
+    }
 
-	public static String generateMacOnIncrease(String baseMac, long l) {
-		long mac = mac2Long(baseMac);
-		if (l > 0xFFFFl) {
-			return null;
-		}
-		mac = mac + (l << 24);
-		mac = mac & 0x06FFFFFFFFFFl;
-		return long2Mac(mac);
-	}
+    public static String getPrimaryPvlanFromUri(URI uri) {
+        String[] vlans = uri.getHost().split("-");
+        if (vlans.length < 1) {
+            return null;
+        }
+        return vlans[0];
+    }
+
+    public static String getIsolatedPvlanFromUri(URI uri) {
+        String[] vlans = uri.getHost().split("-");
+        if (vlans.length < 2) {
+            return null;
+        }
+        for (String vlan : vlans) {
+            if (vlan.startsWith("i")) {
+                return vlan.replace("i", " ").trim();
+            }
+        }
+        return null;
+    }
+
+    public static String generateMacOnIncrease(String baseMac, long l) {
+        long mac = mac2Long(baseMac);
+        if (l > 0xFFFFl) {
+            return null;
+        }
+        mac = mac + (l << 24);
+        mac = mac & 0x06FFFFFFFFFFl;
+        return long2Mac(mac);
+    }
 }
