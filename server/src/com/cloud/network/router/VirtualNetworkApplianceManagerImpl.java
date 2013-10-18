@@ -3346,7 +3346,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         List<VpnUser> addUsers = new ArrayList<VpnUser>();
         List<VpnUser> removeUsers = new ArrayList<VpnUser>();
         for (VpnUser user : vpnUsers) {
-            if (user.getState() == VpnUser.State.Add) {
+            if (user.getState() == VpnUser.State.Add || user.getState() == VpnUser.State.Active) {
                 addUsers.add(user);
             } else if (user.getState() == VpnUser.State.Revoke) {
                 removeUsers.add(user);
