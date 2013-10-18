@@ -1952,7 +1952,7 @@
                                 }
 
                                 //*** from Guest Network section ***
-                                if ('networks' in args.context) {
+                                if (!('vpc' in args.context)) {
                                     if (args.context.networks[0].vpcid == null) { //Guest Network section > non-VPC network, show Acquire IP button
                                         return true;
                                     } else { //Guest Network section > VPC network, hide Acquire IP button
@@ -1960,7 +1960,7 @@
                                     }
                                 }
                                 //*** from VPC section ***
-                                else { //'vpc' in args.context
+                                else { //'vpc' in args.context //args.context.networks[0] has only one property => name: 'Router'
                                     return true; //VPC section, show Acquire IP button
                                 }
                             },
