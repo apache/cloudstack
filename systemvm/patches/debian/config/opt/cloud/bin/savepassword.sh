@@ -53,6 +53,13 @@ done
 [ -f $PASSWD_FILE ] ||  touch $PASSWD_FILE
 
 sed -i /$VM_IP/d $PASSWD_FILE
-echo "$VM_IP=$PASSWORD" >> $PASSWD_FILE
+
+ps aux | grep serve_password.sh |grep -v grep 2>&1 > /dev/null
+if [ $? -eq 0 ]
+then
+    echo "$VM_IP=$PASSWORD" >> $PASSWD_FILE
+else
+    echo "$VM_IP=saved_password" >> $PASSWD_FILE
+fi
 
 unlock_exit $? $lock $locked

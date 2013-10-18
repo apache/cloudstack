@@ -2228,16 +2228,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
         final String password = cmd.getPassword();
         final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        final String vmName = cmd.getVmName();
         final String vmIpAddress = cmd.getVmIpAddress();
-        final String local = vmName;
 
-        // Run save_password_to_domr.sh
-        String args = "-r " + routerPrivateIPAddress;
+        String args = "savepassword.sh " + routerPrivateIPAddress;
         args += " -v " + vmIpAddress;
         args += " -p " + password;
-        args += " " + local;
-        String result = callHostPlugin(conn, "vmops", "savePassword", "args", args);
+        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
 
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "savePassword failed");
