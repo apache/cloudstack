@@ -256,6 +256,7 @@
           <ref bean="XcpServerDiscoverer"/>
           <ref bean="SecondaryStorageDiscoverer"/>
           <ref bean="KvmServerDiscoverer"/>
+          <ref bean="LxcServerDiscoverer"/>
           <ref bean="BareMetalDiscoverer"/>
           <ref bean="OvmDiscoverer"/>
           <ref bean="vmwareServerDiscoverer"/>
