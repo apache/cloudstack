@@ -24,11 +24,13 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.springframework.stereotype.Component;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
@@ -113,6 +115,18 @@ public class ImageStoreHelper {
         }
 
         imageStoreDao.remove(id);
+        return true;
+    }
+
+    /**
+     * Convert current NFS secondary storage to Staging store to be ready to migrate to S3 object store.
+     * @param store NFS image store.
+     * @return true if successful.
+     */
+    public boolean convertToStagingStore(DataStore store) {
+        ImageStoreVO nfsStore = imageStoreDao.findById(store.getId());
+        nfsStore.setRole(DataStoreRole.ImageCache);
+        imageStoreDao.update(store.getId(), nfsStore);
         return true;
     }
 }

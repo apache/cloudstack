@@ -26,20 +26,20 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 
+import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.storage.StoragePoolAutomation;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StoragePoolAutomation;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
@@ -330,4 +330,13 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
     public boolean deleteDataStore(DataStore store) {
         return dataStoreHelper.deletePrimaryDataStore(store);
     }
+
+    /* (non-Javadoc)
+     * @see org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle#migrateToObjectStore(org.apache.cloudstack.engine.subsystem.api.storage.DataStore)
+     */
+    @Override
+    public boolean migrateToObjectStore(DataStore store) {
+        return false;
+    }
+
 }

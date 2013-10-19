@@ -41,4 +41,6 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     List<SnapshotDataStoreVO> listDestroyed(long storeId);
     List<SnapshotDataStoreVO> findBySnapshotId(long snapshotId);
+
+    void duplicateCacheRecordsOnRegionStore(long storeId);
 }

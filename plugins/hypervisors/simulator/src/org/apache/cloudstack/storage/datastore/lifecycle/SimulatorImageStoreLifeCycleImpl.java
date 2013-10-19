@@ -20,12 +20,15 @@
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
 
-import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ScopeType;
-import com.cloud.utils.UriUtils;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
@@ -34,13 +37,13 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreHelper;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.apache.cloudstack.storage.image.store.lifecycle.ImageStoreLifeCycle;
-import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
+import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
+import com.cloud.utils.UriUtils;
 
 public class SimulatorImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
     private static final Logger s_logger = Logger.getLogger(SimulatorImageStoreLifeCycleImpl.class);
@@ -129,4 +132,13 @@ public class SimulatorImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
     public boolean deleteDataStore(DataStore store) {
         return false;
     }
+
+    /* (non-Javadoc)
+     * @see org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle#migrateToObjectStore(org.apache.cloudstack.engine.subsystem.api.storage.DataStore)
+     */
+    @Override
+    public boolean migrateToObjectStore(DataStore store) {
+        return false;
+    }
+
 }

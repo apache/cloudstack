@@ -22,19 +22,20 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 
 @Component
@@ -185,5 +186,31 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         sc.setParameters("store_id", id);
         sc.setParameters("destroyed", true);
         return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public void duplicateCacheRecordsOnRegionStore(long storeId) {
+        // find all records on image cache
+        SearchCriteria<VolumeDataStoreVO> sc = cacheSearch.create();
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("destroyed", false);
+        List<VolumeDataStoreVO> vols = listBy(sc);
+        // create an entry for each record, but with empty install path since the content is not yet on region-wide store yet
+        if (vols != null) {
+            for (VolumeDataStoreVO vol : vols) {
+                VolumeDataStoreVO vs = new VolumeDataStoreVO();
+                vs.setVolumeId(vol.getId());
+                vs.setDataStoreId(storeId);
+                vs.setState(vol.getState());
+                vs.setDownloadPercent(vol.getDownloadPercent());
+                vs.setDownloadState(vol.getDownloadState());
+                vs.setSize(vol.getSize());
+                vs.setPhysicalSize(vol.getPhysicalSize());
+                vs.setErrorString(vol.getErrorString());
+                vs.setRefCnt(vol.getRefCnt() + 1); // increase ref_cnt so that this will not be recycled before the content is pushed to region-wide store
+                persist(vs);
+            }
+        }
+
     }
 }

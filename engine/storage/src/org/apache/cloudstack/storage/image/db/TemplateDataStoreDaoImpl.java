@@ -341,4 +341,35 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         return null;
     }
 
+    /**
+     * Duplicate all image cache store entries
+     */
+    @Override
+    public void duplicateCacheRecordsOnRegionStore(long storeId) {
+        // find all records on image cache
+        SearchCriteria<TemplateDataStoreVO> sc = cacheSearch.create();
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("destroyed", false);
+        List<TemplateDataStoreVO> tmpls = listBy(sc);
+        // create an entry for each record, but with empty install path since the content is not yet on region-wide store yet
+        if (tmpls != null) {
+            for (TemplateDataStoreVO tmpl : tmpls) {
+                TemplateDataStoreVO ts = new TemplateDataStoreVO();
+                ts.setTemplateId(tmpl.getTemplateId());
+                ts.setDataStoreId(storeId);
+                ts.setDataStoreRole(DataStoreRole.Image);
+                ts.setState(tmpl.getState());
+                ts.setDownloadPercent(tmpl.getDownloadPercent());
+                ts.setDownloadState(tmpl.getDownloadState());
+                ts.setSize(tmpl.getSize());
+                ts.setPhysicalSize(tmpl.getPhysicalSize());
+                ts.setErrorString(tmpl.getErrorString());
+                ts.setDownloadUrl(tmpl.getDownloadUrl());
+                ts.setRefCnt(tmpl.getRefCnt() + 1); // increase ref_cnt so that this will not be recycled before the content is pushed to region-wide store
+                persist(ts);
+            }
+        }
+
+    }
+
 }

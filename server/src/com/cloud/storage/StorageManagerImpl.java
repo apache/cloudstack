@@ -43,6 +43,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
@@ -1243,6 +1244,26 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return (PrimaryDataStoreInfo) dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
     }
 
+    @Override
+    @DB
+    public ImageStore prepareSecondaryStorageForObjectStoreMigration(Long storeId) throws ResourceUnavailableException, InsufficientCapacityException {
+        // Verify that image store exists
+        ImageStoreVO store = _imageStoreDao.findById(storeId);
+        if (store == null) {
+            throw new InvalidParameterValueException("Image store with id " + storeId + " doesn't exist");
+        } else if (!store.getProviderName().equals(DataStoreProvider.NFS_IMAGE)) {
+            throw new InvalidParameterValueException("We only support migrate NFS secondary storage to use object store!");
+        }
+        _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), store.getDataCenterId());
+
+        DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider(store.getProviderName());
+        DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
+        DataStore secStore = dataStoreMgr.getDataStore(storeId, DataStoreRole.Image);
+        lifeCycle.migrateToObjectStore(secStore);
+        // converted to an image cache store
+        return (ImageStore)_dataStoreMgr.getDataStore(storeId, DataStoreRole.ImageCache);
+    }
+
     protected class StorageGarbageCollector extends ManagedContextRunnable {
 
         public StorageGarbageCollector() {
@@ -1718,7 +1739,18 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         // store
         associateCrosszoneTemplatesToZone(dcId);
 
+        // duplicate cache store records to region wide storage
+        if (scopeType == ScopeType.REGION) {
+            duplicateCacheStoreRecordsToRegionStore(store.getId());
+        }
+
         return (ImageStore) _dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Image);
+    }
+
+    private void duplicateCacheStoreRecordsToRegionStore(long storeId) {
+        _templateStoreDao.duplicateCacheRecordsOnRegionStore(storeId);
+        _snapshotStoreDao.duplicateCacheRecordsOnRegionStore(storeId);
+        _volumeStoreDao.duplicateCacheRecordsOnRegionStore(storeId);
     }
 
     private void associateCrosszoneTemplatesToZone(Long zoneId) {
