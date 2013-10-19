@@ -257,6 +257,10 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                     break;
                 }
             }
+        } else {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("DeploymentPlanner is provided: " + planner);
+            }
         }
 
         int cpu_requested = offering.getCpu() * offering.getSpeed();
