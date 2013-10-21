@@ -493,7 +493,7 @@ listVirtualRouterElements=7
 
 #### usage commands
 generateUsageRecords=1
-listUsageRecords=1
+listUsageRecords=7
 listUsageTypes=1
 
 #### traffic monitor commands
