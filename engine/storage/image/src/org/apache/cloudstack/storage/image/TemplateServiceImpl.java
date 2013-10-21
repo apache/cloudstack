@@ -28,6 +28,9 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
@@ -59,9 +62,6 @@ import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
@@ -73,8 +73,8 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
@@ -466,7 +466,8 @@ public class TemplateServiceImpl implements TemplateService {
     // persist entry in template_zone_ref table. zoneId can be empty for
     // region-wide image store, in that case,
     // we will associate the template to all the zones.
-    private void associateTemplateToZone(long templateId, Long zoneId) {
+    @Override
+    public void associateTemplateToZone(long templateId, Long zoneId) {
         List<Long> dcs = new ArrayList<Long>();
         if (zoneId != null) {
             dcs.add(zoneId);

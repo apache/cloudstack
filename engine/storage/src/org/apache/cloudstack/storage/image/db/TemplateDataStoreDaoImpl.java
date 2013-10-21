@@ -33,18 +33,22 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO, Long> implements TemplateDataStoreDao {
@@ -60,6 +64,11 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
 
     @Inject
     private DataStoreManager _storeMgr;
+
+    @Inject
+    private VMTemplateDao _tmpltDao;
+    @Inject
+    private TemplateService _tmplSrv;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -368,7 +377,23 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
                 ts.setRefCnt(tmpl.getRefCnt() + 1); // increase ref_cnt so that this will not be recycled before the content is pushed to region-wide store
                 persist(ts);
             }
+
+            // mark template as cross-zones and add template_zone association
+            for (TemplateDataStoreVO tmpl : tmpls) {
+                long templateId = tmpl.getTemplateId();
+                VMTemplateVO template = _tmpltDao.findById(templateId);
+                if (template == null) {
+                    throw new CloudRuntimeException("No template is found for template id: " + templateId);
+                }
+                // mark the template as cross-zones
+                template.setCrossZones(true);
+                _tmpltDao.update(templateId, template);
+                // add template_zone_ref association for these cross-zone templates
+                _tmplSrv.associateTemplateToZone(templateId, null);
+            }
+
         }
+
 
     }
 
