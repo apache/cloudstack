@@ -33,15 +33,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
@@ -75,6 +73,8 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -1934,7 +1934,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @ActionEvent(eventType = EventTypes.EVENT_VM_DESTROY, eventDescription = "destroying Vm", async = true)
     public UserVm destroyVm(DestroyVMCmd cmd)
             throws ResourceUnavailableException, ConcurrentOperationException {
-        return destroyVm(cmd.getId());
+        CallContext ctx = CallContext.current();
+        long vmId = cmd.getId();
+        boolean expunge = cmd.getExpunge();
+        
+        if (!_accountMgr.isAdmin(ctx.getCallingAccount().getType()) && expunge) {
+            throw new PermissionDeniedException("Parameter " + ApiConstants.EXPUNGE + " can be passed by Admin only");
+        }
+        
+        UserVm destroyedVm = destroyVm(vmId);
+        if (expunge) {
+            UserVmVO vm = _vmDao.findById(vmId);
+            if (!expunge(vm, ctx.getCallingUserId(), ctx.getCallingAccount())) {
+                throw new CloudRuntimeException("Failed to expunge vm " + destroyedVm);
+            }
+        }
+        
+        return destroyedVm;
     }
 
     @Override
