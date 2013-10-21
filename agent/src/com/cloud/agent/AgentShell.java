@@ -36,6 +36,7 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 
@@ -191,30 +192,32 @@ public class AgentShell implements IAgentShell, Daemon {
         String zone = null;
         String pod = null;
         String guid = null;
-        for (int i = 0; i < args.length; i++) {
-            final String[] tokens = args[i].split("=");
+        for (String param : args) {
+            final String[] tokens = param.split("=");
             if (tokens.length != 2) {
-                System.out.println("Invalid Parameter: " + args[i]);
+                System.out.println("Invalid Parameter: " + param);
                 continue;
             }
+            final String paramName = tokens[0];
+            final String paramValue = tokens[1];
 
             // save command line properties
-            _cmdLineProperties.put(tokens[0], tokens[1]);
+            _cmdLineProperties.put(paramName, paramValue);
 
-            if (tokens[0].equalsIgnoreCase("port")) {
-                port = tokens[1];
-            } else if (tokens[0].equalsIgnoreCase("threads") || tokens[0].equalsIgnoreCase("workers")) {
-                workers = tokens[1];
-            } else if (tokens[0].equalsIgnoreCase("host")) {
-                host = tokens[1];
-            } else if (tokens[0].equalsIgnoreCase("zone")) {
-                zone = tokens[1];
-            } else if (tokens[0].equalsIgnoreCase("pod")) {
-                pod = tokens[1];
-            } else if (tokens[0].equalsIgnoreCase("guid")) {
-                guid = tokens[1];
-            } else if (tokens[0].equalsIgnoreCase("eth1ip")) {
-                _privateIp = tokens[1];
+            if (paramName.equalsIgnoreCase("port")) {
+                port = paramValue;
+            } else if (paramName.equalsIgnoreCase("threads") || paramName.equalsIgnoreCase("workers")) {
+                workers = paramValue;
+            } else if (paramName.equalsIgnoreCase("host")) {
+                host = paramValue;
+            } else if (paramName.equalsIgnoreCase("zone")) {
+                zone = paramValue;
+            } else if (paramName.equalsIgnoreCase("pod")) {
+                pod = paramValue;
+            } else if (paramName.equalsIgnoreCase("guid")) {
+                guid = paramValue;
+            } else if (paramName.equalsIgnoreCase("eth1ip")) {
+                _privateIp = paramValue;
             }
         }
 
@@ -222,16 +225,16 @@ public class AgentShell implements IAgentShell, Daemon {
             port = getProperty(null, "port");
         }
 
-        _port = NumbersUtil.parseInt(port, 8250);
+        _port = NumberUtils.toInt(port, 8250);
 
-        _proxyPort = NumbersUtil.parseInt(
+        _proxyPort = NumberUtils.toInt(
                 getProperty(null, "consoleproxy.httpListenPort"), 443);
 
         if (workers == null) {
             workers = getProperty(null, "workers");
         }
 
-        _workers = NumbersUtil.parseInt(workers, 5);
+        _workers = NumberUtils.toInt(workers, 5);
 
         if (host == null) {
             host = getProperty(null, "host");
