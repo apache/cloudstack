@@ -93,8 +93,11 @@ public class XmlObject {
         if (e instanceof List) {
             return (List<T>)e;
         }
-        List lst = new ArrayList(1);
-        lst.add(e);
+
+        List lst = new ArrayList();
+        if (e != null) {
+            lst.add(e);
+        }
         return lst;
     }
 
