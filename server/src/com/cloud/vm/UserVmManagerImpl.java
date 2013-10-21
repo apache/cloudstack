@@ -2458,7 +2458,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @DB
-    protected UserVm createVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, String hostName, String displayName, Account owner, Long diskOfferingId,
+    protected UserVm createVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate tmplt, String hostName, String displayName, Account owner, Long diskOfferingId,
         Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, HTTPMethod httpmethod,
 	    String userData, String sshKeyPair, HypervisorType hypervisor, Account caller, Map<Long, IpAddresses> requestedIps,
 	    IpAddresses defaultIps, Boolean isDisplayVmEnabled, String keyboard, List<Long> affinityGroupIdList)
@@ -2470,7 +2470,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new PermissionDeniedException(
                     "The owner of vm to deploy is disabled: " + owner);
         }
-
+        VMTemplateVO template = _templateDao.findById(tmplt.getId());
+        if (template != null) {
+            _templateDao.loadDetails(template);
+        }
+        
         long accountId = owner.getId();
 
         assert !(requestedIps != null && (defaultIps.getIp4Address() != null || defaultIps.getIp6Address() != null)) : "requestedIp list and defaultNetworkIp should never be specified together";
@@ -2807,7 +2811,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         long guestOSCategoryId = guestOS.getCategoryId();
         GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
 
-
         // If hypervisor is vSphere and OS is OS X, set special settings.
         if (hypervisorType.equals(HypervisorType.VMware)) {
             if (guestOS.getDisplayName().toLowerCase().contains("apple mac os")){
@@ -2817,6 +2820,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 s_logger.info("guestOS is OSX : overwrite root disk controller to scsi, use smc and efi");
             }
        }
+
+        Map<String, String> details = template.getDetails();
+        if ( details != null && !details.isEmpty() ) {
+            vm.details.putAll(details);
+        }
 
         _vmDao.persist(vm);
         _vmDao.saveDetails(vm);

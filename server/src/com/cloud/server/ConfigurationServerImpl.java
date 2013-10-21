@@ -292,6 +292,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         updateCloudIdentifier();
 
         _configDepotAdmin.populateConfigurations();
+        // setup XenServer default PV driver version
+        initiateXenServerPVDriverVersion();
 
         // We should not update seed data UUID column here since this will be invoked in upgrade case as well.
         //updateUuids();
@@ -301,6 +303,84 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         // invalidate cache in DAO as we have changed DB status
         _configDao.invalidateCache();
     }
+
+
+    private void templateDetailsInitIfNotExist(long id, String name, String value) {
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement stmt = null;
+        PreparedStatement stmtInsert = null;
+        boolean insert = false;
+        try {
+            txn.start();
+            stmt = txn.prepareAutoCloseStatement("SELECT id FROM vm_template_details WHERE template_id=? and name=?");
+            stmt.setLong(1, id);
+            stmt.setString(2, name);
+            ResultSet rs = stmt.executeQuery();
+            if(rs == null || !rs.next()) {
+                insert = true;
+            }
+            stmt.close();
+
+            if ( insert ) {
+                stmtInsert = txn.prepareAutoCloseStatement(
+                "INSERT INTO vm_template_details(template_id, name, value) VALUES(?, ?, ?)");
+                stmtInsert.setLong(1, id);
+                stmtInsert.setString(2, name);
+                stmtInsert.setString(3, value);
+                if(stmtInsert.executeUpdate() < 1) {
+                    throw new CloudRuntimeException("Unable to init template " + id + " datails: " + name);
+                }
+            }
+            txn.commit();
+        } catch (Exception e) {
+            s_logger.warn("Unable to init template " + id + " datails: " + name, e);
+            throw new CloudRuntimeException("Unable to init template " + id + " datails: " + name);
+        }
+    }
+
+    private void initiateXenServerPVDriverVersion() {
+        String pvdriverversion = Config.XenPVdriverVersion.getDefaultValue();
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        ResultSet rs1 = null;
+        ResultSet rs2 = null;
+        try {
+            String oldValue = _configDao.getValue(Config.XenPVdriverVersion.key());
+            if ( oldValue == null ) {
+                String sql = "select resource from host where hypervisor_type='XenServer' and removed is null and status not in ('Error', 'Removed') group by resource" ;
+                pstmt = txn.prepareAutoCloseStatement(sql);
+                rs1 = pstmt.executeQuery();
+                while (rs1.next()) {
+                    String resouce = rs1.getString(1); //resource column
+                    if ( resouce == null ) continue;
+                    if ( resouce.equalsIgnoreCase("com.cloud.hypervisor.xen.resource.XenServer56Resource")
+                        ||  resouce.equalsIgnoreCase("com.cloud.hypervisor.xen.resource.XenServer56FP1Resource")
+                        ||  resouce.equalsIgnoreCase("com.cloud.hypervisor.xen.resource.XenServer56SP2Resource")
+                        ||  resouce.equalsIgnoreCase("com.cloud.hypervisor.xen.resource.XenServer600Resource")
+                        ||  resouce.equalsIgnoreCase("com.cloud.hypervisor.xen.resource.XenServer602Resource") ) {
+                        pvdriverversion = "xenserver56";
+                        break;
+                    }
+                }
+                _configDao.getValueAndInitIfNotExist(Config.XenPVdriverVersion.key(),
+                    Config.XenPVdriverVersion.getCategory(), pvdriverversion, Config.XenPVdriverVersion.getDescription());
+                sql = "select id from vm_template where hypervisor_type='XenServer'  and format!='ISO' and removed is null";
+                pstmt = txn.prepareAutoCloseStatement(sql);
+                rs2 = pstmt.executeQuery();
+                List<Long> tmpl_ids = new ArrayList<Long>();
+                while (rs2.next()) {
+                    tmpl_ids.add(rs2.getLong(1));
+                }
+                for( Long tmpl_id : tmpl_ids) {
+                    templateDetailsInitIfNotExist(tmpl_id, "hypervisortoolsversion", pvdriverversion);
+                }
+            }
+        } catch (Exception e) {
+            s_logger.debug("initiateXenServerPVDriverVersion failed due to " + e.toString());
+            // ignore
+        }
+    }
+
 
     /*
     private void updateUuids() {

@@ -113,14 +113,10 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
             to.setArch("x86_64");
         }
 
-        long templateId = vm.getTemplateId();
-        Map<String, String> details = _templateDetailsDao.findDetails(templateId);
-        assert(details != null);
         Map<String, String> detailsInVm = vm.getDetails();
         if(detailsInVm != null) {
-            details.putAll(detailsInVm);
+            to.setDetails(detailsInVm);
         }
-        to.setDetails(details);
         // Workaround to make sure the TO has the UUID we need for Niciri integration
         VMInstanceVO vmInstance = _virtualMachineDao.findById(to.getId());
         // check if XStools/VMWare tools are present in the VM and dynamic scaling feature is enabled (per zone/global)

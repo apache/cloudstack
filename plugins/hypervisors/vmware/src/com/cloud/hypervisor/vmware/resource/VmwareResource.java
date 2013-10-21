@@ -3857,11 +3857,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     if (getVmState(vmMo) != State.Stopped) {
                         if (vmMo.safePowerOff(_shutdown_waitMs)) {
                             state = State.Stopped;
-                            return new StopAnswer(cmd, "Stop VM " + cmd.getVmName() + " Succeed", 0, true);
+                            return new StopAnswer(cmd, "Stop VM " + cmd.getVmName() + " Succeed", true);
                         } else {
                             String msg = "Have problem in powering off VM " + cmd.getVmName() + ", let the process continue";
                             s_logger.warn(msg);
-                            return new StopAnswer(cmd, msg, 0, true);
+                            return new StopAnswer(cmd, msg, true);
                         }
                     } else {
                         state = State.Stopped;
@@ -3869,7 +3869,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     String msg = "VM " + cmd.getVmName() + " is already in stopped state";
                     s_logger.info(msg);
-                    return new StopAnswer(cmd, msg, 0, true);
+                    return new StopAnswer(cmd, msg, true);
                 } finally {
                     synchronized (_vms) {
                         _vms.put(cmd.getVmName(), state);
@@ -3882,7 +3882,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                 String msg = "VM " + cmd.getVmName() + " is no longer in vSphere";
                 s_logger.info(msg);
-                return new StopAnswer(cmd, msg, 0, true);
+                return new StopAnswer(cmd, msg, true);
             }
         } catch (Exception e) {
             if (e instanceof RemoteException) {

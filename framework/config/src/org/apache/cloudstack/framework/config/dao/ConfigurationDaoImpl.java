@@ -168,8 +168,13 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     }
 
     @Override
-    @DB
     public String getValueAndInitIfNotExist(String name, String category, String initValue) {
+    	return getValueAndInitIfNotExist(name, category, initValue, ""); 
+    }
+    
+    @Override
+    @DB
+    public String getValueAndInitIfNotExist(String name, String category, String initValue, String desc) {
         String returnValue = initValue;
         try {
             ConfigurationVO config = findByName(name);
@@ -183,7 +188,7 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
                 if (category.equals("Hidden") || category.equals("Secure")) {
                     initValue = DBEncryptionUtil.encrypt(initValue);
                 }
-                ConfigurationVO newConfig = new ConfigurationVO(category, "DEFAULT", "management-server", name, initValue, "");
+                ConfigurationVO newConfig = new ConfigurationVO(category, "DEFAULT", "management-server", name, initValue, desc);
                 persist(newConfig);
             }
             return returnValue;

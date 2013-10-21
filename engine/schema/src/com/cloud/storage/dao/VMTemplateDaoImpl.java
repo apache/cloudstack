@@ -402,6 +402,23 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         return routerTmpltName;
     }
 
+
+    @Override
+    public void loadDetails(VMTemplateVO tmpl) {
+        Map<String, String> details = _templateDetailsDao.findDetails(tmpl.getId());
+        tmpl.setDetails(details);
+    }
+
+    @Override
+    public void saveDetails(VMTemplateVO tmpl) {
+        Map<String, String> details = tmpl.getDetails();
+        if (details == null) {
+            return;
+        }
+        _templateDetailsDao.persist(tmpl.getId(), details);
+    }
+
+
     /*
      * @Override public Set<Pair<Long, Long>> searchSwiftTemplates(String name,
      * String keyword, TemplateFilter templateFilter, boolean isIso,

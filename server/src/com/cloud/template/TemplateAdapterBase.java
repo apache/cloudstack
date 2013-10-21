@@ -18,6 +18,7 @@ package com.cloud.template;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 import javax.inject.Inject;
 
@@ -36,6 +37,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -45,6 +47,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.projects.ProjectManager;
@@ -211,6 +214,20 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         for (VMTemplateVO template : systemvmTmplts) {
             if (template.getName().equalsIgnoreCase(name) || template.getDisplayText().equalsIgnoreCase(displayText)) {
                 throw new IllegalArgumentException("Cannot use reserved names for templates");
+            }
+        }
+
+        if (hypervisorType.equals(Hypervisor.HypervisorType.XenServer) ) {
+            if(  details == null || !details.containsKey("hypervisortoolsversion")
+                    || details.get("hypervisortoolsversion") == null
+                    || ((String)details.get("hypervisortoolsversion")).equalsIgnoreCase("none") ) {
+                String hpvs = _configDao.getValue(Config.XenPVdriverVersion.key());
+                if ( hpvs != null) {
+                    if ( details == null ) {
+                        details = new HashMap<String, String>();
+                    }
+                    details.put("hypervisortoolsversion", hpvs);
+                }
             }
         }
 
