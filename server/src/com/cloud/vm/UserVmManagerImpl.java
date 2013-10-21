@@ -39,6 +39,7 @@ import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
@@ -1981,7 +1982,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @ActionEvent(eventType = EventTypes.EVENT_VM_DESTROY, eventDescription = "destroying Vm", async = true)
     public UserVm destroyVm(DestroyVMCmd cmd)
             throws ResourceUnavailableException, ConcurrentOperationException {
-        return destroyVm(cmd.getId());
+        UserContext ctx = UserContext.current();
+        long vmId = cmd.getId();
+        boolean expunge = cmd.getExpunge();
+        
+        if (!_accountMgr.isAdmin(ctx.getCaller().getType()) && expunge) {
+            throw new PermissionDeniedException("Parameter " + ApiConstants.EXPUNGE + " can be passed by Admin only");
+        }
+        
+        UserVm destroyedVm = destroyVm(vmId);
+        if (expunge) {
+            UserVmVO vm = _vmDao.findById(vmId);
+            if (!expunge(vm, ctx.getCallerUserId(), ctx.getCaller())) {
+                throw new CloudRuntimeException("Failed to expunge vm " + destroyedVm);
+            }
+        }
+        
+        return destroyedVm;
     }
 
     @Override

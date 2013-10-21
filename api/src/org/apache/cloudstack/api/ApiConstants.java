@@ -522,6 +522,7 @@ public class ApiConstants {
     public static final String ROUTING = "isrouting";
     public static final String SERVICE_STATE = "servicestate";
     public static final String MAX_CONNECTIONS = "maxconnections";
+    public static final String EXPUNGE = "expunge";
 
     public enum HostDetails {
         all, capacity, events, stats, min;
