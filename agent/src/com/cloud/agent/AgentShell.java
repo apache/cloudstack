@@ -36,7 +36,6 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 
@@ -55,7 +54,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class AgentShell implements IAgentShell, Daemon {
     private static final Logger s_logger = Logger.getLogger(AgentShell.class
             .getName());
-    private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
     private final Properties _properties = new Properties();
     private final Map<String, Object> _cmdLineProperties = new HashMap<String, Object>();
