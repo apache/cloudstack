@@ -224,7 +224,7 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
     @Override
     public List<DomainVO> findAllChildren(String path, Long parentId){
     	SearchCriteria<DomainVO> sc = FindAllChildrenSearch.create();
-    	sc.setParameters("path", "%"+path+"%");
+    	sc.setParameters("path", path+"%");
     	sc.setParameters("id", parentId);
     	return listBy(sc);
     }
