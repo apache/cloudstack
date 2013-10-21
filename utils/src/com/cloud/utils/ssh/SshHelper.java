@@ -185,6 +185,12 @@ public class SshHelper {
             }
             
             String result = sbResult.toString();
+
+            if (sess.getExitStatus() == null) {
+                //Exit status is NOT available. Returning failure result.
+                return new Pair<Boolean, String>(false, result);
+            }
+
             if (sess.getExitStatus() != null && sess.getExitStatus().intValue() != 0) {
                 s_logger.error("SSH execution of command " + command + " has an error status code in return. result output: " + result);
                 return new Pair<Boolean, String>(false, result);
