@@ -2853,7 +2853,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         long guestOSCategoryId = guestOS.getCategoryId();
         GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
 
-
         // If hypervisor is vSphere and OS is OS X, set special settings.
         if (hypervisorType.equals(HypervisorType.VMware)) {
             if (guestOS.getDisplayName().toLowerCase().contains("apple mac os")){
@@ -2863,6 +2862,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 s_logger.info("guestOS is OSX : overwrite root disk controller to scsi, use smc and efi");
             }
        }
+
+        Map<String, String> details = template.getDetails();
+        if ( details != null && !details.isEmpty() ) {
+            vm.details.putAll(details);
+        }
 
         _vmDao.persist(vm);
         _vmDao.saveDetails(vm);

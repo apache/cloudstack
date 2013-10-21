@@ -517,7 +517,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
                 _mockAgentMgr.handleSystemVMStop(vm.getId());
             }
             txn.commit();
-            return new StopAnswer(cmd, null, new Integer(0), true);
+            return new StopAnswer(cmd, null, true);
         } catch (Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("unable to stop vm " + cmd.getVmName(), ex);

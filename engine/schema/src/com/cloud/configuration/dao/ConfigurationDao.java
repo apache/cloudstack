@@ -54,6 +54,8 @@ public interface ConfigurationDao extends GenericDao<ConfigurationVO, String> {
     
     public String getValueAndInitIfNotExist(String name, String category, String initValue);
     
+    public String getValueAndInitIfNotExist(String name, String category, String initValue, String desc);
+    
 
     /**
      * returns whether or not this is a premium configuration

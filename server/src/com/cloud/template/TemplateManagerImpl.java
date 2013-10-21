@@ -1121,6 +1121,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     public VirtualMachineTemplate getTemplate(long templateId) {
         VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template != null && template.getRemoved() == null) {
+            _tmpltDao.loadDetails(template);
             return template;
         }
 

@@ -49,7 +49,7 @@ sed -i 's/0\.0\.0\.0/127\.0\.0\.1/' /opt/xensource/libexec/qemu-dm-wrapper 2>&1
 sed -i /NOZEROCONF/d /etc/sysconfig/network
 echo "NOZEROCONF=yes" >> /etc/sysconfig/network
 
-[ -f /etc/cron.hourly/logrotate ] || mv /etc/cron.daily/logrotate /etc/cron.hourly 2>&1
+mv -n /etc/cron.daily/logrotate /etc/cron.hourly 2>&1
 
 # more aio thread
 echo 1048576 >/proc/sys/fs/aio-max-nr

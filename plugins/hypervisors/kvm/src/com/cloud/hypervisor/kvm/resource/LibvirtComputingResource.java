@@ -3275,7 +3275,7 @@ ServerResource {
             }
 
             state = State.Stopped;
-            return new StopAnswer(cmd, result, 0, true);
+            return new StopAnswer(cmd, result, true);
         } catch (LibvirtException e) {
             return new StopAnswer(cmd, e.getMessage(), false);
         } finally {

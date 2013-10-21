@@ -946,6 +946,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                             StopCommand cmd = new StopCommand(vm, _mgmtServer.getExecuteInSequence());
                             StopAnswer answer = (StopAnswer) _agentMgr.easySend(destHostId, cmd);
+                           if ( answer != null ) {
+                                String hypervisortoolsversion = answer.getHypervisorToolsVersion();
+                                if (hypervisortoolsversion != null) {
+                                    UserVmVO userVm = _userVmDao.findById(vm.getId());
+                                    _userVmDao.loadDetails(userVm);
+                                    userVm.setDetail("hypervisortoolsversion",  hypervisortoolsversion);
+                                    _userVmDao.saveDetails(userVm);
+                                }
+                            }
+
                             if (answer == null || !answer.getResult()) {
                                 s_logger.warn("Unable to stop " + vm + " due to " + (answer != null ? answer.getDetails() : "no answers"));
                                 _haMgr.scheduleStop(vm, destHostId, WorkType.ForceStop);
@@ -1050,7 +1060,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VMInstanceVO vm = profile.getVirtualMachine();
         StopCommand stop = new StopCommand(vm, _mgmtServer.getExecuteInSequence());
         try {
-            Answer answer = _agentMgr.send(vm.getHostId(), stop);
+            StopAnswer answer = (StopAnswer) _agentMgr.send(vm.getHostId(), stop);
+            if ( answer != null ) {
+                String hypervisortoolsversion = answer.getHypervisorToolsVersion();
+                if (hypervisortoolsversion != null) {
+                    UserVmVO userVm = _userVmDao.findById(vm.getId());
+                    _userVmDao.loadDetails(userVm);
+                    userVm.setDetail("hypervisortoolsversion",  hypervisortoolsversion);
+                    _userVmDao.saveDetails(userVm);
+                }
+            }
             if (!answer.getResult()) {
                 s_logger.debug("Unable to stop VM due to " + answer.getDetails());
                 return false;
@@ -1238,6 +1257,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         StopAnswer answer = null;
         try {
             answer = (StopAnswer) _agentMgr.send(vm.getHostId(), stop);
+
+            if ( answer != null ) {
+                String hypervisortoolsversion = answer.getHypervisorToolsVersion();
+                if (hypervisortoolsversion != null) {
+                    UserVmVO userVm = _userVmDao.findById(vm.getId());
+                    _userVmDao.loadDetails(userVm);
+                    userVm.setDetail("hypervisortoolsversion",  hypervisortoolsversion);
+                    _userVmDao.saveDetails(userVm);
+                }
+            }
             stopped = answer.getResult();
             if (!stopped) {
                 throw new CloudRuntimeException("Unable to stop the virtual machine due to " + answer.getDetails());
@@ -2131,7 +2160,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
 
 
-    public void deltaSync(Map<String, Pair<String, State>> newStates) {
+    public void deltaSync(Map<String, Ternary<String, State, String>> newStates) {
         Map<Long, AgentVmInfo> states = convertToInfos(newStates);
 
         for (Map.Entry<Long, AgentVmInfo> entry : states.entrySet()) {
@@ -2167,7 +2196,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
 
-    public void fullSync(final long clusterId, Map<String, Pair<String, State>> newStates) {
+    public void fullSync(final long clusterId, Map<String, Ternary<String, State, String>> newStates) {
         if (newStates==null)return;
         Map<Long, AgentVmInfo> infos = convertToInfos(newStates);
         Set<VMInstanceVO> set_vms = Collections.synchronizedSet(new HashSet<VMInstanceVO>());
@@ -2301,7 +2330,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
 
 
-    protected Map<Long, AgentVmInfo> convertToInfos(final Map<String, Pair<String, State>> newStates) {
+    protected Map<Long, AgentVmInfo> convertToInfos(final Map<String, Ternary<String, State, String>> newStates) {
         final HashMap<Long, AgentVmInfo> map = new HashMap<Long, AgentVmInfo>();
         if (newStates == null) {
             return map;
@@ -2309,26 +2338,29 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         Collection<VirtualMachineGuru<? extends VMInstanceVO>> vmGurus = _vmGurus.values();
         boolean is_alien_vm = true;
         long alien_vm_count = -1;
-        for (Map.Entry<String, Pair<String, State>> entry : newStates.entrySet()) {
+        for (Map.Entry<String, Ternary<String, State, String>> entry : newStates.entrySet()) {
             is_alien_vm = true;
             for (VirtualMachineGuru<? extends VMInstanceVO> vmGuru : vmGurus) {
                 String name = entry.getKey();
                 VMInstanceVO vm = vmGuru.findByName(name);
                 if (vm != null) {
-                    map.put(vm.getId(), new AgentVmInfo(entry.getKey(), vmGuru, vm, entry.getValue().second(), entry.getValue().first()));
+                    map.put(vm.getId(), new AgentVmInfo(entry.getKey(), vmGuru, vm, entry.getValue().second(),
+                    		entry.getValue().first(), entry.getValue().third()));
                     is_alien_vm = false;
                     break;
                 }
                 Long id = vmGuru.convertToId(name);
                 if (id != null) {
-                    map.put(id, new AgentVmInfo(entry.getKey(), vmGuru, null, entry.getValue().second(), entry.getValue().first()));
+                    map.put(id, new AgentVmInfo(entry.getKey(), vmGuru, null, entry.getValue().second(), 
+                    		entry.getValue().first(), entry.getValue().third()));
                     is_alien_vm = false;
                     break;
                 }
             }
             // alien VMs
             if (is_alien_vm){
-                map.put(alien_vm_count--, new AgentVmInfo(entry.getKey(), null, null, entry.getValue().second(), entry.getValue().first()));
+                map.put(alien_vm_count--, new AgentVmInfo(entry.getKey(), null, null, entry.getValue().second(),
+                		entry.getValue().first(), entry.getValue().third()));
                 s_logger.warn("Found an alien VM " + entry.getKey());
             }
         }
@@ -2348,12 +2380,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 String name = entry.getKey();
                 VMInstanceVO vm = vmGuru.findByName(name);
                 if (vm != null) {
-                    map.put(vm.getId(), new AgentVmInfo(entry.getKey(), vmGuru, vm, entry.getValue().getState(), entry.getValue().getHost() ));
+                    map.put(vm.getId(), new AgentVmInfo(entry.getKey(), vmGuru, vm, entry.getValue().getState(),
+                    		entry.getValue().getHost()));
                     break;
                 }
                 Long id = vmGuru.convertToId(name);
                 if (id != null) {
-                    map.put(id, new AgentVmInfo(entry.getKey(), vmGuru, null,entry.getValue().getState(), entry.getValue().getHost() ));
+                    map.put(id, new AgentVmInfo(entry.getKey(), vmGuru, null,entry.getValue().getState(),
+                    		entry.getValue().getHost()));
                     break;
                 }
             }
@@ -2715,7 +2749,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         if (agent.getHypervisorType() == HypervisorType.XenServer) { // only for Xen
             StartupRoutingCommand startup = (StartupRoutingCommand) cmd;
-            HashMap<String, Pair<String, State>> allStates = startup.getClusterVMStateChanges();
+            HashMap<String, Ternary<String, State, String>> allStates = startup.getClusterVMStateChanges();
             if (allStates != null){
                 fullSync(clusterId, allStates);
             }
@@ -2796,25 +2830,37 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         public String name;
         public State state;
         public String hostUuid;
-        public VMInstanceVO vm;
+        public String hvtoolsversion;
+
+		public VMInstanceVO vm;
         public VirtualMachineGuru<VMInstanceVO> guru;
 
         @SuppressWarnings("unchecked")
-        public AgentVmInfo(String name, VirtualMachineGuru<? extends VMInstanceVO> guru, VMInstanceVO vm, State state, String host) {
+        public AgentVmInfo(String name, VirtualMachineGuru<? extends VMInstanceVO> guru, VMInstanceVO vm, State state, String host, String hvtoolsversion) {
             this.name = name;
             this.state = state;
             this.vm = vm;
             this.guru = (VirtualMachineGuru<VMInstanceVO>) guru;
-            hostUuid = host;
+            this.hostUuid = host;
+            this.hvtoolsversion= hvtoolsversion;
+            
         }
-
+        
+        public AgentVmInfo(String name, VirtualMachineGuru<? extends VMInstanceVO> guru, VMInstanceVO vm, State state, String host) {
+        	this(name, guru, vm, state, host, null);           
+        }
+        
         public AgentVmInfo(String name, VirtualMachineGuru<? extends VMInstanceVO> guru, VMInstanceVO vm, State state) {
-            this(name, guru, vm, state, null);
+            this(name, guru, vm, state, null, null);
         }
 
         public String getHostUuid() {
             return hostUuid;
         }
+        
+        public String getHvtoolsversion() {
+			return hvtoolsversion;
+		}
     }
 
     @Override
