@@ -529,7 +529,7 @@
 
                         },
                         notification: {
-                            pool: pollAsyncJobResult
+                            poll: pollAsyncJobResult
                         }
                     },
                     destroy: {
