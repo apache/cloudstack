@@ -62,6 +62,7 @@ import com.cloud.vm.NicDetailVO;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicDetailDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 
@@ -123,6 +124,8 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     TaggedResourceService _taggedResourceMgr;
     @Inject
     VMTemplateDetailsDao _templateDetailsDao;
+    @Inject
+    UserVmDetailsDao _userVmDetailsDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -204,10 +207,11 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
                     _nicDetailDao.persist(n);
                 } else if (resourceType == TaggedResourceType.Template) {
                     _templateDetailsDao.addTemplateDetail(id, key, value);
+                } else if (resourceType == TaggedResourceType.UserVm) {
+                    _userVmDetailsDao.addVmDetail(id, key, value);
                 } else{
                     throw new InvalidParameterValueException("The resource type " + resourceType + " is not supported by the API yet");
                 }
-
         }
 
         txn.commit();

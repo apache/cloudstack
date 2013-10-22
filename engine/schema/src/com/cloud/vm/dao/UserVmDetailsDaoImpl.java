@@ -96,4 +96,15 @@ public class UserVmDetailsDaoImpl extends GenericDaoBase<UserVmDetailVO, Long> i
         txn.commit();		
 	}
 
+    @Override
+    public void addVmDetail(Long vmId, String key, String value) {
+        UserVmDetailVO detail = findDetail(vmId, key);
+        if (detail == null) {
+            UserVmDetailVO newEntry = new UserVmDetailVO(vmId, key, value);
+            persist(newEntry);
+        } else {
+            detail.setValue(value);
+            update(detail.getId(), detail);
+        }
+    }
 }

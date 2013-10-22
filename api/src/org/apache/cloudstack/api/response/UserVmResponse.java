@@ -17,8 +17,8 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -193,6 +193,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private Boolean isDynamicallyScalable;
     @SerializedName(ApiConstants.SERVICE_STATE) @Param(description="State of the Service from LB rule")
     private String serviceState;
+    
+    @SerializedName(ApiConstants.DETAILS) @Param(description="Template details in key/value pairs.", since="4.2.1")
+    private Map details;
 
     public UserVmResponse(){
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
@@ -444,5 +447,8 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     public void setServiceState(String state) {
         this.serviceState = state;
     }
-
+    
+    public void setDetails(Map details) {
+        this.details = details;
+    }
 }
