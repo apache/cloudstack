@@ -368,11 +368,17 @@
                         });
 
                     } else {
-                        $input = $('<input>').attr({
-                            name: key,
-                            type: 'checkbox'
-                        }).appendTo($value);
-                        if (field.isChecked) {
+                    	$input = $('<input>').attr({
+                    	    name: key,
+                    	    type: 'checkbox'
+                    	}).appendTo($value);
+                    	var isChecked;
+                    	if (typeof (field.isChecked) == 'function') {
+                    	    isChecked = field.isChecked();
+                    	} else {
+                    	    isChecked = field.isChecked;
+                    	}
+                        if (isChecked) {
                             $input.attr('checked', 'checked');
                         } else {
                             // This is mainly for IE compatibility
