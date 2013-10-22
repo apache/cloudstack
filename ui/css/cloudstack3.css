@@ -5977,11 +5977,11 @@ label.error {
   margin-top: 9px !important;
 }
 
-.multi-wizard.instance-wizard .data-disk-offering.required.custom-disk-size .select-container {
+.multi-wizard.instance-wizard .custom-disk-size .select-container {
   height: 279px;
 }
 
-.multi-wizard.instance-wizard .data-disk-offering.custom-disk-size .select-container {
+.multi-wizard.instance-wizard .custom-disk-size .select-container {
   height: 213px;
   margin: -7px 6px 0 8px;
   /*+border-radius:6px;*/
@@ -5992,21 +5992,21 @@ label.error {
   border-radius: 6px 6px 6px 6px;
 }
 
-.multi-wizard.instance-wizard .data-disk-offering .content .section input {
+.multi-wizard.instance-wizard .content .section input {
   float: left;
 }
 
-.multi-wizard.instance-wizard .data-disk-offering .content .section input[type=radio] {
+.multi-wizard.instance-wizard .content .section input[type=radio] {
   margin: 8px 2px 0 17px;
 }
 
-.multi-wizard.instance-wizard .data-disk-offering .content .section label {
+.multi-wizard.instance-wizard .content .section label {
   display: block;
   float: left;
   margin: 10px 7px 7px;
 }
 
-.multi-wizard.instance-wizard .data-disk-offering .content .section label.size {
+.multi-wizard.instance-wizard .content .section label.size {
   color: #647A8E;
   font-weight: bold;
   /*+text-shadow:0px 1px 1px #FFFFFF;*/
@@ -6016,21 +6016,24 @@ label.error {
   text-shadow: 0px 1px 1px #FFFFFF;
 }
 
-.multi-wizard.instance-wizard .data-disk-offering .content .section.custom-size {
+.multi-wizard.instance-wizard .section.custom-size {
   position: relative;
+  background: white;
+  padding: 7px;
+  border-radius: 4px;
 }
 
-.multi-wizard.instance-wizard .data-disk-offering .content .section.custom-size input[type=radio] {
+.multi-wizard.instance-wizard .section.custom-size input[type=radio] {
   float: left;
 }
 
-.multi-wizard.instance-wizard .data-disk-offering .content .section.custom-size input[type=text] {
+.multi-wizard.instance-wizard .section.custom-size input[type=text] {
   float: left;
   width: 28px;
   margin: 6px -1px 0 8px;
 }
 
-.multi-wizard.instance-wizard .data-disk-offering .content .section.custom-size label.error {
+.multi-wizard.instance-wizard .section.custom-size label.error {
   position: absolute;
   top: 29px;
   left: 242px;

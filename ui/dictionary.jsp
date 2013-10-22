@@ -25,6 +25,7 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'label.root.disk.size': '<fmt:message key="label.root.disk.size" />',
 'label.s3.nfs.path': '<fmt:message key="label.s3.nfs.path" />',
 'label.s3.nfs.server': '<fmt:message key="label.s3.nfs.server" />',
 'label.delete.events': '<fmt:message key="label.delete.events" />',
