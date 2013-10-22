@@ -172,6 +172,8 @@ echo Doing CloudStack build
 cp packaging/centos63/replace.properties build/replace.properties
 echo VERSION=%{_maventag} >> build/replace.properties
 echo PACKAGE=%{name} >> build/replace.properties
+touch build/gitrev.txt
+echo $(git rev-parse HEAD) > build/gitrev.txt
 
 if [ "%{_ossnoss}" == "NOREDIST" -o "%{_ossnoss}" == "noredist" ] ; then
    echo "Executing mvn packaging with non-redistributable libraries ..."
@@ -199,6 +201,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms
 mkdir -p ${RPM_BUILD_ROOT}%{python_sitearch}/
+mkdir -p ${RPM_BUILD_ROOT}%/usr/bin
 cp -r scripts/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 install -D systemvm/dist/systemvm.iso ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms/systemvm.iso
 install -D systemvm/dist/systemvm.zip ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms/systemvm.zip
@@ -206,6 +209,8 @@ install python/lib/cloud_utils.py ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_util
 cp -r python/lib/cloudutils ${RPM_BUILD_ROOT}%{python_sitearch}/
 python -m py_compile ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
 python -m compileall ${RPM_BUILD_ROOT}%{python_sitearch}/cloudutils
+cp build/gitrev.txt ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
+cp packaging/centos63/cloudstack-sccs ${RPM_BUILD_ROOT}/usr/bin
  
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
 cp -r plugins/network-elements/cisco-vnmc/scripts/network/cisco/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
@@ -572,6 +577,7 @@ fi
 %dir %attr(0755,root,root) %{python_sitearch}/cloudutils
 %dir %attr(0755,root,root) %{_datadir}/%{name}-common/vms
 %attr(0755,root,root) %{_datadir}/%{name}-common/scripts
+%attr(0755,root,root) /usr/bin/cloudstack-sccs
 %attr(0644, root, root) %{_datadir}/%{name}-common/vms/systemvm.iso
 %attr(0644, root, root) %{_datadir}/%{name}-common/vms/systemvm.zip
 %attr(0644,root,root) %{python_sitearch}/cloud_utils.py
