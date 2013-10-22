@@ -22,4 +22,11 @@ public class AgentShellTest {
         Assert.assertEquals("pod1", shell.getPod());
         Assert.assertEquals("zone1", shell.getZone());
     }
+    @Test
+    public void loadProperties() throws ConfigurationException {
+        AgentShell shell = new AgentShell();
+        shell.loadProperties();
+        Assert.assertNotNull(shell.getProperties());
+        Assert.assertFalse(shell.getProperties().entrySet().isEmpty());
+    }
 }
