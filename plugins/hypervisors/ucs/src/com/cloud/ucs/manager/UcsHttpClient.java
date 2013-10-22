@@ -55,7 +55,9 @@ public class UcsHttpClient {
         requestHeaders.setContentType(MediaType.APPLICATION_XML);
         requestHeaders.setContentLength(body.length());
         HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
-        logger.debug(String.format("UCS call: %s", body));
+        if (!body.contains("aaaLogin")) {
+            logger.debug(String.format("UCS call: %s", body));
+        }
         ResponseEntity<String> rsp = template.exchange(uri, HttpMethod.POST, req, String.class);
         if (rsp.getStatusCode() == org.springframework.http.HttpStatus.OK) {
             return rsp.getBody();
