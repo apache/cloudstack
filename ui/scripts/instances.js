@@ -1463,9 +1463,13 @@
                             if (isAdmin()) {
                                 hiddenFields = [];
                             } else {
-                                hiddenFields = ["hypervisor"];
+                                hiddenFields = ["hypervisor", 'xenserverToolsVersion61plus'];
                             }
-
+                            
+                            if ('instances' in args.context && args.context.instances[0].hypervisor != 'XenServer') {
+                          	  hiddenFields.push('xenserverToolsVersion61plus');
+                            }
+                            
                             if (!args.context.instances[0].publicip) {
                                 hiddenFields.push('publicip');
                             }
@@ -1547,6 +1551,18 @@
                                 label: 'label.hypervisor'
                             },
 
+                            xenserverToolsVersion61plus: {
+                                label: 'XenServer Tools Version 6.1+',
+                                isBoolean: true,
+                                isEditable: function () {
+                                    if (isAdmin())
+                                        return true;
+                                    else
+                                        return false;
+                                },
+                                converter: cloudStack.converters.toBooleanText
+                            },
+                            
                             /*
 								isoid: {
                   label: 'label.attached.iso',
@@ -1622,6 +1638,13 @@
                                             state: "Destroyed"
                                         }); //after a regular user destroys a VM, listVirtualMachines API will no longer returns this destroyed VM to the regular user.
 
+                                    if ('details' in jsonObj && 'hypervisortoolsversion' in jsonObj.details) {
+                                        if (jsonObj.details.hypervisortoolsversion == 'xenserver61')
+                                            jsonObj.xenserverToolsVersion61plus = true;
+                                        else
+                                            jsonObj.xenserverToolsVersion61plus = false;
+                                    }
+                                    
                                     args.response.success({
                                         actionFilter: vmActionfilter,
                                         data: jsonObj
