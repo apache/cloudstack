@@ -32,7 +32,7 @@ class deployDataCenters(object):
         if not path.exists(cfgFile) \
            and not path.exists(path.abspath(cfgFile)):
             raise IOError("config file %s not found. please \
-specify a valid config file" % cfgFile)
+                            specify a valid config file" % cfgFile)
         self.configFile = cfgFile
 
     def addHosts(self, hosts, zoneId, podId, clusterId, hypervisor):
@@ -512,7 +512,8 @@ specify a valid config file" % cfgFile)
         try:
             self.config = configGenerator.get_setup_config(self.configFile)
         except:
-            raise cloudstackException.InvalidParameterException("Failed to load config %s" % self.configFile)
+            raise cloudstackException.InvalidParameterException(
+                "Failed to load config %s" % self.configFile)
 
         mgtDetails = self.config.mgtSvr[0]
         loggers = self.config.logger
@@ -532,27 +533,28 @@ specify a valid config file" % cfgFile)
         if testClientLogFile is not None:
             testClientLogger = logging.getLogger("testclient.testengine.run")
             fh = logging.FileHandler(testClientLogFile)
-            fh.setFormatter(logging.
-            Formatter("%(asctime)s - %(levelname)s - %(name)s\
-           - %(message)s"))
+            fh.setFormatter(logging.Formatter(
+                "%(asctime)s - %(levelname)s - %(name)s\ - %(message)s")
+            )
             testClientLogger.addHandler(fh)
             testClientLogger.setLevel(logging.INFO)
         self.testClientLogger = testClientLogger
 
         self.testClient = \
-            cloudstackTestClient.\
-            cloudstackTestClient( mgtDetails,logging=self.testClientLogger)
+            cloudstackTestClient.cloudstackTestClient(
+                mgtDetails, logging=self.testClientLogger)
 
         if mgtDetails.apiKey is None:
-           mgtDetails.apiKey,mgtDetails.securityKey = self.registerApiKey()
-           mgtDetails.port  = 8080
-                self.testClient = cloudstackTestClient.cloudstackTestClient( mgtDetails,logging=self.testClientLogger)
+            mgtDetails.apiKey, mgtDetails.securityKey = self.registerApiKey()
+            mgtDetails.port = 8080
+            self.testClient = cloudstackTestClient.cloudstackTestClient(
+                mgtDetails, logging=self.testClientLogger)
 
         """config database"""
         dbSvr = self.config.dbSvr
         if dbSvr is not None:
-            self.testClient.dbConfigure(dbSvr.dbSvr, dbSvr.port, dbSvr.user, \
-                                        dbSvr.passwd, dbSvr.db)
+            self.testClient.dbConfigure(
+                dbSvr.dbSvr, dbSvr.port, dbSvr.user, dbSvr.passwd, dbSvr.db)
 
         self.apiClient = self.testClient.getApiClient()
         """set hypervisor"""
@@ -560,7 +562,6 @@ specify a valid config file" % cfgFile)
             self.apiClient.hypervisor = mgtDetails.hypervisor
         else:
             self.apiClient.hypervisor = "XenServer"  # Defaults to Xenserver
-
 
     def updateConfiguration(self, globalCfg):
         if globalCfg is None:

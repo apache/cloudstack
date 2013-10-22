@@ -25,9 +25,11 @@ import hashlib
 
 
 class cloudstackTestClient(object):
-    def __init__(self,mgmtDetails,asyncTimeout=3600,defaultWorkerThreads=10, logging=None):
+    def __init__(self, mgmtDetails, asyncTimeout=3600,
+                 defaultWorkerThreads=10, logging=None):
         self.connection = \
-            cloudstackConnection.cloudConnection( mgmtDetails,asyncTimeout,logging)
+            cloudstackConnection.cloudConnection(mgmtDetails, asyncTimeout,
+                                                 logging)
         self.apiClient =\
             cloudstackAPIClient.CloudStackAPIClient(self.connection)
         self.dbConnection = None
@@ -46,8 +48,8 @@ class cloudstackTestClient(object):
 
     def dbConfigure(self, host="localhost", port=3306, user='cloud',
                     passwd='cloud', db='cloud'):
-        self.dbConnection = dbConnection.dbConnection(host, port, user, passwd,
-                                                      db)
+        self.dbConnection = dbConnection.dbConnection(host, port,
+                                                      user, passwd, db)
 
     def isAdminContext(self):
         """
