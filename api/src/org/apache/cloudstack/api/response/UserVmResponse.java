@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -177,6 +178,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
 	@SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with vm", responseObject = ResourceTagResponse.class)
 	private Set<ResourceTagResponse> tags;
+    
+    @SerializedName(ApiConstants.DETAILS) @Param(description="Template details in key/value pairs.", since="4.2.1")
+    private Map details;
 
 	@SerializedName(ApiConstants.SSH_KEYPAIR) @Param(description="ssh key-pair")
 	private String keyPairName;
@@ -653,5 +657,8 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 	public void setServiceState(String state) {
 		this.serviceState = state;
 	}
-
+	
+    public void setDetails(Map details) {
+        this.details = details;
+    }
 }
