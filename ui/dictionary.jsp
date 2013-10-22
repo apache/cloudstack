@@ -799,6 +799,7 @@ dictionary = {
 'label.network.id': '<fmt:message key="label.network.id" />',
 'label.networking.and.security': '<fmt:message key="label.networking.and.security" />',
 'label.network.label.display.for.blank.value': '<fmt:message key="label.network.label.display.for.blank.value" />',
+'label.network.limits': '<fmt:message key="label.network.limits" />',
 'label.network.name': '<fmt:message key="label.network.name" />',
 'label.network.offering.display.text': '<fmt:message key="label.network.offering.display.text" />',
 'label.network.offering': '<fmt:message key="label.network.offering" />',

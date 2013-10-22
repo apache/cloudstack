@@ -291,6 +291,24 @@
                                         });
                                     }
 
+                                    if (args.data.networkLimit != null) {
+                                        var data = {
+                                            resourceType: 6,
+                                            max: args.data.networkLimit,
+                                            domainid: accountObj.domainid,
+                                            account: accountObj.name
+                                        };
+
+                                        $.ajax({
+                                            url: createURL('updateResourceLimit'),
+                                            data: data,
+                                            async: false,
+                                            success: function(json) {
+                                                accountObj["networkLimit"] = args.data.networkLimit;
+                                            }
+                                        });
+                                    }
+
                                     if (args.data.primaryStorageLimit != null) {
                                         var data = {
                                             resourceType: 10,
@@ -651,6 +669,15 @@
                                                 return false;
                                         }
                                     },
+                                    networkLimit: {
+                                        label: 'label.network.limits',
+                                        isEditable: function(context) {
+                                            if (context.accounts[0].accounttype == roleTypeUser || context.accounts[0].accounttype == roleTypeDomainAdmin) //updateResourceLimits is only allowed on account whose type is user or domain-admin
+                                                return true;
+                                            else
+                                                return false;
+                                        }
+                                    },
                                     primaryStorageLimit: {
                                         label: 'label.primary.storage.limits',
                                         isEditable: function(context) {
@@ -732,6 +759,9 @@
                                                                     break;
                                                                 case "4":
                                                                     accountObj["templateLimit"] = limit.max;
+                                                                    break;
+                                                                case "6":
+                                                                    accountObj["networkLimit"] = limit.max;
                                                                     break;
                                                                 case "7":
                                                                     accountObj["vpcLimit"] = limit.max;
