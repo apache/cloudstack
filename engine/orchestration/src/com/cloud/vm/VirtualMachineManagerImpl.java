@@ -2294,6 +2294,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                                                                           hostDesc + " due to storage failure",
                 "Virtual Machine " + vm.getInstanceName() + " (id: " + vm.getId() + ") running on host [" + vm.getHostId() + "] stopped due to storage failure.");
         }
+        // track hypervsion tools version
+        if( info.hvtoolsversion != null && !info.hvtoolsversion.isEmpty() ) {
+
+            UserVmVO userVm = _userVmDao.findById(vm.getId());
+            _userVmDao.loadDetails(userVm);
+            userVm.setDetail("hypervisortoolsversion",  info.hvtoolsversion);
+            _userVmDao.saveDetails(userVm);
+        }
 
         if (trackExternalChange) {
             if (serverState == State.Starting) {
