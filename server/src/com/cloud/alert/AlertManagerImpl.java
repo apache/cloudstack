@@ -153,12 +153,14 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
         String smtpPassword = configs.get("alert.smtp.password");
         String emailSender = configs.get("alert.email.sender");
         String smtpDebugStr = configs.get("alert.smtp.debug");
+        int smtpTimeout = NumbersUtil.parseInt(configs.get("alert.smtp.timeout"), 30000);
+        int smtpConnectionTimeout = NumbersUtil.parseInt(configs.get("alert.smtp.connectiontimeout"), 30000);
         boolean smtpDebug = false;
         if (smtpDebugStr != null) {
             smtpDebug = Boolean.parseBoolean(smtpDebugStr);
         }
 
-        _emailAlert = new EmailAlert(emailAddresses, smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, smtpDebug);
+        _emailAlert = new EmailAlert(emailAddresses, smtpHost, smtpPort, smtpConnectionTimeout, smtpTimeout, useAuth, smtpUsername, smtpPassword, emailSender, smtpDebug);
 
 
         String storageCapacityThreshold = _configDao.getValue(Config.StorageCapacityThreshold.key());
@@ -775,8 +777,11 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
         private final String _smtpUsername;
         private final String _smtpPassword;
         private final String _emailSender;
+        private int _smtpTimeout;
+        private int _smtpConnectionTimeout;
 
-        public EmailAlert(String[] recipientList, String smtpHost, int smtpPort, boolean smtpUseAuth, final String smtpUsername, final String smtpPassword, String emailSender, boolean smtpDebug) {
+        public EmailAlert(String[] recipientList, String smtpHost, int smtpPort, int smtpConnectionTimeout, int smtpTimeout, boolean smtpUseAuth, final String smtpUsername,
+                final String smtpPassword, String emailSender, boolean smtpDebug) {
             if (recipientList != null) {
                 _recipientList = new InternetAddress[recipientList.length];
                 for (int i = 0; i < recipientList.length; i++) {
@@ -794,14 +799,16 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
             _smtpUsername = smtpUsername;
             _smtpPassword = smtpPassword;
             _emailSender = emailSender;
+            _smtpTimeout = smtpTimeout;
+            _smtpConnectionTimeout = smtpConnectionTimeout;
 
             if (_smtpHost != null) {
                 Properties smtpProps = new Properties();
                 smtpProps.put("mail.smtp.host", smtpHost);
                 smtpProps.put("mail.smtp.port", smtpPort);
                 smtpProps.put("mail.smtp.auth", ""+smtpUseAuth);
-                smtpProps.put("mail.smtp.timeout", 30000);
-                smtpProps.put("mail.smtp.connectiontimeout", 30000);
+                smtpProps.put("mail.smtp.timeout", _smtpTimeout);
+                smtpProps.put("mail.smtp.connectiontimeout", _smtpConnectionTimeout);
                 if (smtpUsername != null) {
                     smtpProps.put("mail.smtp.user", smtpUsername);
                 }
@@ -809,8 +816,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
                 smtpProps.put("mail.smtps.host", smtpHost);
                 smtpProps.put("mail.smtps.port", smtpPort);
                 smtpProps.put("mail.smtps.auth", ""+smtpUseAuth);
-                smtpProps.put("mail.smtps.timeout", 30000);
-                smtpProps.put("mail.smtps.connectiontimeout", 30000);
+                smtpProps.put("mail.smtps.timeout", _smtpTimeout);
+                smtpProps.put("mail.smtps.connectiontimeout", _smtpConnectionTimeout);
                 if (smtpUsername != null) {
                     smtpProps.put("mail.smtps.user", smtpUsername);
                 }
