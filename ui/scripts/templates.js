@@ -214,10 +214,21 @@
                                                     $form.find('.form-item[rel=rootDiskControllerType]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=nicAdapterType]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=keyboardType]').css('display', 'inline-block');
+                                                    
+                                                    $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
+                                                } else if ($(this).val() == "XenServer") {
+                                                	$form.find('.form-item[rel=rootDiskControllerType]').hide();
+                                                    $form.find('.form-item[rel=nicAdapterType]').hide();
+                                                    $form.find('.form-item[rel=keyboardType]').hide();	
+                                                    
+                                                    if (isAdmin())
+                                                        $form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');    
                                                 } else {
                                                     $form.find('.form-item[rel=rootDiskControllerType]').hide();
                                                     $form.find('.form-item[rel=nicAdapterType]').hide();
                                                     $form.find('.form-item[rel=keyboardType]').hide();
+                                                    
+                                                    $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
                                                 }
                                             });
 
@@ -225,6 +236,30 @@
                                         }
                                     },
 
+                                    xenserverToolsVersion61plus: {
+                                        label: 'XenServer Tools Version 6.1+',
+                                        isBoolean: true,
+                                        isChecked: function (args) {
+                                            var b = false;
+                                            if (isAdmin()) {
+                                                $.ajax({
+                                                    url: createURL('listConfigurations'),
+                                                    data: {
+                                                        name: 'xen.pvdriver.version'
+                                                    },
+                                                    async: false,
+                                                    success: function (json) {
+                                                        if (json.listconfigurationsresponse.configuration != null && json.listconfigurationsresponse.configuration[0].value == 'xenserver61') {
+                                                            b = true;
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                            return b;
+                                        },
+                                        isHidden: true
+                                    },
+                                    
                                     //fields for hypervisor == "VMware" (starts here)
                                     rootDiskControllerType: {
                                         label: 'label.root.disk.controller',
@@ -439,6 +474,16 @@
                                     });
                                 }
 
+                                
+                                //XenServer only (starts here)                  
+                                if (args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css("display") != "none") {
+                                    $.extend(data, {
+                                        'details[0].hypervisortoolsversion': (args.data.xenserverToolsVersion61plus == "on") ? "xenserver61" : "xenserver56"
+                                    });
+                                }
+                                //XenServer only (ends here)
+                                
+                                
                                 //VMware only (starts here)
                                 if (args.$form.find('.form-item[rel=rootDiskControllerType]').css("display") != "none" && args.data.rootDiskControllerType != "") {
                                     $.extend(data, {
@@ -800,8 +845,13 @@
                                     if (isAdmin()) {
                                         hiddenFields = [];
                                     } else {
-                                        hiddenFields = ["hypervisor"];
+                                        hiddenFields = ["hypervisor", 'xenserverToolsVersion61plus'];
                                     }
+                                    
+                                    if ('templates' in args.context && args.context.templates[0].hypervisor != 'XenServer') {
+                                        hiddenFields.push('xenserverToolsVersion61plus');
+                                    }
+                                    
                                     return hiddenFields;
                                 },
 
@@ -832,6 +882,17 @@
                                     },
                                     hypervisor: {
                                         label: 'label.hypervisor'
+                                    },
+                                    xenserverToolsVersion61plus: {
+                                        label: 'XenServer Tools Version 6.1+',
+                                        isBoolean: true,
+                                        isEditable: function () {
+                                            if (isAdmin())
+                                                return true;
+                                            else
+                                                return false;
+                                        },
+                                        converter: cloudStack.converters.toBooleanText
                                     },
                                     templatetype: {
                                         label: 'label.type'
@@ -959,13 +1020,21 @@
                                         url: createURL(apiCmd),
                                         dataType: "json",
                                         success: function(json) {
-                                            args.response.success({
-                                                actionFilter: templateActionfilter,
-                                                data: json.listtemplatesresponse.template[0]
-                                            });
+                                        	var jsonObj = json.listtemplatesresponse.template[0];
+
+                                        	if ('details' in jsonObj && 'hypervisortoolsversion' in jsonObj.details) {
+                                        	    if (jsonObj.details.hypervisortoolsversion == 'xenserver61')
+                                        	        jsonObj.xenserverToolsVersion61plus = true;
+                                        	    else
+                                        	        jsonObj.xenserverToolsVersion61plus = false;
+                                        	}
+
+                                        	args.response.success({
+                                        	    actionFilter: templateActionfilter,
+                                        	    data: jsonObj
+                                        	});
                                         }
                                     });
-
                                 }
                             }
                         }
