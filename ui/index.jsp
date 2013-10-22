@@ -239,9 +239,9 @@
                         <div class="step network always-load" wizard-step-id="network">
                             <!-- 5a: Network description -->
                             <div class="wizard-step-conditional nothing-to-select">
-								                <p id="from_instance_page_1"><fmt:message key="message.zone.no.network.selection"/></p>
-								                <p id="from_instance_page_2"><fmt:message key="message.please.proceed"/></p>
-								                <p id="from_vpc_tier"></p>
+                                <p id="from_instance_page_1"><fmt:message key="message.zone.no.network.selection"/></p>
+                                <p id="from_instance_page_2"><fmt:message key="message.please.proceed"/></p>
+                                <p id="from_vpc_tier"></p>
                             </div>
 
                             <!-- 5b: Select network -->
@@ -433,7 +433,7 @@
                                             <a href="5"><fmt:message key="label.edit"/></a>
                                         </div>
                                     </div>
-                                    
+
                                     <!-- Primary network -->
                                     <div class="select odd">
                                         <div class="name">
@@ -551,7 +551,7 @@
                                     <div class="select-area advanced-zone disabled">
                                         <div class="desc">
                                             <fmt:message key="message.desc.advanced.zone"/>
-										                    </div>
+                                        </div>
                                         <input type="radio" name="network-model" value="Advanced" />
                                         <label><fmt:message key="label.advanced"/></label>
                                         <!-- Isolation mode -->
@@ -579,7 +579,7 @@
                          zone-wizard-step-id="addZone">
                         <div class="info-desc">
                             <fmt:message key="message.desc.zone"/>
-						            </div>
+                        </div>
                         <div class="content input-area">
                             <div class="select-container"></div>
                         </div>
@@ -714,7 +714,7 @@
                         </ul>
                         <div class="info-desc" id="add_zone_public_traffic_desc">
                             <span id="for_basic_zone" style="display:none"><fmt:message key="message.public.traffic.in.basic.zone"/></span>
-							              <span id="for_advanced_zone" style="display:none"><fmt:message key="message.public.traffic.in.advanced.zone"/></span>
+                            <span id="for_advanced_zone" style="display:none"><fmt:message key="message.public.traffic.in.advanced.zone"/></span>
                         </div>
                         <div ui-custom="publicTrafficIPRange"></div>
                     </div>
@@ -749,7 +749,7 @@
                         </ul>
                         <div class="info-desc" id="add_zone_guest_traffic_desc">
                             <span id="for_basic_zone" style="display:none"><fmt:message key="message.guest.traffic.in.basic.zone"/></span>
-							              <span id="for_advanced_zone" style="display:none"><fmt:message key="message.guest.traffic.in.advanced.zone"/></span>
+                            <span id="for_advanced_zone" style="display:none"><fmt:message key="message.guest.traffic.in.advanced.zone"/></span>
                         </div>
                         <div class="content input-area">
                             <div class="select-container"></div>
@@ -782,7 +782,7 @@
 
                         <div class="info-desc">
                             <fmt:message key="message.desc.cluster"/>
-						            </div>
+                        </div>
                         <div class="content input-area">
                             <div class="select-container"></div>
                         </div>
@@ -798,7 +798,7 @@
                         </ul>
                         <div class="info-desc">
                             <fmt:message key="message.desc.host"/>
-						            </div>
+                        </div>
                         <div class="content input-area">
                             <div class="select-container"></div>
                         </div>
@@ -814,7 +814,7 @@
                         </ul>
                         <div class="info-desc">
                             <fmt:message key="message.desc.primary.storage"/>
-						            </div>
+                        </div>
                         <div class="content input-area">
                             <div class="select-container"></div>
                         </div>
@@ -830,7 +830,7 @@
                         </ul>
                         <div class="info-desc">
                             <fmt:message key="message.desc.secondary.storage"/>
-						            </div>
+                        </div>
                         <div class="content input-area">
                             <div class="select-container"></div>
                         </div>
@@ -882,7 +882,7 @@
                     <li class="firewall">
                         <div class="name"><span><fmt:message key="label.firewall"/></span></div>
                         <!--<div class="view-details" net-target="staticNAT"><fmt:message key="label.view.all"/></div>-->
-						            <div class="view-details" net-target="firewall"><fmt:message key="label.view.all" /></div>
+                        <div class="view-details" net-target="firewall"><fmt:message key="label.view.all" /></div>
                     </li>
                 </ul>
             </div>
@@ -1244,7 +1244,7 @@
                             <div class="content">
                                 <span class="title" data-list-item="name">Alert 1</span>
                                 <p data-list-item="description">Alert 1</p>
-				                        <p data-list-item="sent">Alert 1</p>
+                                <p data-list-item="sent">Alert 1</p>
                             </div>
                         </li>
                     </ul>
@@ -1418,7 +1418,7 @@
                                 <div class="field timezone">
                                     <div class="name"></div>
                                     <div class="value">
-                                        <select name="timezone">                      
+                                        <select name="timezone">
                                         </select>
                                     </div>
                                 </div>
