@@ -697,7 +697,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
             }
 
-            if (vpcsDeleted) {
+            if (networksDeleted && vpcsDeleted) {
                 // release ip addresses belonging to the account
                 List<? extends IpAddress> ipsToRelease = _ipAddressDao.listByAccount(accountId);
                 for (IpAddress ip : ipsToRelease) {
