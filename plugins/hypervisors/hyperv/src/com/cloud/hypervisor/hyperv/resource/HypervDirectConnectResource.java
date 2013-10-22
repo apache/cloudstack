@@ -42,6 +42,10 @@ import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckRouterAnswer;
+import com.cloud.agent.api.CheckRouterCommand;
+import com.cloud.agent.api.CheckS2SVpnConnectionsAnswer;
+import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
@@ -49,6 +53,7 @@ import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
+import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
@@ -57,22 +62,37 @@ import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.CreateIpAliasCommand;
+import com.cloud.agent.api.routing.DeleteIpAliasCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.DnsMasqConfigCommand;
 import com.cloud.agent.api.routing.IpAliasTO;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
+import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+import com.cloud.agent.api.routing.SetSourceNatAnswer;
+import com.cloud.agent.api.routing.SetSourceNatCommand;
+import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
+import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.SetStaticRouteAnswer;
+import com.cloud.agent.api.routing.SetStaticRouteCommand;
+import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.to.DhcpTO;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.PortForwardingRuleTO;
+import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.HAProxyConfigurator;
+import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.resource.ServerResource;
@@ -369,16 +389,31 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
             answer = execute((SavePasswordCommand) cmd);
         } else  if (clazz == SetFirewallRulesCommand.class) {
             answer = execute((SetFirewallRulesCommand)cmd);
-        } 
-
+        } else if (clazz == LoadBalancerConfigCommand.class) {
+            answer = execute((LoadBalancerConfigCommand) cmd);
+        } else if (clazz == DeleteIpAliasCommand.class) {
+            return execute((DeleteIpAliasCommand) cmd);
+        } else if (clazz == PingTestCommand.class) {
+            answer = execute((PingTestCommand) cmd);
+        } else if (clazz == SetStaticNatRulesCommand.class) {
+            answer = execute((SetStaticNatRulesCommand) cmd);
+        }  else if (clazz == CheckRouterCommand.class) {
+            answer = execute((CheckRouterCommand) cmd);
+        } else if (clazz == SetPortForwardingRulesCommand.class) {
+            answer = execute((SetPortForwardingRulesCommand) cmd);
+        } else if (clazz == SetSourceNatCommand.class) {
+            answer = execute((SetSourceNatCommand) cmd);
+        } else if (clazz == Site2SiteVpnCfgCommand.class) {
+            answer = execute((Site2SiteVpnCfgCommand) cmd);
+        } else if (clazz == CheckS2SVpnConnectionsCommand.class) {
+            answer = execute((CheckS2SVpnConnectionsCommand) cmd);
+        } else if (clazz == SetStaticRouteCommand.class) {
+            answer = execute((SetStaticRouteCommand) cmd);
+        }
         else {
-
         // Else send the cmd to hyperv agent.
-
         String ansStr = postHttpRequest(s_gson.toJson(cmd), agentUri);
-
         if (ansStr == null) {
-            // return null;
            return Answer.createUnsupportedCommandAnswer(cmd);
         }
         // Only Answer instances are returned by remote agents.
@@ -391,6 +426,529 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
         }
         }
         return answer;
+    }
+
+    private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource SetStaticRouteCommand: " + s_gson.toJson(cmd));
+        }
+
+        boolean endResult = true;
+
+        String controlIp = getRouterSshControlIp(cmd);
+        String args = "";
+        String[] results = new String[cmd.getStaticRoutes().length];
+        int i = 0;
+
+        // Extract and build the arguments for the command to be sent to the VR.
+        String[][] rules = cmd.generateSRouteRules();
+        StringBuilder sb = new StringBuilder();
+        String[] srRules = rules[0];
+        for (int j = 0; j < srRules.length; j++) {
+            sb.append(srRules[j]).append(',');
+        }
+        args += " -a " + sb.toString();
+
+        // Send over the command for execution, via ssh, to the VR.
+        try {
+            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null,
+                    "/opt/cloud/bin/vpc_staticroute.sh " + args);
+
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Executing script on domain router " + controlIp + ": /opt/cloud/bin/vpc_staticroute.sh " + args);
+
+            if (!result.first()) {
+                s_logger.error("SetStaticRouteCommand failure on setting one rule. args: " + args);
+                results[i++] = "Failed";
+                endResult = false;
+            } else {
+                results[i++] = null;
+            }
+        } catch (Throwable e) {
+            s_logger.error("SetStaticRouteCommand(args: " + args + ") failed on setting one rule due to " + e);
+            results[i++] = "Failed";
+            endResult = false;
+        }
+        return new SetStaticRouteAnswer(cmd, endResult, results);
+
+    }
+
+    protected CheckS2SVpnConnectionsAnswer execute(CheckS2SVpnConnectionsCommand cmd) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Executing resource CheckS2SVpnConnectionsCommand: " + s_gson.toJson(cmd));
+            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /opt/cloud/bin/checkbatchs2svpn.sh ");
+        }
+
+        Pair<Boolean, String> result;
+        try {
+            String controlIp = getRouterSshControlIp(cmd);
+            String cmdline = "/opt/cloud/bin/checkbatchs2svpn.sh ";
+            for (String ip : cmd.getVpnIps()) {
+                cmdline += " " + ip;
+            }
+
+            result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, cmdline);
+
+            if (!result.first()) {
+                s_logger.error("check site-to-site vpn connections command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " failed, message: "
+                        + result.second());
+
+                return new CheckS2SVpnConnectionsAnswer(cmd, false, result.second());
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("check site-to-site vpn connections command on domain router " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " completed");
+            }
+        } catch (Throwable e) {
+            String msg = "CheckS2SVpnConnectionsCommand failed due to " + e;
+            s_logger.error(msg, e);
+            return new CheckS2SVpnConnectionsAnswer(cmd, false, "CheckS2SVpnConneciontsCommand failed");
+        }
+        return new CheckS2SVpnConnectionsAnswer(cmd, true, result.second());
+    }
+
+    protected Answer execute(Site2SiteVpnCfgCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource Site2SiteVpnCfgCommand " + s_gson.toJson(cmd));
+        }
+
+        String routerIp = getRouterSshControlIp(cmd);
+
+        String args = "";
+        if (cmd.isCreate()) {
+            args += " -A";
+            args += " -l ";
+            args += cmd.getLocalPublicIp();
+            args += " -n ";
+            args += cmd.getLocalGuestCidr();
+            args += " -g ";
+            args += cmd.getLocalPublicGateway();
+            args += " -r ";
+            args += cmd.getPeerGatewayIp();
+            args += " -N ";
+            args += cmd.getPeerGuestCidrList();
+            args += " -e ";
+            args += "\"" + cmd.getEspPolicy() + "\"";
+            args += " -i ";
+            args += "\"" + cmd.getIkePolicy() + "\"";
+            args += " -t ";
+            args += Long.toString(cmd.getIkeLifetime());
+            args += " -T ";
+            args += Long.toString(cmd.getEspLifetime());
+            args += " -s ";
+            args += "\"" + cmd.getIpsecPsk() + "\"";
+            args += " -d ";
+            if (cmd.getDpd()) {
+                args += "1";
+            } else {
+                args += "0";
+            }
+        } else {
+            args += " -D";
+            args += " -r ";
+            args += cmd.getPeerGatewayIp();
+            args += " -n ";
+            args += cmd.getLocalGuestCidr();
+            args += " -N ";
+            args += cmd.getPeerGuestCidrList();
+        }
+
+        Pair<Boolean, String> result;
+        try {
+            result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null,
+                    "/opt/cloud/bin/ipsectunnel.sh " + args);
+
+            if (!result.first()) {
+                s_logger.error("Setup site2site VPN " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " failed, message: " + result.second());
+
+                return new Answer(cmd, false, "Setup site2site VPN falied due to " + result.second());
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("setup site 2 site vpn on router " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " completed");
+            }
+        } catch (Throwable e) {
+            String msg = "Setup site2site VPN falied due to " + e.getMessage();
+            s_logger.error(msg, e);
+            return new Answer(cmd, false, "Setup site2site VPN failed due to " + e.getMessage());
+        }
+        return new Answer(cmd, true, result.second());
+    }
+
+    protected SetSourceNatAnswer execute(SetSourceNatCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource SetSourceNatCommand " + s_gson.toJson(cmd));
+        }
+
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIp = getRouterSshControlIp(cmd);
+        IpAddressTO pubIp = cmd.getIpAddress();
+        try {
+            int ethDeviceNum = findRouterEthDeviceIndex(routerName, routerIp, pubIp.getVifMacAddress());
+            String args = "";
+            args += " -A ";
+            args += " -l ";
+            args += pubIp.getPublicIp();
+
+            args += " -c ";
+            args += "eth" + ethDeviceNum;
+
+            Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null,
+                    "/opt/cloud/bin/vpc_snat.sh " + args);
+
+            if (!result.first()) {
+                String msg = "SetupGuestNetworkCommand on domain router " + routerIp + " failed. message: " + result.second();
+                s_logger.error(msg);
+
+                return new SetSourceNatAnswer(cmd, false, msg);
+            }
+
+            return new SetSourceNatAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            String msg = "Ip SNAT failure due to " + e.toString();
+            s_logger.error(msg, e);
+            return new SetSourceNatAnswer(cmd, false, msg);
+        }
+    }
+
+    //
+    // find mac address of a specified ethx device
+    //    ip address show ethx | grep link/ether | sed -e 's/^[ \t]*//' | cut -d' ' -f2
+    // returns
+    //      eth0:xx.xx.xx.xx
+
+    //
+    // list IP with eth devices
+    //  ifconfig ethx |grep -B1 "inet addr" | awk '{ if ( $1 == "inet" ) { print $2 } else if ( $2 == "Link" ) { printf "%s:" ,$1 } }'
+    //     | awk -F: '{ print $1 ": " $3 }'
+    //
+    // returns
+    //      eth0:xx.xx.xx.xx
+    //
+    //
+
+    private int findRouterEthDeviceIndex(String domrName, String routerIp, String mac) throws Exception {
+
+        s_logger.info("findRouterEthDeviceIndex. mac: " + mac);
+
+        // TODO : this is a temporary very inefficient solution, will refactor it later
+        Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null,
+                "ls /proc/sys/net/ipv4/conf");
+
+        // when we dynamically plug in a new NIC into virtual router, it may take time to show up in guest OS
+        // we use a waiting loop here as a workaround to synchronize activities in systems
+        long startTick = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTick < 15000) {
+            if (result.first()) {
+                String[] tokens = result.second().split("\\s+");
+                for (String token : tokens) {
+                    if (!("all".equalsIgnoreCase(token) || "default".equalsIgnoreCase(token) || "lo".equalsIgnoreCase(token))) {
+                        String cmd = String.format("ip address show %s | grep link/ether | sed -e 's/^[ \t]*//' | cut -d' ' -f2", token);
+
+                        if (s_logger.isDebugEnabled())
+                            s_logger.debug("Run domr script " + cmd);
+                        Pair<Boolean, String> result2 = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null,
+                                // TODO need to find the dev index inside router based on IP address
+                                cmd);
+                        if (s_logger.isDebugEnabled())
+                            s_logger.debug("result: " + result2.first() + ", output: " + result2.second());
+
+                        if (result2.first() && result2.second().trim().equalsIgnoreCase(mac.trim()))
+                            return Integer.parseInt(token.substring(3));
+                    }
+                }
+            }
+
+            s_logger.warn("can not find intereface associated with mac: " + mac + ", guest OS may still at loading state, retry...");
+
+            try {
+                Thread.currentThread().sleep(1000);
+            } catch (InterruptedException e) {
+            }
+        }
+
+        return -1;
+    }
+
+    protected Answer execute(SetPortForwardingRulesCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource SetPortForwardingRulesCommand: " + s_gson.toJson(cmd));
+        }
+
+        String controlIp = getRouterSshControlIp(cmd);
+        String args = "";
+        String[] results = new String[cmd.getRules().length];
+        int i = 0;
+
+        boolean endResult = true;
+        for (PortForwardingRuleTO rule : cmd.getRules()) {
+            args += rule.revoked() ? " -D " : " -A ";
+            args += " -P " + rule.getProtocol().toLowerCase();
+            args += " -l " + rule.getSrcIp();
+            args += " -p " + rule.getStringSrcPortRange();
+            args += " -r " + rule.getDstIp();
+            args += " -d " + rule.getStringDstPortRange();
+
+            try {
+                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/root/firewall.sh " + args);
+
+                if (s_logger.isDebugEnabled())
+                    s_logger.debug("Executing script on domain router " + controlIp + ": /root/firewall.sh " + args);
+
+                if (!result.first()) {
+                    s_logger.error("SetPortForwardingRulesCommand failure on setting one rule. args: " + args);
+                    results[i++] = "Failed";
+                    endResult = false;
+                } else {
+                    results[i++] = null;
+                }
+            } catch (Throwable e) {
+                s_logger.error("SetPortForwardingRulesCommand(args: " + args + ") failed on setting one rule due to " + e.getMessage());
+                results[i++] = "Failed";
+                endResult = false;
+            }
+        }
+
+        return new SetPortForwardingRulesAnswer(cmd, results, endResult);
+    }
+
+    protected Answer execute(CheckRouterCommand cmd) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Executing resource CheckRouterCommand: " + s_gson.toJson(cmd));
+            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /opt/cloud/bin/checkrouter.sh ");
+        }
+
+        Pair<Boolean, String> result;
+        try {
+
+            String controlIp = getRouterSshControlIp(cmd);
+            result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null,
+                    "/opt/cloud/bin/checkrouter.sh ");
+
+            if (!result.first()) {
+                s_logger.error("check router command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " failed, message: " + result.second());
+
+                return new CheckRouterAnswer(cmd, "CheckRouter failed due to " + result.second());
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("check router command on domain router " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " completed");
+            }
+        } catch (Throwable e) {
+            String msg = "CheckRouterCommand failed due to " + e.getMessage();
+            s_logger.error(msg, e);
+            return new CheckRouterAnswer(cmd, msg);
+        }
+        return new CheckRouterAnswer(cmd, result.second(), true);
+    }
+
+    protected Answer execute(SetStaticNatRulesCommand cmd) {
+
+        if (cmd.getVpcId() != null) {
+            //return SetVPCStaticNatRules(cmd);
+        }
+
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource SetFirewallRuleCommand: " + s_gson.toJson(cmd));
+        }
+
+        String args = null;
+        String[] results = new String[cmd.getRules().length];
+        int i = 0;
+        boolean endResult = true;
+        for (StaticNatRuleTO rule : cmd.getRules()) {
+            // 1:1 NAT needs instanceip;publicip;domrip;op
+            args = rule.revoked() ? " -D " : " -A ";
+
+            args += " -l " + rule.getSrcIp();
+            args += " -r " + rule.getDstIp();
+
+            if (rule.getProtocol() != null) {
+                args += " -P " + rule.getProtocol().toLowerCase();
+            }
+
+            args += " -d " + rule.getStringSrcPortRange();
+            args += " -G ";
+
+            try {
+                String controlIp = getRouterSshControlIp(cmd);
+                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/root/firewall.sh " + args);
+
+                if (s_logger.isDebugEnabled())
+                    s_logger.debug("Executing script on domain router " + controlIp + ": /root/firewall.sh " + args);
+
+                if (!result.first()) {
+                    s_logger.error("SetStaticNatRulesCommand failure on setting one rule. args: " + args);
+                    results[i++] = "Failed";
+                    endResult = false;
+                } else {
+                    results[i++] = null;
+                }
+            } catch (Throwable e) {
+                s_logger.error("SetStaticNatRulesCommand (args: " + args + ") failed on setting one rule due to " + e.getMessage());
+                results[i++] = "Failed";
+                endResult = false;
+            }
+        }
+        return new SetStaticNatRulesAnswer(cmd, results, endResult);
+    }
+
+    protected Answer execute(PingTestCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource PingTestCommand: " + s_gson.toJson(cmd));
+        }
+        String controlIp = cmd.getRouterIp();
+        String args = " -c 1 -n -q " + cmd.getPrivateIp();
+        try {
+            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/bin/ping" + args);
+            if (result.first())
+                return new Answer(cmd);
+        } catch (Exception e) {
+            s_logger.error("Unable to execute ping command on DomR (" + controlIp + "), domR may not be ready yet. failure due to "
+                    + e.getMessage());
+        }
+        return new Answer(cmd, false, "PingTestCommand failed");
+    }
+
+    protected Answer execute(final DeleteIpAliasCommand cmd) {
+        cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        List<IpAliasTO> revokedIpAliasTOs = cmd.getDeleteIpAliasTos();
+        List<IpAliasTO> activeIpAliasTOs = cmd.getCreateIpAliasTos();
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing deleteIpAlias command: " + s_gson.toJson(cmd));
+        }
+        String args = "";
+        for (IpAliasTO ipAliasTO : revokedIpAliasTOs) {
+            args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
+        }
+        args = args + "- ";
+        for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
+            args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
+        }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /root/deleteIpAlias " + args);
+        }
+
+        try {
+            String controlIp = getRouterSshControlIp(cmd);
+            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null,
+                    "/root/deleteIpAlias.sh " + args);
+
+            if (!result.first()) {
+                s_logger.error("deleteIpAlias command on domr " + controlIp + " failed, message: " + result.second());
+
+                return new Answer(cmd, false, "deleteIpAlias failed due to " + result.second());
+            }
+
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("deleteIpAlias command on domain router " + controlIp + " completed");
+            }
+
+        } catch (Throwable e) {
+            String msg = "deleteIpAlias failed due to " + e.getMessage();
+            s_logger.error(msg, e);
+            return new Answer(cmd, false, msg);
+        }
+
+        return new Answer(cmd);
+    }
+
+    protected Answer execute(final LoadBalancerConfigCommand cmd) {
+
+        if (cmd.getVpcId() != null) {
+            //return VPCLoadBalancerConfig(cmd);
+        }
+
+        File keyFile = getSystemVMKeyFile();
+
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String controlIp = getRouterSshControlIp(cmd);
+
+        assert (controlIp != null);
+
+        LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
+        String[] config = cfgtr.generateConfiguration(cmd);
+
+        String[][] rules = cfgtr.generateFwRules(cmd);
+        String tmpCfgFilePath = "/tmp/" + routerIp.replace('.', '_') + ".cfg";
+        String tmpCfgFileContents = "";
+        for (int i = 0; i < config.length; i++) {
+            tmpCfgFileContents += config[i];
+            tmpCfgFileContents += "\n";
+        }
+
+        try {
+            SshHelper.scpTo(controlIp, DEFAULT_DOMR_SSHPORT, "root", keyFile, null, "/tmp/", tmpCfgFileContents.getBytes(), routerIp.replace('.', '_') + ".cfg", null);
+
+            try {
+                String[] addRules = rules[LoadBalancerConfigurator.ADD];
+                String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
+                String[] statRules = rules[LoadBalancerConfigurator.STATS];
+
+                String args = "";
+                args += "-i " + routerIp;
+                args += " -f " + tmpCfgFilePath;
+
+                StringBuilder sb = new StringBuilder();
+                if (addRules.length > 0) {
+                    for (int i = 0; i < addRules.length; i++) {
+                        sb.append(addRules[i]).append(',');
+                    }
+
+                    args += " -a " + sb.toString();
+                }
+
+                sb = new StringBuilder();
+                if (removeRules.length > 0) {
+                    for (int i = 0; i < removeRules.length; i++) {
+                        sb.append(removeRules[i]).append(',');
+                    }
+
+                    args += " -d " + sb.toString();
+                }
+
+                sb = new StringBuilder();
+                if (statRules.length > 0) {
+                    for (int i = 0; i < statRules.length; i++) {
+                        sb.append(statRules[i]).append(',');
+                    }
+
+                    args += " -s " + sb.toString();
+                }
+
+                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "scp " + tmpCfgFilePath
+                        + " /etc/haproxy/haproxy.cfg.new");
+
+                if (!result.first()) {
+                    s_logger.error("Unable to copy haproxy configuration file");
+                    return new Answer(cmd, false, "LoadBalancerConfigCommand failed due to uanble to copy haproxy configuration file");
+                }
+
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Run command on domain router " + routerIp + ",  /root/loadbalancer.sh " + args);
+                }
+
+                result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/root/loadbalancer.sh " + args);
+
+                if (!result.first()) {
+                    String msg = "LoadBalancerConfigCommand on domain router " + routerIp + " failed. message: " + result.second();
+                    s_logger.error(msg);
+
+                    return new Answer(cmd, false, msg);
+                }
+
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info("LoadBalancerConfigCommand on domain router " + routerIp + " completed");
+                }
+            } finally {
+                SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "rm " + tmpCfgFilePath);
+            }
+
+            return new Answer(cmd);
+        } catch (Throwable e) {
+            s_logger.error("Unexpected exception: " + e.toString(), e);
+            return new Answer(cmd, false, "LoadBalancerConfigCommand failed due to " + e.getMessage());
+        }
     }
 
     protected Answer execute(SavePasswordCommand cmd) {
@@ -413,7 +971,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
 
         args += " -p " + password;
 
-
         try {
 
             Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/root/savepassword.sh " + args);
@@ -435,7 +992,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
         }
         return new Answer(cmd);
     }
-
 
     protected SetFirewallRulesAnswer execute(SetFirewallRulesCommand cmd) {
         String controlIp = getRouterSshControlIp(cmd);
@@ -577,7 +1133,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
         return new Answer(cmd);
     }
 
-
     private String encodeDataArgs(String[] dataArgs) {
         StringBuilder sb = new StringBuilder();
 
@@ -652,10 +1207,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
         return new Answer(cmd);
     }
 
-
-
-
-
     protected Answer execute(final CreateIpAliasCommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing createIpAlias command: " + s_gson.toJson(cmd));
@@ -693,7 +1244,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
 
         return new Answer(cmd);
     }
-
 
     protected Answer execute(final DnsMasqConfigCommand cmd) {
         if (s_logger.isInfoEnabled()) {
@@ -733,8 +1283,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
 
         return new Answer(cmd);
     }
-
-
 
     protected Answer execute(IpAssocCommand cmd) {
         if (s_logger.isInfoEnabled()) {
@@ -852,7 +1400,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
         }
     }
 
-
    protected Answer execute(GetDomRVersionCmd cmd) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Executing resource GetDomRVersionCmd: " + s_gson.toJson(cmd));
@@ -905,10 +1452,10 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
     }
 
     protected Answer execute(NetworkUsageCommand cmd) {
-/*        if ( cmd.isForVpc() ) {
-            return VPCNetworkUsage(cmd);
+        if ( cmd.isForVpc() ) {
+            //return VPCNetworkUsage(cmd);
         }
-*/        if (s_logger.isInfoEnabled()) {
+        if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource NetworkUsageCommand "+ s_gson.toJson(cmd));
         }
         if(cmd.getOption()!=null && cmd.getOption().equals("create") ){
