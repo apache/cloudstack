@@ -376,8 +376,14 @@
                             name: key,
                             type: 'checkbox'
                         }).appendTo($value);
-                        if (field.isChecked) {
-                            $input.attr('checked', strOrFunc(field.isChecked));
+                    	var isChecked;
+                    	if (typeof (field.isChecked) == 'function') {
+                    	    isChecked = field.isChecked();
+                    	} else {
+                    	    isChecked = field.isChecked;
+                    	}
+                        if (isChecked) {
+                        	$input.attr('checked', strOrFunc(field.isChecked));
                         } else {
                             // This is mainly for IE compatibility
                             setTimeout(function() {
