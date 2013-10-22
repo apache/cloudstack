@@ -657,6 +657,25 @@
                                         }
                                     });
 
+                                    
+                                    //***** addResourceDetail *****
+                                    //XenServer only (starts here)                                       
+  					                if(args.$detailView.find('form').find('div .detail-group').find('.xenserverToolsVersion61plus').length > 0) {	  					                	
+  					                	$.ajax({
+  					                		url: createURL('addResourceDetail'),
+  					                		data: {
+  					                			resourceType: 'template',
+  					                			resourceId: 1,
+  					                			'details[0].key': 'hypervisortoolsversion',
+  					                			'details[0].value': (args.data.xenserverToolsVersion61plus == "on") ? 'xenserver61' : 'xenserver56'
+  					                		},
+  					                		success: function(json) {
+  					                			//do nothing  					                			
+  					                		}
+  					                	});  					                					                	               
+  								    }				      
+  							        //XenServer only (ends here)  	
+                                    
 
                                     //***** listTemplates *****
                                     //So, we call listTemplates API to get a complete template object

@@ -796,13 +796,11 @@
                                 isdynamicallyscalable: (args.data.isdynamicallyscalable == "on"),
                                 ostypeid: args.data.guestosid
                             };
-
                             if (args.data.displayname != args.context.instances[0].displayname) {
                                 $.extend(data, {
                                     displayName: args.data.displayname
                                 });
                             }
-
                             $.ajax({
                                 url: createURL('updateVirtualMachine'),
                                 data: data,
@@ -813,6 +811,26 @@
                                     });
                                 }
                             });
+                            
+                            
+                            //***** addResourceDetail *****
+                            //XenServer only (starts here)                               
+			                if(args.$detailView.find('form').find('div .detail-group').find('.xenserverToolsVersion61plus').length > 0) {	  					                	
+			                	$.ajax({
+			                		url: createURL('addResourceDetail'),
+			                		data: {
+			                			resourceType: 'uservm',
+			                			resourceId: 3,
+			                			'details[0].key': 'hypervisortoolsversion',
+			                			'details[0].value': (args.data.xenserverToolsVersion61plus == "on") ? 'xenserver61' : 'xenserver56'
+			                		},
+			                		success: function(json) {
+			                			//do nothing  					                			
+			                		}
+			                	});  					                					                	               
+						    }				      
+					        //XenServer only (ends here)  	
+                            
                         }
                     },
 
