@@ -28,4 +28,6 @@ public interface TemplateDataFactory {
     TemplateInfo getTemplate(long templateId, DataStoreRole storeRole);
 
     TemplateInfo getTemplate(long templateId, DataStoreRole storeRole, Long zoneId);
+
+    TemplateInfo getReadyTemplateOnCache(long templateId);
 }

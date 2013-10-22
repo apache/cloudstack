@@ -54,6 +54,8 @@ public interface TemplateService {
 
     AsyncCallFuture<TemplateApiResult> prepareTemplateOnPrimary(TemplateInfo srcTemplate, StoragePool pool);
 
+    void syncTemplateToRegionStore(long templateId, DataStore store);
+
     void handleSysTemplateDownload(HypervisorType hostHyper, Long dcId);
 
     void handleTemplateSync(DataStore store);

@@ -31,6 +31,7 @@ import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
@@ -94,6 +95,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         templateRoleSearch.and("template_id", templateRoleSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
         templateRoleSearch.and("store_role", templateRoleSearch.entity().getDataStoreRole(), SearchCriteria.Op.EQ);
         templateRoleSearch.and("destroyed", templateRoleSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        templateRoleSearch.and("state", templateRoleSearch.entity().getState(), SearchCriteria.Op.EQ);
         templateRoleSearch.done();
 
         updateStateSearch = this.createSearchBuilder();
@@ -319,6 +321,16 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         sc.setParameters("template_id", templateId);
         sc.setParameters("store_role", role);
         sc.setParameters("destroyed", false);
+        return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public TemplateDataStoreVO findReadyOnCache(long templateId) {
+        SearchCriteria<TemplateDataStoreVO> sc = templateRoleSearch.create();
+        sc.setParameters("template_id", templateId);
+        sc.setParameters("store_role", DataStoreRole.ImageCache);
+        sc.setParameters("destroyed", false);
+        sc.setParameters("state", ObjectInDataStoreStateMachine.State.Ready);
         return findOneIncludingRemovedBy(sc);
     }
 

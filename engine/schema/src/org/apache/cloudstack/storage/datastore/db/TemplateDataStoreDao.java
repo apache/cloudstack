@@ -64,4 +64,6 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
     List<TemplateDataStoreVO> listByTemplate(long templateId);
 
     void duplicateCacheRecordsOnRegionStore(long storeId);
+
+    TemplateDataStoreVO findReadyOnCache(long templateId);
 }

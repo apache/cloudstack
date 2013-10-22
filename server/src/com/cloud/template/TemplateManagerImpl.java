@@ -479,6 +479,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("The " + desc + " has not been downloaded ");
         }
 
+        // Handle NFS to S3 object store migration case, we trigger template sync from NFS to S3 during extract template or copy template
+        _tmpltSvr.syncTemplateToRegionStore(templateId, tmpltStore);
+
         DataObject templateObject = _tmplFactory.getTemplate(templateId, tmpltStore);
 
         return tmpltStore.createEntityExtractUrl(tmpltStoreRef.getInstallPath(), template.getFormat(), templateObject);
@@ -698,7 +701,15 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Unable to find template with id");
         }
 
+        DataStore srcSecStore = getImageStore(sourceZoneId, templateId);
+        if (srcSecStore == null) {
+            throw new InvalidParameterValueException("There is no template " + templateId + " in zone " + sourceZoneId);
+        }
+
         if (template.isCrossZones()){
+            //TODO: we may need UI still enable CopyTemplate in case of cross zone template to trigger sync to region store.
+            // sync template from cache store to region store if it is not there, for cases where we are going to migrate existing NFS to S3.
+            _tmpltSvr.syncTemplateToRegionStore(templateId, srcSecStore);
             s_logger.debug("Template " + templateId + " is cross-zone, don't need to copy");
             return template;
         }
@@ -708,11 +719,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             s_logger.debug("There is template " + templateId + " in secondary storage " + dstSecStore.getName() + " in zone " + destZoneId
                     + " , don't need to copy");
             return template;
-        }
-
-        DataStore srcSecStore = getImageStore(sourceZoneId, templateId);
-        if (srcSecStore == null) {
-            throw new InvalidParameterValueException("There is no template " + templateId + " in zone " + sourceZoneId);
         }
 
         _accountMgr.checkAccess(caller, AccessType.ModifyEntry, true, template);
@@ -781,7 +787,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         try {
-            StoragePool pool = (StoragePool) this._dataStoreMgr.getPrimaryDataStore(templatePoolVO.getPoolId());
+            StoragePool pool = (StoragePool) _dataStoreMgr.getPrimaryDataStore(templatePoolVO.getPoolId());
             VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templatePoolVO.getTemplateId());
 
             if (s_logger.isDebugEnabled()) {
@@ -1830,6 +1836,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Inject
     public void setTemplateAdapters(List<TemplateAdapter> adapters) {
-        this._adapters = adapters;
+        _adapters = adapters;
     }
 }
