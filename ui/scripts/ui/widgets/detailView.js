@@ -496,6 +496,7 @@
                     action.action({
                         data: data,
                         _custom: $detailView.data('_custom'),
+                        $detailView: $detailView,
                         context: $detailView.data('view-args').context,
                         response: {
                             success: function(args) {
