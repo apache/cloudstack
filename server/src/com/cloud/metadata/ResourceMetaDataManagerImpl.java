@@ -213,7 +213,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
                 }
 
                 // TODO - Have a better design here.
-                if(resourceType == TaggedResourceType.Volume){
+                if (resourceType == TaggedResourceType.Volume){
                     VolumeDetailVO v = new VolumeDetailVO(id, key, value);
                     _volumeDetailDao.persist(v);
                 } else if (resourceType == TaggedResourceType.Nic){
@@ -227,6 +227,8 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
                     _networkDetailsDao.persist(networkDetail);
                 } else if (resourceType == TaggedResourceType.UserVm) {
                     _userVmDetailsDao.addVmDetail(id, key, value);
+                } else if (resourceType == TaggedResourceType.Template) {
+                    _templateDetailsDao.addTemplateDetail(id, key, value);
                 } else{
                     throw new InvalidParameterValueException("The resource type " + resourceType + " is not supported by the API yet");
                 }
