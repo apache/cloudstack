@@ -32,8 +32,12 @@ class deployDataCenters(object):
         if not path.exists(cfgFile) \
            and not path.exists(path.abspath(cfgFile)):
             raise IOError("config file %s not found. please \
-specify a valid config file" % cfgFile)
+                           specify a valid config file" % cfgFile)
         self.configFile = cfgFile
+        '''
+        parsed configuration information
+        '''
+        self.config = None
 
     def addHosts(self, hosts, zoneId, podId, clusterId, hypervisor):
         if hosts is None:
@@ -515,8 +519,10 @@ specify a valid config file" % cfgFile)
             raise cloudstackException.InvalidParameterException(
                 "Failed to load config %s" % self.configFile)
 
-        mgt = self.config.mgtSvr[0]
-
+        ''' Retrieving Management Server Connection Details '''
+        mgtDetails = self.config.mgtSvr[0]
+        ''' Retrieving Database Connection Details'''
+        dbSvrDetails = self.config.dbSvr
         loggers = self.config.logger
         testClientLogFile = None
         self.testCaseLogFile = None
@@ -534,36 +540,33 @@ specify a valid config file" % cfgFile)
         if testClientLogFile is not None:
             testClientLogger = logging.getLogger("testclient.testengine.run")
             fh = logging.FileHandler(testClientLogFile)
-            fh.setFormatter(logging.
-                            Formatter("%(asctime)s - %(levelname)s - %(name)s\
- - %(message)s"))
+            fh.setFormatter(logging.Formatter(
+                "%(asctime)s - %(levelname)s - %(name)s\ - %(message)s")
+            )
             testClientLogger.addHandler(fh)
             testClientLogger.setLevel(logging.INFO)
         self.testClientLogger = testClientLogger
 
         self.testClient = \
             cloudstackTestClient.\
-            cloudstackTestClient(mgt.mgtSvrIp, mgt.port, mgt.user, mgt.passwd,
-                                 mgt.apiKey, mgt.securityKey,
+            cloudstackTestClient(mgtDetails,
+                                 dbSvrDetails,
                                  logging=self.testClientLogger)
-        if mgt.apiKey is None:
-            apiKey, securityKey = self.registerApiKey()
-            self.testClient = cloudstackTestClient.cloudstackTestClient(
-                mgt.mgtSvrIp, 8080,
-                mgt.user, mgt.passwd,
-                apiKey, securityKey,
-                logging=self.testClientLogger)
 
-        """config database"""
-        dbSvr = self.config.dbSvr
-        if dbSvr is not None:
-            self.testClient.dbConfigure(dbSvr.dbSvr, dbSvr.port, dbSvr.user,
-                                        dbSvr.passwd, dbSvr.db)
+        if mgtDetails.apiKey is None:
+            mgtDetails.apiKey, mgtDetails.securityKey = self.registerApiKey()
+            mgtDetails.port = 8080
+            self.testClient = \
+                cloudstackTestClient.cloudstackTestClient(
+                    mgtDetails,
+                    dbSvrDetails,
+                    logging=
+                    self.testClientLogger)
 
         self.apiClient = self.testClient.getApiClient()
         """set hypervisor"""
-        if mgt.hypervisor:
-            self.apiClient.hypervisor = mgt.hypervisor
+        if mgtDetails.hypervisor:
+            self.apiClient.hypervisor = mgtDetails.hypervisor
         else:
             self.apiClient.hypervisor = "XenServer"  # Defaults to Xenserver
 
@@ -578,7 +581,6 @@ specify a valid config file" % cfgFile)
             self.apiClient.updateConfiguration(updateCfg)
 
     def copyAttributesToCommand(self, source, command):
-
         map(lambda attr: setattr(command, attr, getattr(source, attr, None)),
             filter(lambda attr: not attr.startswith("__") and attr not in
                    ["required", "isAsync"], dir(command)))
@@ -586,7 +588,6 @@ specify a valid config file" % cfgFile)
     def configureS3(self, s3):
         if s3 is None:
             return
-
         command = addS3.addS3Cmd()
         self.copyAttributesToCommand(s3, command)
         self.apiClient.addS3(command)
@@ -598,16 +599,13 @@ specify a valid config file" % cfgFile)
         self.configureS3(self.config.s3)
 
 if __name__ == "__main__":
-
     parser = OptionParser()
-
     parser.add_option("-i", "--input", action="store",
                       default="./datacenterCfg", dest="input", help="the path \
                       where the json config file generated, by default is \
                       ./datacenterCfg")
 
     (options, args) = parser.parse_args()
-
     deploy = deployDataCenters(options.input)
     deploy.deploy()
 

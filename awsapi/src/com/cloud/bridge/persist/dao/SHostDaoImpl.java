@@ -25,6 +25,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={SHostDao.class})
@@ -36,7 +37,7 @@ public class SHostDaoImpl extends GenericDaoBase<SHostVO, Long> implements SHost
 	    SearchBuilder <SHostVO> HostSearch = createSearchBuilder();
 	    HostSearch.and("Host", HostSearch.entity().getHost(), SearchCriteria.Op.EQ);
 	    HostSearch.done();
-	    Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
 	    try {
     		txn.start();
     		SearchCriteria<SHostVO> sc = HostSearch.create();
@@ -55,7 +56,7 @@ public class SHostDaoImpl extends GenericDaoBase<SHostVO, Long> implements SHost
 	    LocalStorageHostSearch.and("MHostID", LocalStorageHostSearch.entity().getMhostid(), SearchCriteria.Op.EQ);
 	    LocalStorageHostSearch.and("ExportRoot", LocalStorageHostSearch.entity().getExportRoot(), SearchCriteria.Op.EQ);
 	    LocalStorageHostSearch.done();
-	    Transaction txn = Transaction.currentTxn();
+	    TransactionLegacy txn = TransactionLegacy.currentTxn();
 	    try {
             txn.start();
             SearchCriteria<SHostVO> sc = LocalStorageHostSearch.create();

@@ -35,7 +35,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 
 @Component
@@ -43,7 +43,6 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     private static final Logger s_logger = Logger.getLogger(VolumeDataStoreDaoImpl.class);
     private SearchBuilder<VolumeDataStoreVO> updateStateSearch;
     private SearchBuilder<VolumeDataStoreVO> volumeSearch;
-    private SearchBuilder<VolumeDataStoreVO> volumeRoleSearch;
     private SearchBuilder<VolumeDataStoreVO> storeSearch;
     private SearchBuilder<VolumeDataStoreVO> cacheSearch;
     private SearchBuilder<VolumeDataStoreVO> storeVolumeSearch;
@@ -145,7 +144,7 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     public void deletePrimaryRecordsForStore(long id) {
         SearchCriteria<VolumeDataStoreVO> sc = storeSearch.create();
         sc.setParameters("store_id", id);
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         remove(sc);
         txn.commit();

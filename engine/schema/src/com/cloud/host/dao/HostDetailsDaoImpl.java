@@ -31,7 +31,7 @@ import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -96,7 +96,7 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
     public void persist(long hostId, Map<String, String> details) {
         final String InsertOrUpdateSql = "INSERT INTO `cloud`.`host_details` (host_id, name, value) VALUES (?,?,?) ON DUPLICATE KEY UPDATE value=?";
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
 
         for (Map.Entry<String, String> detail : details.entrySet()) {

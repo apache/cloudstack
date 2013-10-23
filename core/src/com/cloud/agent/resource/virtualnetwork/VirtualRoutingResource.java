@@ -103,7 +103,6 @@ import com.cloud.utils.ssh.SshHelper;
 @Local(value = {VirtualRoutingResource.class})
 public class VirtualRoutingResource implements Manager {
     private static final Logger s_logger = Logger.getLogger(VirtualRoutingResource.class);
-    private String _savepasswordPath; 	// This script saves a random password to the DomR file system
     private String _publicIpAddress;
     private String _firewallPath;
     private String _loadbPath;
@@ -548,13 +547,14 @@ public class VirtualRoutingResource implements Manager {
         final String vmIpAddress = cmd.getVmIpAddress();
         final String local = vmName;
 
-        // Run save_password_to_domr.sh
-        final String result = savePassword(routerPrivateIPAddress, vmIpAddress, password, local);
+        String args = "-v " + vmIpAddress;
+        args += " -p " + password;
+        
+        String result = routerProxy("savepassword.sh", routerPrivateIPAddress, args);
         if (result != null) {
             return new Answer(cmd, false, "Unable to save password to DomR.");
-        } else {
-            return new Answer(cmd);
         }
+        return new Answer(cmd);
     }
 
     protected Answer execute(final DhcpEntryCommand cmd) {
@@ -811,16 +811,6 @@ public class VirtualRoutingResource implements Manager {
         }
 
         return new ConsoleProxyLoadAnswer(cmd, proxyVmId, proxyVmName, success, result);
-    }
-
-    public String savePassword(final String privateIpAddress, final String vmIpAddress, final String password, final String localPath) {
-        final Script command = new Script(_savepasswordPath, _startTimeout, s_logger);
-        command.add("-r", privateIpAddress);
-        command.add("-v", vmIpAddress);
-        command.add("-p", password);
-        command.add(localPath);
-
-        return command.execute();
     }
 
     public String assignGuestNetwork(final String dev, final String routerIP,
@@ -1126,11 +1116,6 @@ public class VirtualRoutingResource implements Manager {
         _loadbPath = findScript("call_loadbalancer.sh");
         if (_loadbPath == null) {
             throw new ConfigurationException("Unable to find the call_loadbalancer.sh");
-        }
-
-        _savepasswordPath = findScript("save_password_to_domr.sh");
-        if (_savepasswordPath == null) {
-            throw new ConfigurationException("Unable to find save_password_to_domr.sh");
         }
 
         _dhcpEntryPath = findScript("dhcp_entry.sh");

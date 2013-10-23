@@ -1189,6 +1189,7 @@ change_password() {
 start() {
   # Clear /tmp for file lock
   rm -f /tmp/*.lock
+  rm -f /tmp/rrouter_bumped
   local hyp=$(hypervisor)
   [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
   log_it "Detected that we are running inside $hyp guest"

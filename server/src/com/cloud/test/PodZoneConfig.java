@@ -28,6 +28,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.net.NetUtils;
 
 public class PodZoneConfig {
@@ -148,7 +149,7 @@ public class PodZoneConfig {
         HashMap<Long, Vector<Object>> currentPodCidrSubnets = new HashMap<Long, Vector<Object>>();
 
         String selectSql = "SELECT id, cidr_address, cidr_size FROM host_pod_ref WHERE data_center_id=" + dcId;
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
             ResultSet rs = stmt.executeQuery();
@@ -363,7 +364,7 @@ public class PodZoneConfig {
 
         String insertVnet = "INSERT INTO `cloud`.`op_dc_vnet_alloc` (vnet, data_center_id, physical_network_id) VALUES ( ?, ?, ?)";
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertVnet);
             for (int i = begin; i <= end; i++) {
@@ -483,7 +484,7 @@ public class PodZoneConfig {
         Vector<Long> allZoneIDs = new Vector<Long>();
 
         String selectSql = "SELECT id FROM data_center";
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
             ResultSet rs = stmt.executeQuery();

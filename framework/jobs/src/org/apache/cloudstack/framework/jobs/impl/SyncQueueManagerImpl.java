@@ -21,8 +21,8 @@ import java.util.Date;
 import java.util.List;
 
 import javax.inject.Inject;
-import org.apache.log4j.Logger;
 
+import org.apache.log4j.Logger;
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueDao;
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
 
@@ -30,6 +30,9 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManager {
@@ -40,84 +43,83 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
 
     @Override
     @DB
-    public SyncQueueVO queue(String syncObjType, long syncObjId, String itemType, long itemId, long queueSizeLimit) {
-        Transaction txn = Transaction.currentTxn();
+    public SyncQueueVO queue(final String syncObjType, final long syncObjId, final String itemType, final long itemId, final long queueSizeLimit) {
         try {
-            txn.start();
+            return Transaction.execute(new TransactionCallback<SyncQueueVO>() {
+                @Override
+                public SyncQueueVO doInTransaction(TransactionStatus status) {
+                    _syncQueueDao.ensureQueue(syncObjType, syncObjId);
+                    SyncQueueVO queueVO = _syncQueueDao.find(syncObjType, syncObjId);
+                    if(queueVO == null)
+                        throw new CloudRuntimeException("Unable to queue item into DB, DB is full?");
 
-            _syncQueueDao.ensureQueue(syncObjType, syncObjId);
-            SyncQueueVO queueVO = _syncQueueDao.find(syncObjType, syncObjId);
-            if(queueVO == null)
-                throw new CloudRuntimeException("Unable to queue item into DB, DB is full?");
-
-            queueVO.setQueueSizeLimit(queueSizeLimit);
-            _syncQueueDao.update(queueVO.getId(), queueVO);
-
-            Date dt = DateUtil.currentGMTTime();
-            SyncQueueItemVO item = new SyncQueueItemVO();
-            item.setQueueId(queueVO.getId());
-            item.setContentType(itemType);
-            item.setContentId(itemId);
-            item.setCreated(dt);
-
-            _syncQueueItemDao.persist(item);
-            txn.commit();
-
-            return queueVO;
-        } catch(Exception e) {
-            s_logger.error("Unexpected exception: ", e);
-            txn.rollback();
-        }
-        return null;
-    }
-
-    @Override
-    @DB
-    public SyncQueueItemVO dequeueFromOne(long queueId, Long msid) {
-        Transaction txt = Transaction.currentTxn();
-        try {
-            txt.start();
-
-            SyncQueueVO queueVO = _syncQueueDao.lockRow(queueId, true);
-            if(queueVO == null) {
-                s_logger.error("Sync queue(id: " + queueId + ") does not exist");
-                txt.commit();
-                return null;
-            }
-
-            if(queueReadyToProcess(queueVO)) {
-                SyncQueueItemVO itemVO = _syncQueueItemDao.getNextQueueItem(queueVO.getId());
-                if(itemVO != null) {
-                    Long processNumber = queueVO.getLastProcessNumber();
-                    if(processNumber == null)
-                        processNumber = new Long(1);
-                    else
-                        processNumber = processNumber + 1;
-                    Date dt = DateUtil.currentGMTTime();
-                    queueVO.setLastProcessNumber(processNumber);
-                    queueVO.setLastUpdated(dt);
-                    queueVO.setQueueSize(queueVO.getQueueSize() + 1);
+                    queueVO.setQueueSizeLimit(queueSizeLimit);
                     _syncQueueDao.update(queueVO.getId(), queueVO);
 
-                    itemVO.setLastProcessMsid(msid);
-                    itemVO.setLastProcessNumber(processNumber);
-                    itemVO.setLastProcessTime(dt);
-                    _syncQueueItemDao.update(itemVO.getId(), itemVO);
+                    Date dt = DateUtil.currentGMTTime();
+                    SyncQueueItemVO item = new SyncQueueItemVO();
+                    item.setQueueId(queueVO.getId());
+                    item.setContentType(itemType);
+                    item.setContentId(itemId);
+                    item.setCreated(dt);
 
-                    txt.commit();
-                    return itemVO;
-                } else {
-                    if(s_logger.isDebugEnabled())
-                        s_logger.debug("Sync queue (" + queueId + ") is currently empty");
+                    _syncQueueItemDao.persist(item);
+                    return queueVO;
                 }
-            } else {
-                if(s_logger.isDebugEnabled())
-                    s_logger.debug("There is a pending process in sync queue(id: " + queueId + ")");
-            }
-            txt.commit();
+            });
         } catch(Exception e) {
             s_logger.error("Unexpected exception: ", e);
-            txt.rollback();
+        }
+        return null;
+    }
+
+    @Override
+    @DB
+    public SyncQueueItemVO dequeueFromOne(final long queueId, final Long msid) {
+        try {
+            return Transaction.execute(new TransactionCallback<SyncQueueItemVO>() {
+                @Override
+                public SyncQueueItemVO doInTransaction(TransactionStatus status) {
+                    SyncQueueVO queueVO = _syncQueueDao.lockRow(queueId, true);
+                    if(queueVO == null) {
+                        s_logger.error("Sync queue(id: " + queueId + ") does not exist");
+                        return null;
+                    }
+
+                    if(queueReadyToProcess(queueVO)) {
+                        SyncQueueItemVO itemVO = _syncQueueItemDao.getNextQueueItem(queueVO.getId());
+                        if(itemVO != null) {
+                            Long processNumber = queueVO.getLastProcessNumber();
+                            if(processNumber == null)
+                                processNumber = new Long(1);
+                            else
+                                processNumber = processNumber + 1;
+                            Date dt = DateUtil.currentGMTTime();
+                            queueVO.setLastProcessNumber(processNumber);
+                            queueVO.setLastUpdated(dt);
+                            queueVO.setQueueSize(queueVO.getQueueSize() + 1);
+                            _syncQueueDao.update(queueVO.getId(), queueVO);
+
+                            itemVO.setLastProcessMsid(msid);
+                            itemVO.setLastProcessNumber(processNumber);
+                            itemVO.setLastProcessTime(dt);
+                            _syncQueueItemDao.update(itemVO.getId(), itemVO);
+
+                            return itemVO;
+                        } else {
+                            if(s_logger.isDebugEnabled())
+                                s_logger.debug("Sync queue (" + queueId + ") is currently empty");
+                        }
+                    } else {
+                        if(s_logger.isDebugEnabled())
+                            s_logger.debug("There is a pending process in sync queue(id: " + queueId + ")");
+                    }
+
+                    return null;
+                }
+            });
+        } catch(Exception e) {
+            s_logger.error("Unexpected exception: ", e);
         }
 
         return null;
@@ -125,101 +127,104 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
 
     @Override
     @DB
-    public List<SyncQueueItemVO> dequeueFromAny(Long msid, int maxItems) {
+    public List<SyncQueueItemVO> dequeueFromAny(final Long msid, final int maxItems) {
 
-        List<SyncQueueItemVO> resultList = new ArrayList<SyncQueueItemVO>();
-        Transaction txt = Transaction.currentTxn();
+        final List<SyncQueueItemVO> resultList = new ArrayList<SyncQueueItemVO>();
+
         try {
-            txt.start();
-
-            List<SyncQueueItemVO> l = _syncQueueItemDao.getNextQueueItems(maxItems);
-            if(l != null && l.size() > 0) {
-                for(SyncQueueItemVO item : l) {
-                    SyncQueueVO queueVO = _syncQueueDao.lockRow(item.getQueueId(), true);
-                    SyncQueueItemVO itemVO = _syncQueueItemDao.lockRow(item.getId(), true);
-                    if(queueReadyToProcess(queueVO) && itemVO.getLastProcessNumber() == null) {
-                        Long processNumber = queueVO.getLastProcessNumber();
-                        if(processNumber == null)
-                            processNumber = new Long(1);
-                        else
-                            processNumber = processNumber + 1;
-
-                        Date dt = DateUtil.currentGMTTime();
-                        queueVO.setLastProcessNumber(processNumber);
-                        queueVO.setLastUpdated(dt);
-                        queueVO.setQueueSize(queueVO.getQueueSize() + 1);
-                        _syncQueueDao.update(queueVO.getId(), queueVO);
-
-                        itemVO.setLastProcessMsid(msid);
-                        itemVO.setLastProcessNumber(processNumber);
-                        itemVO.setLastProcessTime(dt);
-                        _syncQueueItemDao.update(item.getId(), itemVO);
-
-                        resultList.add(item);
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    List<SyncQueueItemVO> l = _syncQueueItemDao.getNextQueueItems(maxItems);
+                    if(l != null && l.size() > 0) {
+                        for(SyncQueueItemVO item : l) {
+                            SyncQueueVO queueVO = _syncQueueDao.lockRow(item.getQueueId(), true);
+                            SyncQueueItemVO itemVO = _syncQueueItemDao.lockRow(item.getId(), true);
+                            if(queueReadyToProcess(queueVO) && itemVO.getLastProcessNumber() == null) {
+                                Long processNumber = queueVO.getLastProcessNumber();
+                                if(processNumber == null)
+                                    processNumber = new Long(1);
+                                else
+                                    processNumber = processNumber + 1;
+        
+                                Date dt = DateUtil.currentGMTTime();
+                                queueVO.setLastProcessNumber(processNumber);
+                                queueVO.setLastUpdated(dt);
+                                queueVO.setQueueSize(queueVO.getQueueSize() + 1);
+                                _syncQueueDao.update(queueVO.getId(), queueVO);
+        
+                                itemVO.setLastProcessMsid(msid);
+                                itemVO.setLastProcessNumber(processNumber);
+                                itemVO.setLastProcessTime(dt);
+                                _syncQueueItemDao.update(item.getId(), itemVO);
+        
+                                resultList.add(item);
+                            }
+                        }
                     }
                 }
-            }
-            txt.commit();
+            });
+
             return resultList;
         } catch(Exception e) {
             s_logger.error("Unexpected exception: ", e);
-            txt.rollback();
         }
+
         return null;
     }
 
     @Override
     @DB
-    public void purgeItem(long queueItemId) {
-        Transaction txt = Transaction.currentTxn();
+    public void purgeItem(final long queueItemId) {
         try {
-            txt.start();
-
-            SyncQueueItemVO itemVO = _syncQueueItemDao.findById(queueItemId);
-            if(itemVO != null) {
-                SyncQueueVO queueVO = _syncQueueDao.lockRow(itemVO.getQueueId(), true);
-
-                _syncQueueItemDao.expunge(itemVO.getId());
-
-                // if item is active, reset queue information
-                if (itemVO.getLastProcessMsid() != null) {
-                    queueVO.setLastUpdated(DateUtil.currentGMTTime());
-                    // decrement the count
-                    assert (queueVO.getQueueSize() > 0) : "Count reduce happens when it's already <= 0!";
-                    queueVO.setQueueSize(queueVO.getQueueSize() - 1);
-                    _syncQueueDao.update(queueVO.getId(), queueVO);
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    SyncQueueItemVO itemVO = _syncQueueItemDao.findById(queueItemId);
+                    if(itemVO != null) {
+                        SyncQueueVO queueVO = _syncQueueDao.lockRow(itemVO.getQueueId(), true);
+        
+                        _syncQueueItemDao.expunge(itemVO.getId());
+        
+                        // if item is active, reset queue information
+                        if (itemVO.getLastProcessMsid() != null) {
+                            queueVO.setLastUpdated(DateUtil.currentGMTTime());
+                            // decrement the count
+                            assert (queueVO.getQueueSize() > 0) : "Count reduce happens when it's already <= 0!";
+                            queueVO.setQueueSize(queueVO.getQueueSize() - 1);
+                            _syncQueueDao.update(queueVO.getId(), queueVO);
+                        }
+                    }
                 }
-            }
-            txt.commit();
+            });
         } catch(Exception e) {
             s_logger.error("Unexpected exception: ", e);
-            txt.rollback();
         }
     }
 
     @Override
     @DB
-    public void returnItem(long queueItemId) {
-        Transaction txt = Transaction.currentTxn();
+    public void returnItem(final long queueItemId) {
         try {
-            txt.start();
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    SyncQueueItemVO itemVO = _syncQueueItemDao.findById(queueItemId);
+                    if(itemVO != null) {
+                        SyncQueueVO queueVO = _syncQueueDao.lockRow(itemVO.getQueueId(), true);
 
-            SyncQueueItemVO itemVO = _syncQueueItemDao.findById(queueItemId);
-            if(itemVO != null) {
-                SyncQueueVO queueVO = _syncQueueDao.lockRow(itemVO.getQueueId(), true);
+                        itemVO.setLastProcessMsid(null);
+                        itemVO.setLastProcessNumber(null);
+                        itemVO.setLastProcessTime(null);
+                        _syncQueueItemDao.update(queueItemId, itemVO);
 
-                itemVO.setLastProcessMsid(null);
-                itemVO.setLastProcessNumber(null);
-                itemVO.setLastProcessTime(null);
-                _syncQueueItemDao.update(queueItemId, itemVO);
-
-                queueVO.setLastUpdated(DateUtil.currentGMTTime());
-                _syncQueueDao.update(queueVO.getId(), queueVO);
-            }
-            txt.commit();
+                        queueVO.setLastUpdated(DateUtil.currentGMTTime());
+                        _syncQueueDao.update(queueVO.getId(), queueVO);
+                    }
+                }
+            });
         } catch(Exception e) {
             s_logger.error("Unexpected exception: ", e);
-            txt.rollback();
         }
     }
 

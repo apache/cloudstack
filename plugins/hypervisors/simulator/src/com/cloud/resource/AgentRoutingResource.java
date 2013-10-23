@@ -231,7 +231,7 @@ public class AgentRoutingResource extends AgentStorageResource {
 		        return new StopAnswer(cmd, result.getDetails(), false);
 		    }
 
-			answer = new StopAnswer(cmd, null, 0, true);
+			answer = new StopAnswer(cmd, null, true);
 			Pair<Long, Long> data = _runningVms.get(vmName);
 			if (data != null) {
 				this.usedCpu -= data.first();

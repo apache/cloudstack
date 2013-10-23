@@ -157,7 +157,7 @@ public class SshHelper {
             int currentReadBytes = 0;
             while (true) {
                 if ((stdout.available() == 0) && (stderr.available() == 0)) {
-                    int conditions = sess.waitForCondition(ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA | ChannelCondition.EOF, 
+                    int conditions = sess.waitForCondition(ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA | ChannelCondition.EOF | ChannelCondition.EXIT_STATUS,
                         waitResultTimeoutInMs);
                     
                     if ((conditions & ChannelCondition.TIMEOUT) != 0) {
@@ -166,7 +166,7 @@ public class SshHelper {
                         throw new Exception(msg);
                     }
 
-                    if ((conditions & ChannelCondition.EOF) != 0) {
+                    if ((conditions & ChannelCondition.EXIT_STATUS) != 0) {
                         if ((conditions & (ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA)) == 0) {                            
                             break;
                         }
@@ -185,6 +185,12 @@ public class SshHelper {
             }
             
             String result = sbResult.toString();
+
+            if (sess.getExitStatus() == null) {
+                //Exit status is NOT available. Returning failure result.
+                return new Pair<Boolean, String>(false, result);
+            }
+
             if (sess.getExitStatus() != null && sess.getExitStatus().intValue() != 0) {
                 s_logger.error("SSH execution of command " + command + " has an error status code in return. result output: " + result);
                 return new Pair<Boolean, String>(false, result);

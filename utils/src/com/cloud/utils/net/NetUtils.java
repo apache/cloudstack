@@ -46,6 +46,7 @@ import com.googlecode.ipv6.IPv6Network;
 
 import com.cloud.utils.IteratorUtil;
 import com.cloud.utils.Pair;
+import org.apache.commons.net.util.SubnetUtils;
 import com.cloud.utils.script.Script;
 
 public class NetUtils {
@@ -1419,5 +1420,16 @@ public class NetUtils {
         mac = mac + (l << 24);
         mac = mac & 0x06FFFFFFFFFFl;
         return long2Mac(mac);
+    }
+
+    public static boolean isIpWithtInCidrRange(String ipAddress, String cidr) {
+        if (!isValidIp(ipAddress)) {
+            return false;
+        }
+        if (!isValidCIDR(cidr)) {
+            return false;
+        }
+        SubnetUtils subnetUtils = new SubnetUtils(cidr);
+        return subnetUtils.getInfo().isInRange(ipAddress);
     }
 }

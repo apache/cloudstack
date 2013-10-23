@@ -38,7 +38,7 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = NetworkOfferingDao.class)
@@ -129,7 +129,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     @Override
     @DB
     public boolean remove(Long networkOfferingId) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         NetworkOfferingVO offering = findById(networkOfferingId);
         offering.setUniqueName(null);
@@ -174,7 +174,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     @Override
     @DB
     public NetworkOfferingVO persist(NetworkOfferingVO off, Map<Detail, String> details) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         //1) persist the offering
         NetworkOfferingVO vo = super.persist(off);

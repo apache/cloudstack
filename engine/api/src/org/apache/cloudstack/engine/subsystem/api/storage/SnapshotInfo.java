@@ -32,4 +32,6 @@ public interface SnapshotInfo extends DataObject, Snapshot {
     Long getDataCenterId();
 
     ObjectInDataStoreStateMachine.State getStatus();
+
+    boolean isRevertable();
 }

@@ -25,6 +25,7 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'label.root.disk.size': '<fmt:message key="label.root.disk.size" />',
 'label.s3.nfs.path': '<fmt:message key="label.s3.nfs.path" />',
 'label.s3.nfs.server': '<fmt:message key="label.s3.nfs.server" />',
 'label.delete.events': '<fmt:message key="label.delete.events" />',
@@ -799,6 +800,7 @@ dictionary = {
 'label.network.id': '<fmt:message key="label.network.id" />',
 'label.networking.and.security': '<fmt:message key="label.networking.and.security" />',
 'label.network.label.display.for.blank.value': '<fmt:message key="label.network.label.display.for.blank.value" />',
+'label.network.limits': '<fmt:message key="label.network.limits" />',
 'label.network.name': '<fmt:message key="label.network.name" />',
 'label.network.offering.display.text': '<fmt:message key="label.network.offering.display.text" />',
 'label.network.offering': '<fmt:message key="label.network.offering" />',

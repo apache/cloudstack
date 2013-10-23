@@ -2423,6 +2423,27 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
         }
 
+        if (vmId != null) {
+            UserVmVO vmInstance = _userVmDao.findById(vmId);
+            if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
+                InvalidParameterValueException ex = new InvalidParameterValueException(
+                        "unable to find a virtual machine with specified id");
+                ex.addProxyObject(vmId.toString(), "vmId");
+                throw ex;
+            }
+
+            _accountMgr.checkAccess(caller, null, true, vmInstance);
+
+            ServiceOfferingVO offering = _srvOfferingDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
+            sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
+
+            // Only return offerings with the same Guest IP type and storage
+            // pool preference
+            // sc.addAnd("guestIpType", SearchCriteria.Op.EQ,
+            // offering.getGuestIpType());
+            sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, offering.getUseLocalStorage());
+        }
+
         // boolean includePublicOfferings = false;
         if ((caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
                 || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
@@ -2432,11 +2453,20 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
             // find all domain Id up to root domain for this account
             List<Long> domainIds = new ArrayList<Long>();
-            DomainVO domainRecord = _domainDao.findById(caller.getDomainId());
-            if (domainRecord == null) {
-                s_logger.error("Could not find the domainId for account:" + caller.getAccountName());
-                throw new CloudAuthenticationException("Could not find the domainId for account:"
-                        + caller.getAccountName());
+            DomainVO domainRecord;
+            if (vmId != null) {
+                 UserVmVO vmInstance = _userVmDao.findById(vmId);
+                 domainRecord = _domainDao.findById(vmInstance.getDomainId());
+                 if ( domainRecord == null ){
+                     s_logger.error("Could not find the domainId for vmId:" + vmId);
+                     throw new CloudAuthenticationException("Could not find the domainId for vmId:" + vmId);
+                 }
+            } else {
+                 domainRecord = _domainDao.findById(caller.getDomainId());
+                 if ( domainRecord == null ){
+                     s_logger.error("Could not find the domainId for account:" + caller.getAccountName());
+                     throw new CloudAuthenticationException("Could not find the domainId for account:" + caller.getAccountName());
+                 }
             }
             domainIds.add(domainRecord.getId());
             while (domainRecord.getParent() != null) {
@@ -2466,25 +2496,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        } else if (vmId != null) {
-            UserVmVO vmInstance = _userVmDao.findById(vmId);
-            if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
-                InvalidParameterValueException ex = new InvalidParameterValueException(
-                        "unable to find a virtual machine with specified id");
-                ex.addProxyObject(vmId.toString(), "vmId");
-                throw ex;
-            }
-
-            _accountMgr.checkAccess(caller, null, true, vmInstance);
-
-            ServiceOfferingVO offering = _srvOfferingDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
-            sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
-
-            // Only return offerings with the same Guest IP type and storage
-            // pool preference
-            // sc.addAnd("guestIpType", SearchCriteria.Op.EQ,
-            // offering.getGuestIpType());
-            sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, offering.getUseLocalStorage());
         }
 
         if (id != null) {

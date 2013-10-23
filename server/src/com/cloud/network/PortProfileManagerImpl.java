@@ -55,18 +55,7 @@ public class PortProfileManagerImpl {
     	// Else, go ahead and create the port profile.
     	PortProfileVO portProfileObj = new PortProfileVO(portProfName, vsmId, vlanId, pType, bType);
 
-    	Transaction txn = Transaction.currentTxn();
-    	try {
-    		txn.start();
-    		_portProfileDao.persist(portProfileObj);
-    		txn.commit();
-    	} catch (Exception e) {
-    		txn.rollback();
-    		throw new CloudRuntimeException(e.getMessage());
-    	}
-
-    	// Return the PortProfileVO object created.
-        return portProfileObj;        
+		return _portProfileDao.persist(portProfileObj);
     }
     
     @DB    
@@ -95,18 +84,7 @@ public class PortProfileManagerImpl {
     	// Else, go ahead and create the port profile.
     	portProfileObj = new PortProfileVO(portProfName, vsmId, lowVlanId, highVlanId, pType, bType);
 
-    	Transaction txn = Transaction.currentTxn();
-    	try {
-    		txn.start();
-    		_portProfileDao.persist(portProfileObj);
-    		txn.commit();
-    	} catch (Exception e) {
-    		txn.rollback();
-    		throw new CloudRuntimeException(e.getMessage());
-    	}
-
-    	// Return the PortProfileVO object created.
-        return portProfileObj;        
+		return _portProfileDao.persist(portProfileObj);
     }
     
     @DB
@@ -121,16 +99,7 @@ public class PortProfileManagerImpl {
         // TODO: Should we be putting any checks here before removing
         // the port profile record from the db?
         
-        Transaction txn = Transaction.currentTxn();
-        try {
-            txn.start();
-            // Remove the VSM entry in CiscoNexusVSMDeviceVO's table.            
-            _portProfileDao.remove(portProfileId);            
-            txn.commit();
-        } catch (Exception e) {
-        	s_logger.info("Caught exception when trying to delete Port Profile record.." + e.getMessage());        	
-        	throw new CloudRuntimeException("Failed to delete Port Profile");
-        }        
-        return true;
+        // Remove the VSM entry in CiscoNexusVSMDeviceVO's table.            
+        return _portProfileDao.remove(portProfileId);            
     }
 }

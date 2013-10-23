@@ -1960,7 +1960,7 @@
             allowedActions.push("createTemplate");
             allowedActions.push("createVolume");
 
-            if (args.context.volumes[0].vmstate == "Stopped") {
+            if (jsonObj.revertable && args.context.volumes[0].vmstate == "Stopped") {
                 allowedActions.push("revertSnapshot");
             }
         }

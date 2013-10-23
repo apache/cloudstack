@@ -23,23 +23,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.DcDetailVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.DcDetailsDao;
-import com.cloud.network.dao.NetworkDetailVO;
-import com.cloud.network.dao.NetworkDetailsDao;
-import com.cloud.server.ResourceMetaDataService;
-import com.cloud.storage.VolumeDetailVO;
-import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.vm.NicDetailVO;
-import com.cloud.vm.UserVmDetailVO;
-import com.cloud.vm.dao.NicDao;
-import com.cloud.vm.dao.NicDetailDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.ResourceTagJoinDao;
+import com.cloud.dc.DcDetailVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DcDetailsDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -47,18 +37,24 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.dao.StaticRouteDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.projects.dao.ProjectDao;
+import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.server.TaggedResourceService;
+import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
@@ -66,8 +62,14 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.uuididentity.dao.IdentityDao;
+import com.cloud.vm.NicDetailVO;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicDetailDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 
@@ -136,7 +138,9 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     @Inject
     TaggedResourceService _taggedResourceMgr;
     @Inject
-    UserVmDetailsDao _userVmDetail;
+    VMTemplateDetailsDao _templateDetailsDao;
+    @Inject
+    UserVmDetailsDao _userVmDetailsDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -190,51 +194,51 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_DETAILS_CREATE, eventDescription = "creating resource meta data")
-    public boolean addResourceMetaData(String resourceId, TaggedResourceType resourceType, Map<String, String> details){
+    public boolean addResourceMetaData(final String resourceId, final TaggedResourceType resourceType, final Map<String, String> details){
+        return Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
+                for (String key : details.keySet()) {
+                        Long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+                        //check if object exists
+                        if (_daoMap.get(resourceType).findById(id) == null) {
+                            throw new InvalidParameterValueException("Unable to find resource by id " + resourceId +
+                                    " and type " + resourceType);
+                        }
 
-        for (String key : details.keySet()) {
-                Long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
+                        String value = details.get(key);
 
-                //check if object exists
-                if (_daoMap.get(resourceType).findById(id) == null) {
-                    throw new InvalidParameterValueException("Unable to find resource by id " + resourceId +
-                            " and type " + resourceType);
+                        if (value == null || value.isEmpty()) {
+                            throw new InvalidParameterValueException("Value for the key " + key + " is either null or empty");
+                        }
+
+                        // TODO - Have a better design here.
+                        if(resourceType == TaggedResourceType.Volume){
+                            VolumeDetailVO v = new VolumeDetailVO(id, key, value);
+                            _volumeDetailDao.persist(v);
+                        } else if (resourceType == TaggedResourceType.Nic){
+                            NicDetailVO n = new NicDetailVO(id, key, value);
+                            _nicDetailDao.persist(n);
+                        } else if (resourceType == TaggedResourceType.Zone){
+                             DcDetailVO dataCenterDetail = new DcDetailVO(id, key, value);
+                             _dcDetailsDao.persist(dataCenterDetail);
+                        } else if (resourceType == TaggedResourceType.Network){
+                            NetworkDetailVO networkDetail = new NetworkDetailVO(id, key, value);
+                            _networkDetailsDao.persist(networkDetail);
+                        } else if (resourceType == TaggedResourceType.UserVm) {
+                            _userVmDetailsDao.addVmDetail(id, key, value);
+                        } else if (resourceType == TaggedResourceType.Template) {
+                            _templateDetailsDao.addTemplateDetail(id, key, value);
+                        } else{
+                            throw new InvalidParameterValueException("The resource type " + resourceType + " is not supported by the API yet");
+                        }
+
                 }
 
-                String value = details.get(key);
-
-                if (value == null || value.isEmpty()) {
-                    throw new InvalidParameterValueException("Value for the key " + key + " is either null or empty");
-                }
-
-                // TODO - Have a better design here.
-                if(resourceType == TaggedResourceType.Volume){
-                    VolumeDetailVO v = new VolumeDetailVO(id, key, value);
-                    _volumeDetailDao.persist(v);
-                } else if (resourceType == TaggedResourceType.Nic){
-                    NicDetailVO n = new NicDetailVO(id, key, value);
-                    _nicDetailDao.persist(n);
-                }else if (resourceType == TaggedResourceType.UserVm){
-                    UserVmDetailVO userVmDetail = new UserVmDetailVO(id, key, value);
-                    _userVmDetailDao.persist(userVmDetail);
-                } else if (resourceType == TaggedResourceType.Zone){
-                     DcDetailVO dataCenterDetail = new DcDetailVO(id, key, value);
-                     _dcDetailsDao.persist(dataCenterDetail);
-                } else if (resourceType == TaggedResourceType.Network){
-                    NetworkDetailVO networkDetail = new NetworkDetailVO(id, key, value);
-                    _networkDetailsDao.persist(networkDetail);
-                } else {
-                    throw new InvalidParameterValueException("The resource type " + resourceType + " is not supported by the API yet");
-                }
-
-        }
-
-        txn.commit();
-
-        return true;
+                return true;
+            }
+        });
     }
 
 

@@ -237,6 +237,9 @@
                     data: {
                         templates: templatesObj,
                         hypervisors: hypervisorObjs
+                    },
+                    customHidden: function(args) {
+                        return true;
                     }
                 });
             },

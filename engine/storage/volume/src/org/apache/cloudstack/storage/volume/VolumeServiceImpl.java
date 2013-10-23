@@ -725,7 +725,7 @@ public class VolumeServiceImpl implements VolumeService {
 
             srcVolume.processEvent(Event.OperationSuccessed);
             destVolume.processEvent(Event.OperationSuccessed, result.getAnswer());
-            // srcVolume.getDataStore().delete(srcVolume);
+            srcVolume.getDataStore().delete(srcVolume);
             future.complete(res);
         } catch (Exception e) {
             res.setResult(e.toString());

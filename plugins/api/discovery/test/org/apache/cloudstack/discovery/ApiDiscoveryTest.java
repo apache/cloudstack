@@ -65,7 +65,7 @@ public class ApiDiscoveryTest {
 
         Set<Class<?>> cmdClasses = new HashSet<Class<?>>();
         cmdClasses.add(ListApisCmd.class);
-        _discoveryService.init();
+        _discoveryService.start();
         _discoveryService.cacheResponseMap(cmdClasses);
     }
 

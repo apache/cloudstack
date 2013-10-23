@@ -26,7 +26,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -108,6 +107,8 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.net.UrlUtil;
@@ -159,7 +160,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
 
     @Override
     @DB
-    public ExternalFirewallDeviceVO addExternalFirewall(long physicalNetworkId, String url, String username, String password, String deviceName, ServerResource resource) {
+    public ExternalFirewallDeviceVO addExternalFirewall(long physicalNetworkId, String url, String username, String password, final String deviceName, ServerResource resource) {
         String guid;
         PhysicalNetworkVO pNetwork = null;
         NetworkDevice ntwkDevice = NetworkDevice.getNetworkDevice(deviceName);
@@ -176,7 +177,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         }
         zoneId = pNetwork.getDataCenterId();
 
-        PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
+        final PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
         if (ntwkSvcProvider == null ) {
             throw new CloudRuntimeException("Network Service Provider: " + ntwkDevice.getNetworkServiceProvder() +
                     " is not enabled in the physical network: " + physicalNetworkId + "to add this device" );
@@ -204,7 +205,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         hostDetails.put("username", username);
         hostDetails.put("password", password);
         hostDetails.put("deviceName", deviceName);
-        Map<String, String> configParams = new HashMap<String, String>();
+        final Map<String, String> configParams = new HashMap<String, String>();
         UrlUtil.parseQueryParameters(uri.getQuery(), false, configParams);
         hostDetails.putAll(configParams);
 
@@ -215,27 +216,29 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             throw new CloudRuntimeException(e.getMessage());
         }
 
-        Host externalFirewall = _resourceMgr.addHost(zoneId, resource, Host.Type.ExternalFirewall, hostDetails);
+        final Host externalFirewall = _resourceMgr.addHost(zoneId, resource, Host.Type.ExternalFirewall, hostDetails);
         if (externalFirewall != null) {
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
+            final PhysicalNetworkVO pNetworkFinal = pNetwork; 
+            return Transaction.execute(new TransactionCallback<ExternalFirewallDeviceVO>() {
+                @Override
+                public ExternalFirewallDeviceVO doInTransaction(TransactionStatus status) {
+                    boolean dedicatedUse = (configParams.get(ApiConstants.FIREWALL_DEVICE_DEDICATED) != null) ? Boolean.parseBoolean(configParams.get(ApiConstants.FIREWALL_DEVICE_DEDICATED)) : false;
+                    long capacity =  NumbersUtil.parseLong(configParams.get(ApiConstants.FIREWALL_DEVICE_CAPACITY), 0);
+                    if (capacity == 0) {
+                        capacity = _defaultFwCapacity;
+                    }
 
-            boolean dedicatedUse = (configParams.get(ApiConstants.FIREWALL_DEVICE_DEDICATED) != null) ? Boolean.parseBoolean(configParams.get(ApiConstants.FIREWALL_DEVICE_DEDICATED)) : false;
-            long capacity =  NumbersUtil.parseLong(configParams.get(ApiConstants.FIREWALL_DEVICE_CAPACITY), 0);
-            if (capacity == 0) {
-                capacity = _defaultFwCapacity;
-            }
+                    ExternalFirewallDeviceVO fwDevice = new ExternalFirewallDeviceVO(externalFirewall.getId(), pNetworkFinal.getId(), ntwkSvcProvider.getProviderName(),
+                            deviceName, capacity, dedicatedUse);
 
-            ExternalFirewallDeviceVO fwDevice = new ExternalFirewallDeviceVO(externalFirewall.getId(), pNetwork.getId(), ntwkSvcProvider.getProviderName(),
-                    deviceName, capacity, dedicatedUse);
+                    _externalFirewallDeviceDao.persist(fwDevice);
 
-            _externalFirewallDeviceDao.persist(fwDevice);
+                    DetailVO hostDetail = new DetailVO(externalFirewall.getId(), ApiConstants.FIREWALL_DEVICE_ID, String.valueOf(fwDevice.getId()));
+                    _hostDetailDao.persist(hostDetail);
 
-            DetailVO hostDetail = new DetailVO(externalFirewall.getId(), ApiConstants.FIREWALL_DEVICE_ID, String.valueOf(fwDevice.getId()));
-            _hostDetailDao.persist(hostDetail);
-
-            txn.commit();
-            return fwDevice;
+                    return fwDevice;
+                }
+            });
         } else {
             return null;
         }
@@ -343,7 +346,6 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
 
     @DB
     protected boolean freeFirewallForNetwork(Network network) {
-        Transaction txn = Transaction.currentTxn();
         GlobalLock deviceMapLock = GlobalLock.getInternLock("NetworkFirewallDeviceMap");
         try {
             if (deviceMapLock.lock(120)) {
@@ -353,7 +355,6 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
                         _networkExternalFirewallDao.remove(fwDeviceForNetwork.getId());
                     }
                 } catch (Exception exception) {
-                    txn.rollback();
                     s_logger.error("Failed to release firewall device for the network" + network.getId() + " due to " + exception.getMessage());
                     return false;
                 } finally {
@@ -363,7 +364,6 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         } finally {
             deviceMapLock.releaseRef();
         }
-        txn.commit();
         return true;
     }
 

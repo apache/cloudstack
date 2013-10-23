@@ -27,7 +27,11 @@ fi
 
 echo To fault called >> [RROUTER_LOG]
 [RROUTER_BIN_PATH]/disable_pubip.sh >> [RROUTER_LOG] 2>&1
+echo Disable public ip >> [RROUTER_LOG]
+[RROUTER_BIN_PATH]/services.sh stop >> [RROUTER_LOG] 2>&1
+echo Stop services $? >> [RROUTER_LOG]
 [RROUTER_BIN_PATH]/primary-backup.sh fault >> [RROUTER_LOG] 2>&1
+echo Switch conntrackd mode fault $? >> [RROUTER_LOG]
 echo Status: FAULT >> [RROUTER_LOG]
 
 releaseLockFile $lock $locked

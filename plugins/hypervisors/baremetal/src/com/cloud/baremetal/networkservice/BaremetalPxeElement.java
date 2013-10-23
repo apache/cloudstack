@@ -48,7 +48,6 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -117,14 +116,11 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
         
         VMInstanceVO vo = _vmDao.findById(vm.getId());
         if (vo.getLastHostId() == null) {
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
             nic.setMacAddress(dest.getHost().getPrivateMacAddress());
             NicVO nicVo = _nicDao.findById(nic.getId());
             assert vo != null : "Where ths nic " + nic.getId() + " going???";
             nicVo.setMacAddress(nic.getMacAddress());
             _nicDao.update(nicVo.getId(), nicVo);
-            txn.commit();
             
         	/*This vm is just being created */
         	if (!_pxeMgr.prepare(vm, nic, dest, context)) {

@@ -148,7 +148,13 @@ public class DateUtil {
     		scheduleTime.set(Calendar.MINUTE, minutes);
     		scheduleTime.set(Calendar.SECOND, 0);
     		scheduleTime.set(Calendar.MILLISECOND, 0);
-    		execDate = scheduleTime.getTime();
+            try {
+                execDate = scheduleTime.getTime();
+            } catch (IllegalArgumentException ex) {
+                scheduleTime.setLenient(true);
+                execDate = scheduleTime.getTime();
+                scheduleTime.setLenient(false);
+            }
     		// XXX: !execDate.after(startDate) is strictly for testing. 
     		// During testing we use a test clock which runs much faster than the real clock
     		// So startDate and execDate will always be ahead in the future
@@ -168,7 +174,13 @@ public class DateUtil {
     		scheduleTime.set(Calendar.MINUTE, minutes);
     		scheduleTime.set(Calendar.SECOND, 0);
     		scheduleTime.set(Calendar.MILLISECOND, 0);
-    		execDate = scheduleTime.getTime();
+            try {
+                execDate = scheduleTime.getTime();
+            } catch (IllegalArgumentException ex) {
+                scheduleTime.setLenient(true);
+                execDate = scheduleTime.getTime();
+                scheduleTime.setLenient(false);
+            }
     		// XXX: !execDate.after(startDate) is strictly for testing. 
             // During testing we use a test clock which runs much faster than the real clock
             // So startDate and execDate will always be ahead in the future
@@ -189,7 +201,13 @@ public class DateUtil {
     		scheduleTime.set(Calendar.MINUTE, minutes);
     		scheduleTime.set(Calendar.SECOND, 0);
     		scheduleTime.set(Calendar.MILLISECOND, 0);
-    		execDate = scheduleTime.getTime();
+            try {
+                execDate = scheduleTime.getTime();
+            } catch (IllegalArgumentException ex) {
+                scheduleTime.setLenient(true);
+                execDate = scheduleTime.getTime();
+                scheduleTime.setLenient(false);
+            }
     		// XXX: !execDate.after(startDate) is strictly for testing. 
             // During testing we use a test clock which runs much faster than the real clock
             // So startDate and execDate will always be ahead in the future
@@ -213,7 +231,13 @@ public class DateUtil {
     		scheduleTime.set(Calendar.MINUTE, minutes);
     		scheduleTime.set(Calendar.SECOND, 0);
     		scheduleTime.set(Calendar.MILLISECOND, 0);
-    		execDate = scheduleTime.getTime();
+            try {
+                execDate = scheduleTime.getTime();
+            } catch (IllegalArgumentException ex) {
+                scheduleTime.setLenient(true);
+                execDate = scheduleTime.getTime();
+                scheduleTime.setLenient(false);
+            }
     		// XXX: !execDate.after(startDate) is strictly for testing. 
             // During testing we use a test clock which runs much faster than the real clock
             // So startDate and execDate will always be ahead in the future
@@ -226,7 +250,14 @@ public class DateUtil {
     		throw new CloudRuntimeException("Incorrect interval: "+type.toString());
     	}
 
-    	return scheduleTime.getTime();
+        try {
+            return scheduleTime.getTime();
+        } catch (IllegalArgumentException ex) {
+            scheduleTime.setLenient(true);
+            Date nextScheduledDate = scheduleTime.getTime();
+            scheduleTime.setLenient(false);
+            return nextScheduledDate;
+        }
     }
     
 	// test only

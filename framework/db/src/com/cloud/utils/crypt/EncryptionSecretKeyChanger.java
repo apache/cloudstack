@@ -39,6 +39,7 @@ import org.jasypt.properties.EncryptableProperties;
 
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import org.apache.commons.configuration.ConfigurationException;
@@ -227,7 +228,7 @@ public class EncryptionSecretKeyChanger {
 		initEncryptor(newEncryptor, newDBKey);
 		System.out.println("Initialised Encryptors");
 		
-		Transaction txn = Transaction.open("Migrate");
+		TransactionLegacy txn = TransactionLegacy.open("Migrate");
 		txn.start();
 		try {
 			Connection conn;

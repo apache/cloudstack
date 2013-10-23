@@ -30,7 +30,7 @@ import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Local(value=ClusterDetailsDao.class)
 public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long> implements ClusterDetailsDao, ScopedConfigStorage {
@@ -100,7 +100,7 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
 
     @Override
     public void persist(long clusterId, Map<String, String> details) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         SearchCriteria<ClusterDetailsVO> sc = ClusterSearch.create();
         sc.setParameters("clusterId", clusterId);
@@ -119,7 +119,7 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
 
     @Override
     public void persist(long clusterId, String name, String value) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         SearchCriteria<ClusterDetailsVO> sc = DetailSearch.create();
         sc.setParameters("clusterId", clusterId);

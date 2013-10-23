@@ -80,7 +80,7 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
             dbProps = new Properties();
         }
         try {
-            dbProps.load(new FileInputStream(dbPropsFile));
+            PropertiesUtil.loadFromFile(dbProps, dbPropsFile);
         } catch (IOException e) {
             s_logger.fatal("Unable to load db properties file, pl. check the classpath and file path configuration", e);
             return false;

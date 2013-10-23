@@ -31,7 +31,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
@@ -177,6 +176,9 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
@@ -1169,11 +1171,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @DB
     @Override
     public boolean updateTemplateOrIsoPermissions(BaseUpdateTemplateOrIsoPermissionsCmd cmd) {
-        Transaction txn = Transaction.currentTxn();
-
         // Input validation
-        Long id = cmd.getId();
-        Account caller = CallContext.current().getCallingAccount();
+        final Long id = cmd.getId();
+        final Account caller = CallContext.current().getCallingAccount();
         List<String> accountNames = cmd.getAccountNames();
         List<Long> projectIds = cmd.getProjectIds();
         Boolean isFeatured = cmd.isFeatured();
@@ -1290,10 +1290,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         //Derive the domain id from the template owner as updateTemplatePermissions is not cross domain operation
         Account owner = _accountMgr.getAccount(ownerId);
-        Domain domain = _domainDao.findById(owner.getDomainId());
+        final Domain domain = _domainDao.findById(owner.getDomainId());
         if ("add".equalsIgnoreCase(operation)) {
-            txn.start();
-            for (String accountName : accountNames) {
+            final List<String> accountNamesFinal = accountNames; 
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    for (String accountName : accountNamesFinal) {
                 Account permittedAccount = _accountDao.findActiveAccount(accountName, domain.getId());
                 if (permittedAccount != null) {
                     if (permittedAccount.getId() == caller.getId()) {
@@ -1306,12 +1309,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                         _launchPermissionDao.persist(launchPermission);
                     }
                 } else {
-                    txn.rollback();
                     throw new InvalidParameterValueException("Unable to grant a launch permission to account " + accountName + " in domain id=" + domain.getUuid()
                             + ", account not found.  " + "No permissions updated, please verify the account names and retry.");
                 }
             }
-            txn.commit();
+                }
+            });
         } else if ("remove".equalsIgnoreCase(operation)) {
             List<Long> accountIds = new ArrayList<Long>();
             for (String accountName : accountNames) {
@@ -1341,11 +1344,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (userId == null) {
             userId = User.UID_SYSTEM;
         }
-        long templateId = command.getEntityId();
+        final long templateId = command.getEntityId();
         Long volumeId = command.getVolumeId();
         Long snapshotId = command.getSnapshotId();
         VMTemplateVO privateTemplate = null;
-        Long accountId = null;
+        final Long accountId = null;
         SnapshotVO snapshot = null;
         VolumeVO volume = null;
 
@@ -1434,8 +1437,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                         zoneId, accountId, volumeId);
             }*/
             if (privateTemplate == null) {
-                Transaction txn = Transaction.currentTxn();
-                txn.start();
+                final VolumeVO volumeFinal = volume;
+                final SnapshotVO snapshotFinal = snapshot;
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
                 // template_store_ref entries should have been removed using our
                 // DataObject.processEvent command in case of failure, but clean
                 // it up here to avoid
@@ -1450,10 +1456,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 // decrement resource count
                 if (accountId != null) {
                     _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.template);
-                    _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.secondary_storage, new Long(volume != null ? volume.getSize()
-                            : snapshot.getSize()));
+                            _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.secondary_storage, new Long(volumeFinal != null ? volumeFinal.getSize()
+                                    : snapshotFinal.getSize()));
                 }
-                txn.commit();
+                    }
+                });
+
             }
         }
 

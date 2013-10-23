@@ -51,8 +51,13 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
     @Override
     protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile,
             DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
-
         s_logger.debug("ClusterScopeStoragePoolAllocator looking for storage pool");
+
+        if (dskCh.useLocalStorage()) {
+            // cluster wide allocator should bail out in case of local disk
+            return null;
+        }
+
         List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 
         long dcId = plan.getDataCenterId();
@@ -84,9 +89,7 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
 
         if (pools.size() == 0) {
             if (s_logger.isDebugEnabled()) {
-                String storageType = dskCh.useLocalStorage() ? ServiceOffering.StorageType.local.toString()
-                        : ServiceOffering.StorageType.shared.toString();
-                s_logger.debug("No storage pools available for " + storageType + " volume allocation, returning");
+                s_logger.debug("No storage pools available for " + ServiceOffering.StorageType.shared.toString() + " volume allocation, returning");
             }
             return suitablePools;
         }
@@ -95,16 +98,16 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             if (suitablePools.size() == returnUpTo) {
                 break;
             }
-            StoragePool pol = (StoragePool) dataStoreMgr.getPrimaryDataStore(pool.getId());
-            if (filter(avoid, pol, dskCh, plan)) {
-                suitablePools.add(pol);
+            StoragePool storagePool = (StoragePool) dataStoreMgr.getPrimaryDataStore(pool.getId());
+            if (filter(avoid, storagePool, dskCh, plan)) {
+                suitablePools.add(storagePool);
             } else {
                 avoid.addPool(pool.getId());
             }
         }
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("FirstFitStoragePoolAllocator returning " + suitablePools.size() + " suitable storage pools");
+            s_logger.debug("ClusterScopeStoragePoolAllocator returning " + suitablePools.size() + " suitable storage pools");
         }
 
         return suitablePools;

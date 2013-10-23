@@ -140,6 +140,8 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
@@ -404,11 +406,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     @DB
-    protected VolumeVO persistVolume(Account owner, Long zoneId, String volumeName, String url, String format) {
-
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-
+    protected VolumeVO persistVolume(final Account owner, final Long zoneId, final String volumeName, final String url, final String format) {
+        return Transaction.execute(new TransactionCallback<VolumeVO>() {
+            @Override
+            public VolumeVO doInTransaction(TransactionStatus status) {
         VolumeVO volume = new VolumeVO(volumeName, zoneId, -1, -1, -1, new Long(-1), null, null, 0, Volume.Type.DATADISK);
         volume.setPoolId(null);
         volume.setDataCenterId(zoneId);
@@ -430,8 +431,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
 
-        txn.commit();
         return volume;
+    }
+        });
     }
 
     /*
@@ -600,9 +602,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             userSpecifiedName = getRandomVolumeName();
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        VolumeVO volume = commitVolume(cmd, caller, ownerId, displayVolumeEnabled, zoneId, diskOfferingId, size,
+                minIops, maxIops, parentVolume, userSpecifiedName);
 
+        return volume;
+    }
+
+    private VolumeVO commitVolume(final CreateVolumeCmd cmd, final Account caller, final long ownerId, final Boolean displayVolumeEnabled,
+            final Long zoneId, final Long diskOfferingId, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume,
+            final String userSpecifiedName) {
+        return Transaction.execute(new TransactionCallback<VolumeVO>() {
+            @Override
+            public VolumeVO doInTransaction(TransactionStatus status) {
         VolumeVO volume = new VolumeVO(userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, 0, Volume.Type.DATADISK);
         volume.setPoolId(null);
         volume.setDataCenterId(zoneId);
@@ -637,10 +648,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // decrement it
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, new Long(volume.getSize()));
-
-        txn.commit();
-
         return volume;
+    }
+        });
     }
 
     public boolean validateVolumeSizeRange(long size) {

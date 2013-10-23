@@ -732,7 +732,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
                 vm = OvmVm.getDetails(_conn, vmName);
             } catch (XmlRpcException e) {
                 s_logger.debug("Unable to get details of vm: " + vmName + ", treating it as stopped", e);
-                return new StopAnswer(cmd, "success", 0, true);
+                return new StopAnswer(cmd, "success", true);
             }
 
             deleteAllNetworkRulesForVm(vmName);
@@ -740,7 +740,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             cleanup(vm);
 
             state = State.Stopped;
-            return new StopAnswer(cmd, "success", 0, true);
+            return new StopAnswer(cmd, "success", true);
         } catch (Exception e) {
             s_logger.debug("Stop " + vmName + "failed", e);
             return new StopAnswer(cmd, e.getMessage(), false);

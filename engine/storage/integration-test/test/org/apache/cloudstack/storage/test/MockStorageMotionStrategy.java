@@ -26,7 +26,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority.Priority;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -43,8 +43,8 @@ public class MockStorageMotionStrategy implements DataMotionStrategy {
 
     boolean success = true;
     @Override
-    public Priority canHandle(DataObject srcData, DataObject destData) {
-        return Priority.HIGHEST;
+    public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
+        return StrategyPriority.HIGHEST;
     }
 
     public void makeBackupSnapshotSucceed(boolean success) {
@@ -52,8 +52,8 @@ public class MockStorageMotionStrategy implements DataMotionStrategy {
     }
 
     @Override
-    public Priority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
-        return Priority.HIGHEST;
+    public StrategyPriority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
+        return StrategyPriority.HIGHEST;
     }
 
     @Override

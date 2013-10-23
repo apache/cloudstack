@@ -159,6 +159,10 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -1067,7 +1071,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         String sql = "SELECT volume_id from snapshots, snapshot_store_ref WHERE snapshots.id = snapshot_store_ref.snapshot_id and store_id=? GROUP BY volume_id";
         List<Long> list = new ArrayList<Long>();
         try {
-            Transaction txn = Transaction.currentTxn();
+            TransactionLegacy txn = TransactionLegacy.currentTxn();
             ResultSet rs = null;
             PreparedStatement pstmt = null;
             pstmt = txn.prepareAutoCloseStatement(sql);
@@ -1087,7 +1091,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     List<String> findAllSnapshotForVolume(Long volumeId) {
         String sql = "SELECT backup_snap_id FROM snapshots WHERE volume_id=? and backup_snap_id is not NULL";
         try {
-            Transaction txn = Transaction.currentTxn();
+            TransactionLegacy txn = TransactionLegacy.currentTxn();
             ResultSet rs = null;
             PreparedStatement pstmt = null;
             pstmt = txn.prepareAutoCloseStatement(sql);
@@ -1784,7 +1788,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public boolean deleteImageStore(DeleteImageStoreCmd cmd) {
-        long storeId = cmd.getId();
+        final long storeId = cmd.getId();
         // Verify that image store exists
         ImageStoreVO store = _imageStoreDao.findById(storeId);
         if (store == null) {
@@ -1810,8 +1814,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         // ready to delete
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
         // first delete from image_store_details table, we need to do that since
         // we are not actually deleting record from main
         // image_data_store table, so delete cascade will not work
@@ -1820,7 +1825,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
         _templateStoreDao.deletePrimaryRecordsForStore(storeId);
         _imageStoreDao.remove(storeId);
-        txn.commit();
+            }
+        });
+
         return true;
     }
 
@@ -1894,7 +1901,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public boolean deleteSecondaryStagingStore(DeleteSecondaryStagingStoreCmd cmd) {
-        long storeId = cmd.getId();
+        final long storeId = cmd.getId();
         // Verify that cache store exists
         ImageStoreVO store = _imageStoreDao.findById(storeId);
         if (store == null) {
@@ -1919,8 +1926,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         // ready to delete
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
         // first delete from image_store_details table, we need to do that since
         // we are not actually deleting record from main
         // image_data_store table, so delete cascade will not work
@@ -1929,7 +1937,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
         _templateStoreDao.deletePrimaryRecordsForStore(storeId);
         _imageStoreDao.remove(storeId);
-        txn.commit();
+            }
+        });
+
         return true;
     }
 

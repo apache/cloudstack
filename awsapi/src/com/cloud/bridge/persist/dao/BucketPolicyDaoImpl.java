@@ -26,7 +26,7 @@ import com.cloud.bridge.model.BucketPolicyVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={BucketPolicyDao.class})
@@ -42,7 +42,7 @@ public class BucketPolicyDaoImpl extends GenericDaoBase<BucketPolicyVO, Long> im
     public BucketPolicyVO getByName( String bucketName ) {
         SearchBuilder <BucketPolicyVO> searchByBucket = createSearchBuilder();
         searchByBucket.and("BucketName", searchByBucket.entity().getBucketName(), SearchCriteria.Op.EQ);
-        Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         try {
             txn.start();
             SearchCriteria<BucketPolicyVO> sc = searchByBucket.create();
@@ -59,7 +59,7 @@ public class BucketPolicyDaoImpl extends GenericDaoBase<BucketPolicyVO, Long> im
     public void deletePolicy( String bucketName ) {
         SearchBuilder <BucketPolicyVO> deleteByBucket = createSearchBuilder();
         deleteByBucket.and("BucketName", deleteByBucket.entity().getBucketName(), SearchCriteria.Op.EQ);
-        Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         try {
             txn.start();
             SearchCriteria<BucketPolicyVO> sc = deleteByBucket.create();

@@ -393,6 +393,12 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name="dynamically_scalable")
     private boolean isDynamicallyScalable;
+    
+    @Column(name="detail_name")
+    private String detailName;
+
+    @Column(name="detail_value")
+    private String detailValue;
 
     public UserVmJoinVO() {
     }
@@ -883,5 +889,14 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public Boolean isDynamicallyScalable() {
         return isDynamicallyScalable;
+    }
+
+    public String getDetailName() {
+        return detailName;
+    }
+
+
+    public String getDetailValue() {
+        return detailValue;
     }
 }

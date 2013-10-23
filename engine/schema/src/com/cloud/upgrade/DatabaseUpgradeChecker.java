@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.TreeMap;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
@@ -73,7 +74,7 @@ import com.cloud.upgrade.dao.VersionVO.Step;
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.ScriptRunner;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value = {SystemIntegrityChecker.class})
@@ -82,10 +83,12 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
     protected HashMap<String, DbUpgrade[]> _upgradeMap = new HashMap<String, DbUpgrade[]>();
 
+    @Inject
     VersionDao _dao;
 
     public DatabaseUpgradeChecker() {
         _dao = new VersionDaoImpl();
+
         _upgradeMap.put("2.1.7", new DbUpgrade[] {new Upgrade217to218(), new Upgrade218to22(), new Upgrade221to222(),
                 new UpgradeSnapshot217to224(), new Upgrade222to224(), new Upgrade224to225(), new Upgrade225to226(),
                 new Upgrade227to228(), new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(),
@@ -269,7 +272,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             s_logger.debug("Running upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-"
                     + upgrade.getUpgradableVersionRange()[1]
                     + " to " + upgrade.getUpgradedVersion());
-            Transaction txn = Transaction.open("Upgrade");
+            TransactionLegacy txn = TransactionLegacy.open("Upgrade");
             txn.start();
             try {
                 Connection conn;
@@ -339,7 +342,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 VersionVO version = _dao.findByVersion(upgradedVersion, Step.Upgrade);
                 s_logger.debug("Upgrading to version " + upgradedVersion + "...");
 
-                Transaction txn = Transaction.open("Cleanup");
+                TransactionLegacy txn = TransactionLegacy.open("Cleanup");
                 try {
                     if (version != null) {
                         for (DbUpgrade upgrade : versionUpgrades) {

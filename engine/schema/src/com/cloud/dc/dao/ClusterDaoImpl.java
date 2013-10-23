@@ -40,7 +40,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -156,7 +156,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
 
     @Override
     public Map<Long, List<Long>> getPodClusterIdMap(List<Long> clusterIds){
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         Map<Long, List<Long>> result = new HashMap<Long, List<Long>>();
 
@@ -243,7 +243,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
 
     @Override
     public boolean remove(Long id) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         ClusterVO cluster = createForUpdate();
         cluster.setName(null);

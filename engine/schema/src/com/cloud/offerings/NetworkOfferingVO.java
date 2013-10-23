@@ -136,6 +136,8 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name = "concurrent_connections")
     Integer concurrentConnections;
 
+    @Column(name = "keep_alive_enabled")
+    boolean keepAliveEnabled = false;
 
     @Override
     public String getDisplayText() {
@@ -147,6 +149,15 @@ public class NetworkOfferingVO implements NetworkOffering {
     
     @Column(name = "public_lb")
     boolean publicLb;
+
+    @Override
+    public boolean isKeepAliveEnabled() {
+        return keepAliveEnabled;
+    }
+
+    public void setKeepAliveEnabled(boolean keepAliveEnabled) {
+        this.keepAliveEnabled = keepAliveEnabled;
+    }
 
     @Override
     public long getId() {
@@ -430,6 +441,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.internalLb = internalLb;
     }
 
+    @Override
     public Integer getConcurrentConnections() {
         return  this.concurrentConnections;
     }

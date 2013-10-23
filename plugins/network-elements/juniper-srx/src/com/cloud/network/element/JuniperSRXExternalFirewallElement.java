@@ -95,7 +95,7 @@ import com.cloud.vm.VirtualMachineProfile;
         PortForwardingServiceProvider.class, IpDeployer.class,
         SourceNatServiceProvider.class, RemoteAccessVPNServiceProvider.class})
 public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceManagerImpl implements SourceNatServiceProvider, FirewallServiceProvider,
-PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer, JuniperSRXFirewallElementService, StaticNatServiceProvider {
+PortForwardingServiceProvider, IpDeployer, JuniperSRXFirewallElementService, StaticNatServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(JuniperSRXExternalFirewallElement.class);
 
@@ -223,42 +223,6 @@ PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer, Junip
         }
 
         return applyFirewallRules(config, rules);
-    }
-
-    @Override
-    public boolean startVpn(Network config, RemoteAccessVpn vpn) throws ResourceUnavailableException {
-        if (!canHandle(config, Service.Vpn)) {
-            return false;
-        }
-
-        return manageRemoteAccessVpn(true, config, vpn);
-
-    }
-
-    @Override
-    public boolean stopVpn(Network config, RemoteAccessVpn vpn) throws ResourceUnavailableException {
-        if (!canHandle(config, Service.Vpn)) {
-            return false;
-        }
-
-        return manageRemoteAccessVpn(false, config, vpn);
-    }
-
-    @Override
-    public String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users) throws ResourceUnavailableException {
-        Network config = _networksDao.findById(vpn.getNetworkId());
-
-        if (!canHandle(config, Service.Vpn)) {
-            return null;
-        }
-
-        boolean result = manageRemoteAccessVpnUsers(config, vpn, users);
-        String[] results = new String[users.size()];
-        for (int i = 0; i < results.length; i++) {
-            results[i] = String.valueOf(result);
-        }
-
-        return results;
     }
 
     @Override

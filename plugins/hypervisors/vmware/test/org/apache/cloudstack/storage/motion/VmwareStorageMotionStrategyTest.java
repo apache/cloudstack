@@ -25,7 +25,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority.Priority;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
@@ -100,8 +100,8 @@ public class VmwareStorageMotionStrategyTest {
         when(srcHost.getHypervisorType()).thenReturn(HypervisorType.VMware);
         when(destHost.getHypervisorType()).thenReturn(HypervisorType.VMware);
         Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
-        Priority canHandle = strategy.canHandle(volumeMap, srcHost, destHost);
-        assertTrue("The strategy is only supposed to handle vmware hosts", canHandle == Priority.HYPERVISOR);
+        StrategyPriority canHandle = strategy.canHandle(volumeMap, srcHost, destHost);
+        assertTrue("The strategy is only supposed to handle vmware hosts", canHandle == StrategyPriority.HYPERVISOR);
     }
 
     @Test
@@ -111,8 +111,8 @@ public class VmwareStorageMotionStrategyTest {
         when(srcHost.getHypervisorType()).thenReturn(HypervisorType.XenServer);
         when(destHost.getHypervisorType()).thenReturn(HypervisorType.XenServer);
         Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
-        Priority canHandle = strategy.canHandle(volumeMap, srcHost, destHost);
-        assertFalse("The strategy is only supposed to handle vmware hosts", canHandle == Priority.HYPERVISOR);
+        StrategyPriority canHandle = strategy.canHandle(volumeMap, srcHost, destHost);
+        assertFalse("The strategy is only supposed to handle vmware hosts", canHandle == StrategyPriority.HYPERVISOR);
     }
 
     @Test

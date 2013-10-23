@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class PrimaryDataStoreDetailsDaoImpl extends GenericDaoBase<PrimaryDataStoreDetailVO, Long> implements
@@ -45,7 +45,7 @@ public class PrimaryDataStoreDetailsDaoImpl extends GenericDaoBase<PrimaryDataSt
 
     @Override
     public void update(long poolId, Map<String, String> details) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         SearchCriteria<PrimaryDataStoreDetailVO> sc = PoolSearch.create();
         sc.setParameters("pool", poolId);
 
