@@ -60,10 +60,12 @@ import com.cloud.hypervisor.vmware.resource.VmwareResource;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.Network;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.VmwareTrafficLabel;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.network.element.CiscoNexusVSMElement;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceManager;
@@ -105,8 +107,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 	ResourceManager _resourceMgr;
 	@Inject
 	CiscoNexusVSMDeviceDao _nexusDao;
-	@Inject
 	CiscoNexusVSMElement _nexusElement;
+	List<NetworkElement> networkElements;
 	@Inject
     NetworkModel _netmgr;
     @Inject
@@ -450,6 +452,15 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
             }
 		}
 	}
+	
+	protected CiscoNexusVSMElement getCiscoNexusVSMElement() {
+	    for ( NetworkElement networkElement : networkElements ) {
+	        if ( networkElement instanceof CiscoNexusVSMElement )
+	            return (CiscoNexusVSMElement)networkElement;
+	    }
+	    
+	    throw new IllegalStateException("Failed to CiscoNexusVSMElement");
+	}
 
     private VmwareDatacenterVO fetchVmwareDatacenterByZone(Long dcId) throws DiscoveryException {
         VmwareDatacenterVO vmwareDc;
@@ -640,6 +651,16 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 
 	}
 
+    @Override
+    public boolean start() {
+        if ( ! super.start() )
+            return false;
+        
+        _nexusElement = getCiscoNexusVSMElement();
+        
+        return true;
+    }
+	
 	@Override
 	public boolean stop() {
 		_resourceMgr.unregisterResourceStateAdapter(this.getClass()
@@ -791,4 +812,14 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
         }
         _urlParams.putAll(params);
     }
+
+    public List<NetworkElement> getNetworkElements() {
+        return networkElements;
+    }
+
+    @Inject
+    public void setNetworkElements(List<NetworkElement> networkElements) {
+        this.networkElements = networkElements;
+    }
+
 }

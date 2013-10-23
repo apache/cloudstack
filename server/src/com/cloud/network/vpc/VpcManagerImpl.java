@@ -1217,7 +1217,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
 
-    protected List<VpcProvider> getVpcElements() {
+    public List<VpcProvider> getVpcElements() {
         if (vpcElements == null) {
             vpcElements = new ArrayList<VpcProvider>();
             vpcElements.add((VpcProvider)_ntwkModel.getElementImplementingProvider(Provider.VPCVirtualRouter.getName()));
@@ -2213,5 +2213,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         return new ArrayList<Provider>(providers.values());
+    }
+
+    @Inject
+    public void setVpcElements(List<VpcProvider> vpcElements) {
+        this.vpcElements = vpcElements;
     }
 }

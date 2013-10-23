@@ -194,7 +194,6 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     @Inject EndPointSelector _epSelector;
     @Inject
     private ResourceManager _resourceMgr;
-    @Inject
     protected List<SnapshotStrategy> snapshotStrategies;
 
 
@@ -379,11 +378,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         String parent = null;
         try {
             for (String backupUuid : BackupUuids) {
-<<<<<<< HEAD
-                downloadSnapshotFromSwiftCommand cmd = new downloadSnapshotFromSwiftCommand(swift, secStore.getUri(), dcId, accountId, volumeId, parent, backupUuid, _backupsnapshotwait);
-=======
                  DownloadSnapshotFromSwiftCommand cmd = new DownloadSnapshotFromSwiftCommand(swift, secondaryStoragePoolUrl, dcId, accountId, volumeId, parent, backupUuid, _backupsnapshotwait);
->>>>>>> master
                 Answer answer = _agentMgr.sendToSSVM(dcId, cmd);
                 if ((answer == null) || !answer.getResult()) {
                     throw new CloudRuntimeException("downloadSnapshotsFromSwift failed ");
@@ -1234,5 +1229,14 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                     new Long(volume.getSize()));
         }
         return snapshot;
+    }
+
+    public List<SnapshotStrategy> getSnapshotStrategies() {
+        return snapshotStrategies;
+    }
+
+    @Inject
+    public void setSnapshotStrategies(List<SnapshotStrategy> snapshotStrategies) {
+        this.snapshotStrategies = snapshotStrategies;
     }
 }

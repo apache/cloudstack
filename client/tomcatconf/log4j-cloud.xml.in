@@ -152,6 +152,14 @@ under the License.
       <priority value="INFO"/>
    </category>
    
+   <category name="org.springframework">
+      <priority value="WARN"/>
+   </category>
+   
+   <category name="org.apache.cloudstack.spring.module.context.ResourceApplicationContext">
+      <priority value="WARN"/>
+   </category>
+   
    <category name="net">
      <priority value="INFO"/>
    </category>

@@ -1,0 +1,321 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements. See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership. The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied. See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+                      http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+                      http://www.springframework.org/schema/context
+                      http://www.springframework.org/schema/context/spring-context-3.0.xsd"
+                      >
+
+  <!--
+    DAO with customized configuration
+  -->
+  <bean id="serviceOfferingDaoImpl" class="com.cloud.service.dao.ServiceOfferingDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="50" />
+        <entry key="cache.time.to.live" value="600" />
+      </map>
+    </property>  
+  </bean>
+
+  <bean id="diskOfferingDaoImpl" class="com.cloud.storage.dao.DiskOfferingDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="50" />
+        <entry key="cache.time.to.live" value="600" />
+      </map>
+    </property>  
+  </bean>
+
+  <bean id="dataCenterDaoImpl" class="com.cloud.dc.dao.DataCenterDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="50" />
+        <entry key="cache.time.to.live" value="600" />
+      </map>
+    </property>  
+  </bean>
+
+  <bean id="hostPodDaoImpl" class="com.cloud.dc.dao.HostPodDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="50" />
+        <entry key="cache.time.to.live" value="600" />
+      </map>
+    </property>  
+  </bean>
+
+  <bean id="vlanDaoImpl" class="com.cloud.dc.dao.VlanDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="30" />
+        <entry key="cache.time.to.live" value="3600" />
+      </map>
+    </property>  
+  </bean>
+
+  <bean id="userDaoImpl" class="com.cloud.user.dao.UserDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="5000" />
+        <entry key="cache.time.to.live" value="300" />
+      </map>
+    </property>  
+  </bean>
+
+  <bean id="VMTemplateDaoImpl" class="com.cloud.storage.dao.VMTemplateDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="100" />
+        <entry key="cache.time.to.live" value="600" />
+      </map>
+    </property>  
+  </bean>
+
+  <bean id="hypervisorCapabilitiesDaoImpl" class="com.cloud.hypervisor.dao.HypervisorCapabilitiesDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="100" />
+        <entry key="cache.time.to.live" value="600" />
+      </map>
+    </property>  
+  </bean>
+  <bean id="dedicatedResourceDaoImpl" class="com.cloud.dc.dao.DedicatedResourceDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="30" />
+        <entry key="cache.time.to.live" value="3600" />
+      </map>
+    </property>
+  </bean>
+  
+  <!--
+    DAOs with default configuration
+  -->
+  <bean id="accountDaoImpl" class="com.cloud.user.dao.AccountDaoImpl" />
+  <bean id="accountDetailsDaoImpl" class="com.cloud.user.AccountDetailsDaoImpl" />
+  <bean id="accountJoinDaoImpl" class="com.cloud.api.query.dao.AccountJoinDaoImpl" />
+  <bean id="accountGuestVlanMapDaoImpl" class="com.cloud.network.dao.AccountGuestVlanMapDaoImpl" />
+  <bean id="accountVlanMapDaoImpl" class="com.cloud.dc.dao.AccountVlanMapDaoImpl" />
+  <bean id="alertDaoImpl" class="com.cloud.alert.dao.AlertDaoImpl" />
+  <bean id="asyncJobJoinDaoImpl" class="com.cloud.api.query.dao.AsyncJobJoinDaoImpl" />
+  <bean id="autoScalePolicyConditionMapDaoImpl" class="com.cloud.network.as.dao.AutoScalePolicyConditionMapDaoImpl" />
+  <bean id="autoScalePolicyDaoImpl" class="com.cloud.network.as.dao.AutoScalePolicyDaoImpl" />
+  <bean id="autoScaleVmGroupDaoImpl" class="com.cloud.network.as.dao.AutoScaleVmGroupDaoImpl" />
+  <bean id="autoScaleVmGroupPolicyMapDaoImpl" class="com.cloud.network.as.dao.AutoScaleVmGroupPolicyMapDaoImpl" />
+  <bean id="autoScaleVmProfileDaoImpl" class="com.cloud.network.as.dao.AutoScaleVmProfileDaoImpl" />
+  <bean id="capacityDaoImpl" class="com.cloud.capacity.dao.CapacityDaoImpl" />
+  <bean id="certificateDaoImpl" class="com.cloud.certificate.dao.CertificateDaoImpl" />
+  <bean id="clusterDaoImpl" class="com.cloud.dc.dao.ClusterDaoImpl" />
+  <bean id="clusterDetailsDaoImpl" class="com.cloud.dc.ClusterDetailsDaoImpl" />
+  <bean id="clusterVSMMapDaoImpl" class="com.cloud.dc.dao.ClusterVSMMapDaoImpl" />
+  <bean id="commandExecLogDaoImpl" class="com.cloud.secstorage.CommandExecLogDaoImpl" />
+  <bean id="conditionDaoImpl" class="com.cloud.network.as.dao.ConditionDaoImpl" />
+  <bean id="consoleProxyDaoImpl" class="com.cloud.vm.dao.ConsoleProxyDaoImpl" />
+  <bean id="counterDaoImpl" class="com.cloud.network.as.dao.CounterDaoImpl" />
+  <bean id="dataCenterIpAddressDaoImpl" class="com.cloud.dc.dao.DataCenterIpAddressDaoImpl" />
+  <bean id="dataCenterJoinDaoImpl" class="com.cloud.api.query.dao.DataCenterJoinDaoImpl" />
+  <bean id="dataCenterLinkLocalIpAddressDaoImpl" class="com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl" />
+  <bean id="dataCenterVnetDaoImpl" class="com.cloud.dc.dao.DataCenterVnetDaoImpl" />
+  <bean id="dcDetailsDaoImpl" class="com.cloud.dc.dao.DcDetailsDaoImpl" />
+  <bean id="engineDcDetailsDaoImpl" class="org.apache.cloudstack.engine.datacenter.entity.api.db.dao.DcDetailsDaoImpl" />
+  <bean id="diskOfferingJoinDaoImpl" class="com.cloud.api.query.dao.DiskOfferingJoinDaoImpl" />
+  <bean id="domainDaoImpl" class="com.cloud.domain.dao.DomainDaoImpl" />
+  <bean id="domainRouterDaoImpl" class="com.cloud.vm.dao.DomainRouterDaoImpl" />
+  <bean id="domainRouterJoinDaoImpl" class="com.cloud.api.query.dao.DomainRouterJoinDaoImpl" />
+  <bean id="engineClusterDaoImpl" class="org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineClusterDaoImpl" />
+  <bean id="engineDataCenterDaoImpl" class="org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineDataCenterDaoImpl" />
+  <bean id="engineHostDaoImpl" class="org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineHostDaoImpl" />
+  <bean id="engineHostPodDaoImpl" class="org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineHostPodDaoImpl" />
+  <bean id="eventDaoImpl" class="com.cloud.event.dao.EventDaoImpl" />
+  <bean id="eventJoinDaoImpl" class="com.cloud.event.dao.EventJoinDaoImpl" />
+  <bean id="externalFirewallDeviceDaoImpl" class="com.cloud.network.dao.ExternalFirewallDeviceDaoImpl" />
+  <bean id="externalLoadBalancerDeviceDaoImpl" class="com.cloud.network.dao.ExternalLoadBalancerDeviceDaoImpl" />
+  <bean id="externalPublicIpStatisticsDaoImpl" class="com.cloud.usage.dao.ExternalPublicIpStatisticsDaoImpl" />
+  <bean id="firewallRulesCidrsDaoImpl" class="com.cloud.network.dao.FirewallRulesCidrsDaoImpl" />
+  <bean id="firewallRulesDaoImpl" class="com.cloud.network.dao.FirewallRulesDaoImpl" />
+  <bean id="globalLoadBalancerDaoImpl" class="org.apache.cloudstack.region.gslb.GlobalLoadBalancerDaoImpl" />
+  <bean id="globalLoadBalancerLbRuleMapDaoImpl" class="org.apache.cloudstack.region.gslb.GlobalLoadBalancerLbRuleMapDaoImpl" />
+  <bean id="guestOSCategoryDaoImpl" class="com.cloud.storage.dao.GuestOSCategoryDaoImpl" />
+  <bean id="guestOSDaoImpl" class="com.cloud.storage.dao.GuestOSDaoImpl" />
+  <bean id="guestOSHypervisorDaoImpl" class="com.cloud.storage.dao.GuestOSHypervisorDaoImpl" />
+  <bean id="highAvailabilityDaoImpl" class="com.cloud.ha.dao.HighAvailabilityDaoImpl" />
+  <bean id="hostDaoImpl" class="com.cloud.host.dao.HostDaoImpl" />
+  <bean id="engineHostDetailsDaoImpl" class="org.apache.cloudstack.engine.datacenter.entity.api.db.dao.HostDetailsDaoImpl" />
+  <bean id="hostDetailsDaoImpl" class="com.cloud.host.dao.HostDetailsDaoImpl" />
+  <bean id="hostJoinDaoImpl" class="com.cloud.api.query.dao.HostJoinDaoImpl" />
+  <bean id="engineHostTagsDaoImpl" class="org.apache.cloudstack.engine.datacenter.entity.api.db.dao.HostTagsDaoImpl" />
+  <bean id="hostTagsDaoImpl" class="com.cloud.host.dao.HostTagsDaoImpl" />
+  <bean id="hostTransferMapDaoImpl" class="com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl" />
+  <bean id="iPAddressDaoImpl" class="com.cloud.network.dao.IPAddressDaoImpl" />
+  <bean id="identityDaoImpl" class="com.cloud.uuididentity.dao.IdentityDaoImpl" />
+  <bean id="imageStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.ImageStoreDaoImpl" />
+  <bean id="imageStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.image.db.ImageStoreDetailsDaoImpl" /> 
+  <bean id="imageStoreJoinDaoImpl" class="com.cloud.api.query.dao.ImageStoreJoinDaoImpl" />   
+  <bean id="snapshotDataStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.SnapshotDataStoreDaoImpl" /> 
+  <bean id="templateDataStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.TemplateDataStoreDaoImpl" /> 
+  <bean id="templateJoinDaoImpl" class="com.cloud.api.query.dao.TemplateJoinDaoImpl" />
+  <bean id="volumeDataStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.VolumeDataStoreDaoImpl" />   
+  <bean id="inlineLoadBalancerNicMapDaoImpl" class="com.cloud.network.dao.InlineLoadBalancerNicMapDaoImpl" />
+  <bean id="instanceGroupDaoImpl" class="com.cloud.vm.dao.InstanceGroupDaoImpl" />
+  <bean id="instanceGroupJoinDaoImpl" class="com.cloud.api.query.dao.InstanceGroupJoinDaoImpl" />
+  <bean id="instanceGroupVMMapDaoImpl" class="com.cloud.vm.dao.InstanceGroupVMMapDaoImpl" />
+  <bean id="itWorkDaoImpl" class="com.cloud.vm.ItWorkDaoImpl" />
+  <bean id="keystoreDaoImpl" class="com.cloud.keystore.KeystoreDaoImpl" />
+  <bean id="lBHealthCheckPolicyDaoImpl" class="com.cloud.network.dao.LBHealthCheckPolicyDaoImpl" />
+  <bean id="lBStickinessPolicyDaoImpl" class="com.cloud.network.dao.LBStickinessPolicyDaoImpl" />
+  <bean id="launchPermissionDaoImpl" class="com.cloud.storage.dao.LaunchPermissionDaoImpl" />
+  <bean id="loadBalancerDaoImpl" class="com.cloud.network.dao.LoadBalancerDaoImpl" />
+  <bean id="loadBalancerVMMapDaoImpl" class="com.cloud.network.dao.LoadBalancerVMMapDaoImpl" />
+  <bean id="managementServerHostDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostDaoImpl" />
+  <bean id="managementServerHostPeerDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostPeerDaoImpl" />
+  <bean id="networkAccountDaoImpl" class="com.cloud.network.dao.NetworkAccountDaoImpl" />
+  <bean id="networkACLDaoImpl" class="com.cloud.network.vpc.dao.NetworkACLDaoImpl" />
+  <bean id="networkACLItemDaoImpl" class="com.cloud.network.vpc.dao.NetworkACLItemDaoImpl" />
+  <bean id="networkDaoImpl" class="com.cloud.network.dao.NetworkDaoImpl" />
+  <bean id="networkDomainDaoImpl" class="com.cloud.network.dao.NetworkDomainDaoImpl" />
+  <bean id="networkExternalFirewallDaoImpl" class="com.cloud.network.dao.NetworkExternalFirewallDaoImpl" />
+  <bean id="networkExternalLoadBalancerDaoImpl" class="com.cloud.network.dao.NetworkExternalLoadBalancerDaoImpl" />
+  <bean id="networkOfferingDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingDaoImpl" />
+  <bean id="networkOfferingServiceMapDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl" />
+  <bean id="networkOpDaoImpl" class="com.cloud.network.dao.NetworkOpDaoImpl" />
+  <bean id="networkRuleConfigDaoImpl" class="com.cloud.network.dao.NetworkRuleConfigDaoImpl" />
+  <bean id="networkServiceMapDaoImpl" class="com.cloud.network.dao.NetworkServiceMapDaoImpl" />
+  <bean id="nicDaoImpl" class="com.cloud.vm.dao.NicDaoImpl" />
+  <bean id="nicDetailDaoImpl" class="com.cloud.vm.dao.NicDetailDaoImpl" />
+  <bean id="nicSecondaryIpDaoImpl" class="com.cloud.vm.dao.NicSecondaryIpDaoImpl" />
+  <bean id="nicIpAliasDaoImpl" class="com.cloud.vm.dao.NicIpAliasDaoImpl" />
+  <bean id="objectInDataStoreDaoImpl" class="org.apache.cloudstack.storage.db.ObjectInDataStoreDaoImpl" />
+  <bean id="ovsTunnelInterfaceDaoImpl" class="com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl" />
+  <bean id="ovsTunnelNetworkDaoImpl" class="com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl" />
+  <bean id="physicalNetworkDaoImpl" class="com.cloud.network.dao.PhysicalNetworkDaoImpl" />
+  <bean id="physicalNetworkIsolationMethodDaoImpl" class="com.cloud.network.dao.PhysicalNetworkIsolationMethodDaoImpl" />
+  <bean id="physicalNetworkServiceProviderDaoImpl" class="com.cloud.network.dao.PhysicalNetworkServiceProviderDaoImpl" />
+  <bean id="physicalNetworkTagDaoImpl" class="com.cloud.network.dao.PhysicalNetworkTagDaoImpl" />
+  <bean id="physicalNetworkTrafficTypeDaoImpl" class="com.cloud.network.dao.PhysicalNetworkTrafficTypeDaoImpl" />
+  <bean id="podVlanDaoImpl" class="com.cloud.dc.dao.PodVlanDaoImpl" />
+  <bean id="podVlanMapDaoImpl" class="com.cloud.dc.dao.PodVlanMapDaoImpl" />
+  <bean id="PortableIpDaoImpl" class="org.apache.cloudstack.region.PortableIpDaoImpl" />
+  <bean id="PortableIpRangeDaoImpl" class="org.apache.cloudstack.region.PortableIpRangeDaoImpl" />
+  <bean id="portForwardingRulesDaoImpl" class="com.cloud.network.rules.dao.PortForwardingRulesDaoImpl" />
+  <bean id="portProfileDaoImpl" class="com.cloud.network.dao.PortProfileDaoImpl" />
+  <bean id="primaryDataStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl" />
+  <bean id="primaryDataStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.volume.db.PrimaryDataStoreDetailsDaoImpl" />
+  <bean id="privateIpDaoImpl" class="com.cloud.network.vpc.dao.PrivateIpDaoImpl" />
+  <bean id="projectAccountDaoImpl" class="com.cloud.projects.dao.ProjectAccountDaoImpl" />
+  <bean id="projectAccountJoinDaoImpl" class="com.cloud.api.query.dao.ProjectAccountJoinDaoImpl" />
+  <bean id="projectDaoImpl" class="com.cloud.projects.dao.ProjectDaoImpl" />
+  <bean id="projectInvitationDaoImpl" class="com.cloud.projects.dao.ProjectInvitationDaoImpl" />
+  <bean id="projectInvitationJoinDaoImpl" class="com.cloud.api.query.dao.ProjectInvitationJoinDaoImpl" />
+  <bean id="projectJoinDaoImpl" class="com.cloud.api.query.dao.ProjectJoinDaoImpl" />
+  <bean id="regionDaoImpl" class="org.apache.cloudstack.region.dao.RegionDaoImpl" />
+  <bean id="remoteAccessVpnDaoImpl" class="com.cloud.network.dao.RemoteAccessVpnDaoImpl" />
+  <bean id="resourceCountDaoImpl" class="com.cloud.configuration.dao.ResourceCountDaoImpl" />
+  <bean id="resourceLimitDaoImpl" class="com.cloud.configuration.dao.ResourceLimitDaoImpl" />
+  <bean id="resourceTagJoinDaoImpl" class="com.cloud.api.query.dao.ResourceTagJoinDaoImpl" />
+  <bean id="resourceTagsDaoImpl" class="com.cloud.tags.dao.ResourceTagsDaoImpl" />
+  <bean id="routerNetworkDaoImpl" class="com.cloud.network.dao.RouterNetworkDaoImpl" />
+  <bean id="sSHKeyPairDaoImpl" class="com.cloud.user.dao.SSHKeyPairDaoImpl" />
+  <bean id="secondaryStorageVmDaoImpl" class="com.cloud.vm.dao.SecondaryStorageVmDaoImpl" />
+  <bean id="securityGroupDaoImpl" class="com.cloud.network.security.dao.SecurityGroupDaoImpl" />
+  <bean id="securityGroupJoinDaoImpl" class="com.cloud.api.query.dao.SecurityGroupJoinDaoImpl" />
+  <bean id="securityGroupRuleDaoImpl" class="com.cloud.network.security.dao.SecurityGroupRuleDaoImpl" />
+  <bean id="securityGroupRulesDaoImpl" class="com.cloud.network.security.dao.SecurityGroupRulesDaoImpl" />
+  <bean id="securityGroupVMMapDaoImpl" class="com.cloud.network.security.dao.SecurityGroupVMMapDaoImpl" />
+  <bean id="securityGroupWorkDaoImpl" class="com.cloud.network.security.dao.SecurityGroupWorkDaoImpl" />
+  <bean id="serviceOfferingJoinDaoImpl" class="com.cloud.api.query.dao.ServiceOfferingJoinDaoImpl" />
+  <bean id="site2SiteCustomerGatewayDaoImpl" class="com.cloud.network.dao.Site2SiteCustomerGatewayDaoImpl" />
+  <bean id="site2SiteVpnConnectionDaoImpl" class="com.cloud.network.dao.Site2SiteVpnConnectionDaoImpl" />
+  <bean id="site2SiteVpnGatewayDaoImpl" class="com.cloud.network.dao.Site2SiteVpnGatewayDaoImpl" />
+  <bean id="snapshotDaoImpl" class="com.cloud.storage.dao.SnapshotDaoImpl" />
+  <bean id="snapshotPolicyDaoImpl" class="com.cloud.storage.dao.SnapshotPolicyDaoImpl" />
+  <bean id="snapshotScheduleDaoImpl" class="com.cloud.storage.dao.SnapshotScheduleDaoImpl" />
+  <bean id="staticRouteDaoImpl" class="com.cloud.network.vpc.dao.StaticRouteDaoImpl" />
+  <bean id="storageNetworkIpAddressDaoImpl" class="com.cloud.dc.dao.StorageNetworkIpAddressDaoImpl" />
+  <bean id="storageNetworkIpRangeDaoImpl" class="com.cloud.dc.dao.StorageNetworkIpRangeDaoImpl" />
+  <bean id="storagePoolDetailsDaoImpl" class="com.cloud.storage.dao.StoragePoolDetailsDaoImpl" />
+  <bean id="storagePoolHostDaoImpl" class="com.cloud.storage.dao.StoragePoolHostDaoImpl" />
+  <bean id="storagePoolJoinDaoImpl" class="com.cloud.api.query.dao.StoragePoolJoinDaoImpl" />
+  <bean id="storagePoolWorkDaoImpl" class="com.cloud.storage.dao.StoragePoolWorkDaoImpl" />
+  <bean id="templatePrimaryDataStoreDaoImpl" class="org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreDaoImpl" />
+  <bean id="uploadDaoImpl" class="com.cloud.storage.dao.UploadDaoImpl" />
+  <bean id="usageDaoImpl" class="com.cloud.usage.dao.UsageDaoImpl" />
+  <bean id="usageEventDaoImpl" class="com.cloud.event.dao.UsageEventDaoImpl" />
+  <bean id="usageIPAddressDaoImpl" class="com.cloud.usage.dao.UsageIPAddressDaoImpl" />
+  <bean id="usageJobDaoImpl" class="com.cloud.usage.dao.UsageJobDaoImpl" />
+  <bean id="usageLoadBalancerPolicyDaoImpl" class="com.cloud.usage.dao.UsageLoadBalancerPolicyDaoImpl" />
+  <bean id="usageNetworkDaoImpl" class="com.cloud.usage.dao.UsageNetworkDaoImpl" />
+  <bean id="usageNetworkOfferingDaoImpl" class="com.cloud.usage.dao.UsageNetworkOfferingDaoImpl" />
+  <bean id="usagePortForwardingRuleDaoImpl" class="com.cloud.usage.dao.UsagePortForwardingRuleDaoImpl" />
+  <bean id="usageSecurityGroupDaoImpl" class="com.cloud.usage.dao.UsageSecurityGroupDaoImpl" />
+  <bean id="usageStorageDaoImpl" class="com.cloud.usage.dao.UsageStorageDaoImpl" />
+  <bean id="usageVMInstanceDaoImpl" class="com.cloud.usage.dao.UsageVMInstanceDaoImpl" />
+  <bean id="usageVPNUserDaoImpl" class="com.cloud.usage.dao.UsageVPNUserDaoImpl" />
+  <bean id="usageVolumeDaoImpl" class="com.cloud.usage.dao.UsageVolumeDaoImpl" />
+  <bean id="usageVmDiskDaoImpl" class="com.cloud.usage.dao.UsageVmDiskDaoImpl" />
+  <bean id="userAccountDaoImpl" class="com.cloud.user.dao.UserAccountDaoImpl" />
+  <bean id="userAccountJoinDaoImpl" class="com.cloud.api.query.dao.UserAccountJoinDaoImpl" />
+  <bean id="userIpv6AddressDaoImpl" class="com.cloud.network.dao.UserIpv6AddressDaoImpl" />
+  <bean id="userStatisticsDaoImpl" class="com.cloud.user.dao.UserStatisticsDaoImpl" />
+  <bean id="userStatsLogDaoImpl" class="com.cloud.user.dao.UserStatsLogDaoImpl" />
+  <bean id="userVmDiskStatsDaoImpl" class="com.cloud.user.dao.VmDiskStatisticsDaoImpl" />
+  <bean id="userVmCloneSettingDaoImpl" class="com.cloud.vm.dao.UserVmCloneSettingDaoImpl" />
+  <bean id="userVmDaoImpl" class="com.cloud.vm.dao.UserVmDaoImpl" />
+  <bean id="userVmDetailsDaoImpl" class="com.cloud.vm.dao.UserVmDetailsDaoImpl" />
+  <bean id="userVmJoinDaoImpl" class="com.cloud.api.query.dao.UserVmJoinDaoImpl" />
+  <bean id="vMComputeTagDaoImpl" class="org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMComputeTagDaoImpl" />
+  <bean id="vMEntityDaoImpl" class="org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMEntityDaoImpl" />
+  <bean id="vMInstanceDaoImpl" class="com.cloud.vm.dao.VMInstanceDaoImpl" />
+  <bean id="vMNetworkMapDaoImpl" class="org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDaoImpl" />
+  <bean id="vMReservationDaoImpl" class="org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDaoImpl" />
+  <bean id="vMRootDiskTagDaoImpl" class="org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMRootDiskTagDaoImpl" />
+  <bean id="vMSnapshotDaoImpl" class="com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl" />
+  <bean id="vMTemplateDetailsDaoImpl" class="com.cloud.storage.dao.VMTemplateDetailsDaoImpl" />
+  <bean id="vMTemplateHostDaoImpl" class="com.cloud.storage.dao.VMTemplateHostDaoImpl" />
+  <bean id="vMTemplatePoolDaoImpl" class="com.cloud.storage.dao.VMTemplatePoolDaoImpl" />
+  <bean id="vMTemplateZoneDaoImpl" class="com.cloud.storage.dao.VMTemplateZoneDaoImpl" />
+  <bean id="virtualRouterProviderDaoImpl" class="com.cloud.network.dao.VirtualRouterProviderDaoImpl" />
+  <bean id="vmRulesetLogDaoImpl" class="com.cloud.network.security.dao.VmRulesetLogDaoImpl" />
+  <bean id="volumeDaoImpl" class="com.cloud.storage.dao.VolumeDaoImpl" />
+  <bean id="volumeDetailsDaoImpl" class="com.cloud.storage.dao.VolumeDetailsDaoImpl" />
+  <bean id="volumeHostDaoImpl" class="com.cloud.storage.dao.VolumeHostDaoImpl" />
+  <bean id="volumeJoinDaoImpl" class="com.cloud.api.query.dao.VolumeJoinDaoImpl" />
+  <bean id="volumeReservationDaoImpl" class="org.apache.cloudstack.engine.cloud.entity.api.db.dao.VolumeReservationDaoImpl" />
+  <bean id="vpcDaoImpl" class="com.cloud.network.vpc.dao.VpcDaoImpl" />
+  <bean id="vpcGatewayDaoImpl" class="com.cloud.network.vpc.dao.VpcGatewayDaoImpl" />
+  <bean id="vpcOfferingDaoImpl" class="com.cloud.network.vpc.dao.VpcOfferingDaoImpl" />
+  <bean id="vpcOfferingServiceMapDaoImpl" class="com.cloud.network.vpc.dao.VpcOfferingServiceMapDaoImpl" />
+  <bean id="vpcServiceMapDaoImpl" class="com.cloud.network.vpc.dao.VpcServiceMapDaoImpl" />
+  <bean id="vpnUserDaoImpl" class="com.cloud.network.dao.VpnUserDaoImpl" />
+  <bean id="applicationLbRuleDaoImpl" class="org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDaoImpl" />
+  <bean id="networkOfferingDetailsDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingDetailsDaoImpl" />
+  <bean id="serviceOfferingDetailsDaoImpl" class="com.cloud.service.dao.ServiceOfferingDetailsDaoImpl"/>
+
+  <bean id="AffinityGroupDaoImpl" class="org.apache.cloudstack.affinity.dao.AffinityGroupDaoImpl" />
+  <bean id="AffinityGroupVMMapDaoImpl" class="org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDaoImpl" />
+  <bean id="AffinityGroupDomainMapDaoImpl" class="org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDaoImpl" />
+  
+  <bean id="databaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker" />
+
+</beans>

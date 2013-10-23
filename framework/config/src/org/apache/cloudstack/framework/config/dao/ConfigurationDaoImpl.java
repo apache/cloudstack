@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
@@ -126,6 +127,14 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
         _premium = (premium != null) && ((String)premium).equals("true");
 
         return true;
+    }
+
+    @PostConstruct
+    public void init() throws ConfigurationException {
+        /* This bean is loaded in bootstrap and beans
+         * in bootstrap don't go through the CloudStackExtendedLifeCycle
+         */
+        configure(getName(), getConfigParams());
     }
 
     //Use update method with category instead

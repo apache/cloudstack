@@ -16,6 +16,25 @@
 // under the License.
 package com.cloud.agent.manager;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.PatternSyntaxException;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthCommand;
@@ -31,7 +50,12 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.resource.*;
+import com.cloud.resource.AgentResourceBase;
+import com.cloud.resource.AgentRoutingResource;
+import com.cloud.resource.AgentStorageResource;
+import com.cloud.resource.Discoverer;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.SimulatorSecondaryDiscoverer;
 import com.cloud.simulator.MockHost;
 import com.cloud.simulator.MockHostVO;
 import com.cloud.simulator.MockVMVO;
@@ -41,30 +65,9 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-
-import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.PatternSyntaxException;
 
 @Component
 @Local(value = { MockAgentManager.class })
@@ -84,10 +87,13 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
     MockStorageManager _storageMgr = null;
     @Inject
     ResourceManager _resourceMgr;
-    @Inject
+    
     SimulatorSecondaryDiscoverer discoverer;
     @Inject
     HostDao hostDao;
+    
+    List<Discoverer> discoverers;
+    
     private SecureRandom random;
     private final Map<String, AgentResourceBase> _resources = new ConcurrentHashMap<String, AgentResourceBase>();
     private ThreadPoolExecutor _executor;
@@ -455,6 +461,17 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
 
     @Override
     public boolean start() {
+        for ( Discoverer discoverer : discoverers ) {
+            if ( discoverer instanceof SimulatorSecondaryDiscoverer ) {
+                this.discoverer = (SimulatorSecondaryDiscoverer)discoverer;
+                break;
+            }
+        }
+
+        if ( this.discoverer == null ) {
+            throw new IllegalStateException("Failed to find SimulatorSecondaryDiscoverer");
+        }
+
         return true;
     }
 
@@ -479,5 +496,14 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
             s_logger.debug("Checking if network name setup is done on the resource");
         }
         return new CheckNetworkAnswer(cmd, true, "Network Setup check by names is done");
+    }
+
+    public List<Discoverer> getDiscoverers() {
+        return discoverers;
+    }
+
+    @Inject
+    public void setDiscoverers(List<Discoverer> discoverers) {
+        this.discoverers = discoverers;
     }
 }

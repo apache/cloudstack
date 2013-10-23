@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.TreeMap;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
@@ -82,10 +83,12 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
     protected HashMap<String, DbUpgrade[]> _upgradeMap = new HashMap<String, DbUpgrade[]>();
 
+    @Inject
     VersionDao _dao;
 
     public DatabaseUpgradeChecker() {
         _dao = new VersionDaoImpl();
+
         _upgradeMap.put("2.1.7", new DbUpgrade[] {new Upgrade217to218(), new Upgrade218to22(), new Upgrade221to222(),
                 new UpgradeSnapshot217to224(), new Upgrade222to224(), new Upgrade224to225(), new Upgrade225to226(),
                 new Upgrade227to228(), new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(),

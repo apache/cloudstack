@@ -1,0 +1,216 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements. See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership. The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied. See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+                      http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+                      http://www.springframework.org/schema/context
+                      http://www.springframework.org/schema/context/spring-context-3.0.xsd"
+                      >
+
+    <bean id="accountManagerImpl" class="com.cloud.user.AccountManagerImpl">
+        <property name="userAuthenticators"
+            value="#{userAuthenticatorsRegistry.registered}" />
+        <property name="userPasswordEncoders"
+            value="#{userPasswordEncodersRegistry.registered}" />
+        <property name="securityCheckers" value="#{securityCheckersRegistry.registered}" />
+    </bean>
+
+    <bean id="managementServerImpl" class="com.cloud.server.ManagementServerImpl">
+        <property name="userAuthenticators"
+            value="#{userAuthenticatorsRegistry.registered}" />
+        <property name="userPasswordEncoders"
+            value="#{userPasswordEncodersRegistry.registered}" />
+        <property name="hostAllocators" value="#{hostAllocatorsRegistry.registered}" />
+        <property name="affinityGroupProcessors"
+            value="#{affinityProcessorsRegistry.registered}" />
+        <property name="planners"
+            value="#{deploymentPlannersRegistry.registered}" />
+        <property name="storagePoolAllocators"
+            value="#{storagePoolAllocatorsRegistry.registered}" />
+    </bean>
+
+    <bean id="storageManagerImpl" class="com.cloud.storage.StorageManagerImpl" />
+
+    <bean id="resourceManagerImpl" class="com.cloud.resource.ResourceManagerImpl">
+        <property name="discoverers"
+            value="#{resourceDiscoverersRegistry.registered}" />
+    </bean>
+
+    <bean id="highAvailabilityManagerExtImpl" class="com.cloud.ha.HighAvailabilityManagerExtImpl">
+        <property name="investigators" value="#{haInvestigatorsRegistry.registered}" />
+        <property name="fenceBuilders" value="#{haFenceBuildersRegistry.registered}" />
+    </bean>
+
+    <bean id="ipAddressManagerImpl" class="com.cloud.network.IpAddressManagerImpl">
+    </bean>
+
+    <bean id="networkModelImpl" class="com.cloud.network.NetworkModelImpl">
+        <property name="networkElements" value="#{networkElementsRegistry.registered}" />
+    </bean>
+
+    <bean id="configurationServerImpl" class="com.cloud.server.ConfigurationServerImpl" />
+
+    <bean id="userVmManagerImpl" class="com.cloud.vm.UserVmManagerImpl" />
+
+    <bean id="consoleProxyManagerImpl" class="com.cloud.consoleproxy.ConsoleProxyManagerImpl">
+        <property name="consoleProxyAllocators"
+            value="#{consoleProxyAllocatorsRegistry.registered}" />
+    </bean>
+
+    <bean id="securityGroupManagerImpl2" class="com.cloud.network.security.SecurityGroupManagerImpl2" />
+
+    <bean id="premiumSecondaryStorageManagerImpl"
+        class="com.cloud.secstorage.PremiumSecondaryStorageManagerImpl">
+        <property name="secondaryStorageVmAllocators"
+            value="#{secondaryStorageVmAllocatorsRegistry.registered}" />
+    </bean>
+
+    <bean id="ipv6AddressManagerImpl" class="com.cloud.network.Ipv6AddressManagerImpl" />
+
+
+    <bean id="alertManagerImpl" class="com.cloud.alert.AlertManagerImpl" />
+
+    <bean id="autoScaleManagerImpl" class="com.cloud.network.as.AutoScaleManagerImpl" />
+
+    <bean id="capacityManagerImpl" class="com.cloud.capacity.CapacityManagerImpl" />
+
+    <bean id="configurationManagerImpl" class="com.cloud.configuration.ConfigurationManagerImpl" >  
+        <property name="secChecker" value="#{securityCheckersRegistry.registered}" />
+    </bean>
+
+    <bean id="externalDeviceUsageManagerImpl" class="com.cloud.network.ExternalDeviceUsageManagerImpl" />
+
+    <bean id="externalNetworkDeviceManagerImpl" class="com.cloud.network.ExternalNetworkDeviceManagerImpl" />
+
+    <bean id="firewallManagerImpl" class="com.cloud.network.firewall.FirewallManagerImpl" />
+
+    <bean id="hypervisorGuruManagerImpl" class="com.cloud.hypervisor.HypervisorGuruManagerImpl" >
+        <property name="hvGuruList" value="#{hypervisorGurusRegistry.registered}" />
+    </bean>
+
+    <bean id="identityServiceImpl" class="com.cloud.uuididentity.IdentityServiceImpl" />
+
+    <bean id="keystoreManagerImpl" class="com.cloud.keystore.KeystoreManagerImpl" />
+
+    <bean id="loadBalancingRulesManagerImpl" class="com.cloud.network.lb.LoadBalancingRulesManagerImpl" />
+
+    <bean id="networkACLManagerImpl" class="com.cloud.network.vpc.NetworkACLManagerImpl" />
+
+    <bean id="networkACLServiceImpl" class="com.cloud.network.vpc.NetworkACLServiceImpl" />
+
+    <bean id="networkServiceImpl" class="com.cloud.network.NetworkServiceImpl" >
+        <property name="networkGurus" value="#{networkGurusRegistry.registered}" />
+    </bean>
+
+    <bean id="networkUsageManagerImpl" class="com.cloud.network.NetworkUsageManagerImpl" />
+
+    <bean id="oCFS2ManagerImpl" class="com.cloud.storage.OCFS2ManagerImpl" />
+
+    <bean id="projectManagerImpl" class="com.cloud.projects.ProjectManagerImpl" />
+
+    <bean id="queryManagerImpl" class="com.cloud.api.query.QueryManagerImpl" />
+
+    <bean id="regionManagerImpl" class="org.apache.cloudstack.region.RegionManagerImpl" />
+
+    <bean id="regionServiceImpl" class="org.apache.cloudstack.region.RegionServiceImpl" />
+
+    <bean id="remoteAccessVpnManagerImpl" class="com.cloud.network.vpn.RemoteAccessVpnManagerImpl" />
+
+    <bean id="resourceLimitManagerImpl" class="com.cloud.resourcelimit.ResourceLimitManagerImpl" />
+
+    <bean id="rulesManagerImpl" class="com.cloud.network.rules.RulesManagerImpl" />
+
+    <bean id="site2SiteVpnManagerImpl" class="com.cloud.network.vpn.Site2SiteVpnManagerImpl" />
+
+    <bean id="snapshotManagerImpl" class="com.cloud.storage.snapshot.SnapshotManagerImpl" >
+        <property name="snapshotStrategies" value="#{snapshotStrategiesRegistry.registered}" />
+    </bean>
+
+    <bean id="snapshotSchedulerImpl" class="com.cloud.storage.snapshot.SnapshotSchedulerImpl" />
+    <bean id="storageNetworkManagerImpl" class="com.cloud.network.StorageNetworkManagerImpl" />
+    <bean id="taggedResourceManagerImpl" class="com.cloud.tags.TaggedResourceManagerImpl" />
+    <bean id="resourceMetaDataManagerImpl" class="com.cloud.metadata.ResourceMetaDataManagerImpl" />
+
+    <bean id="templateManagerImpl" class="com.cloud.template.TemplateManagerImpl">
+        <property name="templateAdapters" value="#{templateAdapterRegistry.registered}" />
+    </bean>
+
+    <bean id="uploadMonitorImpl" class="com.cloud.storage.upload.UploadMonitorImpl" />
+    <bean id="usageServiceImpl" class="com.cloud.usage.UsageServiceImpl" />
+    <bean id="virtualNetworkApplianceManagerImpl"
+        class="com.cloud.network.router.VirtualNetworkApplianceManagerImpl" />
+    <bean id="vpcManagerImpl" class="com.cloud.network.vpc.VpcManagerImpl" >
+        <property name="vpcElements" value="#{vpcProvidersRegistry.registered}"></property>
+    </bean>
+    <bean id="vpcVirtualNetworkApplianceManagerImpl"
+        class="com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl" />
+
+
+    <bean id="ApiAsyncJobDispatcher" class="com.cloud.api.ApiAsyncJobDispatcher">
+        <property name="name" value="ApiAsyncJobDispatcher" />
+    </bean>
+
+
+    <bean id="statsCollector" class="com.cloud.server.StatsCollector" />
+
+    <bean id="storagePoolAutomationImpl" class="com.cloud.storage.StoragePoolAutomationImpl" />
+
+    <bean id="domainManagerImpl" class="com.cloud.user.DomainManagerImpl" />
+
+    <bean id="downloadMonitorImpl" class="com.cloud.storage.download.DownloadMonitorImpl" />
+  
+    <bean id="lBHealthCheckManagerImpl" class="com.cloud.network.lb.LBHealthCheckManagerImpl" />
+
+    <bean id="volumeApiServiceImpl" class="com.cloud.storage.VolumeApiServiceImpl">
+        <property name="storagePoolAllocators"
+            value="#{storagePoolAllocatorsRegistry.registered}" />
+    </bean>
+    
+    <bean id="ApplicationLoadBalancerService" class="org.apache.cloudstack.network.lb.ApplicationLoadBalancerManagerImpl" />
+
+    <bean id="vMSnapshotManagerImpl" class="com.cloud.vm.snapshot.VMSnapshotManagerImpl" />
+
+    <bean id="AffinityGroupServiceImpl"
+        class="org.apache.cloudstack.affinity.AffinityGroupServiceImpl">
+        <property name="affinityGroupProcessors"
+            value="#{affinityProcessorsRegistry.registered}" />
+    </bean>
+
+    <bean id="DeploymentPlanningManager" class="com.cloud.deploy.DeploymentPlanningManagerImpl">
+        <property name="planners"
+            value="#{deploymentPlannersRegistry.registered}" />
+        <property name="affinityGroupProcessors"
+            value="#{affinityProcessorsRegistry.registered}" />
+        <property name="storagePoolAllocators"
+            value="#{storagePoolAllocatorsRegistry.registered}" />
+        <property name="hostAllocators" value="#{hostAllocatorsRegistry.registered}" />
+    </bean>
+
+    <bean id="AffinityGroupJoinDaoImpl" class="com.cloud.api.query.dao.AffinityGroupJoinDaoImpl" />
+
+    <bean id="PlannerHostReservationDaoImpl" class="com.cloud.deploy.dao.PlannerHostReservationDaoImpl" />
+
+    <bean id="GlobalLoadBalancingRulesServiceImpl"
+        class="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl" />
+
+</beans>
