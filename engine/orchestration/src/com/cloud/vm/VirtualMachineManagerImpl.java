@@ -887,10 +887,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                            if ( answer != null ) {
                                 String hypervisortoolsversion = answer.getHypervisorToolsVersion();
                                 if (hypervisortoolsversion != null) {
-                                    UserVmVO userVm = _userVmDao.findById(vm.getId());
-                                    _userVmDao.loadDetails(userVm);
-                                    userVm.setDetail("hypervisortoolsversion",  hypervisortoolsversion);
-                                    _userVmDao.saveDetails(userVm);
+                                    if (vm.getType() == VirtualMachine.Type.User) {
+                                        UserVmVO userVm = _userVmDao.findById(vm.getId());
+                                        _userVmDao.loadDetails(userVm);
+                                        userVm.setDetail("hypervisortoolsversion",  hypervisortoolsversion);
+                                        _userVmDao.saveDetails(userVm);
+                                    }
                                 }
                             }
 
@@ -1003,10 +1005,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if ( answer != null ) {
                 String hypervisortoolsversion = answer.getHypervisorToolsVersion();
                 if (hypervisortoolsversion != null) {
-                    UserVmVO userVm = _userVmDao.findById(vm.getId());
-                    _userVmDao.loadDetails(userVm);
-                    userVm.setDetail("hypervisortoolsversion",  hypervisortoolsversion);
-                    _userVmDao.saveDetails(userVm);
+                    if (vm.getType() == VirtualMachine.Type.User) {
+                        UserVmVO userVm = _userVmDao.findById(vm.getId());
+                        _userVmDao.loadDetails(userVm);
+                        userVm.setDetail("hypervisortoolsversion",  hypervisortoolsversion);
+                        _userVmDao.saveDetails(userVm);
+                    }
                 }
             }
             if (!answer.getResult()) {
@@ -1208,10 +1212,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if ( answer != null ) {
                 String hypervisortoolsversion = answer.getHypervisorToolsVersion();
                 if (hypervisortoolsversion != null) {
-                    UserVmVO userVm = _userVmDao.findById(vm.getId());
-                    _userVmDao.loadDetails(userVm);
-                    userVm.setDetail("hypervisortoolsversion",  hypervisortoolsversion);
-                    _userVmDao.saveDetails(userVm);
+                    if (vm.getType() == VirtualMachine.Type.User) {
+                        UserVmVO userVm = _userVmDao.findById(vm.getId());
+                        _userVmDao.loadDetails(userVm);
+                        userVm.setDetail("hypervisortoolsversion",  hypervisortoolsversion);
+                        _userVmDao.saveDetails(userVm);
+                    }
                 }
             }
             stopped = answer.getResult();
@@ -2296,11 +2302,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         // track hypervsion tools version
         if( info.hvtoolsversion != null && !info.hvtoolsversion.isEmpty() ) {
-
-            UserVmVO userVm = _userVmDao.findById(vm.getId());
-            _userVmDao.loadDetails(userVm);
-            userVm.setDetail("hypervisortoolsversion",  info.hvtoolsversion);
-            _userVmDao.saveDetails(userVm);
+            if (vm.getType() == VirtualMachine.Type.User) {
+                UserVmVO userVm = _userVmDao.findById(vm.getId());
+                _userVmDao.loadDetails(userVm);
+                userVm.setDetail("hypervisortoolsversion",  info.hvtoolsversion);
+                _userVmDao.saveDetails(userVm);
+            }
         }
 
         if (trackExternalChange) {
