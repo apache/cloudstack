@@ -28,9 +28,9 @@ class managementServer(object):
         self.port = 8096
         self.apiKey = None
         self.securityKey = None
-   self.useHttps = None
-   self.certCAPath = None
-   self.certPath = None
+        self.useHttps = None
+        self.certCAPath = None
+        self.certPath = None
 
 
 class dbServer(object):

@@ -35,11 +35,27 @@ from configGenerator import ConfigManager
          logging :
 '''
 
+'''
+@Desc  : CloudStackTestClient is encapsulated class for getting various \
+         clients viz., apiclient,dbconnection etc
+@Input : mgmtDetails : Management Server Details
+         dbSvrDetails: Database Server details of Management \
+                       Server. Retrieved from configuration file.
+         asyncTimeout :
+         defaultWorkerThreads :
+         logging :
+'''
+
 
 class cloudstackTestClient(object):
-    def __init__(self,mgmtDetails,asyncTimeout=3600,defaultWorkerThreads=10, logging=None):
+    def __init__(self, mgmtDetails,
+                 dbSvrDetails, asyncTimeout=3600,
+                 defaultWorkerThreads=10,
+                 logging=None):
         self.connection = \
-            cloudstackConnection.cloudConnection( mgmtDetails,asyncTimeout,logging)
+            cloudstackConnection.cloudConnection(mgmtDetails,
+                                                 asyncTimeout,
+                                                 logging)
         self.apiClient =\
             cloudstackAPIClient.CloudStackAPIClient(self.connection)
         self.dbConnection = None
@@ -59,7 +75,6 @@ class cloudstackTestClient(object):
         '''
         self.configObj = ConfigManager()
         self.asyncJobMgr = None
-        self.ssh = None
         self.id = None
         self.defaultWorkerThreads = defaultWorkerThreads
 
@@ -92,13 +107,6 @@ class cloudstackTestClient(object):
                 return 2  # domain-admin
         except:
             return 0  # user
-
-    def random_gen(self, size=6, chars=string.ascii_uppercase + string.digits):
-        """Generate Random Strings of variable length"""
-        randomstr = ''.join(random.choice(chars) for x in range(size))
-        if self.identifier:
-            return ''.join([self.identifier, '-', randomstr])
-        return randomstr
 
     def createUserApiClient(self, UserName, DomainName, acctType=0):
         if not self.isAdminContext():
