@@ -18,33 +18,20 @@
 package org.apache.cloudstack.region;
 
 
+import java.util.HashMap;
+
+import javax.naming.ConfigurationException;
+
 import junit.framework.Assert;
-import junit.framework.TestCase;
 
-import org.apache.cloudstack.api.command.admin.domain.DeleteDomainCmd;
-import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.dao.RegionDao;
-
-import org.apache.log4j.Logger;
-import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.user.Account;
-import com.cloud.user.dao.AccountDao;
 
+public class RegionManagerTest {
 
-
-public class RegionManagerTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(RegionManagerTest.class);
-
-    @Before
-    @Override
-    protected void setUp() {
-
-    }
-    
     @Test
     public void testUniqueName() {
     	RegionManagerImpl regionMgr = new RegionManagerImpl();
@@ -59,4 +46,10 @@ public class RegionManagerTest extends TestCase {
     	}
     }
 
+    @Test
+    public void configure() throws ConfigurationException {
+        RegionManagerImpl regionManager = new RegionManagerImpl();
+        regionManager.configure("foo", new HashMap<String, Object>());
+        Assert.assertTrue(regionManager.getId() != 0);
+    }
 }
