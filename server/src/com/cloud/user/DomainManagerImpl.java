@@ -115,6 +115,15 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     }
 
     @Override
+    public Domain getDomainByName(String name, long parentId) {
+	SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
+	sc.addAnd("name", SearchCriteria.Op.EQ, name);
+	sc.addAnd("parent", SearchCriteria.Op.EQ, parentId);
+	Domain domain = _domainDao.findOneBy(sc);
+	return domain;
+    }
+
+    @Override
     public Set<Long> getDomainChildrenIds(String parentDomainPath) {
         Set<Long> childDomains = new HashSet<Long>();
         SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();

@@ -680,3 +680,4 @@ addLdapConfiguration=3
 deleteLdapConfiguration=3
 listLdapUsers=3
 ldapCreateAccount=3
+importLdapUsers=3

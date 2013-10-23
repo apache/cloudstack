@@ -16,7 +16,6 @@
 // under the License.
 package groovy.org.apache.cloudstack.ldap
 
-import org.apache.cloudstack.api.ServerApiException
 import org.apache.cloudstack.api.command.LdapUserSearchCmd
 import org.apache.cloudstack.api.response.LdapUserResponse
 import org.apache.cloudstack.ldap.LdapManager
@@ -49,9 +48,9 @@ class LdapSearchUserCmdSpec extends spock.lang.Specification {
 	given: "We have an Ldap manager and ldap user search cmd"
         def ldapManager = Mock(LdapManager)
 		List<LdapUser> users = new ArrayList()
-		users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org"))
+		users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null))
 		ldapManager.searchUsers(_) >> users
-		LdapUserResponse response = new LdapUserResponse("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org")
+		LdapUserResponse response = new LdapUserResponse("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null)
 		ldapManager.createLdapUserResponse(_) >> response
         def ldapUserSearchCmd = new LdapUserSearchCmd(ldapManager)
 	when: "The command is executed"

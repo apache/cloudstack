@@ -25,12 +25,7 @@ import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 
 import org.apache.cloudstack.api.LdapValidator;
-import org.apache.cloudstack.api.command.LdapAddConfigurationCmd;
-import org.apache.cloudstack.api.command.LdapCreateAccountCmd;
-import org.apache.cloudstack.api.command.LdapDeleteConfigurationCmd;
-import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
-import org.apache.cloudstack.api.command.LdapListUsersCmd;
-import org.apache.cloudstack.api.command.LdapUserSearchCmd;
+import org.apache.cloudstack.api.command.*;
 import org.apache.cloudstack.api.response.LdapConfigurationResponse;
 import org.apache.cloudstack.api.response.LdapUserResponse;
 import org.apache.cloudstack.ldap.dao.LdapConfigurationDao;
@@ -136,6 +131,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
 		response.setLastname(user.getLastname());
 		response.setEmail(user.getEmail());
 		response.setPrincipal(user.getPrincipal());
+	response.setDomain(user.getDomain());
 		return response;
 	}
 
@@ -164,6 +160,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
 		cmdList.add(LdapDeleteConfigurationCmd.class);
 		cmdList.add(LdapListConfigurationCmd.class);
 		cmdList.add(LdapCreateAccountCmd.class);
+	cmdList.add(LdapImportUsersCmd.class);
 		return cmdList;
 	}
 
