@@ -40,8 +40,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
-import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority.Priority;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
@@ -150,6 +150,8 @@ public class SnapshotTest extends CloudStackTestNGBase {
     VolumeDataFactory volFactory;
     @Inject
     SnapshotDataFactory snapshotFactory;
+    @Inject
+    StorageStrategyFactory storageStrategyFactory;
     @Inject
     List<SnapshotStrategy> snapshotStrategies;
     @Inject
@@ -404,7 +406,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
         boolean result = false;
 
-        SnapshotStrategy snapshotStrategy = StrategyPriority.pickStrategy(snapshotStrategies, snapshot, SnapshotOperation.TAKE);
+        SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.TAKE);
         if (snapshotStrategy != null) {
             snapshot = snapshotStrategy.takeSnapshot(snapshot);
             result = true;
@@ -426,7 +428,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
         SnapshotInfo newSnapshot = null;
 
-        SnapshotStrategy snapshotStrategy = StrategyPriority.pickStrategy(snapshotStrategies, snapshot, SnapshotOperation.TAKE);
+        SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.TAKE);
         if (snapshotStrategy != null) {
             newSnapshot = snapshotStrategy.takeSnapshot(snapshot);
         }
@@ -434,7 +436,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
 
         // create another snapshot
         for (SnapshotStrategy strategy : this.snapshotStrategies) {
-            if (strategy.canHandle(snapshot, SnapshotOperation.DELETE) != Priority.CANT_HANDLE) {
+            if (strategy.canHandle(snapshot, SnapshotOperation.DELETE) != StrategyPriority.CANT_HANDLE) {
                 strategy.deleteSnapshot(newSnapshot.getId());
             }
         }
@@ -448,7 +450,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
         boolean result = false;
 
-        SnapshotStrategy snapshotStrategy = StrategyPriority.pickStrategy(snapshotStrategies, snapshot, SnapshotOperation.TAKE);
+        SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.TAKE);
         if (snapshotStrategy != null) {
             snapshot = snapshotStrategy.takeSnapshot(snapshot);
             result = true;
@@ -478,7 +480,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
         SnapshotInfo newSnapshot = null;
 
-        SnapshotStrategy snapshotStrategy = StrategyPriority.pickStrategy(snapshotStrategies, snapshot, SnapshotOperation.TAKE);
+        SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.TAKE);
         if (snapshotStrategy != null) {
             newSnapshot = snapshotStrategy.takeSnapshot(snapshot);
         }
@@ -491,7 +493,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
 
         try {
             for (SnapshotStrategy strategy : this.snapshotStrategies) {
-                if (strategy.canHandle(snapshot, SnapshotOperation.DELETE) != Priority.CANT_HANDLE) {
+                if (strategy.canHandle(snapshot, SnapshotOperation.DELETE) != StrategyPriority.CANT_HANDLE) {
                     boolean res = strategy.deleteSnapshot(newSnapshot.getId());
                     Assert.assertTrue(res);
                 }
