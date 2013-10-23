@@ -57,7 +57,7 @@ public class StrategyPriority {
         public int compare(SnapshotStrategy o1, SnapshotStrategy o2) {
             int i1 = o1.canHandle(snapshot).ordinal();
             int i2 = o2.canHandle(snapshot).ordinal();
-            return new Integer(i2).compareTo(new Integer(i1));
+            return Integer.compare(i2, i1);
         }
     }
 
@@ -74,7 +74,7 @@ public class StrategyPriority {
         public int compare(DataMotionStrategy o1, DataMotionStrategy o2) {
             int i1 = o1.canHandle(srcData, destData).ordinal();
             int i2 = o2.canHandle(srcData, destData).ordinal();
-            return new Integer(i2).compareTo(new Integer(i1));
+            return Integer.compare(i2, i1);
         }
     }
 
@@ -93,7 +93,7 @@ public class StrategyPriority {
         public int compare(DataMotionStrategy o1, DataMotionStrategy o2) {
             int i1 = o1.canHandle(volumeMap, srcHost, destHost).ordinal();
             int i2 = o2.canHandle(volumeMap, srcHost, destHost).ordinal();
-            return new Integer(i2).compareTo(new Integer(i1));
+            return Integer.compare(i2, i1);
         }
     }
 }
