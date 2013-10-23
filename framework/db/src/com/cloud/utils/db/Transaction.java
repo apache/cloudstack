@@ -18,14 +18,13 @@ package com.cloud.utils.db;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.cloud.utils.exception.ExceptionUtil;
-
 public class Transaction {
     private final static AtomicLong counter = new AtomicLong(0);
     private final static TransactionStatus STATUS = new TransactionStatus() {
     };
 
-    public static <T> T execute(TransactionCallback<T> callback) {
+    @SuppressWarnings("deprecation")
+    public static <T,E extends Throwable> T execute(TransactionCallbackWithException<T,E> callback) throws E {
         String name = "tx-" + counter.incrementAndGet();
         short databaseId = TransactionLegacy.CLOUD_DB;
         TransactionLegacy currentTxn = TransactionLegacy.currentTxn(false);
@@ -43,24 +42,13 @@ public class Transaction {
         }
     }
 
-    public static <T,X extends Exception> T executeWithException(final TransactionCallbackWithException<T> callback, Class<X> exception) throws X {
-        try {
-            return execute(new TransactionCallback<T>() {
-                @Override
-                public T doInTransaction(TransactionStatus status) {
-                    try {
-                        return callback.doInTransaction(status);
-                    } catch (Exception e) {
-                        ExceptionUtil.rethrowRuntime(e);
-                        throw new TransactionWrappedExeception(e);
-                    }
-                }
-            });
-        } catch (TransactionWrappedExeception e) {
-            ExceptionUtil.rethrowRuntime(e.getWrapped());
-            ExceptionUtil.rethrow(e.getWrapped(), exception);
-            throw e;
-        }
+    public static <T> T execute(final TransactionCallback<T> callback) {
+        return execute(new TransactionCallbackWithException<T, RuntimeException>() {
+            @Override
+            public T doInTransaction(TransactionStatus status) throws RuntimeException {
+                return callback.doInTransaction(status);
+            }
+        });
     }
 
 }

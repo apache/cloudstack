@@ -3,7 +3,7 @@ package com.cloud.utils.db;
 public abstract class TransactionCallbackNoReturn implements TransactionCallback<Object> {
 
 	@Override
-	public Object doInTransaction(TransactionStatus status) {
+	public final Object doInTransaction(TransactionStatus status) {
 		doInTransactionWithoutResult(status);
 		return null;
 	}

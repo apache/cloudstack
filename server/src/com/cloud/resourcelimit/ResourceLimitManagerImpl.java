@@ -91,8 +91,7 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -379,9 +378,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
 
         final Project projectFinal = project;
-        Transaction.executeWithException(new TransactionCallbackWithException<Object>() {
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
             @Override
-            public Object doInTransaction(TransactionStatus status) throws ResourceAllocationException {
+            public void doInTransactionWithoutResult(TransactionStatus status) throws ResourceAllocationException {
                 // Lock all rows first so nobody else can read it
                 Set<Long> rowIdsToLock = _resourceCountDao.listAllRowsToUpdate(account.getId(), ResourceOwnerType.Account, type);
                 SearchCriteria<ResourceCountVO> sc = ResourceCountSearch.create();
@@ -423,10 +422,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                     }
                     domainId = domain.getParent();
                 }
-                
-                return null;
             }
-        }, ResourceAllocationException.class);
+        });
     }
 
     @Override

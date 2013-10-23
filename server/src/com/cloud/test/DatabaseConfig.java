@@ -59,6 +59,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.net.NfsUtils;
@@ -419,9 +420,9 @@ public class DatabaseConfig {
             final DbConfigXMLHandler handler = new DbConfigXMLHandler();
             handler.setParent(this);
 
-            Transaction.executeWithException(new TransactionCallbackWithException<Object>() {
+            Transaction.execute(new TransactionCallbackWithExceptionNoReturn<Exception>() {
                 @Override
-                public Object doInTransaction(TransactionStatus status) throws Exception {
+                public void doInTransactionWithoutResult(TransactionStatus status) throws Exception {
                     // Save user configured values for all fields
                     saxParser.parse(configFile, handler);
         
@@ -429,10 +430,8 @@ public class DatabaseConfig {
                     saveVMTemplate();
                     saveRootDomain();
                     saveDefaultConfiguations();
-
-                    return null;
                 }
-            }, Exception.class);
+            });
 
             // Check pod CIDRs against each other, and against the guest ip network/netmask
             pzc.checkAllPodCidrSubnets();

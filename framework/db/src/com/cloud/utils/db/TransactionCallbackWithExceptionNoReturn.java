@@ -18,19 +18,15 @@
  */
 package com.cloud.utils.db;
 
-import com.cloud.utils.exception.CloudRuntimeException;
+public abstract class TransactionCallbackWithExceptionNoReturn<E extends Throwable> implements TransactionCallbackWithException<Boolean, E> {
 
-public class TransactionWrappedExeception extends CloudRuntimeException {
-
-    private static final long serialVersionUID = -3254037624055143300L;
-
-    Exception e;
-
-    public TransactionWrappedExeception(Exception e) {
-        this.e = e;
+    @Override
+    public final Boolean doInTransaction(TransactionStatus status) throws E {
+        doInTransactionWithoutResult(status);
+        return true;
     }
 
-    public Exception getWrapped() {
-        return e;
-    }
+    public abstract void doInTransactionWithoutResult(TransactionStatus status) throws E;
+
 }
+

@@ -71,7 +71,6 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -162,7 +161,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         boolean success = true;
         ApplicationLoadBalancerRuleVO newRule = null;
         try {
-            newRule = Transaction.executeWithException(new TransactionCallbackWithException<ApplicationLoadBalancerRuleVO>() {
+            newRule = Transaction.execute(new TransactionCallbackWithException<ApplicationLoadBalancerRuleVO,NetworkRuleConflictException>() {
                 @Override
                 public ApplicationLoadBalancerRuleVO doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
                     //1) Persist the rule
@@ -183,7 +182,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
                     
                     return newRule;
                 }
-            }, NetworkRuleConflictException.class);
+            });
             
             return newRule;
         } catch (Exception e) {

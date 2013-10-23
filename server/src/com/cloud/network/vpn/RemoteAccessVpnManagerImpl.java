@@ -193,7 +193,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         final String newIpRange = NetUtils.long2Ip(++startIp) + "-" + range[1];
         final String sharedSecret = PasswordGenerator.generatePresharedKey(_pskLength);
         
-        return Transaction.executeWithException(new TransactionCallbackWithException<RemoteAccessVpn>() {
+        return Transaction.execute(new TransactionCallbackWithException<RemoteAccessVpn, NetworkRuleConflictException>() {
             @Override
             public RemoteAccessVpn doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
                 _rulesMgr.reservePorts(ipAddr, NetUtils.UDP_PROTO, Purpose.Vpn, openFirewall, caller, NetUtils.VPN_PORT, NetUtils.VPN_L2TP_PORT, NetUtils.VPN_NATT_PORT);
@@ -201,7 +201,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                         publicIpId, range[0], newIpRange, sharedSecret);
                 return _remoteAccessVpnDao.persist(vpnVO);
             }
-        }, NetworkRuleConflictException.class);
+        });
     }
 
     private void validateRemoteAccessVpnConfiguration() throws ConfigurationException {

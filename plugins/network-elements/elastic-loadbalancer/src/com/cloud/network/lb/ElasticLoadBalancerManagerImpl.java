@@ -587,9 +587,9 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     
     @DB
     public PublicIp allocDirectIp(final Account account, final long guestNetworkId) throws InsufficientAddressCapacityException {
-        return Transaction.executeWithException(new TransactionCallbackWithException<PublicIp>() {
+        return Transaction.execute(new TransactionCallbackWithException<PublicIp,InsufficientAddressCapacityException>() {
             @Override
-            public PublicIp doInTransaction(TransactionStatus status) throws Exception {
+            public PublicIp doInTransaction(TransactionStatus status) throws InsufficientAddressCapacityException {
                 Network frontEndNetwork = _networkModel.getNetwork(guestNetworkId);
 
                 PublicIp ip = _ipAddrMgr.assignPublicIpAddress(frontEndNetwork.getDataCenterId(), null, account, VlanType.DirectAttached, frontEndNetwork.getId(), null, true);
@@ -600,7 +600,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
 
                 return ip;
             }
-        }, InsufficientAddressCapacityException.class);
+        });
     }
     
     public void releaseIp(long ipId, long userId, Account caller) {

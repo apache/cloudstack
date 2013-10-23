@@ -226,7 +226,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
         final Long accountIdFinal = accountId;
         final Long domainIdFinal = domainId;
-        return Transaction.executeWithException(new TransactionCallbackWithException<FirewallRuleVO>() {
+        return Transaction.execute(new TransactionCallbackWithException<FirewallRuleVO,NetworkRuleConflictException>() {
             @Override
             public FirewallRuleVO doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
                 FirewallRuleVO newRule = new FirewallRuleVO(xId, ipAddrId, portStart, portEnd, protocol.toLowerCase(), networkId,
@@ -244,7 +244,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 
                 return newRule;
             }
-        }, NetworkRuleConflictException.class);
+        });
     }
 
     @Override

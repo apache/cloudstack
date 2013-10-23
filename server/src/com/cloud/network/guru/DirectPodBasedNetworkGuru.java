@@ -52,9 +52,8 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic;
@@ -170,9 +169,9 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
             InsufficientAddressCapacityException, ConcurrentOperationException {
         final DataCenter dc = _dcDao.findById(pod.getDataCenterId());
         if (nic.getIp4Address() == null) {
-            Transaction.executeWithException(new TransactionCallbackWithException<Object>() {
+            Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientAddressCapacityException>() {
                 @Override
-                public Object doInTransaction(TransactionStatus status) throws InsufficientAddressCapacityException {
+                public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientAddressCapacityException {
                     PublicIp ip = null;
                     List<PodVlanMapVO> podRefs = _podVlanDao.listPodVlanMapsByPod(pod.getId());
                     String podRangeGateway = null;
@@ -213,10 +212,8 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                             _networkMgr.savePlaceholderNic(network, nic.getIp4Address(), null, VirtualMachine.Type.DomainRouter);
                         }
                     }
-                    
-                    return null;
                 }
-            }, InsufficientAddressCapacityException.class);
+            });
         }
         nic.setDns1(dc.getDns1());
         nic.setDns2(dc.getDns2());

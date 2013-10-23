@@ -167,6 +167,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
@@ -337,9 +338,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmFinal, template, serviceOffering, null, null);
 
-        Transaction.executeWithException(new TransactionCallbackWithException<Object>() {
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientCapacityException>() {
             @Override
-            public Object doInTransaction(TransactionStatus status) throws InsufficientCapacityException {
+            public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientCapacityException {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Allocating nics for " + vmFinal);
                 }
@@ -365,10 +366,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 for (Map.Entry<? extends DiskOffering, Long> offering : dataDiskOfferingsFinal.entrySet()) {
                     volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + vmFinal.getId(), offering.getKey(), offering.getValue(), vmFinal, template, owner);
                 }
-                
-                return null;
             }
-        }, InsufficientCapacityException.class);
+        });
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocation completed for VM: " + vmFinal);
@@ -566,7 +565,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 final ItWorkVO workFinal = work;
                 Ternary<VMInstanceVO, ReservationContext, ItWorkVO> result = 
-                        Transaction.executeWithException(new TransactionCallbackWithException<Ternary<VMInstanceVO, ReservationContext, ItWorkVO>>() {
+                        Transaction.execute(new TransactionCallbackWithException<Ternary<VMInstanceVO, ReservationContext, ItWorkVO>, NoTransitionException>() {
                     @Override
                     public Ternary<VMInstanceVO, ReservationContext, ItWorkVO> doInTransaction(TransactionStatus status) throws NoTransitionException {
                         Journal journal = new Journal.LogJournal("Creating " + vm, s_logger);
@@ -582,7 +581,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                         return new Ternary<VMInstanceVO, ReservationContext, ItWorkVO>(null, null, work);
                     }
-                }, NoTransitionException.class);
+                });
                 
                 work = result.third();
                 if (result.first() != null)

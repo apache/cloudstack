@@ -84,7 +84,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.sun.mail.smtp.SMTPMessage;
@@ -469,9 +469,9 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         //verify permissions
         _accountMgr.checkAccess(caller,AccessType.ModifyProject, true, _accountMgr.getAccount(project.getProjectAccountId()));
 
-        Transaction.executeWithException(new TransactionCallbackWithException<Object>() {
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
             @Override
-            public Object doInTransaction(TransactionStatus status) throws ResourceAllocationException {
+            public void doInTransactionWithoutResult(TransactionStatus status) throws ResourceAllocationException {
                 if (displayText != null) {
                     project.setDisplayText(displayText);
                     _projectDao.update(projectId, project);
@@ -509,10 +509,8 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
                         s_logger.trace("Future owner " + newOwnerName + "is already the owner of the project id=" + projectId);
                     }
                }
-                
-                return null;
             }
-        }, ResourceAllocationException.class);
+        });
 
 
         return _projectDao.findById(projectId);

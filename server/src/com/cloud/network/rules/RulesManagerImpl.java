@@ -79,6 +79,7 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
@@ -312,7 +313,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
             final Ip dstIpFinal = dstIp;
             final IPAddressVO ipAddressFinal = ipAddress;
-            return Transaction.executeWithException(new TransactionCallbackWithException<PortForwardingRuleVO>() {
+            return Transaction.execute(new TransactionCallbackWithException<PortForwardingRuleVO,NetworkRuleConflictException>() {
                 @Override
                 public PortForwardingRuleVO doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
                     PortForwardingRuleVO newRule = new PortForwardingRuleVO(rule.getXid(), rule.getSourceIpAddressId(),
@@ -350,7 +351,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                         throw new CloudRuntimeException("Unable to add rule for the ip id=" + ipAddrId, e);
                     }
                 }
-            }, NetworkRuleConflictException.class);
+            });
 
         } finally {
             // release ip address if ipassoc was perfored
@@ -395,7 +396,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         //String dstIp = _networkModel.getIpInNetwork(ipAddress.getAssociatedWithVmId(), networkId);
         final String dstIp = ipAddress.getVmIp();
-        return Transaction.executeWithException(new TransactionCallbackWithException<StaticNatRule>() {
+        return Transaction.execute(new TransactionCallbackWithException<StaticNatRule,NetworkRuleConflictException>() {
             @Override
             public StaticNatRule doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
 
@@ -434,7 +435,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                     throw new CloudRuntimeException("Unable to add static nat rule for the ip id=" + newRule.getSourceIpAddressId(), e);
                 }
             }
-        }, NetworkRuleConflictException.class);
+        });
 
     }
 
@@ -1154,9 +1155,9 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             final boolean openFirewall, final Account caller, final int... ports) throws NetworkRuleConflictException {
         final FirewallRuleVO[] rules = new FirewallRuleVO[ports.length];
 
-        Transaction.executeWithException(new TransactionCallbackWithException<Object>() {
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<NetworkRuleConflictException>() {
             @Override
-            public Object doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
+            public void doInTransactionWithoutResult(TransactionStatus status) throws NetworkRuleConflictException {
                 for (int i = 0; i < ports.length; i++) {
         
                     rules[i] = new FirewallRuleVO(null, ip.getId(), ports[i], protocol, ip.getAssociatedWithNetworkId(), ip.getAllocatedToAccountId(), ip.getAllocatedInDomainId(), purpose, null, null, null, null);
@@ -1167,10 +1168,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                                 rules[i].getId(), ip.getAssociatedWithNetworkId());
                     }
                 }
-                
-                return null;
             }
-        }, NetworkRuleConflictException.class);
+        });
 
         boolean success = false;
         try {

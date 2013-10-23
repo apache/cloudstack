@@ -169,7 +169,7 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
@@ -687,9 +687,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public void allocate(final VirtualMachineProfile vm, final LinkedHashMap<? extends Network, ? extends NicProfile> networks) throws InsufficientCapacityException,
         ConcurrentOperationException {
 
-        Transaction.executeWithException(new TransactionCallbackWithException<Object>() {
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientCapacityException>() {
             @Override
-            public Object doInTransaction(TransactionStatus status) throws InsufficientCapacityException {
+            public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientCapacityException {
                 int deviceId = 0;
         
                 boolean[] deviceIds = new boolean[networks.size()];
@@ -750,10 +750,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (nics.size() == 1) {
                     nics.get(0).setDefaultNic(true);
                 }
-                
-                return null;
             }
-        }, InsufficientCapacityException.class);
+        });
     }
 
     @DB
@@ -2470,15 +2468,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             final LinkedHashMap<Network, NicProfile> profiles = new LinkedHashMap<Network, NicProfile>();
             profiles.put(network, null);
 
-            Transaction.executeWithException(new TransactionCallbackWithException<Object>() {
+            Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientCapacityException>() {
                 @Override
-                public Object doInTransaction(TransactionStatus status) throws Exception {
+                public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientCapacityException {
                     cleanupNics(vm);
                     allocate(vm, profiles);
-
-                    return null;
                 }
-            }, InsufficientCapacityException.class);
+            });
         }
         return true;
     }

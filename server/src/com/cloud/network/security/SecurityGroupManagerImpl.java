@@ -1101,7 +1101,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         // check permissions
         _accountMgr.checkAccess(caller, null, true, group);
 
-        return Transaction.executeWithException(new TransactionCallbackWithException<Boolean>() {
+        return Transaction.execute(new TransactionCallbackWithException<Boolean,ResourceInUseException>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) throws ResourceInUseException {
                 SecurityGroupVO group = _securityGroupDao.lockRow(groupId, true);
@@ -1127,7 +1127,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         
                 return true;
             }
-        }, ResourceInUseException.class);
+        });
 
     }
 

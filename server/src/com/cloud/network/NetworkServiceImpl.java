@@ -1304,9 +1304,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             final Account ownerFinal, final String cidr, final boolean createVlan) throws InsufficientCapacityException,
             ResourceAllocationException {
         try {
-            return Transaction.executeWithException(new TransactionCallbackWithException<Network>() {
+            return Transaction.execute(new TransactionCallbackWithException<Network,Exception>() {
                 @Override
-                public Network doInTransaction(TransactionStatus status) throws Exception {
+                public Network doInTransaction(TransactionStatus status) throws InsufficientCapacityException, ResourceAllocationException {
                     Account owner = ownerFinal;
                     Boolean subdomainAccess = subdomainAccessFinal;
                     
@@ -1368,7 +1368,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                     }
                     return network;
                 }
-            }, Exception.class);
+            });
         } catch (Exception e) {
             ExceptionUtil.rethrowRuntime(e);
             ExceptionUtil.rethrow(e, InsufficientCapacityException.class);
@@ -3898,7 +3898,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         final NetworkOfferingVO ntwkOffFinal = ntwkOff; 
         try {
-            return Transaction.executeWithException(new TransactionCallbackWithException<Network>() {
+            return Transaction.execute(new TransactionCallbackWithException<Network,Exception>() {
                 @Override
                 public Network doInTransaction(TransactionStatus status) throws ResourceAllocationException, InsufficientCapacityException {
                     //lock datacenter as we need to get mac address seq from there
@@ -3941,7 +3941,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             
                     return privateNetwork;
                 }
-            }, Exception.class);
+            });
         } catch (Exception e) {
             ExceptionUtil.rethrowRuntime(e);
             ExceptionUtil.rethrow(e, ResourceAllocationException.class);

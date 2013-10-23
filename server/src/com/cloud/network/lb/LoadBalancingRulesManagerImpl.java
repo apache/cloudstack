@@ -1456,7 +1456,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 Purpose.LoadBalancing, FirewallRuleType.User, networkId, null);
 
 
-        return Transaction.executeWithException(new TransactionCallbackWithException<LoadBalancerVO>() {
+        return Transaction.execute(new TransactionCallbackWithException<LoadBalancerVO,NetworkRuleConflictException>() {
             @Override
             public LoadBalancerVO doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
                 LoadBalancerVO newRule = new LoadBalancerVO(xId, name, description,
@@ -1507,7 +1507,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     }
                 }
             }
-        }, NetworkRuleConflictException.class);
+        });
 
     }
 

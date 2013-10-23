@@ -92,6 +92,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -487,9 +488,9 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     @DB
     protected void processAnswer(final VMSnapshotVO vmSnapshot, UserVmVO  userVm, final Answer as, Long hostId) {
         try {
-            Transaction.executeWithException(new TransactionCallbackWithException<Object>() {
+            Transaction.execute(new TransactionCallbackWithExceptionNoReturn<NoTransitionException>() {
                 @Override
-                public Object doInTransaction(TransactionStatus status) throws NoTransitionException {
+                public void doInTransactionWithoutResult(TransactionStatus status) throws NoTransitionException {
                     if (as instanceof CreateVMSnapshotAnswer) {
                         CreateVMSnapshotAnswer answer = (CreateVMSnapshotAnswer) as;
                         finalizeCreate(vmSnapshot, answer.getVolumeTOs());
@@ -503,10 +504,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                         finalizeDelete(vmSnapshot, answer.getVolumeTOs());
                         _vmSnapshotDao.remove(vmSnapshot.getId());
                     }
-                    
-                    return null;
                 }
-            }, NoTransitionException.class);
+            });
         } catch (Exception e) {
             String errMsg = "Error while process answer: " + as.getClass() + " due to " + e.getMessage();
             s_logger.error(errMsg, e);

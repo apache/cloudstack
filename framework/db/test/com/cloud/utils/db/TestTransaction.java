@@ -23,6 +23,7 @@ import static org.mockito.Mockito.*;
 
 import java.io.FileNotFoundException;
 import java.sql.Connection;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
 import org.junit.Before;
@@ -88,14 +89,14 @@ public class TestTransaction {
     @Test
     public void testRollbackWithException() throws Exception {
         try {
-            Transaction.executeWithException(new TransactionCallbackWithException<Object>() {
+            Transaction.execute(new TransactionCallbackWithException<Object,FileNotFoundException>() {
                 @Override
                 public Object doInTransaction(TransactionStatus status) throws FileNotFoundException {
                     assertEquals(TransactionLegacy.CLOUD_DB, TransactionLegacy.currentTxn().getDatabaseId().shortValue());
 
                     throw new FileNotFoundException("Panic!");
                 }
-            }, FileNotFoundException.class);
+            });
             fail();
         } catch (FileNotFoundException e) {
             assertEquals("Panic!", e.getMessage());
@@ -104,6 +105,23 @@ public class TestTransaction {
         verify(conn).setAutoCommit(false);
         verify(conn, times(0)).commit();
         verify(conn, times(1)).rollback();
+        verify(conn, times(1)).close();
+    }
+    
+    @Test
+    public void testWithExceptionNoReturn() throws Exception {
+        final AtomicInteger i = new AtomicInteger(0);
+        assertTrue(Transaction.execute(new TransactionCallbackWithExceptionNoReturn<FileNotFoundException>() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) throws FileNotFoundException {
+                i.incrementAndGet();
+            }
+        }));
+        
+        assertEquals(1, i.get());
+        verify(conn).setAutoCommit(false);
+        verify(conn, times(1)).commit();
+        verify(conn, times(0)).rollback();
         verify(conn, times(1)).close();
     }
     

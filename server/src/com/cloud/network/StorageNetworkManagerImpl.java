@@ -224,7 +224,7 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
         StorageNetworkIpRangeVO range = null;
 
         final String endIpFinal = endIp;
-        return Transaction.executeWithException(new TransactionCallbackWithException<StorageNetworkIpRangeVO>() {
+        return Transaction.execute(new TransactionCallbackWithException<StorageNetworkIpRangeVO,SQLException>() {
             @Override
             public StorageNetworkIpRangeVO doInTransaction(TransactionStatus status) throws SQLException {
                 StorageNetworkIpRangeVO range = new StorageNetworkIpRangeVO(zoneId, podId, nw.getId(), startIp, endIpFinal, vlan, netmask, cmd.getGateWay());
@@ -244,7 +244,7 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
 
                 return range;
             }
-        }, SQLException.class);
+        });
     }
 
     private String getInUseIpAddress(long rangeId) {

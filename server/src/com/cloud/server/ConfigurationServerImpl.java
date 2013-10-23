@@ -109,6 +109,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -837,9 +838,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         final HostPodVO pod = new HostPodVO(podName, zoneId, gateway, cidrAddress, cidrSize, ipRange);
         try {
             final String endIpFinal = endIp;
-            Transaction.executeWithException(new TransactionCallbackWithException<Object>() {
+            Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InternalErrorException>() {
                 @Override
-                public Object doInTransaction(TransactionStatus status) throws InternalErrorException {
+                public void doInTransactionWithoutResult(TransactionStatus status) throws InternalErrorException {
                     if (_podDao.persist(pod) == null) {
                         throw new InternalErrorException("Failed to create new pod. Please contact Cloud Support.");
                     }
@@ -860,10 +861,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     } else {
                         _zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
                     }
-                    
-                    return null;
                 }
-            }, InternalErrorException.class);
+            });
         } catch (Exception e) {
             s_logger.error("Unable to create new pod due to " + e.getMessage(), e);
             throw new InternalErrorException("Failed to create new pod. Please contact Cloud Support.");

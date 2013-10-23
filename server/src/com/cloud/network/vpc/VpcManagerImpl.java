@@ -121,6 +121,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
@@ -1405,7 +1406,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final PhysicalNetwork physNetFinal = physNet;
         VpcGatewayVO gatewayVO = null;
         try {
-            gatewayVO = Transaction.executeWithException(new TransactionCallbackWithException<VpcGatewayVO>() {
+            gatewayVO = Transaction.execute(new TransactionCallbackWithException<VpcGatewayVO,Exception>() {
                 @Override
                 public VpcGatewayVO doInTransaction(TransactionStatus status) throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
                     s_logger.debug("Creating Private gateway for VPC " + vpc);
@@ -1465,7 +1466,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     
                     return gatewayVO;
                 }
-            }, Exception.class);
+            });
         } catch (Exception e) {
             ExceptionUtil.rethrowRuntime(e);
             ExceptionUtil.rethrow(e, InsufficientCapacityException.class);
@@ -1822,7 +1823,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw new InvalidParameterValueException("The static gateway cidr overlaps with one of the blacklisted routes of the zone the VPC belongs to");
         }
 
-        return Transaction.executeWithException(new TransactionCallbackWithException<StaticRouteVO>() {
+        return Transaction.execute(new TransactionCallbackWithException<StaticRouteVO, NetworkRuleConflictException>() {
             @Override
             public StaticRouteVO doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
                 StaticRouteVO newRoute = new StaticRouteVO(gateway.getId(), cidr, vpc.getId(), vpc.getAccountId(), vpc.getDomainId());
@@ -1838,7 +1839,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 
                 return newRoute;
             }
-        }, NetworkRuleConflictException.class);
+        });
     }
 
     protected boolean isCidrBlacklisted(String cidr, long zoneId) {
@@ -1981,9 +1982,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
 
                 try {
-                    Transaction.executeWithException(new TransactionCallbackWithException<Object>() {
+                    Transaction.execute(new TransactionCallbackWithExceptionNoReturn<Exception>() {
                         @Override
-                        public Object doInTransaction(TransactionStatus status) throws Exception {
+                        public void doInTransactionWithoutResult(TransactionStatus status) throws Exception {
                             // Cleanup inactive VPCs
                             List<VpcVO> inactiveVpcs = _vpcDao.listInactiveVpcs();
                             s_logger.info("Found " + inactiveVpcs.size() + " removed VPCs to cleanup");
@@ -1991,10 +1992,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                                 s_logger.debug("Cleaning up " + vpc);
                                 destroyVpc(vpc, _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM);
                             }
-                            
-                            return null;
                         }
-                    }, Exception.class);
+                    });
                 } catch (Exception e) {
                     s_logger.error("Exception ", e);
                 } finally {

@@ -124,7 +124,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
@@ -317,9 +317,9 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         }
 
         try {
-            Transaction.executeWithException(new TransactionCallbackWithException<Object>() {
+            Transaction.execute(new TransactionCallbackWithExceptionNoReturn<Exception>() {
                 @Override
-                public Object doInTransaction(TransactionStatus status) throws InsufficientAddressCapacityException, ResourceUnavailableException {
+                public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientAddressCapacityException, ResourceUnavailableException {
 
                     // ensure that there is an ASA 1000v assigned to this network
                     CiscoAsa1000vDevice assignedAsa = assignAsa1000vToNetwork(network);
@@ -419,10 +419,8 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
                         throw new CloudRuntimeException("Failed to associate Cisco ASA 1000v (" + assignedAsa.getManagementIp() +
                                 ") with logical edge firewall in VNMC for network " + network.getName());
                     }
-
-                    return null;
                 }
-            }, Exception.class);
+            });
         } catch (CloudRuntimeException e) {
             s_logger.error("CiscoVnmcElement failed", e);
             return false;

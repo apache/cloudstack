@@ -243,6 +243,7 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
@@ -1412,9 +1413,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             s_logger.debug("Recovering vm " + vmId);
         }
 
-        Transaction.executeWithException(new TransactionCallbackWithException<Object>() {
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
             @Override
-            public Object doInTransaction(TransactionStatus status) throws ResourceAllocationException {
+            public void doInTransactionWithoutResult(TransactionStatus status) throws ResourceAllocationException {
         
                 Account account = _accountDao.lockRow(vm.getAccountId(), true);
         
@@ -1473,10 +1474,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 //Update Resource Count for the given account
                 resourceCountIncrement(account.getId(), new Long(serviceOffering.getCpu()),
                         new Long(serviceOffering.getRamSize()));
-                
-                return null;
             }
-        }, ResourceAllocationException.class);
+        });
 
 
         return _vmDao.findById(vmId);
@@ -2785,7 +2784,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             final ServiceOfferingVO offering, final boolean isIso, final String sshPublicKey,
             final LinkedHashMap<String, NicProfile> networkNicMap, final long id, final String instanceName, final String uuidName,
             final HypervisorType hypervisorType) throws InsufficientCapacityException {
-        return Transaction.executeWithException(new TransactionCallbackWithException<UserVmVO>() {
+        return Transaction.execute(new TransactionCallbackWithException<UserVmVO,InsufficientCapacityException>() {
             @Override
             public UserVmVO doInTransaction(TransactionStatus status) throws InsufficientCapacityException {
                 UserVmVO vm = new UserVmVO(id, instanceName, displayName,
@@ -2878,7 +2877,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         new Long(offering.getRamSize()));
                 return vm;
             }
-        }, InsufficientCapacityException.class);
+        });
     }
 
     private void validateUserData(String userData, HTTPMethod httpmethod) {

@@ -422,9 +422,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                         final boolean dedicatedLB = offering.getDedicatedLB(); // does network offering supports a dedicated load balancer?
 
                         try {
-                            lbDevice = Transaction.executeWithException(new TransactionCallbackWithException<ExternalLoadBalancerDeviceVO>() {
+                            lbDevice = Transaction.execute(new TransactionCallbackWithException<ExternalLoadBalancerDeviceVO,InsufficientCapacityException>() {
                                 @Override
-                                public ExternalLoadBalancerDeviceVO doInTransaction(TransactionStatus status) throws Exception {
+                                public ExternalLoadBalancerDeviceVO doInTransaction(TransactionStatus status) throws InsufficientCapacityException {
                                     // FIXME: should the device allocation be done during network implement phase or do a
                                     // lazy allocation when first rule for the network is configured??
         
@@ -442,7 +442,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                                     _externalLoadBalancerDeviceDao.update(lbDeviceId, lbDevice);
                                     return lbDevice;
                                 }
-                            }, InsufficientCapacityException.class);
+                            });
 
                             // allocated load balancer for the network, so skip retry
                             tryLbProvisioning = false;
