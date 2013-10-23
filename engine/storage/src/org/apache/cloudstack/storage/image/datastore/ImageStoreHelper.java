@@ -31,6 +31,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
@@ -42,6 +43,8 @@ public class ImageStoreHelper {
     ImageStoreDao imageStoreDao;
     @Inject
     ImageStoreDetailsDao imageStoreDetailsDao;
+    @Inject
+    SnapshotDataStoreDao snapshotStoreDao;
 
     public ImageStoreVO createImageStore(Map<String, Object> params) {
         ImageStoreVO store = imageStoreDao.findByName((String) params.get("name"));
@@ -127,6 +130,8 @@ public class ImageStoreHelper {
         ImageStoreVO nfsStore = imageStoreDao.findById(store.getId());
         nfsStore.setRole(DataStoreRole.ImageCache);
         imageStoreDao.update(store.getId(), nfsStore);
+        // clear snapshot entry on primary store to make next snapshot become full snapshot
+        snapshotStoreDao.deleteSnapshotRecordsOnPrimary();
         return true;
     }
 }

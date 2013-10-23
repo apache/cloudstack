@@ -44,5 +44,8 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     void duplicateCacheRecordsOnRegionStore(long storeId);
 
+    // delete the snapshot entry on primary data store to make sure that next snapshot will be full snapshot
+    void deleteSnapshotRecordsOnPrimary();
+
     List<SnapshotDataStoreVO> listOnCache(long snapshotId);
 }
