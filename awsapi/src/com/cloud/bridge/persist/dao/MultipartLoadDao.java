@@ -34,6 +34,7 @@ import com.cloud.bridge.service.core.s3.S3MultipartPart;
 import com.cloud.bridge.service.core.s3.S3MultipartUpload;
 import com.cloud.bridge.util.OrderedPair;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 public class MultipartLoadDao {
     public static final Logger logger = Logger.getLogger(MultipartLoadDao.class);
@@ -94,9 +95,9 @@ public class MultipartLoadDao {
      */
     public int initiateUpload( String accessKey, String bucketName, String key, String cannedAccess, S3MetaDataEntry[] meta ) {
         int uploadId = -1;
-        Transaction txn = null;
+        TransactionLegacy txn = null;
         try {
-            txn = Transaction.open(Transaction.AWSAPI_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
             Date tod = new Date();
             MultiPartUploadsVO uploadVO = new MultiPartUploadsVO(accessKey,
                     bucketName, key, cannedAccess, tod);
@@ -315,9 +316,9 @@ public class MultipartLoadDao {
     private void saveMultipartMeta( int uploadId, S3MetaDataEntry[] meta ) {
         if (null == meta) return;
 
-        Transaction txn = null;
+        TransactionLegacy txn = null;
         try {
-            txn = Transaction.open(Transaction.AWSAPI_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
             for( int i=0; i < meta.length; i++ ) 
             {
                 S3MetaDataEntry entry = meta[i];

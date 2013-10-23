@@ -35,6 +35,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -162,6 +163,11 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -308,12 +314,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     @DB
-    public void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering, Pair<? extends DiskOffering, Long> rootDiskOffering,
-            LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferings, LinkedHashMap<? extends Network, ? extends NicProfile> auxiliaryNetworks, DeploymentPlan plan,
-            HypervisorType hyperType) throws InsufficientCapacityException {
+    public void allocate(String vmInstanceName, final VirtualMachineTemplate template, ServiceOffering serviceOffering, final Pair<? extends DiskOffering, Long> rootDiskOffering,
+        LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferings, final LinkedHashMap<? extends Network, ? extends NicProfile> auxiliaryNetworks, DeploymentPlan plan,
+        HypervisorType hyperType) throws InsufficientCapacityException {
 
         VMInstanceVO vm = _vmDao.findVMByInstanceName(vmInstanceName);
-        Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
+        final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocating entries for VM: " + vm);
@@ -324,46 +330,46 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             vm.setPodId(plan.getPodId());
         }
         assert (plan.getClusterId() == null && plan.getPoolId() == null) : "We currently don't support cluster and pool preset yet";
-        vm = _vmDao.persist(vm);
+        final VMInstanceVO vmFinal = _vmDao.persist(vm);
+        final LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferingsFinal = dataDiskOfferings == null ? 
+                new LinkedHashMap<DiskOffering, Long>() : dataDiskOfferings;
 
-        VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, serviceOffering, null, null);
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmFinal, template, serviceOffering, null, null);
+
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientCapacityException>() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientCapacityException {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Allocating nics for " + vmFinal);
+                }
+        
+                try {
+                    _networkMgr.allocate(vmProfile, auxiliaryNetworks);
+                } catch (ConcurrentOperationException e) {
+                    throw new CloudRuntimeException("Concurrent operation while trying to allocate resources for the VM", e);
+                }
+        
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Allocating disks for " + vmFinal);
+                }
+        
+                if (template.getFormat() == ImageFormat.ISO) {
+                    volumeMgr.allocateRawVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOffering.first(), rootDiskOffering.second(), vmFinal, template, owner);
+                } else if (template.getFormat() == ImageFormat.BAREMETAL) {
+                    // Do nothing
+                } else {
+                    volumeMgr.allocateTemplatedVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOffering.first(), template, vmFinal, owner);
+                }
+        
+                for (Map.Entry<? extends DiskOffering, Long> offering : dataDiskOfferingsFinal.entrySet()) {
+                    volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + vmFinal.getId(), offering.getKey(), offering.getValue(), vmFinal, template, owner);
+                }
+            }
+        });
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Allocating nics for " + vm);
-        }
-
-        try {
-            _networkMgr.allocate(vmProfile, auxiliaryNetworks);
-        } catch (ConcurrentOperationException e) {
-            throw new CloudRuntimeException("Concurrent operation while trying to allocate resources for the VM", e);
-        }
-
-        if (dataDiskOfferings == null) {
-            dataDiskOfferings = new LinkedHashMap<DiskOffering, Long>(0);
-        }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Allocating disks for " + vm);
-        }
-
-        if (template.getFormat() == ImageFormat.ISO) {
-            volumeMgr.allocateRawVolume(Type.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), rootDiskOffering.second(), vm, template, owner);
-        } else if (template.getFormat() == ImageFormat.BAREMETAL) {
-            // Do nothing
-        } else {
-            volumeMgr.allocateTemplatedVolume(Type.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), template, vm, owner);
-        }
-
-        for (Map.Entry<? extends DiskOffering, Long> offering : dataDiskOfferings.entrySet()) {
-            volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + vm.getId(), offering.getKey(), offering.getValue(), vm, template, owner);
-        }
-
-        txn.commit();
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Allocation completed for VM: " + vm);
+            s_logger.debug("Allocation completed for VM: " + vmFinal);
         }
     }
 
@@ -548,36 +554,40 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @DB
-    protected Ternary<VMInstanceVO, ReservationContext, ItWorkVO> changeToStartState(VirtualMachineGuru vmGuru, VMInstanceVO vm, User caller, Account account)
-            throws ConcurrentOperationException {
+    protected Ternary<VMInstanceVO, ReservationContext, ItWorkVO> changeToStartState(VirtualMachineGuru vmGuru, final VMInstanceVO vm, final User caller, final Account account)
+        throws ConcurrentOperationException {
         long vmId = vm.getId();
 
         ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Starting, vm.getType(), vm.getId());
         int retry = VmOpLockStateRetry.value();
         while (retry-- != 0) {
-            Transaction txn = Transaction.currentTxn();
-            Ternary<VMInstanceVO, ReservationContext, ItWorkVO> result = null;
-            txn.start();
             try {
-                Journal journal = new Journal.LogJournal("Creating " + vm, s_logger);
-                work = _workDao.persist(work);
-                ReservationContextImpl context = new ReservationContextImpl(work.getId(), journal, caller, account);
+                final ItWorkVO workFinal = work;
+                Ternary<VMInstanceVO, ReservationContext, ItWorkVO> result = 
+                        Transaction.execute(new TransactionCallbackWithException<Ternary<VMInstanceVO, ReservationContext, ItWorkVO>, NoTransitionException>() {
+                    @Override
+                    public Ternary<VMInstanceVO, ReservationContext, ItWorkVO> doInTransaction(TransactionStatus status) throws NoTransitionException {
+                        Journal journal = new Journal.LogJournal("Creating " + vm, s_logger);
+                        ItWorkVO work = _workDao.persist(workFinal);
+                        ReservationContextImpl context = new ReservationContextImpl(work.getId(), journal, caller, account);
 
-                if (stateTransitTo(vm, Event.StartRequested, null, work.getId())) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Successfully transitioned to start state for " + vm + " reservation id = " + work.getId());
+                        if (stateTransitTo(vm, Event.StartRequested, null, work.getId())) {
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Successfully transitioned to start state for " + vm + " reservation id = " + work.getId());
+                            }
+                            return new Ternary<VMInstanceVO, ReservationContext, ItWorkVO>(vm, context, work);
+                        }
+
+                        return new Ternary<VMInstanceVO, ReservationContext, ItWorkVO>(null, null, work);
                     }
-                    result = new Ternary<VMInstanceVO, ReservationContext, ItWorkVO>(vm, context, work);
-                    txn.commit();
+                });
+                
+                work = result.third();
+                if (result.first() != null)
                     return result;
-                }
             } catch (NoTransitionException e) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to transition into Starting state due to " + e.getMessage());
-                }
-            } finally {
-                if (result == null) {
-                    txn.rollback();
                 }
             }
 

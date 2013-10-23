@@ -41,7 +41,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class DataMotionServiceImpl implements DataMotionService {
-    @Inject
+
     List<DataMotionStrategy> strategies;
 
     @Override
@@ -89,7 +89,12 @@ public class DataMotionServiceImpl implements DataMotionService {
         strategy.copyAsync(volumeMap, vmTo, srcHost, destHost, callback);
     }
 
+    @Inject
     public void setStrategies(List<DataMotionStrategy> strategies) {
         this.strategies = strategies;
+    }
+
+    public List<DataMotionStrategy> getStrategies() {
+        return strategies;
     }
 }

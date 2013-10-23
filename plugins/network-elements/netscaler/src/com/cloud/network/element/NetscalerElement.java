@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import org.apache.cloudstack.region.gslb.GslbServiceProvider;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -110,13 +109,14 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.UrlUtil;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-
 import com.google.gson.Gson;
 
 @Local(value = {NetworkElement.class, StaticNatServiceProvider.class, LoadBalancingServiceProvider.class, GslbServiceProvider.class})
@@ -409,9 +409,9 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     }
 
     @DB
-    private ExternalLoadBalancerDeviceVO configureNetscalerLoadBalancer(long lbDeviceId, Long capacity, Boolean dedicatedUse, List<Long> newPodsConfig) {
-        ExternalLoadBalancerDeviceVO lbDeviceVo = _lbDeviceDao.findById(lbDeviceId);
-        Map<String, String> lbDetails = _detailsDao.findDetails(lbDeviceVo.getHostId());
+    private ExternalLoadBalancerDeviceVO configureNetscalerLoadBalancer(final long lbDeviceId, Long capacity, Boolean dedicatedUse, List<Long> newPodsConfig) {
+        final ExternalLoadBalancerDeviceVO lbDeviceVo = _lbDeviceDao.findById(lbDeviceId);
+        final Map<String, String> lbDetails = _detailsDao.findDetails(lbDeviceVo.getHostId());
 
         if ((lbDeviceVo == null) || !isNetscalerDevice(lbDeviceVo.getDeviceName())) {
             throw new InvalidParameterValueException("No netscaler device found with ID: " + lbDeviceId);
@@ -425,7 +425,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             }
         }
 
-        List<Long> podsToAssociate = new ArrayList<Long>();
+        final List<Long> podsToAssociate = new ArrayList<Long>();
         if (newPodsConfig != null && newPodsConfig.size() > 0) {
             for (Long podId: newPodsConfig) {
                 HostPodVO pod = _podDao.findById(podId);
@@ -441,7 +441,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             }
         }
 
-        List<Long> podsToDeassociate = new ArrayList<Long>();
+        final List<Long> podsToDeassociate = new ArrayList<Long>();
         for (Long podId: currentPodsConfig) {
             if (!newPodsConfig.contains(podId)) {
                 podsToDeassociate.add(podId);
@@ -482,26 +482,28 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             lbDeviceVo.setIsDedicatedDevice(dedicatedUse);
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                _lbDeviceDao.update(lbDeviceId, lbDeviceVo);
+        
+                for (Long podId: podsToAssociate) {
+                    NetScalerPodVO nsPodVo = new NetScalerPodVO(lbDeviceId, podId);
+                    _netscalerPodDao.persist(nsPodVo);
+                }
+        
+                for (Long podId: podsToDeassociate) {
+                    NetScalerPodVO nsPodVo = _netscalerPodDao.findByPodId(podId);
+                    _netscalerPodDao.remove(nsPodVo.getId());
+                }
+        
+                // FIXME get the row lock to avoid race condition
+                _detailsDao.persist(lbDeviceVo.getHostId(), lbDetails);
 
-        _lbDeviceDao.update(lbDeviceId, lbDeviceVo);
-
-        for (Long podId: podsToAssociate) {
-            NetScalerPodVO nsPodVo = new NetScalerPodVO(lbDeviceId, podId);
-            _netscalerPodDao.persist(nsPodVo);
-        }
-
-        for (Long podId: podsToDeassociate) {
-            NetScalerPodVO nsPodVo = _netscalerPodDao.findByPodId(podId);
-            _netscalerPodDao.remove(nsPodVo.getId());
-        }
-
-        // FIXME get the row lock to avoid race condition
-        _detailsDao.persist(lbDeviceVo.getHostId(), lbDetails);
+            }
+        });
         HostVO host = _hostDao.findById(lbDeviceVo.getHostId());
-        txn.commit();
-
+        
         _agentMgr.reconnect(host.getId());
         return lbDeviceVo;
     }

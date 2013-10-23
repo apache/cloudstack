@@ -30,7 +30,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -74,7 +74,7 @@ public class KeystoreDaoImpl extends GenericDaoBase<KeystoreVO, Long> implements
 	@Override
 	@DB
 	public void save(String name, String certificate, String key, String domainSuffix) {
-		Transaction txn = Transaction.currentTxn();
+		TransactionLegacy txn = TransactionLegacy.currentTxn();
 		try {
 			txn.start();
 			

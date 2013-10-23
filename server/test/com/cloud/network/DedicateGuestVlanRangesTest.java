@@ -37,7 +37,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedGuestVlanRangeCmd;
@@ -56,6 +55,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 public class DedicateGuestVlanRangesTest {
 
@@ -177,7 +177,7 @@ public class DedicateGuestVlanRangesTest {
     }
 
     void runDedicateGuestVlanRangePostiveTest() throws Exception {
-        Transaction txn = Transaction.open("runDedicateGuestVlanRangePostiveTest");
+        TransactionLegacy txn = TransactionLegacy.open("runDedicateGuestVlanRangePostiveTest");
         
         Field dedicateVlanField = _dedicateGuestVlanRangeClass.getDeclaredField("vlan");
         dedicateVlanField.setAccessible(true);
@@ -213,7 +213,7 @@ public class DedicateGuestVlanRangesTest {
     }
 
     void runDedicateGuestVlanRangeInvalidFormat() throws Exception {
-        Transaction txn = Transaction.open("runDedicateGuestVlanRangeInvalidFormat");
+        TransactionLegacy txn = TransactionLegacy.open("runDedicateGuestVlanRangeInvalidFormat");
 
         Field dedicateVlanField = _dedicateGuestVlanRangeClass.getDeclaredField("vlan");
         dedicateVlanField.setAccessible(true);
@@ -234,7 +234,7 @@ public class DedicateGuestVlanRangesTest {
     }
 
     void runDedicateGuestVlanRangeInvalidRangeValue() throws Exception {
-        Transaction txn = Transaction.open("runDedicateGuestVlanRangeInvalidRangeValue");
+        TransactionLegacy txn = TransactionLegacy.open("runDedicateGuestVlanRangeInvalidRangeValue");
 
         Field dedicateVlanField = _dedicateGuestVlanRangeClass.getDeclaredField("vlan");
         dedicateVlanField.setAccessible(true);
@@ -255,7 +255,7 @@ public class DedicateGuestVlanRangesTest {
     }
 
     void runDedicateGuestVlanRangeAllocatedVlans() throws Exception {
-        Transaction txn = Transaction.open("runDedicateGuestVlanRangeAllocatedVlans");
+        TransactionLegacy txn = TransactionLegacy.open("runDedicateGuestVlanRangeAllocatedVlans");
         
         Field dedicateVlanField = _dedicateGuestVlanRangeClass.getDeclaredField("vlan");
         dedicateVlanField.setAccessible(true);
@@ -281,7 +281,7 @@ public class DedicateGuestVlanRangesTest {
     }
 
     void runDedicateGuestVlanRangeDedicatedRange() throws Exception {
-        Transaction txn = Transaction.open("runDedicateGuestVlanRangeDedicatedRange");
+        TransactionLegacy txn = TransactionLegacy.open("runDedicateGuestVlanRangeDedicatedRange");
         
         Field dedicateVlanField = _dedicateGuestVlanRangeClass.getDeclaredField("vlan");
         dedicateVlanField.setAccessible(true);
@@ -310,7 +310,7 @@ public class DedicateGuestVlanRangesTest {
     }
 
     void runDedicateGuestVlanRangePartiallyDedicated() throws Exception {
-        Transaction txn = Transaction.open("runDedicateGuestVlanRangePartiallyDedicated");
+        TransactionLegacy txn = TransactionLegacy.open("runDedicateGuestVlanRangePartiallyDedicated");
         
         Field dedicateVlanField = _dedicateGuestVlanRangeClass.getDeclaredField("vlan");
         dedicateVlanField.setAccessible(true);
@@ -339,7 +339,7 @@ public class DedicateGuestVlanRangesTest {
     }
     
     void runReleaseDedicatedGuestVlanRangePostiveTest() throws Exception {
-        Transaction txn = Transaction.open("runReleaseDedicatedGuestVlanRangePostiveTest");
+        TransactionLegacy txn = TransactionLegacy.open("runReleaseDedicatedGuestVlanRangePostiveTest");
 
         AccountGuestVlanMapVO accountGuestVlanMap = new AccountGuestVlanMapVO(1L, 1L);
         when(networkService._accountGuestVlanMapDao.findById(anyLong())).thenReturn(accountGuestVlanMap);
@@ -357,7 +357,7 @@ public class DedicateGuestVlanRangesTest {
     }
 
     void runReleaseDedicatedGuestVlanRangeInvalidRange() throws Exception {
-        Transaction txn = Transaction.open("runReleaseDedicatedGuestVlanRangeInvalidRange");
+        TransactionLegacy txn = TransactionLegacy.open("runReleaseDedicatedGuestVlanRangeInvalidRange");
 
         when(networkService._accountGuestVlanMapDao.findById(anyLong())).thenReturn(null);
 

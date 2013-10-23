@@ -27,7 +27,7 @@ import com.cloud.host.HostTagVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component(value="EngineHostTagsDao")
 @Local(value=HostTagsDao.class)
@@ -56,7 +56,7 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
     
     @Override
     public void persist(long hostId, List<String> hostTags) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
 
         txn.start();
         SearchCriteria<HostTagVO> sc = HostSearch.create();

@@ -20,7 +20,7 @@ package com.cloud.usage.dao;
 import com.cloud.usage.UsageVMSnapshotVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -51,7 +51,7 @@ public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Lo
             "ORDER BY created desc limit 1";
     
     public void update(UsageVMSnapshotVO usage) {
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
         try {
             txn.start();
@@ -76,7 +76,7 @@ public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Lo
         List<UsageVMSnapshotVO> usageRecords = new ArrayList<UsageVMSnapshotVO>();
 
         String sql = GET_USAGE_RECORDS_BY_ACCOUNT;
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
 
         try {
@@ -130,7 +130,7 @@ public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Lo
         List<UsageVMSnapshotVO> usageRecords = new ArrayList<UsageVMSnapshotVO>();
 
         String sql = PREVIOUS_QUERY;
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
         try {
             int i = 1;

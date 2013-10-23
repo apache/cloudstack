@@ -57,7 +57,7 @@ public class CallContext {
     private User user;
     private final Map<Object, Object> context = new HashMap<Object, Object>();
 
-    private static EntityManager s_entityMgr;
+    static EntityManager s_entityMgr;
 
     public static void init(EntityManager entityMgr) {
         s_entityMgr = entityMgr;

@@ -47,6 +47,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -110,7 +111,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         HostVO host = null;
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
 
         try {
             pstmt = txn.prepareStatement(sql);

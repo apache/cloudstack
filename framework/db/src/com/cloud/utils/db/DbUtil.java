@@ -56,7 +56,7 @@ public class DbUtil {
     				assert(false);
     			}
     			
-    			Connection connection = Transaction.getStandaloneConnection();
+    			Connection connection = TransactionLegacy.getStandaloneConnection();
     			if(connection != null) {
     				try {
 						connection.setAutoCommit(true);

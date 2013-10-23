@@ -29,7 +29,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component(value="EngineDcDetailsDao")
 @Local(value=DcDetailsDao.class)
@@ -83,7 +83,7 @@ public class DcDetailsDaoImpl extends GenericDaoBase<DcDetailVO, Long> implement
 
     @Override
     public void persist(long dcId, Map<String, String> details) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         SearchCriteria<DcDetailVO> sc = DcSearch.create();
         sc.setParameters("dcId", dcId);

@@ -33,7 +33,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = { StoragePoolHostDao.class })
@@ -104,7 +104,7 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
 
     @Override
     public List<StoragePoolHostVO> listByHostStatus(long poolId, Status hostStatus) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<StoragePoolHostVO> result = new ArrayList<StoragePoolHostVO>();
         ResultSet rs = null;
@@ -142,7 +142,7 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
     public List<Pair<Long, Integer>> getDatacenterStoragePoolHostInfo(long dcId, boolean sharedOnly) {
         ArrayList<Pair<Long, Integer>> l = new ArrayList<Pair<Long, Integer>>();
         String sql = sharedOnly ? SHARED_STORAGE_POOL_HOST_INFO : STORAGE_POOL_HOST_INFO;
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         ;
         PreparedStatement pstmt = null;
         try {
@@ -169,7 +169,7 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
     public void deletePrimaryRecordsForHost(long hostId) {
         SearchCriteria<StoragePoolHostVO> sc = HostSearch.create();
         sc.setParameters("host_id", hostId);
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         remove(sc);
         txn.commit();
@@ -180,7 +180,7 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
         SearchCriteria<StoragePoolHostVO> sc = PoolHostSearch.create();
         sc.setParameters("host_id", hostId);
         sc.setParameters("pool_id", poolId);
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         remove(sc);
         txn.commit();

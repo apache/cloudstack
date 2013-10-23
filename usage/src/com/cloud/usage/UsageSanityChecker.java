@@ -26,7 +26,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 public class UsageSanityChecker {
     
@@ -186,7 +186,7 @@ public class UsageSanityChecker {
             // Error while reading last check id  
         }
 
-        Connection conn = Transaction.getStandaloneConnection();
+        Connection conn = TransactionLegacy.getStandaloneConnection();
         int maxId = 0;
         PreparedStatement pstmt = conn.prepareStatement("select max(id) from cloud_usage.cloud_usage");
         ResultSet rs = pstmt.executeQuery();

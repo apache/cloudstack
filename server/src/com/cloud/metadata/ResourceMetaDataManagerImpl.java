@@ -62,6 +62,8 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.uuididentity.dao.IdentityDao;
 import com.cloud.vm.NicDetailVO;
 import com.cloud.vm.dao.NicDao;
@@ -192,51 +194,51 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_DETAILS_CREATE, eventDescription = "creating resource meta data")
-    public boolean addResourceMetaData(String resourceId, TaggedResourceType resourceType, Map<String, String> details){
+    public boolean addResourceMetaData(final String resourceId, final TaggedResourceType resourceType, final Map<String, String> details){
+        return Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
+                for (String key : details.keySet()) {
+                        Long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+                        //check if object exists
+                        if (_daoMap.get(resourceType).findById(id) == null) {
+                            throw new InvalidParameterValueException("Unable to find resource by id " + resourceId +
+                                    " and type " + resourceType);
+                        }
 
-        for (String key : details.keySet()) {
-                Long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
+                        String value = details.get(key);
 
-                //check if object exists
-                if (_daoMap.get(resourceType).findById(id) == null) {
-                    throw new InvalidParameterValueException("Unable to find resource by id " + resourceId +
-                            " and type " + resourceType);
+                        if (value == null || value.isEmpty()) {
+                            throw new InvalidParameterValueException("Value for the key " + key + " is either null or empty");
+                        }
+
+                        // TODO - Have a better design here.
+                        if(resourceType == TaggedResourceType.Volume){
+                            VolumeDetailVO v = new VolumeDetailVO(id, key, value);
+                            _volumeDetailDao.persist(v);
+                        } else if (resourceType == TaggedResourceType.Nic){
+                            NicDetailVO n = new NicDetailVO(id, key, value);
+                            _nicDetailDao.persist(n);
+                        } else if (resourceType == TaggedResourceType.Zone){
+                             DcDetailVO dataCenterDetail = new DcDetailVO(id, key, value);
+                             _dcDetailsDao.persist(dataCenterDetail);
+                        } else if (resourceType == TaggedResourceType.Network){
+                            NetworkDetailVO networkDetail = new NetworkDetailVO(id, key, value);
+                            _networkDetailsDao.persist(networkDetail);
+                        } else if (resourceType == TaggedResourceType.UserVm) {
+                            _userVmDetailsDao.addVmDetail(id, key, value);
+                        } else if (resourceType == TaggedResourceType.Template) {
+                            _templateDetailsDao.addTemplateDetail(id, key, value);
+                        } else{
+                            throw new InvalidParameterValueException("The resource type " + resourceType + " is not supported by the API yet");
+                        }
+
                 }
 
-                String value = details.get(key);
-
-                if (value == null || value.isEmpty()) {
-                    throw new InvalidParameterValueException("Value for the key " + key + " is either null or empty");
-                }
-
-                // TODO - Have a better design here.
-                if (resourceType == TaggedResourceType.Volume){
-                    VolumeDetailVO v = new VolumeDetailVO(id, key, value);
-                    _volumeDetailDao.persist(v);
-                } else if (resourceType == TaggedResourceType.Nic){
-                    NicDetailVO n = new NicDetailVO(id, key, value);
-                    _nicDetailDao.persist(n);
-                } else if (resourceType == TaggedResourceType.Zone){
-                     DcDetailVO dataCenterDetail = new DcDetailVO(id, key, value);
-                     _dcDetailsDao.persist(dataCenterDetail);
-                } else if (resourceType == TaggedResourceType.Network){
-                    NetworkDetailVO networkDetail = new NetworkDetailVO(id, key, value);
-                    _networkDetailsDao.persist(networkDetail);
-                } else if (resourceType == TaggedResourceType.UserVm) {
-                    _userVmDetailsDao.addVmDetail(id, key, value);
-                } else if (resourceType == TaggedResourceType.Template) {
-                    _templateDetailsDao.addTemplateDetail(id, key, value);
-                } else{
-                    throw new InvalidParameterValueException("The resource type " + resourceType + " is not supported by the API yet");
-                }
-        }
-
-        txn.commit();
-
-        return true;
+                return true;
+            }
+        });
     }
 
 

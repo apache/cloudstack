@@ -226,10 +226,7 @@ public class UcsManagerImpl implements UcsManager {
             vo.setZoneId(cmd.getZoneId());
             vo.setName(cmd.getName());
 
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
             mgrvo = ucsDao.persist(vo);
-            txn.commit();
             UcsManagerResponse rsp = new UcsManagerResponse();
             rsp.setId(String.valueOf(vo.getId()));
             rsp.setName(vo.getName());

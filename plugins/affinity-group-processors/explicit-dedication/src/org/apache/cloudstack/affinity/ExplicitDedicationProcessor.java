@@ -24,7 +24,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 
@@ -48,6 +47,8 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -410,7 +411,7 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
 
     @DB
     @Override
-    public void handleDeleteGroup(AffinityGroup group) {
+    public void handleDeleteGroup(final AffinityGroup group) {
         // When a group of the 'ExplicitDedication' type gets deleted, make sure
         // to remove the dedicated resources in the group as well.
         if (group != null) {
@@ -419,20 +420,21 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Releasing the dedicated resources under group: " + group);
                 }
-                Transaction txn = Transaction.currentTxn();
-                txn.start();
 
-                SearchBuilder<DedicatedResourceVO> listByAffinityGroup = _dedicatedDao.createSearchBuilder();
-                listByAffinityGroup.and("affinityGroupId", listByAffinityGroup.entity().getAffinityGroupId(),
-                        SearchCriteria.Op.EQ);
-                listByAffinityGroup.done();
-                SearchCriteria<DedicatedResourceVO> sc = listByAffinityGroup.create();
-                sc.setParameters("affinityGroupId", group.getId());
-
-                _dedicatedDao.lockRows(sc, null, true);
-                _dedicatedDao.remove(sc);
-
-                txn.commit();
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        SearchBuilder<DedicatedResourceVO> listByAffinityGroup = _dedicatedDao.createSearchBuilder();
+                        listByAffinityGroup.and("affinityGroupId", listByAffinityGroup.entity().getAffinityGroupId(),
+                                SearchCriteria.Op.EQ);
+                        listByAffinityGroup.done();
+                        SearchCriteria<DedicatedResourceVO> sc = listByAffinityGroup.create();
+                        sc.setParameters("affinityGroupId", group.getId());
+        
+                        _dedicatedDao.lockRows(sc, null, true);
+                        _dedicatedDao.remove(sc);
+                    }
+                });
             } else {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("No dedicated resources to releease under group: " + group);

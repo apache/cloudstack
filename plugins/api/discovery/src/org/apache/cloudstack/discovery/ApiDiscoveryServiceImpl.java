@@ -16,14 +16,24 @@
 // under the License.
 package org.apache.cloudstack.discovery;
 
-import com.cloud.serializer.Param;
-import com.cloud.user.User;
-import com.cloud.utils.ReflectUtil;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.PluggableService;
-import com.google.gson.annotations.SerializedName;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.APIChecker;
-import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.command.user.discovery.ListApisCmd;
 import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
 import org.apache.cloudstack.api.response.ApiParameterResponse;
@@ -32,27 +42,29 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.ejb.Local;
-import javax.inject.Inject;
-import java.lang.reflect.Field;
-import java.util.*;
+import com.cloud.serializer.Param;
+import com.cloud.user.User;
+import com.cloud.utils.ReflectUtil;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.component.ComponentLifecycleBase;
+import com.cloud.utils.component.PluggableService;
+import com.google.gson.annotations.SerializedName;
 
 @Component
 @Local(value = ApiDiscoveryService.class)
-public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
+public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements ApiDiscoveryService {
     private static final Logger s_logger = Logger.getLogger(ApiDiscoveryServiceImpl.class);
 
-    @Inject protected List<APIChecker> _apiAccessCheckers = null;
-    @Inject protected List<PluggableService> _services = null;
+    List<APIChecker> _apiAccessCheckers = null;
+    List<PluggableService> _services = null;
     private static Map<String, ApiDiscoveryResponse> s_apiNameDiscoveryResponseMap = null;
 
     protected ApiDiscoveryServiceImpl() {
         super();
     }
 
-    @PostConstruct
-    void init() {
+    @Override
+    public boolean start() {
         if (s_apiNameDiscoveryResponseMap == null) {
             long startTime = System.nanoTime();
             s_apiNameDiscoveryResponseMap = new HashMap<String, ApiDiscoveryResponse>();
@@ -66,6 +78,8 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
             long endTime = System.nanoTime();
             s_logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
         }
+        
+        return true;
     }
 
     protected Map<String, List<String>> cacheResponseMap(Set<Class<?>> cmdClasses) {
@@ -248,5 +262,22 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(ListApisCmd.class);
         return cmdList;
+    }
+
+    public List<APIChecker> getApiAccessCheckers() {
+        return _apiAccessCheckers;
+    }
+
+    public void setApiAccessCheckers(List<APIChecker> _apiAccessCheckers) {
+        this._apiAccessCheckers = _apiAccessCheckers;
+    }
+
+    public List<PluggableService> getServices() {
+        return _services;
+    }
+
+    @Inject
+    public void setServices(List<PluggableService> _services) {
+        this._services = _services;
     }
 }

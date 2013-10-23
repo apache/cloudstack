@@ -19,7 +19,7 @@ package com.cloud.vm.dao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.NicDetailVO;
 import org.springframework.stereotype.Component;
 
@@ -75,7 +75,7 @@ public class NicDetailDaoImpl extends GenericDaoBase<NicDetailVO, Long> implemen
 
     @Override
     public void persist(long nicId, Map<String, String> details) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         SearchCriteria<NicDetailVO> sc = NicSearch.create();
         sc.setParameters("nicId", nicId);

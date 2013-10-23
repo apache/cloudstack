@@ -31,7 +31,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = { VMRootDiskTagDao.class })
@@ -52,7 +52,7 @@ public class VMRootDiskTagDaoImpl extends GenericDaoBase<VMRootDiskTagVO, Long> 
 
     @Override
     public void persist(long vmId, List<String> rootDiskTags) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
 
         txn.start();
         SearchCriteria<VMRootDiskTagVO> sc = VmIdSearch.create();

@@ -26,7 +26,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -76,8 +75,12 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
@@ -197,12 +200,12 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_ADD, eventDescription = "creating forwarding rule", create = true)
-    public PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId, Ip vmIp, boolean openFirewall)
+    public PortForwardingRule createPortForwardingRule(final PortForwardingRule rule, final Long vmId, Ip vmIp, final boolean openFirewall)
             throws NetworkRuleConflictException {
         CallContext ctx = CallContext.current();
-        Account caller = ctx.getCallingAccount();
+        final Account caller = ctx.getCallingAccount();
 
-        Long ipAddrId = rule.getSourceIpAddressId();
+        final Long ipAddrId = rule.getSourceIpAddressId();
 
         IPAddressVO ipAddress = _ipAddressDao.findById(ipAddrId);
 
@@ -213,7 +216,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             throw new InvalidParameterValueException("Unable to create port forwarding rule; ip id=" + ipAddrId + " has static nat enabled");
         }
 
-        Long networkId = rule.getNetworkId();
+        final Long networkId = rule.getNetworkId();
         Network network = _networkModel.getNetwork(networkId);
         //associate ip address to network (if needed)
         boolean performedIpAssoc = false;
@@ -245,8 +248,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(),
                     rule.getProtocol(), Purpose.PortForwarding, FirewallRuleType.User, networkId, rule.getTrafficType());
 
-            Long accountId = ipAddress.getAllocatedToAccountId();
-            Long domainId = ipAddress.getAllocatedInDomainId();
+            final Long accountId = ipAddress.getAllocatedToAccountId();
+            final Long domainId = ipAddress.getAllocatedInDomainId();
 
             // start port can't be bigger than end port
             if (rule.getDestinationPortStart() > rule.getDestinationPortEnd()) {
@@ -308,46 +311,48 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                 }
             }
 
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
-
-            PortForwardingRuleVO newRule = new PortForwardingRuleVO(rule.getXid(), rule.getSourceIpAddressId(),
-                    rule.getSourcePortStart(), rule.getSourcePortEnd(), dstIp, rule.getDestinationPortStart(),
-                    rule.getDestinationPortEnd(), rule.getProtocol().toLowerCase(), networkId, accountId, domainId, vmId);
-            newRule = _portForwardingDao.persist(newRule);
-
-            // create firewallRule for 0.0.0.0/0 cidr
-            if (openFirewall) {
-                _firewallMgr.createRuleForAllCidrs(ipAddrId, caller, rule.getSourcePortStart(), rule.getSourcePortEnd(),
-                        rule.getProtocol(), null, null, newRule.getId(), networkId);
-            }
-
-            try {
-                _firewallMgr.detectRulesConflict(newRule);
-                if (!_firewallDao.setStateToAdd(newRule)) {
-                    throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
+            final Ip dstIpFinal = dstIp;
+            final IPAddressVO ipAddressFinal = ipAddress;
+            return Transaction.execute(new TransactionCallbackWithException<PortForwardingRuleVO,NetworkRuleConflictException>() {
+                @Override
+                public PortForwardingRuleVO doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
+                    PortForwardingRuleVO newRule = new PortForwardingRuleVO(rule.getXid(), rule.getSourceIpAddressId(),
+                            rule.getSourcePortStart(), rule.getSourcePortEnd(), dstIpFinal, rule.getDestinationPortStart(),
+                            rule.getDestinationPortEnd(), rule.getProtocol().toLowerCase(), networkId, accountId, domainId, vmId);
+                    newRule = _portForwardingDao.persist(newRule);
+        
+                    // create firewallRule for 0.0.0.0/0 cidr
+                    if (openFirewall) {
+                        _firewallMgr.createRuleForAllCidrs(ipAddrId, caller, rule.getSourcePortStart(), rule.getSourcePortEnd(),
+                                rule.getProtocol(), null, null, newRule.getId(), networkId);
+                    }
+        
+                    try {
+                        _firewallMgr.detectRulesConflict(newRule);
+                        if (!_firewallDao.setStateToAdd(newRule)) {
+                            throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
+                        }
+                        CallContext.current().setEventDetails("Rule Id: " + newRule.getId());
+                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(),
+                                ipAddressFinal.getDataCenterId(), newRule.getId(), null, PortForwardingRule.class.getName(),
+                                newRule.getUuid());
+                        return newRule;
+                    } catch (Exception e) {
+                        if (newRule != null) {
+                            // no need to apply the rule as it wasn't programmed on the backend yet
+                            _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
+                            removePFRule(newRule);
+                        }
+        
+                        if (e instanceof NetworkRuleConflictException) {
+                            throw (NetworkRuleConflictException) e;
+                        }
+        
+                        throw new CloudRuntimeException("Unable to add rule for the ip id=" + ipAddrId, e);
+                    }
                 }
-                CallContext.current().setEventDetails("Rule Id: " + newRule.getId());
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(),
-                        ipAddress.getDataCenterId(), newRule.getId(), null, PortForwardingRule.class.getName(),
-                        newRule.getUuid());
-                txn.commit();
-                return newRule;
-            } catch (Exception e) {
-                if (newRule != null) {
-                    txn.start();
-                    // no need to apply the rule as it wasn't programmed on the backend yet
-                    _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
-                    removePFRule(newRule);
-                    txn.commit();
-                }
+            });
 
-                if (e instanceof NetworkRuleConflictException) {
-                    throw (NetworkRuleConflictException) e;
-                }
-
-                throw new CloudRuntimeException("Unable to add rule for the ip id=" + ipAddrId, e);
-            }
         } finally {
             // release ip address if ipassoc was perfored
             if (performedIpAssoc) {
@@ -361,10 +366,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_ADD, eventDescription = "creating static nat rule", create = true)
-    public StaticNatRule createStaticNatRule(StaticNatRule rule, boolean openFirewall) throws NetworkRuleConflictException {
-        Account caller = CallContext.current().getCallingAccount();
+    public StaticNatRule createStaticNatRule(final StaticNatRule rule, final boolean openFirewall) throws NetworkRuleConflictException {
+        final Account caller = CallContext.current().getCallingAccount();
 
-        Long ipAddrId = rule.getSourceIpAddressId();
+        final Long ipAddrId = rule.getSourceIpAddressId();
 
         IPAddressVO ipAddress = _ipAddressDao.findById(ipAddrId);
 
@@ -377,9 +382,9 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), Purpose.StaticNat, FirewallRuleType.User,null, rule.getTrafficType() );
 
-        Long networkId = ipAddress.getAssociatedWithNetworkId();
-        Long accountId = ipAddress.getAllocatedToAccountId();
-        Long domainId = ipAddress.getAllocatedInDomainId();
+        final Long networkId = ipAddress.getAssociatedWithNetworkId();
+        final Long accountId = ipAddress.getAllocatedToAccountId();
+        final Long domainId = ipAddress.getAllocatedInDomainId();
 
         _networkModel.checkIpForService(ipAddress, Service.StaticNat, null);
 
@@ -390,48 +395,48 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         }
 
         //String dstIp = _networkModel.getIpInNetwork(ipAddress.getAssociatedWithVmId(), networkId);
-        String dstIp = ipAddress.getVmIp();
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        final String dstIp = ipAddress.getVmIp();
+        return Transaction.execute(new TransactionCallbackWithException<StaticNatRule,NetworkRuleConflictException>() {
+            @Override
+            public StaticNatRule doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
 
-        FirewallRuleVO newRule = new FirewallRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol().toLowerCase(),
-                networkId, accountId, domainId, rule.getPurpose(), null, null, null, null, null);
+                FirewallRuleVO newRule = new FirewallRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol().toLowerCase(),
+                        networkId, accountId, domainId, rule.getPurpose(), null, null, null, null, null);
 
-        newRule = _firewallDao.persist(newRule);
+                newRule = _firewallDao.persist(newRule);
 
-        // create firewallRule for 0.0.0.0/0 cidr
-        if (openFirewall) {
-            _firewallMgr.createRuleForAllCidrs(ipAddrId, caller, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), null, null, newRule.getId(), networkId);
-        }
+                // create firewallRule for 0.0.0.0/0 cidr
+                if (openFirewall) {
+                    _firewallMgr.createRuleForAllCidrs(ipAddrId, caller, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), null, null, newRule.getId(), networkId);
+                }
 
-        try {
-            _firewallMgr.detectRulesConflict(newRule);
-            if (!_firewallDao.setStateToAdd(newRule)) {
-                throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
+                try {
+                    _firewallMgr.detectRulesConflict(newRule);
+                    if (!_firewallDao.setStateToAdd(newRule)) {
+                        throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
+                    }
+                    CallContext.current().setEventDetails("Rule Id: " + newRule.getId());
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(), 0, newRule.getId(),
+                            null, FirewallRule.class.getName(), newRule.getUuid());
+
+                    StaticNatRule staticNatRule = new StaticNatRuleImpl(newRule, dstIp);
+
+                    return staticNatRule;
+                } catch (Exception e) {
+                    if (newRule != null) {
+                        // no need to apply the rule as it wasn't programmed on the backend yet
+                        _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
+                        _firewallMgr.removeRule(newRule);
+                    }
+
+                    if (e instanceof NetworkRuleConflictException) {
+                        throw (NetworkRuleConflictException) e;
+                    }
+                    throw new CloudRuntimeException("Unable to add static nat rule for the ip id=" + newRule.getSourceIpAddressId(), e);
+                }
             }
-            CallContext.current().setEventDetails("Rule Id: " + newRule.getId());
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(), 0, newRule.getId(),
-                    null, FirewallRule.class.getName(), newRule.getUuid());
+        });
 
-            txn.commit();
-            StaticNatRule staticNatRule = new StaticNatRuleImpl(newRule, dstIp);
-
-            return staticNatRule;
-        } catch (Exception e) {
-
-            if (newRule != null) {
-                txn.start();
-                // no need to apply the rule as it wasn't programmed on the backend yet
-                _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
-                _firewallMgr.removeRule(newRule);
-                txn.commit();
-            }
-
-            if (e instanceof NetworkRuleConflictException) {
-                throw (NetworkRuleConflictException) e;
-            }
-            throw new CloudRuntimeException("Unable to add static nat rule for the ip id=" + newRule.getSourceIpAddressId(), e);
-        }
     }
 
     @Override
@@ -1146,23 +1151,25 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
     @Override
     @DB
-    public FirewallRuleVO[] reservePorts(IpAddress ip, String protocol, FirewallRule.Purpose purpose,
-            boolean openFirewall, Account caller, int... ports) throws NetworkRuleConflictException {
-        FirewallRuleVO[] rules = new FirewallRuleVO[ports.length];
+    public FirewallRuleVO[] reservePorts(final IpAddress ip, final String protocol, final FirewallRule.Purpose purpose,
+            final boolean openFirewall, final Account caller, final int... ports) throws NetworkRuleConflictException {
+        final FirewallRuleVO[] rules = new FirewallRuleVO[ports.length];
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        for (int i = 0; i < ports.length; i++) {
-
-            rules[i] = new FirewallRuleVO(null, ip.getId(), ports[i], protocol, ip.getAssociatedWithNetworkId(), ip.getAllocatedToAccountId(), ip.getAllocatedInDomainId(), purpose, null, null, null, null);
-            rules[i] = _firewallDao.persist(rules[i]);
-
-            if (openFirewall) {
-                _firewallMgr.createRuleForAllCidrs(ip.getId(), caller, ports[i], ports[i], protocol, null, null,
-                        rules[i].getId(), ip.getAssociatedWithNetworkId());
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<NetworkRuleConflictException>() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) throws NetworkRuleConflictException {
+                for (int i = 0; i < ports.length; i++) {
+        
+                    rules[i] = new FirewallRuleVO(null, ip.getId(), ports[i], protocol, ip.getAssociatedWithNetworkId(), ip.getAllocatedToAccountId(), ip.getAllocatedInDomainId(), purpose, null, null, null, null);
+                    rules[i] = _firewallDao.persist(rules[i]);
+        
+                    if (openFirewall) {
+                        _firewallMgr.createRuleForAllCidrs(ip.getId(), caller, ports[i], ports[i], protocol, null, null,
+                                rules[i].getId(), ip.getAssociatedWithNetworkId());
+                    }
+                }
             }
-        }
-        txn.commit();
+        });
 
         boolean success = false;
         try {
@@ -1173,12 +1180,14 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             return rules;
         } finally {
             if (!success) {
-                txn.start();
-
-                for (FirewallRuleVO newRule : rules) {
-                    _firewallMgr.removeRule(newRule);
-                }
-                txn.commit();
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        for (FirewallRuleVO newRule : rules) {
+                            _firewallMgr.removeRule(newRule);
+                        }
+                    }
+                });
             }
         }
     }

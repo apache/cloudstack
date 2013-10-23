@@ -255,15 +255,12 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
         }
         
         BaremetalPxeVO vo = new BaremetalPxeVO();
-        Transaction txn = Transaction.currentTxn();
         vo.setHostId(pxeServer.getId());
         vo.setNetworkServiceProviderId(ntwkSvcProvider.getId());
         vo.setPodId(pod.getId());
         vo.setPhysicalNetworkId(pcmd.getPhysicalNetworkId());
         vo.setDeviceType(BaremetalPxeType.PING.toString());
-        txn.start();
         _pxeDao.persist(vo);
-        txn.commit();
         return vo;
     }
 

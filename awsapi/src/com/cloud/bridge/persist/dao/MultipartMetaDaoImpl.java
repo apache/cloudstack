@@ -27,6 +27,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={MultipartMetaDao.class})
@@ -37,7 +38,7 @@ public class MultipartMetaDaoImpl extends GenericDaoBase<MultipartMetaVO, Long> 
         SearchBuilder <MultipartMetaVO> searchByUID = createSearchBuilder();
         searchByUID.and("UploadID", searchByUID.entity().getUploadID(), SearchCriteria.Op.EQ);
         searchByUID.done();
-        Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         try {
             txn.start();
             SearchCriteria<MultipartMetaVO> sc = searchByUID.create();

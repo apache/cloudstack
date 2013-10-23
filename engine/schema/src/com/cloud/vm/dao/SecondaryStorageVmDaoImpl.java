@@ -31,7 +31,7 @@ import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
@@ -105,7 +105,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
     
     @Override
     public boolean remove(Long id) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         SecondaryStorageVmVO proxy = createForUpdate();
         proxy.setPublicIpAddress(null);
@@ -167,7 +167,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
     @Override
     public List<Long> getRunningSecStorageVmListByMsid(SecondaryStorageVm.Role role, long msid) {
     	List<Long> l = new ArrayList<Long>();
-        Transaction txn = Transaction.currentTxn();;
+        TransactionLegacy txn = TransactionLegacy.currentTxn();;
         PreparedStatement pstmt = null;
         try {
         	String sql;
@@ -237,7 +237,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
     public List<Long> listRunningSecStorageOrderByLoad(SecondaryStorageVm.Role role, long zoneId) {
     	
     	List<Long> l = new ArrayList<Long>();
-        Transaction txn = Transaction.currentTxn();;
+        TransactionLegacy txn = TransactionLegacy.currentTxn();;
         PreparedStatement pstmt = null;
         try {
         	String sql;

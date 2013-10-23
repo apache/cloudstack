@@ -35,7 +35,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={DomainDao.class})
@@ -117,7 +117,7 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
     		return null;
     	}
     	
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
     	try {
     		txn.start();
 
@@ -168,7 +168,7 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
         String sql1 = "SELECT * from domain where parent = " + id + " and removed is null";
 
         boolean success = false;
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
         	txn.start();
             DomainVO parentDomain = super.lockRow(domain.getParent(), true);

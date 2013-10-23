@@ -86,6 +86,7 @@ import com.cloud.bridge.util.StringHelper;
 import com.cloud.bridge.util.Triple;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 /**
  * The CRUD control actions to be invoked from S3BucketAction or S3ObjectAction.
@@ -195,7 +196,7 @@ public class S3Engine {
         String cannedAccessPolicy = request.getCannedAccess();
         String bucketName = request.getBucketName();
         response.setBucketName( bucketName );
-        Transaction txn= null;
+        TransactionLegacy txn= null;
         verifyBucketName( bucketName, false );
 
         S3PolicyContext context = new S3PolicyContext( PolicyActions.CreateBucket,  bucketName );
@@ -205,7 +206,7 @@ public class S3Engine {
         OrderedPair<SHostVO, String> shost_storagelocation_pair = null;
         boolean success = false;
         try {
-            txn = Transaction.open(Transaction.AWSAPI_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
 
             if (bucketDao.getByName(request.getBucketName()) != null)
                 throw new ObjectAlreadyExistsException("Bucket already exists");
@@ -257,10 +258,10 @@ public class S3Engine {
         String bucketName = request.getBucketName();
         SBucketVO sbucket   = bucketDao.getByName(bucketName);
 
-        Transaction txn = null;
+        TransactionLegacy txn = null;
         if ( sbucket != null ) 
         {	
-            txn = Transaction.open(Transaction.AWSAPI_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
             txn.start();
             S3PolicyContext context = new S3PolicyContext( PolicyActions.DeleteBucket, bucketName );
             switch( verifyPolicy( context ))
@@ -699,7 +700,7 @@ public class S3Engine {
         if (null != version)
             httpResp.addHeader("x-amz-version-id", version);
         httpResp.flushBuffer();
-        Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         // [C] Re-assemble the object from its uploaded file parts
         try {
             // explicit transaction control to avoid holding transaction during
@@ -752,11 +753,11 @@ public class S3Engine {
         S3BucketAdapter bucketAdapter = getStorageHostBucketAdapter(host_storagelocation_pair.getFirst());
         String itemFileName = object_objectitem_pair.getSecond().getStoredPath();
         InputStream is = null;
-        Transaction txn = null;
+        TransactionLegacy txn = null;
         try {
             // explicit transaction control to avoid holding transaction during file-copy process
 
-            txn = Transaction.open(Transaction.AWSAPI_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
             txn.start();
             is = request.getDataInputStream();
             String md5Checksum = bucketAdapter.saveObject(is, host_storagelocation_pair.getSecond(), bucket.getName(), itemFileName);
@@ -813,11 +814,11 @@ public class S3Engine {
         S3BucketAdapter bucketAdapter =  getStorageHostBucketAdapter(host_storagelocation_pair.getFirst());
         String itemFileName = object_objectitem_pair.getSecond().getStoredPath();
         InputStream is = null;
-        Transaction txn = null;
+        TransactionLegacy txn = null;
         try {
             // explicit transaction control to avoid holding transaction during file-copy process
 
-            txn = Transaction.open(Transaction.AWSAPI_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
             txn.start();
 
             is = request.getInputStream();
@@ -1505,7 +1506,7 @@ public class S3Engine {
         context.setEvalParam( ConditionKeys.Acl, cannedAccessPolicy);
 
         verifyAccess( context, "SBucket", bucket.getId(), SAcl.PERMISSION_WRITE );  // TODO - check this validates plain POSTs
-        Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         txn.start();
 
         // [B] If versioning is off them we over write a null object item
@@ -1554,7 +1555,7 @@ public class S3Engine {
         } 
         else 
         {    
-            Transaction txn1 = Transaction.open(Transaction.AWSAPI_DB);
+            TransactionLegacy txn1 = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
             txn1.start();
             // -> there is no object nor an object item
             object = new SObjectVO();

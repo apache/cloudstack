@@ -34,7 +34,7 @@ import com.cloud.network.security.VmRulesetLogVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={VmRulesetLogDao.class})
@@ -85,7 +85,7 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
         return createOrUpdateUsingMultiInsert(workItems);
     }
     
-    private int executeWithRetryOnDeadlock(Transaction txn, String pstmt,  List<Long> vmIds) throws SQLException {
+    private int executeWithRetryOnDeadlock(TransactionLegacy txn, String pstmt,  List<Long> vmIds) throws SQLException {
 
         int numUpdated = 0;
         final int maxTries = 3;
@@ -120,7 +120,7 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
     }
     
     protected int createOrUpdateUsingMultiInsert(Set<Long> workItems) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
 
         int size = workItems.size();
         int count = 0;
@@ -156,7 +156,7 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
     }
     
     protected int createOrUpdateUsingBatch(Set<Long> workItems) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement stmtInsert = null;
         int [] queryResult = null;
         int count=0;

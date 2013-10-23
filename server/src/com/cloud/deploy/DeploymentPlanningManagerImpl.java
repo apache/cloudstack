@@ -99,6 +99,9 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.DiskProfile;
@@ -540,7 +543,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     }
 
     @DB
-    private boolean checkIfHostFitsPlannerUsage(long hostId, PlannerResourceUsage resourceUsageRequired) {
+    private boolean checkIfHostFitsPlannerUsage(final long hostId, final PlannerResourceUsage resourceUsageRequired) {
         // TODO Auto-generated method stub
         // check if this host has been picked up by some other planner
         // exclusively
@@ -550,7 +553,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
         PlannerHostReservationVO reservationEntry = _plannerHostReserveDao.findByHostId(hostId);
         if (reservationEntry != null) {
-            long id = reservationEntry.getId();
+            final long id = reservationEntry.getId();
             PlannerResourceUsage hostResourceType = reservationEntry.getResourceUsage();
 
             if (hostResourceType != null) {
@@ -562,36 +565,35 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                     return false;
                 }
             } else {
+                final PlannerResourceUsage hostResourceTypeFinal = hostResourceType;
                 // reserve the host for required resourceType
                 // let us lock the reservation entry before updating.
-                final Transaction txn = Transaction.currentTxn();
-
-                try {
-                    txn.start();
-
-                    final PlannerHostReservationVO lockedEntry = _plannerHostReserveDao.lockRow(id, true);
-                    if (lockedEntry == null) {
-                        s_logger.error("Unable to lock the host entry for reservation, host: " + hostId);
-                        return false;
-                    }
-                    // check before updating
-                    if (lockedEntry.getResourceUsage() == null) {
-                        lockedEntry.setResourceUsage(resourceUsageRequired);
-                        _plannerHostReserveDao.persist(lockedEntry);
-                        return true;
-                    } else {
-                        // someone updated it earlier. check if we can still use it
-                        if (lockedEntry.getResourceUsage() == resourceUsageRequired) {
-                            return true;
-                        } else {
-                            s_logger.debug("Cannot use this host for usage: " + resourceUsageRequired
-                                    + ", since this host has been reserved for planner usage : " + hostResourceType);
+                return Transaction.execute(new TransactionCallback<Boolean>() {
+                    @Override
+                    public Boolean doInTransaction(TransactionStatus status) {
+                        final PlannerHostReservationVO lockedEntry = _plannerHostReserveDao.lockRow(id, true);
+                        if (lockedEntry == null) {
+                            s_logger.error("Unable to lock the host entry for reservation, host: " + hostId);
                             return false;
                         }
+                        // check before updating
+                        if (lockedEntry.getResourceUsage() == null) {
+                            lockedEntry.setResourceUsage(resourceUsageRequired);
+                            _plannerHostReserveDao.persist(lockedEntry);
+                            return true;
+                        } else {
+                            // someone updated it earlier. check if we can still use it
+                            if (lockedEntry.getResourceUsage() == resourceUsageRequired) {
+                                return true;
+                            } else {
+                                s_logger.debug("Cannot use this host for usage: " + resourceUsageRequired
+                                        + ", since this host has been reserved for planner usage : " + hostResourceTypeFinal);
+                                return false;
+                            }
+                        }
                     }
-                } finally {
-                    txn.commit();
-                }
+                });
+
             }
 
         }
@@ -600,7 +602,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     }
 
     @DB
-    public boolean checkHostReservationRelease(Long hostId) {
+    public boolean checkHostReservationRelease(final Long hostId) {
 
         if (hostId != null) {
             PlannerHostReservationVO reservationEntry = _plannerHostReserveDao.findByHostId(hostId);
@@ -662,26 +664,26 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                     s_logger.debug("Host has no VMs associated, releasing the planner reservation for host " + hostId);
                 }
 
-                long id = reservationEntry.getId();
-                final Transaction txn = Transaction.currentTxn();
+                final long id = reservationEntry.getId();
 
-                try {
-                    txn.start();
+                return Transaction.execute(new TransactionCallback<Boolean>() {
+                    @Override
+                    public Boolean doInTransaction(TransactionStatus status) {
+                        final PlannerHostReservationVO lockedEntry = _plannerHostReserveDao.lockRow(id, true);
+                        if (lockedEntry == null) {
+                            s_logger.error("Unable to lock the host entry for reservation, host: " + hostId);
+                            return false;
+                        }
+                        // check before updating
+                        if (lockedEntry.getResourceUsage() != null) {
+                            lockedEntry.setResourceUsage(null);
+                            _plannerHostReserveDao.persist(lockedEntry);
+                            return true;
+                        }
 
-                    final PlannerHostReservationVO lockedEntry = _plannerHostReserveDao.lockRow(id, true);
-                    if (lockedEntry == null) {
-                        s_logger.error("Unable to lock the host entry for reservation, host: " + hostId);
                         return false;
                     }
-                    // check before updating
-                    if (lockedEntry.getResourceUsage() != null) {
-                        lockedEntry.setResourceUsage(null);
-                        _plannerHostReserveDao.persist(lockedEntry);
-                        return true;
-                    }
-                } finally {
-                    txn.commit();
-                }
+                });
             }
 
         }
@@ -1251,50 +1253,51 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
     @DB
     @Override
-    public String finalizeReservation(DeployDestination plannedDestination,
-            VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids)
+    public String finalizeReservation(final DeployDestination plannedDestination,
+            final VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids)
             throws InsufficientServerCapacityException, AffinityConflictException {
 
-        VirtualMachine vm = vmProfile.getVirtualMachine();
-        long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
+        final VirtualMachine vm = vmProfile.getVirtualMachine();
+        final long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
 
-        boolean saveReservation = true;
-        final Transaction txn = Transaction.currentTxn();
-        try {
-            txn.start();
-            if (vmGroupCount > 0) {
-                List<Long> groupIds = _affinityGroupVMMapDao.listAffinityGroupIdsByVmId(vm.getId());
-                SearchCriteria<AffinityGroupVO> criteria = _affinityGroupDao.createSearchCriteria();
-                criteria.addAnd("id", SearchCriteria.Op.IN, groupIds.toArray(new Object[groupIds.size()]));
-                List<AffinityGroupVO> groups = _affinityGroupDao.lockRows(criteria, null, true);
+        return Transaction.execute(new TransactionCallback<String>() {
+            @Override
+            public String doInTransaction(TransactionStatus status) {
+                boolean saveReservation = true;
 
-                for (AffinityGroupProcessor processor : _affinityProcessors) {
-                    if (!processor.check(vmProfile, plannedDestination)) {
-                        saveReservation = false;
-                        break;
+                if (vmGroupCount > 0) {
+                    List<Long> groupIds = _affinityGroupVMMapDao.listAffinityGroupIdsByVmId(vm.getId());
+                    SearchCriteria<AffinityGroupVO> criteria = _affinityGroupDao.createSearchCriteria();
+                    criteria.addAnd("id", SearchCriteria.Op.IN, groupIds.toArray(new Object[groupIds.size()]));
+                    List<AffinityGroupVO> groups = _affinityGroupDao.lockRows(criteria, null, true);
+
+                    for (AffinityGroupProcessor processor : _affinityProcessors) {
+                        if (!processor.check(vmProfile, plannedDestination)) {
+                            saveReservation = false;
+                            break;
+                        }
                     }
                 }
-            }
 
-            if (saveReservation) {
-                VMReservationVO vmReservation = new VMReservationVO(vm.getId(), plannedDestination.getDataCenter()
-                        .getId(), plannedDestination.getPod().getId(), plannedDestination.getCluster().getId(),
-                        plannedDestination.getHost().getId());
-                Map<Long, Long> volumeReservationMap = new HashMap<Long, Long>();
+                if (saveReservation) {
+                    VMReservationVO vmReservation = new VMReservationVO(vm.getId(), plannedDestination.getDataCenter()
+                            .getId(), plannedDestination.getPod().getId(), plannedDestination.getCluster().getId(),
+                            plannedDestination.getHost().getId());
+                    Map<Long, Long> volumeReservationMap = new HashMap<Long, Long>();
 
-                if (vm.getHypervisorType() != HypervisorType.BareMetal) {
-                    for (Volume vo : plannedDestination.getStorageForDisks().keySet()) {
-                        volumeReservationMap.put(vo.getId(), plannedDestination.getStorageForDisks().get(vo).getId());
+                    if (vm.getHypervisorType() != HypervisorType.BareMetal) {
+                        for (Volume vo : plannedDestination.getStorageForDisks().keySet()) {
+                            volumeReservationMap.put(vo.getId(), plannedDestination.getStorageForDisks().get(vo).getId());
+                        }
+                        vmReservation.setVolumeReservation(volumeReservationMap);
                     }
-                    vmReservation.setVolumeReservation(volumeReservationMap);
+                    _reservationDao.persist(vmReservation);
+                    return vmReservation.getUuid();
                 }
-                _reservationDao.persist(vmReservation);
-                return vmReservation.getUuid();
+
+                return null;
             }
-        } finally {
-            txn.commit();
-        }
-        return null;
+        });
     }
 
     @Override

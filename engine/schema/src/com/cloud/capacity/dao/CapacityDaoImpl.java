@@ -46,7 +46,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -186,7 +186,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     @Override
     public  List<Long> listClustersCrossingThreshold(short capacityType, Long zoneId, String configName, long compute_requested){
 
-         Transaction txn = Transaction.currentTxn();
+         TransactionLegacy txn = TransactionLegacy.currentTxn();
          PreparedStatement pstmt = null;
          List<Long> result = new ArrayList<Long>();         
          StringBuilder sql = new StringBuilder(LIST_CLUSTERS_CROSSING_THRESHOLD);
@@ -241,7 +241,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     @Override
     public  List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId, String resource_state){
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<SummedCapacity> result = new ArrayList<SummedCapacity>();
 
@@ -291,7 +291,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     public  List<SummedCapacity> listCapacitiesGroupedByLevelAndType(Integer capacityType, Long zoneId, Long podId, Long clusterId, int level, Long limit){
 
         StringBuilder finalQuery = new StringBuilder(); 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<SummedCapacity> result = new ArrayList<SummedCapacity>();
 
@@ -378,7 +378,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     @Override
     public  List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId){
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<SummedCapacity> result = new ArrayList<SummedCapacity>();
 
@@ -425,7 +425,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     public void updateAllocated(Long hostId, long allocatedAmount, short capacityType, boolean add) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             txn.start();
@@ -458,7 +458,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     @Override
     public List<Long> listClustersInZoneOrPodByHostCapacities(long id, int requiredCpu, long requiredRam, short capacityTypeForOrdering, boolean isZone){
-    Transaction txn = Transaction.currentTxn();
+    TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
 
@@ -503,7 +503,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     @Override
     public List<Long> listHostsWithEnoughCapacity(int requiredCpu, long requiredRam, Long clusterId, String hostType){
-    Transaction txn = Transaction.currentTxn();
+    TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
 
@@ -599,7 +599,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     @Override
     public List<SummedCapacity> findByClusterPodZone(Long zoneId, Long podId, Long clusterId){
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<SummedCapacity> result = new ArrayList<SummedCapacity>();
 
@@ -711,7 +711,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     @Override
     public Pair<List<Long>, Map<Long, Double>> orderClustersByAggregateCapacity(long id, short capacityTypeForOrdering, boolean isZone){
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
         Map<Long, Double> clusterCapacityMap = new HashMap<Long, Double>();
@@ -764,7 +764,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     @Override
     public List<Long> listPodsByHostCapacities(long zoneId, int requiredCpu, long requiredRam, short capacityType) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
 
@@ -798,7 +798,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     @Override
     public Pair<List<Long>, Map<Long, Double>> orderPodsByAggregateCapacity(long zoneId, short capacityTypeForOrdering) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
         Map<Long, Double> podCapacityMap = new HashMap<Long, Double>();
@@ -840,7 +840,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     @Override
     public void updateCapacityState(Long dcId, Long podId, Long clusterId, Long hostId, String capacityState) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         StringBuilder sql = new StringBuilder(UPDATE_CAPACITY_STATE);
         List<Long> resourceIdList = new ArrayList<Long>();
 

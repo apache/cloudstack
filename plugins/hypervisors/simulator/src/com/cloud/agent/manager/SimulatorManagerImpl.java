@@ -99,7 +99,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
 import org.apache.cloudstack.storage.command.DeleteCommand;
@@ -182,7 +182,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
     @DB
     @Override
     public Answer simulate(Command cmd, String hostGuid) {
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             MockHost host = _mockHost.findByGuid(hostGuid);
             String cmdName = cmd.toString();
@@ -373,7 +373,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
             return new Answer(cmd, false, e.toString());
         } finally {
             txn.close();
-            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             txn.close();
         }
     }
@@ -403,7 +403,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
     @Override
     public boolean configureSimulator(Long zoneId, Long podId, Long clusterId, Long hostId, String command,
             String values) {
-        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
             MockConfigurationVO config = _mockConfigDao.findByCommand(zoneId, podId, clusterId, hostId, command);
@@ -427,7 +427,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
             throw new CloudRuntimeException("Unable to configure simulator because of " + ex.getMessage(), ex);
         } finally {
             txn.close();
-            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             txn.close();
         }
         return true;

@@ -28,7 +28,7 @@ import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = VMTemplateDetailsDao.class)
@@ -84,7 +84,7 @@ public class VMTemplateDetailsDaoImpl extends GenericDaoBase<VMTemplateDetailVO,
 
     @Override
     public void persist(long templateId, Map<String, String> details) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         SearchCriteria<VMTemplateDetailVO> sc = TemplateSearch.create();
         sc.setParameters("templateId", templateId);

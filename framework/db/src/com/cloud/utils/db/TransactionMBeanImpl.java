@@ -25,21 +25,21 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.management.StandardMBean;
 
-import com.cloud.utils.db.Transaction.StackElement;
+import com.cloud.utils.db.TransactionLegacy.StackElement;
 
 public class TransactionMBeanImpl extends StandardMBean implements TransactionMBean {
     
-    Map<Long, Transaction> _txns = new ConcurrentHashMap<Long, Transaction>();
+    Map<Long, TransactionLegacy> _txns = new ConcurrentHashMap<Long, TransactionLegacy>();
     
     public TransactionMBeanImpl() {
         super(TransactionMBean.class, false);
     }
     
-    public void addTransaction(Transaction txn) {
+    public void addTransaction(TransactionLegacy txn) {
         _txns.put(txn.getId(), txn);
     }
     
-    public void removeTransaction(Transaction txn) {
+    public void removeTransaction(TransactionLegacy txn) {
         _txns.remove(txn.getId());
     }
     
@@ -53,7 +53,7 @@ public class TransactionMBeanImpl extends StandardMBean implements TransactionMB
         int[] count = new int[2];
         count[0] = 0;
         count[1] = 0;
-        for (Transaction txn : _txns.values()) {
+        for (TransactionLegacy txn : _txns.values()) {
             if (txn.getStack().size() > 0) {
                 count[0]++;
             }
@@ -67,7 +67,7 @@ public class TransactionMBeanImpl extends StandardMBean implements TransactionMB
     @Override
     public List<Map<String, String>> getTransactions() {
         ArrayList<Map<String, String>> txns = new ArrayList<Map<String, String>>();
-        for (Transaction info : _txns.values()) {
+        for (TransactionLegacy info : _txns.values()) {
             txns.add(toMap(info));
         }
         return txns;
@@ -76,7 +76,7 @@ public class TransactionMBeanImpl extends StandardMBean implements TransactionMB
     @Override
     public List<Map<String, String>> getActiveTransactions() {
         ArrayList<Map<String, String>> txns = new ArrayList<Map<String, String>>();
-        for (Transaction txn : _txns.values()) {
+        for (TransactionLegacy txn : _txns.values()) {
             if (txn.getStack().size() > 0 || txn.getCurrentConnection() != null) {
                 txns.add(toMap(txn));
             }
@@ -84,7 +84,7 @@ public class TransactionMBeanImpl extends StandardMBean implements TransactionMB
         return txns;
     }
     
-    protected Map<String, String> toMap(Transaction txn) {
+    protected Map<String, String> toMap(TransactionLegacy txn) {
         Map<String, String> map = new HashMap<String, String>();
         map.put("name", txn.getName());
         map.put("id", Long.toString(txn.getId()));
@@ -103,7 +103,7 @@ public class TransactionMBeanImpl extends StandardMBean implements TransactionMB
     @Override
     public List<Map<String, String>> getTransactionsWithDatabaseConnection() {
         ArrayList<Map<String, String>> txns = new ArrayList<Map<String, String>>();
-        for (Transaction txn : _txns.values()) {
+        for (TransactionLegacy txn : _txns.values()) {
             if (txn.getCurrentConnection() != null) {
                 txns.add(toMap(txn));
             }

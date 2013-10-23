@@ -1,0 +1,63 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements. See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership. The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied. See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+                      http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+                      http://www.springframework.org/schema/context
+                      http://www.springframework.org/schema/context/spring-context-3.0.xsd"
+                      >
+
+    <!--Image formats-->
+    <bean id="ISO" class="org.apache.cloudstack.storage.image.format.ISO" />
+    <bean id="OVA" class="org.apache.cloudstack.storage.image.format.OVA" />
+    <bean id="QCOW2" class="org.apache.cloudstack.storage.image.format.QCOW2" />
+    <bean id="VHD" class="org.apache.cloudstack.storage.image.format.VHD" />
+    <bean id="VHDX" class="org.apache.cloudstack.storage.image.format.VHDX" />
+    <bean id="unknown" class="org.apache.cloudstack.storage.image.format.Unknown" />
+    <bean id="BAREMETAL" class="org.apache.cloudstack.storage.image.format.BAREMETAL" />
+    
+
+    <bean id="objectInDataStoreManagerImpl"
+        class="org.apache.cloudstack.storage.datastore.ObjectInDataStoreManagerImpl" />
+
+    <bean id="dataObjectManagerImpl"
+        class="org.apache.cloudstack.storage.datastore.DataObjectManagerImpl" />
+
+    <bean id="defaultEndPointSelector"
+        class="org.apache.cloudstack.storage.endpoint.DefaultEndPointSelector" />
+
+    <bean id="dataStoreManagerImpl"
+        class="org.apache.cloudstack.storage.datastore.DataStoreManagerImpl"
+        depends-on="dataStoreProviderManager">
+        <property name="primaryStoreMgr" ref="primaryDataStoreProviderMgr" />
+        <property name="imageDataStoreMgr" ref="imageStoreProviderMgr" />
+    </bean>
+
+    <bean id="dataStoreProviderManager"
+        class="org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManagerImpl">
+        <property name="providers">
+            <list />
+        </property>
+    </bean>
+
+</beans>

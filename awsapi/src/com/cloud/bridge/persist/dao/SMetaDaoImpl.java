@@ -28,6 +28,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={SMetaDao.class})
@@ -41,7 +42,7 @@ public class SMetaDaoImpl extends GenericDaoBase<SMetaVO, Long> implements SMeta
 	    SearchByTarget.and("Target", SearchByTarget.entity().getTarget(), SearchCriteria.Op.EQ);
 	    SearchByTarget.and("TargetID", SearchByTarget.entity().getTargetId(), SearchCriteria.Op.EQ);
 	    SearchByTarget.done();
-	    Transaction txn = Transaction.open( Transaction.AWSAPI_DB);
+	    TransactionLegacy txn = TransactionLegacy.open( TransactionLegacy.AWSAPI_DB);
 	    try {
             txn.start();
             SearchCriteria<SMetaVO> sc = SearchByTarget.create();
@@ -71,7 +72,7 @@ public class SMetaDaoImpl extends GenericDaoBase<SMetaVO, Long> implements SMeta
 	    SearchBuilder <SMetaVO> SearchByTarget = createSearchBuilder();
 	    SearchByTarget.and("Target", SearchByTarget.entity().getTarget(), SearchCriteria.Op.EQ);
 	    SearchByTarget.and("TargetID", SearchByTarget.entity().getTargetId(), SearchCriteria.Op.EQ);
-	    Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
 	    try {
 		txn.start();
 		SearchCriteria<SMetaVO> sc = SearchByTarget.create();

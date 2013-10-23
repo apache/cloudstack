@@ -57,7 +57,7 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -220,7 +220,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
         List<Long> l = new ArrayList<Long>();
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
 
         PreparedStatement pstmt = null;
         try {
@@ -438,7 +438,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
      * permittedAccountsStr = permittedAccountsStr.substring(0,
      * permittedAccountsStr.length() - 1); }
      *
-     * Transaction txn = Transaction.currentTxn(); txn.start();
+     * TransactionLegacy txn = TransactionLegacy.currentTxn(); txn.start();
      *
      * Set<Pair<Long, Long>> templateZonePairList = new HashSet<Pair<Long,
      * Long>>(); PreparedStatement pstmt = null; ResultSet rs = null; String sql
@@ -522,7 +522,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
      * permittedAccountsStr = permittedAccountsStr.substring(0,
      * permittedAccountsStr.length()-1); }
      *
-     * Transaction txn = Transaction.currentTxn(); txn.start();
+     * TransactionLegacy txn = TransactionLegacy.currentTxn(); txn.start();
      *
      * // Use LinkedHashSet here to guarantee iteration order Set<Pair<Long,
      * Long>> templateZonePairList = new LinkedHashSet<Pair<Long, Long>>();
@@ -737,7 +737,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     @Override
     @DB
     public long addTemplateToZone(VMTemplateVO tmplt, long zoneId) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         VMTemplateVO tmplt2 = findById(tmplt.getId());
         if (tmplt2 == null) {
@@ -872,7 +872,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     @Override
     @DB
     public boolean remove(Long id) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         VMTemplateVO template = createForUpdate();
         template.setRemoved(new Date());
@@ -907,7 +907,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
      *
      * final String permittedAccountsStr = join(",", permittedAccounts);
      *
-     * final Transaction txn = Transaction.currentTxn(); txn.start();
+     * final TransactionLegacy txn = TransactionLegacy.currentTxn(); txn.start();
      *
      * Set<Pair<Long, Long>> templateZonePairList = new HashSet<Pair<Long,
      * Long>>(); PreparedStatement pstmt = null; ResultSet rs = null; try {

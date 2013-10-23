@@ -98,7 +98,7 @@ public class SequenceFetcher {
                 sql.append(_tg.valueColumnName()).append(" FROM ").append(_tg.table());
                 sql.append(" WHERE ").append(_tg.pkColumnName()).append(" = ? FOR UPDATE");
                 
-                Transaction txn = Transaction.open("Sequence");
+                TransactionLegacy txn = TransactionLegacy.open("Sequence");
                 
                 PreparedStatement selectStmt = txn.prepareStatement(sql.toString());
                 if (_key == null) {

@@ -33,6 +33,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={MultiPartUploadsDao.class})
@@ -42,9 +43,9 @@ public class MultiPartUploadsDaoImpl extends GenericDaoBase<MultiPartUploadsVO, 
     public OrderedPair<String,String> multipartExits( int uploadId ) {
         MultiPartUploadsVO uploadvo = null;
         
-        Transaction txn = null; 
+        TransactionLegacy txn = null; 
         try {
-            txn = Transaction.open(Transaction.AWSAPI_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
             uploadvo = findById(new Long(uploadId));
             if (null != uploadvo)
                 return new OrderedPair<String,String>(uploadvo.getAccessKey(), uploadvo.getNameKey());
@@ -58,9 +59,9 @@ public class MultiPartUploadsDaoImpl extends GenericDaoBase<MultiPartUploadsVO, 
     @Override
     public void deleteUpload(int uploadId) {
         
-        Transaction txn = null; 
+        TransactionLegacy txn = null; 
         try {
-            txn = Transaction.open(Transaction.AWSAPI_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
             remove(new Long(uploadId));
             txn.commit();
         }finally {
@@ -70,10 +71,10 @@ public class MultiPartUploadsDaoImpl extends GenericDaoBase<MultiPartUploadsVO, 
     
     @Override
     public String getAtrributeValue(String attribute, int uploadid) {
-        Transaction txn = null;
+        TransactionLegacy txn = null;
         MultiPartUploadsVO uploadvo = null;
         try {
-            txn = Transaction.open(Transaction.AWSAPI_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
             uploadvo = findById(new Long(uploadid));
             if (null != uploadvo) {
                 if ( attribute.equalsIgnoreCase("AccessKey") )
@@ -105,7 +106,7 @@ public class MultiPartUploadsDaoImpl extends GenericDaoBase<MultiPartUploadsVO, 
        Filter filter = new Filter(MultiPartUploadsVO.class, "nameKey", Boolean.TRUE, null, null);
        filter.addOrderBy(MultiPartUploadsVO.class, "createTime", Boolean.TRUE);
        
-       Transaction txn = Transaction.open("cloudbridge", Transaction.AWSAPI_DB, true);
+       TransactionLegacy txn = TransactionLegacy.open("cloudbridge", TransactionLegacy.AWSAPI_DB, true);
        try {
            txn.start();
            SearchCriteria<MultiPartUploadsVO> sc = byBucket.create();

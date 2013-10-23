@@ -29,7 +29,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = { AlertDao.class })
@@ -116,7 +116,7 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
             return result;
         }
         if (alerts != null && !alerts.isEmpty()) {
-            Transaction txn = Transaction.currentTxn();
+            TransactionLegacy txn = TransactionLegacy.currentTxn();
             txn.start();
             for (AlertVO alert : alerts) {
                 alert = lockRow(alert.getId(), true);
