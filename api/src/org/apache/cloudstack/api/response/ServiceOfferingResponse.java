@@ -17,9 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
-import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -107,13 +105,8 @@ public class ServiceOfferingResponse extends BaseResponse {
     @Param(description = "additional key/value details tied with this service offering", since = "4.2.0")
     private Map<String, String> details;
     
-    @SerializedName(ApiConstants.RESOURCE_TAGS)  @Param(description="the list of resource tags associated with service offering." +
-    		" The resource tags are not used for Volume/VM placement on the specific host.",
-            responseObject = ResourceTagResponse.class, since="4.3")
-    private Set<ResourceTagResponse> resourceTags;
     
     public ServiceOfferingResponse(){
-        resourceTags = new LinkedHashSet<ResourceTagResponse>();
     }
 
     public String getId() {
@@ -295,7 +288,4 @@ public class ServiceOfferingResponse extends BaseResponse {
         this.details = details;
     }
 
-    public void addTag(ResourceTagResponse tag){
-        this.resourceTags.add(tag);
-    }
 }

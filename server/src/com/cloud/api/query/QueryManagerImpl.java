@@ -2390,22 +2390,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Long domainId = cmd.getDomainId();
         Boolean isSystem = cmd.getIsSystem();
         String vmTypeStr = cmd.getSystemVmType();
-        Map<String, String> resourceTags = cmd.getResourceTags();
         
-        SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
-        if (resourceTags != null && !resourceTags.isEmpty()) {
-            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
-            for (int count=0; count < resourceTags.size(); count++) {
-                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
-                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
-                tagSearch.cp();
-            }
-            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
-            sb.groupBy(sb.entity().getId());
-            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
-        }
-        
-        SearchCriteria<ServiceOfferingJoinVO> sc = sb.create();
+        SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
 
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && isSystem) {
             throw new InvalidParameterValueException("Only ROOT admins can access system's offering");
@@ -2514,17 +2500,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (vmTypeStr != null) {
             sc.addAnd("vm_type", SearchCriteria.Op.EQ, vmTypeStr);
-        }
-        
-        
-        if (resourceTags != null && !resourceTags.isEmpty()) {
-            int count = 0;
-            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.ServiceOffering.toString());
-            for (String key : resourceTags.keySet()) {
-                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
-                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), resourceTags.get(key));
-                count++;
-            }
         }
 
         return _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
