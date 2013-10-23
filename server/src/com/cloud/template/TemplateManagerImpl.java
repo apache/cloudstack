@@ -1707,6 +1707,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return stores;
     }
 
+
     @Override
     public VMTemplateVO updateTemplate(UpdateIsoCmd cmd) {
         return updateTemplateOrIso(cmd);

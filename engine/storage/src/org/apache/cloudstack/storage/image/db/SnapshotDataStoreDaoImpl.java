@@ -263,4 +263,12 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     }
 
+    @Override
+    public List<SnapshotDataStoreVO> listOnCache(long snapshotId) {
+        SearchCriteria<SnapshotDataStoreVO> sc = storeSnapshotSearch.create();
+        sc.setParameters("snapshot_id", snapshotId);
+        sc.setParameters("store_role", DataStoreRole.ImageCache);
+        return search(sc, null);
+    }
+
 }

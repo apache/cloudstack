@@ -43,4 +43,6 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
     List<SnapshotDataStoreVO> findBySnapshotId(long snapshotId);
 
     void duplicateCacheRecordsOnRegionStore(long storeId);
+
+    List<SnapshotDataStoreVO> listOnCache(long snapshotId);
 }

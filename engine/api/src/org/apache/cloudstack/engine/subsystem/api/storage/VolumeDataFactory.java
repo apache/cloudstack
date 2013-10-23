@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import java.util.List;
+
 import com.cloud.storage.DataStoreRole;
 
 public interface VolumeDataFactory {
@@ -28,4 +30,6 @@ public interface VolumeDataFactory {
     VolumeInfo getVolume(long volumeId, DataStoreRole storeRole);
 
     VolumeInfo getVolume(long volumeId);
+
+    List<VolumeInfo> listVolumeOnCache(long volumeId);
 }

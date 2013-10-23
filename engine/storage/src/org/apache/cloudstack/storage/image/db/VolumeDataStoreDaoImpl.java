@@ -43,6 +43,7 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     private static final Logger s_logger = Logger.getLogger(VolumeDataStoreDaoImpl.class);
     private SearchBuilder<VolumeDataStoreVO> updateStateSearch;
     private SearchBuilder<VolumeDataStoreVO> volumeSearch;
+    private SearchBuilder<VolumeDataStoreVO> volumeRoleSearch;
     private SearchBuilder<VolumeDataStoreVO> storeSearch;
     private SearchBuilder<VolumeDataStoreVO> cacheSearch;
     private SearchBuilder<VolumeDataStoreVO> storeVolumeSearch;

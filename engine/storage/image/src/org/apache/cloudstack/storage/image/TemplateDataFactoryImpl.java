@@ -18,6 +18,9 @@
  */
 package org.apache.cloudstack.storage.image;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -125,6 +128,19 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
             return null;
         }
 
+    }
+
+    @Override
+    public List<TemplateInfo> listTemplateOnCache(long templateId) {
+        List<TemplateDataStoreVO> cacheTmpls = templateStoreDao.listOnCache(templateId);
+        List<TemplateInfo> tmplObjs = new ArrayList<TemplateInfo>();
+        for (TemplateDataStoreVO cacheTmpl : cacheTmpls) {
+            long storeId = cacheTmpl.getDataStoreId();
+            DataStore store = storeMgr.getDataStore(storeId, DataStoreRole.ImageCache);
+            TemplateInfo tmplObj = getTemplate(templateId, store);
+            tmplObjs.add(tmplObj);
+        }
+        return tmplObjs;
     }
 
 }

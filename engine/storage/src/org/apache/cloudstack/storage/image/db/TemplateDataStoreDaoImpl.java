@@ -335,6 +335,14 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     }
 
     @Override
+    public List<TemplateDataStoreVO> listOnCache(long templateId) {
+        SearchCriteria<TemplateDataStoreVO> sc = templateRoleSearch.create();
+        sc.setParameters("template_id", templateId);
+        sc.setParameters("store_role", DataStoreRole.ImageCache);
+        return search(sc, null);
+    }
+
+    @Override
     public List<TemplateDataStoreVO> listByTemplate(long templateId) {
         SearchCriteria<TemplateDataStoreVO> sc = templateSearch.create();
         sc.setParameters("template_id", templateId);
