@@ -238,7 +238,9 @@
                         templates: templatesObj,
                         hypervisors: hypervisorObjs
                     },
-                    customFlag: 'isdynamicallyscalable', // Field determines if custom slider is shown
+                    customHidden: function(args) {
+                        return true;
+                    }
                 });
             },
 

@@ -383,72 +383,20 @@
 
                                     originalValues(formData);
 
-                                    $step.find('input[type=radio]').bind('change', function() {
-                                        var $target = $(this);
-                                        var val = $target.val();
-                                        var item;
-
-                                        $.map(args.data.templates, function(v, k) {
-                                            if (!v) {
-                                                return true;
-                                            }
-                                            
-                                            var target = $.grep(v, function(elem) {
-                                                return elem.id == val;
-                                            });
-
-                                            if (target.length) {
-                                                item = target[0];
-
-                                                return false;
-                                            }
-
-                                            return true;
-                                        });
-
-                                        if (!item) return true;
-
-                                        var custom = item[args.customFlag];
-
-                                        $step.find('.custom-size-label').remove();
-
-                                        if (custom) {
-                                            $target.parent().find('.name')
-                                                .append(
-                                                    $('<span>').addClass('custom-size-label')
-                                                        .append(': ')
-                                                        .append(
-                                                            $('<span>').addClass('custom-disk-size').html(
-                                                                $step.find('.custom-size input[name=size]').val()
-                                                            )
-                                                        )
-                                                        .append(' GB')
-                                                );
-                                            $target.parent().find('.select-desc .desc')
-                                                .append(
-                                                    $('<span>').addClass('custom-size-label')
-                                                        .append(', ')
-                                                        .append(
-                                                            $('<span>').addClass('custom-disk-size').html(
-                                                                $step.find('.custom-size input[name=size]').val()
-                                                            )
-                                                        )
-                                                        .append(' GB')
-                                                );
-                                            $step.find('.section.custom-size').show();
-                                            $step.addClass('custom-disk-size');
-                                            $target.closest('.select-container').scrollTop(
-                                                $target.position().top
-                                            );
-                                        } else {
-                                            $step.find('.section.custom-size').hide();
-                                            $step.removeClass('custom-disk-size');
-                                        }
-
-                                        return true;
+                                    var custom = args.customHidden({
+                                        context: context,
+                                        data: args.data
                                     });
 
-                                    $step.find('input[type=radio]:first').trigger('change');
+                                    $step.find('.custom-size-label').remove();
+
+                                    if (!custom) {
+                                        $step.find('.section.custom-size').show();
+                                        $step.addClass('custom-disk-size');
+                                    } else {
+                                        $step.find('.section.custom-size').hide();
+                                        $step.removeClass('custom-disk-size');
+                                    }
                                 }
                             }
                         };
