@@ -174,7 +174,6 @@
     <module>test</module>
     <module>client</module>
     <module>services</module>
-    <module>tools</module>
   </modules>
 
   <dependencyManagement>
@@ -511,9 +510,7 @@
       </properties>
       <modules>
         <module>developer</module>
-        <!--
         <module>tools</module>
--->
       </modules>
     </profile>
     <profile>

@@ -2470,9 +2470,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if( info.hvtoolsversion != null && !info.hvtoolsversion.isEmpty() ) {
 
             UserVmVO userVm = _userVmDao.findById(vm.getId());
-            _userVmDao.loadDetails(userVm);
-            userVm.setDetail("hypervisortoolsversion",  info.hvtoolsversion);
-            _userVmDao.saveDetails(userVm);
+            if (userVm != null) {
+                _userVmDao.loadDetails(userVm);
+                userVm.setDetail("hypervisortoolsversion",  info.hvtoolsversion);
+                _userVmDao.saveDetails(userVm);
+            }
         }
 
         if (trackExternalChange) {
