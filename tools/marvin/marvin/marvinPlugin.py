@@ -22,6 +22,7 @@ import nose.core
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin import deployDataCenter
 from nose.plugins.base import Plugin
+import time
 
 
 class MarvinPlugin(Plugin):
@@ -121,9 +122,27 @@ class MarvinPlugin(Plugin):
             self.config = config
 
     def beforeTest(self, test):
-        testname = test.__str__().split()[0]
-        self.testclient.identifier = '-'.join([self.identifier, testname])
+        self.testName = test.__str__().split()[0]
+        self.testclient.identifier = '-'.join([self.identifier, self.testName])
         self.logger.name = test.__str__()
+
+    def startTest(self, test):
+        """
+        Currently used to record start time for tests
+        """
+        self.startTime = time.time()
+
+    def stopTest(self, test):
+        """
+        Currently used to record end time for tests
+        """
+        endTime = time.time()
+        if self.startTime is not None:
+            totTime = int(endTime - self.startTime)
+            self.logger.debug(
+                "****TestCaseName: %s; Time Taken: %s Seconds; \
+                StartTime: %s; EndTime: %s****"
+                % (self.testName, str(totTime), self.startTime, endTime))
 
     def _injectClients(self, test):
         self.debug_stream. \
