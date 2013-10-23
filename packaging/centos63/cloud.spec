@@ -486,11 +486,20 @@ if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
     mv %{_sysconfdir}/cloud.rpmsave/agent/agent.properties %{_sysconfdir}/cloud.rpmsave/agent/agent.properties.rpmsave
 fi
 
+%preun usage
+/sbin/service cloudstack-usage stop || true
+if [ "$1" == "0" ] ; then
+    /sbin/chkconfig --del cloudstack-usage > /dev/null 2>&1 || true
+    /sbin/service cloudstack-usage stop > /dev/null 2>&1 || true
+fi
+
 %post usage
 if [ -f "%{_sysconfdir}/%{name}/management/db.properties" ]; then
     echo Replacing db.properties with management server db.properties
     rm -f %{_sysconfdir}/%{name}/usage/db.properties
     ln -s %{_sysconfdir}/%{name}/management/db.properties %{_sysconfdir}/%{name}/usage/db.properties
+    /sbin/chkconfig --add cloudstack-usage > /dev/null 2>&1 || true
+    /sbin/chkconfig --level 345 cloudstack-usage on > /dev/null 2>&1 || true
 fi
 
 #%post awsapi
