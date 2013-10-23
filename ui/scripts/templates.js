@@ -379,6 +379,11 @@
                                                     id: 'TAR',
                                                     description: 'TAR'
                                                 });
+                                            } else if (args.hypervisor == "Hyperv") {
+                                            	items.push({
+                                                    id: 'VHD',
+                                                    description: 'VHD'
+                                                });
                                             }
                                             args.response.success({
                                                 data: items
