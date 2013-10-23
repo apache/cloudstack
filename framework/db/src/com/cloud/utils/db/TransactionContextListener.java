@@ -20,19 +20,19 @@ package com.cloud.utils.db;
 
 import org.apache.cloudstack.managed.context.ManagedContextListener;
 
-public class TransactionContextListener implements ManagedContextListener<Transaction> {
+public class TransactionContextListener implements ManagedContextListener<TransactionLegacy> {
 
     @Override
-    public Transaction onEnterContext(boolean reentry) {
+    public TransactionLegacy onEnterContext(boolean reentry) {
         if ( ! reentry ) {
-            return Transaction.open(Thread.currentThread().getName());
+            return TransactionLegacy.open(Thread.currentThread().getName());
         }
         
         return null;
     }
 
     @Override
-    public void onLeaveContext(Transaction data, boolean reentry) {
+    public void onLeaveContext(TransactionLegacy data, boolean reentry) {
         if ( ! reentry ) {
             data.close();
         }

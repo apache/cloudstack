@@ -28,7 +28,7 @@ public class TransactionContextInterceptor implements MethodInterceptor {
     }
     @Override
     public Object invoke(MethodInvocation m) throws Throwable {
-        Transaction txn = Transaction.open(m.getMethod().getName());
+        TransactionLegacy txn = TransactionLegacy.open(m.getMethod().getName());
         try {
             return m.proceed();
         } finally {
