@@ -311,7 +311,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
 
     private void templateDetailsInitIfNotExist(long id, String name, String value) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement stmt = null;
         PreparedStatement stmtInsert = null;
         boolean insert = false;
@@ -345,7 +345,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     private void initiateXenServerPVDriverVersion() {
         String pvdriverversion = Config.XenPVdriverVersion.getDefaultValue();
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         ResultSet rs1 = null;
         ResultSet rs2 = null;
