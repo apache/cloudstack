@@ -61,9 +61,11 @@ class cloudConnection(object):
                        % (self.protocol, self.mgtSvr, self.port, self.path)
 
     def __copy__(self):
-        return cloudConnection(self.mgtSvr, self.port, self.user, self.passwd,
-                               self.apiKey, self.securityKey,
-                               self.asyncTimeout, self.logging, self.protocol,
+        return cloudConnection(self.mgtSvr, self.port, self.user,
+                               self.passwd, self.apiKey,
+                               self.securityKey,
+                               self.asyncTimeout, self.logging,
+                               self.protocol,
                                self.path)
 
     def loglevel(self, lvl=logging.WARNING):
@@ -85,7 +87,7 @@ class cloudConnection(object):
         timeout = self.asyncTimeout
 
         while timeout > 0:
-            asyncResonse = self.marvin_request(cmd, response_type=response)
+            asyncResonse = self.marvinRequest(cmd, response_type=response)
 
             if asyncResonse.jobstatus == 2:
                 raise cloudstackException.cloudstackAPIException(
@@ -144,14 +146,17 @@ class cloudConnection(object):
             payload["signature"] = signature
 
         try:
-        #https_flag : whether https enabled or not
-        #cert_path  : ca and cert paths of the https connection
+            #https_flag : Signifies whether to verify connection over \
+            #http or https, \
+            #initialized to False, will be set to true if user provided https
+            #connection
             https_flag = False
             cert_path = ()
             if self.protocol == "https":
                 https_flag = True
                 if self.certCAPath != "NA" and self.certPath != "NA":
                     cert_path = (self.certCAPath, self.certPath)
+
             #Verify whether protocol is "http", then call the request over http
             if self.protocol == "http":
                 if method == 'POST':
@@ -161,12 +166,15 @@ class cloudConnection(object):
                     response = requests.get(self.baseurl, params=payload,
                                             verify=https_flag)
             else:
-                exception_check = False
-                exception_info = None
-                #use user provided CA certs for request
+                '''
+                If protocol is https, then create the  connection url with \
+                user provided certificates \
+                provided as part of cert
+                '''
                 try:
                     if method == 'POST':
-                        response = requests.post(self.baseurl, params=payload,
+                        response = requests.post(self.baseurl,
+                                                 params=payload,
                                                  cert=cert_path,
                                                  verify=https_flag)
                     else:
@@ -174,37 +182,42 @@ class cloudConnection(object):
                                                 cert=cert_path,
                                                 verify=https_flag)
                 except Exception, e:
-                    # attempt a connection using default certs
-                    self.logging.debug("connection failed using provided certs"
-                                       " because of %s" % e)
-                    exception_check = True
-                    exception_info = e
+                    '''
+                    If an exception occurs with user provided CA certs, \
+                    then try with default certs, \
+                    we dont need to mention here the cert path
+                    '''
+                    self.logging.debug("Creating CS connection over https \
+                                        didnt worked with user provided certs \
+                                            , so trying with no certs %s" % e)
                     if method == 'POST':
-                        response = requests.post(self.baseurl, params=payload,
+                        response = requests.post(self.baseurl,
+                                                 params=payload,
                                                  verify=https_flag)
                     else:
-                        response = requests.get(self.baseurl, params=payload,
+                        response = requests.get(self.baseurl,
+                                                params=payload,
                                                 verify=https_flag)
-                finally:
-                    if exception_check and exception_info is not None:
-                        raise exception_info
         except ConnectionError, c:
-            self.logging.debug("Connection refused."
-                               " Reason: %s : %s" % (self.baseurl, c))
+            self.logging.debug("Connection refused. Reason: %s : %s"
+                               % (self.baseurl, c))
             raise c
         except HTTPError, h:
-            self.logging.debug("Server returned error code: %s" % h)
+            self.logging.debug("Http Error.Server returned error code: %s" % h)
             raise h
         except Timeout, t:
             self.logging.debug("Connection timed out with %s" % t)
             raise t
         except RequestException, r:
-            self.logging.debug("Error returned by server %s" % r)
+            self.logging.debug("RequestException from server %s" % r)
             raise r
+        except Exception, e:
+            self.logging.debug("Error returned by server %s" % r)
+            raise e
         else:
             return response
 
-    def sanitize_command(self, cmd):
+    def sanitizeCommand(self, cmd):
         """
         Removes None values, Validates all required params are present
         @param cmd: Cmd object eg: createPhysicalNetwork
@@ -242,9 +255,9 @@ class cloudConnection(object):
                             for k, v in val.iteritems():
                                 requests["%s[%d].%s" % (param, i, k)] = v
                             i = i + 1
-        return cmdname, isAsync, requests
+        return cmdname.strip(), isAsync, requests
 
-    def marvin_request(self, cmd, response_type=None, method='GET', data=''):
+    def marvinRequest(self, cmd, response_type=None, method='GET', data=''):
         """
         Requester for marvin command objects
         @param cmd: marvin's command from cloudstackAPI
@@ -252,11 +265,13 @@ class cloudConnection(object):
         @param method: HTTP GET/POST, defaults to GET
         @return:
         """
-        cmdname, isAsync, payload = self.sanitize_command(cmd)
+        cmdname, isAsync, payload = self.sanitizeCommand(cmd)
         self.logging.debug("sending %s request: %s %s" % (method, cmdname,
                                                           str(payload)))
-        response = self.request(
-            cmdname, self.auth, payload=payload, method=method)
+        response = self.request(cmdname,
+                                self.auth,
+                                payload=payload,
+                                method=method)
         self.logging.debug("Request: %s Response: %s" %
                            (response.url, response.text))
         try:

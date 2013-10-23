@@ -32,8 +32,12 @@ class deployDataCenters(object):
         if not path.exists(cfgFile) \
            and not path.exists(path.abspath(cfgFile)):
             raise IOError("config file %s not found. please \
-                            specify a valid config file" % cfgFile)
+                           specify a valid config file" % cfgFile)
         self.configFile = cfgFile
+        '''
+        parsed configuration information
+        '''
+        self.config = None
 
     def addHosts(self, hosts, zoneId, podId, clusterId, hypervisor):
         if hosts is None:
@@ -515,7 +519,10 @@ class deployDataCenters(object):
             raise cloudstackException.InvalidParameterException(
                 "Failed to load config %s" % self.configFile)
 
+        ''' Retrieving Management Server Connection Details '''
         mgtDetails = self.config.mgtSvr[0]
+        ''' Retrieving Database Connection Details'''
+        dbSvrDetails = self.config.dbSvr
         loggers = self.config.logger
         testClientLogFile = None
         self.testCaseLogFile = None
@@ -541,20 +548,20 @@ class deployDataCenters(object):
         self.testClientLogger = testClientLogger
 
         self.testClient = \
-            cloudstackTestClient.cloudstackTestClient(
-                mgtDetails, logging=self.testClientLogger)
+            cloudstackTestClient.\
+            cloudstackTestClient(mgtDetails,
+                                 dbSvrDetails,
+                                 logging=self.testClientLogger)
 
         if mgtDetails.apiKey is None:
             mgtDetails.apiKey, mgtDetails.securityKey = self.registerApiKey()
             mgtDetails.port = 8080
-            self.testClient = cloudstackTestClient.cloudstackTestClient(
-                mgtDetails, logging=self.testClientLogger)
-
-        """config database"""
-        dbSvr = self.config.dbSvr
-        if dbSvr is not None:
-            self.testClient.dbConfigure(
-                dbSvr.dbSvr, dbSvr.port, dbSvr.user, dbSvr.passwd, dbSvr.db)
+            self.testClient = \
+                cloudstackTestClient.cloudstackTestClient(
+                    mgtDetails,
+                    dbSvrDetails,
+                    logging=
+                    self.testClientLogger)
 
         self.apiClient = self.testClient.getApiClient()
         """set hypervisor"""
@@ -592,16 +599,13 @@ class deployDataCenters(object):
         self.configureS3(self.config.s3)
 
 if __name__ == "__main__":
-
     parser = OptionParser()
-
     parser.add_option("-i", "--input", action="store",
                       default="./datacenterCfg", dest="input", help="the path \
                       where the json config file generated, by default is \
                       ./datacenterCfg")
 
     (options, args) = parser.parse_args()
-
     deploy = deployDataCenters(options.input)
     deploy.deploy()
 

@@ -222,7 +222,7 @@ class codeGenerator(object):
             body += self.space + self.space
             body += 'response = %sResponse()\n' % cmdName
             body += self.space + self.space
-            body += 'response = self.connection.marvin_request(command,'
+            body += 'response = self.connection.marvinRequest(command,'
             body += ' response_type=response, method=method)\n'
             body += self.space + self.space + 'return response\n'
             body += self.newline
