@@ -17,10 +17,10 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority.Priority;
 import org.junit.Test;
 
@@ -43,22 +43,34 @@ public class StrategyPriorityTest {
         SnapshotStrategy pluginStrategy = mock(SnapshotStrategy.class);
         SnapshotStrategy highestStrategy = mock(SnapshotStrategy.class);
 
-        doReturn(Priority.CANT_HANDLE).when(cantHandleStrategy).canHandle(any(Snapshot.class));
-        doReturn(Priority.DEFAULT).when(defaultStrategy).canHandle(any(Snapshot.class));
-        doReturn(Priority.HYPERVISOR).when(hyperStrategy).canHandle(any(Snapshot.class));
-        doReturn(Priority.PLUGIN).when(pluginStrategy).canHandle(any(Snapshot.class));
-        doReturn(Priority.HIGHEST).when(highestStrategy).canHandle(any(Snapshot.class));
+        doReturn(Priority.CANT_HANDLE).when(cantHandleStrategy).canHandle(any(Snapshot.class), any(SnapshotOperation.class));
+        doReturn(Priority.DEFAULT).when(defaultStrategy).canHandle(any(Snapshot.class), any(SnapshotOperation.class));
+        doReturn(Priority.HYPERVISOR).when(hyperStrategy).canHandle(any(Snapshot.class), any(SnapshotOperation.class));
+        doReturn(Priority.PLUGIN).when(pluginStrategy).canHandle(any(Snapshot.class), any(SnapshotOperation.class));
+        doReturn(Priority.HIGHEST).when(highestStrategy).canHandle(any(Snapshot.class), any(SnapshotOperation.class));
 
         List<SnapshotStrategy> strategies = new ArrayList<SnapshotStrategy>(5);
-        strategies.addAll(Arrays.asList(defaultStrategy, pluginStrategy, hyperStrategy, cantHandleStrategy, highestStrategy));
+        SnapshotStrategy strategy = null;
 
-        StrategyPriority.sortStrategies(strategies, mock(Snapshot.class));
+        strategies.add(cantHandleStrategy);
+        strategy = StrategyPriority.pickStrategy(strategies, mock(Snapshot.class), SnapshotOperation.TAKE);
+        assertEquals("A strategy was found when it shouldn't have been.", null, strategy);
 
-        assertEquals("Highest was not 1st.", highestStrategy, strategies.get(0));
-        assertEquals("Plugin was not 2nd.", pluginStrategy, strategies.get(1));
-        assertEquals("Hypervisor was not 3rd.", hyperStrategy, strategies.get(2));
-        assertEquals("Default was not 4th.", defaultStrategy, strategies.get(3));
-        assertEquals("Can't Handle was not 5th.", cantHandleStrategy, strategies.get(4));
+        strategies.add(defaultStrategy);
+        strategy = StrategyPriority.pickStrategy(strategies, mock(Snapshot.class), SnapshotOperation.TAKE);
+        assertEquals("Default strategy was not picked.", defaultStrategy, strategy);
+
+        strategies.add(hyperStrategy);
+        strategy = StrategyPriority.pickStrategy(strategies, mock(Snapshot.class), SnapshotOperation.TAKE);
+        assertEquals("Hypervisor strategy was not picked.", hyperStrategy, strategy);
+
+        strategies.add(pluginStrategy);
+        strategy = StrategyPriority.pickStrategy(strategies, mock(Snapshot.class), SnapshotOperation.TAKE);
+        assertEquals("Plugin strategy was not picked.", pluginStrategy, strategy);
+
+        strategies.add(highestStrategy);
+        strategy = StrategyPriority.pickStrategy(strategies, mock(Snapshot.class), SnapshotOperation.TAKE);
+        assertEquals("Highest strategy was not picked.", highestStrategy, strategy);
     }
 
     @Test
@@ -76,15 +88,27 @@ public class StrategyPriorityTest {
         doReturn(Priority.HIGHEST).when(highestStrategy).canHandle(any(DataObject.class), any(DataObject.class));
 
         List<DataMotionStrategy> strategies = new ArrayList<DataMotionStrategy>(5);
-        strategies.addAll(Arrays.asList(defaultStrategy, pluginStrategy, hyperStrategy, cantHandleStrategy, highestStrategy));
+        DataMotionStrategy strategy = null;
 
-        StrategyPriority.sortStrategies(strategies, mock(DataObject.class), mock(DataObject.class));
+        strategies.add(cantHandleStrategy);
+        strategy = StrategyPriority.pickStrategy(strategies, mock(DataObject.class), mock(DataObject.class));
+        assertEquals("A strategy was found when it shouldn't have been.", null, strategy);
 
-        assertEquals("Highest was not 1st.", highestStrategy, strategies.get(0));
-        assertEquals("Plugin was not 2nd.", pluginStrategy, strategies.get(1));
-        assertEquals("Hypervisor was not 3rd.", hyperStrategy, strategies.get(2));
-        assertEquals("Default was not 4th.", defaultStrategy, strategies.get(3));
-        assertEquals("Can't Handle was not 5th.", cantHandleStrategy, strategies.get(4));
+        strategies.add(defaultStrategy);
+        strategy = StrategyPriority.pickStrategy(strategies, mock(DataObject.class), mock(DataObject.class));
+        assertEquals("Default strategy was not picked.", defaultStrategy, strategy);
+
+        strategies.add(hyperStrategy);
+        strategy = StrategyPriority.pickStrategy(strategies, mock(DataObject.class), mock(DataObject.class));
+        assertEquals("Hypervisor strategy was not picked.", hyperStrategy, strategy);
+
+        strategies.add(pluginStrategy);
+        strategy = StrategyPriority.pickStrategy(strategies, mock(DataObject.class), mock(DataObject.class));
+        assertEquals("Plugin strategy was not picked.", pluginStrategy, strategy);
+
+        strategies.add(highestStrategy);
+        strategy = StrategyPriority.pickStrategy(strategies, mock(DataObject.class), mock(DataObject.class));
+        assertEquals("Highest strategy was not picked.", highestStrategy, strategy);
     }
 
     @Test
@@ -103,14 +127,26 @@ public class StrategyPriorityTest {
         doReturn(Priority.HIGHEST).when(highestStrategy).canHandle(any(Map.class), any(Host.class), any(Host.class));
 
         List<DataMotionStrategy> strategies = new ArrayList<DataMotionStrategy>(5);
-        strategies.addAll(Arrays.asList(defaultStrategy, pluginStrategy, hyperStrategy, cantHandleStrategy, highestStrategy));
+        DataMotionStrategy strategy = null;
 
-        StrategyPriority.sortStrategies(strategies, mock(Map.class), mock(Host.class), mock(Host.class));
+        strategies.add(cantHandleStrategy);
+        strategy = StrategyPriority.pickStrategy(strategies, mock(Map.class), mock(Host.class), mock(Host.class));
+        assertEquals("A strategy was found when it shouldn't have been.", null, strategy);
 
-        assertEquals("Highest was not 1st.", highestStrategy, strategies.get(0));
-        assertEquals("Plugin was not 2nd.", pluginStrategy, strategies.get(1));
-        assertEquals("Hypervisor was not 3rd.", hyperStrategy, strategies.get(2));
-        assertEquals("Default was not 4th.", defaultStrategy, strategies.get(3));
-        assertEquals("Can't Handle was not 5th.", cantHandleStrategy, strategies.get(4));
+        strategies.add(defaultStrategy);
+        strategy = StrategyPriority.pickStrategy(strategies, mock(Map.class), mock(Host.class), mock(Host.class));
+        assertEquals("Default strategy was not picked.", defaultStrategy, strategy);
+
+        strategies.add(hyperStrategy);
+        strategy = StrategyPriority.pickStrategy(strategies, mock(Map.class), mock(Host.class), mock(Host.class));
+        assertEquals("Hypervisor strategy was not picked.", hyperStrategy, strategy);
+
+        strategies.add(pluginStrategy);
+        strategy = StrategyPriority.pickStrategy(strategies, mock(Map.class), mock(Host.class), mock(Host.class));
+        assertEquals("Plugin strategy was not picked.", pluginStrategy, strategy);
+
+        strategies.add(highestStrategy);
+        strategy = StrategyPriority.pickStrategy(strategies, mock(Map.class), mock(Host.class), mock(Host.class));
+        assertEquals("Highest strategy was not picked.", highestStrategy, strategy);
     }
 }

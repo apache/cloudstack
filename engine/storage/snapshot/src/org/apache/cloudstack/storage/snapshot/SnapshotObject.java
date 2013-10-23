@@ -19,16 +19,18 @@
 package org.apache.cloudstack.storage.snapshot;
 
 import java.util.Date;
+import java.util.List;
 
 import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -37,6 +39,7 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -72,6 +75,8 @@ public class SnapshotObject implements SnapshotInfo {
     ObjectInDataStoreManager objectInStoreMgr;
     @Inject
     SnapshotDataStoreDao snapshotStoreDao;
+    @Inject
+    List<SnapshotStrategy> snapshotStrategies;
 
     public SnapshotObject() {
 
@@ -120,6 +125,16 @@ public class SnapshotObject implements SnapshotInfo {
             return null;
         }
         return snapshotFactory.getSnapshot(vo.getId(), store);
+    }
+
+    @Override
+    public boolean isRevertable() {
+        SnapshotStrategy snapshotStrategy = StrategyPriority.pickStrategy(snapshotStrategies, snapshot, SnapshotOperation.REVERT);
+        if (snapshotStrategy != null) {
+            return true;
+        }
+
+        return false;
     }
 
     @Override
@@ -268,18 +283,18 @@ public class SnapshotObject implements SnapshotInfo {
                     snapshotStore.setParentSnapshotId(0L);
                 }
                 snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
-                
+
                 // update side-effect of snapshot operation
                 if(snapshotTO.getVolume() != null && snapshotTO.getVolume().getPath() != null) {
-                	VolumeVO vol = volumeDao.findByUuid(snapshotTO.getVolume().getUuid());
-                	if(vol != null) {
-	                	s_logger.info("Update volume path change due to snapshot operation, volume " + vol.getId() + " path: "
-	                		+ vol.getPath() + "->" + snapshotTO.getVolume().getPath());
-	                	vol.setPath(snapshotTO.getVolume().getPath());
-	                	volumeDao.update(vol.getId(), vol);
-                	} else {
-                		s_logger.error("Cound't find the original volume with uuid: " + snapshotTO.getVolume().getUuid());
-                	}
+                    VolumeVO vol = volumeDao.findByUuid(snapshotTO.getVolume().getUuid());
+                    if(vol != null) {
+                        s_logger.info("Update volume path change due to snapshot operation, volume " + vol.getId() + " path: "
+                                + vol.getPath() + "->" + snapshotTO.getVolume().getPath());
+                        vol.setPath(snapshotTO.getVolume().getPath());
+                        volumeDao.update(vol.getId(), vol);
+                    } else {
+                        s_logger.error("Cound't find the original volume with uuid: " + snapshotTO.getVolume().getUuid());
+                    }
                 }
             } else {
                 throw new CloudRuntimeException("Unknown answer: " + answer.getClass());

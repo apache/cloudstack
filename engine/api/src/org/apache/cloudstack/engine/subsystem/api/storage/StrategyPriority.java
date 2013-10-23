@@ -16,10 +16,10 @@
 // under the License.
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
 
 import com.cloud.host.Host;
 import com.cloud.storage.Snapshot;
@@ -33,67 +33,49 @@ public class StrategyPriority {
         HIGHEST
     }
 
-    public static void sortStrategies(List<SnapshotStrategy> strategies, Snapshot snapshot) {
-        Collections.sort(strategies, new SnapshotStrategyComparator(snapshot));
+    public static SnapshotStrategy pickStrategy(List<SnapshotStrategy> strategies, Snapshot snapshot, SnapshotOperation op) {
+        Priority highestPriority = Priority.CANT_HANDLE;
+        SnapshotStrategy strategyToUse = null;
+
+        for (SnapshotStrategy strategy : strategies) {
+            Priority priority = strategy.canHandle(snapshot, op);
+            if (priority.ordinal() > highestPriority.ordinal()) {
+                highestPriority = priority;
+                strategyToUse = strategy;
+            }
+        }
+
+        return strategyToUse;
     }
 
-    public static void sortStrategies(List<DataMotionStrategy> strategies, DataObject srcData, DataObject destData) {
-        Collections.sort(strategies, new DataMotionStrategyComparator(srcData, destData));
+    // TODO DRY this out by consolidating methods
+    public static DataMotionStrategy pickStrategy(List<DataMotionStrategy> strategies, DataObject srcData, DataObject destData) {
+        Priority highestPriority = Priority.CANT_HANDLE;
+        DataMotionStrategy strategyToUse = null;
+
+        for (DataMotionStrategy strategy : strategies) {
+            Priority priority = strategy.canHandle(srcData, destData);
+            if (priority.ordinal() > highestPriority.ordinal()) {
+                highestPriority = priority;
+                strategyToUse = strategy;
+            }
+        }
+
+        return strategyToUse;
     }
 
-    public static void sortStrategies(List<DataMotionStrategy> strategies, Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
-        Collections.sort(strategies, new DataMotionStrategyHostComparator(volumeMap, srcHost, destHost));
-    }
+    public static DataMotionStrategy pickStrategy(List<DataMotionStrategy> strategies, Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
+        Priority highestPriority = Priority.CANT_HANDLE;
+        DataMotionStrategy strategyToUse = null;
 
-    static class SnapshotStrategyComparator implements Comparator<SnapshotStrategy> {
-
-        Snapshot snapshot;
-
-        public SnapshotStrategyComparator(Snapshot snapshot) {
-            this.snapshot = snapshot;
+        for (DataMotionStrategy strategy : strategies) {
+            Priority priority = strategy.canHandle(volumeMap, srcHost, destHost);
+            if (priority.ordinal() > highestPriority.ordinal()) {
+                highestPriority = priority;
+                strategyToUse = strategy;
+            }
         }
 
-        @Override
-        public int compare(SnapshotStrategy o1, SnapshotStrategy o2) {
-            int i1 = o1.canHandle(snapshot).ordinal();
-            int i2 = o2.canHandle(snapshot).ordinal();
-            return Integer.compare(i2, i1);
-        }
-    }
-
-    static class DataMotionStrategyComparator implements Comparator<DataMotionStrategy> {
-
-        DataObject srcData, destData;
-
-        public DataMotionStrategyComparator(DataObject srcData, DataObject destData) {
-            this.srcData = srcData;
-            this.destData = destData;
-        }
-
-        @Override
-        public int compare(DataMotionStrategy o1, DataMotionStrategy o2) {
-            int i1 = o1.canHandle(srcData, destData).ordinal();
-            int i2 = o2.canHandle(srcData, destData).ordinal();
-            return Integer.compare(i2, i1);
-        }
-    }
-
-    static class DataMotionStrategyHostComparator implements Comparator<DataMotionStrategy> {
-
-        Host srcHost, destHost;
-        Map<VolumeInfo, DataStore> volumeMap;
-
-        public DataMotionStrategyHostComparator(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
-            this.volumeMap = volumeMap;
-            this.srcHost = srcHost;
-            this.destHost = destHost;
-        }
-
-        @Override
-        public int compare(DataMotionStrategy o1, DataMotionStrategy o2) {
-            int i1 = o1.canHandle(volumeMap, srcHost, destHost).ordinal();
-            int i2 = o2.canHandle(volumeMap, srcHost, destHost).ordinal();
-            return Integer.compare(i2, i1);
-        }
+        return strategyToUse;
     }
 }

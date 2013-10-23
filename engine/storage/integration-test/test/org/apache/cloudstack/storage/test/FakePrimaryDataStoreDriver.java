@@ -18,8 +18,8 @@
  */
 package org.apache.cloudstack.storage.test;
 
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
+import java.util.UUID;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -33,7 +33,8 @@ import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 
-import java.util.UUID;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
 
 public class FakePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     boolean snapshotResult = true;

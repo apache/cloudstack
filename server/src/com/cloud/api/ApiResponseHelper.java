@@ -31,8 +31,6 @@ import java.util.TimeZone;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -134,6 +132,8 @@ import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
@@ -144,6 +144,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
+import org.apache.log4j.Logger;
 
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
@@ -257,6 +258,7 @@ import com.cloud.server.Criteria;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
@@ -281,6 +283,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
@@ -312,6 +315,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     protected AsyncJobManager _jobMgr;
     @Inject
     ConfigurationManager _configMgr;
+    @Inject
+    SnapshotDataFactory snapshotfactory;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -446,6 +451,19 @@ public class ApiResponseHelper implements ResponseGenerator {
         snapshotResponse.setName(snapshot.getName());
         snapshotResponse.setIntervalType(ApiDBUtils.getSnapshotIntervalTypes(snapshot.getId()));
         snapshotResponse.setState(snapshot.getState());
+
+        SnapshotInfo snapshotInfo = null;
+        if (!(snapshot instanceof SnapshotInfo)) {
+            snapshotInfo = snapshotfactory.getSnapshot(snapshot.getId(), DataStoreRole.Image);
+        } else {
+            snapshotInfo = (SnapshotInfo)snapshot;
+        }
+
+        if (snapshotInfo == null) {
+            throw new CloudRuntimeException("Unable to find info for image store snapshot with uuid '"+snapshot.getUuid()+"'");
+        }
+
+        snapshotResponse.setRevertable(snapshotInfo.isRevertable());
 
         // set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.Snapshot, snapshot.getId());
