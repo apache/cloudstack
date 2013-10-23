@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 @APICommand(name = "deleteTags", description = "Deleting resource tag(s)", responseObject = SuccessResponse.class, since = "4.0.0")
 public class DeleteTagsCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(DeleteTagsCmd.class.getName());
@@ -59,7 +59,7 @@ public class DeleteTagsCmd extends BaseAsyncCmd{
     /////////////////////////////////////////////////////
 
 
-    public TaggedResourceType getResourceType(){
+    public ResourceObjectType getResourceType(){
         return _taggedResourceService.getResourceType(resourceType);
     }
 

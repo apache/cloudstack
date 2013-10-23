@@ -64,7 +64,7 @@ public class ResourceTagVO implements ResourceTag {
     
     @Column(name="resource_type")
     @Enumerated(value=EnumType.STRING)
-    private TaggedResourceType resourceType;
+    private ResourceObjectType resourceType;
     
     @Column(name="customer")
     String customer;
@@ -85,7 +85,7 @@ public class ResourceTagVO implements ResourceTag {
      * @param resourceUuid TODO
      */
     public ResourceTagVO(String key, String value, long accountId, long domainId, long resourceId, 
-            TaggedResourceType resourceType, String customer, String resourceUuid) {
+            ResourceObjectType resourceType, String customer, String resourceUuid) {
         super();
         this.key = key;
         this.value = value;
@@ -139,7 +139,7 @@ public class ResourceTagVO implements ResourceTag {
     }
 
     @Override
-    public TaggedResourceType getResourceType() {
+    public ResourceObjectType getResourceType() {
         return resourceType;
     }
 

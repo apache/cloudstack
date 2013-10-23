@@ -40,7 +40,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
@@ -175,7 +175,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
         if (tags != null && !tags.isEmpty()) {
             int count = 0;
-            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.ISO.toString());
+            sc.setJoinParameters("tagSearch", "resourceType", ResourceObjectType.ISO.toString());
             for (String key : tags.keySet()) {
                 sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
                 sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
@@ -880,9 +880,9 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         VMTemplateVO vo = findById(id);
         if (vo != null) {
             if (vo.getFormat() == ImageFormat.ISO) {
-                _tagsDao.removeByIdAndType(id, TaggedResourceType.ISO);
+                _tagsDao.removeByIdAndType(id, ResourceObjectType.ISO);
             } else {
-                _tagsDao.removeByIdAndType(id, TaggedResourceType.Template);
+                _tagsDao.removeByIdAndType(id, ResourceObjectType.Template);
             }
         }
 

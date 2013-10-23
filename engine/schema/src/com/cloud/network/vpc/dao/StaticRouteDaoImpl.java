@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteVO;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 
@@ -110,7 +110,7 @@ public class StaticRouteDaoImpl extends GenericDaoBase<StaticRouteVO, Long> impl
         txn.start();
         StaticRouteVO entry = findById(id);
         if (entry != null) {
-            _tagsDao.removeByIdAndType(id, TaggedResourceType.StaticRoute);
+            _tagsDao.removeByIdAndType(id, ResourceObjectType.StaticRoute);
         }
         boolean result = super.remove(id);
         txn.commit();

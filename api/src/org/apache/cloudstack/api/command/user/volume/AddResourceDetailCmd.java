@@ -71,7 +71,7 @@ public class AddResourceDetailCmd extends BaseAsyncCmd {
         return detailsMap;
     }
 
-    public ResourceTag.TaggedResourceType getResourceType() {
+    public ResourceTag.ResourceObjectType getResourceType() {
         return _taggedResourceService.getResourceType(resourceType);
     }
 

@@ -26,7 +26,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -255,7 +255,7 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name="tag_resource_type")
     @Enumerated(value=EnumType.STRING)
-    private TaggedResourceType tagResourceType;
+    private ResourceObjectType tagResourceType;
 
     @Column(name="tag_customer")
     private String tagCustomer;
@@ -649,7 +649,7 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
 
 
 
-    public TaggedResourceType getTagResourceType() {
+    public ResourceObjectType getTagResourceType() {
         return tagResourceType;
     }
 

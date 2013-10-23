@@ -19,7 +19,7 @@ package com.cloud.tags.dao;
 import java.util.List;
 
 import com.cloud.server.ResourceTag;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -30,8 +30,8 @@ public interface ResourceTagDao extends GenericDao<ResourceTagVO, Long>{
      * @param resourceType
      * @return
      */
-    boolean removeByIdAndType(long resourceId, TaggedResourceType resourceType);
+    boolean removeByIdAndType(long resourceId, ResourceObjectType resourceType);
     
-    List<? extends ResourceTag> listBy(long resourceId, TaggedResourceType resourceType);
+    List<? extends ResourceTag> listBy(long resourceId, ResourceObjectType resourceType);
 
 }

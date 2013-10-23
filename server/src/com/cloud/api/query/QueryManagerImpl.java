@@ -155,7 +155,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -2690,7 +2690,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         
         if (resourceTags != null && !resourceTags.isEmpty()) {
             int count = 0;
-            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.Zone.toString());
+            sc.setJoinParameters("tagSearch", "resourceType", ResourceObjectType.Zone.toString());
             for (String key : resourceTags.keySet()) {
                 sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
                 sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), resourceTags.get(key));
@@ -2946,9 +2946,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                     scTag.addAnd("tagKey", SearchCriteria.Op.EQ, key);
                     scTag.addAnd("tagValue", SearchCriteria.Op.EQ, tags.get(key));
                     if (isIso) {
-                        scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, TaggedResourceType.ISO);
+                        scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, ResourceObjectType.ISO);
                     } else {
-                        scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, TaggedResourceType.Template);
+                        scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, ResourceObjectType.Template);
                     }
                     scc.addOr("tagKey", SearchCriteria.Op.SC, scTag);
                     count++;
@@ -3263,39 +3263,39 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     @Override
     public List<ResourceDetailResponse> listResource(ListResourceDetailsCmd cmd) {
         String key = cmd.getKey();
-        ResourceTag.TaggedResourceType resourceType = cmd.getResourceType();
+        ResourceTag.ResourceObjectType resourceType = cmd.getResourceType();
         String resourceId = cmd.getResourceId();
-        Long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
+        long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
         List<ResourceDetailResponse> responseList = new ArrayList<ResourceDetailResponse>();
         List<? extends ResourceDetail> detailList = new ArrayList<ResourceDetail>();
         ResourceDetail requestedDetail = null;
 
         
-        if (resourceType == ResourceTag.TaggedResourceType.Volume) {
+        if (resourceType == ResourceTag.ResourceObjectType.Volume) {
             if (key == null) {
                 detailList = _volumeDetailDao.findDetails(id);
             } else {
                 requestedDetail = _volumeDetailDao.findDetail(id, key);
             }
-        } else if (resourceType == ResourceTag.TaggedResourceType.Nic){
+        } else if (resourceType == ResourceTag.ResourceObjectType.Nic){
             if (key == null) {
                 detailList = _nicDetailDao.findDetails(id);
             } else {
                 requestedDetail = _nicDetailDao.findDetail(id, key);
             }
-        } else if (resourceType == ResourceTag.TaggedResourceType.UserVm){
+        } else if (resourceType == ResourceTag.ResourceObjectType.UserVm){
             if (key == null) {
                 detailList = _userVmDetailDao.findDetailsList(id);
             } else {
                 requestedDetail = _userVmDetailDao.findDetail(id, key);
             }
-        } else if (resourceType == ResourceTag.TaggedResourceType.Zone){
+        } else if (resourceType == ResourceTag.ResourceObjectType.Zone){
             if (key == null) {
                 detailList = _dcDetailsDao.findDetailsList(id);
             } else {
                 requestedDetail = _dcDetailsDao.findDetail(id, key);
             }
-        } else if (resourceType == TaggedResourceType.Network){
+        } else if (resourceType == ResourceObjectType.Network){
             if (key == null) {
                 detailList = _networkDetailsDao.findDetails(id);
             } else {
@@ -3321,7 +3321,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     
-    protected ResourceDetailResponse createResourceDetailsResponse(long resourceId, String key, String value, ResourceTag.TaggedResourceType type) {
+    protected ResourceDetailResponse createResourceDetailsResponse(long resourceId, String key, String value, ResourceTag.ResourceObjectType type) {
         ResourceDetailResponse resourceDetailResponse = new ResourceDetailResponse();
         resourceDetailResponse.setResourceId(String.valueOf(resourceId));
         resourceDetailResponse.setName(key);

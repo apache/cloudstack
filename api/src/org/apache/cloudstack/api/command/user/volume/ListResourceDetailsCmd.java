@@ -55,7 +55,7 @@ public class ListResourceDetailsCmd extends BaseListProjectAndAccountResourcesCm
         this.setResponseObject(response);
     }
 
-    public ResourceTag.TaggedResourceType getResourceType() {
+    public ResourceTag.ResourceObjectType getResourceType() {
         return _taggedResourceService.getResourceType(resourceType);
     }
 

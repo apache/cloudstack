@@ -217,7 +217,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
 import com.cloud.server.ResourceTag;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.StatsCollector;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
@@ -1154,11 +1154,11 @@ public class ApiDBUtils {
         return vmSnapshot;
     }
 
-    public static String getUuid(String resourceId, TaggedResourceType resourceType) {
+    public static String getUuid(String resourceId, ResourceObjectType resourceType) {
         return _taggedResourceService.getUuid(resourceId, resourceType);
     }
 
-    public static List<? extends ResourceTag> listByResourceTypeAndId(TaggedResourceType type, long resourceId) {
+    public static List<? extends ResourceTag> listByResourceTypeAndId(ResourceObjectType type, long resourceId) {
         return _taggedResourceService.listByResourceTypeAndId(type, resourceId);
     }
     public static List<ConditionVO> getAutoScalePolicyConditions(long policyId)
@@ -1689,7 +1689,7 @@ public class ApiDBUtils {
         return _accountService.isAdmin(account.getType());
     }
     
-    public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, TaggedResourceType resourceType){
+    public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType){
         return  _tagJoinDao.listBy(resourceUUID, resourceType);
     }
 }

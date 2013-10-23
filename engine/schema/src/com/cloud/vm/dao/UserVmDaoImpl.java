@@ -34,7 +34,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Resource;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.Account;
@@ -577,7 +577,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     public boolean remove(Long id) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
-        _tagsDao.removeByIdAndType(id, TaggedResourceType.UserVm);
+        _tagsDao.removeByIdAndType(id, ResourceObjectType.UserVm);
         boolean result = super.remove(id);
         txn.commit();
         return result;

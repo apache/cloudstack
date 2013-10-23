@@ -16,14 +16,11 @@
 // under the License.package com.cloud.server;
 
 package com.cloud.server;
-import java.util.List;
 import java.util.Map;
 
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 
 public interface ResourceMetaDataService {
-
-    TaggedResourceType getResourceType (String resourceTypeStr);
 
     /**
      * @param resourceId TODO
@@ -31,7 +28,7 @@ public interface ResourceMetaDataService {
      * @param details
      * @return
      */
-    boolean addResourceMetaData(String resourceId, TaggedResourceType resourceType, Map<String, String> details);
+    boolean addResourceMetaData(String resourceId, ResourceObjectType resourceType, Map<String, String> details);
 
 
     /**
@@ -41,7 +38,7 @@ public interface ResourceMetaDataService {
      * @param key
      * @return
      */
-    public boolean deleteResourceMetaData(String resourceId, TaggedResourceType resourceType, String key);
+    public boolean deleteResourceMetaData(String resourceId, ResourceObjectType resourceType, String key);
 
 
     }
