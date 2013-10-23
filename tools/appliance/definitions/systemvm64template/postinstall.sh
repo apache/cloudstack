@@ -105,7 +105,7 @@ setup_accounts() {
   echo "root:$ROOTPW" | chpasswd
   echo "cloud:`openssl rand -base64 32`" | chpasswd
   sed -i -e '/Defaults\s\+env_reset/a Defaults\texempt_group=admin' /etc/sudoers
-  sed -i -e 's/%admin ALL=(ALL) ALL/%admin ALL=NOPASSWD:ALL/g' /etc/sudoers
+  sed -i -e 's/%admin ALL=(ALL) ALL/%admin ALL=NOPASSWD:/bin/chmod, /bin/cp, /bin/mkdir, /bin/mount, /bin/umount/g' /etc/sudoers
   # Disable password based authentication via ssh, this will take effect on next reboot
   sed -i -e 's/^.*PasswordAuthentication .*$/PasswordAuthentication no/g' /etc/ssh/sshd_config
   # Secure ~/.ssh

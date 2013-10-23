@@ -727,7 +727,7 @@ class sudoersConfig(serviceCfgBase):
     def config(self):
         try:
             cfo = configFileOps("/etc/sudoers", self)
-            cfo.addEntry("cloud ALL ", "NOPASSWD : ALL")
+            cfo.addEntry("cloud ALL ", "NOPASSWD : /bin/chmod, /bin/cp, /bin/mkdir, /bin/mount, /bin/umount")
             cfo.rmEntry("Defaults", "requiretty", " ")
             cfo.save()
             return True
