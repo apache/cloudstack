@@ -27,7 +27,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
-import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority.Priority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -311,11 +310,11 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     @Override
-    public StrategyPriority.Priority canHandle(Snapshot snapshot, SnapshotOperation op) {
+    public StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op) {
         if (op == SnapshotOperation.REVERT) {
-            return Priority.CANT_HANDLE;
+            return StrategyPriority.CANT_HANDLE;
         }
 
-        return Priority.DEFAULT;
+        return StrategyPriority.DEFAULT;
     }
 }

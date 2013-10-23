@@ -142,9 +142,7 @@
 
     <bean id="site2SiteVpnManagerImpl" class="com.cloud.network.vpn.Site2SiteVpnManagerImpl" />
 
-    <bean id="snapshotManagerImpl" class="com.cloud.storage.snapshot.SnapshotManagerImpl" >
-        <property name="snapshotStrategies" value="#{snapshotStrategiesRegistry.registered}" />
-    </bean>
+    <bean id="snapshotManagerImpl" class="com.cloud.storage.snapshot.SnapshotManagerImpl" />
 
     <bean id="snapshotSchedulerImpl" class="com.cloud.storage.snapshot.SnapshotSchedulerImpl" />
     <bean id="storageNetworkManagerImpl" class="com.cloud.network.StorageNetworkManagerImpl" />

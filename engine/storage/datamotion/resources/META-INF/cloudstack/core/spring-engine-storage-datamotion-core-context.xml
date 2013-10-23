@@ -29,7 +29,6 @@
 
     <bean id="dataMotionServiceImpl"
         class="org.apache.cloudstack.storage.motion.DataMotionServiceImpl">
-        <property name="strategies" value="#{dataMotionStrategiesRegistry.registered}" />
     </bean>
 
 </beans>

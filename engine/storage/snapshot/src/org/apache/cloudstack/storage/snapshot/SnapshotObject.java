@@ -31,6 +31,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -76,7 +77,7 @@ public class SnapshotObject implements SnapshotInfo {
     @Inject
     SnapshotDataStoreDao snapshotStoreDao;
     @Inject
-    List<SnapshotStrategy> snapshotStrategies;
+    StorageStrategyFactory storageStrategyFactory;
 
     public SnapshotObject() {
 
@@ -129,7 +130,7 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public boolean isRevertable() {
-        SnapshotStrategy snapshotStrategy = StrategyPriority.pickStrategy(snapshotStrategies, snapshot, SnapshotOperation.REVERT);
+        SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.REVERT);
         if (snapshotStrategy != null) {
             return true;
         }

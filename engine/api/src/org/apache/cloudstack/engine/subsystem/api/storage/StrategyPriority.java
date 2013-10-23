@@ -16,66 +16,10 @@
 // under the License.
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import java.util.List;
-import java.util.Map;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
-
-import com.cloud.host.Host;
-import com.cloud.storage.Snapshot;
-
-public class StrategyPriority {
-    public enum Priority {
-        CANT_HANDLE,
-        DEFAULT,
-        HYPERVISOR,
-        PLUGIN,
-        HIGHEST
-    }
-
-    public static SnapshotStrategy pickStrategy(List<SnapshotStrategy> strategies, Snapshot snapshot, SnapshotOperation op) {
-        Priority highestPriority = Priority.CANT_HANDLE;
-        SnapshotStrategy strategyToUse = null;
-
-        for (SnapshotStrategy strategy : strategies) {
-            Priority priority = strategy.canHandle(snapshot, op);
-            if (priority.ordinal() > highestPriority.ordinal()) {
-                highestPriority = priority;
-                strategyToUse = strategy;
-            }
-        }
-
-        return strategyToUse;
-    }
-
-    // TODO DRY this out by consolidating methods
-    public static DataMotionStrategy pickStrategy(List<DataMotionStrategy> strategies, DataObject srcData, DataObject destData) {
-        Priority highestPriority = Priority.CANT_HANDLE;
-        DataMotionStrategy strategyToUse = null;
-
-        for (DataMotionStrategy strategy : strategies) {
-            Priority priority = strategy.canHandle(srcData, destData);
-            if (priority.ordinal() > highestPriority.ordinal()) {
-                highestPriority = priority;
-                strategyToUse = strategy;
-            }
-        }
-
-        return strategyToUse;
-    }
-
-    public static DataMotionStrategy pickStrategy(List<DataMotionStrategy> strategies, Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
-        Priority highestPriority = Priority.CANT_HANDLE;
-        DataMotionStrategy strategyToUse = null;
-
-        for (DataMotionStrategy strategy : strategies) {
-            Priority priority = strategy.canHandle(volumeMap, srcHost, destHost);
-            if (priority.ordinal() > highestPriority.ordinal()) {
-                highestPriority = priority;
-                strategyToUse = strategy;
-            }
-        }
-
-        return strategyToUse;
-    }
+public enum StrategyPriority {
+    CANT_HANDLE,
+    DEFAULT,
+    HYPERVISOR,
+    PLUGIN,
+    HIGHEST
 }

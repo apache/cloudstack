@@ -42,6 +42,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
@@ -194,7 +197,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     @Inject EndPointSelector _epSelector;
     @Inject
     private ResourceManager _resourceMgr;
-    protected List<SnapshotStrategy> snapshotStrategies;
+    @Inject StorageStrategyFactory _storageStrategyFactory;
 
 
     private int _totalRetries;
@@ -277,7 +280,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             }
         }
 
-        SnapshotStrategy snapshotStrategy = StrategyPriority.pickStrategy(snapshotStrategies, snapshot, SnapshotOperation.REVERT);
+        SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.REVERT);
 
         if (snapshotStrategy == null) {
             s_logger.error("Unable to find snaphot strategy to handle snapshot with id '"+snapshotId+"'");
@@ -506,7 +509,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         }
 
         _accountMgr.checkAccess(caller, null, true, snapshotCheck);
-        SnapshotStrategy snapshotStrategy = StrategyPriority.pickStrategy(snapshotStrategies, snapshotCheck, SnapshotOperation.DELETE);
+        SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshotCheck, SnapshotOperation.DELETE);
         if (snapshotStrategy == null) {
             s_logger.error("Unable to find snaphot strategy to handle snapshot with id '"+snapshotId+"'");
             return false;
@@ -696,7 +699,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             // Either way delete the snapshots for this volume.
             List<SnapshotVO> snapshots = listSnapsforVolume(volumeId);
             for (SnapshotVO snapshot : snapshots) {
-                SnapshotStrategy snapshotStrategy = StrategyPriority.pickStrategy(snapshotStrategies, snapshot, SnapshotOperation.DELETE);
+                SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.DELETE);
                 if (snapshotStrategy == null) {
                     s_logger.error("Unable to find snaphot strategy to handle snapshot with id '"+snapshot.getId()+"'");
                     continue;
@@ -1027,7 +1030,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotId, volume.getDataStore());
 
         try {
-            SnapshotStrategy snapshotStrategy = StrategyPriority.pickStrategy(snapshotStrategies, snapshot, SnapshotOperation.TAKE);
+            SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.TAKE);
 
             if (snapshotStrategy == null) {
                 throw new CloudRuntimeException("Can't find snapshot strategy to deal with snapshot:" + snapshotId);
@@ -1210,12 +1213,4 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         return snapshot;
     }
 
-    public List<SnapshotStrategy> getSnapshotStrategies() {
-        return snapshotStrategies;
-    }
-
-    @Inject
-    public void setSnapshotStrategies(List<SnapshotStrategy> snapshotStrategies) {
-        this.snapshotStrategies = snapshotStrategies;
-    }
 }

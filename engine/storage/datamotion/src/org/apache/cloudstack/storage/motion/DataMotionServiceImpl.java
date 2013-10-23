@@ -30,6 +30,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.springframework.stereotype.Component;
@@ -41,8 +43,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class DataMotionServiceImpl implements DataMotionService {
-
-    List<DataMotionStrategy> strategies;
+    @Inject
+    StorageStrategyFactory storageStrategyFactory;
 
     @Override
     public void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
@@ -58,8 +60,7 @@ public class DataMotionServiceImpl implements DataMotionService {
             return;
         }
 
-        // TODO DRY this out when the overloaded methods are DRYed out
-        DataMotionStrategy strategy = StrategyPriority.pickStrategy(strategies, srcData, destData);
+        DataMotionStrategy strategy = storageStrategyFactory.getDataMotionStrategy(srcData, destData);
         if (strategy == null) {
             throw new CloudRuntimeException("Can't find strategy to move data. "+
                     "Source: "+srcData.getType().name()+" '"+srcData.getUuid()+
@@ -73,8 +74,7 @@ public class DataMotionServiceImpl implements DataMotionService {
     public void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost,
             AsyncCompletionCallback<CopyCommandResult> callback) {
 
-        // TODO DRY this out when the overloaded methods are DRYed out
-        DataMotionStrategy strategy = StrategyPriority.pickStrategy(strategies, volumeMap, srcHost, destHost);
+        DataMotionStrategy strategy = storageStrategyFactory.getDataMotionStrategy(volumeMap, srcHost, destHost);
         if (strategy == null) {
             List<String> volumeIds = new LinkedList<String>();
             for (final VolumeInfo volumeInfo : volumeMap.keySet()) {
@@ -87,14 +87,5 @@ public class DataMotionServiceImpl implements DataMotionService {
         }
 
         strategy.copyAsync(volumeMap, vmTo, srcHost, destHost, callback);
-    }
-
-    @Inject
-    public void setStrategies(List<DataMotionStrategy> strategies) {
-        this.strategies = strategies;
-    }
-
-    public List<DataMotionStrategy> getStrategies() {
-        return strategies;
     }
 }

@@ -18,21 +18,28 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import java.util.Collection;
 import java.util.Map;
 
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
 
-import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
+import com.cloud.storage.Snapshot;
 
-public interface DataMotionStrategy {
-    StrategyPriority canHandle(DataObject srcData, DataObject destData);
+public interface StorageStrategyFactory {
 
-    StrategyPriority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost);
+    Collection<DataMotionStrategy> getDataMotionStrategies(DataObject srcData, DataObject destData);
 
-    Void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback);
+    DataMotionStrategy getDataMotionStrategy(DataObject srcData, DataObject destData);
 
-    Void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost,
-            AsyncCompletionCallback<CopyCommandResult> callback);
+
+    Collection<DataMotionStrategy> getDataMotionStrategies(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost);
+
+    DataMotionStrategy getDataMotionStrategy(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost);
+
+
+    Collection<SnapshotStrategy> getSnapshotStrategies(Snapshot snapshot, SnapshotOperation op);
+
+    SnapshotStrategy getSnapshotStrategy(Snapshot snapshot, SnapshotOperation op); 
 
 }
