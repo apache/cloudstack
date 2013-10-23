@@ -2198,8 +2198,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             String broadcastUri = network.getBroadcastUri().toString();
             response.setBroadcastUri(broadcastUri);
             String vlan = "N/A";
-            if (BroadcastDomainType.Vlan.scheme().equals(BroadcastDomainType.getSchemeValue(network.getBroadcastUri()))) {
-                vlan = BroadcastDomainType.getValue(network.getBroadcastUri());
+            switch (BroadcastDomainType.getSchemeValue(network.getBroadcastUri())){
+                case Vlan:
+                case Vxlan:
+                    vlan = BroadcastDomainType.getValue(network.getBroadcastUri());
+                    break;
             }
             // return vlan information only to Root admin
             response.setVlan(vlan);
