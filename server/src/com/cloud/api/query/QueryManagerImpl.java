@@ -2763,10 +2763,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 ex.addProxyObject(template.getUuid(), "templateId");
                 throw ex;
             }
-            if ((template == null) || ((template.getRemoved() != null) && !showRemovedTmpl)){ // If template is removed and showRemoved flag not turned -> throw exception. findbyId returns removed template as well above.
-                s_logger.error("Please specify a valid template ID, template " + template.getUuid() + " is removed");
-                throw new InvalidParameterValueException("Please specify a valid template ID " + template.getUuid());
-            }
 
             // if template is not public, perform permission check here
             if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
