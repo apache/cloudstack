@@ -22,6 +22,9 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -49,8 +52,6 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
@@ -211,7 +212,8 @@ AncientDataMotionStrategy implements DataMotionStrategy {
                     cacheMgr.deleteCacheObject(srcForCopy);
                 } else {
                     // for template, we want to leave it on cache for performance reason
-                    if (answer == null || !answer.getResult()) {
+                    if ((answer == null || !answer.getResult()) && srcForCopy.getRefCount() < 2) {
+                        // cache object created by this copy, not already there
                         cacheMgr.deleteCacheObject(srcForCopy);
                     } else {
                         cacheMgr.releaseCacheObject(srcForCopy);
@@ -244,6 +246,13 @@ AncientDataMotionStrategy implements DataMotionStrategy {
     protected void deleteSnapshotCacheChain(SnapshotInfo snapshot) {
         while (snapshot != null) {
             cacheMgr.deleteCacheObject(snapshot);
+            snapshot = snapshot.getParent();
+        }
+    }
+
+    protected void releaseSnapshotCacheChain(SnapshotInfo snapshot) {
+        while (snapshot != null) {
+            cacheMgr.releaseCacheObject(snapshot);
             snapshot = snapshot.getParent();
         }
     }
@@ -281,7 +290,8 @@ AncientDataMotionStrategy implements DataMotionStrategy {
             throw new CloudRuntimeException(basicErrMsg);
         } finally {
             if (!(storTO instanceof NfsTO)) {
-                deleteSnapshotCacheChain((SnapshotInfo) srcData);
+                // still keep snapshot on cache which may be migrated from previous secondary storage
+                releaseSnapshotCacheChain((SnapshotInfo)srcData);
             }
         }
     }
@@ -307,7 +317,7 @@ AncientDataMotionStrategy implements DataMotionStrategy {
         if (cacheStore == null) {
             // need to find a nfs or cifs image store, assuming that can't copy volume
             // directly to s3
-            ImageStoreEntity imageStore = (ImageStoreEntity) this.dataStoreMgr.getImageStore(destScope.getScopeId());
+            ImageStoreEntity imageStore = (ImageStoreEntity) dataStoreMgr.getImageStore(destScope.getScopeId());
             if (!imageStore.getProtocol().equalsIgnoreCase("nfs") && !imageStore.getProtocol().equalsIgnoreCase("cifs")) {
                 s_logger.debug("can't find a nfs (or cifs) image store to satisfy the need for a staging store");
                 return null;
@@ -316,7 +326,7 @@ AncientDataMotionStrategy implements DataMotionStrategy {
             DataObject objOnImageStore = imageStore.create(srcData);
             objOnImageStore.processEvent(Event.CreateOnlyRequested);
 
-            Answer answer = this.copyObject(srcData, objOnImageStore);
+            Answer answer = copyObject(srcData, objOnImageStore);
             if (answer == null || !answer.getResult()) {
                 if (answer != null) {
                     s_logger.debug("copy to image store failed: " + answer.getDetails());
@@ -362,7 +372,7 @@ AncientDataMotionStrategy implements DataMotionStrategy {
 
     protected Answer migrateVolumeToPool(DataObject srcData, DataObject destData) {
         VolumeInfo volume = (VolumeInfo)srcData;
-        StoragePool destPool = (StoragePool)this.dataStoreMgr.getDataStore(destData.getDataStore().getId(), DataStoreRole.Primary);
+        StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(destData.getDataStore().getId(), DataStoreRole.Primary);
         MigrateVolumeCommand command = new MigrateVolumeCommand(volume.getId(), volume.getPath(), destPool);
         EndPoint ep = selector.select(volume.getDataStore());
         MigrateVolumeAnswer answer = (MigrateVolumeAnswer) ep.sendMessage(command);
@@ -371,14 +381,14 @@ AncientDataMotionStrategy implements DataMotionStrategy {
             throw new CloudRuntimeException("Failed to migrate volume " + volume + " to storage pool " + destPool);
         } else {
             // Update the volume details after migration.
-            VolumeVO volumeVo = this.volDao.findById(volume.getId());
+            VolumeVO volumeVo = volDao.findById(volume.getId());
             Long oldPoolId = volume.getPoolId();
             volumeVo.setPath(answer.getVolumePath());
             volumeVo.setFolder(destPool.getPath());
             volumeVo.setPodId(destPool.getPodId());
             volumeVo.setPoolId(destPool.getId());
             volumeVo.setLastPoolId(oldPoolId);
-            this.volDao.update(volume.getId(), volumeVo);
+            volDao.update(volume.getId(), volumeVo);
         }
 
         return answer;
@@ -452,7 +462,7 @@ AncientDataMotionStrategy implements DataMotionStrategy {
 
         // clean up snapshot copied to staging
         if (needCache && srcData != null) {
-            cacheMgr.deleteCacheObject(srcData);
+            cacheMgr.releaseCacheObject(srcData);  // reduce ref count, but keep it there on cache which is converted from previous secondary storage
         }
         return answer;
     }

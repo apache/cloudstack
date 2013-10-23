@@ -42,6 +42,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
@@ -129,6 +130,8 @@ public class TemplateServiceImpl implements TemplateService {
     TemplateManager _tmpltMgr;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    StorageCacheManager _cacheMgr;
 
     class TemplateOpContext<T> extends AsyncRpcContext<T> {
         final TemplateObject template;
@@ -670,6 +673,7 @@ public class TemplateServiceImpl implements TemplateService {
                         throw new CloudRuntimeException("sync template from cache to region wide store failed for image store " + store.getName() + ":"
                                 + result.getResult());
                     }
+                    _cacheMgr.releaseCacheObject(srcTemplate); // reduce reference count for template on cache, so it can recycled by schedule
                 } catch (Exception ex) {
                     throw new CloudRuntimeException("sync template from cache to region wide store failed for image store " + store.getName());
                 }
