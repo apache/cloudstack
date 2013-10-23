@@ -369,6 +369,12 @@
             });
         },
 
+        prepareObjectStoreMigration: function($detailView, args) {        	
+            var tab = args.tabs[args.activeTab];
+            var isMultiple = tab.multiple;
+            uiActions.remove($detailView, args);
+        },            
+        
         /**
          * Convert editable fields to text boxes; clicking again saves data
          *
