@@ -19,10 +19,8 @@
 package org.apache.cloudstack.storage.helper;
 
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
 
 import javax.inject.Inject;
 
@@ -30,10 +28,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
 
 import com.cloud.host.Host;
 import com.cloud.storage.Snapshot;
@@ -44,23 +42,8 @@ public class StorageStrategyFactoryImpl implements StorageStrategyFactory {
     List<DataMotionStrategy> dataMotionStrategies;
 
     @Override
-    public DataMotionStrategy getDataMotionStrategy(DataObject srcData, DataObject destData) {
-        return first(getDataMotionStrategies(srcData, destData));
-    }
-
-    @Override
-    public DataMotionStrategy getDataMotionStrategy(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
-        return first(getDataMotionStrategies(volumeMap, srcHost, destHost));
-    }
-
-    @Override
-    public SnapshotStrategy getSnapshotStrategy(Snapshot snapshot, SnapshotOperation op) {
-        return first(getSnapshotStrategies(snapshot, op));
-    }
-
-    @Override
-    public Collection<DataMotionStrategy> getDataMotionStrategies(final DataObject srcData, final DataObject destData) {
-        return sort(dataMotionStrategies, new CanHandle<DataMotionStrategy>() {
+    public DataMotionStrategy getDataMotionStrategy(final DataObject srcData, final DataObject destData) {
+        return bestMatch(dataMotionStrategies, new CanHandle<DataMotionStrategy>() {
             @Override
             public StrategyPriority canHandle(DataMotionStrategy strategy) {
                 return strategy.canHandle(srcData, destData);
@@ -69,8 +52,8 @@ public class StorageStrategyFactoryImpl implements StorageStrategyFactory {
     }
 
     @Override
-    public Collection<DataMotionStrategy> getDataMotionStrategies(final Map<VolumeInfo, DataStore> volumeMap, final Host srcHost, final Host destHost) {
-        return sort(dataMotionStrategies, new CanHandle<DataMotionStrategy>() {
+    public DataMotionStrategy getDataMotionStrategy(final Map<VolumeInfo, DataStore> volumeMap, final Host srcHost, final Host destHost) {
+        return bestMatch(dataMotionStrategies, new CanHandle<DataMotionStrategy>() {
             @Override
             public StrategyPriority canHandle(DataMotionStrategy strategy) {
                 return strategy.canHandle(volumeMap, srcHost, destHost);
@@ -79,8 +62,8 @@ public class StorageStrategyFactoryImpl implements StorageStrategyFactory {
     }
 
     @Override
-    public Collection<SnapshotStrategy> getSnapshotStrategies(final Snapshot snapshot, final SnapshotOperation op) {
-        return sort(snapshotStrategies, new CanHandle<SnapshotStrategy>() {
+    public SnapshotStrategy getSnapshotStrategy(final Snapshot snapshot, final SnapshotOperation op) {
+        return bestMatch(snapshotStrategies, new CanHandle<SnapshotStrategy>() {
             @Override
             public StrategyPriority canHandle(SnapshotStrategy strategy) {
                 return strategy.canHandle(snapshot, op);
@@ -88,30 +71,22 @@ public class StorageStrategyFactoryImpl implements StorageStrategyFactory {
         });
     }
 
-    private static <T> Collection<T> sort(Collection<T> collection, final CanHandle<T> canHandle) {
+    private static <T> T bestMatch(Collection<T> collection, final CanHandle<T> canHandle) {
         if (collection.size() == 0)
             return null;
 
-        TreeSet<T> resultSet = new TreeSet<T>(new Comparator<T>() {
-            @Override
-            public int compare(T o1, T o2) {
-                int i1 = canHandle.canHandle(o1).ordinal();
-                int i2 = canHandle.canHandle(o2).ordinal();
-                return new Integer(i2).compareTo(new Integer(i1));
-            }
-        });
+        StrategyPriority highestPriority = StrategyPriority.CANT_HANDLE;
 
-        for ( T test : collection ) {
-            if ( canHandle.canHandle(test) != StrategyPriority.CANT_HANDLE ) {
-                resultSet.add(test);
+        T strategyToUse = null;
+        for (T strategy : collection) {
+            StrategyPriority priority = canHandle.canHandle(strategy);
+            if (priority.ordinal() > highestPriority.ordinal()) {
+                highestPriority = priority;
+                strategyToUse = strategy;
             }
         }
 
-        return resultSet;
-    }
-    
-    private static <T> T first(Collection<T> resultSet) {
-        return resultSet.size() == 0 ? null : resultSet.iterator().next();
+        return strategyToUse;
     }
     
     private static interface CanHandle<T> {

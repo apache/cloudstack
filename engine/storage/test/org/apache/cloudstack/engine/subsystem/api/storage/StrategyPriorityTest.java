@@ -16,22 +16,22 @@
 // under the License.
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
-
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.storage.helper.StorageStrategyFactoryImpl;
 import org.junit.Test;
 
 import com.cloud.host.Host;
 import com.cloud.storage.Snapshot;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 public class StrategyPriorityTest {
 
@@ -50,17 +50,30 @@ public class StrategyPriorityTest {
         doReturn(StrategyPriority.HIGHEST).when(highestStrategy).canHandle(any(Snapshot.class), any(SnapshotOperation.class));
 
         List<SnapshotStrategy> strategies = new ArrayList<SnapshotStrategy>(5);
-        strategies.addAll(Arrays.asList(defaultStrategy, pluginStrategy, hyperStrategy, cantHandleStrategy, highestStrategy));
+        SnapshotStrategy strategy = null;
 
         StorageStrategyFactoryImpl factory = new StorageStrategyFactoryImpl();
         factory.setSnapshotStrategies(strategies);
-        Iterator<SnapshotStrategy> iter = factory.getSnapshotStrategies(mock(Snapshot.class), SnapshotOperation.TAKE).iterator();
 
-        assertEquals("Highest was not 1st.", highestStrategy, iter.next());
-        assertEquals("Plugin was not 2nd.", pluginStrategy, iter.next());
-        assertEquals("Hypervisor was not 3rd.", hyperStrategy, iter.next());
-        assertEquals("Default was not 4th.", defaultStrategy, iter.next());
-        assertTrue("Can't Handle was not 5th.", !iter.hasNext());
+        strategies.add(cantHandleStrategy);
+        strategy = factory.getSnapshotStrategy(mock(Snapshot.class), SnapshotOperation.TAKE);
+        assertEquals("A strategy was found when it shouldn't have been.", null, strategy);
+
+        strategies.add(defaultStrategy);
+        strategy = factory.getSnapshotStrategy(mock(Snapshot.class), SnapshotOperation.TAKE);
+        assertEquals("Default strategy was not picked.", defaultStrategy, strategy);
+
+        strategies.add(hyperStrategy);
+        strategy = factory.getSnapshotStrategy(mock(Snapshot.class), SnapshotOperation.TAKE);
+        assertEquals("Hypervisor strategy was not picked.", hyperStrategy, strategy);
+
+        strategies.add(pluginStrategy);
+        strategy = factory.getSnapshotStrategy(mock(Snapshot.class), SnapshotOperation.TAKE);
+        assertEquals("Plugin strategy was not picked.", pluginStrategy, strategy);
+
+        strategies.add(highestStrategy);
+        strategy = factory.getSnapshotStrategy(mock(Snapshot.class), SnapshotOperation.TAKE);
+        assertEquals("Highest strategy was not picked.", highestStrategy, strategy);
     }
 
     @Test
@@ -78,17 +91,30 @@ public class StrategyPriorityTest {
         doReturn(StrategyPriority.HIGHEST).when(highestStrategy).canHandle(any(DataObject.class), any(DataObject.class));
 
         List<DataMotionStrategy> strategies = new ArrayList<DataMotionStrategy>(5);
-        strategies.addAll(Arrays.asList(defaultStrategy, pluginStrategy, hyperStrategy, cantHandleStrategy, highestStrategy));
+        DataMotionStrategy strategy = null;
 
         StorageStrategyFactoryImpl factory = new StorageStrategyFactoryImpl();
         factory.setDataMotionStrategies(strategies);
-        Iterator<DataMotionStrategy> iter = factory.getDataMotionStrategies(mock(DataObject.class), mock(DataObject.class)).iterator();
 
-        assertEquals("Highest was not 1st.", highestStrategy, iter.next());
-        assertEquals("Plugin was not 2nd.", pluginStrategy, iter.next());
-        assertEquals("Hypervisor was not 3rd.", hyperStrategy, iter.next());
-        assertEquals("Default was not 4th.", defaultStrategy, iter.next());
-        assertTrue("Can't Handle was not 5th.", !iter.hasNext());
+        strategies.add(cantHandleStrategy);
+        strategy = factory.getDataMotionStrategy(mock(DataObject.class), mock(DataObject.class));
+        assertEquals("A strategy was found when it shouldn't have been.", null, strategy);
+
+        strategies.add(defaultStrategy);
+        strategy = factory.getDataMotionStrategy(mock(DataObject.class), mock(DataObject.class));
+        assertEquals("Default strategy was not picked.", defaultStrategy, strategy);
+
+        strategies.add(hyperStrategy);
+        strategy = factory.getDataMotionStrategy(mock(DataObject.class), mock(DataObject.class));
+        assertEquals("Hypervisor strategy was not picked.", hyperStrategy, strategy);
+
+        strategies.add(pluginStrategy);
+        strategy = factory.getDataMotionStrategy(mock(DataObject.class), mock(DataObject.class));
+        assertEquals("Plugin strategy was not picked.", pluginStrategy, strategy);
+
+        strategies.add(highestStrategy);
+        strategy = factory.getDataMotionStrategy(mock(DataObject.class), mock(DataObject.class));
+        assertEquals("Highest strategy was not picked.", highestStrategy, strategy);
     }
 
     @Test
@@ -107,16 +133,29 @@ public class StrategyPriorityTest {
         doReturn(StrategyPriority.HIGHEST).when(highestStrategy).canHandle(any(Map.class), any(Host.class), any(Host.class));
 
         List<DataMotionStrategy> strategies = new ArrayList<DataMotionStrategy>(5);
-        strategies.addAll(Arrays.asList(defaultStrategy, pluginStrategy, hyperStrategy, cantHandleStrategy, highestStrategy));
+        DataMotionStrategy strategy = null;
 
         StorageStrategyFactoryImpl factory = new StorageStrategyFactoryImpl();
         factory.setDataMotionStrategies(strategies);
-        Iterator<DataMotionStrategy> iter = factory.getDataMotionStrategies(mock(Map.class), mock(Host.class), mock(Host.class)).iterator();
 
-        assertEquals("Highest was not 1st.", highestStrategy, iter.next());
-        assertEquals("Plugin was not 2nd.", pluginStrategy, iter.next());
-        assertEquals("Hypervisor was not 3rd.", hyperStrategy, iter.next());
-        assertEquals("Default was not 4th.", defaultStrategy, iter.next());
-        assertTrue("Can't Handle was not 5th.", !iter.hasNext());
+        strategies.add(cantHandleStrategy);
+        strategy = factory.getDataMotionStrategy(mock(Map.class), mock(Host.class), mock(Host.class));
+        assertEquals("A strategy was found when it shouldn't have been.", null, strategy);
+
+        strategies.add(defaultStrategy);
+        strategy = factory.getDataMotionStrategy(mock(Map.class), mock(Host.class), mock(Host.class));
+        assertEquals("Default strategy was not picked.", defaultStrategy, strategy);
+
+        strategies.add(hyperStrategy);
+        strategy = factory.getDataMotionStrategy(mock(Map.class), mock(Host.class), mock(Host.class));
+        assertEquals("Hypervisor strategy was not picked.", hyperStrategy, strategy);
+
+        strategies.add(pluginStrategy);
+        strategy = factory.getDataMotionStrategy(mock(Map.class), mock(Host.class), mock(Host.class));
+        assertEquals("Plugin strategy was not picked.", pluginStrategy, strategy);
+
+        strategies.add(highestStrategy);
+        strategy = factory.getDataMotionStrategy(mock(Map.class), mock(Host.class), mock(Host.class));
+        assertEquals("Highest strategy was not picked.", highestStrategy, strategy);
     }
 }
