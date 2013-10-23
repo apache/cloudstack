@@ -169,7 +169,6 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         vmr.actionsAfterCrash = Types.OnCrashBehaviour.DESTROY;
         vmr.actionsAfterShutdown = Types.OnNormalExit.DESTROY;
 
-        Map<String, String> details = vmSpec.getDetails();
         if (isDmcEnabled(conn, host) && vmSpec.isEnableDynamicallyScaleVm()) {
             //scaling is allowed
             vmr.memoryStaticMin = getStaticMin(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD, vmSpec.getMinRam(), vmSpec.getMaxRam());
@@ -193,18 +192,21 @@ public class XenServer56FP1Resource extends XenServer56Resource {
             vmr.VCPUsMax = 32L;
         }
 
-        String timeoffset = details.get("timeoffset");
-        if (timeoffset != null) {
-            Map<String, String> platform = vmr.platform;
-            platform.put("timeoffset", timeoffset);
-            vmr.platform = platform;
-        }
+        Map<String, String> details = vmSpec.getDetails();
+        if ( details != null ) {
+            String timeoffset = details.get("timeoffset");
+            if (timeoffset != null) {
+                Map<String, String> platform = vmr.platform;
+                platform.put("timeoffset", timeoffset);
+                vmr.platform = platform;
+            }
 
-        String coresPerSocket = details.get("cpu.corespersocket");
-        if (coresPerSocket != null) {
-            Map<String, String> platform = vmr.platform;
-            platform.put("cores-per-socket", coresPerSocket);
-            vmr.platform = platform;
+            String coresPerSocket = details.get("cpu.corespersocket");
+            if (coresPerSocket != null) {
+                Map<String, String> platform = vmr.platform;
+                platform.put("cores-per-socket", coresPerSocket);
+                vmr.platform = platform;
+            }            
         }
 
         vmr.VCPUsAtStartup = (long) vmSpec.getCpus();
