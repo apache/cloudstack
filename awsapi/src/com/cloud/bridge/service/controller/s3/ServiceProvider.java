@@ -62,6 +62,7 @@ import com.cloud.bridge.util.OrderedPair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class ServiceProvider extends ManagerBase {
@@ -90,7 +91,7 @@ public class ServiceProvider extends ManagerBase {
 
     protected ServiceProvider() throws IOException {
         // register service implementation object
-        Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         txn.close();
     }
 
@@ -183,7 +184,7 @@ public class ServiceProvider extends ManagerBase {
 
     public UserInfo getUserInfo(String accessKey) {
         UserInfo info = new UserInfo();
-        Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         try {
             txn.start();
             UserCredentialsVO cloudKeys = ucDao.getByAccessKey( accessKey ); 
@@ -253,7 +254,7 @@ public class ServiceProvider extends ManagerBase {
 
         multipartDir = properties.getProperty("storage.multipartDir");
 
-        Transaction txn1 = Transaction.open(Transaction.AWSAPI_DB);
+        TransactionLegacy txn1 = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         timer.schedule(getHeartbeatTask(), HEARTBEAT_INTERVAL, HEARTBEAT_INTERVAL);
         txn1.close();
 

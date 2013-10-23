@@ -118,6 +118,8 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.QueryBuilder;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.events.SubscriptionMgr;
@@ -569,10 +571,10 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Exception while trying to start console proxy", e);
             return null;
-        } catch (CloudRuntimeException e) {
+        } catch (ConcurrentOperationException e) {
             s_logger.warn("Runtime Exception while trying to start console proxy", e);
             return null;
-        } catch (ConcurrentOperationException e) {
+        } catch (CloudRuntimeException e) {
             s_logger.warn("Runtime Exception while trying to start console proxy", e);
             return null;
         } catch (OperationTimedoutException e) {
@@ -1049,25 +1051,24 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
 
     @Override
     @DB
-    public void setManagementState(ConsoleProxyManagementState state) {
-        Transaction txn = Transaction.currentTxn();
+    public void setManagementState(final ConsoleProxyManagementState state) {
         try {
-            txn.start();
-
-            ConsoleProxyManagementState lastState = getManagementState();
+            final ConsoleProxyManagementState lastState = getManagementState();
             if (lastState == null) {
-                txn.commit();
                 return;
             }
 
             if (lastState != state) {
-                _configDao.update(Config.ConsoleProxyManagementLastState.key(), Config.ConsoleProxyManagementLastState.getCategory(), lastState.toString());
-                _configDao.update(Config.ConsoleProxyManagementState.key(), Config.ConsoleProxyManagementState.getCategory(), state.toString());
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        _configDao.update(Config.ConsoleProxyManagementLastState.key(), Config.ConsoleProxyManagementLastState.getCategory(), lastState.toString());
+                        _configDao.update(Config.ConsoleProxyManagementState.key(), Config.ConsoleProxyManagementState.getCategory(), state.toString());
+                    }
+                });
             }
-
-            txn.commit();
         } catch (Throwable e) {
-            txn.rollback();
+            s_logger.error("Failed to set managment state", e);
         }
     }
 
@@ -1090,23 +1091,18 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     @Override
     @DB
     public void resumeLastManagementState() {
-        Transaction txn = Transaction.currentTxn();
         try {
-            txn.start();
             ConsoleProxyManagementState state = getManagementState();
             ConsoleProxyManagementState lastState = getLastManagementState();
             if (lastState == null) {
-                txn.commit();
                 return;
             }
 
             if (lastState != state) {
                 _configDao.update(Config.ConsoleProxyManagementState.key(), Config.ConsoleProxyManagementState.getCategory(), lastState.toString());
             }
-
-            txn.commit();
         } catch (Throwable e) {
-            txn.rollback();
+            s_logger.error("Failed to resume last management state", e);
         }
     }
 

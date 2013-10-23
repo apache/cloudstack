@@ -65,7 +65,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         _msId = msId;
         Connection conn = null;
         try {
-            conn = Transaction.getStandaloneConnectionWithException();
+            conn = TransactionLegacy.getStandaloneConnectionWithException();
             conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
             conn.setAutoCommit(true);
             _concierge = new ConnectionConcierge("LockMaster", conn, true);

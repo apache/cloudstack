@@ -33,7 +33,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -100,7 +100,7 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
 	@Override
 	@DB
 	public SecurityGroupWorkVO take(long serverId) {
-		final Transaction txn = Transaction.currentTxn();
+		final TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             final SearchCriteria<SecurityGroupWorkVO> sc = UntakenWorkSearch.create();
             sc.setParameters("step", Step.Scheduled);
@@ -149,7 +149,7 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
 	@Override
 	@DB
 	public void updateStep(Long vmId, Long logSequenceNumber, Step step) {
-		final Transaction txn = Transaction.currentTxn();
+		final TransactionLegacy txn = TransactionLegacy.currentTxn();
 		txn.start();
         SearchCriteria<SecurityGroupWorkVO> sc = VmIdSeqNumSearch.create();
         sc.setParameters("vmId", vmId);
@@ -180,7 +180,7 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
 	@Override
 	@DB
 	public void updateStep(Long workId, Step step) {
-		final Transaction txn = Transaction.currentTxn();
+		final TransactionLegacy txn = TransactionLegacy.currentTxn();
 		txn.start();
 
         SecurityGroupWorkVO work = lockRow(workId, true);

@@ -26,7 +26,6 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.command.admin.network.CreateStorageNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteStorageNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListStorageNetworkIpRangeCmd;
@@ -46,8 +45,12 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.QueryBuilder;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.SecondaryStorageVmVO;
@@ -93,7 +96,7 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
         }
     }
 
-    private void createStorageIpEntires(Transaction txn, long rangeId, String startIp, String endIp, long zoneId) throws SQLException {
+    private void createStorageIpEntires(TransactionLegacy txn, long rangeId, String startIp, String endIp, long zoneId) throws SQLException {
         long startIPLong = NetUtils.ip2Long(startIp);
         long endIPLong = NetUtils.ip2Long(endIp);
         String insertSql = "INSERT INTO `cloud`.`op_dc_storage_network_ip_address` (range_id, ip_address, mac_address, taken) VALUES (?, ?, (select mac_address from `cloud`.`data_center` where id=?), ?)";
@@ -120,11 +123,11 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
     @Override
     @DB
     public StorageNetworkIpRange updateIpRange(UpdateStorageNetworkIpRangeCmd cmd) {
-        Integer vlan = cmd.getVlan();
-        Long rangeId = cmd.getId();
+        final Integer vlan = cmd.getVlan();
+        final Long rangeId = cmd.getId();
         String startIp = cmd.getStartIp();
         String endIp = cmd.getEndIp();
-        String netmask = cmd.getNetmask();
+        final String netmask = cmd.getNetmask();
 
         if (netmask != null && !NetUtils.isValidNetmask(netmask)) {
             throw new CloudRuntimeException("Invalid netmask:" + netmask);
@@ -147,45 +150,50 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
             checkOverlapStorageIpRange(podId, startIp, endIp);
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        try {
-            range = _sNwIpRangeDao.acquireInLockTable(range.getId());
-            if (range == null) {
-                throw new CloudRuntimeException("Cannot acquire lock on storage ip range " + rangeId);
+        final String startIpFinal = startIp;
+        final String endIpFinal = endIp;
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                StorageNetworkIpRangeVO range = null;
+                try {
+                    range = _sNwIpRangeDao.acquireInLockTable(rangeId);
+                    if (range == null) {
+                        throw new CloudRuntimeException("Cannot acquire lock on storage ip range " + rangeId);
+                    }
+                    StorageNetworkIpRangeVO vo = _sNwIpRangeDao.createForUpdate();
+                    if (vlan != null) {
+                        vo.setVlan(vlan);
+                    }
+                    if (startIpFinal != null) {
+                        vo.setStartIp(startIpFinal);
+                    }
+                    if (endIpFinal != null) {
+                        vo.setEndIp(endIpFinal);
+                    }
+                    if (netmask != null) {
+                        vo.setNetmask(netmask);
+                    }
+                    _sNwIpRangeDao.update(rangeId, vo);
+                } finally {
+                    if (range != null) {
+                        _sNwIpRangeDao.releaseFromLockTable(range.getId());
+                    }
+                }
             }
-            StorageNetworkIpRangeVO vo = _sNwIpRangeDao.createForUpdate();
-            if (vlan != null) {
-                vo.setVlan(vlan);
-            }
-            if (startIp != null) {
-                vo.setStartIp(startIp);
-            }
-            if (endIp != null) {
-                vo.setEndIp(endIp);
-            }
-            if (netmask != null) {
-                vo.setNetmask(netmask);
-            }
-            _sNwIpRangeDao.update(rangeId, vo);
-        } finally {
-            if (range != null) {
-                _sNwIpRangeDao.releaseFromLockTable(range.getId());
-            }
-        }
-        txn.commit();
+        });
 
         return _sNwIpRangeDao.findById(rangeId);
     }
 
     @Override
     @DB
-    public StorageNetworkIpRange createIpRange(CreateStorageNetworkIpRangeCmd cmd) throws SQLException {
-        Long podId = cmd.getPodId();
-        String startIp = cmd.getStartIp();
+    public StorageNetworkIpRange createIpRange(final CreateStorageNetworkIpRangeCmd cmd) throws SQLException {
+        final Long podId = cmd.getPodId();
+        final String startIp = cmd.getStartIp();
         String endIp = cmd.getEndIp();
-        Integer vlan = cmd.getVlan();
-        String netmask = cmd.getNetmask();
+        final Integer vlan = cmd.getVlan();
+        final String netmask = cmd.getNetmask();
 
         if (endIp == null) {
             endIp = startIp;
@@ -199,7 +207,7 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
         if (pod == null) {
             throw new CloudRuntimeException("Cannot find pod " + podId);
         }
-        Long zoneId = pod.getDataCenterId();
+        final Long zoneId = pod.getDataCenterId();
 
         List<NetworkVO> nws = _networkDao.listByZoneAndTrafficType(zoneId, TrafficType.Storage);
         if (nws.size() == 0) {
@@ -208,34 +216,35 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
         if (nws.size() > 1) {
             throw new CloudRuntimeException("Find more than one storage network in zone " + zoneId + "," + nws.size() + " found");
         }
-        NetworkVO nw = nws.get(0);
+        final NetworkVO nw = nws.get(0);
 
         checkOverlapPrivateIpRange(podId, startIp, endIp);
         checkOverlapStorageIpRange(podId, startIp, endIp);
 
-        Transaction txn = Transaction.currentTxn();
         StorageNetworkIpRangeVO range = null;
 
-        txn.start();
-        range = new StorageNetworkIpRangeVO(zoneId, podId, nw.getId(), startIp, endIp, vlan, netmask, cmd.getGateWay());
-        _sNwIpRangeDao.persist(range);
-        try {
-            createStorageIpEntires(txn, range.getId(), startIp, endIp, zoneId);
-        } catch (SQLException e) {
-            txn.rollback();
-            StringBuilder err = new StringBuilder();
-            err.append("Create storage network range failed.");
-            err.append("startIp=" + startIp);
-            err.append("endIp=" + endIp);
-            err.append("netmask=" + netmask);
-            err.append("zoneId=" + zoneId);
-            s_logger.debug(err.toString(), e);
-            throw e;
-        }
+        final String endIpFinal = endIp;
+        return Transaction.execute(new TransactionCallbackWithException<StorageNetworkIpRangeVO,SQLException>() {
+            @Override
+            public StorageNetworkIpRangeVO doInTransaction(TransactionStatus status) throws SQLException {
+                StorageNetworkIpRangeVO range = new StorageNetworkIpRangeVO(zoneId, podId, nw.getId(), startIp, endIpFinal, vlan, netmask, cmd.getGateWay());
+                _sNwIpRangeDao.persist(range);
+                try {
+                    createStorageIpEntires(TransactionLegacy.currentTxn(), range.getId(), startIp, endIpFinal, zoneId);
+                } catch (SQLException e) {
+                    StringBuilder err = new StringBuilder();
+                    err.append("Create storage network range failed.");
+                    err.append("startIp=" + startIp);
+                    err.append("endIp=" + endIpFinal);
+                    err.append("netmask=" + netmask);
+                    err.append("zoneId=" + zoneId);
+                    s_logger.debug(err.toString(), e);
+                    throw e;
+                }
 
-        txn.commit();
-
-        return range;
+                return range;
+            }
+        });
     }
 
     private String getInUseIpAddress(long rangeId) {
@@ -251,7 +260,7 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
     @Override
     @DB
     public void deleteIpRange(DeleteStorageNetworkIpRangeCmd cmd) {
-        long rangeId = cmd.getId();
+        final long rangeId = cmd.getId();
         StorageNetworkIpRangeVO range = _sNwIpRangeDao.findById(rangeId);
         if (range == null) {
             throw new CloudRuntimeException("Can not find storage network ip range " + rangeId);
@@ -261,26 +270,30 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
             throw new CloudRuntimeException(getInUseIpAddress(rangeId));
         }
 
-        final Transaction txn = Transaction.currentTxn();
-        txn.start();
-        try {
-            range = _sNwIpRangeDao.acquireInLockTable(rangeId);
-            if (range == null) {
-                String msg = "Unable to acquire lock on storage network ip range id=" + rangeId + ", delete failed";
-                s_logger.warn(msg);
-                throw new CloudRuntimeException(msg);
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                StorageNetworkIpRangeVO range = null;
+                try {
+                    range = _sNwIpRangeDao.acquireInLockTable(rangeId);
+                    if (range == null) {
+                        String msg = "Unable to acquire lock on storage network ip range id=" + rangeId + ", delete failed";
+                        s_logger.warn(msg);
+                        throw new CloudRuntimeException(msg);
+                    }
+                    /*
+                     * entries in op_dc_storage_network_ip_address will be deleted automatically due to
+                     * fk_storage_ip_address__range_id constraint key
+                     */
+                    _sNwIpRangeDao.remove(rangeId);
+                } finally {
+                    if (range != null) {
+                        _sNwIpRangeDao.releaseFromLockTable(rangeId);
+                    }
+                }
             }
-            /*
-             * entries in op_dc_storage_network_ip_address will be deleted automatically due to
-             * fk_storage_ip_address__range_id constraint key
-             */
-            _sNwIpRangeDao.remove(rangeId);
-        } finally {
-            if (range != null) {
-                _sNwIpRangeDao.releaseFromLockTable(rangeId);
-            }
-        }
-        txn.commit();
+        });
+
     }
 
     @Override

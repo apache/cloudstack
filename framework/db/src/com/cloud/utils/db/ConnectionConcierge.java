@@ -178,7 +178,7 @@ public class ConnectionConcierge {
                 return "Not Found";
             }
 
-            Connection conn = Transaction.getStandaloneConnection();
+            Connection conn = TransactionLegacy.getStandaloneConnection();
             if (conn == null) {
                 return "Unable to get anotehr db connection";
             }

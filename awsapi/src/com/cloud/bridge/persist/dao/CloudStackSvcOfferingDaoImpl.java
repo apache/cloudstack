@@ -29,6 +29,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={CloudStackSvcOfferingDao.class})
@@ -42,7 +43,7 @@ public class CloudStackSvcOfferingDaoImpl extends GenericDaoBase<CloudStackServi
         SearchBuilder <CloudStackServiceOfferingVO> searchByName = createSearchBuilder();
         searchByName.and("name", searchByName.entity().getName(), SearchCriteria.Op.EQ);
         searchByName.done();
-        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         try {
             txn.start();
             SearchCriteria<CloudStackServiceOfferingVO> sc = searchByName.create();
@@ -61,7 +62,7 @@ public class CloudStackSvcOfferingDaoImpl extends GenericDaoBase<CloudStackServi
         SearchBuilder <CloudStackServiceOfferingVO> searchByID = createSearchBuilder();
         searchByID.and("uuid", searchByID.entity().getUuid(), SearchCriteria.Op.EQ);
         searchByID.done();
-        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         try {
             txn.start();
             SearchCriteria<CloudStackServiceOfferingVO> sc = searchByID.create();

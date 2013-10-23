@@ -21,6 +21,7 @@ import java.util.List;
 import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 public interface DataCenterVnetDao extends GenericDao<DataCenterVnetVO, Long> {
     public List<DataCenterVnetVO> listAllocatedVnets(long physicalNetworkId);
@@ -33,7 +34,7 @@ public interface DataCenterVnetDao extends GenericDao<DataCenterVnetVO, Long> {
     
     public void delete(long physicalNetworkId);
 
-    public void deleteVnets(Transaction txn, long dcId, long physicalNetworkId, List<String> vnets);
+    public void deleteVnets(TransactionLegacy txn, long dcId, long physicalNetworkId, List<String> vnets);
 
     public void lockRange(long dcId, long physicalNetworkId, Integer start, Integer end);
 

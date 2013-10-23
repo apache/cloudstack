@@ -43,7 +43,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -181,7 +181,7 @@ public class PrimaryDataStoreHelper {
     public boolean deletePrimaryDataStore(DataStore store) {
         List<StoragePoolHostVO> hostPoolRecords = this.storagePoolHostDao.listByPoolId(store.getId());
         StoragePoolVO poolVO = this.dataStoreDao.findById(store.getId());
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         for (StoragePoolHostVO host : hostPoolRecords) {
             storagePoolHostDao.deleteStoragePoolHostDetails(host.getHostId(), host.getPoolId());

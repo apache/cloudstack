@@ -33,6 +33,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -239,8 +241,13 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -1375,11 +1382,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public UserVm recoverVirtualMachine(RecoverVMCmd cmd)
             throws ResourceAllocationException, CloudRuntimeException {
 
-        Long vmId = cmd.getId();
+        final Long vmId = cmd.getId();
         Account caller = CallContext.current().getCallingAccount();
 
         // Verify input parameters
-        UserVmVO vm = _vmDao.findById(vmId.longValue());
+        final UserVmVO vm = _vmDao.findById(vmId.longValue());
 
         if (vm == null) {
             throw new InvalidParameterValueException(
@@ -1409,68 +1416,70 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             s_logger.debug("Recovering vm " + vmId);
         }
 
-        Transaction txn = Transaction.currentTxn();
-        AccountVO account = null;
-        txn.start();
-
-        account = _accountDao.lockRow(vm.getAccountId(), true);
-
-        // if the account is deleted, throw error
-        if (account.getRemoved() != null) {
-            throw new CloudRuntimeException(
-                    "Unable to recover VM as the account is deleted");
-        }
-
-        // Get serviceOffering for Virtual Machine
-        ServiceOfferingVO serviceOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
-
-        // First check that the maximum number of UserVMs, CPU and Memory limit for the given
-        // accountId will not be exceeded
-        resourceLimitCheck(account, new Long(serviceOffering.getCpu()), new Long(serviceOffering.getRamSize()));
-
-        _haMgr.cancelDestroy(vm, vm.getHostId());
-
-        try {
-            if (!_itMgr.stateTransitTo(vm,
-                    VirtualMachine.Event.RecoveryRequested, null)) {
-                s_logger.debug("Unable to recover the vm because it is not in the correct state: "
-                        + vmId);
-                throw new InvalidParameterValueException(
-                        "Unable to recover the vm because it is not in the correct state: "
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) throws ResourceAllocationException {
+        
+                Account account = _accountDao.lockRow(vm.getAccountId(), true);
+        
+                // if the account is deleted, throw error
+                if (account.getRemoved() != null) {
+                    throw new CloudRuntimeException(
+                            "Unable to recover VM as the account is deleted");
+                }
+        
+                // Get serviceOffering for Virtual Machine
+                ServiceOfferingVO serviceOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
+        
+                // First check that the maximum number of UserVMs, CPU and Memory limit for the given
+                // accountId will not be exceeded
+                resourceLimitCheck(account, new Long(serviceOffering.getCpu()), new Long(serviceOffering.getRamSize()));
+        
+                _haMgr.cancelDestroy(vm, vm.getHostId());
+        
+                try {
+                    if (!_itMgr.stateTransitTo(vm,
+                            VirtualMachine.Event.RecoveryRequested, null)) {
+                        s_logger.debug("Unable to recover the vm because it is not in the correct state: "
                                 + vmId);
-            }
-        } catch (NoTransitionException e) {
-            throw new InvalidParameterValueException(
-                    "Unable to recover the vm because it is not in the correct state: "
-                            + vmId);
-        }
-
-        // Recover the VM's disks
-        List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
-        for (VolumeVO volume : volumes) {
-            if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
-                // Create an event
-                Long templateId = volume.getTemplateId();
-                Long diskOfferingId = volume.getDiskOfferingId();
-                Long offeringId = null;
-                if (diskOfferingId != null) {
-                    DiskOfferingVO offering = _diskOfferingDao
-                            .findById(diskOfferingId);
-                    if (offering != null
-                            && (offering.getType() == DiskOfferingVO.Type.Disk)) {
-                        offeringId = offering.getId();
+                        throw new InvalidParameterValueException(
+                                "Unable to recover the vm because it is not in the correct state: "
+                                        + vmId);
+                    }
+                } catch (NoTransitionException e) {
+                    throw new InvalidParameterValueException(
+                            "Unable to recover the vm because it is not in the correct state: "
+                                    + vmId);
+                }
+        
+                // Recover the VM's disks
+                List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
+                for (VolumeVO volume : volumes) {
+                    if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
+                        // Create an event
+                        Long templateId = volume.getTemplateId();
+                        Long diskOfferingId = volume.getDiskOfferingId();
+                        Long offeringId = null;
+                        if (diskOfferingId != null) {
+                            DiskOfferingVO offering = _diskOfferingDao
+                                    .findById(diskOfferingId);
+                            if (offering != null
+                                    && (offering.getType() == DiskOfferingVO.Type.Disk)) {
+                                offeringId = offering.getId();
+                            }
+                        }
+                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(),
+                                volume.getDataCenterId(), volume.getId(), volume.getName(), offeringId, templateId,
+                                volume.getSize(), Volume.class.getName(), volume.getUuid());
                     }
                 }
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(),
-                        volume.getDataCenterId(), volume.getId(), volume.getName(), offeringId, templateId,
-                        volume.getSize(), Volume.class.getName(), volume.getUuid());
+        
+                //Update Resource Count for the given account
+                resourceCountIncrement(account.getId(), new Long(serviceOffering.getCpu()),
+                        new Long(serviceOffering.getRamSize()));
             }
-        }
+        });
 
-        //Update Resource Count for the given account
-        resourceCountIncrement(account.getId(), new Long(serviceOffering.getCpu()),
-                new Long(serviceOffering.getRamSize()));
-        txn.commit();
 
         return _vmDao.findById(vmId);
     }
@@ -1981,8 +1990,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @DB
     protected InstanceGroupVO createVmGroup(String groupName, long accountId) {
         Account account = null;
-        final Transaction txn = Transaction.currentTxn();
-        txn.start();
         try {
             account = _accountDao.acquireInLockTable(accountId); // to ensure
             // duplicate
@@ -2005,7 +2012,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (account != null) {
                 _accountDao.releaseFromLockTable(accountId);
             }
-            txn.commit();
         }
     }
 
@@ -2048,7 +2054,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     @DB
-    public boolean addInstanceToGroup(long userVmId, String groupName) {
+    public boolean addInstanceToGroup(final long userVmId, String groupName) {
         UserVmVO vm = _vmDao.findById(userVmId);
 
         InstanceGroupVO group = _vmGroupDao.findByAccountAndName(
@@ -2059,43 +2065,47 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (group != null) {
-            final Transaction txn = Transaction.currentTxn();
-            txn.start();
             UserVm userVm = _vmDao.acquireInLockTable(userVmId);
             if (userVm == null) {
                 s_logger.warn("Failed to acquire lock on user vm id="
                         + userVmId);
             }
             try {
-                // don't let the group be deleted when we are assigning vm to
-                // it.
-                InstanceGroupVO ngrpLock = _vmGroupDao.lockRow(group.getId(),
-                        false);
-                if (ngrpLock == null) {
-                    s_logger.warn("Failed to acquire lock on vm group id="
-                            + group.getId() + " name=" + group.getName());
-                    txn.rollback();
-                    return false;
-                }
+                final InstanceGroupVO groupFinal = group;
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        // don't let the group be deleted when we are assigning vm to
+                        // it.
+                        InstanceGroupVO ngrpLock = _vmGroupDao.lockRow(groupFinal.getId(),
+                                false);
+                        if (ngrpLock == null) {
+                            s_logger.warn("Failed to acquire lock on vm group id="
+                                    + groupFinal.getId() + " name=" + groupFinal.getName());
+                            throw new CloudRuntimeException("Failed to acquire lock on vm group id="
+                                    + groupFinal.getId() + " name=" + groupFinal.getName());
+                        }
+        
+                        // Currently don't allow to assign a vm to more than one group
+                        if (_groupVMMapDao.listByInstanceId(userVmId) != null) {
+                            // Delete all mappings from group_vm_map table
+                            List<InstanceGroupVMMapVO> groupVmMaps = _groupVMMapDao
+                                    .listByInstanceId(userVmId);
+                            for (InstanceGroupVMMapVO groupMap : groupVmMaps) {
+                                SearchCriteria<InstanceGroupVMMapVO> sc = _groupVMMapDao
+                                        .createSearchCriteria();
+                                sc.addAnd("instanceId", SearchCriteria.Op.EQ,
+                                        groupMap.getInstanceId());
+                                _groupVMMapDao.expunge(sc);
+                            }
+                        }
+                        InstanceGroupVMMapVO groupVmMapVO = new InstanceGroupVMMapVO(
+                                groupFinal.getId(), userVmId);
+                        _groupVMMapDao.persist(groupVmMapVO);
 
-                // Currently don't allow to assign a vm to more than one group
-                if (_groupVMMapDao.listByInstanceId(userVmId) != null) {
-                    // Delete all mappings from group_vm_map table
-                    List<InstanceGroupVMMapVO> groupVmMaps = _groupVMMapDao
-                            .listByInstanceId(userVmId);
-                    for (InstanceGroupVMMapVO groupMap : groupVmMaps) {
-                        SearchCriteria<InstanceGroupVMMapVO> sc = _groupVMMapDao
-                                .createSearchCriteria();
-                        sc.addAnd("instanceId", SearchCriteria.Op.EQ,
-                                groupMap.getInstanceId());
-                        _groupVMMapDao.expunge(sc);
                     }
-                }
-                InstanceGroupVMMapVO groupVmMapVO = new InstanceGroupVMMapVO(
-                        group.getId(), userVmId);
-                _groupVMMapDao.persist(groupVmMapVO);
+                });
 
-                txn.commit();
                 return true;
             } finally {
                 if (userVm != null) {
@@ -2764,102 +2774,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             hypervisorType = template.getHypervisorType();
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        UserVmVO vm = new UserVmVO(id, instanceName, displayName,
-                template.getId(), hypervisorType, template.getGuestOSId(),
-                offering.getOfferHA(), offering.getLimitCpuUse(),
-                owner.getDomainId(), owner.getId(), offering.getId(), userData,
-                hostName, diskOfferingId);
-        vm.setUuid(uuidName);
-        vm.setDynamicallyScalable(template.isDynamicallyScalable());
-        if (sshPublicKey != null) {
-            vm.setDetail("SSH.PublicKey", sshPublicKey);
-        }
-
-        if (keyboard != null && !keyboard.isEmpty())
-            vm.setDetail(VmDetailConstants.KEYBOARD, keyboard);
-
-        if (isIso) {
-            vm.setIsoId(template.getId());
-        }
-
-        if(isDisplayVmEnabled != null){
-            if(!_accountMgr.isRootAdmin(caller.getType())){
-                throw new PermissionDeniedException( "Cannot update parameter displayvm, only admin permitted ");
-            }
-            vm.setDisplayVm(isDisplayVmEnabled);
-        }else {
-            vm.setDisplayVm(true);
-        }
-
-        // If hypervisor is vSphere, check for clone type setting.
-        if (hypervisorType.equals(HypervisorType.VMware)) {
-            // retrieve clone flag.
-            UserVmCloneType cloneType = UserVmCloneType.linked;
-            String value = _configDao.getValue(Config.VmwareCreateFullClone.key());
-            if (value != null) {
-                if (Boolean.parseBoolean(value) == true)
-                    cloneType = UserVmCloneType.full;
-            }
-            UserVmCloneSettingVO vmCloneSettingVO = new UserVmCloneSettingVO(id, cloneType.toString());
-            _vmCloneSettingDao.persist(vmCloneSettingVO);
-        }
-
-        long guestOSId = template.getGuestOSId();
-        GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
-        long guestOSCategoryId = guestOS.getCategoryId();
-        GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
-
-        // If hypervisor is vSphere and OS is OS X, set special settings.
-        if (hypervisorType.equals(HypervisorType.VMware)) {
-            if (guestOS.getDisplayName().toLowerCase().contains("apple mac os")){
-                vm.setDetail("smc.present", "TRUE");
-                vm.setDetail(VmDetailConstants.ROOK_DISK_CONTROLLER, "scsi");
-                vm.setDetail("firmware", "efi");
-                s_logger.info("guestOS is OSX : overwrite root disk controller to scsi, use smc and efi");
-            }
-       }
-
-        Map<String, String> details = template.getDetails();
-        if ( details != null && !details.isEmpty() ) {
-            vm.details.putAll(details);
-        }
-
-        _vmDao.persist(vm);
-        _vmDao.saveDetails(vm);
-
-        s_logger.debug("Allocating in the DB for vm");
-        DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
-
-        List<String> computeTags = new ArrayList<String>();
-        computeTags.add(offering.getHostTag());
-
-        List<String> rootDiskTags =	new ArrayList<String>();
-        rootDiskTags.add(offering.getTags());
-
-        if(isIso){
-            VirtualMachineEntity vmEntity = _orchSrvc.createVirtualMachineFromScratch(vm.getUuid(), Long.toString(owner.getAccountId()), vm.getIsoId().toString(), hostName, displayName, hypervisor.name(), guestOSCategory.getName(), offering.getCpu(), offering.getSpeed(), offering.getRamSize(), diskSize,  computeTags, rootDiskTags, networkNicMap, plan);
-        }else {
-            VirtualMachineEntity vmEntity = _orchSrvc.createVirtualMachine(vm.getUuid(), Long.toString(owner.getAccountId()), Long.toString(template.getId()), hostName, displayName, hypervisor.name(), offering.getCpu(),  offering.getSpeed(), offering.getRamSize(), diskSize, computeTags, rootDiskTags, networkNicMap, plan);
-        }
-
-
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Successfully allocated DB entry for " + vm);
-        }
-        CallContext.current().setEventDetails("Vm Id: " + vm.getId());
-
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, accountId, zone.getId(), vm.getId(),
-                vm.getHostName(), offering.getId(), template.getId(), hypervisorType.toString(),
-                VirtualMachine.class.getName(), vm.getUuid());
-
-        //Update Resource Count for the given account
-        resourceCountIncrement(accountId, new Long(offering.getCpu()),
-                new Long(offering.getRamSize()));
-
-        txn.commit();
+        UserVmVO vm = commitUserVm(zone, template, hostName, displayName, owner, diskOfferingId, diskSize, userData,
+                hypervisor, caller, isDisplayVmEnabled, keyboard, accountId, offering, isIso, sshPublicKey,
+                networkNicMap, id, instanceName, uuidName, hypervisorType);
 
         // Assign instance to the group
         try {
@@ -2882,6 +2799,113 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return vm;
+    }
+
+    private UserVmVO commitUserVm(final DataCenter zone, final VirtualMachineTemplate template, final String hostName,
+            final String displayName, final Account owner, final Long diskOfferingId, final Long diskSize, final String userData,
+            final HypervisorType hypervisor, final Account caller, final Boolean isDisplayVmEnabled, final String keyboard, final long accountId,
+            final ServiceOfferingVO offering, final boolean isIso, final String sshPublicKey,
+            final LinkedHashMap<String, NicProfile> networkNicMap, final long id, final String instanceName, final String uuidName,
+            final HypervisorType hypervisorType) throws InsufficientCapacityException {
+        return Transaction.execute(new TransactionCallbackWithException<UserVmVO,InsufficientCapacityException>() {
+            @Override
+            public UserVmVO doInTransaction(TransactionStatus status) throws InsufficientCapacityException {
+                UserVmVO vm = new UserVmVO(id, instanceName, displayName,
+                        template.getId(), hypervisorType, template.getGuestOSId(),
+                        offering.getOfferHA(), offering.getLimitCpuUse(),
+                        owner.getDomainId(), owner.getId(), offering.getId(), userData,
+                        hostName, diskOfferingId);
+                vm.setUuid(uuidName);
+                vm.setDynamicallyScalable(template.isDynamicallyScalable());
+                if (sshPublicKey != null) {
+                    vm.setDetail("SSH.PublicKey", sshPublicKey);
+                }
+        
+                if (keyboard != null && !keyboard.isEmpty())
+                    vm.setDetail(VmDetailConstants.KEYBOARD, keyboard);
+        
+                if (isIso) {
+                    vm.setIsoId(template.getId());
+                }
+        
+                if(isDisplayVmEnabled != null){
+                    if(!_accountMgr.isRootAdmin(caller.getType())){
+                        throw new PermissionDeniedException( "Cannot update parameter displayvm, only admin permitted ");
+                    }
+                    vm.setDisplayVm(isDisplayVmEnabled);
+                }else {
+                    vm.setDisplayVm(true);
+                }
+        
+                // If hypervisor is vSphere, check for clone type setting.
+                if (hypervisorType.equals(HypervisorType.VMware)) {
+                    // retrieve clone flag.
+                    UserVmCloneType cloneType = UserVmCloneType.linked;
+                    String value = _configDao.getValue(Config.VmwareCreateFullClone.key());
+                    if (value != null) {
+                        if (Boolean.parseBoolean(value) == true)
+                            cloneType = UserVmCloneType.full;
+                    }
+                    UserVmCloneSettingVO vmCloneSettingVO = new UserVmCloneSettingVO(id, cloneType.toString());
+                    _vmCloneSettingDao.persist(vmCloneSettingVO);
+                }
+        
+                long guestOSId = template.getGuestOSId();
+                GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
+                long guestOSCategoryId = guestOS.getCategoryId();
+                GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
+        
+        
+                // If hypervisor is vSphere and OS is OS X, set special settings.
+                if (hypervisorType.equals(HypervisorType.VMware)) {
+                    if (guestOS.getDisplayName().toLowerCase().contains("apple mac os")){
+                        vm.setDetail("smc.present", "TRUE");
+                        vm.setDetail(VmDetailConstants.ROOK_DISK_CONTROLLER, "scsi");
+                        vm.setDetail("firmware", "efi");
+                        s_logger.info("guestOS is OSX : overwrite root disk controller to scsi, use smc and efi");
+                    }
+               }
+        
+                Map<String, String> details = template.getDetails();
+                if ( details != null && !details.isEmpty() ) {
+                    vm.details.putAll(details);
+                }
+
+                _vmDao.persist(vm);
+                _vmDao.saveDetails(vm);
+        
+                s_logger.debug("Allocating in the DB for vm");
+                DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
+        
+                List<String> computeTags = new ArrayList<String>();
+                computeTags.add(offering.getHostTag());
+        
+                List<String> rootDiskTags =	new ArrayList<String>();
+                rootDiskTags.add(offering.getTags());
+        
+                if(isIso){
+                    VirtualMachineEntity vmEntity = _orchSrvc.createVirtualMachineFromScratch(vm.getUuid(), Long.toString(owner.getAccountId()), vm.getIsoId().toString(), hostName, displayName, hypervisor.name(), guestOSCategory.getName(), offering.getCpu(), offering.getSpeed(), offering.getRamSize(), diskSize,  computeTags, rootDiskTags, networkNicMap, plan);
+                }else {
+                    VirtualMachineEntity vmEntity = _orchSrvc.createVirtualMachine(vm.getUuid(), Long.toString(owner.getAccountId()), Long.toString(template.getId()), hostName, displayName, hypervisor.name(), offering.getCpu(),  offering.getSpeed(), offering.getRamSize(), diskSize, computeTags, rootDiskTags, networkNicMap, plan);
+                }
+        
+        
+        
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Successfully allocated DB entry for " + vm);
+                }
+                CallContext.current().setEventDetails("Vm Id: " + vm.getId());
+        
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, accountId, zone.getId(), vm.getId(),
+                        vm.getHostName(), offering.getId(), template.getId(), hypervisorType.toString(),
+                        VirtualMachine.class.getName(), vm.getUuid());
+        
+                //Update Resource Count for the given account
+                resourceCountIncrement(accountId, new Long(offering.getCpu()),
+                        new Long(offering.getRamSize()));
+                return vm;
+            }
+        });
     }
 
     private void validateUserData(String userData, HTTPMethod httpmethod) {
@@ -3441,7 +3465,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public void collectVmDiskStatistics (UserVmVO userVm) {
+    public void collectVmDiskStatistics (final UserVmVO userVm) {
         // support KVM only util 2013.06.25
         if (!userVm.getHypervisorType().equals(HypervisorType.KVM))
             return;
@@ -3449,7 +3473,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     	long hostId = userVm.getHostId();
     	List<String> vmNames = new ArrayList<String>();
     	vmNames.add(userVm.getInstanceName());
-    	HostVO host = _hostDao.findById(hostId);
+    	final HostVO host = _hostDao.findById(hostId);
 
     	GetVmDiskStatsAnswer diskStatsAnswer = null;
     	try {
@@ -3463,98 +3487,98 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 s_logger.warn("Error while collecting disk stats vm: " + userVm.getHostName() + " from host: " + host.getName() + "; details: " + diskStatsAnswer.getDetails());
                 return;
             }
-            Transaction txn = Transaction.open(Transaction.CLOUD_DB);
             try {
-                txn.start();
-                HashMap<String, List<VmDiskStatsEntry>> vmDiskStatsByName = diskStatsAnswer.getVmDiskStatsMap();
-                if (vmDiskStatsByName == null)
-                    return;
-                List<VmDiskStatsEntry> vmDiskStats = vmDiskStatsByName.get(userVm.getInstanceName());
-                if (vmDiskStats == null)
-		    return;
-
-	        for (VmDiskStatsEntry vmDiskStat:vmDiskStats) {
-                    SearchCriteria<VolumeVO> sc_volume = _volsDao.createSearchCriteria();
-                    sc_volume.addAnd("path", SearchCriteria.Op.EQ, vmDiskStat.getPath());
-                    VolumeVO volume = _volsDao.search(sc_volume, null).get(0);
-	            VmDiskStatisticsVO previousVmDiskStats = _vmDiskStatsDao.findBy(userVm.getAccountId(), userVm.getDataCenterId(), userVm.getId(), volume.getId());
-	            VmDiskStatisticsVO vmDiskStat_lock = _vmDiskStatsDao.lock(userVm.getAccountId(), userVm.getDataCenterId(), userVm.getId(), volume.getId());
-
-	                if ((vmDiskStat.getIORead() == 0) && (vmDiskStat.getIOWrite() == 0) && (vmDiskStat.getBytesRead() == 0) && (vmDiskStat.getBytesWrite() == 0)) {
-	                    s_logger.debug("Read/Write of IO and Bytes are both 0. Not updating vm_disk_statistics");
-	                    continue;
-	                }
-
-	                if (vmDiskStat_lock == null) {
-	                    s_logger.warn("unable to find vm disk stats from host for account: " + userVm.getAccountId() + " with vmId: " + userVm.getId()+ " and volumeId:" + volume.getId());
-	                    continue;
-	                }
-
-	                if (previousVmDiskStats != null
-	                        && ((previousVmDiskStats.getCurrentIORead() != vmDiskStat_lock.getCurrentIORead())
-	                        || ((previousVmDiskStats.getCurrentIOWrite() != vmDiskStat_lock.getCurrentIOWrite())
-	                        || (previousVmDiskStats.getCurrentBytesRead() != vmDiskStat_lock.getCurrentBytesRead())
-	    	                || (previousVmDiskStats.getCurrentBytesWrite() != vmDiskStat_lock.getCurrentBytesWrite())))) {
-	                    s_logger.debug("vm disk stats changed from the time GetVmDiskStatsCommand was sent. " +
-	                            "Ignoring current answer. Host: " + host.getName() + " . VM: " + vmDiskStat.getVmName() +
-	                            " IO Read: " + vmDiskStat.getIORead() + " IO Write: " + vmDiskStat.getIOWrite() +
-	                            " Bytes Read: " + vmDiskStat.getBytesRead() + " Bytes Write: " + vmDiskStat.getBytesWrite());
-	                    continue;
-	                }
-
-	                if (vmDiskStat_lock.getCurrentIORead() > vmDiskStat.getIORead()) {
-	                    if (s_logger.isDebugEnabled()) {
-	                        s_logger.debug("Read # of IO that's less than the last one.  " +
-	                                "Assuming something went wrong and persisting it. Host: " + host.getName() + " . VM: " + vmDiskStat.getVmName() +
-	                                " Reported: " + vmDiskStat.getIORead() + " Stored: " + vmDiskStat_lock.getCurrentIORead());
-	                    }
-	                    vmDiskStat_lock.setNetIORead(vmDiskStat_lock.getNetIORead() + vmDiskStat_lock.getCurrentIORead());
-	                }
-	                vmDiskStat_lock.setCurrentIORead(vmDiskStat.getIORead());
-	                if (vmDiskStat_lock.getCurrentIOWrite() > vmDiskStat.getIOWrite()) {
-	                    if (s_logger.isDebugEnabled()) {
-	                        s_logger.debug("Write # of IO that's less than the last one.  " +
-	                                "Assuming something went wrong and persisting it. Host: " + host.getName() + " . VM: " + vmDiskStat.getVmName() +
-	                                " Reported: " + vmDiskStat.getIOWrite() + " Stored: " + vmDiskStat_lock.getCurrentIOWrite());
-	                    }
-	                    vmDiskStat_lock.setNetIOWrite(vmDiskStat_lock.getNetIOWrite() + vmDiskStat_lock.getCurrentIOWrite());
-	                }
-	                vmDiskStat_lock.setCurrentIOWrite(vmDiskStat.getIOWrite());
-	                if (vmDiskStat_lock.getCurrentBytesRead() > vmDiskStat.getBytesRead()) {
-	                    if (s_logger.isDebugEnabled()) {
-	                        s_logger.debug("Read # of Bytes that's less than the last one.  " +
-	                                "Assuming something went wrong and persisting it. Host: " + host.getName() + " . VM: " + vmDiskStat.getVmName() +
-	                                " Reported: " + vmDiskStat.getBytesRead() + " Stored: " + vmDiskStat_lock.getCurrentBytesRead());
-	                    }
-	                    vmDiskStat_lock.setNetBytesRead(vmDiskStat_lock.getNetBytesRead() + vmDiskStat_lock.getCurrentBytesRead());
-	                }
-	                vmDiskStat_lock.setCurrentBytesRead(vmDiskStat.getBytesRead());
-	                if (vmDiskStat_lock.getCurrentBytesWrite() > vmDiskStat.getBytesWrite()) {
-	                    if (s_logger.isDebugEnabled()) {
-	                        s_logger.debug("Write # of Bytes that's less than the last one.  " +
-	                                "Assuming something went wrong and persisting it. Host: " + host.getName() + " . VM: " + vmDiskStat.getVmName() +
-	                                " Reported: " + vmDiskStat.getBytesWrite() + " Stored: " + vmDiskStat_lock.getCurrentBytesWrite());
-	                    }
-	                    vmDiskStat_lock.setNetBytesWrite(vmDiskStat_lock.getNetBytesWrite() + vmDiskStat_lock.getCurrentBytesWrite());
-	                }
-	                vmDiskStat_lock.setCurrentBytesWrite(vmDiskStat.getBytesWrite());
-
-	                if (! _dailyOrHourly) {
-	                    //update agg bytes
-	                	vmDiskStat_lock.setAggIORead(vmDiskStat_lock.getNetIORead() + vmDiskStat_lock.getCurrentIORead());
-	                	vmDiskStat_lock.setAggIOWrite(vmDiskStat_lock.getNetIOWrite() + vmDiskStat_lock.getCurrentIOWrite());
-	                	vmDiskStat_lock.setAggBytesRead(vmDiskStat_lock.getNetBytesRead() + vmDiskStat_lock.getCurrentBytesRead());
-	                	vmDiskStat_lock.setAggBytesWrite(vmDiskStat_lock.getNetBytesWrite() + vmDiskStat_lock.getCurrentBytesWrite());
-	                }
-
-	                _vmDiskStatsDao.update(vmDiskStat_lock.getId(), vmDiskStat_lock);
-	        	}
-	        	txn.commit();
+                final GetVmDiskStatsAnswer diskStatsAnswerFinal = diskStatsAnswer;
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        HashMap<String, List<VmDiskStatsEntry>> vmDiskStatsByName = diskStatsAnswerFinal.getVmDiskStatsMap();
+                        if (vmDiskStatsByName == null)
+                            return;
+                        List<VmDiskStatsEntry> vmDiskStats = vmDiskStatsByName.get(userVm.getInstanceName());
+                        if (vmDiskStats == null)
+                            return;
+        
+            	        for (VmDiskStatsEntry vmDiskStat:vmDiskStats) {
+                                SearchCriteria<VolumeVO> sc_volume = _volsDao.createSearchCriteria();
+                                sc_volume.addAnd("path", SearchCriteria.Op.EQ, vmDiskStat.getPath());
+                                VolumeVO volume = _volsDao.search(sc_volume, null).get(0);
+            	            VmDiskStatisticsVO previousVmDiskStats = _vmDiskStatsDao.findBy(userVm.getAccountId(), userVm.getDataCenterId(), userVm.getId(), volume.getId());
+            	            VmDiskStatisticsVO vmDiskStat_lock = _vmDiskStatsDao.lock(userVm.getAccountId(), userVm.getDataCenterId(), userVm.getId(), volume.getId());
+        
+        	                if ((vmDiskStat.getIORead() == 0) && (vmDiskStat.getIOWrite() == 0) && (vmDiskStat.getBytesRead() == 0) && (vmDiskStat.getBytesWrite() == 0)) {
+        	                    s_logger.debug("Read/Write of IO and Bytes are both 0. Not updating vm_disk_statistics");
+        	                    continue;
+        	                }
+        
+        	                if (vmDiskStat_lock == null) {
+        	                    s_logger.warn("unable to find vm disk stats from host for account: " + userVm.getAccountId() + " with vmId: " + userVm.getId()+ " and volumeId:" + volume.getId());
+        	                    continue;
+        	                }
+        
+        	                if (previousVmDiskStats != null
+        	                        && ((previousVmDiskStats.getCurrentIORead() != vmDiskStat_lock.getCurrentIORead())
+        	                        || ((previousVmDiskStats.getCurrentIOWrite() != vmDiskStat_lock.getCurrentIOWrite())
+        	                        || (previousVmDiskStats.getCurrentBytesRead() != vmDiskStat_lock.getCurrentBytesRead())
+        	    	                || (previousVmDiskStats.getCurrentBytesWrite() != vmDiskStat_lock.getCurrentBytesWrite())))) {
+        	                    s_logger.debug("vm disk stats changed from the time GetVmDiskStatsCommand was sent. " +
+        	                            "Ignoring current answer. Host: " + host.getName() + " . VM: " + vmDiskStat.getVmName() +
+        	                            " IO Read: " + vmDiskStat.getIORead() + " IO Write: " + vmDiskStat.getIOWrite() +
+        	                            " Bytes Read: " + vmDiskStat.getBytesRead() + " Bytes Write: " + vmDiskStat.getBytesWrite());
+        	                    continue;
+        	                }
+        
+        	                if (vmDiskStat_lock.getCurrentIORead() > vmDiskStat.getIORead()) {
+        	                    if (s_logger.isDebugEnabled()) {
+        	                        s_logger.debug("Read # of IO that's less than the last one.  " +
+        	                                "Assuming something went wrong and persisting it. Host: " + host.getName() + " . VM: " + vmDiskStat.getVmName() +
+        	                                " Reported: " + vmDiskStat.getIORead() + " Stored: " + vmDiskStat_lock.getCurrentIORead());
+        	                    }
+        	                    vmDiskStat_lock.setNetIORead(vmDiskStat_lock.getNetIORead() + vmDiskStat_lock.getCurrentIORead());
+        	                }
+        	                vmDiskStat_lock.setCurrentIORead(vmDiskStat.getIORead());
+        	                if (vmDiskStat_lock.getCurrentIOWrite() > vmDiskStat.getIOWrite()) {
+        	                    if (s_logger.isDebugEnabled()) {
+        	                        s_logger.debug("Write # of IO that's less than the last one.  " +
+        	                                "Assuming something went wrong and persisting it. Host: " + host.getName() + " . VM: " + vmDiskStat.getVmName() +
+        	                                " Reported: " + vmDiskStat.getIOWrite() + " Stored: " + vmDiskStat_lock.getCurrentIOWrite());
+        	                    }
+        	                    vmDiskStat_lock.setNetIOWrite(vmDiskStat_lock.getNetIOWrite() + vmDiskStat_lock.getCurrentIOWrite());
+        	                }
+        	                vmDiskStat_lock.setCurrentIOWrite(vmDiskStat.getIOWrite());
+        	                if (vmDiskStat_lock.getCurrentBytesRead() > vmDiskStat.getBytesRead()) {
+        	                    if (s_logger.isDebugEnabled()) {
+        	                        s_logger.debug("Read # of Bytes that's less than the last one.  " +
+        	                                "Assuming something went wrong and persisting it. Host: " + host.getName() + " . VM: " + vmDiskStat.getVmName() +
+        	                                " Reported: " + vmDiskStat.getBytesRead() + " Stored: " + vmDiskStat_lock.getCurrentBytesRead());
+        	                    }
+        	                    vmDiskStat_lock.setNetBytesRead(vmDiskStat_lock.getNetBytesRead() + vmDiskStat_lock.getCurrentBytesRead());
+        	                }
+        	                vmDiskStat_lock.setCurrentBytesRead(vmDiskStat.getBytesRead());
+        	                if (vmDiskStat_lock.getCurrentBytesWrite() > vmDiskStat.getBytesWrite()) {
+        	                    if (s_logger.isDebugEnabled()) {
+        	                        s_logger.debug("Write # of Bytes that's less than the last one.  " +
+        	                                "Assuming something went wrong and persisting it. Host: " + host.getName() + " . VM: " + vmDiskStat.getVmName() +
+        	                                " Reported: " + vmDiskStat.getBytesWrite() + " Stored: " + vmDiskStat_lock.getCurrentBytesWrite());
+        	                    }
+        	                    vmDiskStat_lock.setNetBytesWrite(vmDiskStat_lock.getNetBytesWrite() + vmDiskStat_lock.getCurrentBytesWrite());
+        	                }
+        	                vmDiskStat_lock.setCurrentBytesWrite(vmDiskStat.getBytesWrite());
+        
+        	                if (! _dailyOrHourly) {
+        	                    //update agg bytes
+        	                	vmDiskStat_lock.setAggIORead(vmDiskStat_lock.getNetIORead() + vmDiskStat_lock.getCurrentIORead());
+        	                	vmDiskStat_lock.setAggIOWrite(vmDiskStat_lock.getNetIOWrite() + vmDiskStat_lock.getCurrentIOWrite());
+        	                	vmDiskStat_lock.setAggBytesRead(vmDiskStat_lock.getNetBytesRead() + vmDiskStat_lock.getCurrentBytesRead());
+        	                	vmDiskStat_lock.setAggBytesWrite(vmDiskStat_lock.getNetBytesWrite() + vmDiskStat_lock.getCurrentBytesWrite());
+        	                }
+        
+        	                _vmDiskStatsDao.update(vmDiskStat_lock.getId(), vmDiskStat_lock);
+        	        	}
+                    }
+                });
             } catch (Exception e) {
-                txn.rollback();
                 s_logger.warn("Unable to update vm disk statistics for vm: " + userVm.getId() + " from host: " + hostId, e);
-            } finally {
-                txn.close();
             }
         }
     }
@@ -4295,7 +4319,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_MOVE, eventDescription = "move VM to another user", async = false)
-    public UserVm moveVMToUser(AssignVMCmd cmd)
+    public UserVm moveVMToUser(final AssignVMCmd cmd)
             throws ResourceAllocationException, ConcurrentOperationException,
             ResourceUnavailableException, InsufficientCapacityException {
         // VERIFICATIONS and VALIDATIONS
@@ -4315,7 +4339,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // get and check the valid VM
-        UserVmVO vm = _vmDao.findById(cmd.getVmId());
+        final UserVmVO vm = _vmDao.findById(cmd.getVmId());
         if (vm == null) {
             throw new InvalidParameterValueException(
                     "There is no vm by that id " + cmd.getVmId());
@@ -4330,7 +4354,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw ex;
         }
 
-        Account oldAccount = _accountService.getActiveAccountById(vm
+        final Account oldAccount = _accountService.getActiveAccountById(vm
                 .getAccountId());
         if (oldAccount == null) {
             throw new InvalidParameterValueException("Invalid account for VM "
@@ -4343,7 +4367,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
-        Account newAccount = _accountService.getActiveAccountByName(
+        final Account newAccount = _accountService.getActiveAccountByName(
                 cmd.getAccountName(), cmd.getDomainId());
         if (newAccount == null
                 || newAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
@@ -4400,8 +4424,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
 
         // Get serviceOffering and Volumes for Virtual Machine
-        ServiceOfferingVO offering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
-        List<VolumeVO> volumes = _volsDao.findByInstance(cmd.getVmId());
+        final ServiceOfferingVO offering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
+        final List<VolumeVO> volumes = _volsDao.findByInstance(cmd.getVmId());
 
         //Remove vm from instance group
         removeInstanceFromInstanceGroup(cmd.getVmId());
@@ -4431,55 +4455,57 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         DomainVO domain = _domainDao.findById(cmd.getDomainId());
         _accountMgr.checkAccess(newAccount, domain);
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        //generate destroy vm event for usage
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
-                vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHypervisorType().toString(),
-                VirtualMachine.class.getName(), vm.getUuid());
-
-        // update resource counts for old account
-        resourceCountDecrement(oldAccount.getAccountId(), new Long(offering.getCpu()),
-                new Long(offering.getRamSize()));
-
-        // OWNERSHIP STEP 1: update the vm owner
-        vm.setAccountId(newAccount.getAccountId());
-        vm.setDomainId(cmd.getDomainId());
-        _vmDao.persist(vm);
-
-        // OS 2: update volume
-        for (VolumeVO volume : volumes) {
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(),
-                    volume.getDataCenterId(), volume.getId(), volume.getName(), Volume.class.getName(), volume.getUuid());
-            _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.volume);
-            _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.primary_storage,
-                    new Long(volume.getSize()));
-            volume.setAccountId(newAccount.getAccountId());
-            volume.setDomainId(newAccount.getDomainId());
-            _volsDao.persist(volume);
-            _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume);
-            _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.primary_storage,
-                    new Long(volume.getSize()));
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(),
-                    volume.getDataCenterId(), volume.getId(), volume.getName(),
-                    volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(),
-                    volume.getUuid());
-            //snapshots: mark these removed in db
-            List<SnapshotVO> snapshots = _snapshotDao.listByVolumeIdIncludingRemoved(volume.getId());
-            for (SnapshotVO snapshot: snapshots){
-                _snapshotDao.remove(snapshot.getId());
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                //generate destroy vm event for usage
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
+                        vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHypervisorType().toString(),
+                        VirtualMachine.class.getName(), vm.getUuid());
+        
+                // update resource counts for old account
+                resourceCountDecrement(oldAccount.getAccountId(), new Long(offering.getCpu()),
+                        new Long(offering.getRamSize()));
+        
+                // OWNERSHIP STEP 1: update the vm owner
+                vm.setAccountId(newAccount.getAccountId());
+                vm.setDomainId(cmd.getDomainId());
+                _vmDao.persist(vm);
+        
+                // OS 2: update volume
+                for (VolumeVO volume : volumes) {
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(),
+                            volume.getDataCenterId(), volume.getId(), volume.getName(), Volume.class.getName(), volume.getUuid());
+                    _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.volume);
+                    _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.primary_storage,
+                            new Long(volume.getSize()));
+                    volume.setAccountId(newAccount.getAccountId());
+                    volume.setDomainId(newAccount.getDomainId());
+                    _volsDao.persist(volume);
+                    _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume);
+                    _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.primary_storage,
+                            new Long(volume.getSize()));
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(),
+                            volume.getDataCenterId(), volume.getId(), volume.getName(),
+                            volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(),
+                            volume.getUuid());
+                    //snapshots: mark these removed in db
+                    List<SnapshotVO> snapshots = _snapshotDao.listByVolumeIdIncludingRemoved(volume.getId());
+                    for (SnapshotVO snapshot: snapshots){
+                        _snapshotDao.remove(snapshot.getId());
+                    }
+                }
+        
+                //update resource count of new account
+                resourceCountIncrement(newAccount.getAccountId(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
+        
+                //generate usage events to account for this change
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
+                        vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHypervisorType().toString(),
+                        VirtualMachine.class.getName(), vm.getUuid());
             }
-        }
+        });
 
-        //update resource count of new account
-        resourceCountIncrement(newAccount.getAccountId(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
-
-        //generate usage events to account for this change
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
-                vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHypervisorType().toString(),
-                VirtualMachine.class.getName(), vm.getUuid());
-
-        txn.commit();
 
         VirtualMachine vmoi = _itMgr.findById(vm.getId());
         VirtualMachineProfileImpl vmOldProfile = new VirtualMachineProfileImpl(vmoi);

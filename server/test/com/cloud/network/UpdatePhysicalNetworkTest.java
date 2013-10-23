@@ -24,7 +24,8 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Transaction;
-import org.junit.Test;
+import com.cloud.utils.db.TransactionLegacy;
+
 import org.junit.*;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockitoAnnotations.*;
@@ -58,7 +59,7 @@ public class UpdatePhysicalNetworkTest {
 
     @Test
     public void updatePhysicalNetworkTest(){
-        Transaction txn = Transaction.open("updatePhysicalNetworkTest");
+        TransactionLegacy txn = TransactionLegacy.open("updatePhysicalNetworkTest");
         NetworkServiceImpl networkService = setUp();
         existingRange.add("524");
         when(_physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetworkVO);

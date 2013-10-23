@@ -29,7 +29,6 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
 import org.apache.log4j.Logger;
 
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;

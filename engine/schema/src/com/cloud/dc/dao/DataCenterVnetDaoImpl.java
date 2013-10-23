@@ -38,7 +38,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -121,7 +121,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     public void add(long dcId, long physicalNetworkId, List<String> vnets) {
         String insertVnet = "INSERT INTO `cloud`.`op_dc_vnet_alloc` (vnet, data_center_id, physical_network_id) VALUES ( ?, ?, ?)";
         
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertVnet);
@@ -139,7 +139,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     }
 
     //In the List<string> argument each string is a vlan. not a vlanRange.
-    public void deleteVnets(Transaction txn, long dcId, long physicalNetworkId, List<String> vnets) {
+    public void deleteVnets(TransactionLegacy txn, long dcId, long physicalNetworkId, List<String> vnets) {
         String deleteVnet = "DELETE FROM `cloud`.`op_dc_vnet_alloc` WHERE data_center_id=? AND physical_network_id=? AND taken IS NULL AND vnet=?";
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(deleteVnet);
@@ -171,7 +171,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         }
         sc.setParameters("physicalNetworkId", physicalNetworkId);
         Date now = new Date();
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         DataCenterVnetVO vo = lockOneRandomRow(sc, true);
         if (vo == null) {

@@ -22,7 +22,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 
@@ -53,6 +52,8 @@ import com.cloud.network.guru.DirectPodBasedNetworkGuru;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
@@ -100,18 +101,18 @@ public class BaremetaNetworkGuru extends DirectPodBasedNetworkGuru {
         } else {
             // we need to get a new ip address if we try to deploy a vm in a
             // different pod
-            IPAddressVO ipVO = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), oldIp);
+            final IPAddressVO ipVO = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), oldIp);
             if (ipVO != null) {
                 PodVlanMapVO mapVO = _podVlanDao.listPodVlanMapsByVlan(ipVO.getVlanId());
                 if (mapVO.getPodId() != dest.getPod().getId()) {
-                    Transaction txn = Transaction.currentTxn();
-                    txn.start();
-
-                    // release the old ip here
-                    _ipAddrMgr.markIpAsUnavailable(ipVO.getId());
-                    _ipAddressDao.unassignIpAddress(ipVO.getId());
-
-                    txn.commit();
+                    Transaction.execute(new TransactionCallbackNoReturn() {
+                        @Override
+                        public void doInTransactionWithoutResult(TransactionStatus status) {
+                            // release the old ip here
+                            _ipAddrMgr.markIpAsUnavailable(ipVO.getId());
+                            _ipAddressDao.unassignIpAddress(ipVO.getId());
+                        }
+                    });
 
                     nic.setIp4Address(null);
                     getNewIp = true;

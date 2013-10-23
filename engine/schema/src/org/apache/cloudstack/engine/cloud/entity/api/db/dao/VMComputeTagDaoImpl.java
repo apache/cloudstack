@@ -31,7 +31,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = { VMComputeTagDao.class })
@@ -52,7 +52,7 @@ public class VMComputeTagDaoImpl extends GenericDaoBase<VMComputeTagVO, Long> im
 
     @Override
     public void persist(long vmId, List<String> computeTags) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
 
         txn.start();
         SearchCriteria<VMComputeTagVO> sc = VmIdSearch.create();

@@ -33,7 +33,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-
 import org.apache.cloudstack.api.command.user.region.ha.gslb.AssignToGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.CreateGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.DeleteGlobalLoadBalancerRuleCmd;
@@ -59,6 +58,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.net.Ip;
 
 public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
@@ -181,7 +181,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
     void runCreateGlobalLoadBalancerRulePostiveTest() throws Exception {
 
-        Transaction txn = Transaction.open("runCreateGlobalLoadBalancerRulePostiveTest");
+        TransactionLegacy txn = TransactionLegacy.open("runCreateGlobalLoadBalancerRulePostiveTest");
 
         GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
 
@@ -246,7 +246,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
     void runCreateGlobalLoadBalancerRuleInvalidAlgorithm() throws Exception {
 
-        Transaction txn = Transaction.open("runCreateGlobalLoadBalancerRulePostiveTest");
+        TransactionLegacy txn = TransactionLegacy.open("runCreateGlobalLoadBalancerRulePostiveTest");
 
         GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
 
@@ -311,7 +311,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
     void runCreateGlobalLoadBalancerRuleInvalidStickyMethod() throws Exception {
 
-        Transaction txn = Transaction.open("runCreateGlobalLoadBalancerRulePostiveTest");
+        TransactionLegacy txn = TransactionLegacy.open("runCreateGlobalLoadBalancerRulePostiveTest");
 
         GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
 
@@ -376,7 +376,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
     void runCreateGlobalLoadBalancerRuleInvalidServiceType() throws Exception {
 
-        Transaction txn = Transaction.open("runCreateGlobalLoadBalancerRulePostiveTest");
+        TransactionLegacy txn = TransactionLegacy.open("runCreateGlobalLoadBalancerRulePostiveTest");
 
         GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
 
@@ -441,7 +441,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
     void runCreateGlobalLoadBalancerRuleInvalidDomainName() throws Exception {
 
-        Transaction txn = Transaction.open("runCreateGlobalLoadBalancerRulePostiveTest");
+        TransactionLegacy txn = TransactionLegacy.open("runCreateGlobalLoadBalancerRulePostiveTest");
 
         GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
 
@@ -507,7 +507,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
     void runAssignToGlobalLoadBalancerRuleTest() throws Exception {
 
-        Transaction txn = Transaction.open("runAssignToGlobalLoadBalancerRuleTest");
+        TransactionLegacy txn = TransactionLegacy.open("runAssignToGlobalLoadBalancerRuleTest");
 
         GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
 
@@ -570,7 +570,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
     void runAssignToGlobalLoadBalancerRuleTestSameZoneLb() throws  Exception {
 
-        Transaction txn = Transaction.open("runAssignToGlobalLoadBalancerRuleTestSameZoneLb");
+        TransactionLegacy txn = TransactionLegacy.open("runAssignToGlobalLoadBalancerRuleTestSameZoneLb");
 
         GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
 
@@ -655,7 +655,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
     void runAssignToGlobalLoadBalancerRuleTestRevokedState() throws Exception {
 
-        Transaction txn = Transaction.open("runAssignToGlobalLoadBalancerRuleTestRevokedState");
+        TransactionLegacy txn = TransactionLegacy.open("runAssignToGlobalLoadBalancerRuleTestRevokedState");
 
         GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
 
@@ -712,7 +712,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
     void runRemoveFromGlobalLoadBalancerRuleTest() throws Exception {
 
-        Transaction txn = Transaction.open("runRemoveFromGlobalLoadBalancerRuleTest");
+        TransactionLegacy txn = TransactionLegacy.open("runRemoveFromGlobalLoadBalancerRuleTest");
 
         GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
 
@@ -785,7 +785,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
     void runRemoveFromGlobalLoadBalancerRuleTestUnassignedLb() throws Exception {
 
-        Transaction txn = Transaction.open("runRemoveFromGlobalLoadBalancerRuleTestUnassignedLb");
+        TransactionLegacy txn = TransactionLegacy.open("runRemoveFromGlobalLoadBalancerRuleTestUnassignedLb");
 
         GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
 
@@ -846,7 +846,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
     void runRemoveFromGlobalLoadBalancerRuleTestInvalidLb() throws Exception {
 
-        Transaction txn = Transaction.open("runRemoveFromGlobalLoadBalancerRuleTestInvalidLb");
+        TransactionLegacy txn = TransactionLegacy.open("runRemoveFromGlobalLoadBalancerRuleTestInvalidLb");
 
         GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
 
@@ -890,7 +890,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
     void runDeleteGlobalLoadBalancerRuleTestWithNoLbRules() throws Exception {
 
-        Transaction txn = Transaction.open("runDeleteGlobalLoadBalancerRuleTestWithNoLbRules");
+        TransactionLegacy txn = TransactionLegacy.open("runDeleteGlobalLoadBalancerRuleTestWithNoLbRules");
 
         GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
 
@@ -936,7 +936,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
     void runDeleteGlobalLoadBalancerRuleTestWithLbRules() throws Exception {
 
-        Transaction txn = Transaction.open("runDeleteGlobalLoadBalancerRuleTestWithLbRules");
+        TransactionLegacy txn = TransactionLegacy.open("runDeleteGlobalLoadBalancerRuleTestWithLbRules");
 
         GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
 

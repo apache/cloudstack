@@ -38,6 +38,8 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.network.dao.PortProfileDao;
@@ -131,29 +133,13 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     	if (VSMObj == null) {
     		// Create the VSM record. For now, we aren't using the vsmName field.
     		VSMObj = new CiscoNexusVSMDeviceVO(ipaddress, username, password);
-    		Transaction txn = Transaction.currentTxn();
-    		try {
-   				txn.start();
-   	            _ciscoNexusVSMDeviceDao.persist(VSMObj);
-   	            txn.commit();
-    		} catch (Exception e) {
-    			txn.rollback();
-    			throw new CloudRuntimeException(e.getMessage());
-    		}
+            _ciscoNexusVSMDeviceDao.persist(VSMObj);
     	}
 
     	// At this stage, we have a VSM record for sure. Connect the VSM to the cluster Id.
     	long vsmId = _ciscoNexusVSMDeviceDao.getVSMbyIpaddress(ipaddress).getId();
     	ClusterVSMMapVO connectorObj = new ClusterVSMMapVO(clusterId, vsmId);
-    	Transaction txn = Transaction.currentTxn();
-    	try {
-    		txn.start();
-    		_clusterVSMDao.persist(connectorObj);
-    		txn.commit();
-    	} catch (Exception e) {
-    		txn.rollback();
-    		throw new CloudRuntimeException(e.getMessage());
-    	}
+		_clusterVSMDao.persist(connectorObj);
 
     	// Now, get a list of all the ESXi servers in this cluster.
     	// This is effectively a select * from host where cluster_id=clusterId;
@@ -196,7 +182,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     }
 
     @DB
-    public boolean deleteCiscoNexusVSM(long vsmId) throws ResourceInUseException {
+    public boolean deleteCiscoNexusVSM(final long vsmId) throws ResourceInUseException {
         CiscoNexusVSMDeviceVO cisconexusvsm = _ciscoNexusVSMDeviceDao.findById(vsmId);
         if (cisconexusvsm == null) {
         	// This entry is already not present. Return success.
@@ -225,20 +211,16 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
         }
 
         // Iterate through the cluster list again, this time, delete the VSM.
-        Transaction txn = Transaction.currentTxn();
-        try {
-            txn.start();
-            // Remove the VSM entry in CiscoNexusVSMDeviceVO's table.
-            _ciscoNexusVSMDeviceDao.remove(vsmId);
-            // Remove the current record as well from ClusterVSMMapVO's table.
-            _clusterVSMDao.removeByVsmId(vsmId);
-            // There are no hosts at this stage in the cluster, so we don't need
-            // to notify any resources or remove host details.
-            txn.commit();
-        } catch (Exception e) {
-        	s_logger.info("Caught exception when trying to delete VSM record.." + e.getMessage());
-        	throw new CloudRuntimeException("Failed to delete VSM");
-        }
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                // Remove the VSM entry in CiscoNexusVSMDeviceVO's table.
+                _ciscoNexusVSMDeviceDao.remove(vsmId);
+                // Remove the current record as well from ClusterVSMMapVO's table.
+                _clusterVSMDao.removeByVsmId(vsmId);
+            }
+        });
+
         return true;
     }
 
@@ -252,15 +234,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
         if (cisconexusvsm.getvsmDeviceState() == CiscoNexusVSMDeviceVO.VSMDeviceState.Disabled) {
         	// it's currently disabled. So change it to enabled and write it out to the db.
         	cisconexusvsm.setVsmDeviceState(CiscoNexusVSMDeviceVO.VSMDeviceState.Enabled);
-        	Transaction txn = Transaction.currentTxn();
-        	try {
-        		txn.start();
-        		_ciscoNexusVSMDeviceDao.persist(cisconexusvsm);
-   	            txn.commit();
-    		} catch (Exception e) {
-    			txn.rollback();
-    			throw new CloudRuntimeException(e.getMessage());
-    		}
+    		_ciscoNexusVSMDeviceDao.persist(cisconexusvsm);
     	}
 
         return cisconexusvsm;
@@ -276,15 +250,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
         if (cisconexusvsm.getvsmDeviceState() == CiscoNexusVSMDeviceVO.VSMDeviceState.Enabled) {
         	// it's currently disabled. So change it to enabled and write it out to the db.
         	cisconexusvsm.setVsmDeviceState(CiscoNexusVSMDeviceVO.VSMDeviceState.Disabled);
-        	Transaction txn = Transaction.currentTxn();
-        	try {
-        		txn.start();
-        		_ciscoNexusVSMDeviceDao.persist(cisconexusvsm);
-   	            txn.commit();
-    		} catch (Exception e) {
-    			txn.rollback();
-    			throw new CloudRuntimeException(e.getMessage());
-    		}
+    		_ciscoNexusVSMDeviceDao.persist(cisconexusvsm);
     	}
 
         return cisconexusvsm;

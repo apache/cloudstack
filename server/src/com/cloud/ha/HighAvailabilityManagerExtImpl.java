@@ -24,14 +24,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Component;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.usage.dao.UsageJobDao;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Local(value={HighAvailabilityManager.class})
 public class HighAvailabilityManagerExtImpl extends HighAvailabilityManagerImpl {
@@ -74,7 +73,7 @@ public class HighAvailabilityManagerExtImpl extends HighAvailabilityManagerImpl 
 
             try {
                 boolean isRunning = false;
-                Transaction txn = Transaction.open(Transaction.USAGE_DB);
+                TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
                 try {
                     Date lastHeartbeat = _usageJobDao.getLastHeartbeat();
                     if (lastHeartbeat != null) {
@@ -91,7 +90,7 @@ public class HighAvailabilityManagerExtImpl extends HighAvailabilityManagerImpl 
                     txn.close();
 
                     // switch back to VMOPS db
-                    Transaction swap = Transaction.open(Transaction.CLOUD_DB);
+                    TransactionLegacy swap = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
                     swap.close();
                 }
 

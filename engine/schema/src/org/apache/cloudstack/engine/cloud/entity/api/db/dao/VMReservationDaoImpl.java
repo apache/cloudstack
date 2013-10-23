@@ -35,7 +35,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = { VMReservationDao.class })
@@ -80,7 +80,7 @@ public class VMReservationDaoImpl extends GenericDaoBase<VMReservationVO, Long> 
     @Override
     @DB
     public VMReservationVO persist(VMReservationVO reservation) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
 
         VMReservationVO dbVO = super.persist(reservation);

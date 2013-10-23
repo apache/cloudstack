@@ -85,8 +85,8 @@ import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.QueryBuilder;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.Task;
@@ -591,7 +591,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
         @Override
         protected void doTask(final Task task) throws Exception {
-            Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+            TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             try {
                 if (task.getType() != Task.Type.DATA) {
                     super.doTask(task);

@@ -94,6 +94,7 @@ import com.cloud.bridge.util.XSerializer;
 import com.cloud.bridge.util.XSerializerXmlAdapter;
 import com.cloud.bridge.util.XmlHelper;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 
 public class S3BucketAction implements ServletAction {
@@ -371,7 +372,7 @@ public class S3BucketAction implements ServletAction {
             response.setStatus(403);
             return;
         }			
-        Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         // [B] Place the policy into the database over writting an existing policy
         try {
             // -> first make sure that the policy is valid by parsing it

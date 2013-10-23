@@ -97,6 +97,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.QueryBuilder;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -355,7 +356,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @DB
     protected boolean noDbTxn() {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         return !txn.dbTxnStarted();
     }
 
@@ -1252,7 +1253,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         @Override
         protected void doTask(final Task task) throws Exception {
-            Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+            TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             try {
                 final Type type = task.getType();
                 if (type == Task.Type.DATA) {

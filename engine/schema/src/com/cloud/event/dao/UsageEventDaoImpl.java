@@ -36,7 +36,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -90,7 +90,7 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
     public synchronized List<UsageEventVO> getRecentEvents(Date endDate) {
         long recentEventId = getMostRecentEventId();
         long maxEventId = getMaxEventId(endDate);
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         String sql = COPY_EVENTS;
         if (recentEventId == 0) {
             if (s_logger.isDebugEnabled()) {
@@ -120,7 +120,7 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
 
     @DB
     private long getMostRecentEventId() {
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             List<UsageEventVO> latestEvents = getLatestEvent();
 
@@ -140,7 +140,7 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
     }
 
     private List<UsageEventVO> findRecentEvents(Date endDate) {
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             return listLatestEvents(endDate);
         } catch (Exception ex) {
@@ -152,7 +152,7 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
     }
 
     private long getMaxEventId(Date endDate) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             String sql = MAX_EVENT;

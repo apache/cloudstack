@@ -161,6 +161,7 @@ import com.cloud.bridge.util.ConfigurationHelper;
 import com.cloud.bridge.util.EC2RestAuth;
 import com.cloud.stack.models.CloudStackAccount;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component("EC2RestServlet")
 public class EC2RestServlet extends HttpServlet {
@@ -377,7 +378,7 @@ public class EC2RestServlet extends HttpServlet {
     private void setUserKeys( HttpServletRequest request, HttpServletResponse response ) {
         String[] accessKey = null;
         String[] secretKey = null;
-        Transaction txn = null;
+        TransactionLegacy txn = null;
         try {
             // -> all these parameters are required
             accessKey = request.getParameterValues( "accesskey" );
@@ -398,7 +399,7 @@ public class EC2RestServlet extends HttpServlet {
             return;
         }
         try {
-            txn = Transaction.open(Transaction.AWSAPI_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
             txn.start();
             // -> use the keys to see if the account actually exists
             ServiceProvider.getInstance().getEC2Engine().validateAccount( accessKey[0], secretKey[0] );
@@ -434,7 +435,7 @@ public class EC2RestServlet extends HttpServlet {
      */
     private void setCertificate( HttpServletRequest request, HttpServletResponse response ) 
             throws Exception { 
-        Transaction txn = null;
+        TransactionLegacy txn = null;
         try {
             // [A] Pull the cert and cloud AccessKey from the request
             String[] certificate = request.getParameterValues( "cert" );
@@ -470,7 +471,7 @@ public class EC2RestServlet extends HttpServlet {
             // [C] Associate the cert's uniqueId with the Cloud API keys
             String uniqueId = AuthenticationUtils.X509CertUniqueId( userCert );
             logger.debug( "SetCertificate, uniqueId: " + uniqueId );
-            txn = Transaction.open(Transaction.AWSAPI_DB);
+            txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
             txn.start();
             UserCredentialsVO user = ucDao.getByAccessKey(accessKey[0]);
             user.setCertUniqueId(uniqueId);
@@ -505,7 +506,7 @@ public class EC2RestServlet extends HttpServlet {
      */
     private void deleteCertificate( HttpServletRequest request, HttpServletResponse response ) 
             throws Exception {
-        Transaction txn = null;
+        TransactionLegacy txn = null;
         try {
             String [] accessKey = request.getParameterValues( "AWSAccessKeyId" );
             if ( null == accessKey || 0 == accessKey.length ) { 
@@ -527,7 +528,7 @@ public class EC2RestServlet extends HttpServlet {
                 /*	     	     UserCredentialsDao credentialDao = new UserCredentialsDao();
 	     	     credentialDao.setCertificateId( accessKey[0], null );
 
-                 */	     	     txn = Transaction.open(Transaction.AWSAPI_DB);
+                 */	     	     txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
                  UserCredentialsVO user = ucDao.getByAccessKey(accessKey[0]);
                  user.setCertUniqueId(null);
                  ucDao.update(user.getId(), user);

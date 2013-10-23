@@ -31,7 +31,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.usage.UsageVMInstanceVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={UsageVMInstanceDao.class})
@@ -51,7 +51,7 @@ public class UsageVMInstanceDaoImpl extends GenericDaoBase<UsageVMInstanceVO, Lo
 	public UsageVMInstanceDaoImpl() {}
 
     public void update(UsageVMInstanceVO instance) {
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
         try {
             txn.start();
@@ -71,7 +71,7 @@ public class UsageVMInstanceDaoImpl extends GenericDaoBase<UsageVMInstanceVO, Lo
     }
 
     public void delete(UsageVMInstanceVO instance) {
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
         try {
             txn.start();
@@ -91,7 +91,7 @@ public class UsageVMInstanceDaoImpl extends GenericDaoBase<UsageVMInstanceVO, Lo
     }
 
     public List<UsageVMInstanceVO> getUsageRecords(long accountId, Date startDate, Date endDate) {
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
         List<UsageVMInstanceVO> usageInstances = new ArrayList<UsageVMInstanceVO>();
         try {
