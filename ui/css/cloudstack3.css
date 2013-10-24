@@ -46,6 +46,7 @@ div.toolbar,
 
 /*+}*/
 body {
+  min-width: 1024px;
   font-family: sans-serif;
   height: 769px !important;
   overflow: auto;
@@ -60,12 +61,22 @@ body.install-wizard {
   background: #FFFFFF url(../images/bg-login.png);
 }
 
-#container {
+#main-area {
   width: 1024px;
+  height: 728px;
+  margin: auto;
+  border: 1px solid #D4D4D4;
+  /*+box-shadow:0px -5px 11px #B7B7B7;*/
+  -moz-box-shadow: 0px -5px 11px #B7B7B7;
+  -webkit-box-shadow: 0px -5px 11px #B7B7B7;
+  -o-box-shadow: 0px -5px 11px #B7B7B7;
+  box-shadow: 0px -5px 11px #B7B7B7;
+}
+
+#container {
+  /*[empty]width:;*/
   height: 783px;
   margin: auto;
-  border: 1px solid #E2E2E2;
-  border-top: none;
   position: relative;
 }
 
@@ -124,7 +135,7 @@ table thead th.sorted.asc {
 
 table tbody td,
 table th {
-  padding: 9px 5px 4px 5px;
+  padding: 10px 5px 8px;
   border-right: 1px solid #BFBFBF;
   color: #495A76;
   clear: none;
@@ -403,11 +414,11 @@ body.login {
 }
 
 .login .logo {
-  width: 243px;
+  width: 250px;
   height: 31px;
   float: left;
   margin: 72px 0 0 209px;
-  background: url(../images/logo-login.png) no-repeat -7px 0px;
+  background: url(../images/logo-login.png) no-repeat 0 0;
 }
 
 .login.nologo .logo {
@@ -446,7 +457,7 @@ body.login {
 }
 
 #browser div.panel div.detail-view .toolbar {
-  width: 594px;
+  width: 100%;
 }
 
 div.list-view table tbody td span {
@@ -1296,7 +1307,6 @@ div.list-view td.state.off span {
 .quick-view-tooltip {
   width: 470px;
   display: inline-block;
-  margin-left: -462px;
   padding-top: 50px;
 }
 
@@ -1305,20 +1315,16 @@ div.list-view td.state.off span {
   position: absolute;
   top: 71px;
   left: 10px;
-  color: #5A6977;
-  /*+text-shadow:0px 1px #EAEAEA;*/
-  -moz-text-shadow: 0px 1px #EAEAEA;
-  -webkit-text-shadow: 0px 1px #EAEAEA;
-  -o-text-shadow: 0px 1px #EAEAEA;
-  text-shadow: 0px 1px #EAEAEA;
+  color: #808080;
+  font-weight: 100;
 }
 
 .quick-view-tooltip > div.title .icon {
   position: relative;
-  top: -3px;
+  top: -2px;
   background: url(../images/sprites.png) no-repeat -42px -67px;
   float: right;
-  padding: 5px 21px 0 1px;
+  padding: 0px 13px 0 0px;
 }
 
 .quick-view-tooltip .loading-overlay {
@@ -1337,8 +1343,8 @@ div.list-view td.state.off span {
 
 .quick-view-tooltip .container {
   border: 1px solid #9EA2A5;
-  background: #CCCFD6;
-  width: 470px;
+  background: #FFFFFF;
+  width: 478px;
   min-height: 100px;
   height: auto;
   overflow: hidden;
@@ -1356,10 +1362,10 @@ div.list-view td.state.off span {
 
 .quick-view-tooltip .detail-view .main-groups {
   width: 456px;
-  height: 152px;
+  height: 170px;
   position: absolute;
-  top: 55px;
   padding-top: 7px;
+  top: 55px;
   border: 1px solid #808080;
   border-left: none;
   border-right: none;
@@ -1393,7 +1399,7 @@ div.list-view td.state.off span {
 .quick-view-tooltip .detail-view .details {
   display: inline-block;
   height: auto;
-  padding-bottom: 209px;
+  padding-bottom: 224px;
 }
 
 .quick-view-tooltip .detail-view .detail-group {
@@ -1416,14 +1422,9 @@ div.list-view td.state.off span {
 }
 
 .quick-view-tooltip .detail-view .detail-group table td.name {
-  color: #3E5F7F !important;
+  color: #000000 !important;
   padding: 0px 29px 0px 5px !important;
   font-size: 13px;
-  /*+text-shadow:0px 1px #DBDBDB;*/
-  -moz-text-shadow: 0px 1px #DBDBDB;
-  -webkit-text-shadow: 0px 1px #DBDBDB;
-  -o-text-shadow: 0px 1px #DBDBDB;
-  text-shadow: 0px 1px #DBDBDB;
 }
 
 .quick-view-tooltip .detail-view .detail-group table td.value {
@@ -1444,7 +1445,7 @@ div.list-view td.state.off span {
 
 .quick-view-tooltip .detail-view .detail-group .main-groups table td.value span {
   height: 25px;
-  top: 0px;
+  top: 7px;
 }
 
 .quick-view-tooltip .detail-view .detail-group.actions {
@@ -1506,15 +1507,17 @@ div.list-view td.state.off span {
   height: auto;
   background: none;
   vertical-align: top;
+  position: relative;
+  top: 27px;
   float: left;
 }
 
 .quick-view-tooltip .detail-view .detail-group.actions td.view-all {
   position: relative;
   left: 0px;
+  top: 26px;
   float: left;
-  height: 22px;
-  border-top: 1px solid #808080;
+  height: 26px;
   /*+box-shadow:inset 0px 1px #FFFFFF;*/
   -moz-box-shadow: inset 0px 1px #FFFFFF;
   -webkit-box-shadow: inset 0px 1px #FFFFFF;
@@ -1966,25 +1969,17 @@ div.detail-group td.view-all div.view-all {
 }
 
 div.detail-group td.view-all a {
-  background: url(../images/gradients.png) repeat-x 0px -529px;
-  font-size: 11px;
+  font-size: 13px;
   display: block;
-  height: 27px;
   text-decoration: none;
-  color: #4C5D6C;
+  color: #145A98;
   /*+text-shadow:0px 1px 2px #FFFFFF;*/
   -moz-text-shadow: 0px 1px 2px #FFFFFF;
   -webkit-text-shadow: 0px 1px 2px #FFFFFF;
   -o-text-shadow: 0px 1px 2px #FFFFFF;
   text-shadow: 0px 1px 2px #FFFFFF;
   float: left;
-  padding: 0 1px;
-  border-left: 1px solid #9B9EA2;
-  /*+border-radius:5px 0 0 5px;*/
-  -moz-border-radius: 5px 0 0 5px;
-  -webkit-border-radius: 5px 0 0 5px;
-  -khtml-border-radius: 5px 0 0 5px;
-  border-radius: 5px 0 0 5px;
+  font-weight: 100;
 }
 
 div.detail-group td.view-all:hover a {
@@ -1998,7 +1993,13 @@ div.detail-group td.view-all a span {
   top: 7px;
 }
 
+div.detail-group td.view-all:hover a span {
+  text-decoration: underline;
+  color: #000000;
+}
+
 div.detail-group td.view-all div.view-all div.end {
+  display: none;
   float: left;
   width: 15px;
   height: 25px;
@@ -2034,16 +2035,9 @@ div.details .main-groups label.error {
 
 .detail-view td.view-all.multiple {
   max-width: 145px;
-  height: 17px;
   display: block;
   float: left;
-  margin: 8px 2px 8px 8px;
-  border: none !important;
-  /*+box-shadow:none;*/
-  -moz-box-shadow: none !important;
-  -webkit-box-shadow: none !important;
-  -o-box-shadow: none !important;
-  box-shadow: none !important;
+  height: 28px;
 }
 
 /*** Actions*/
@@ -2061,7 +2055,7 @@ div.detail-group.actions tr {
 }
 
 div.detail-group.actions td {
-  height: 43px;
+  height: 50px;
   vertical-align: middle;
 }
 
@@ -2107,7 +2101,6 @@ div.detail-group.actions td {
 .detail-group table td.detail-actions.full-length {
   display: block;
   width: 99%;
-  border-bottom: 1px solid #AAAAAA;
   float: left;
 }
 
@@ -2204,8 +2197,11 @@ div.detail-group.actions td {
 
 /*Header*/
 #header {
+  width: 100%;
   height: 56px;
   background: #DFDFDF url(../images/bg-header.png) repeat-x;
+  z-index: 10000;
+  position: relative;
 }
 
 #header div.button {
@@ -2215,7 +2211,7 @@ div.detail-group.actions td {
 }
 
 #header.nologo div.logo {
-  width: 170px;
+  width: 210px;
   height: 47px;
   position: relative;
   float: left;
@@ -6018,7 +6014,7 @@ label.error {
 
 .multi-wizard.instance-wizard .section.custom-size {
   position: relative;
-  background: white;
+  background: #FFFFFF;
   padding: 7px;
   border-radius: 4px;
 }
@@ -6497,8 +6493,9 @@ label.error {
   text-align: center;
   /*+placement:shift 0px 153px;*/
   position: relative;
-  left: -10px;
+  left: 0px;
   top: 153px;
+  left: -10px;
   /*+text-shadow:0px 1px #FFFFFF;*/
   -moz-text-shadow: 0px 1px #FFFFFF;
   -webkit-text-shadow: 0px 1px #FFFFFF;
@@ -9866,8 +9863,9 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   color: #838181;
   /*+placement:shift 488px 9px;*/
   position: relative;
-  left: 480px;
+  left: 488px;
   top: 9px;
+  left: 480px;
   margin: 19px 0 0 40px;
 }
 
@@ -12286,97 +12284,118 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .accounts-wizard table {
-    margin: 0;
-    width: 100%;
-    table-layout: fixed;
+  margin: 0;
+  width: 100%;
+  table-layout: fixed;
 }
+
 .accounts-wizard .ui-button {
-    display: inline-block !important;
-    float: none !important;
+  display: inline-block !important;
+  float: none !important;
 }
+
 .accounts-wizard td:last-child {
-    border: none;
+  border: none;
 }
+
 .accounts-wizard tbody tr:nth-child(even) {
-    background: #DFE1E3;
+  background: #DFE1E3;
 }
+
 .accounts-wizard tbody tr:nth-child(odd) {
-    background: #F2F0F0;
+  background: #F2F0F0;
 }
+
 .accounts-wizard .content {
-    display: inline-block;
+  display: inline-block;
 }
+
 .accounts-wizard .content:last-child {
-    margin-left: 14px;
+  margin-left: 14px;
 }
+
 .accounts-wizard .input-area {
-    width: 320px;
-    font-size: 13px;
-    color: #485867;
-    text-shadow: 0px 2px 1px #FFFFFF;
+  width: 320px;
+  font-size: 13px;
+  color: #485867;
+  text-shadow: 0px 2px 1px #FFFFFF;
 }
+
 .ldap-account-choice {
-    border: none !important;
-    border-radius: 0 0 0 0 !important;
+  border: none !important;
+  border-radius: 0 0 0 0 !important;
 }
+
 .manual-account-details .name {
-    margin-top: 2px;
-    width: 100px;
-    float: left;
-    padding-bottom:10px;
+  margin-top: 2px;
+  width: 100px;
+  float: left;
+  padding-bottom: 10px;
 }
+
 .manual-account-details {
-    height: auto !important;
-    overflow: visible !important;
-    overflow-x: visible !important;
+  height: auto !important;
+  overflow: visible !important;
+  overflow-x: visible !important;
 }
+
 .manual-account-details label.error {
-    display: block;
-    font-size: 10px;
+  display: block;
+  font-size: 10px;
 }
+
 .manual-account-details .value {
-    float: left;
+  float: left;
 }
+
 .manual-account-details .form-item:after {
-    content:".";
-    display: block;
-    clear: both;
-    visibility: hidden;
-    line-height: 0;
-    height: 0;
+  content: ".";
+  display: block;
+  clear: both;
+  visibility: hidden;
+  line-height: 0;
+  height: 0;
 }
+
 .manual-account-details .form-item {
-    padding: 5px;
-    width: 100%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
+  padding: 5px;
+  width: 100%;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
 }
-.manual-account-details select, .manual-account-details input {
-    width: 150px;
-}
+
+.manual-account-details select,
 .manual-account-details input {
-    background: #F6F6F6;
-    -moz-border-radius: 4px;
-    -webkit-border-radius: 4px;
-    -khtml-border-radius: 4px;
-    border-radius: 4px;
-    border-radius: 4px 4px 4px 4px;
-    border: 1px solid #AFAFAF;
-    -moz-box-shadow: inset 0px 1px #727272;
-    -webkit-box-shadow: inset 0px 1px #727272;
-    -o-box-shadow: inset 0px 1px #727272;
-    box-shadow: inset 0px 1px #727272;
-    -moz-box-shadow: inset 0px 1px 0px #727272;
-    -webkit-box-shadow: inset 0px 1px 0px #727272;
-    -o-box-shadow: inset 0px 1px 0px #727272;
+  width: 150px;
 }
+
+.manual-account-details input {
+  background: #F6F6F6;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
+  border: 1px solid #AFAFAF;
+  -moz-box-shadow: inset 0px 1px #727272;
+  -webkit-box-shadow: inset 0px 1px #727272;
+  -o-box-shadow: inset 0px 1px #727272;
+  box-shadow: inset 0px 1px #727272;
+  -moz-box-shadow: inset 0px 1px 0px #727272;
+  -webkit-box-shadow: inset 0px 1px 0px #727272;
+  -o-box-shadow: inset 0px 1px 0px #727272;
+}
+
 .manual-account-details > *:nth-child(even) {
-    background: #DFE1E3;
+  background: #DFE1E3;
 }
+
 .manual-account-details > *:nth-child(odd) {
-    background: #F2F0F0;
+  background: #F2F0F0;
 }
+
 .manual-account-details .value {
-    display: inline-block;
+  display: inline-block;
 }
+
