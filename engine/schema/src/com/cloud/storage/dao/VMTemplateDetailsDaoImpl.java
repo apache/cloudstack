@@ -98,7 +98,7 @@ public class VMTemplateDetailsDaoImpl extends GenericDaoBase<VMTemplateDetailVO,
     }
     
     @Override
-    public void addTemplateDetail(Long templateId, String key, String value) {
+    public void addTemplateDetail(long templateId, String key, String value) {
         VMTemplateDetailVO detail = findDetail(templateId, key);
         if (detail == null) {
             VMTemplateDetailVO newEntry = new VMTemplateDetailVO(templateId, key, value);
@@ -106,6 +106,18 @@ public class VMTemplateDetailsDaoImpl extends GenericDaoBase<VMTemplateDetailVO,
         } else {
             detail.setValue(value);
             update(detail.getId(), detail);
+        }
+    }
+    
+    @Override
+    public void removeDetails(long templateId, String key) {
+        if(key != null){
+            VMTemplateDetailVO detail = findDetail(templateId, key);
+            if(detail != null){
+                remove(detail.getId());
+            }
+        } else {
+            deleteDetails(templateId);
         }
     }
 }

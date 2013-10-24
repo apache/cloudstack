@@ -152,16 +152,16 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         }
         
         // TODO - Have a better design here.
-        if(resourceType == ResourceObjectType.Volume){
+        if (resourceType == ResourceObjectType.Volume){
            _volumeDetailDao.removeDetails(id, key);
-        } else if(resourceType == ResourceObjectType.Nic){
+        } else if (resourceType == ResourceObjectType.Nic){
             _nicDetailDao.removeDetails(id, key);
-        } else if(resourceType == ResourceObjectType.UserVm){
-            _userVmDetailDao.removeDetails(id, key);
+        } else if (resourceType == ResourceObjectType.UserVm) {
+            _userVmDetailsDao.removeDetails(id, key); 
+        } else if (resourceType == ResourceObjectType.Template) {
+            _templateDetailsDao.removeDetails(id, key);
         } else if (resourceType == ResourceObjectType.Zone){
             _dcDetailsDao.removeDetails(id, key);
-        } else if (resourceType == ResourceObjectType.Network){
-            _networkDetailsDao.removeDetails(id, key);
         }
 
         return true;
