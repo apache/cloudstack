@@ -88,8 +88,6 @@ public class VmwareClient {
 	            }
 	        };
 	        HttpsURLConnection.setDefaultHostnameVerifier(hv);
-	        
-        	vimService = new VimService();
 		} catch (Exception e) {
 		}   	
     }
@@ -107,7 +105,7 @@ public class VmwareClient {
     }
 
     private ManagedObjectReference SVC_INST_REF = new ManagedObjectReference();
-    private static VimService vimService;
+    private VimService vimService;
     private VimPortType vimPort;
     private String serviceCookie;
     private final String SVC_INST_NAME = "ServiceInstance";
@@ -127,6 +125,7 @@ public class VmwareClient {
         SVC_INST_REF.setType(SVC_INST_NAME);
         SVC_INST_REF.setValue(SVC_INST_NAME);
 
+    	vimService = new VimService();
         vimPort = vimService.getVimPort();
         Map<String, Object> ctxt = ((BindingProvider) vimPort).getRequestContext();
 
