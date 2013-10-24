@@ -599,6 +599,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class ManagementServerImpl extends ManagerBase implements ManagementServer {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
 
+    private static final LockMasterListener s_lockMasterListener = new LockMasterListener(ManagementServerNode.getManagementServerId());
+
     @Inject
     public AccountManager _accountMgr;
     @Inject
@@ -818,7 +820,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public boolean start() {
         s_logger.info("Startup CloudStack management server...");
 
-        _clusterMgr.registerListener(new LockMasterListener(ManagementServerNode.getManagementServerId()));
+        _clusterMgr.registerListener(s_lockMasterListener);
 
         enableAdminUser("password");
         return true;
