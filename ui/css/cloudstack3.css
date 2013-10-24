@@ -135,7 +135,7 @@ table thead th.sorted.asc {
 
 table tbody td,
 table th {
-  padding: 9px 5px 4px;
+  padding: 10px 5px 8px;
   border-right: 1px solid #BFBFBF;
   color: #495A76;
   clear: none;
@@ -457,7 +457,7 @@ body.login {
 }
 
 #browser div.panel div.detail-view .toolbar {
-  width: 594px;
+  width: 100%;
 }
 
 div.list-view table tbody td span {
@@ -1977,25 +1977,17 @@ div.detail-group td.view-all div.view-all {
 }
 
 div.detail-group td.view-all a {
-  background: url(../images/gradients.png) repeat-x 0px -529px;
-  font-size: 11px;
+  font-size: 13px;
   display: block;
-  height: 27px;
   text-decoration: none;
-  color: #4C5D6C;
+  color: #268BE3;
   /*+text-shadow:0px 1px 2px #FFFFFF;*/
   -moz-text-shadow: 0px 1px 2px #FFFFFF;
   -webkit-text-shadow: 0px 1px 2px #FFFFFF;
   -o-text-shadow: 0px 1px 2px #FFFFFF;
   text-shadow: 0px 1px 2px #FFFFFF;
   float: left;
-  padding: 0 1px;
-  border-left: 1px solid #9B9EA2;
-  /*+border-radius:5px 0 0 5px;*/
-  -moz-border-radius: 5px 0 0 5px;
-  -webkit-border-radius: 5px 0 0 5px;
-  -khtml-border-radius: 5px 0 0 5px;
-  border-radius: 5px 0 0 5px;
+  font-weight: 100;
 }
 
 div.detail-group td.view-all:hover a {
@@ -2009,7 +2001,13 @@ div.detail-group td.view-all a span {
   top: 7px;
 }
 
+div.detail-group td.view-all:hover a span {
+  text-decoration: underline;
+  color: #000000;
+}
+
 div.detail-group td.view-all div.view-all div.end {
+  display: none;
   float: left;
   width: 15px;
   height: 25px;
@@ -2045,16 +2043,9 @@ div.details .main-groups label.error {
 
 .detail-view td.view-all.multiple {
   max-width: 145px;
-  height: 17px;
   display: block;
   float: left;
-  margin: 8px 2px 8px 8px;
-  border: none !important;
-  /*+box-shadow:none;*/
-  -moz-box-shadow: none !important;
-  -webkit-box-shadow: none !important;
-  -o-box-shadow: none !important;
-  box-shadow: none !important;
+  height: 28px;
 }
 
 /*** Actions*/
@@ -2072,7 +2063,7 @@ div.detail-group.actions tr {
 }
 
 div.detail-group.actions td {
-  height: 43px;
+  height: 47px;
   vertical-align: middle;
 }
 
