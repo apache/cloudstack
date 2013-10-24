@@ -17,7 +17,6 @@
 package com.cloud.agent.dao.impl;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -26,6 +25,7 @@ import java.util.Properties;
 
 import javax.ejb.Local;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.dao.StorageComponent;
@@ -59,18 +59,10 @@ public class PropertiesStorage implements StorageComponent {
             _properties.store(output, _name);
             output.flush();
             output.close();
-        } catch (FileNotFoundException e) {
-            s_logger.error("Who deleted the file? ", e);
         } catch (IOException e) {
             s_logger.error("Uh-oh: ", e);
         } finally {
-            if (output != null) {
-                try {
-                    output.close();
-                } catch (IOException e) {
-                    // ignore.
-                }
-            }
+            IOUtils.closeQuietly(output);
         }
     }
 
@@ -99,7 +91,7 @@ public class PropertiesStorage implements StorageComponent {
         }
 
         try {
-            _properties.load(new FileInputStream(file));
+            PropertiesUtil.loadFromFile(_properties, file);
             _file = file;
         } catch (FileNotFoundException e) {
             s_logger.error("How did we get here? ", e);
