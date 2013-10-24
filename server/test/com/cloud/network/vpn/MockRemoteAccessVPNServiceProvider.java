@@ -23,7 +23,6 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
@@ -63,14 +62,14 @@ public class MockRemoteAccessVPNServiceProvider extends ManagerBase implements
 	}
 
 	@Override
-	public boolean startVpn(Network network, RemoteAccessVpn vpn)
+	public boolean startVpn(RemoteAccessVpn vpn)
 			throws ResourceUnavailableException {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
-	public boolean stopVpn(Network network, RemoteAccessVpn vpn)
+	public boolean stopVpn(RemoteAccessVpn vpn)
 			throws ResourceUnavailableException {
 		// TODO Auto-generated method stub
 		return false;

@@ -76,11 +76,20 @@ public class MockConfigurationDaoImpl  extends GenericDaoBase<ConfigurationVO, S
      * @see com.cloud.configuration.dao.ConfigurationDao#getValueAndInitIfNotExist(java.lang.String, java.lang.String, java.lang.String)
      */
     @Override
+    public String getValueAndInitIfNotExist(String name, String category, String initValue, String desc) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+    
+    /* (non-Javadoc)
+     * @see com.cloud.configuration.dao.ConfigurationDao#getValueAndInitIfNotExist(java.lang.String, java.lang.String, java.lang.String)
+     */
+    @Override
     public String getValueAndInitIfNotExist(String name, String category, String initValue) {
         // TODO Auto-generated method stub
         return null;
     }
-
+    
     /* (non-Javadoc)
      * @see com.cloud.configuration.dao.ConfigurationDao#isPremium()
      */

@@ -70,6 +70,9 @@ public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager imp
     private String _ip = null;
 
 
+    public StaticConsoleProxyManager() {
+        
+    }
 
     @Override
     protected HostVO findHost(VMInstanceVO vm) {

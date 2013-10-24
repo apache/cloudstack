@@ -258,7 +258,8 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
 
             });
             
-            if ( s3.isMultipartEnabled()){
+
+            if ( !s3.getSingleUpload(remoteSize) ){
                 // use TransferManager to do multipart upload
                 S3Utils.mputObject(s3, putObjectRequest);
             } else{

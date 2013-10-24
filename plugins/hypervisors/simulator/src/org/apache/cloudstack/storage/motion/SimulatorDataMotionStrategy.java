@@ -24,7 +24,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority.Priority;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
@@ -33,13 +33,13 @@ import com.cloud.host.Host;
 
 public class SimulatorDataMotionStrategy implements DataMotionStrategy {
     @Override
-    public Priority canHandle(DataObject srcData, DataObject destData) {
-        return Priority.HYPERVISOR;
+    public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
+        return StrategyPriority.HYPERVISOR;
     }
 
     @Override
-    public Priority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
-        return Priority.HYPERVISOR;
+    public StrategyPriority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
+        return StrategyPriority.HYPERVISOR;
     }
 
     @Override

@@ -22,27 +22,44 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface ResourceTag extends ControlledEntity, Identity, InternalIdentity {
 
-    public enum  TaggedResourceType {
-        UserVm,
-        Template,
-        ISO,
-        Volume,
-        Snapshot,
-        Network,
-        Nic,
-        LoadBalancer,
-        PortForwardingRule,
-        FirewallRule,
-        SecurityGroup,
-        PublicIpAddress,
-        Project,
-        Vpc,
-        NetworkACL,
-        StaticRoute,
-        VMSnapshot,
-        RemoteAccessVpn,
-        Zone,
-        ServiceOffering
+    //FIXME - extract enum to another interface as its used both by resourceTags and resourceMetaData code
+    public enum  ResourceObjectType {
+        UserVm (true, true),
+        Template (true, true),
+        ISO (true, false),
+        Volume (true, true),
+        Snapshot (true, false),
+        Network (true, true),
+        Nic (false, true),
+        LoadBalancer (true, false),
+        PortForwardingRule (true, false),
+        FirewallRule (true, false),
+        SecurityGroup (true, false),
+        PublicIpAddress (true, false),
+        Project (true, false),
+        Vpc (true, false),
+        NetworkACL (true, false),
+        StaticRoute (true, false),
+        VMSnapshot (true, false),
+        RemoteAccessVpn (true, false),
+        Zone (false, true),
+        ServiceOffering (false, true);
+        
+        ResourceObjectType(boolean resourceTagsSupport, boolean resourceMetadataSupport) {
+            this.resourceTagsSupport = resourceTagsSupport;
+            this.metadataSupport = resourceMetadataSupport;
+        }
+        
+        private final boolean resourceTagsSupport;
+        private final boolean metadataSupport;
+        
+        public boolean resourceTagsSupport() {
+            return this.resourceTagsSupport;
+        }
+        
+        public boolean resourceMetadataSupport() {
+            return this.metadataSupport;
+        }
     }
 
     /**
@@ -63,7 +80,7 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
     /**
      * @return
      */
-    TaggedResourceType getResourceType();
+    ResourceObjectType getResourceType();
 
     /**
      * @return

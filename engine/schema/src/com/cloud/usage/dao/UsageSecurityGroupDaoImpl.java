@@ -31,7 +31,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.usage.UsageSecurityGroupVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={UsageSecurityGroupDao.class})
@@ -55,7 +55,7 @@ public class UsageSecurityGroupDaoImpl extends GenericDaoBase<UsageSecurityGroup
 	public UsageSecurityGroupDaoImpl() {}
 
 	public void update(UsageSecurityGroupVO usage) {
-	    Transaction txn = Transaction.open(Transaction.USAGE_DB);
+	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
 		PreparedStatement pstmt = null;
 		try {
 		    txn.start();
@@ -100,7 +100,7 @@ public class UsageSecurityGroupDaoImpl extends GenericDaoBase<UsageSecurityGroup
             sql += " LIMIT " + startIndex + ",500";
         }
 
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
 
         try {

@@ -71,6 +71,7 @@ assignVirtualMachine=7
 migrateVirtualMachine=1
 migrateVirtualMachineWithVolume=1
 recoverVirtualMachine=7
+expungeVirtualMachine=1
 
 #### snapshot commands
 createSnapshot=15
@@ -493,7 +494,7 @@ listVirtualRouterElements=7
 
 #### usage commands
 generateUsageRecords=1
-listUsageRecords=1
+listUsageRecords=7
 listUsageTypes=1
 
 #### traffic monitor commands

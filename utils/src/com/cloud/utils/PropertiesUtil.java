@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 public class PropertiesUtil {
@@ -155,5 +156,20 @@ public class PropertiesUtil {
             configMap.put((String)key, value);
         }
         return configMap;
+    }
+
+    /**
+     * Load a Properties object with contents from a File.
+     * @param properties the properties object to be loaded
+     * @param file  the file to load from
+     * @throws IOException 
+     */
+    public static void loadFromFile(Properties properties, File file) throws IOException {
+        InputStream stream = new FileInputStream(file);
+        try {
+            properties.load(stream);
+        } finally {
+            IOUtils.closeQuietly(stream);
+        }
     }
 }

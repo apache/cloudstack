@@ -46,7 +46,7 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 
 @Component
@@ -163,7 +163,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 
     @Override
     public void update(VMTemplateHostVO instance) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             Date now = new Date();
@@ -235,7 +235,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
     @Override
     public List<VMTemplateHostVO> listByTemplateStatus(long templateId, long datacenterId,
             VMTemplateHostVO.Status downloadState) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<VMTemplateHostVO> result = new ArrayList<VMTemplateHostVO>();
         try {
@@ -267,7 +267,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
     @Override
     public List<VMTemplateHostVO> listByTemplateStatus(long templateId, long datacenterId, long podId,
             VMTemplateHostVO.Status downloadState) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<VMTemplateHostVO> result = new ArrayList<VMTemplateHostVO>();
         ResultSet rs = null;

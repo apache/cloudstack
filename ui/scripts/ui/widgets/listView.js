@@ -1696,7 +1696,10 @@
                 noActionCol: listViewData.noActionCol
             });
         createFilters($toolbar, listViewData.filters);
+                
+        if (listViewData.hideSearchBar != true) {
         createSearchBar($toolbar, listViewData);
+        }
 
         loadBody(
             $table,

@@ -27,6 +27,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={CloudStackConfigurationDao.class})
@@ -42,7 +43,7 @@ public class CloudStackConfigurationDaoImpl extends GenericDaoBase<CloudStackCon
     @DB
     public String getConfigValue(String name) {
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
-        Transaction txn = Transaction.open("cloud", Transaction.CLOUD_DB, true);
+        TransactionLegacy txn = TransactionLegacy.open("cloud", TransactionLegacy.CLOUD_DB, true);
         try {
             txn.start();
             SearchCriteria<CloudStackConfigurationVO> sc = NameSearch.create();

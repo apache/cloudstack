@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value=VolumeDetailsDao.class)
@@ -98,7 +98,7 @@ public class VolumeDetailsDaoImpl extends GenericDaoBase<VolumeDetailVO, Long> i
 
     @Override
     public void persist(long volumeId, Map<String, String> details) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         SearchCriteria<VolumeDetailVO> sc = VolumeSearch.create();
         sc.setParameters("volumeId", volumeId);

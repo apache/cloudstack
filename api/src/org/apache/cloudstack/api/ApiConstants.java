@@ -34,6 +34,7 @@ public class ApiConstants {
     public static final String BYTES_READ_RATE = "bytesreadrate";
     public static final String BYTES_WRITE_RATE = "byteswriterate";
     public static final String CATEGORY = "category";
+    public static final String CAN_REVERT = "canrevert";
     public static final String CERTIFICATE = "certificate";
     public static final String PRIVATE_KEY = "privatekey";
     public static final String DOMAIN_SUFFIX = "domainsuffix";
@@ -142,6 +143,7 @@ public class ApiConstants {
     public static final String MAX_SNAPS = "maxsnaps";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
+    public static final String KEEPALIVE_ENABLED = "keepaliveenabled";
     public static final String NAME = "name";
     public static final String METHOD_NAME = "methodname";
     public static final String NETWORK_DOMAIN = "networkdomain";
@@ -186,6 +188,7 @@ public class ApiConstants {
     public static final String REQUIRES_HVM = "requireshvm";
     public static final String RESOURCE_TYPE = "resourcetype";
     public static final String RESPONSE = "response";
+    public static final String REVERTABLE = "revertable";
     public static final String QUERY_FILTER = "queryfilter";
     public static final String SCHEDULE = "schedule";
     public static final String SCOPE = "scope";
@@ -248,7 +251,7 @@ public class ApiConstants {
     public static final String IS_VOLATILE = "isvolatile";
     public static final String VOLUME_ID = "volumeid";
     public static final String ZONE_ID = "zoneid";
-    public static final String ZONE_NAME = "zonename";    
+    public static final String ZONE_NAME = "zonename";
     public static final String NETWORK_TYPE = "networktype";
     public static final String PAGE = "page";
     public static final String PAGE_SIZE = "pagesize";
@@ -518,7 +521,9 @@ public class ApiConstants {
     public static final String ROUTING = "isrouting";
     public static final String MAX_CONNECTIONS = "maxconnections";
     public static final String SERVICE_STATE = "servicestate";
-    public static final String RESOURCE_TAG = "resourcetag";
+    public static final String RESOURCE_DETAIL = "resourcedetail";
+    public static final String EXPUNGE = "expunge";
+
     public enum HostDetails {
         all, capacity, events, stats, min;
     }

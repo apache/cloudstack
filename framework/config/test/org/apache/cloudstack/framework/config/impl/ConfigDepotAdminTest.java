@@ -95,6 +95,7 @@ public class ConfigDepotAdminTest extends TestCase {
         verify(_configDao, times(1)).persist(any(ConfigurationVO.class));
 
         when(_configDao.findById(DynamicIntCK.key())).thenReturn(dynamicIntCV);
+        _depotAdmin._configured.clear();
         _depotAdmin.populateConfigurations();
         // This is two because DynamicIntCK also returns null.
         verify(_configDao, times(2)).persist(any(ConfigurationVO.class));

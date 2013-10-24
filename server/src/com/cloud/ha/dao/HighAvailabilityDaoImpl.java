@@ -33,6 +33,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -130,7 +131,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
 
     @Override
     public HaWorkVO take(final long serverId) {
-        final Transaction txn = Transaction.currentTxn();
+        final TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             final SearchCriteria<HaWorkVO> sc = TBASearch.create();
             sc.setParameters("time", System.currentTimeMillis() >> 10);

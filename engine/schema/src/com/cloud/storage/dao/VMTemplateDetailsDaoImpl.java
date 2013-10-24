@@ -28,7 +28,7 @@ import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = VMTemplateDetailsDao.class)
@@ -84,7 +84,7 @@ public class VMTemplateDetailsDaoImpl extends GenericDaoBase<VMTemplateDetailVO,
 
     @Override
     public void persist(long templateId, Map<String, String> details) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         SearchCriteria<VMTemplateDetailVO> sc = TemplateSearch.create();
         sc.setParameters("templateId", templateId);
@@ -95,5 +95,29 @@ public class VMTemplateDetailsDaoImpl extends GenericDaoBase<VMTemplateDetailVO,
             persist(vo);
         }
         txn.commit();
+    }
+    
+    @Override
+    public void addTemplateDetail(long templateId, String key, String value) {
+        VMTemplateDetailVO detail = findDetail(templateId, key);
+        if (detail == null) {
+            VMTemplateDetailVO newEntry = new VMTemplateDetailVO(templateId, key, value);
+            persist(newEntry);
+        } else {
+            detail.setValue(value);
+            update(detail.getId(), detail);
+        }
+    }
+    
+    @Override
+    public void removeDetails(long templateId, String key) {
+        if(key != null){
+            VMTemplateDetailVO detail = findDetail(templateId, key);
+            if(detail != null){
+                remove(detail.getId());
+            }
+        } else {
+            deleteDetails(templateId);
+        }
     }
 }

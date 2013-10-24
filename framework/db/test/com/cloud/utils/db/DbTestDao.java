@@ -29,7 +29,7 @@ public class DbTestDao extends GenericDaoBase<DbTestVO, Long> implements Generic
 
     @DB
     public void create(int fldInt, long fldLong, String fldString) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             txn.start();
@@ -48,7 +48,7 @@ public class DbTestDao extends GenericDaoBase<DbTestVO, Long> implements Generic
 
     @DB
     public void update(int fldInt, long fldLong, String fldString) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             txn.start();

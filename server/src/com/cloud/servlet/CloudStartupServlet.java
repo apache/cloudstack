@@ -30,6 +30,7 @@ import com.cloud.utils.LogUtils;
 import com.cloud.utils.SerialVersionUID;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 public class CloudStartupServlet extends HttpServlet {
     public static final Logger s_logger = Logger.getLogger(CloudStartupServlet.class.getName());
@@ -49,7 +50,7 @@ public class CloudStartupServlet extends HttpServlet {
 				if(ComponentContext.getApplicationContext() != null) {
 					_timer.cancel();
 					
-					Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+					TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
 					try {
 						ComponentContext.initComponentsLifeCycle();
 					} finally {

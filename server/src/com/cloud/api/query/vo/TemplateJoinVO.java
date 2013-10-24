@@ -30,7 +30,7 @@ import javax.persistence.TemporalType;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -238,7 +238,7 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name="tag_resource_type")
     @Enumerated(value=EnumType.STRING)
-    private TaggedResourceType tagResourceType;
+    private ResourceObjectType tagResourceType;
 
     @Column(name="tag_customer")
     private String tagCustomer;
@@ -369,7 +369,7 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
         return tagResourceUuid;
     }
 
-    public TaggedResourceType getTagResourceType() {
+    public ResourceObjectType getTagResourceType() {
         return tagResourceType;
     }
 

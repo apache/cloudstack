@@ -29,7 +29,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -90,6 +89,11 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
@@ -482,31 +486,30 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     }
     
     @DB
-    protected void processAnswer(VMSnapshotVO vmSnapshot, UserVmVO  userVm, Answer as, Long hostId) {
-        final Transaction txn = Transaction.currentTxn();
+    protected void processAnswer(final VMSnapshotVO vmSnapshot, UserVmVO  userVm, final Answer as, Long hostId) {
         try {
-            txn.start();
-            if (as instanceof CreateVMSnapshotAnswer) {
-                CreateVMSnapshotAnswer answer = (CreateVMSnapshotAnswer) as;
-                finalizeCreate(vmSnapshot, answer.getVolumeTOs());
-                vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationSucceeded);
-            } else if (as instanceof RevertToVMSnapshotAnswer) {
-                RevertToVMSnapshotAnswer answer = (RevertToVMSnapshotAnswer) as;
-                finalizeRevert(vmSnapshot, answer.getVolumeTOs());
-                vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationSucceeded);
-            } else if (as instanceof DeleteVMSnapshotAnswer) {
-                DeleteVMSnapshotAnswer answer = (DeleteVMSnapshotAnswer) as;
-                finalizeDelete(vmSnapshot, answer.getVolumeTOs());
-                _vmSnapshotDao.remove(vmSnapshot.getId());
-            }
-            txn.commit();
+            Transaction.execute(new TransactionCallbackWithExceptionNoReturn<NoTransitionException>() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) throws NoTransitionException {
+                    if (as instanceof CreateVMSnapshotAnswer) {
+                        CreateVMSnapshotAnswer answer = (CreateVMSnapshotAnswer) as;
+                        finalizeCreate(vmSnapshot, answer.getVolumeTOs());
+                        vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationSucceeded);
+                    } else if (as instanceof RevertToVMSnapshotAnswer) {
+                        RevertToVMSnapshotAnswer answer = (RevertToVMSnapshotAnswer) as;
+                        finalizeRevert(vmSnapshot, answer.getVolumeTOs());
+                        vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationSucceeded);
+                    } else if (as instanceof DeleteVMSnapshotAnswer) {
+                        DeleteVMSnapshotAnswer answer = (DeleteVMSnapshotAnswer) as;
+                        finalizeDelete(vmSnapshot, answer.getVolumeTOs());
+                        _vmSnapshotDao.remove(vmSnapshot.getId());
+                    }
+                }
+            });
         } catch (Exception e) {
             String errMsg = "Error while process answer: " + as.getClass() + " due to " + e.getMessage();
             s_logger.error(errMsg, e);
-            txn.rollback();
             throw new CloudRuntimeException(errMsg);
-        } finally {
-            txn.close();
         }
     }
 

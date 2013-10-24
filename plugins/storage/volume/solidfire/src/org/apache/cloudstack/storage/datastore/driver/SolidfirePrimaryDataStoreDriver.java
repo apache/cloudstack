@@ -20,12 +20,19 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.*;
+import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
 import org.apache.commons.lang.StringUtils;
@@ -39,9 +46,9 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.user.AccountVO;
-import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountDetailVO;
+import com.cloud.user.AccountDetailsDao;
+import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 
 public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
@@ -122,10 +129,10 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         String clusterAdminPassword = sfConnection.getClusterAdminPassword();
 
         long accountNumber = SolidFireUtil.createSolidFireAccount(mVip, mPort,
-            clusterAdminUsername, clusterAdminPassword, sfAccountName);
+                clusterAdminUsername, clusterAdminPassword, sfAccountName);
 
         return SolidFireUtil.getSolidFireAccountById(mVip, mPort,
-            clusterAdminUsername, clusterAdminPassword, accountNumber);
+                clusterAdminUsername, clusterAdminPassword, accountNumber);
     }
 
     private void updateCsDbWithAccountInfo(long csAccountId, SolidFireUtil.SolidFireAccount sfAccount) {
@@ -174,18 +181,22 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             _targetSecret = targetSecret;
         }
 
+        @Override
         public String getInitiatorUsername() {
             return _initiatorUsername;
         }
 
+        @Override
         public String getInitiatorSecret() {
             return _initiatorSecret;
         }
 
+        @Override
         public String getTargetUsername() {
             return _targetUsername;
         }
 
+        @Override
         public String getTargetSecret() {
             return _targetSecret;
         }
@@ -268,7 +279,7 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         Long maxIops = volumeInfo.getMaxIops();
 
         if (minIops == null || minIops <= 0 ||
-            maxIops == null || maxIops <= 0) {
+                maxIops == null || maxIops <= 0) {
             long defaultMaxIops = getDefaultMaxIops(storagePoolId);
 
             iops = new Iops(getDefaultMinIops(storagePoolId), defaultMaxIops, getDefaultBurstIops(storagePoolId, defaultMaxIops));
@@ -328,22 +339,22 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             _minIops = minIops;
             _maxIops = maxIops;
             _burstIops = burstIops;
-    	}
+        }
 
-    	public long getMinIops()
-    	{
-    		return _minIops;
-    	}
+        public long getMinIops()
+        {
+            return _minIops;
+        }
 
-    	public long getMaxIops()
-    	{
-    		return _maxIops;
-    	}
+        public long getMaxIops()
+        {
+            return _maxIops;
+        }
 
-    	public long getBurstIops()
-    	{
-    		return _burstIops;
-    	}
+        public long getBurstIops()
+        {
+            return _burstIops;
+        }
     }
 
     private void deleteSolidFireVolume(VolumeInfo volumeInfo, SolidFireConnection sfConnection)
@@ -501,14 +512,14 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             _volumeDao.deleteVolumesByInstance(volumeInfo.getId());
 
-//            if (!sfAccountHasVolume(sfAccountId, sfConnection)) {
-//                // delete the account from the SolidFire SAN
-//                deleteSolidFireAccount(sfAccountId, sfConnection);
-//
-//                // delete the info in the account_details table
-//                // that's related to the SolidFire account
-//                _accountDetailsDao.deleteDetails(account.getAccountId());
-//            }
+            //            if (!sfAccountHasVolume(sfAccountId, sfConnection)) {
+            //                // delete the account from the SolidFire SAN
+            //                deleteSolidFireAccount(sfAccountId, sfConnection);
+            //
+            //                // delete the info in the account_details table
+            //                // that's related to the SolidFire account
+            //                _accountDetailsDao.deleteDetails(account.getAccountId());
+            //            }
 
             StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
 

@@ -517,7 +517,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 			count++;
 		}
 
-		return success ? new StopAnswer(cmd, "Success", 0, true) : new StopAnswer(cmd, "IPMI power off failed", false);
+		return success ? new StopAnswer(cmd, "Success", true) : new StopAnswer(cmd, "IPMI power off failed", false);
 	}
 
 	protected StartAnswer execute(StartCommand cmd) {

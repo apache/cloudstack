@@ -36,7 +36,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority.Priority;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
@@ -124,13 +124,13 @@ AncientDataMotionStrategy implements DataMotionStrategy {
     ManagementService _mgmtServer;
 
     @Override
-    public Priority canHandle(DataObject srcData, DataObject destData) {
-        return Priority.DEFAULT;
+    public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
+        return StrategyPriority.DEFAULT;
     }
 
     @Override
-    public Priority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
-        return Priority.CANT_HANDLE;
+    public StrategyPriority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
+        return StrategyPriority.CANT_HANDLE;
     }
 
     protected boolean needCacheStorage(DataObject srcData, DataObject destData) {

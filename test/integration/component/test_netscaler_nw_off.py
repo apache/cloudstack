@@ -2359,11 +2359,10 @@ class TestNOWithNetscaler(cloudstackTestCase):
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
+        cls._cleanup = []
         try:
            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler_1"])
-           cls._cleanup = [
-                    cls.netscaler
-                    ]
+           cls._cleanup.append(cls.netscaler)
            cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
@@ -2403,7 +2402,7 @@ class TestNOWithNetscaler(cloudstackTestCase):
         return
 
     @attr(tags = ["advancedns"])
-    def test_01_network_off_without_conserve_mode(self):
+    def test_01_netoff_without_conserve_mode(self):
         """Test Nw off with Conserve mode off, VR-All services, LB-netscaler
         """
 
@@ -2672,7 +2671,7 @@ class TestNOWithNetscaler(cloudstackTestCase):
         return
 
     @attr(tags = ["advancedns"])
-    def test_02_network_off_with_conserve_mode_netscaler(self):
+    def test_02_net_off_conserve_mode_ns(self):
         """Test NW off with Conserve mode ON, LB-Netscaler and VR-All services
         """
 

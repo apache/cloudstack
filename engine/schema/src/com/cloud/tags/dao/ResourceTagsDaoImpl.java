@@ -23,7 +23,7 @@ import javax.ejb.Local;
 import org.springframework.stereotype.Component;
 
 import com.cloud.server.ResourceTag;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -44,7 +44,7 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
     }
     
     @Override
-    public boolean removeByIdAndType(long resourceId, ResourceTag.TaggedResourceType resourceType) {
+    public boolean removeByIdAndType(long resourceId, ResourceTag.ResourceObjectType resourceType) {
         SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
         sc.setParameters("resourceId", resourceId);
         sc.setParameters("resourceType", resourceType);
@@ -53,7 +53,7 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
     }
 
     @Override
-    public List<? extends ResourceTag> listBy(long resourceId, TaggedResourceType resourceType) {
+    public List<? extends ResourceTag> listBy(long resourceId, ResourceObjectType resourceType) {
         SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
         sc.setParameters("resourceId", resourceId);
         sc.setParameters("resourceType", resourceType);

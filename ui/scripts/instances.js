@@ -529,7 +529,7 @@
 
                         },
                         notification: {
-                            pool: pollAsyncJobResult
+                            poll: pollAsyncJobResult
                         }
                     },
                     destroy: {
@@ -556,6 +556,39 @@
                                             getUpdatedItem: function(json) {
                                                 return json.queryasyncjobresultresponse.jobresult.virtualmachine;
                                             },
+                                            getActionFilter: function() {
+                                                return vmActionfilter;
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        },
+                        notification: {
+                            poll: pollAsyncJobResult
+                        }
+                    },
+                    expunge: {
+                        label: 'label.action.expunge.instance',
+                        compactLabel: 'label.expunge',
+                        messages: {
+                            confirm: function(args) {
+                                return 'message.action.expunge.instance';
+                            },
+                            notification: function(args) {
+                                return 'label.action.expunge.instance';
+                            }
+                        },
+                        action: function(args) {
+                            $.ajax({
+                                url: createURL("expungeVirtualMachine&id=" + args.context.instances[0].id),
+                                dataType: "json",
+                                async: true,
+                                success: function(json) {
+                                    var jid = json.expungevirtualmachineresponse.jobid;
+                                    args.response.success({
+                                        _custom: {
+                                            jobId: jid,
                                             getActionFilter: function() {
                                                 return vmActionfilter;
                                             }
@@ -796,13 +829,11 @@
                                 isdynamicallyscalable: (args.data.isdynamicallyscalable == "on"),
                                 ostypeid: args.data.guestosid
                             };
-
                             if (args.data.displayname != args.context.instances[0].displayname) {
                                 $.extend(data, {
                                     displayName: args.data.displayname
                                 });
                             }
-
                             $.ajax({
                                 url: createURL('updateVirtualMachine'),
                                 data: data,
@@ -813,6 +844,26 @@
                                     });
                                 }
                             });
+                            
+                            
+                            //***** addResourceDetail *****
+                            //XenServer only (starts here)                               
+			                if(args.$detailView.find('form').find('div .detail-group').find('.xenserverToolsVersion61plus').length > 0) {	  					                	
+			                	$.ajax({
+			                		url: createURL('addResourceDetail'),
+			                		data: {
+			                			resourceType: 'uservm',
+			                			resourceId: 3,
+			                			'details[0].key': 'hypervisortoolsversion',
+			                			'details[0].value': (args.data.xenserverToolsVersion61plus == "on") ? 'xenserver61' : 'xenserver56'
+			                		},
+			                		success: function(json) {
+			                			//do nothing  					                			
+			                		}
+			                	});  					                					                	               
+						    }				      
+					        //XenServer only (ends here)  	
+                            
                         }
                     },
 
@@ -1463,9 +1514,13 @@
                             if (isAdmin()) {
                                 hiddenFields = [];
                             } else {
-                                hiddenFields = ["hypervisor"];
+                                hiddenFields = ["hypervisor", 'xenserverToolsVersion61plus'];
                             }
-
+                            
+                            if ('instances' in args.context && args.context.instances[0].hypervisor != 'XenServer') {
+                          	  hiddenFields.push('xenserverToolsVersion61plus');
+                            }
+                            
                             if (!args.context.instances[0].publicip) {
                                 hiddenFields.push('publicip');
                             }
@@ -1547,6 +1602,18 @@
                                 label: 'label.hypervisor'
                             },
 
+                            xenserverToolsVersion61plus: {
+                                label: 'XenServer Tools Version 6.1+',
+                                isBoolean: true,
+                                isEditable: function () {
+                                    if (isAdmin())
+                                        return true;
+                                    else
+                                        return false;
+                                },
+                                converter: cloudStack.converters.toBooleanText
+                            },
+                            
                             /*
 								isoid: {
                   label: 'label.attached.iso',
@@ -1617,11 +1684,22 @@
                                     var jsonObj;
                                     if (json.listvirtualmachinesresponse.virtualmachine != null && json.listvirtualmachinesresponse.virtualmachine.length > 0)
                                         jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];
+                                    else if (isAdmin()) 
+                                        jsonObj = $.extend(args.context.instances[0], {
+                                            state: "Expunged"
+                                        }); //after root admin expunge a VM, listVirtualMachines API will no longer returns this expunged VM to all users.
                                     else
                                         jsonObj = $.extend(args.context.instances[0], {
                                             state: "Destroyed"
                                         }); //after a regular user destroys a VM, listVirtualMachines API will no longer returns this destroyed VM to the regular user.
 
+                                    if ('details' in jsonObj && 'hypervisortoolsversion' in jsonObj.details) {
+                                        if (jsonObj.details.hypervisortoolsversion == 'xenserver61')
+                                            jsonObj.xenserverToolsVersion61plus = true;
+                                        else
+                                            jsonObj.xenserverToolsVersion61plus = false;
+                                    }
+                                    
                                     args.response.success({
                                         actionFilter: vmActionfilter,
                                         data: jsonObj
@@ -1944,6 +2022,8 @@
             if (isAdmin() || isDomainAdmin()) {
                 allowedActions.push("restore");
             }
+            if (isAdmin())
+                allowedActions.push("expunge");
         } else if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
             allowedActions.push("restart");
@@ -2001,6 +2081,9 @@
             //  allowedActions.push("stop");
         } else if (jsonObj.state == 'Error') {
             allowedActions.push("destroy");
+        } else if (jsonObj.state == 'Expunging') {
+            if (isAdmin())
+                allowedActions.push("expunge");
         }
         return allowedActions;
     }

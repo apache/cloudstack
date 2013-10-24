@@ -29,7 +29,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageVmDiskVO;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -51,7 +51,7 @@ public class UsageVmDiskDaoImpl extends GenericDaoBase<UsageVmDiskVO, Long> impl
 
 	@Override
 	public Map<String, UsageVmDiskVO> getRecentVmDiskStats() {
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         String sql = SELECT_LATEST_STATS;
         PreparedStatement pstmt = null;
         try {
@@ -89,7 +89,7 @@ public class UsageVmDiskDaoImpl extends GenericDaoBase<UsageVmDiskVO, Long> impl
 
     @Override
 	public void deleteOldStats(long maxEventTime) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         String sql = DELETE_OLD_STATS;
         PreparedStatement pstmt = null;
         try {
@@ -106,7 +106,7 @@ public class UsageVmDiskDaoImpl extends GenericDaoBase<UsageVmDiskVO, Long> impl
     
     @Override
     public void saveUsageVmDisks(List<UsageVmDiskVO> usageVmDisks) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
             String sql = INSERT_USAGE_VM_DISK;

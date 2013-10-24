@@ -404,7 +404,9 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public boolean startVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
+    public boolean startVpn(RemoteAccessVpn vpn) throws ResourceUnavailableException {
+        Network network = _networksDao.findById(vpn.getNetworkId());
+
         if (canHandle(network, Service.Vpn)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
@@ -420,7 +422,9 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public boolean stopVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
+    public boolean stopVpn(RemoteAccessVpn vpn) throws ResourceUnavailableException {
+        Network network = _networksDao.findById(vpn.getNetworkId());
+
         if (canHandle(network, Service.Vpn)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {

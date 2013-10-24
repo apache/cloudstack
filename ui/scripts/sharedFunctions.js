@@ -855,6 +855,7 @@ cloudStack.preFilter = {
                 args.$form.find('.form-item[rel=isPublic]').hide();
             }
             args.$form.find('.form-item[rel=isFeatured]').hide();
+            args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
         }
     },
     addLoadBalancerDevice: function(args) { //add netscaler device OR add F5 device

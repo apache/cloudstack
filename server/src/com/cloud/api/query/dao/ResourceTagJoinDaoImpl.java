@@ -30,7 +30,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.server.ResourceTag;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -95,7 +95,7 @@ public class ResourceTagJoinDaoImpl extends GenericDaoBase<ResourceTagJoinVO, Lo
     
     
     @Override
-    public List<ResourceTagJoinVO> listBy(String resourceUUID, TaggedResourceType resourceType) {
+    public List<ResourceTagJoinVO> listBy(String resourceUUID, ResourceObjectType resourceType) {
         SearchCriteria<ResourceTagJoinVO> sc = AllFieldsSearch.create();
         sc.setParameters("uuid", resourceUUID);
         sc.setParameters("resourceType", resourceType);

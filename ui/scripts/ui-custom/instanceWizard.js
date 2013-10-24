@@ -263,6 +263,8 @@
                     },
 
                     'select-iso': function($step, formData) {
+                        $step.find('.section.custom-size').hide();
+                        
                         var originalValues = function(formData) {
                             var $inputs = $step.find('.wizard-step-conditional:visible')
                                 .find('input[type=radio]');
@@ -376,6 +378,21 @@
                                     });
 
                                     originalValues(formData);
+
+                                    var custom = args.customHidden({
+                                        context: context,
+                                        data: args.data
+                                    });
+
+                                    $step.find('.custom-size-label').remove();
+
+                                    if (!custom) {
+                                        $step.find('.section.custom-size').show();
+                                        $step.addClass('custom-disk-size');
+                                    } else {
+                                        $step.find('.section.custom-size').hide();
+                                        $step.removeClass('custom-disk-size');
+                                    }
                                 }
                             }
                         };
@@ -1014,20 +1031,24 @@
                 // Setup tabs and slider
                 $wizard.find('.section.custom-size .size.max span').html(maxCustomDiskSize);
                 $wizard.find('.tab-view').tabs();
-                $wizard.find('.slider').slider({
+                $wizard.find('.slider').each(function() {
+                   var $slider = $(this);
+
+                    $slider.slider({
                     min: 1,
                     max: maxCustomDiskSize,
                     start: function(event) {
-                        $wizard.find('div.data-disk-offering div.custom-size input[type=radio]').click();
+                            $slider.closest('.section.custom-size').find('input[type=radio]').click();
                     },
                     slide: function(event, ui) {
-                        $wizard.find('div.data-disk-offering div.custom-size input[type=text]').val(
+                            $slider.closest('.section.custom-size').find('input[type=text]').val(
                             ui.value
                         );
-                        $wizard.find('div.data-disk-offering span.custom-disk-size').html(
+                            $slider.closest('.step').find('span.custom-disk-size').html(
                             ui.value
                         );
                     }
+                });
                 });
 
                 $wizard.find('div.data-disk-offering div.custom-size input[type=text]').bind('change', function() {

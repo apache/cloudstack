@@ -310,7 +310,11 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     @Override
-    public StrategyPriority.Priority canHandle(Snapshot snapshot) {
-        return StrategyPriority.Priority.DEFAULT;
+    public StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op) {
+        if (op == SnapshotOperation.REVERT) {
+            return StrategyPriority.CANT_HANDLE;
+        }
+
+        return StrategyPriority.DEFAULT;
     }
 }

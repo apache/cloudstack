@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.projects.Project.State;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -103,7 +103,7 @@ public class ProjectJoinVO extends BaseViewVO implements InternalIdentity, Ident
 
     @Column(name="tag_resource_type")
     @Enumerated(value=EnumType.STRING)
-    private TaggedResourceType tagResourceType;
+    private ResourceObjectType tagResourceType;
 
     @Column(name="tag_customer")
     private String tagCustomer;
@@ -196,7 +196,7 @@ public class ProjectJoinVO extends BaseViewVO implements InternalIdentity, Ident
         return tagResourceUuid;
     }
 
-    public TaggedResourceType getTagResourceType() {
+    public ResourceObjectType getTagResourceType() {
         return tagResourceType;
     }
 

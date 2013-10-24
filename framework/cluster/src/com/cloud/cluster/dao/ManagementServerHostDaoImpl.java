@@ -38,7 +38,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value={ManagementServerHostDao.class})
@@ -52,7 +52,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 
 	@Override
     public void invalidateRunSession(long id, long runid) {
-	    Transaction txn = Transaction.currentTxn();
+	    TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement("update mshost set runid=0, state='Down' where id=? and runid=?");
@@ -81,7 +81,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 	@Override
     @DB
 	public void update(long id, long runid, String name, String version, String serviceIP, int servicePort, Date lastUpdate) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             txn.start();
@@ -106,7 +106,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 	@Override
     @DB
     public boolean remove(Long id) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
     
         try {
         	txn.start();
@@ -127,7 +127,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 	@Override
     @DB
 	public void update(long id, long runid, Date lastUpdate) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             txn.start();
@@ -167,7 +167,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 	@Override
     @DB
 	public int increaseAlertCount(long id) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         int changedRows = 0;
         try {
@@ -209,7 +209,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 	
 	@Override
     public void update(long id, long runId, State state, Date lastUpdate) {
-	    Transaction txn = Transaction.currentTxn();
+	    TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement("update mshost set state=?, last_update=? where id=? and runid=?");
@@ -241,7 +241,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 	public List<Long> listOrphanMsids() {
 		List<Long> orphanList = new ArrayList<Long>();
 		
-	    Transaction txn = Transaction.currentTxn();
+	    TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement(

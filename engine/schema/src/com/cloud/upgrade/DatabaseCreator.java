@@ -30,11 +30,11 @@ import java.util.Properties;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import com.cloud.utils.PropertiesUtil;
-
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.db.ScriptRunner;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 // Creates the CloudStack Database by using the 4.0 schema and apply
 // upgrade steps to it.
@@ -172,7 +172,7 @@ public class DatabaseCreator {
         }
 
         try {
-            Transaction.initDataSource(dbPropsFile);
+            TransactionLegacy.initDataSource(dbPropsFile);
         } catch (NullPointerException e) {
         }
         initDB(dbPropsFile, rootPassword, databases, dryRun);
@@ -187,7 +187,7 @@ public class DatabaseCreator {
             }
 
             System.out.println("========> Processing SQL file at " + sqlScript.getAbsolutePath());
-            Connection conn = Transaction.getStandaloneConnection();
+            Connection conn = TransactionLegacy.getStandaloneConnection();
             try {
                 FileReader reader = null;
                 try {
@@ -207,7 +207,7 @@ public class DatabaseCreator {
             }
         }
 
-        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         try {
         // Process db upgrade classes
         for (String upgradeClass: upgradeClasses) {

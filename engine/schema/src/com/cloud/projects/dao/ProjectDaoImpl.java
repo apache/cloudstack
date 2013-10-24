@@ -26,7 +26,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectVO;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 
@@ -36,7 +36,7 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = { ProjectDao.class })
@@ -75,7 +75,7 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
     @DB
     public boolean remove(Long projectId) {
         boolean result = false;
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         ProjectVO projectToRemove = findById(projectId);
         projectToRemove.setName(null);
@@ -84,7 +84,7 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
             return false;
         } 
         
-        _tagsDao.removeByIdAndType(projectId, TaggedResourceType.Project);
+        _tagsDao.removeByIdAndType(projectId, ResourceObjectType.Project);
         result = super.remove(projectId);
         txn.commit();
 

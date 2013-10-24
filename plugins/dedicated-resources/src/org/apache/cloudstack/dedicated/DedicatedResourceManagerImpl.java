@@ -48,7 +48,6 @@ import org.apache.cloudstack.api.response.DedicatePodResponse;
 import org.apache.cloudstack.api.response.DedicateZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -79,6 +78,9 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
@@ -113,7 +115,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_DEDICATE_RESOURCE, eventDescription = "dedicating a Zone")
-    public List<DedicatedResourceVO> dedicateZone(Long zoneId, Long domainId, String accountName) {
+    public List<DedicatedResourceVO> dedicateZone(final Long zoneId, final Long domainId, final String accountName) {
         Long accountId = null;
         List<HostVO> hosts = null;
         if(accountName != null){
@@ -124,7 +126,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         List<Long> childDomainIds = getDomainChildIds(domainId);
         childDomainIds.add(domainId);
         checkAccountAndDomain(accountId, domainId);
-        DataCenterVO dc = _zoneDao.findById(zoneId);
+        final DataCenterVO dc = _zoneDao.findById(zoneId);
         if (dc == null) {
             throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
         } else {
@@ -220,46 +222,50 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
 
         checkHostsSuitabilityForExplicitDedication(accountId, childDomainIds, hosts);
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        // find or create the affinity group by name under this account/domain
-        AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountId);
-        if (group == null) {
-            s_logger.error("Unable to dedicate zone due to, failed to create dedication affinity group");
-            throw new CloudRuntimeException("Failed to dedicate zone. Please contact Cloud Support.");
-        }
+        final Long accountIdFinal = accountId;
+        return Transaction.execute(new TransactionCallback<List<DedicatedResourceVO>>() {
+            @Override
+            public List<DedicatedResourceVO> doInTransaction(TransactionStatus status) {
+                // find or create the affinity group by name under this account/domain
+                AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountIdFinal);
+                if (group == null) {
+                    s_logger.error("Unable to dedicate zone due to, failed to create dedication affinity group");
+                    throw new CloudRuntimeException("Failed to dedicate zone. Please contact Cloud Support.");
+                }
 
-        DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(zoneId, null, null, null, null, null,
-                group.getId());
-        try {
-            dedicatedResource.setDomainId(domainId);
-            if (accountId != null) {
-                dedicatedResource.setAccountId(accountId);
+                DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(zoneId, null, null, null, null, null,
+                        group.getId());
+                try {
+                    dedicatedResource.setDomainId(domainId);
+                    if (accountIdFinal != null) {
+                        dedicatedResource.setAccountId(accountIdFinal);
+                    }
+                    dedicatedResource = _dedicatedDao.persist(dedicatedResource);
+
+                    // save the domainId in the zone
+                    dc.setDomainId(domainId);
+                    if (!_zoneDao.update(zoneId, dc)) {
+                        throw new CloudRuntimeException(
+                                "Failed to dedicate zone, could not set domainId. Please contact Cloud Support.");
+                    }
+
+                } catch (Exception e) {
+                    s_logger.error("Unable to dedicate zone due to " + e.getMessage(), e);
+                    throw new CloudRuntimeException("Failed to dedicate zone. Please contact Cloud Support.");
+                }
+
+                List<DedicatedResourceVO> result = new ArrayList<DedicatedResourceVO>();
+                result.add(dedicatedResource);
+                return result;
+
             }
-            dedicatedResource = _dedicatedDao.persist(dedicatedResource);
-
-            // save the domainId in the zone
-            dc.setDomainId(domainId);
-            if (!_zoneDao.update(zoneId, dc)) {
-                throw new CloudRuntimeException(
-                        "Failed to dedicate zone, could not set domainId. Please contact Cloud Support.");
-            }
-
-        } catch (Exception e) {
-            s_logger.error("Unable to dedicate zone due to " + e.getMessage(), e);
-            throw new CloudRuntimeException("Failed to dedicate zone. Please contact Cloud Support.");
-        }
-        txn.commit();
-
-        List<DedicatedResourceVO> result = new ArrayList<DedicatedResourceVO>();
-        result.add(dedicatedResource);
-        return result;
+        });
     }
 
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_DEDICATE_RESOURCE, eventDescription = "dedicating a Pod")
-    public List<DedicatedResourceVO> dedicatePod(Long podId, Long domainId, String accountName) {
+    public List<DedicatedResourceVO> dedicatePod(final Long podId, final Long domainId, final String accountName) {
         Long accountId = null;
         if(accountName != null){
             Account caller = CallContext.current().getCallingAccount();
@@ -353,37 +359,40 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
 
         checkHostsSuitabilityForExplicitDedication(accountId, childDomainIds, hosts);
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        // find or create the affinity group by name under this account/domain
-        AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountId);
-        if (group == null) {
-            s_logger.error("Unable to dedicate zone due to, failed to create dedication affinity group");
-            throw new CloudRuntimeException("Failed to dedicate zone. Please contact Cloud Support.");
-        }
-        DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(null, podId, null, null, null, null,
-                group.getId());
-        try {
-            dedicatedResource.setDomainId(domainId);
-            if (accountId != null) {
-                dedicatedResource.setAccountId(accountId);
-            }
-            dedicatedResource = _dedicatedDao.persist(dedicatedResource);
-        } catch (Exception e) {
-            s_logger.error("Unable to dedicate pod due to " + e.getMessage(), e);
-            throw new CloudRuntimeException("Failed to dedicate pod. Please contact Cloud Support.");
-        }
-        txn.commit();
+        final Long accountIdFinal = accountId;
+        return Transaction.execute(new TransactionCallback<List<DedicatedResourceVO>>() {
+            @Override
+            public List<DedicatedResourceVO> doInTransaction(TransactionStatus status) {
+                // find or create the affinity group by name under this account/domain
+                AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountIdFinal);
+                if (group == null) {
+                    s_logger.error("Unable to dedicate zone due to, failed to create dedication affinity group");
+                    throw new CloudRuntimeException("Failed to dedicate zone. Please contact Cloud Support.");
+                }
+                DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(null, podId, null, null, null, null,
+                        group.getId());
+                try {
+                    dedicatedResource.setDomainId(domainId);
+                    if (accountIdFinal != null) {
+                        dedicatedResource.setAccountId(accountIdFinal);
+                    }
+                    dedicatedResource = _dedicatedDao.persist(dedicatedResource);
+                } catch (Exception e) {
+                    s_logger.error("Unable to dedicate pod due to " + e.getMessage(), e);
+                    throw new CloudRuntimeException("Failed to dedicate pod. Please contact Cloud Support.");
+                }
 
-        List<DedicatedResourceVO> result = new ArrayList<DedicatedResourceVO>();
-        result.add(dedicatedResource);
-        return result;
+                List<DedicatedResourceVO> result = new ArrayList<DedicatedResourceVO>();
+                result.add(dedicatedResource);
+                return result;
+            }
+        });
     }
 
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_DEDICATE_RESOURCE, eventDescription = "dedicating a Cluster")
-    public List<DedicatedResourceVO> dedicateCluster(Long clusterId, Long domainId, String accountName) {
+    public List<DedicatedResourceVO> dedicateCluster(final Long clusterId, final Long domainId, final String accountName) {
         Long accountId = null;
         List<HostVO> hosts = null;
         if(accountName != null){
@@ -463,37 +472,40 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
 
         checkHostsSuitabilityForExplicitDedication(accountId, childDomainIds, hosts);
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        // find or create the affinity group by name under this account/domain
-        AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountId);
-        if (group == null) {
-            s_logger.error("Unable to dedicate zone due to, failed to create dedication affinity group");
-            throw new CloudRuntimeException("Failed to dedicate zone. Please contact Cloud Support.");
-        }
-        DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(null, null, clusterId, null, null, null,
-                group.getId());
-        try {
-            dedicatedResource.setDomainId(domainId);
-            if (accountId != null) {
-                dedicatedResource.setAccountId(accountId);
-            }
-            dedicatedResource = _dedicatedDao.persist(dedicatedResource);
-        } catch (Exception e) {
-            s_logger.error("Unable to dedicate host due to " + e.getMessage(), e);
-            throw new CloudRuntimeException("Failed to dedicate cluster. Please contact Cloud Support.");
-        }
-        txn.commit();
+        final Long accountIdFinal = accountId;
+        return Transaction.execute(new TransactionCallback<List<DedicatedResourceVO>>() {
+            @Override
+            public List<DedicatedResourceVO> doInTransaction(TransactionStatus status) {
+                // find or create the affinity group by name under this account/domain
+                AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountIdFinal);
+                if (group == null) {
+                    s_logger.error("Unable to dedicate zone due to, failed to create dedication affinity group");
+                    throw new CloudRuntimeException("Failed to dedicate zone. Please contact Cloud Support.");
+                }
+                DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(null, null, clusterId, null, null, null,
+                        group.getId());
+                try {
+                    dedicatedResource.setDomainId(domainId);
+                    if (accountIdFinal != null) {
+                        dedicatedResource.setAccountId(accountIdFinal);
+                    }
+                    dedicatedResource = _dedicatedDao.persist(dedicatedResource);
+                } catch (Exception e) {
+                    s_logger.error("Unable to dedicate host due to " + e.getMessage(), e);
+                    throw new CloudRuntimeException("Failed to dedicate cluster. Please contact Cloud Support.");
+                }
 
-        List<DedicatedResourceVO> result = new ArrayList<DedicatedResourceVO>();
-        result.add(dedicatedResource);
-        return result;
+                List<DedicatedResourceVO> result = new ArrayList<DedicatedResourceVO>();
+                result.add(dedicatedResource);
+                return result;
+            }
+        });
     }
 
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_DEDICATE_RESOURCE, eventDescription = "dedicating a Host")
-    public List<DedicatedResourceVO> dedicateHost(Long hostId, Long domainId, String accountName) {
+    public List<DedicatedResourceVO> dedicateHost(final Long hostId, final Long domainId, final String accountName) {
         Long accountId = null;
         if(accountName != null){
             Account caller = CallContext.current().getCallingAccount();
@@ -558,31 +570,35 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         childDomainIds.add(domainId);
         checkHostSuitabilityForExplicitDedication(accountId, childDomainIds, hostId);
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        // find or create the affinity group by name under this account/domain
-        AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountId);
-        if (group == null) {
-            s_logger.error("Unable to dedicate zone due to, failed to create dedication affinity group");
-            throw new CloudRuntimeException("Failed to dedicate zone. Please contact Cloud Support.");
-        }
-        DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(null, null, null, hostId, null, null,
-                group.getId());
-        try {
-            dedicatedResource.setDomainId(domainId);
-            if (accountId != null) {
-                dedicatedResource.setAccountId(accountId);
-            }
-            dedicatedResource = _dedicatedDao.persist(dedicatedResource);
-        } catch (Exception e) {
-            s_logger.error("Unable to dedicate host due to " + e.getMessage(), e);
-            throw new CloudRuntimeException("Failed to dedicate host. Please contact Cloud Support.");
-        }
-        txn.commit();
+        final Long accountIdFinal = accountId;
+        return Transaction.execute(new TransactionCallback<List<DedicatedResourceVO>>() {
+            @Override
+            public List<DedicatedResourceVO> doInTransaction(TransactionStatus status) {
+                // find or create the affinity group by name under this account/domain
+                AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountIdFinal);
+                if (group == null) {
+                    s_logger.error("Unable to dedicate zone due to, failed to create dedication affinity group");
+                    throw new CloudRuntimeException("Failed to dedicate zone. Please contact Cloud Support.");
+                }
+                DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(null, null, null, hostId, null, null,
+                        group.getId());
+                try {
+                    dedicatedResource.setDomainId(domainId);
+                    if (accountIdFinal != null) {
+                        dedicatedResource.setAccountId(accountIdFinal);
+                    }
+                    dedicatedResource = _dedicatedDao.persist(dedicatedResource);
+                } catch (Exception e) {
+                    s_logger.error("Unable to dedicate host due to " + e.getMessage(), e);
+                    throw new CloudRuntimeException("Failed to dedicate host. Please contact Cloud Support.");
+                }
 
-        List<DedicatedResourceVO> result = new ArrayList<DedicatedResourceVO>();
-        result.add(dedicatedResource);
-        return result;
+                List<DedicatedResourceVO> result = new ArrayList<DedicatedResourceVO>();
+                result.add(dedicatedResource);
+                return result;
+            }
+        });
+
     }
 
     private AffinityGroup findOrCreateDedicatedAffinityGroup(Long domainId, Long accountId) {
@@ -889,9 +905,8 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_DEDICATE_RESOURCE_RELEASE, eventDescription = "Releasing dedicated resource")
-    public boolean releaseDedicatedResource(Long zoneId, Long podId, Long clusterId, Long hostId) throws InvalidParameterValueException{
+    public boolean releaseDedicatedResource(final Long zoneId, Long podId, Long clusterId, Long hostId) throws InvalidParameterValueException{
         DedicatedResourceVO resource = null;
-        Long resourceId = null;
         if (zoneId != null) {
             resource = _dedicatedDao.findByZoneId(zoneId);
         }
@@ -907,26 +922,28 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         if (resource == null){
             throw new InvalidParameterValueException("No Dedicated Resource available to release");
         } else {
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
-            resourceId = resource.getId();
-            if (!_dedicatedDao.remove(resourceId)) {
-                throw new CloudRuntimeException("Failed to delete Resource " + resourceId);
-            }
-            if (zoneId != null) {
-                // remove the domainId set in zone
-                DataCenterVO dc = _zoneDao.findById(zoneId);
-                if (dc != null) {
-                    dc.setDomainId(null);
-                    dc.setDomain(null);
-                    if (!_zoneDao.update(zoneId, dc)) {
-                        throw new CloudRuntimeException(
-                                "Failed to release dedicated zone, could not clear domainId. Please contact Cloud Support.");
+            final DedicatedResourceVO resourceFinal = resource; 
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    Long resourceId = resourceFinal.getId();
+                    if (!_dedicatedDao.remove(resourceId)) {
+                        throw new CloudRuntimeException("Failed to delete Resource " + resourceId);
+                    }
+                    if (zoneId != null) {
+                        // remove the domainId set in zone
+                        DataCenterVO dc = _zoneDao.findById(zoneId);
+                        if (dc != null) {
+                            dc.setDomainId(null);
+                            dc.setDomain(null);
+                            if (!_zoneDao.update(zoneId, dc)) {
+                                throw new CloudRuntimeException(
+                                        "Failed to release dedicated zone, could not clear domainId. Please contact Cloud Support.");
+                            }
+                        }
                     }
                 }
-            }
-
-            txn.commit();
+            });
 
             // find the group associated and check if there are any more
             // resources under that group

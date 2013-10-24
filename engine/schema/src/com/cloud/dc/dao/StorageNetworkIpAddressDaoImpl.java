@@ -30,10 +30,10 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.GenericQueryBuilder;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={StorageNetworkIpAddressDao.class})
@@ -87,7 +87,7 @@ public class StorageNetworkIpAddressDaoImpl extends GenericDaoBase<StorageNetwor
     public StorageNetworkIpAddressVO takeIpAddress(long rangeId) {
 		SearchCriteria<StorageNetworkIpAddressVO> sc = untakenIp.create();
 		sc.setParameters("rangeId", rangeId);
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         StorageNetworkIpAddressVO ip = lockOneRandomRow(sc, true);
         if (ip == null) {

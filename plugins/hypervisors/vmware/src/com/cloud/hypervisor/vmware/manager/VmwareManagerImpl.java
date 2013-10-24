@@ -120,6 +120,8 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
@@ -1091,32 +1093,12 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
             // Add DC to database into vmware_data_center table
             vmwareDc = new VmwareDatacenterVO(guid, vmwareDcName, vCenterHost, userName, password);
-            Transaction txn = Transaction.currentTxn();
-            try {
-                txn.start();
-                vmwareDc = _vmwareDcDao.persist(vmwareDc);
-                txn.commit();
-            } catch (Exception e) {
-                txn.rollback();
-                s_logger.error("Failed to persist VMware datacenter details to database. Exception: " + e.getMessage());
-                throw new CloudRuntimeException(e.getMessage());
-            }
+            vmwareDc = _vmwareDcDao.persist(vmwareDc);
 
             // Map zone with vmware datacenter
             vmwareDcZoneMap = new VmwareDatacenterZoneMapVO(zoneId, vmwareDc.getId());
 
-            txn = Transaction.currentTxn();
-            try {
-                txn.start();
-                vmwareDcZoneMap = _vmwareDcZoneMapDao.persist(vmwareDcZoneMap);
-                txn.commit();
-            } catch (Exception e) {
-                txn.rollback();
-                s_logger.error("Failed to associate VMware datacenter with zone " + zoneId + ". Exception: " + e.getMessage());
-                // Removing VMware datacenter from vmware_data_center table because association with zone failed.
-                _vmwareDcDao.remove(vmwareDcZoneMap.getId());
-                throw new CloudRuntimeException(e.getMessage());
-            }
+            vmwareDcZoneMap = _vmwareDcZoneMapDao.persist(vmwareDcZoneMap);
 
             // Set custom field for this DC
             if (addDcCustomFieldDef) {
@@ -1152,40 +1134,35 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         validateZoneWithResources(zoneId, "remove VMware datacenter to zone");
 
         // Get DC associated with this zone
-        VmwareDatacenterZoneMapVO vmwareDcZoneMap;
         VmwareDatacenterVO vmwareDatacenter;
         String vmwareDcName;
-        long vmwareDcId;
         String vCenterHost;
         String userName;
         String password;
         DatacenterMO dcMo = null;
         Transaction txn;
 
-        vmwareDcZoneMap = _vmwareDcZoneMapDao.findByZoneId(zoneId);
+        final VmwareDatacenterZoneMapVO vmwareDcZoneMap = _vmwareDcZoneMapDao.findByZoneId(zoneId);
         // Check if zone is associated with VMware DC
         if (vmwareDcZoneMap == null) {
             throw new CloudRuntimeException("Zone " + zoneId + " is not associated with any VMware datacenter.");
         }
 
-        vmwareDcId = vmwareDcZoneMap.getVmwareDcId();
+        final long vmwareDcId = vmwareDcZoneMap.getVmwareDcId();
         vmwareDatacenter = _vmwareDcDao.findById(vmwareDcId);
         vmwareDcName = vmwareDatacenter.getVmwareDatacenterName();
         vCenterHost = vmwareDatacenter.getVcenterHost();
         userName = vmwareDatacenter.getUser();
         password = vmwareDatacenter.getPassword();
-        txn = Transaction.currentTxn();
-        try {
-            txn.start();
-            // Remove the VMware datacenter entry in table vmware_data_center
-            _vmwareDcDao.remove(vmwareDcId);
-            // Remove the map entry in table vmware_data_center_zone_map
-            _vmwareDcZoneMapDao.remove(vmwareDcZoneMap.getId());
-            txn.commit();
-        } catch (Exception e) {
-            s_logger.info("Caught exception when trying to delete VMware datacenter record." + e.getMessage());
-            throw new CloudRuntimeException("Failed to delete VMware datacenter.");
-        }
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                // Remove the VMware datacenter entry in table vmware_data_center
+                _vmwareDcDao.remove(vmwareDcId);
+                // Remove the map entry in table vmware_data_center_zone_map
+                _vmwareDcZoneMapDao.remove(vmwareDcZoneMap.getId());
+            }
+        });
 
         // Construct context
         VmwareContext context = null;

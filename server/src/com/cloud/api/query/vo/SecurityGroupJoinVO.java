@@ -24,7 +24,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 
 @Entity
 @Table(name="security_group_view")
@@ -135,7 +135,7 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
 
     @Column(name="tag_resource_type")
     @Enumerated(value=EnumType.STRING)
-    private TaggedResourceType tagResourceType;
+    private ResourceObjectType tagResourceType;
 
     @Column(name="tag_customer")
     private String tagCustomer;
@@ -295,7 +295,7 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         return tagResourceUuid;
     }
 
-    public TaggedResourceType getTagResourceType() {
+    public ResourceObjectType getTagResourceType() {
         return tagResourceType;
     }
 

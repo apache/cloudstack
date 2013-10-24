@@ -26,18 +26,8 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.serializer.Param;
 import com.cloud.storage.Snapshot;
 import com.google.gson.annotations.SerializedName;
-import com.cloud.serializer.Param;
-import com.cloud.storage.Snapshot;
-import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.EntityReference;
-
-import java.util.Date;
-import java.util.List;
 
 @EntityReference(value=Snapshot.class)
-@SuppressWarnings("unused")
 public class SnapshotResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "ID of the snapshot")
@@ -100,6 +90,9 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with snapshot", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
+    @SerializedName(ApiConstants.REVERTABLE)
+    @Param(description="indicates whether the underlying storage supports reverting the volume to this snapshot")
+    private boolean revertable;
 
     @Override
     public String getObjectId() {
@@ -118,6 +111,7 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
         return accountName;
     }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
@@ -131,6 +125,7 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
         this.domainId = domainId;
     }
 
+    @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }
@@ -180,8 +175,16 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     public void setZoneId(String zoneId) {
         this.zoneId = zoneId;
     }
- 
+
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
+    }
+
+    public boolean isRevertable() {
+        return revertable;
+    }
+
+    public void setRevertable(boolean revertable) {
+        this.revertable = revertable;
     }
 }

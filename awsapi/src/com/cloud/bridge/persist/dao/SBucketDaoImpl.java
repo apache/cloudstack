@@ -29,6 +29,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={SBucketDao.class})
@@ -42,7 +43,7 @@ public class SBucketDaoImpl extends GenericDaoBase<SBucketVO, Long> implements S
 	    SearchBuilder<SBucketVO> SearchByName = createSearchBuilder();
 	    SearchByName.and("Name", SearchByName.entity().getName(), SearchCriteria.Op.EQ);
 	    //Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
-	    Transaction txn = Transaction.open("cloudbridge", Transaction.AWSAPI_DB, true);
+	    TransactionLegacy txn = TransactionLegacy.open("cloudbridge", TransactionLegacy.AWSAPI_DB, true);
 	    try {
 		txn.start();
 		SearchCriteria<SBucketVO> sc = SearchByName.create();
@@ -59,7 +60,7 @@ public class SBucketDaoImpl extends GenericDaoBase<SBucketVO, Long> implements S
 	    SearchBuilder<SBucketVO> ByCanonicalID = createSearchBuilder();
 	    ByCanonicalID.and("OwnerCanonicalID", ByCanonicalID.entity().getOwnerCanonicalId(), SearchCriteria.Op.EQ);
 	    Filter filter = new Filter(SBucketVO.class, "createTime", Boolean.TRUE, null, null);
-	    Transaction txn = Transaction.currentTxn();  // Transaction.open("cloudbridge", Transaction.AWSAPI_DB, true);
+	    TransactionLegacy txn = TransactionLegacy.currentTxn();  // Transaction.open("cloudbridge", Transaction.AWSAPI_DB, true);
 	    try {
             txn.start();
             SearchCriteria<SBucketVO> sc = ByCanonicalID.create();

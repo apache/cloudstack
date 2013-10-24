@@ -31,5 +31,5 @@ public interface NicDetailDao extends GenericDao<NicDetailVO, Long> {
 
     void deleteDetails(long nicId);
 
-    void removeDetails(Long id, String key);
+    void removeDetails(long nicId, String key);
 }

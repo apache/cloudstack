@@ -35,7 +35,7 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={HostPodDao.class})
@@ -85,7 +85,7 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
         HashMap<Long, List<Object>> currentPodCidrSubnets = new HashMap<Long, List<Object>>();
 
         String selectSql = "SELECT id, cidr_address, cidr_size FROM host_pod_ref WHERE data_center_id=" + zoneId +" and removed IS NULL";
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
             ResultSet rs = stmt.executeQuery();
@@ -111,7 +111,7 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
 
     @Override
     public boolean remove(Long id) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         HostPodVO pod = createForUpdate();
         pod.setName(null);

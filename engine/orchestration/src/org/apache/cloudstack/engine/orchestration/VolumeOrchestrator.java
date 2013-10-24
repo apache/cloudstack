@@ -31,7 +31,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -97,6 +96,9 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
@@ -681,9 +683,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @DB
-    protected VolumeVO switchVolume(VolumeVO existingVolume, VirtualMachineProfile vm) throws StorageUnavailableException {
-        Transaction txn = Transaction.currentTxn();
-
+    protected VolumeVO switchVolume(final VolumeVO existingVolume, final VirtualMachineProfile vm) throws StorageUnavailableException {
         Long templateIdToUse = null;
         Long volTemplateId = existingVolume.getTemplateId();
         long vmTemplateId = vm.getTemplateId();
@@ -695,22 +695,26 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             templateIdToUse = vmTemplateId;
         }
 
-        txn.start();
-        VolumeVO newVolume = allocateDuplicateVolumeVO(existingVolume, templateIdToUse);
-        // In case of Vmware if vm reference is not removed then during root
-        // disk cleanup
-        // the vm also gets deleted, so remove the reference
-        if (vm.getHypervisorType() == HypervisorType.VMware) {
-            _volsDao.detachVolume(existingVolume.getId());
-        }
-        try {
-            stateTransitTo(existingVolume, Volume.Event.DestroyRequested);
-        } catch (NoTransitionException e) {
-            s_logger.debug("Unable to destroy existing volume: " + e.toString());
-        }
-        txn.commit();
-        return newVolume;
-
+        final Long templateIdToUseFinal = templateIdToUse; 
+        return Transaction.execute(new TransactionCallback<VolumeVO>() {
+            @Override
+            public VolumeVO doInTransaction(TransactionStatus status) {
+                VolumeVO newVolume = allocateDuplicateVolumeVO(existingVolume, templateIdToUseFinal);
+                // In case of Vmware if vm reference is not removed then during root
+                // disk cleanup
+                // the vm also gets deleted, so remove the reference
+                if (vm.getHypervisorType() == HypervisorType.VMware) {
+                    _volsDao.detachVolume(existingVolume.getId());
+                }
+                try {
+                    stateTransitTo(existingVolume, Volume.Event.DestroyRequested);
+                } catch (NoTransitionException e) {
+                    s_logger.debug("Unable to destroy existing volume: " + e.toString());
+                }
+                
+                return newVolume;
+            }
+        });
     }
 
     @Override
@@ -724,28 +728,32 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Cleaning storage for vm: " + vmId);
         }
-        List<VolumeVO> volumesForVm = _volsDao.findByInstance(vmId);
-        List<VolumeVO> toBeExpunged = new ArrayList<VolumeVO>();
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        for (VolumeVO vol : volumesForVm) {
-            if (vol.getVolumeType().equals(Type.ROOT)) {
-                // Destroy volume if not already destroyed
-                boolean volumeAlreadyDestroyed = (vol.getState() == Volume.State.Destroy || vol.getState() == Volume.State.Expunged || vol.getState() == Volume.State.Expunging);
-                if (!volumeAlreadyDestroyed) {
-                    volService.destroyVolume(vol.getId());
-                } else {
-                    s_logger.debug("Skipping destroy for the volume " + vol + " as its in state " + vol.getState().toString());
+        final List<VolumeVO> volumesForVm = _volsDao.findByInstance(vmId);
+        final List<VolumeVO> toBeExpunged = new ArrayList<VolumeVO>();
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                for (VolumeVO vol : volumesForVm) {
+                    if (vol.getVolumeType().equals(Type.ROOT)) {
+                        // Destroy volume if not already destroyed
+                        boolean volumeAlreadyDestroyed = (vol.getState() == Volume.State.Destroy || vol.getState() == Volume.State.Expunged || vol.getState() == Volume.State.Expunging);
+                        if (!volumeAlreadyDestroyed) {
+                            volService.destroyVolume(vol.getId());
+                        } else {
+                            s_logger.debug("Skipping destroy for the volume " + vol + " as its in state " + vol.getState().toString());
+                        }
+                        toBeExpunged.add(vol);
+                    } else {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Detaching " + vol);
+                        }
+                        _volsDao.detachVolume(vol.getId());
+                    }
                 }
-                toBeExpunged.add(vol);
-            } else {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Detaching " + vol);
-                }
-                _volsDao.detachVolume(vol.getId());
             }
-        }
-        txn.commit();
+        });
+
         AsyncCallFuture<VolumeApiResult> future = null;
         for (VolumeVO expunge : toBeExpunged) {
             future = volService.expungeVolumeAsync(volFactory.getVolume(expunge.getId()));

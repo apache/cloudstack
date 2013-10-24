@@ -194,6 +194,7 @@ import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ListVlanIpRangesCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.ExpungeVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVirtualMachineWithVolumeCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
@@ -518,7 +519,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
@@ -565,6 +566,9 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -1995,7 +1999,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (tags != null && !tags.isEmpty()) {
             int count = 0;
-            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.PublicIpAddress.toString());
+            sc.setJoinParameters("tagSearch", "resourceType", ResourceObjectType.PublicIpAddress.toString());
             for (String key : tags.keySet()) {
                 sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
                 sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
@@ -2166,12 +2170,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     @DB
     public DomainVO updateDomain(UpdateDomainCmd cmd) {
-        Long domainId = cmd.getId();
-        String domainName = cmd.getDomainName();
-        String networkDomain = cmd.getNetworkDomain();
+        final Long domainId = cmd.getId();
+        final String domainName = cmd.getDomainName();
+        final String networkDomain = cmd.getNetworkDomain();
 
         // check if domain exists in the system
-        DomainVO domain = _domainDao.findById(domainId);
+        final DomainVO domain = _domainDao.findById(domainId);
         if (domain == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find domain with specified domain id");
             ex.addProxyObject(domainId.toString(), "domainId");
@@ -2212,27 +2216,26 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
-        Transaction txn = Transaction.currentTxn();
-
-        txn.start();
-
-        if (domainName != null) {
-            String updatedDomainPath = getUpdatedDomainPath(domain.getPath(), domainName);
-            updateDomainChildren(domain, updatedDomainPath);
-            domain.setName(domainName);
-            domain.setPath(updatedDomainPath);
-        }
-
-        if (networkDomain != null) {
-            if (networkDomain.isEmpty()) {
-                domain.setNetworkDomain(null);
-            } else {
-                domain.setNetworkDomain(networkDomain);
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                if (domainName != null) {
+                    String updatedDomainPath = getUpdatedDomainPath(domain.getPath(), domainName);
+                    updateDomainChildren(domain, updatedDomainPath);
+                    domain.setName(domainName);
+                    domain.setPath(updatedDomainPath);
+                }
+        
+                if (networkDomain != null) {
+                    if (networkDomain.isEmpty()) {
+                        domain.setNetworkDomain(null);
+                    } else {
+                        domain.setNetworkDomain(networkDomain);
+                    }
+                }
+                _domainDao.update(domainId, domain);
             }
-        }
-        _domainDao.update(domainId, domain);
-
-        txn.commit();
+        });
 
         return _domainDao.findById(domainId);
 
@@ -2370,7 +2373,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         for (SummedCapacity summedCapacity : summedCapacities) {
             CapacityVO capacity = new CapacityVO(summedCapacity.getDataCenterId(), summedCapacity.getPodId(), summedCapacity.getClusterId(),
                     summedCapacity.getCapacityType(), summedCapacity.getPercentUsed());
-            capacity.setUsedCapacity(summedCapacity.getUsedCapacity());
+            capacity.setUsedCapacity(summedCapacity.getUsedCapacity() + summedCapacity.getReservedCapacity());
             capacity.setTotalCapacity(summedCapacity.getTotalCapacity());
             capacities.add(capacity);
         }
@@ -2751,6 +2754,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AddNicToVMCmd.class);
         cmdList.add(DeployVMCmd.class);
         cmdList.add(DestroyVMCmd.class);
+        cmdList.add(ExpungeVMCmd.class);
         cmdList.add(GetVMPasswordCmd.class);
         cmdList.add(ListVMsCmd.class);
         cmdList.add(ScaleVMCmd.class);
@@ -3440,7 +3444,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // give us the same key
         if (_hashKey == null) {
             _hashKey = _configDao.getValueAndInitIfNotExist(Config.HashKey.key(), Config.HashKey.getCategory(),
-                    getBase64EncodedRandomKey(128));
+                    getBase64EncodedRandomKey(128), Config.HashKey.getDescription());
         }
         return _hashKey;
     }
@@ -3450,7 +3454,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (_encryptionKey == null) {
             _encryptionKey = _configDao.getValueAndInitIfNotExist(Config.EncryptionKey.key(),
                     Config.EncryptionKey.getCategory(),
-                    getBase64EncodedRandomKey(128));
+                    getBase64EncodedRandomKey(128), Config.EncryptionKey.getDescription());
         }
         return _encryptionKey;
     }
@@ -3460,7 +3464,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (_encryptionIV == null) {
             _encryptionIV = _configDao.getValueAndInitIfNotExist(Config.EncryptionIV.key(),
                     Config.EncryptionIV.getCategory(),
-                    getBase64EncodedRandomKey(128));
+                    getBase64EncodedRandomKey(128),  Config.EncryptionIV.getDescription());
         }
         return _encryptionIV;
     }
@@ -3651,7 +3655,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     @DB
-    public boolean updateHostPassword(UpdateHostPasswordCmd cmd) {
+    public boolean updateHostPassword(final UpdateHostPasswordCmd cmd) {
         if (cmd.getClusterId() == null && cmd.getHostId() == null) {
             throw new InvalidParameterValueException("You should provide one of cluster id or a host id.");
         } else if (cmd.getClusterId() == null) {
@@ -3668,35 +3672,30 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 throw new InvalidParameterValueException("This operation is not supported for this hypervisor type");
             }
             // get all the hosts in this cluster
-            List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cmd.getClusterId());
-            Transaction txn = Transaction.currentTxn();
-            try {
-                txn.start();
-                for (HostVO h : hosts) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Changing password for host name = " + h.getName());
-                    }
-                    // update password for this host
-                    DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
-                    if (nv.getValue().equals(cmd.getUsername())) {
-                        DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
-                        nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
-                        _detailsDao.persist(nvp);
-                    } else {
-                        // if one host in the cluster has diff username then
-                        // rollback to maintain consistency
-                        txn.rollback();
-                        throw new InvalidParameterValueException(
-                                "The username is not same for all hosts, please modify passwords for individual hosts.");
+            final List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cmd.getClusterId());
+
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    for (HostVO h : hosts) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Changing password for host name = " + h.getName());
+                        }
+                        // update password for this host
+                        DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
+                        if (nv.getValue().equals(cmd.getUsername())) {
+                            DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
+                            nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
+                            _detailsDao.persist(nvp);
+                        } else {
+                            // if one host in the cluster has diff username then
+                            // rollback to maintain consistency
+                            throw new InvalidParameterValueException(
+                                    "The username is not same for all hosts, please modify passwords for individual hosts.");
+                        }
                     }
                 }
-                txn.commit();
-                // if hypervisor is xenserver then we update it in
-                // CitrixResourceBase
-            } catch (Exception e) {
-                txn.rollback();
-                throw new CloudRuntimeException("Failed to update password " + e.getMessage());
-            }
+            });
         }
 
         return true;

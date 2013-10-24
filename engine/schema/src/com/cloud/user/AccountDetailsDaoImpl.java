@@ -31,7 +31,7 @@ import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Local(value = {AccountDetailsDao.class})
 public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long> implements AccountDetailsDao, ScopedConfigStorage {
@@ -57,7 +57,7 @@ public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long>
 
     @Override
     public void persist(long accountId, Map<String, String> details) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         SearchCriteria<AccountDetailVO> sc = accountSearch.create();
         sc.setParameters("accountId", accountId);

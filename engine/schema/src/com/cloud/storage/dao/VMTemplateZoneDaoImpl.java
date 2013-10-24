@@ -27,7 +27,7 @@ import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = { VMTemplateZoneDao.class })
@@ -89,7 +89,7 @@ public class VMTemplateZoneDaoImpl extends GenericDaoBase<VMTemplateZoneVO, Long
     public void deletePrimaryRecordsForTemplate(long templateId) {
         SearchCriteria<VMTemplateZoneVO> sc = TemplateSearch.create();
         sc.setParameters("template_id", templateId);
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         remove(sc);
         txn.commit();

@@ -1464,7 +1464,7 @@ def network_rules(session, args):
     vm_mac = args.get('vmMAC')
     signature = args.pop('signature')
     seqno = args.pop('seqno')
-    sec_ips = args.pop("secIps")
+    sec_ips = args.get("secIps")
     deflated = 'false'
     if 'deflated' in args:
         deflated = args.pop('deflated')

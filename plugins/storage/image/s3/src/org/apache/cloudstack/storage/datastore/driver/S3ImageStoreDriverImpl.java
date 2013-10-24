@@ -67,13 +67,21 @@ public class S3ImageStoreDriverImpl extends  BaseImageStoreDriverImpl {
                         .get(ApiConstants.S3_SOCKET_TIMEOUT)), imgStore.getCreated(),
                 _configDao.getValue(Config.S3EnableRRS.toString()) == null ? false : Boolean.parseBoolean(_configDao
                         .getValue(Config.S3EnableRRS.toString())),
-                _configDao.getValue(Config.S3EnableMultiPartUpload.toString()) == null ? true : Boolean.parseBoolean(_configDao
-                                .getValue(Config.S3EnableMultiPartUpload.toString()))                        
+                getMaxSingleUploadSizeInBytes()                      
                 );
 
     }
 
 
+    private long getMaxSingleUploadSizeInBytes() {
+        try {
+            return Long.parseLong(_configDao.getValue(Config.S3MaxSingleUploadSize.toString())) * 1024L * 1024L * 1024L;
+        } catch (NumberFormatException e) {
+            // use default 5GB
+            return 5L * 1024L * 1024L * 1024L;
+        }
+    }
+    
     @Override
     public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format, DataObject dataObject) {
         // for S3, no need to do anything, just return template url for

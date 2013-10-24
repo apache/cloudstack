@@ -23,7 +23,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 
 @Entity
 @Table(name="resource_tag_view")
@@ -50,7 +50,7 @@ public class ResourceTagJoinVO extends BaseViewVO implements ControlledViewEntit
 
     @Column(name="resource_type")
     @Enumerated(value=EnumType.STRING)
-    private TaggedResourceType resourceType;
+    private ResourceObjectType resourceType;
 
     @Column(name="customer")
     String customer;
@@ -171,7 +171,7 @@ public class ResourceTagJoinVO extends BaseViewVO implements ControlledViewEntit
         return resourceUuid;
     }
 
-    public TaggedResourceType getResourceType() {
+    public ResourceObjectType getResourceType() {
         return resourceType;
     }
 

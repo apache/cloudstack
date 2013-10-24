@@ -1040,7 +1040,7 @@ ServerResource {
             s_logger.debug("matchPifFileInDirectory: file name '"+fname+"'");
             if (fname.startsWith("eth") || fname.startsWith("bond")
                 || fname.startsWith("vlan") || fname.startsWith("em")
-                || fname.matches("^p\\d+p\\d+")) {
+                || fname.matches("^p\\d+p\\d+.*")) {
                 return fname;
             }
         }
@@ -3257,7 +3257,7 @@ ServerResource {
             }
 
             state = State.Stopped;
-            return new StopAnswer(cmd, result, 0, true);
+            return new StopAnswer(cmd, result, true);
         } catch (LibvirtException e) {
             return new StopAnswer(cmd, e.getMessage(), false);
         } finally {

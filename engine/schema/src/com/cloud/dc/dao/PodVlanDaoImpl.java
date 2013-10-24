@@ -28,7 +28,7 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -49,7 +49,7 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements P
     public void add(long podId, int start, int end) {
         String insertVnet = "INSERT INTO `cloud`.`op_pod_vlan_alloc` (vlan, pod_id) VALUES ( ?, ?)";
         
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertVnet);
@@ -68,7 +68,7 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements P
     public void delete(long podId) {
     	String deleteVnet = "DELETE FROM `cloud`.`op_pod_vlan_alloc` WHERE pod_id = ?";
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(deleteVnet);
             stmt.setLong(1, podId);
@@ -82,7 +82,7 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements P
         SearchCriteria<PodVlanVO> sc = FreeVlanSearch.create();
         sc.setParameters("podId", podId);
         Date now = new Date();
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
             PodVlanVO vo = lockOneRandomRow(sc, true);

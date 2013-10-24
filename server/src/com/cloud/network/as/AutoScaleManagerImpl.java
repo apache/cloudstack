@@ -95,8 +95,10 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.net.NetUtils;
 
 @Local(value = { AutoScaleService.class, AutoScaleManager.class })
@@ -428,9 +430,9 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     }
 
     @DB
-    protected AutoScalePolicyVO checkValidityAndPersist(AutoScalePolicyVO autoScalePolicyVO, List<Long> conditionIds) {
-        int duration = autoScalePolicyVO.getDuration();
-        int quietTime = autoScalePolicyVO.getQuietTime();
+    protected AutoScalePolicyVO checkValidityAndPersist(final AutoScalePolicyVO autoScalePolicyVOFinal, final List<Long> conditionIds) {
+        final int duration = autoScalePolicyVOFinal.getDuration();
+        final int quietTime = autoScalePolicyVOFinal.getQuietTime();
 
         if (duration < 0) {
             throw new InvalidParameterValueException("duration is an invalid value: " + duration);
@@ -440,48 +442,49 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             throw new InvalidParameterValueException("quiettime is an invalid value: " + quietTime);
         }
 
-        final Transaction txn = Transaction.currentTxn();
-        txn.start();
-
-        autoScalePolicyVO = _autoScalePolicyDao.persist(autoScalePolicyVO);
-
-        if (conditionIds != null) {
-            SearchBuilder<ConditionVO> conditionsSearch = _conditionDao.createSearchBuilder();
-            conditionsSearch.and("ids", conditionsSearch.entity().getId(), Op.IN);
-            conditionsSearch.done();
-            SearchCriteria<ConditionVO> sc = conditionsSearch.create();
-
-            sc.setParameters("ids", conditionIds.toArray(new Object[0]));
-            List<ConditionVO> conditions = _conditionDao.search(sc, null);
-
-            ControlledEntity[] sameOwnerEntities = conditions.toArray(new ControlledEntity[conditions.size() + 1]);
-            sameOwnerEntities[sameOwnerEntities.length - 1] = autoScalePolicyVO;
-            _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, sameOwnerEntities);
-
-            if (conditionIds.size() != conditions.size()) {
-                // TODO report the condition id which could not be found
-                throw new InvalidParameterValueException("Unable to find the condition specified");
-            }
-
-            ArrayList<Long> counterIds = new ArrayList<Long>();
-            for (ConditionVO condition : conditions) {
-                if (counterIds.contains(condition.getCounterid())) {
-                    throw new InvalidParameterValueException("atleast two conditions in the conditionids have the same counter. It is not right to apply two different conditions for the same counter");
+        return Transaction.execute(new TransactionCallback<AutoScalePolicyVO>() {
+            @Override
+            public AutoScalePolicyVO doInTransaction(TransactionStatus status) {
+                AutoScalePolicyVO autoScalePolicyVO = _autoScalePolicyDao.persist(autoScalePolicyVOFinal);
+        
+                if (conditionIds != null) {
+                    SearchBuilder<ConditionVO> conditionsSearch = _conditionDao.createSearchBuilder();
+                    conditionsSearch.and("ids", conditionsSearch.entity().getId(), Op.IN);
+                    conditionsSearch.done();
+                    SearchCriteria<ConditionVO> sc = conditionsSearch.create();
+        
+                    sc.setParameters("ids", conditionIds.toArray(new Object[0]));
+                    List<ConditionVO> conditions = _conditionDao.search(sc, null);
+        
+                    ControlledEntity[] sameOwnerEntities = conditions.toArray(new ControlledEntity[conditions.size() + 1]);
+                    sameOwnerEntities[sameOwnerEntities.length - 1] = autoScalePolicyVO;
+                    _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, sameOwnerEntities);
+        
+                    if (conditionIds.size() != conditions.size()) {
+                        // TODO report the condition id which could not be found
+                        throw new InvalidParameterValueException("Unable to find the condition specified");
+                    }
+        
+                    ArrayList<Long> counterIds = new ArrayList<Long>();
+                    for (ConditionVO condition : conditions) {
+                        if (counterIds.contains(condition.getCounterid())) {
+                            throw new InvalidParameterValueException("atleast two conditions in the conditionids have the same counter. It is not right to apply two different conditions for the same counter");
+                        }
+                        counterIds.add(condition.getCounterid());
+                    }
+        
+                    /* For update case remove the existing mappings and create fresh ones */
+                    _autoScalePolicyConditionMapDao.removeByAutoScalePolicyId(autoScalePolicyVO.getId());
+        
+                    for (Long conditionId : conditionIds) {
+                        AutoScalePolicyConditionMapVO policyConditionMapVO = new AutoScalePolicyConditionMapVO(autoScalePolicyVO.getId(), conditionId);
+                        _autoScalePolicyConditionMapDao.persist(policyConditionMapVO);
+                    }
                 }
-                counterIds.add(condition.getCounterid());
+
+                return autoScalePolicyVO;
             }
-
-            /* For update case remove the existing mappings and create fresh ones */
-            _autoScalePolicyConditionMapDao.removeByAutoScalePolicyId(autoScalePolicyVO.getId());
-
-            for (Long conditionId : conditionIds) {
-                AutoScalePolicyConditionMapVO policyConditionMapVO = new AutoScalePolicyConditionMapVO(autoScalePolicyVO.getId(), conditionId);
-                _autoScalePolicyConditionMapDao.persist(policyConditionMapVO);
-            }
-        }
-
-        txn.commit();
-        return autoScalePolicyVO;
+        });
     }
 
     @Override
@@ -511,7 +514,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEPOLICY_DELETE, eventDescription = "deleting autoscale policy")
-    public boolean deleteAutoScalePolicy(long id) {
+    public boolean deleteAutoScalePolicy(final long id) {
         /* Check if entity is in database */
         getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Policy", id, _autoScalePolicyDao);
 
@@ -519,23 +522,25 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             throw new InvalidParameterValueException("Cannot delete AutoScale Policy when it is in use by one or more AutoScale Vm Groups");
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        return Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
+                boolean success = true;
+                success = _autoScalePolicyDao.remove(id);
+                if (!success) {
+                    s_logger.warn("Failed to remove AutoScale Policy db object");
+                    return false;
+                }
+                success = _autoScalePolicyConditionMapDao.removeByAutoScalePolicyId(id);
+                if (!success) {
+                    s_logger.warn("Failed to remove AutoScale Policy Condition mappings");
+                    return false;
+                }
+                s_logger.info("Successfully deleted autoscale policy id : " + id);
 
-        boolean success = true;
-        success = _autoScalePolicyDao.remove(id);
-        if (!success) {
-            s_logger.warn("Failed to remove AutoScale Policy db object");
-            return false;
-        }
-        success = _autoScalePolicyConditionMapDao.removeByAutoScalePolicyId(id);
-        if (!success) {
-            s_logger.warn("Failed to remove AutoScale Policy Condition mappings");
-            return false;
-        }
-        txn.commit();
-        s_logger.info("Successfully deleted autoscale policy id : " + id);
-        return true; // successful
+                return success;
+            }
+        });
     }
 
     public void checkCallerAccess(String accountName, Long domainId)
@@ -745,7 +750,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMGROUP_DELETE, eventDescription = "deleting autoscale vm group")
-    public boolean deleteAutoScaleVmGroup(long id) {
+    public boolean deleteAutoScaleVmGroup(final long id) {
         AutoScaleVmGroupVO autoScaleVmGroupVO = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", id, _autoScaleVmGroupDao);
 
         if (autoScaleVmGroupVO.getState().equals(AutoScaleVmGroup.State_New)) {
@@ -769,24 +774,27 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             }
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        success = _autoScaleVmGroupDao.remove(id);
+        return Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
+                boolean success = _autoScaleVmGroupDao.remove(id);
+        
+                if (!success) {
+                    s_logger.warn("Failed to remove AutoScale Group db object");
+                    return false;
+                }
+        
+                success = _autoScaleVmGroupPolicyMapDao.removeByGroupId(id);
+                if (!success) {
+                    s_logger.warn("Failed to remove AutoScale Group Policy mappings");
+                    return false;
+                }
+        
+                s_logger.info("Successfully deleted autoscale vm group id : " + id);
+                return success; // Successfull
+            }
+        });
 
-        if (!success) {
-            s_logger.warn("Failed to remove AutoScale Group db object");
-            return false;
-        }
-
-        success = _autoScaleVmGroupPolicyMapDao.removeByGroupId(id);
-        if (!success) {
-            s_logger.warn("Failed to remove AutoScale Group Policy mappings");
-            return false;
-        }
-
-        txn.commit();
-        s_logger.info("Successfully deleted autoscale vm group id : " + id);
-        return success; // Successfull
     }
 
     @Override
@@ -831,13 +839,13 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     }
 
     @DB
-    protected AutoScaleVmGroupVO checkValidityAndPersist(AutoScaleVmGroupVO vmGroup, List<Long> passedScaleUpPolicyIds, List<Long> passedScaleDownPolicyIds) {
+    protected AutoScaleVmGroupVO checkValidityAndPersist(final AutoScaleVmGroupVO vmGroup, final List<Long> passedScaleUpPolicyIds, final List<Long> passedScaleDownPolicyIds) {
         int minMembers = vmGroup.getMinMembers();
         int maxMembers = vmGroup.getMaxMembers();
         int interval = vmGroup.getInterval();
         List<Counter> counters = new ArrayList<Counter>();
         List<AutoScalePolicyVO> policies = new ArrayList<AutoScalePolicyVO>();
-        List<Long> policyIds = new ArrayList<Long>();
+        final List<Long> policyIds = new ArrayList<Long>();
         List<Long> currentScaleUpPolicyIds = new ArrayList<Long>();
         List<Long> currentScaleDownPolicyIds = new ArrayList<Long>();
         if (vmGroup.getCreated() != null) {
@@ -887,20 +895,23 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         sameOwnerEntities[sameOwnerEntities.length - 1] = profileVO;
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, sameOwnerEntities);
 
-        final Transaction txn = Transaction.currentTxn();
-        txn.start();
-        vmGroup = _autoScaleVmGroupDao.persist(vmGroup);
+        return Transaction.execute(new TransactionCallback<AutoScaleVmGroupVO>() {
+            @Override
+            public AutoScaleVmGroupVO doInTransaction(TransactionStatus status) {
+                AutoScaleVmGroupVO vmGroupNew = _autoScaleVmGroupDao.persist(vmGroup);
+        
+                if (passedScaleUpPolicyIds != null || passedScaleDownPolicyIds != null) {
+                    _autoScaleVmGroupPolicyMapDao.removeByGroupId(vmGroupNew.getId());
+        
+                    for (Long policyId : policyIds) {
+                        _autoScaleVmGroupPolicyMapDao.persist(new AutoScaleVmGroupPolicyMapVO(vmGroupNew.getId(), policyId));
+                    }
+                }
 
-        if (passedScaleUpPolicyIds != null || passedScaleDownPolicyIds != null) {
-            _autoScaleVmGroupPolicyMapDao.removeByGroupId(vmGroup.getId());
-
-            for (Long policyId : policyIds) {
-                _autoScaleVmGroupPolicyMapDao.persist(new AutoScaleVmGroupPolicyMapVO(vmGroup.getId(), policyId));
+                return vmGroupNew;
             }
-        }
-        txn.commit();
+        });
 
-        return vmGroup;
     }
 
     @Override

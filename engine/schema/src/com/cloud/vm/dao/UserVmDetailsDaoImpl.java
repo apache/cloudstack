@@ -22,13 +22,12 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
-import com.cloud.vm.NicDetailVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.UserVmDetailVO;
 
 @Component
@@ -93,7 +92,7 @@ public class UserVmDetailsDaoImpl extends GenericDaoBase<UserVmDetailVO, Long> i
 
 	@Override
 	public void persist(long vmId, Map<String, String> details) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         SearchCriteria<UserVmDetailVO> sc = VmSearch.create();
         sc.setParameters("vmId", vmId);
@@ -107,7 +106,19 @@ public class UserVmDetailsDaoImpl extends GenericDaoBase<UserVmDetailVO, Long> i
 	}
 
     @Override
-    public void removeDetails(Long vmId, String key) {
+    public void addVmDetail(long vmId, String key, String value) {
+        UserVmDetailVO detail = findDetail(vmId, key);
+        if (detail == null) {
+            UserVmDetailVO newEntry = new UserVmDetailVO(vmId, key, value);
+            persist(newEntry);
+        } else {
+            detail.setValue(value);
+            update(detail.getId(), detail);
+        }
+    }
+
+    @Override
+    public void removeDetails(long vmId, String key) {
         if(key != null){
             UserVmDetailVO detail = findDetail(vmId, key);
             if(detail != null){
@@ -116,8 +127,5 @@ public class UserVmDetailsDaoImpl extends GenericDaoBase<UserVmDetailVO, Long> i
         }else {
             deleteDetails(vmId);
         }
-
     }
-
-
 }

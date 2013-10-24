@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import java.util.List;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -25,13 +27,11 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
@@ -48,13 +48,25 @@ public class DestroyVMCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
             required=true, description="The ID of the virtual machine")
     private Long id;
-
+    
+    
+    @Parameter(name=ApiConstants.EXPUNGE, type=CommandType.BOOLEAN, 
+            description="If true is passed, the vm is expunged immediately. False by default. Parameter can be passed to the call by ROOT/Domain admin only", since="4.2.1")
+    private Boolean expunge;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getId() {
         return id;
+    }
+    
+    public boolean getExpunge() {
+        if (expunge == null) {
+            return false;
+        } 
+        return expunge;
     }
 
     /////////////////////////////////////////////////////
@@ -97,11 +109,14 @@ public class DestroyVMCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, ConcurrentOperationException{
         CallContext.current().setEventDetails("Vm Id: "+getId());
-        UserVm result;
-        result = _userVmService.destroyVm(this);
+        UserVm result = _userVmService.destroyVm(this);
 
+        UserVmResponse response = new UserVmResponse();
         if (result != null) {
-            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
+            List<UserVmResponse> responses =  _responseGenerator.createUserVmResponse("virtualmachine", result);
+            if (responses != null && !responses.isEmpty()) {
+                response = responses.get(0);
+            }
             response.setResponseName("virtualmachine");
             this.setResponseObject(response);
         } else {

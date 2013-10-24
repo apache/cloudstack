@@ -36,7 +36,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 
@@ -63,6 +62,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 //@Ignore("Requires database to be set up")
@@ -152,8 +152,8 @@ public class CreatePrivateNetworkTest {
     @Test
     @DB
     public void createInvalidlyHostedPrivateNetwork() {
-        Transaction __txn;
-        __txn = Transaction.open("createInvalidlyHostedPrivateNetworkTest");
+        TransactionLegacy __txn;
+        __txn = TransactionLegacy.open("createInvalidlyHostedPrivateNetworkTest");
         /* Network nw; */
         try {
             /* nw = */

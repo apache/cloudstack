@@ -31,7 +31,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Local(value = StoragePoolDetailsDao.class)
 public class StoragePoolDetailsDaoImpl extends GenericDaoBase<StoragePoolDetailVO, Long> implements StoragePoolDetailsDao, ScopedConfigStorage {
@@ -48,7 +48,7 @@ public class StoragePoolDetailsDaoImpl extends GenericDaoBase<StoragePoolDetailV
 
     @Override
     public void update(long poolId, Map<String, String> details) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         SearchCriteria<StoragePoolDetailVO> sc = PoolSearch.create();
         sc.setParameters("pool", poolId);
 

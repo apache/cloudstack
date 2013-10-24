@@ -26,7 +26,7 @@ import org.testng.ITestNGMethod;
 import org.testng.internal.ConstructorOrMethod;
 
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 public class TestNGAop implements IMethodInterceptor {
 
@@ -39,7 +39,7 @@ public class TestNGAop implements IMethodInterceptor {
             if (m != null) {
                 DB db = m.getAnnotation(DB.class);
                 if (db != null) {
-                    Transaction txn = Transaction.open(m.getName());
+                    TransactionLegacy txn = TransactionLegacy.open(m.getName());
                 }
             }
         }

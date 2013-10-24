@@ -38,7 +38,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -74,7 +74,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 	@Override
     public void deleteRecordsForAccount(Long accountId) {
 	    String sql = ((accountId == null) ? DELETE_ALL : DELETE_ALL_BY_ACCOUNTID);
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
         try {
             txn.start();
@@ -99,7 +99,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 
 	@Override
     public void saveAccounts(List<AccountVO> accounts) {
-	    Transaction txn = Transaction.currentTxn();
+	    TransactionLegacy txn = TransactionLegacy.currentTxn();
 	    try {
 	        txn.start();
 	        String sql = INSERT_ACCOUNT;
@@ -133,7 +133,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 
     @Override
     public void updateAccounts(List<AccountVO> accounts) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
             String sql = UPDATE_ACCOUNT;
@@ -163,7 +163,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 
 	@Override
     public void saveUserStats(List<UserStatisticsVO> userStats) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
             String sql = INSERT_USER_STATS;
@@ -204,7 +204,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 
     @Override
     public void updateUserStats(List<UserStatisticsVO> userStats) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
             String sql = UPDATE_USER_STATS;
@@ -231,7 +231,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 
 	@Override
     public Long getLastAccountId() {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         String sql = GET_LAST_ACCOUNT;
         try {
@@ -248,7 +248,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 
     @Override
     public Long getLastUserStatsId() {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         String sql = GET_LAST_USER_STATS;
         try {
@@ -265,7 +265,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 
     @Override
     public List<Long> listPublicTemplatesByAccount(long accountId) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         String sql = GET_PUBLIC_TEMPLATES_BY_ACCOUNTID;
         List<Long> templateList = new ArrayList<Long>();
@@ -284,7 +284,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 
        @Override
        public Long getLastVmDiskStatsId() {
-               Transaction txn = Transaction.currentTxn();
+               TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         String sql = GET_LAST_VM_DISK_STATS;
         try {
@@ -301,7 +301,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 
        @Override
        public void updateVmDiskStats(List<VmDiskStatisticsVO> vmDiskStats) {
-               Transaction txn = Transaction.currentTxn();
+               TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
             String sql = UPDATE_VM_DISK_STATS;
@@ -335,7 +335,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 
        @Override
        public void saveVmDiskStats(List<VmDiskStatisticsVO> vmDiskStats) {
-               Transaction txn = Transaction.currentTxn();
+               TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
             String sql = INSERT_VM_DISK_STATS;
@@ -381,7 +381,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 
     @Override
     public void saveUsageRecords(List<UsageVO> usageRecords) {
-       Transaction txn = Transaction.currentTxn();
+       TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
             String sql = INSERT_USGAE_RECORDS;
