@@ -1307,7 +1307,6 @@ div.list-view td.state.off span {
 .quick-view-tooltip {
   width: 470px;
   display: inline-block;
-  margin-left: -462px;
   padding-top: 50px;
 }
 
@@ -1316,20 +1315,16 @@ div.list-view td.state.off span {
   position: absolute;
   top: 71px;
   left: 10px;
-  color: #5A6977;
-  /*+text-shadow:0px 1px #EAEAEA;*/
-  -moz-text-shadow: 0px 1px #EAEAEA;
-  -webkit-text-shadow: 0px 1px #EAEAEA;
-  -o-text-shadow: 0px 1px #EAEAEA;
-  text-shadow: 0px 1px #EAEAEA;
+  color: #808080;
+  font-weight: 100;
 }
 
 .quick-view-tooltip > div.title .icon {
   position: relative;
-  top: -3px;
+  top: -2px;
   background: url(../images/sprites.png) no-repeat -42px -67px;
   float: right;
-  padding: 5px 21px 0 1px;
+  padding: 0px 13px 0 0px;
 }
 
 .quick-view-tooltip .loading-overlay {
@@ -1348,8 +1343,8 @@ div.list-view td.state.off span {
 
 .quick-view-tooltip .container {
   border: 1px solid #9EA2A5;
-  background: #CCCFD6;
-  width: 470px;
+  background: #FFFFFF;
+  width: 478px;
   min-height: 100px;
   height: auto;
   overflow: hidden;
@@ -1367,10 +1362,10 @@ div.list-view td.state.off span {
 
 .quick-view-tooltip .detail-view .main-groups {
   width: 456px;
-  height: 152px;
+  height: 170px;
   position: absolute;
-  top: 55px;
   padding-top: 7px;
+  top: 55px;
   border: 1px solid #808080;
   border-left: none;
   border-right: none;
@@ -1404,7 +1399,7 @@ div.list-view td.state.off span {
 .quick-view-tooltip .detail-view .details {
   display: inline-block;
   height: auto;
-  padding-bottom: 209px;
+  padding-bottom: 224px;
 }
 
 .quick-view-tooltip .detail-view .detail-group {
@@ -1427,14 +1422,9 @@ div.list-view td.state.off span {
 }
 
 .quick-view-tooltip .detail-view .detail-group table td.name {
-  color: #3E5F7F !important;
+  color: #000000 !important;
   padding: 0px 29px 0px 5px !important;
   font-size: 13px;
-  /*+text-shadow:0px 1px #DBDBDB;*/
-  -moz-text-shadow: 0px 1px #DBDBDB;
-  -webkit-text-shadow: 0px 1px #DBDBDB;
-  -o-text-shadow: 0px 1px #DBDBDB;
-  text-shadow: 0px 1px #DBDBDB;
 }
 
 .quick-view-tooltip .detail-view .detail-group table td.value {
@@ -1455,7 +1445,7 @@ div.list-view td.state.off span {
 
 .quick-view-tooltip .detail-view .detail-group .main-groups table td.value span {
   height: 25px;
-  top: 0px;
+  top: 7px;
 }
 
 .quick-view-tooltip .detail-view .detail-group.actions {
@@ -1517,15 +1507,17 @@ div.list-view td.state.off span {
   height: auto;
   background: none;
   vertical-align: top;
+  position: relative;
+  top: 27px;
   float: left;
 }
 
 .quick-view-tooltip .detail-view .detail-group.actions td.view-all {
   position: relative;
   left: 0px;
+  top: 26px;
   float: left;
-  height: 22px;
-  border-top: 1px solid #808080;
+  height: 26px;
   /*+box-shadow:inset 0px 1px #FFFFFF;*/
   -moz-box-shadow: inset 0px 1px #FFFFFF;
   -webkit-box-shadow: inset 0px 1px #FFFFFF;
@@ -1980,7 +1972,7 @@ div.detail-group td.view-all a {
   font-size: 13px;
   display: block;
   text-decoration: none;
-  color: #268BE3;
+  color: #145A98;
   /*+text-shadow:0px 1px 2px #FFFFFF;*/
   -moz-text-shadow: 0px 1px 2px #FFFFFF;
   -webkit-text-shadow: 0px 1px 2px #FFFFFF;
@@ -2063,7 +2055,7 @@ div.detail-group.actions tr {
 }
 
 div.detail-group.actions td {
-  height: 47px;
+  height: 50px;
   vertical-align: middle;
 }
 
@@ -2109,7 +2101,6 @@ div.detail-group.actions td {
 .detail-group table td.detail-actions.full-length {
   display: block;
   width: 99%;
-  border-bottom: 1px solid #AAAAAA;
   float: left;
 }
 
