@@ -46,6 +46,7 @@ div.toolbar,
 
 /*+}*/
 body {
+  min-width: 1024px;
   font-family: sans-serif;
   height: 769px !important;
   overflow: auto;
@@ -60,12 +61,22 @@ body.install-wizard {
   background: #FFFFFF url(../images/bg-login.png);
 }
 
-#container {
+#main-area {
   width: 1024px;
+  height: 728px;
+  margin: auto;
+  border: 1px solid #D4D4D4;
+  /*+box-shadow:0px -5px 11px #B7B7B7;*/
+  -moz-box-shadow: 0px -5px 11px #B7B7B7;
+  -webkit-box-shadow: 0px -5px 11px #B7B7B7;
+  -o-box-shadow: 0px -5px 11px #B7B7B7;
+  box-shadow: 0px -5px 11px #B7B7B7;
+}
+
+#container {
+  /*[empty]width:;*/
   height: 783px;
   margin: auto;
-  border: 1px solid #E2E2E2;
-  border-top: none;
   position: relative;
 }
 
@@ -124,7 +135,7 @@ table thead th.sorted.asc {
 
 table tbody td,
 table th {
-  padding: 9px 5px 4px 5px;
+  padding: 9px 5px 4px;
   border-right: 1px solid #BFBFBF;
   color: #495A76;
   clear: none;
@@ -2204,8 +2215,11 @@ div.detail-group.actions td {
 
 /*Header*/
 #header {
+  width: 100%;
   height: 56px;
   background: #DFDFDF url(../images/bg-header.png) repeat-x;
+  z-index: 10000;
+  position: relative;
 }
 
 #header div.button {
@@ -6018,7 +6032,7 @@ label.error {
 
 .multi-wizard.instance-wizard .section.custom-size {
   position: relative;
-  background: white;
+  background: #FFFFFF;
   padding: 7px;
   border-radius: 4px;
 }
@@ -6497,8 +6511,9 @@ label.error {
   text-align: center;
   /*+placement:shift 0px 153px;*/
   position: relative;
-  left: -10px;
+  left: 0px;
   top: 153px;
+  left: -10px;
   /*+text-shadow:0px 1px #FFFFFF;*/
   -moz-text-shadow: 0px 1px #FFFFFF;
   -webkit-text-shadow: 0px 1px #FFFFFF;
@@ -9866,8 +9881,9 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   color: #838181;
   /*+placement:shift 488px 9px;*/
   position: relative;
-  left: 480px;
+  left: 488px;
   top: 9px;
+  left: 480px;
   margin: 19px 0 0 40px;
 }
 
@@ -12286,97 +12302,118 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .accounts-wizard table {
-    margin: 0;
-    width: 100%;
-    table-layout: fixed;
+  margin: 0;
+  width: 100%;
+  table-layout: fixed;
 }
+
 .accounts-wizard .ui-button {
-    display: inline-block !important;
-    float: none !important;
+  display: inline-block !important;
+  float: none !important;
 }
+
 .accounts-wizard td:last-child {
-    border: none;
+  border: none;
 }
+
 .accounts-wizard tbody tr:nth-child(even) {
-    background: #DFE1E3;
+  background: #DFE1E3;
 }
+
 .accounts-wizard tbody tr:nth-child(odd) {
-    background: #F2F0F0;
+  background: #F2F0F0;
 }
+
 .accounts-wizard .content {
-    display: inline-block;
+  display: inline-block;
 }
+
 .accounts-wizard .content:last-child {
-    margin-left: 14px;
+  margin-left: 14px;
 }
+
 .accounts-wizard .input-area {
-    width: 320px;
-    font-size: 13px;
-    color: #485867;
-    text-shadow: 0px 2px 1px #FFFFFF;
+  width: 320px;
+  font-size: 13px;
+  color: #485867;
+  text-shadow: 0px 2px 1px #FFFFFF;
 }
+
 .ldap-account-choice {
-    border: none !important;
-    border-radius: 0 0 0 0 !important;
+  border: none !important;
+  border-radius: 0 0 0 0 !important;
 }
+
 .manual-account-details .name {
-    margin-top: 2px;
-    width: 100px;
-    float: left;
-    padding-bottom:10px;
+  margin-top: 2px;
+  width: 100px;
+  float: left;
+  padding-bottom: 10px;
 }
+
 .manual-account-details {
-    height: auto !important;
-    overflow: visible !important;
-    overflow-x: visible !important;
+  height: auto !important;
+  overflow: visible !important;
+  overflow-x: visible !important;
 }
+
 .manual-account-details label.error {
-    display: block;
-    font-size: 10px;
+  display: block;
+  font-size: 10px;
 }
+
 .manual-account-details .value {
-    float: left;
+  float: left;
 }
+
 .manual-account-details .form-item:after {
-    content:".";
-    display: block;
-    clear: both;
-    visibility: hidden;
-    line-height: 0;
-    height: 0;
+  content: ".";
+  display: block;
+  clear: both;
+  visibility: hidden;
+  line-height: 0;
+  height: 0;
 }
+
 .manual-account-details .form-item {
-    padding: 5px;
-    width: 100%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
+  padding: 5px;
+  width: 100%;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
 }
-.manual-account-details select, .manual-account-details input {
-    width: 150px;
-}
+
+.manual-account-details select,
 .manual-account-details input {
-    background: #F6F6F6;
-    -moz-border-radius: 4px;
-    -webkit-border-radius: 4px;
-    -khtml-border-radius: 4px;
-    border-radius: 4px;
-    border-radius: 4px 4px 4px 4px;
-    border: 1px solid #AFAFAF;
-    -moz-box-shadow: inset 0px 1px #727272;
-    -webkit-box-shadow: inset 0px 1px #727272;
-    -o-box-shadow: inset 0px 1px #727272;
-    box-shadow: inset 0px 1px #727272;
-    -moz-box-shadow: inset 0px 1px 0px #727272;
-    -webkit-box-shadow: inset 0px 1px 0px #727272;
-    -o-box-shadow: inset 0px 1px 0px #727272;
+  width: 150px;
 }
+
+.manual-account-details input {
+  background: #F6F6F6;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
+  border: 1px solid #AFAFAF;
+  -moz-box-shadow: inset 0px 1px #727272;
+  -webkit-box-shadow: inset 0px 1px #727272;
+  -o-box-shadow: inset 0px 1px #727272;
+  box-shadow: inset 0px 1px #727272;
+  -moz-box-shadow: inset 0px 1px 0px #727272;
+  -webkit-box-shadow: inset 0px 1px 0px #727272;
+  -o-box-shadow: inset 0px 1px 0px #727272;
+}
+
 .manual-account-details > *:nth-child(even) {
-    background: #DFE1E3;
+  background: #DFE1E3;
 }
+
 .manual-account-details > *:nth-child(odd) {
-    background: #F2F0F0;
+  background: #F2F0F0;
 }
+
 .manual-account-details .value {
-    display: inline-block;
+  display: inline-block;
 }
+
