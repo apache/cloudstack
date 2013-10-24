@@ -18,6 +18,7 @@ package com.cloud.utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
@@ -30,6 +31,7 @@ public class PropertiesUtilsTest {
         File configFile = PropertiesUtil.findConfigFile("notexistingresource");
         Assert.assertNull(configFile);
     }
+
     @Test
     public void loadFromFile() throws IOException {
         File file = File.createTempFile("test", ".properties");
@@ -37,5 +39,16 @@ public class PropertiesUtilsTest {
         Properties properties = new Properties();
         PropertiesUtil.loadFromFile(properties, file);
         Assert.assertEquals("b", properties.get("a"));
+    }
+
+    @Test
+    public void processConfigFile() throws IOException {
+        File tempFile = File.createTempFile("temp", ".properties");
+        FileUtils.writeStringToFile(tempFile, "a=b\nc=d\n");
+        Map<String, String> config = PropertiesUtil
+                .processConfigFile(new String[] { tempFile.getAbsolutePath() });
+        Assert.assertEquals("b", config.get("a"));
+        Assert.assertEquals("d", config.get("c"));
+        tempFile.delete();
     }
 }
