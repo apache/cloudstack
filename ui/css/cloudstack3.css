@@ -403,11 +403,11 @@ body.login {
 }
 
 .login .logo {
-  width: 243px;
+  width: 250px;
   height: 31px;
   float: left;
   margin: 72px 0 0 209px;
-  background: url(../images/logo-login.png) no-repeat -7px 0px;
+  background: url(../images/logo-login.png) no-repeat 0 0;
 }
 
 .login.nologo .logo {
@@ -2215,7 +2215,7 @@ div.detail-group.actions td {
 }
 
 #header.nologo div.logo {
-  width: 170px;
+  width: 210px;
   height: 47px;
   position: relative;
   float: left;
