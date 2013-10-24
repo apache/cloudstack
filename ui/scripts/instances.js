@@ -568,6 +568,39 @@
                             poll: pollAsyncJobResult
                         }
                     },
+                    expunge: {
+                        label: 'label.action.expunge.instance',
+                        compactLabel: 'label.expunge',
+                        messages: {
+                            confirm: function(args) {
+                                return 'message.action.expunge.instance';
+                            },
+                            notification: function(args) {
+                                return 'label.action.expunge.instance';
+                            }
+                        },
+                        action: function(args) {
+                            $.ajax({
+                                url: createURL("expungeVirtualMachine&id=" + args.context.instances[0].id),
+                                dataType: "json",
+                                async: true,
+                                success: function(json) {
+                                    var jid = json.expungevirtualmachineresponse.jobid;
+                                    args.response.success({
+                                        _custom: {
+                                            jobId: jid,
+                                            getActionFilter: function() {
+                                                return vmActionfilter;
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        },
+                        notification: {
+                            poll: pollAsyncJobResult
+                        }
+                    },
                     restore: {
                         label: 'label.action.restore.instance',
                         compactLabel: 'label.restore',
@@ -1651,6 +1684,10 @@
                                     var jsonObj;
                                     if (json.listvirtualmachinesresponse.virtualmachine != null && json.listvirtualmachinesresponse.virtualmachine.length > 0)
                                         jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];
+                                    else if (isAdmin()) 
+                                        jsonObj = $.extend(args.context.instances[0], {
+                                            state: "Expunged"
+                                        }); //after root admin expunge a VM, listVirtualMachines API will no longer returns this expunged VM to all users.
                                     else
                                         jsonObj = $.extend(args.context.instances[0], {
                                             state: "Destroyed"
@@ -1985,6 +2022,8 @@
             if (isAdmin() || isDomainAdmin()) {
                 allowedActions.push("restore");
             }
+            if (isAdmin())
+                allowedActions.push("expunge");
         } else if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
             allowedActions.push("restart");
@@ -2042,6 +2081,9 @@
             //  allowedActions.push("stop");
         } else if (jsonObj.state == 'Error') {
             allowedActions.push("destroy");
+        } else if (jsonObj.state == 'Expunging') {
+            if (isAdmin())
+                allowedActions.push("expunge");
         }
         return allowedActions;
     }

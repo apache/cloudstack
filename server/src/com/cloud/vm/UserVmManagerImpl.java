@@ -44,6 +44,7 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.ExpungeVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
@@ -1963,6 +1964,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_EXPUNGE, eventDescription = "expunging Vm", async = true)
+    public UserVm expungeVm(ExpungeVMCmd cmd)
+            throws ResourceUnavailableException, ConcurrentOperationException {
+        return expungeVm(cmd.getId());
+    }
+
+    @Override
     @DB
     public InstanceGroupVO createVmGroup(CreateVMGroupCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
@@ -3583,7 +3591,48 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
+    @Override
+    public UserVm expungeVm(long vmId) throws ResourceUnavailableException,
+    ConcurrentOperationException {
+        Account caller = CallContext.current().getCallingAccount();
+        Long userId = caller.getId();
 
+        // Verify input parameters
+        UserVmVO vm = _vmDao.findById(vmId);
+        if (vm == null) {
+            InvalidParameterValueException ex = new InvalidParameterValueException(
+                    "Unable to find a virtual machine with specified vmId");
+            ex.addProxyObject(String.valueOf(vmId), "vmId");
+            throw ex;
+        }
+
+        if (vm.getRemoved() != null) {
+            s_logger.trace("Vm id=" + vmId + " is already expunged");
+            return vm;
+        }
+
+        if ((vm.getState() != State.Destroyed) && (vm.getState() != State.Expunging)) {
+            CloudRuntimeException ex = new CloudRuntimeException(
+                    "Please destroy vm with specified vmId before expunge");
+            ex.addProxyObject(String.valueOf(vmId), "vmId");
+            throw ex;
+        }
+
+        _accountMgr.checkAccess(caller, null, true, vm);
+
+        boolean status;
+
+        status = expunge(vm, userId, caller);    
+        if (status) {
+            return  _vmDao.findByIdIncludingRemoved(vmId);
+        } else {
+            CloudRuntimeException ex = new CloudRuntimeException(
+                    "Failed to expunge vm with specified vmId");
+            ex.addProxyObject(String.valueOf(vmId), "vmId");
+            throw ex;
+        }
+
+    }
 
     @Override
     public Pair<List<UserVmJoinVO>, Integer> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive,
