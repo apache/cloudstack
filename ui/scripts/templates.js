@@ -600,7 +600,7 @@
                                     //***** updateTemplate *****
                                     var data = {
                                         id: args.context.templates[0].id,
-                                        zoneid: args.context.templates[0].zoneid,
+                                        //zoneid: args.context.templates[0].zoneid, //can't update template/ISO in only one zone. It always get updated in all zones.
                                         name: args.data.name,
                                         displaytext: args.data.displaytext,
                                         ostypeid: args.data.ostypeid,
@@ -620,7 +620,7 @@
                                     //***** updateTemplatePermissions *****
                                     var data = {
                                         id: args.context.templates[0].id,
-                                        zoneid: args.context.templates[0].zoneid
+                                        //zoneid: args.context.templates[0].zoneid //can't update template/ISO in only one zone. It always get updated in all zones.
                                     };
 
                                     //if args.data.ispublic is undefined, do not pass ispublic to API call.
@@ -1419,7 +1419,7 @@
                                     //***** updateIso *****
                                     var data = {
                                         id: args.context.isos[0].id,
-                                        zoneid: args.context.isos[0].zoneid,
+                                        //zoneid: args.context.isos[0].zoneid, //can't update template/ISO in only one zone. It always get updated in all zones.
                                         name: args.data.name,
                                         displaytext: args.data.displaytext,
                                         ostypeid: args.data.ostypeid
@@ -1437,7 +1437,7 @@
                                     //***** updateIsoPermissions *****
                                     var data = {
                                         id: args.context.isos[0].id,
-                                        zoneid: args.context.isos[0].zoneid
+                                        //zoneid: args.context.isos[0].zoneid //can't update template/ISO in only one zone. It always get updated in all zones.
                                     };
                                     //if args.data.ispublic is undefined, do not pass ispublic to API call.
                                     if (args.data.ispublic == "on") {
