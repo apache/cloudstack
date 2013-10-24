@@ -70,7 +70,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     @Inject protected DataCenterLinkLocalIpAddressDao _LinkLocalIpAllocDao = null;
     @Inject protected DataCenterVnetDao _vnetAllocDao = null;
     @Inject protected PodVlanDao _podVlanAllocDao = null;
-    @Inject protected DcDetailsDao _detailsDao = null;
+    @Inject protected DataCenterDetailsDao _detailsDao = null;
     @Inject protected AccountGuestVlanMapDao _accountGuestVlanMapDao = null;
 
     protected long _prefix;

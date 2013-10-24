@@ -26,4 +26,5 @@ public interface ServiceOfferingDetailsDao extends GenericDao<ServiceOfferingDet
     void persist(long serviceOfferingId, Map<String, String> details);
     ServiceOfferingDetailsVO findDetail(long serviceOfferingId, String name);
     void deleteDetails(long serviceOfferingId);
+    void removeDetails(long offId, String key);
 }

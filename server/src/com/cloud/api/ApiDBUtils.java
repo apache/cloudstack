@@ -123,6 +123,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DataCenterDetailsDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
@@ -400,6 +401,8 @@ public class ApiDBUtils {
     static NetworkACLDao _networkACLDao;
     static ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     static AccountService _accountService;
+    static DataCenterDetailsDao _zoneDetailsDao;
+
 
 
     @Inject
@@ -513,8 +516,8 @@ public class ApiDBUtils {
     @Inject private NetworkACLDao networkACLDao;
     @Inject private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
     @Inject private AccountService accountService;
-    @Inject
-    private ConfigurationManager configMgr;
+    @Inject private ConfigurationManager configMgr;
+    @Inject private DataCenterDetailsDao zoneDetailsDao;
 
     @PostConstruct
     void init() {
@@ -626,6 +629,8 @@ public class ApiDBUtils {
         _networkACLDao = networkACLDao;
         _serviceOfferingDetailsDao = serviceOfferingDetailsDao;
         _accountService = accountService;
+        _zoneDetailsDao = zoneDetailsDao;
+
     }
 
     // ///////////////////////////////////////////////////////////
@@ -1691,5 +1696,10 @@ public class ApiDBUtils {
     
     public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType){
         return  _tagJoinDao.listBy(resourceUUID, resourceType);
+    }
+    
+    public static Map<String, String> getZoneDetails(long zoneId) {
+        Map<String, String> details = _zoneDetailsDao.findDetails(zoneId);
+        return details.isEmpty() ? null : details;
     }
 }

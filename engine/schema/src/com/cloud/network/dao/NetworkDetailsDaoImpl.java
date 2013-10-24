@@ -80,7 +80,7 @@ public class NetworkDetailsDaoImpl extends GenericDaoBase<NetworkDetailVO, Long>
     }
 
     @Override
-    public void removeDetails(Long networkId, String key) {
+    public void removeDetails(long networkId, String key) {
         if(key != null){
             NetworkDetailVO detail = findDetail(networkId, key);
             if(detail != null){

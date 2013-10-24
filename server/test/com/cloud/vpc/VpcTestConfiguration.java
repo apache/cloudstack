@@ -43,7 +43,7 @@ import com.cloud.dc.dao.DataCenterDaoImpl;
 import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl;
 import com.cloud.dc.dao.DataCenterVnetDaoImpl;
-import com.cloud.dc.dao.DcDetailsDaoImpl;
+import com.cloud.dc.dao.DataCenterDetailsDaoImpl;
 import com.cloud.dc.dao.HostPodDaoImpl;
 import com.cloud.dc.dao.PodVlanDaoImpl;
 import com.cloud.dc.dao.PodVlanMapDaoImpl;
@@ -153,7 +153,7 @@ import com.cloud.vpc.dao.MockVpcOfferingServiceMapDaoImpl;
         VMTemplateHostDaoImpl.class,
         MockVpcDaoImpl.class,
         VMTemplateDaoImpl.class,VMTemplateZoneDaoImpl.class,VMTemplateDetailsDaoImpl.class,DataCenterDaoImpl.class,DataCenterIpAddressDaoImpl.class,DataCenterLinkLocalIpAddressDaoImpl.class,DataCenterVnetDaoImpl.class,PodVlanDaoImpl.class,
-        DcDetailsDaoImpl.class,MockNetworkManagerImpl.class,MockVpcVirtualNetworkApplianceManager.class,
+        DataCenterDetailsDaoImpl.class,MockNetworkManagerImpl.class,MockVpcVirtualNetworkApplianceManager.class,
         EntityManagerImpl.class,LoadBalancerDaoImpl.class,FirewallRulesCidrsDaoImpl.class,VirtualRouterProviderDaoImpl.class,
         ProjectDaoImpl.class,ProjectAccountDaoImpl.class,MockVpcOfferingDaoImpl.class,
         MockConfigurationManagerImpl.class, MockNetworkOfferingServiceMapDaoImpl.class,

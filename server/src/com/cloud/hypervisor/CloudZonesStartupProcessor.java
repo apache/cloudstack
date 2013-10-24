@@ -38,11 +38,11 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.DcDetailVO;
+import com.cloud.dc.DataCenterDetailVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.DcDetailsDao;
+import com.cloud.dc.dao.DataCenterDetailsDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
@@ -69,7 +69,7 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
     @Inject DataCenterDao _zoneDao = null;
     @Inject HostDao _hostDao = null;
     @Inject HostPodDao _podDao = null;
-    @Inject DcDetailsDao _zoneDetailsDao = null;
+    @Inject DataCenterDetailsDao _zoneDetailsDao = null;
     
     @Inject AgentManager _agentManager = null;
     @Inject ConfigurationManager _configurationManager = null;
@@ -175,7 +175,7 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
     	}
         
         long zoneId = zone.getId();
-        DcDetailVO maxHostsInZone = _zoneDetailsDao.findDetail(zoneId, ZoneConfig.MaxHosts.key());
+        DataCenterDetailVO maxHostsInZone = _zoneDetailsDao.findDetail(zoneId, ZoneConfig.MaxHosts.key());
         if(maxHostsInZone != null){
         	long maxHosts = new Long(maxHostsInZone.getValue()).longValue();
         	long currentCountOfHosts = _hostDao.countRoutingHostsByDataCenter(zoneId);

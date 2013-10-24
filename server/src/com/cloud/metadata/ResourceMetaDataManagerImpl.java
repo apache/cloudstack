@@ -25,8 +25,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.dc.DcDetailVO;
-import com.cloud.dc.dao.DcDetailsDao;
+import com.cloud.dc.DataCenterDetailVO;
+import com.cloud.dc.dao.DataCenterDetailsDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -45,7 +45,6 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
-import com.cloud.uuididentity.dao.IdentityDao;
 import com.cloud.vm.NicDetailVO;
 import com.cloud.vm.dao.NicDetailDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
@@ -62,7 +61,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     @Inject
     UserVmDetailsDao _userVmDetailDao;
     @Inject
-    DcDetailsDao _dcDetailsDao;
+    DataCenterDetailsDao _dcDetailsDao;
     @Inject
     NetworkDetailsDao _networkDetailsDao;
     @Inject
@@ -110,7 +109,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
                         }
 
                         long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
-                        // TODO - Have a better design here.
+                        // TODO - Have a better design here for getting the DAO.
                         if(resourceType == ResourceObjectType.Volume){
                             VolumeDetailVO v = new VolumeDetailVO(id, key, value);
                             _volumeDetailDao.persist(v);
@@ -118,7 +117,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
                             NicDetailVO n = new NicDetailVO(id, key, value);
                             _nicDetailDao.persist(n);
                         } else if (resourceType == ResourceObjectType.Zone){
-                             DcDetailVO dataCenterDetail = new DcDetailVO(id, key, value);
+                             DataCenterDetailVO dataCenterDetail = new DataCenterDetailVO(id, key, value);
                              _dcDetailsDao.persist(dataCenterDetail);
                         } else if (resourceType == ResourceObjectType.Network){
                             NetworkDetailVO networkDetail = new NetworkDetailVO(id, key, value);
@@ -151,7 +150,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
             throw new InvalidParameterValueException("The resource type " + resourceType + " is not supported by the API yet");
         }
         
-        // TODO - Have a better design here.
+        // TODO - Have a better design here for getting the DAO.
         if (resourceType == ResourceObjectType.Volume){
            _volumeDetailDao.removeDetails(id, key);
         } else if (resourceType == ResourceObjectType.Nic){
@@ -162,6 +161,10 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
             _templateDetailsDao.removeDetails(id, key);
         } else if (resourceType == ResourceObjectType.Zone){
             _dcDetailsDao.removeDetails(id, key);
+        } else if (resourceType == ResourceObjectType.ServiceOffering) {
+            _serviceOfferingDetailsDao.removeDetails(id, key);
+        } else if (resourceType == ResourceObjectType.Network) {
+            _networkDetailsDao.removeDetails(id, key);
         }
 
         return true;

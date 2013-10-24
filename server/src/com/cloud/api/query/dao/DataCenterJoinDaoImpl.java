@@ -105,6 +105,8 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
             zoneResponse.addTag(tagResponse);
         }
         
+        zoneResponse.setResourceDetails(ApiDBUtils.getZoneDetails(dataCenter.getId()));
+        
         zoneResponse.setObjectName("zone");
         return zoneResponse;
     }

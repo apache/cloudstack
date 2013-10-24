@@ -19,19 +19,19 @@ package com.cloud.dc.dao;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.dc.DcDetailVO;
+import com.cloud.dc.DataCenterDetailVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface DcDetailsDao extends GenericDao<DcDetailVO, Long> {
+public interface DataCenterDetailsDao extends GenericDao<DataCenterDetailVO, Long> {
     Map<String, String> findDetails(long dcId);
     
     void persist(long dcId, Map<String, String> details);
     
-    DcDetailVO findDetail(long dcId, String name);
+    DataCenterDetailVO findDetail(long dcId, String name);
 
 	void deleteDetails(long dcId);
 
-    void removeDetails(Long id, String key);
+    void removeDetails(long id, String key);
 
-    List<DcDetailVO> findDetailsList(long dcId);
+    List<DataCenterDetailVO> findDetailsList(long dcId);
 }

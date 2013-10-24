@@ -95,4 +95,17 @@ public class ServiceOfferingDetailsDaoImpl extends GenericDaoBase<ServiceOfferin
         }
         txn.commit();
     }
+    
+    @Override
+    public void removeDetails(long offId, String key) {
+        if(key != null){
+            ServiceOfferingDetailsVO detail = findDetail(offId, key);
+            if(detail != null){
+                remove(detail.getId());
+            }
+        }else {
+            deleteDetails(offId);
+        }
+    }
+
 }

@@ -27,18 +27,18 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 
-import com.cloud.dc.DcDetailVO;
+import com.cloud.dc.DataCenterDetailVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
-@Local(value=DcDetailsDao.class)
-public class DcDetailsDaoImpl extends GenericDaoBase<DcDetailVO, Long> implements DcDetailsDao, ScopedConfigStorage {
-    protected final SearchBuilder<DcDetailVO> DcSearch;
-    protected final SearchBuilder<DcDetailVO> DetailSearch;
+@Local(value=DataCenterDetailsDao.class)
+public class DataCenterDetailsDaoImpl extends GenericDaoBase<DataCenterDetailVO, Long> implements DataCenterDetailsDao, ScopedConfigStorage {
+    protected final SearchBuilder<DataCenterDetailVO> DcSearch;
+    protected final SearchBuilder<DataCenterDetailVO> DetailSearch;
     
-    public DcDetailsDaoImpl() {
+    public DataCenterDetailsDaoImpl() {
         DcSearch = createSearchBuilder();
         DcSearch.and("dcId", DcSearch.entity().getDcId(), SearchCriteria.Op.EQ);
         DcSearch.done();
@@ -50,8 +50,8 @@ public class DcDetailsDaoImpl extends GenericDaoBase<DcDetailVO, Long> implement
     }
 
     @Override
-    public DcDetailVO findDetail(long dcId, String name) {
-        SearchCriteria<DcDetailVO> sc = DetailSearch.create();
+    public DataCenterDetailVO findDetail(long dcId, String name) {
+        SearchCriteria<DataCenterDetailVO> sc = DetailSearch.create();
         sc.setParameters("dcId", dcId);
         sc.setParameters("name", name);
         
@@ -60,42 +60,42 @@ public class DcDetailsDaoImpl extends GenericDaoBase<DcDetailVO, Long> implement
 
     @Override
     public Map<String, String> findDetails(long dcId) {
-        SearchCriteria<DcDetailVO> sc = DcSearch.create();
+        SearchCriteria<DataCenterDetailVO> sc = DcSearch.create();
         sc.setParameters("dcId", dcId);
         
-        List<DcDetailVO> results = search(sc, null);
+        List<DataCenterDetailVO> results = search(sc, null);
         Map<String, String> details = new HashMap<String, String>(results.size());
-        for (DcDetailVO result : results) {
+        for (DataCenterDetailVO result : results) {
             details.put(result.getName(), result.getValue());
         }
         return details;
     }
 
     @Override
-    public List<DcDetailVO> findDetailsList(long dcId) {
-        SearchCriteria<DcDetailVO> sc = DcSearch.create();
+    public List<DataCenterDetailVO> findDetailsList(long dcId) {
+        SearchCriteria<DataCenterDetailVO> sc = DcSearch.create();
         sc.setParameters("dcId", dcId);
 
-        List<DcDetailVO> results = search(sc, null);
+        List<DataCenterDetailVO> results = search(sc, null);
         return results;
     }
 
 
     @Override
     public void deleteDetails(long dcId) {
-        SearchCriteria<DcDetailVO> sc = DcSearch.create();
+        SearchCriteria<DataCenterDetailVO> sc = DcSearch.create();
         sc.setParameters("dcId", dcId);
         
-        List<DcDetailVO> results = search(sc, null);
-        for (DcDetailVO result : results) {
+        List<DataCenterDetailVO> results = search(sc, null);
+        for (DataCenterDetailVO result : results) {
         	remove(result.getId());
         }
     }
 
     @Override
-    public void removeDetails(Long id, String key) {
+    public void removeDetails(long id, String key) {
         if(key != null){
-            DcDetailVO detail = findDetail(id, key);
+            DataCenterDetailVO detail = findDetail(id, key);
             if(detail != null){
                 remove(detail.getId());
             }
@@ -108,12 +108,12 @@ public class DcDetailsDaoImpl extends GenericDaoBase<DcDetailVO, Long> implement
     public void persist(long dcId, Map<String, String> details) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
-        SearchCriteria<DcDetailVO> sc = DcSearch.create();
+        SearchCriteria<DataCenterDetailVO> sc = DcSearch.create();
         sc.setParameters("dcId", dcId);
         expunge(sc);
         
         for (Map.Entry<String, String> detail : details.entrySet()) {
-            DcDetailVO vo = new DcDetailVO(dcId, detail.getKey(), detail.getValue());
+            DataCenterDetailVO vo = new DataCenterDetailVO(dcId, detail.getKey(), detail.getValue());
             persist(vo);
         }
         txn.commit();
@@ -126,7 +126,7 @@ public class DcDetailsDaoImpl extends GenericDaoBase<DcDetailVO, Long> implement
 
     @Override
     public String getConfigValue(long id, ConfigKey<?> key) {
-        DcDetailVO vo = findDetail(id, key.key());
+        DataCenterDetailVO vo = findDetail(id, key.key());
         return vo == null ? null : vo.getValue();
     }
 

@@ -98,7 +98,7 @@ import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.DcDetailVO;
+import com.cloud.dc.DataCenterDetailVO;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
@@ -111,7 +111,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDao;
-import com.cloud.dc.dao.DcDetailsDao;
+import com.cloud.dc.dao.DataCenterDetailsDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
@@ -284,7 +284,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Inject
     ConfigurationServer _configServer;
     @Inject
-    DcDetailsDao _dcDetailsDao;
+    DataCenterDetailsDao _dcDetailsDao;
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
     @Inject
@@ -450,9 +450,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (zone == null) {
                     throw new InvalidParameterValueException("unable to find zone by id " + resourceId);
                 }
-                DcDetailVO dcDetailVO = _dcDetailsDao.findDetail(resourceId, name.toLowerCase());
+                DataCenterDetailVO dcDetailVO = _dcDetailsDao.findDetail(resourceId, name.toLowerCase());
                 if (dcDetailVO == null) {
-                    dcDetailVO = new DcDetailVO(resourceId, name, value);
+                    dcDetailVO = new DataCenterDetailVO(resourceId, name, value);
                     _dcDetailsDao.persist(dcDetailVO);
                 } else {
                     dcDetailVO.setValue(value);

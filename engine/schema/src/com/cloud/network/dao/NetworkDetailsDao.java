@@ -30,6 +30,6 @@ public interface NetworkDetailsDao extends GenericDao<NetworkDetailVO, Long> {
 
     void deleteDetails(long networkId);
 
-    public void removeDetails(Long networkId, String key);
+    public void removeDetails(long networkId, String key);
 
 }

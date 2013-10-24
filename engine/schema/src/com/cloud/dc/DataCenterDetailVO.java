@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
 @Table(name="data_center_details")
-public class DcDetailVO implements InternalIdentity, ResourceDetail {
+public class DataCenterDetailVO implements InternalIdentity, ResourceDetail {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -43,10 +43,10 @@ public class DcDetailVO implements InternalIdentity, ResourceDetail {
     @Column(name="value")
     private String value;
     
-    protected DcDetailVO() {
+    protected DataCenterDetailVO() {
     }
     
-    public DcDetailVO(long dcId, String name, String value) {
+    public DataCenterDetailVO(long dcId, String name, String value) {
         this.dcId = dcId;
         this.name = name;
         this.value = value;
