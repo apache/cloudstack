@@ -18,7 +18,6 @@ package com.cloud.hypervisor.kvm.resource;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.BufferedOutputStream;
@@ -436,7 +435,7 @@ ServerResource {
         s_logger.info("developer.properties found at " + file.getAbsolutePath());
         Properties properties = new Properties();
         try {
-            properties.load(new FileInputStream(file));
+            PropertiesUtil.loadFromFile(properties, file);
 
             String startMac = (String) properties.get("private.macaddr.start");
             if (startMac == null) {
