@@ -94,8 +94,7 @@ public class NicDetailDaoImpl extends GenericDaoBase<NicDetailVO, Long> implemen
     }
 
     @Override
-    public void removeDetails(Long nicId, String key) {
-
+    public void removeDetails(long nicId, String key) {
         if(key != null){
             NicDetailVO detail = findDetail(nicId, key);
             if(detail != null){
@@ -104,7 +103,6 @@ public class NicDetailDaoImpl extends GenericDaoBase<NicDetailVO, Long> implemen
         }else {
             deleteDetails(nicId);
         }
-
     }
     
 }

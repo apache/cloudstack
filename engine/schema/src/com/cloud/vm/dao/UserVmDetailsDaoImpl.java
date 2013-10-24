@@ -97,7 +97,7 @@ public class UserVmDetailsDaoImpl extends GenericDaoBase<UserVmDetailVO, Long> i
 	}
 
     @Override
-    public void addVmDetail(Long vmId, String key, String value) {
+    public void addVmDetail(long vmId, String key, String value) {
         UserVmDetailVO detail = findDetail(vmId, key);
         if (detail == null) {
             UserVmDetailVO newEntry = new UserVmDetailVO(vmId, key, value);
@@ -105,6 +105,18 @@ public class UserVmDetailsDaoImpl extends GenericDaoBase<UserVmDetailVO, Long> i
         } else {
             detail.setValue(value);
             update(detail.getId(), detail);
+        }
+    }
+
+    @Override
+    public void removeDetails(long vmId, String key) {
+        if(key != null){
+            UserVmDetailVO detail = findDetail(vmId, key);
+            if(detail != null){
+                remove(detail.getId());
+            }
+        }else {
+            deleteDetails(vmId);
         }
     }
 }

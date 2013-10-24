@@ -227,10 +227,14 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
 
         Long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
         // TODO - Have a better design here.
-        if(resourceType == TaggedResourceType.Volume){
+        if (resourceType == TaggedResourceType.Volume){
            _volumeDetailDao.removeDetails(id, key);
-        } else {
+        } else if (resourceType == TaggedResourceType.Nic){
             _nicDetailDao.removeDetails(id, key);
+        } else if (resourceType == TaggedResourceType.UserVm) {
+            _userVmDetailsDao.removeDetails(id, key); 
+        } else if (resourceType == TaggedResourceType.Template) {
+            _templateDetailsDao.removeDetails(id, key);
         }
 
         return true;

@@ -30,5 +30,7 @@ public interface VMTemplateDetailsDao extends GenericDao<VMTemplateDetailVO, Lon
 
     void deleteDetails(long vmId);
     
-    void addTemplateDetail(Long templateId, String key, String value);
+    void addTemplateDetail(long templateId, String key, String value);
+    
+    void removeDetails(long templateId, String key);
 }
