@@ -853,12 +853,40 @@
 			                		url: createURL('addResourceDetail'),
 			                		data: {
 			                			resourceType: 'uservm',
-			                			resourceId: 3,
+			                			resourceId: args.context.instances[0].id,
 			                			'details[0].key': 'hypervisortoolsversion',
 			                			'details[0].value': (args.data.xenserverToolsVersion61plus == "on") ? 'xenserver61' : 'xenserver56'
 			                		},
-			                		success: function(json) {
-			                			//do nothing  					                			
+			                		success: function(json) {			                			
+			                			 var jobId = json.addResourceDetailresponse.jobid;
+                                         var addResourceDetailIntervalID = setInterval(function() {
+                                             $.ajax({
+                                                 url: createURL("queryAsyncJobResult&jobid=" + jobId),
+                                                 dataType: "json",
+                                                 success: function(json) {
+                                                     var result = json.queryasyncjobresultresponse;
+                                                     
+                                                     if (result.jobstatus == 0) {
+                                                         return; //Job has not completed
+                                                     } else {
+                                                         clearInterval(addResourceDetailIntervalID);
+
+                                                         if (result.jobstatus == 1) {                                                        	 
+                                                        	 //do nothing                                                        	 
+                                                         } else if (result.jobstatus == 2) {
+                                                        	 cloudStack.dialog.notice({
+                                                                 message: "Failed to update XenServer Tools Version 6.1+ field. Error: " + _s(result.jobresult.errortext)
+                                                             });                                                             
+                                                         }
+                                                     }
+                                                 },
+                                                 error: function(XMLHttpResponse) {                                                    
+                                                     cloudStack.dialog.notice({
+                                                         message: "Failed to update XenServer Tools Version 6.1+ field. Error: " + parseXMLHttpResponse(XMLHttpResponse)
+                                                     });                                                          
+                                                 }
+                                             });
+                                         }, g_queryAsyncJobResultInterval);			                			   
 			                		}
 			                	});  					                					                	               
 						    }				      
