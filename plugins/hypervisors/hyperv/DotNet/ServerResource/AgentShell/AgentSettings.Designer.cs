@@ -192,7 +192,7 @@ namespace CloudStack.Plugin.AgentShell {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("..\\..\\..\\..\\..\\")]
+        [global::System.Configuration.DefaultSettingValueAttribute("../../../../../")]
         public string hyperv_plugin_root {
             get {
                 return ((string)(this["hyperv_plugin_root"]));
@@ -216,7 +216,19 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((string)(this["private_mac_address"]));
             }
         }
-        
+
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("systemvm.iso")]
+        public string system_vm_iso {
+            get {
+                return ((string)(this["system_vm_iso"]));
+            }
+            set {
+                this["system_vm_iso"] = value;
+            }
+        }
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute(".\\var\\test\\storagepool")]

@@ -16,18 +16,26 @@
 // under the License.
 package com.cloud.hypervisor.hyperv.discoverer;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -42,6 +50,7 @@ import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -67,6 +76,13 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.storage.JavaStorageLayer;
+import com.cloud.storage.StorageLayer;
+import com.cloud.utils.FileUtil;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 
 /**
  * Methods to discover and managem a Hyper-V agent. Prepares a
@@ -76,8 +92,15 @@ import com.cloud.resource.UnableDeleteHostException;
 @Local(value = Discoverer.class)
 public class HypervServerDiscoverer extends DiscovererBase implements
         Discoverer, Listener, ResourceStateAdapter {
-    private static final Logger s_logger = Logger
-            .getLogger(HypervServerDiscoverer.class);
+    private static final Logger s_logger = Logger.getLogger(HypervServerDiscoverer.class);
+
+    private String _instance;
+    private String _mountParent;
+    private int _timeout;
+    Random _rand = new Random(System.currentTimeMillis());
+
+    Map<String, String> _storageMounts = new HashMap<String, String>();
+    StorageLayer _storage;
 
     @Inject
     private HostDao _hostDao = null;
@@ -91,6 +114,8 @@ public class HypervServerDiscoverer extends DiscovererBase implements
     private HostPodDao _podDao;
     @Inject
     private DataCenterDao _dcDao;
+    @Inject
+    DataStoreManager _dataStoreMgr;
 
     // TODO: AgentManager and AlertManager not being used to transmit info,
     // may want to reconsider.
@@ -152,8 +177,17 @@ public class HypervServerDiscoverer extends DiscovererBase implements
             s_logger.debug("Setting up host " + agentId);
         }
 
+        String secondaryStorageUri = getSecondaryStorageStoreUrl(cluster.getDataCenterId());
+        if (secondaryStorageUri == null) {
+            s_logger.debug("Secondary storage uri for dc " + cluster.getDataCenterId() + " couldn't be obtained");
+        } else {
+            prepareSecondaryStorageStore(secondaryStorageUri);
+        }
+
         HostEnvironment env = new HostEnvironment();
         SetupCommand setup = new SetupCommand(env);
+        setup.setSecondaryStorage(secondaryStorageUri);
+        setup.setSystemVmIso("systemvm/" + getSystemVMIsoFileNameOnDatastore());
         if (!host.isSetup()) {
             setup.setNeedSetup(true);
         }
@@ -298,6 +332,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements
             params.put("cluster", Long.toString(clusterId));
             params.put("guid", guidWithTail);
             params.put("ipaddress", agentIp);
+            params.put("sec.storage.url", getSecondaryStorageStoreUrl(dcId));
 
             // Hyper-V specific settings
             Map<String, String> details = new HashMap<String, String>();
@@ -348,6 +383,177 @@ public class HypervServerDiscoverer extends DiscovererBase implements
         }
         return null;
     }
+    
+
+    private void prepareSecondaryStorageStore(String storageUrl) {
+        String mountPoint = getMountPoint(storageUrl);
+
+        GlobalLock lock = GlobalLock.getInternLock("prepare.systemvm");
+        try {
+            if(lock.lock(3600)) {
+                try {
+                    File patchFolder = new File(mountPoint + "/systemvm");
+                    if(!patchFolder.exists()) {
+                        if(!patchFolder.mkdirs()) {
+                            String msg = "Unable to create systemvm folder on secondary storage. location: " + patchFolder.toString();
+                            s_logger.error(msg);
+                            throw new CloudRuntimeException(msg);
+                        }
+                    }
+
+                    File srcIso = getSystemVMPatchIsoFile();
+                    File destIso = new File(mountPoint + "/systemvm/" + getSystemVMIsoFileNameOnDatastore());
+                    if(!destIso.exists()) {
+                        s_logger.info("Copy System VM patch ISO file to secondary storage. source ISO: " +
+                                srcIso.getAbsolutePath() + ", destination: " + destIso.getAbsolutePath());
+                        try {
+                            FileUtil.copyfile(srcIso, destIso);
+                        } catch(IOException e) {
+                            s_logger.error("Unexpected exception ", e);
+
+                            String msg = "Unable to copy systemvm ISO on secondary storage. src location: " + srcIso.toString() + ", dest location: " + destIso;
+                            s_logger.error(msg);
+                            throw new CloudRuntimeException(msg);
+                        }
+                    } else {
+                        if(s_logger.isTraceEnabled()) {
+                            s_logger.trace("SystemVM ISO file " + destIso.getPath() + " already exists");
+                        }
+                    }
+                } finally {
+                    lock.unlock();
+                }
+            }
+        } finally {
+            lock.releaseRef();
+        }
+    }
+
+    private String getMountPoint(String storageUrl) {
+        String mountPoint = null;
+        synchronized(_storageMounts) {
+            mountPoint = _storageMounts.get(storageUrl);
+            if(mountPoint != null) {
+                return mountPoint;
+            }
+
+            URI uri;
+            try {
+                uri = new URI(storageUrl);
+            } catch (URISyntaxException e) {
+                s_logger.error("Invalid storage URL format ", e);
+                throw new CloudRuntimeException("Unable to create mount point due to invalid storage URL format " + storageUrl);
+            }
+
+            mountPoint = mount(File.separator + File.separator + uri.getHost() + uri.getPath(), _mountParent,
+                    uri.getScheme(), uri.getQuery());
+            if(mountPoint == null) {
+                s_logger.error("Unable to create mount point for " + storageUrl);
+                return "/mnt/sec";
+            }
+
+            _storageMounts.put(storageUrl, mountPoint);
+            return mountPoint;
+        }
+    }
+
+    protected String mount(String path, String parent, String scheme, String query) {
+        String mountPoint = setupMountPoint(parent);
+        if (mountPoint == null) {
+            s_logger.warn("Unable to create a mount point");
+            return null;
+        }
+
+        Script script = null;
+        String result = null;
+        if (scheme.equals("cifs")) {
+            Script command = new Script(true, "mount", _timeout, s_logger);
+            command.add("-t", "cifs");
+            command.add(path);
+            command.add(mountPoint);
+
+            if (query != null) {
+                query = query.replace('&', ',');
+                command.add("-o", query);
+            }
+            result = command.execute();
+        }
+
+        if (result != null) {
+            s_logger.warn("Unable to mount " + path + " due to " + result);
+            File file = new File(mountPoint);
+            if (file.exists()) {
+                file.delete();
+            }
+            return null;
+        }
+
+        // Change permissions for the mountpoint
+        script = new Script(true, "chmod", _timeout, s_logger);
+        script.add("-R", "777", mountPoint);
+        result = script.execute();
+        if (result != null) {
+            s_logger.warn("Unable to set permissions for " + mountPoint + " due to " + result);
+        }
+        return mountPoint;
+    }
+
+    private String setupMountPoint(String parent) {
+        String mountPoint = null;
+        long mshostId = ManagementServerNode.getManagementServerId();
+        for (int i = 0; i < 10; i++) {
+            String mntPt = parent + File.separator + String.valueOf(mshostId) + "." + Integer.toHexString(_rand.nextInt(Integer.MAX_VALUE));
+            File file = new File(mntPt);
+            if (!file.exists()) {
+                if (_storage.mkdir(mntPt)) {
+                    mountPoint = mntPt;
+                    break;
+                }
+            }
+            s_logger.error("Unable to create mount: " + mntPt);
+        }
+
+        return mountPoint;
+    }
+
+    private String getSystemVMIsoFileNameOnDatastore() {
+        String version = this.getClass().getPackage().getImplementationVersion();
+        String fileName = "systemvm-" + version + ".iso";
+        return fileName.replace(':', '-');
+    }
+
+    private File getSystemVMPatchIsoFile() {
+        // locate systemvm.iso
+        URL url = this.getClass().getClassLoader().getResource("vms/systemvm.iso");
+        File isoFile = null;
+        if (url != null) {
+            isoFile = new File(url.getPath());
+        }
+
+        if(isoFile == null || !isoFile.exists()) {
+            isoFile = new File("/usr/share/cloudstack-common/vms/systemvm.iso");
+        }
+
+        assert(isoFile != null);
+        if(!isoFile.exists()) {
+            s_logger.error("Unable to locate systemvm.iso in your setup at " + isoFile.toString());
+        }
+        return isoFile;
+    }
+
+    private String getSecondaryStorageStoreUrl(long zoneId) {
+        String secUrl = null;
+        DataStore secStore = _dataStoreMgr.getImageStore(zoneId);
+        if (secStore != null) {
+            secUrl = secStore.getUri();
+        }
+
+        if (secUrl == null) {
+            s_logger.warn("Secondary storage uri couldn't be retrieved");
+        }
+
+        return secUrl;
+    }
 
     /**
      * Encapsulate GUID calculation in public method to allow access to test
@@ -371,9 +577,26 @@ public class HypervServerDiscoverer extends DiscovererBase implements
     // Inherit Adapter.stop
     // Inherit Adapter.start
     @Override
-    public final boolean configure(final String name,
-            final Map<String, Object> params) throws ConfigurationException {
+    public final boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
+
+        _mountParent = (String) params.get(Config.MountParent.key());
+        if (_mountParent == null) {
+            _mountParent = File.separator + "mnt";
+        }
+
+        if (_instance != null) {
+            _mountParent = _mountParent + File.separator + _instance;
+        }
+
+        String value = (String)params.get("scripts.timeout");
+        _timeout = NumbersUtil.parseInt(value, 30) * 1000;
+
+        _storage = (StorageLayer)params.get(StorageLayer.InstanceConfigKey);
+        if (_storage == null) {
+            _storage = new JavaStorageLayer();
+            _storage.configure("StorageLayer", params);
+        }
 
         // TODO: allow timeout on we HTTPRequests to be configured
         _agentMgr.registerForHostEvents(this, true, false, true);

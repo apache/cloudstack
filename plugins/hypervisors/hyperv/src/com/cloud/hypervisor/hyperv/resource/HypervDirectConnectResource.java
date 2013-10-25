@@ -27,14 +27,20 @@ import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 
+import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -54,11 +60,12 @@ import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
-import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.CreateIpAliasCommand;
@@ -88,6 +95,8 @@ import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor;
@@ -98,19 +107,26 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.storage.JavaStorageLayer;
+import com.cloud.storage.StorageLayer;
+import com.cloud.utils.FileUtil;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineName;
 import com.google.gson.Gson;
 
 /**
  * Implementation of dummy resource to be returned from discoverer.
  **/
-
-public class HypervDirectConnectResource extends ServerResourceBase implements
-        ServerResource {
+@Local(value = ServerResource.class)
+public class HypervDirectConnectResource extends ServerResourceBase implements ServerResource {
     public static final int DEFAULT_AGENT_PORT = 8250;
     private static final Logger s_logger = Logger
             .getLogger(HypervDirectConnectResource.class.getName());
@@ -387,7 +403,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
             answer = execute((VmDataCommand) cmd);
         } else if (clazz == SavePasswordCommand.class) {
             answer = execute((SavePasswordCommand) cmd);
-        } else  if (clazz == SetFirewallRulesCommand.class) {
+        } else if (clazz == SetFirewallRulesCommand.class) {
             answer = execute((SetFirewallRulesCommand)cmd);
         } else if (clazz == LoadBalancerConfigCommand.class) {
             answer = execute((LoadBalancerConfigCommand) cmd);
@@ -411,19 +427,19 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
             answer = execute((SetStaticRouteCommand) cmd);
         }
         else {
-        // Else send the cmd to hyperv agent.
-        String ansStr = postHttpRequest(s_gson.toJson(cmd), agentUri);
-        if (ansStr == null) {
-           return Answer.createUnsupportedCommandAnswer(cmd);
-        }
-        // Only Answer instances are returned by remote agents.
-        // E.g. see Response.getAnswers()
-        Answer[] result = s_gson.fromJson(ansStr, Answer[].class);
-        s_logger.debug("executeRequest received response "
-                + s_gson.toJson(result));
-        if (result.length > 0) {
-            return result[0];
-        }
+            // Else send the cmd to hyperv agent.
+            String ansStr = postHttpRequest(s_gson.toJson(cmd), agentUri);
+            if (ansStr == null) {
+               return Answer.createUnsupportedCommandAnswer(cmd);
+            }
+            // Only Answer instances are returned by remote agents.
+            // E.g. see Response.getAnswers()
+            Answer[] result = s_gson.fromJson(ansStr, Answer[].class);
+            s_logger.debug("executeRequest received response "
+                    + s_gson.toJson(result));
+            if (result.length > 0) {
+                return result[0];
+            }
         }
         return answer;
     }
@@ -1259,7 +1275,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
         for(DhcpTO dhcpTo : dhcpTos) {
             args = args + dhcpTo.getRouterIp()+":"+dhcpTo.getGateway()+":"+dhcpTo.getNetmask()+":"+dhcpTo.getStartIpOfSubnet()+"-";
         }
-        //File keyFile = mgr.getSystemVMKeyFile();
 
         try {
             Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/root/dnsmasq.sh " + args);
@@ -1319,43 +1334,17 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
     protected void assignPublicIpAddress(final String vmName, final String privateIpAddress, final String publicIpAddress, final boolean add, final boolean firstIP,
             final boolean sourceNat, final String vlanId, final String vlanGateway, final String vlanNetmask, final String vifMacAddress) throws Exception {
 
-        //String publicNeworkName = HypervisorHostHelper.getPublicNetworkNamePrefix(vlanId);
-        //Pair<Integer, VirtualDevice> publicNicInfo = vmMo.getNicDeviceIndex(publicNeworkName);
-
-        if (s_logger.isDebugEnabled()) {
-            //s_logger.debug("Find public NIC index, public network name: " + publicNeworkName + ", index: " + publicNicInfo.first());
-        }
-
         boolean addVif = false;
         boolean removeVif = false;
-        if (add ) { // && publicNicInfo.first().intValue() == -1) {
+        if (add) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Plug new NIC to associate" + privateIpAddress + " to " + publicIpAddress);
             }
-
             addVif = true;
         } else if (!add && firstIP) {
             removeVif = true;
-
-            if (s_logger.isDebugEnabled()) {
-                //s_logger.debug("Unplug NIC " + publicNicInfo.first());
-            }
         }
 
-/*        if (addVif) {
-            plugPublicNic(vmMo, vlanId, vifMacAddress);
-            publicNicInfo = vmMo.getNicDeviceIndex(publicNeworkName);
-            if (publicNicInfo.first().intValue() >= 0) {
-                networkUsage(privateIpAddress, "addVif", "eth" + publicNicInfo.first());
-            }
-        }
-*/
-/*        if (publicNicInfo.first().intValue() < 0) {
-            String msg = "Failed to find DomR VIF to associate/disassociate IP with.";
-            s_logger.error(msg);
-            throw new InternalErrorException(msg);
-        }
-*/
         String args = null;
 
         if (add) {
@@ -1400,7 +1389,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
         }
     }
 
-   protected Answer execute(GetDomRVersionCmd cmd) {
+    protected Answer execute(GetDomRVersionCmd cmd) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Executing resource GetDomRVersionCmd: " + s_gson.toJson(cmd));
             s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /opt/cloud/bin/get_template_version.sh ");
@@ -1558,25 +1547,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
         return null;
     }
 
-    private File getSystemVMPatchIsoFile() {
-        // locate systemvm.iso
-        URL url = this.getClass().getClassLoader().getResource("vms/systemvm.iso");
-        File isoFile = null;
-        if (url != null) {
-            isoFile = new File(url.getPath());
-        }
-
-        if(isoFile == null || !isoFile.exists()) {
-            isoFile = new File("/usr/share/cloudstack-common/vms/systemvm.iso");
-        }
-
-        assert(isoFile != null);
-        if(!isoFile.exists()) {
-            s_logger.error("Unable to locate systemvm.iso in your setup at " + isoFile.toString());
-        }
-        return isoFile;
-    }
-
     public File getSystemVMKeyFile() {
         URL url = this.getClass().getClassLoader().getResource("scripts/vm/systemvm/id_rsa.cloud");
         File keyFile = null;
@@ -1721,6 +1691,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
     public void setRunLevel(final int level) {
         // TODO Auto-generated method stub
     }
+
     protected String connect(final String vmName, final String ipAddress, final int port) {
         long startTick = System.currentTimeMillis();
 
@@ -1735,9 +1706,10 @@ public class HypervDirectConnectResource extends ServerResourceBase implements
                 sch = SocketChannel.open();
                 sch.configureBlocking(true);
                 sch.socket().setSoTimeout(5000);
-
+                // we need to connect to the public ip address to check the status of the VM
+/*
                 InetSocketAddress addr = new InetSocketAddress(ipAddress, port);
-                sch.connect(addr);
+                sch.connect(addr);*/
                 return null;
             } catch (IOException e) {
                 s_logger.info("Could not connect to " + ipAddress + " due to " + e.toString());

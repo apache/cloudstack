@@ -30,7 +30,7 @@ using System.IO;
 
 namespace HypervResource
 {
-    public class WmiCallsV2
+    public class WmiCallsV2 : IWmiCallsV2
     {
         public static String CloudStackUserDataKey = "cloudstack-vm-userdata";
 
@@ -39,12 +39,22 @@ namespace HypervResource
             // Trigger assembly load into curren appdomain
         }
 
+        /// <summary>
+        /// Returns ping status of the given ip
+        /// </summary>
+
         private static ILog logger = LogManager.GetLogger(typeof(WmiCallsV2));
+
+        public static String PingHost(String ip)
+        {
+            
+            return "Success";
+        }
 
         /// <summary>
         /// Returns ComputerSystem lacking any NICs and VOLUMEs
         /// </summary>
-        public static ComputerSystem AddUserData(ComputerSystem vm, string userData)
+        public ComputerSystem AddUserData(ComputerSystem vm, string userData)
         {
             // Obtain controller for Hyper-V virtualisation subsystem
             VirtualSystemManagementService vmMgmtSvc = GetVirtualisationSystemManagementService();
@@ -85,7 +95,7 @@ namespace HypervResource
         /// <summary>
         /// Returns ComputerSystem lacking any NICs and VOLUMEs
         /// </summary>
-        public static void DeleteHostKvpItem(ComputerSystem vm, string key)
+        public void DeleteHostKvpItem(ComputerSystem vm, string key)
         {
             // Obtain controller for Hyper-V virtualisation subsystem
             VirtualSystemManagementService vmMgmtSvc = GetVirtualisationSystemManagementService();
@@ -122,7 +132,7 @@ namespace HypervResource
             }
         }
 
-        public static VirtualSystemManagementService GetVirtualisationSystemManagementService()
+        public VirtualSystemManagementService GetVirtualisationSystemManagementService()
         {
             // VirtualSystemManagementService is a singleton, most anonymous way of lookup is by asking for the set
             // of local instances, which should be size 1.
@@ -172,7 +182,7 @@ namespace HypervResource
             logger.DebugFormat("WMI job succeeded: {0}, Elapsed={1}", jobObj.Description, jobObj.ElapsedTime);
         }
 
-        public static ComputerSystem GetComputerSystem(string displayName)
+        public ComputerSystem GetComputerSystem(string displayName)
         {
             var wmiQuery = String.Format("ElementName=\"{0}\"", displayName);
             ComputerSystem.ComputerSystemCollection vmCollection = ComputerSystem.GetInstances(wmiQuery);
@@ -185,7 +195,7 @@ namespace HypervResource
             return null;
         }
 
-        public static List<string> GetVmElementNames()
+        public List<string> GetVmElementNames()
         {
             List<string> result = new List<string>();
             ComputerSystem.ComputerSystemCollection vmCollection = ComputerSystem.GetInstances();
@@ -202,7 +212,21 @@ namespace HypervResource
             return result;
         }
 
-        public static VirtualSystemSettingData GetVmSettings(ComputerSystem vm)
+        public string GetDefaultDataRoot()
+        {
+            string defaultRootPath = null;
+            VirtualSystemManagementServiceSettingData vs_mgmt_data = VirtualSystemManagementServiceSettingData.CreateInstance();
+            defaultRootPath = vs_mgmt_data.DefaultVirtualHardDiskPath;
+            if (defaultRootPath == null) {
+                defaultRootPath = Path.GetPathRoot(Environment.SystemDirectory)  +
+                    "\\Users\\Public\\Documents\\Hyper-V\\Virtual hard disks";
+            }
+
+            return defaultRootPath;
+        }
+
+        public VirtualSystemSettingData GetVmSettings(ComputerSystem vm)
+
         {
             // An ASSOCIATOR object provides the cross reference from the ComputerSettings and the 
             // VirtualSystemSettingData, but generated wrappers do not expose a ASSOCIATOR OF query as a method.
@@ -233,7 +257,7 @@ namespace HypervResource
             throw ex;
         }
 
-        public static KvpExchangeComponentSettingData GetKvpSettings(VirtualSystemSettingData vmSettings)
+        public KvpExchangeComponentSettingData GetKvpSettings(VirtualSystemSettingData vmSettings)
         {
             // An ASSOCIATOR object provides the cross reference from the VirtualSystemSettingData and the 
             // KvpExchangeComponentSettingData, but generated wrappers do not expose a ASSOCIATOR OF query as a method.
