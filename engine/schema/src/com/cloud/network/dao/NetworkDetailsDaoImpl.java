@@ -20,10 +20,10 @@ import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
-import com.cloud.dc.dao.ResourceDetailDaoImpl;
+import com.cloud.dc.dao.ResourceDetailDaoBase;
 
 @Component
 @Local(value=NetworkDetailsDao.class)
-public class NetworkDetailsDaoImpl extends ResourceDetailDaoImpl<NetworkDetailVO> implements NetworkDetailsDao {
+public class NetworkDetailsDaoImpl extends ResourceDetailDaoBase<NetworkDetailVO> implements NetworkDetailsDao {
 
 }

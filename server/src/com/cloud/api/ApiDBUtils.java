@@ -126,7 +126,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterDetailsDao;
 import com.cloud.dc.dao.HostPodDao;
-import com.cloud.dc.dao.ResourceDetailDaoImpl;
+import com.cloud.dc.dao.ResourceDetailDaoBase;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;

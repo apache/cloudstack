@@ -20,11 +20,11 @@ import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
-import com.cloud.dc.dao.ResourceDetailDaoImpl;
+import com.cloud.dc.dao.ResourceDetailDaoBase;
 import com.cloud.vm.UserVmDetailVO;
 
 @Component
 @Local(value=UserVmDetailsDao.class)
-public class UserVmDetailsDaoImpl extends ResourceDetailDaoImpl<UserVmDetailVO> implements UserVmDetailsDao {
+public class UserVmDetailsDaoImpl extends ResourceDetailDaoBase<UserVmDetailVO> implements UserVmDetailsDao {
 
 }

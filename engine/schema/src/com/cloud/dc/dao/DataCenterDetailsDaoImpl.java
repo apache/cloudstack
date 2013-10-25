@@ -26,7 +26,7 @@ import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import com.cloud.dc.DataCenterDetailVO;
 
 @Local(value=DataCenterDetailsDao.class)
-public class DataCenterDetailsDaoImpl extends ResourceDetailDaoImpl<DataCenterDetailVO> implements DataCenterDetailsDao, ScopedConfigStorage {
+public class DataCenterDetailsDaoImpl extends ResourceDetailDaoBase<DataCenterDetailVO> implements DataCenterDetailsDao, ScopedConfigStorage {
     
     public DataCenterDetailsDaoImpl() {
     }

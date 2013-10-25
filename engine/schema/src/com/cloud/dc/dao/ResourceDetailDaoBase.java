@@ -28,10 +28,10 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 
-public abstract class ResourceDetailDaoImpl<R extends ResourceDetail> extends GenericDaoBase<R, Long>{
+public abstract class ResourceDetailDaoBase<R extends ResourceDetail> extends GenericDaoBase<R, Long>{
     private SearchBuilder<R> AllFieldsSearch;
     
-    public ResourceDetailDaoImpl() {
+    public ResourceDetailDaoBase() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("resourceId", AllFieldsSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
@@ -85,6 +85,9 @@ public abstract class ResourceDetailDaoImpl<R extends ResourceDetail> extends Ge
 
 
     public void addDetails(List<R> details) {
+        if (details.isEmpty()) {
+            return;
+        }
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         SearchCriteria<R> sc = AllFieldsSearch.create();
