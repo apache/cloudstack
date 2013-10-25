@@ -593,6 +593,43 @@
                             poll: pollAsyncJobResult
                         }
                     },
+                    
+                    expunge: {
+                        label: 'Expunge Instance',
+                        compactLabel: 'Expunge',
+                        messages: {
+                            confirm: function(args) {
+                                return 'Please confirm you want to expunge this instance.';
+                            },
+                            notification: function(args) {
+                                return 'Expunge Instance';
+                            }
+                        },
+                        action: function(args) {
+                            $.ajax({
+                                url: createURL('destroyVirtualMachine'),
+                                data: {
+                                	id: args.context.instances[0].id,
+                                	expunge: true
+                                },
+                                success: function(json) {
+                                	var jid = json.destroyvirtualmachineresponse.jobid;
+                                    args.response.success({
+                                        _custom: {
+                                            jobId: jid,
+                                            getActionFilter: function() {
+                                                return vmActionfilter;
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        },
+                        notification: {
+                            poll: pollAsyncJobResult
+                        }
+                    },
+                                        
                     restore: {
                         label: 'label.action.restore.instance',
                         compactLabel: 'label.restore',
@@ -2049,6 +2086,7 @@
         if (jsonObj.state == 'Destroyed') {
             if (isAdmin() || isDomainAdmin()) {
                 allowedActions.push("restore");
+                allowedActions.push("expunge");
             }
         } else if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
