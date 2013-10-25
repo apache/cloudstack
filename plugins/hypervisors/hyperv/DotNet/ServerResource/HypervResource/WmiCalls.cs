@@ -158,7 +158,7 @@ namespace HypervResource
         /// <summary>
         /// Create new VM.  By default we start it. 
         /// </summary>
-        public static ComputerSystem DeployVirtualMachine(dynamic jsonObj)
+        public static ComputerSystem DeployVirtualMachine(dynamic jsonObj, string systemVmIso)
         {
             var vmInfo = jsonObj.vm;
             string vmName = vmInfo.name;
@@ -325,25 +325,12 @@ namespace HypervResource
                
                 String bootargs = bootArgs;
                 WmiCallsV2.AddUserData(vm, bootargs);
-
-
-                // Get existing KVP
-                //var vmSettings = WmiCallsV2.GetVmSettings(vm);
-                //var kvpInfo = WmiCallsV2.GetKvpSettings(vmSettings);
-                //logger.DebugFormat("Boot Args presisted on the VM are ", kvpInfo);
-                //WmiCallsV2.AddUserData(vm, bootargs);
-
-                // Verify key added to subsystem
-                //kvpInfo = WmiCallsV2.GetKvpSettings(vmSettings);
-
-                // HostExchangesItems are embedded objects in the sense that the object value is stored and not a reference to the object.
-                //kvpProps = kvpInfo.HostExchangeItems;
-
             }
+
             // call patch systemvm iso only for systemvms
             if (vmName.StartsWith("r-"))
             {
-                patchSystemVmIso(vmName);
+                patchSystemVmIso(vmName, systemVmIso);
             }
 
             logger.DebugFormat("Starting VM {0}", vmName);
@@ -354,9 +341,10 @@ namespace HypervResource
             {
                 System.Threading.Thread.Sleep(90000);
                 SetState(newVm, RequiredState.Reboot);
-               // wait for the second boot and then return with suces
+                // wait for the second boot and then return with sucess
                 System.Threading.Thread.Sleep(50000);
             }
+            
             logger.InfoFormat("Started VM {0}", vmName);
             return newVm;
        }
@@ -364,11 +352,11 @@ namespace HypervResource
         /// this method is to add a dvd drive and attach the systemvm iso.
         /// 
 
-        public static void patchSystemVmIso(String vmName)
+        public static void patchSystemVmIso(String vmName, String systemVmIso)
         {
             ComputerSystem vmObject = WmiCalls.GetComputerSystem(vmName);
             AddDiskDriveToVm(vmObject, "", "1", IDE_ISO_DRIVE);
-            WmiCalls.AttachIso(vmName, "c:\\systemvm.iso");
+            WmiCalls.AttachIso(vmName, systemVmIso);
         }
 
         /// <summary>

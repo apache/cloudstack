@@ -77,6 +77,7 @@ namespace HypervResource
         public string RootDeviceName;
         public ulong ParentPartitionMinMemoryMb;
         public string LocalSecondaryStoragePath;
+        public string systemVmIso;
     }
 
     /// <summary>
@@ -111,6 +112,7 @@ namespace HypervResource
         public static HypervResourceControllerConfig config = new HypervResourceControllerConfig();
 
         private static ILog logger = LogManager.GetLogger(typeof(WmiCalls));
+        private static string systemVmIso;
 
         public static void Initialize()
         {
@@ -140,9 +142,35 @@ namespace HypervResource
             {
                 logger.Info(CloudStackTypes.SetupCommand + cmd.ToString());
 
+                string details = null;
+                bool result = false;
+
+                try
+                {
+                    NFSTO share = new NFSTO();
+                    String uriStr = (String)cmd.secondaryStorage;
+                    share.uri = new Uri(uriStr);
+
+                    string systemVmIso = (string)cmd.systemVmIso;
+                    string defaultDataPath = WmiCallsV2.GetDefaultDataRoot();
+                    string isoPath = Path.Combine(defaultDataPath, Path.GetFileName(systemVmIso));
+                    if (!File.Exists(isoPath))
+                    {
+                        logger.Info("File " + isoPath + " not found. Copying it from the secondary share.");
+                        Utils.DownloadCifsFileToLocalFile(systemVmIso, share, isoPath);
+                    }
+                    HypervResourceController.systemVmIso = isoPath;
+                    result = true;
+                }
+                catch (Exception sysEx)
+                {
+                    details = CloudStackTypes.SetupCommand + " failed due to " + sysEx.Message;
+                    logger.Error(details, sysEx);
+                }
+
                 object ansContent = new
                 {
-                    result = true,
+                    result = result,
                     details = "success - NOP",
                     _reconnect = false
                 };
@@ -803,7 +831,7 @@ namespace HypervResource
 
                 try
                 {
-                    WmiCalls.DeployVirtualMachine(cmd);
+                    WmiCalls.DeployVirtualMachine(cmd, systemVmIso);
                     result = true;
                 }
                 catch (Exception wmiEx)

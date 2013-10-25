@@ -39,7 +39,17 @@ namespace HypervResource
             // Trigger assembly load into curren appdomain
         }
 
+        /// <summary>
+        /// Returns ping status of the given ip
+        /// </summary>
+
         private static ILog logger = LogManager.GetLogger(typeof(WmiCallsV2));
+
+        public static String PingHost(String ip)
+        {
+            
+            return "Success";
+        }
 
         /// <summary>
         /// Returns ComputerSystem lacking any NICs and VOLUMEs
@@ -200,6 +210,19 @@ namespace HypervResource
                 result.Add(vm.ElementName);
             }
             return result;
+        }
+
+        public static string GetDefaultDataRoot()
+        {
+            string defaultRootPath = null;
+            VirtualSystemManagementServiceSettingData vs_mgmt_data = VirtualSystemManagementServiceSettingData.CreateInstance();
+            defaultRootPath = vs_mgmt_data.DefaultVirtualHardDiskPath;
+            if (defaultRootPath == null) {
+                defaultRootPath = Path.GetPathRoot(Environment.SystemDirectory)  +
+                    "\\Users\\Public\\Documents\\Hyper-V\\Virtual hard disks";
+            }
+
+            return defaultRootPath;
         }
 
         public static VirtualSystemSettingData GetVmSettings(ComputerSystem vm)
