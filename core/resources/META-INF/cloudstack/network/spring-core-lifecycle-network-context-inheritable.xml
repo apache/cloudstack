@@ -48,11 +48,47 @@
         <property name="typeClass"
             value="com.cloud.network.element.NetworkElement" />
     </bean>
-    
+
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
         <property name="registry" ref="vpcProvidersRegistry" />
         <property name="typeClass"
             value="com.cloud.network.element.VpcProvider" />
+    </bean>
+
+    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
+        <property name="registry" ref="firewallServiceProvidersRegistry" />
+        <property name="typeClass"
+            value="com.cloud.network.element.FirewallServiceProvider" />
+    </bean>
+
+    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
+        <property name="registry" ref="portForwardingServiceProvidersRegistry" />
+        <property name="typeClass"
+            value="com.cloud.network.element.PortForwardingServiceProvider" />
+    </bean>
+
+    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
+        <property name="registry" ref="staticNatServiceProvidersRegistry" />
+        <property name="typeClass"
+            value="com.cloud.network.element.StaticNatServiceProvider" />
+    </bean>
+
+    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
+        <property name="registry" ref="networkACLServiceProvidersRegistry" />
+        <property name="typeClass"
+            value="com.cloud.network.element.NetworkACLServiceProvider" />
+    </bean>
+
+    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
+        <property name="registry" ref="loadBalancingServiceProvidersRegistry" />
+        <property name="typeClass"
+            value="com.cloud.network.element.LoadBalancingServiceProvider" />
+    </bean>
+
+    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
+        <property name="registry" ref="site2SiteVpnServiceProvidersRegistry" />
+        <property name="typeClass"
+            value="com.cloud.network.element.Site2SiteVpnServiceProvider" />
     </bean>
 
 </beans>

@@ -247,7 +247,6 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     DataCenterDao _dcDao = null;
     @Inject
     UserDao _userDao;
-    @Inject
     List<LoadBalancingServiceProvider> _lbProviders;
     @Inject ApplicationLoadBalancerRuleDao _appLbRuleDao;
     @Inject
@@ -2171,6 +2170,15 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         if (lbProvider == null) {
             throw new InvalidParameterValueException("Lb rule with scheme " + scheme.toString() + " is not supported by lb providers in network " + network);
         }
+    }
+
+    public List<LoadBalancingServiceProvider> getLbProviders() {
+        return _lbProviders;
+    }
+
+    @Inject
+    public void setLbProviders(List<LoadBalancingServiceProvider> lbProviders) {
+        this._lbProviders = lbProviders;
     }
 
 }

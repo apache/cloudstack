@@ -102,7 +102,12 @@
 
     <bean id="externalNetworkDeviceManagerImpl" class="com.cloud.network.ExternalNetworkDeviceManagerImpl" />
 
-    <bean id="firewallManagerImpl" class="com.cloud.network.firewall.FirewallManagerImpl" />
+    <bean id="firewallManagerImpl" class="com.cloud.network.firewall.FirewallManagerImpl" >
+        <property name="firewallElements" value="#{firewallServiceProvidersRegistry.registered}" />
+        <property name="networkAclElements" value="#{networkACLServiceProvidersRegistry.registered}" />
+        <property name="pfElements" value="#{portForwardingServiceProvidersRegistry.registered}" />
+        <property name="staticNatElements" value="#{staticNatServiceProvidersRegistry.registered}" />
+    </bean>
 
     <bean id="hypervisorGuruManagerImpl" class="com.cloud.hypervisor.HypervisorGuruManagerImpl" >
         <property name="hvGuruList" value="#{hypervisorGurusRegistry.registered}" />
@@ -112,9 +117,13 @@
 
     <bean id="keystoreManagerImpl" class="com.cloud.keystore.KeystoreManagerImpl" />
 
-    <bean id="loadBalancingRulesManagerImpl" class="com.cloud.network.lb.LoadBalancingRulesManagerImpl" />
+    <bean id="loadBalancingRulesManagerImpl" class="com.cloud.network.lb.LoadBalancingRulesManagerImpl" >
+        <property name="lbProviders" value="#{loadBalancingServiceProvidersRegistry.registered}" />
+    </bean>
 
-    <bean id="networkACLManagerImpl" class="com.cloud.network.vpc.NetworkACLManagerImpl" />
+    <bean id="networkACLManagerImpl" class="com.cloud.network.vpc.NetworkACLManagerImpl" >
+        <property name="networkAclElements" value="#{networkACLServiceProvidersRegistry.registered}" />
+    </bean>
 
     <bean id="networkACLServiceImpl" class="com.cloud.network.vpc.NetworkACLServiceImpl" />
 
@@ -140,7 +149,9 @@
 
     <bean id="rulesManagerImpl" class="com.cloud.network.rules.RulesManagerImpl" />
 
-    <bean id="site2SiteVpnManagerImpl" class="com.cloud.network.vpn.Site2SiteVpnManagerImpl" />
+    <bean id="site2SiteVpnManagerImpl" class="com.cloud.network.vpn.Site2SiteVpnManagerImpl" >
+        <property name="s2sProviders" value="#{site2SiteVpnServiceProvidersRegistry.registered}" />
+    </bean>
 
     <bean id="snapshotManagerImpl" class="com.cloud.storage.snapshot.SnapshotManagerImpl" />
 

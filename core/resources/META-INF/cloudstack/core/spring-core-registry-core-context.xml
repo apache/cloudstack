@@ -118,12 +118,22 @@
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="excludeKey" value="ip.deployers.exclude" />
         <property name="excludeDefault" value="MidoNetElement" />
+        <property name="preRegistered">
+            <list>
+                <ref bean="VpcVirtualRouter" />
+            </list>
+        </property>
     </bean>
 
     <bean id="dhcpProvidersRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="excludeKey" value="dhcp.providers.exclude" />
         <property name="excludeDefault" value="MidoNetElement" />
+        <property name="preRegistered">
+            <list>
+                <ref bean="VpcVirtualRouter" />
+            </list>
+        </property>
     </bean>
 
     <bean id="networkGurusRegistry"
@@ -139,6 +149,67 @@
             <list>
                 <ref bean="VpcVirtualRouter" />
                 <ref bean="InternalLbVm" />
+            </list>
+        </property>
+    </bean>
+
+    <bean id="firewallServiceProvidersRegistry"
+        class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="excludeKey" value="firewall.service.provider.exclude" />
+        <property name="preRegistered">
+            <list>
+                <ref bean="VpcVirtualRouter" />
+            </list>
+        </property>
+    </bean>
+
+    <bean id="loadBalancingServiceProvidersRegistry"
+        class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="excludeKey" value="load.balancing.service.provider.exclude" />
+        <property name="preRegistered">
+            <list>
+                <ref bean="VpcVirtualRouter" />
+                <ref bean="InternalLbVm" />
+            </list>
+        </property>
+    </bean>
+
+    <bean id="portForwardingServiceProvidersRegistry"
+        class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="excludeKey" value="port.forwarding.service.provider.exclude" />
+        <property name="preRegistered">
+            <list>
+                <ref bean="VpcVirtualRouter" />
+            </list>
+        </property>
+    </bean>
+
+    <bean id="staticNatServiceProvidersRegistry"
+        class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="excludeKey" value="static.nat.service.provider.exclude" />
+        <property name="preRegistered">
+            <list>
+                <ref bean="VpcVirtualRouter" />
+            </list>
+        </property>
+    </bean>
+
+    <bean id="networkACLServiceProvidersRegistry"
+        class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="excludeKey" value="network.acl.service.provider.exclude" />
+        <property name="preRegistered">
+            <list>
+                <ref bean="VpcVirtualRouter" />
+            </list>
+        </property>
+    </bean>
+
+    <bean id="site2SiteVpnServiceProvidersRegistry"
+        class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="excludeKey" value="site2site.vpn.service.provider.exclude" />
+        <property name="preRegistered">
+            <list>
+                <ref bean="VpcVirtualRouter" />
             </list>
         </property>
     </bean>
