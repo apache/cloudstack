@@ -916,7 +916,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     }
 
     private boolean canAvoidCluster(Cluster clusterVO, ExcludeList avoids, ExcludeList plannerAvoidOutput,
-            VirtualMachineProfile<? extends VirtualMachine> vmProfile) {
+            VirtualMachineProfile vmProfile) {
 
         ExcludeList allocatorAvoidOutput = new ExcludeList(avoids.getDataCentersToAvoid(), avoids.getPodsToAvoid(),
                 avoids.getClustersToAvoid(), avoids.getHostsToAvoid(), avoids.getPoolsToAvoid());
@@ -990,7 +990,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         return false;
     }
 
-    private Pair<Boolean, Boolean> findVMStorageRequirements(VirtualMachineProfile<? extends VirtualMachine> vmProfile) {
+    private Pair<Boolean, Boolean> findVMStorageRequirements(VirtualMachineProfile vmProfile) {
 
         boolean requiresShared = false, requiresLocal = false;
 
