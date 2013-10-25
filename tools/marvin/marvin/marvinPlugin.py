@@ -140,9 +140,10 @@ class MarvinPlugin(Plugin):
         if self.startTime is not None:
             totTime = int(endTime - self.startTime)
             self.logger.debug(
-                "****TestCaseName: %s; Time Taken: %s Seconds; \
-                StartTime: %s; EndTime: %s****"
-                % (self.testName, str(totTime), self.startTime, endTime))
+                "TestCaseName: %s; Time Taken: %s Seconds; \
+                StartTime: %s; EndTime: %s"
+                % (self.testName, str(totTime),
+                   str(time.ctime(self.startTime)), str(time.ctime(endTime))))
 
     def _injectClients(self, test):
         self.debug_stream. \
