@@ -16,7 +16,7 @@
 # under the License.
 
 grammar = ['create', 'list', 'delete', 'update', 'ldap', 'login', 'logout',
-           'enable', 'activate', 'disable', 'add', 'remove',
+           'enable', 'expunge', 'activate', 'disable', 'add', 'remove',
            'attach', 'detach', 'associate', 'dissociate', 'generate', 'assign',
            'authorize', 'change', 'register', 'configure',
            'start', 'restart', 'reboot', 'stop', 'reconnect',
