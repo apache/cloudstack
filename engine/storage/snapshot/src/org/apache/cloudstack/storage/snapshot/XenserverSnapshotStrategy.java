@@ -16,8 +16,17 @@
 // under the License.
 package org.apache.cloudstack.storage.snapshot;
 
-import javax.inject.Inject;
-
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
@@ -36,24 +45,12 @@ import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
+import javax.inject.Inject;
 
 @Component
 public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     private static final Logger s_logger = Logger.getLogger(XenserverSnapshotStrategy.class);
 
-    @Inject
-    SnapshotManager snapshotMgr;
     @Inject
     SnapshotService snapshotSvr;
     @Inject
