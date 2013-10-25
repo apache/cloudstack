@@ -535,26 +535,51 @@
                     destroy: {
                         label: 'label.action.destroy.instance',
                         compactLabel: 'label.destroy',
-                        messages: {
-                            confirm: function(args) {
-                                return 'message.action.destroy.instance';
+                        createForm: {
+                            title: 'label.action.destroy.instance', 
+                            desc: 'Please confirm that you want to destroy this instance',
+                            preFilter: function(args) {
+                            	if (isAdmin() || isDomainAdmin()) {
+                            		args.$form.find('.form-item[rel=expunge]').css('display', 'inline-block');
+                            	} else {
+                            		args.$form.find('.form-item[rel=expunge]').hide();
+                            	}
                             },
+                            fields: {
+                            	expunge: {
+                                    label: 'Expunge',
+                                    isBoolean: true,
+                                    isChecked: false
+                                }
+                            }
+                        },                        
+                        messages: {                            
                             notification: function(args) {
                                 return 'label.action.destroy.instance';
                             }
                         },
-                        action: function(args) {
+                        action: function(args) {                        	
+                        	var data = {
+                        		id: args.context.instances[0].id		
+                        	};                        	
+                        	if (args.data.expunge == 'on') {
+                        		$.extend(data, {
+                        			expunge: true
+                        		});
+                        	}                        	
                             $.ajax({
-                                url: createURL("destroyVirtualMachine&id=" + args.context.instances[0].id),
-                                dataType: "json",
-                                async: true,
+                                url: createURL('destroyVirtualMachine'),
+                                data: data,                                
                                 success: function(json) {
                                     var jid = json.destroyvirtualmachineresponse.jobid;
                                     args.response.success({
                                         _custom: {
                                             jobId: jid,
-                                            getUpdatedItem: function(json) {
-                                                return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                            getUpdatedItem: function(json) {                                            	
+                                            	if ('virtualmachine' in json.queryasyncjobresultresponse.jobresult) //destroy without expunge                                            	
+                                                    return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                            	else //destroy with expunge
+                                            		return { 'toRemove': true };
                                             },
                                             getActionFilter: function() {
                                                 return vmActionfilter;
