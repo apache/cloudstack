@@ -1039,6 +1039,7 @@ public class TransactionLegacy {
                 dbProps = new Properties();
             }
             try {
+                PropertiesUtil.loadFromFile(dbProps, dbPropsFile);
                 dbProps.load(new FileInputStream(dbPropsFile));
             } catch (IOException e) {
                 s_logger.fatal("Unable to load db properties file, pl. check the classpath and file path configuration", e);

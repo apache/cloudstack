@@ -18,7 +18,6 @@
 package org.apache.cloudstack.framework.jobs.impl;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -868,7 +867,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         try {
             final File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
             final Properties dbProps = new Properties();
-            dbProps.load(new FileInputStream(dbPropsFile));
+            PropertiesUtil.loadFromFile(dbProps, dbPropsFile);
 
             final int cloudMaxActive = Integer.parseInt(dbProps.getProperty("db.cloud.maxActive"));
 

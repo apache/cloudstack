@@ -78,7 +78,7 @@ public class DBEncryptionUtil {
         	StandardPBEStringEncryptor encryptor = EncryptionSecretKeyChecker.getEncryptor();
         	dbProps = new EncryptableProperties(encryptor);
         	try {
-				dbProps.load(new FileInputStream(dbPropsFile));
+        	    PropertiesUtil.loadFromFile(dbProps, dbPropsFile);
 			} catch (FileNotFoundException e) {
 				throw new CloudRuntimeException("db.properties file not found while reading DB secret key", e);
 			} catch (IOException e) {
