@@ -864,6 +864,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             DataCenterDeployment potentialPlan = new DataCenterDeployment(plan.getDataCenterId(), clusterVO.getPodId(),
                     clusterVO.getId(), null, plan.getPoolId(), null, plan.getReservationContext());
 
+
             // find suitable hosts under this cluster, need as many hosts as we
             // get.
             List<Host> suitableHosts = findSuitableHosts(vmProfile, potentialPlan, avoid, HostAllocator.RETURN_UPTO_ALL);
@@ -906,7 +907,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                 s_logger.debug("No suitable hosts found under this Cluster: " + clusterId);
             }
 
-            if (canAvoidCluster(clusterVO, avoid, PlannerAvoidOutput)) {
+            if (canAvoidCluster(clusterVO, avoid, PlannerAvoidOutput, vmProfile)) {
                 avoid.addCluster(clusterVO.getId());
             }
         }
@@ -914,7 +915,8 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         return null;
     }
 
-    private boolean canAvoidCluster(Cluster clusterVO, ExcludeList avoids, ExcludeList plannerAvoidOutput) {
+    private boolean canAvoidCluster(Cluster clusterVO, ExcludeList avoids, ExcludeList plannerAvoidOutput,
+            VirtualMachineProfile<? extends VirtualMachine> vmProfile) {
 
         ExcludeList allocatorAvoidOutput = new ExcludeList(avoids.getDataCentersToAvoid(), avoids.getPodsToAvoid(),
                 avoids.getClustersToAvoid(), avoids.getHostsToAvoid(), avoids.getPoolsToAvoid());
@@ -938,28 +940,43 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             }
         }
 
+        // all hosts in avoid set, avoid the cluster. Otherwise check the pools
+        if (avoidAllHosts) {
+            return true;
+        }
+
         // Cluster can be put in avoid set in following scenarios:
         // 1. If storage allocators haven't put any pools in avoid set means either no pools in cluster 
-        // or pools not suitable for the allocators to handle.
+        // or pools not suitable for the allocators to handle or there is no
+        // linkage of any suitable host to any of the pools in cluster
         // 2. If all 'shared' or 'local' pools are in avoid set
         if  (allocatorAvoidOutput.getPoolsToAvoid() != null && !allocatorAvoidOutput.getPoolsToAvoid().isEmpty()) {
-            // check shared pools
-            List<StoragePoolVO> allPoolsInCluster = _storagePoolDao.findPoolsByTags(clusterVO.getDataCenterId(),
-                    clusterVO.getPodId(), clusterVO.getId(), null);
-            for (StoragePoolVO pool : allPoolsInCluster) {
-                if (!allocatorAvoidOutput.shouldAvoid(pool)) {
-                    // there's some pool in the cluster that is not yet in avoid set
-                    avoidAllPools = false;
-                    break;
-                }
-            }
-            if (avoidAllPools) {
-                // check local pools
-                List<StoragePoolVO> allLocalPoolsInCluster = _storagePoolDao.findLocalStoragePoolsByTags(clusterVO.getDataCenterId(),
+
+            Pair<Boolean, Boolean> storageRequirements = findVMStorageRequirements(vmProfile);
+            boolean vmRequiresSharedStorage = storageRequirements.first();
+            boolean vmRequiresLocalStorege = storageRequirements.second();
+
+            if (vmRequiresSharedStorage) {
+                // check shared pools
+                List<StoragePoolVO> allPoolsInCluster = _storagePoolDao.findPoolsByTags(clusterVO.getDataCenterId(),
                         clusterVO.getPodId(), clusterVO.getId(), null);
-                for (StoragePoolVO pool : allLocalPoolsInCluster) {
+                for (StoragePoolVO pool : allPoolsInCluster) {
                     if (!allocatorAvoidOutput.shouldAvoid(pool)) {
                         // there's some pool in the cluster that is not yet in avoid set
+                        avoidAllPools = false;
+                        break;
+                    }
+                }
+            }
+
+            if (vmRequiresLocalStorege) {
+                // check local pools
+                List<StoragePoolVO> allLocalPoolsInCluster = _storagePoolDao.findLocalStoragePoolsByTags(
+                        clusterVO.getDataCenterId(), clusterVO.getPodId(), clusterVO.getId(), null);
+                for (StoragePoolVO pool : allLocalPoolsInCluster) {
+                    if (!allocatorAvoidOutput.shouldAvoid(pool)) {
+                        // there's some pool in the cluster that is not yet
+                        // in avoid set
                         avoidAllPools = false;
                         break;
                     }
@@ -973,6 +990,27 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         return false;
     }
 
+    private Pair<Boolean, Boolean> findVMStorageRequirements(VirtualMachineProfile<? extends VirtualMachine> vmProfile) {
+
+        boolean requiresShared = false, requiresLocal = false;
+
+        List<VolumeVO> volumesTobeCreated = _volsDao.findUsableVolumesForInstance(vmProfile.getId());
+
+        // for each volume find whether shared or local pool is required
+        for (VolumeVO toBeCreated : volumesTobeCreated) {
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(toBeCreated.getDiskOfferingId());
+
+            if (diskOffering != null) {
+                if (diskOffering.getUseLocalStorage()) {
+                    requiresLocal = true;
+                } else {
+                    requiresShared = true;
+                }
+            }
+        }
+        
+        return new Pair<Boolean, Boolean>(requiresShared, requiresLocal);
+    }
     protected Pair<Host, Map<Volume, StoragePool>> findPotentialDeploymentResources(List<Host> suitableHosts,
             Map<Volume, List<StoragePool>> suitableVolumeStoragePools, ExcludeList avoid,
             DeploymentPlanner.PlannerResourceUsage resourceUsageRequired) {
