@@ -329,6 +329,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected int _migratewait;
     protected String _instance; //instance name (default is usually "VM")
     static final Random _rand = new Random(System.currentTimeMillis());
+    protected boolean _securityGroupEnabled;
 
     protected IAgentControl _agentControl;
 
@@ -4969,8 +4970,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.warn("set xenserver Iptable failed");
                 return null;
             }
-            _canBridgeFirewall = can_bridge_firewall(conn);
-
+            
+            if (_securityGroupEnabled) {
+            	_canBridgeFirewall = can_bridge_firewall(conn);
+            }
+            
             String result = callHostPluginPremium(conn, "heartbeat", "host", _host.uuid, "interval", Integer
                     .toString(_heartbeatInterval));
             if (result == null || !result.contains("> DONE <")) {
@@ -5944,6 +5948,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         _publicNetworkName = (String) params.get("public.network.device");
         _guestNetworkName = (String)params.get("guest.network.device");
         _instance = (String) params.get("instance.name");
+        _securityGroupEnabled = Boolean.parseBoolean((String)params.get("securitygroupenabled"));
 
         _linkLocalPrivateNetworkName = (String) params.get("private.linkLocal.device");
         if (_linkLocalPrivateNetworkName == null) {
