@@ -17,7 +17,8 @@
 
 package org.apache.cloudstack.api.command.user.volume;
 
-import com.cloud.server.ResourceTag;
+import java.util.List;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
@@ -26,16 +27,16 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ResourceDetailResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 
-import java.util.List;
+import com.cloud.server.ResourceTag;
 
 @APICommand(name = "listResourceDetails", description = "List resource detail(s)", responseObject = ResourceTagResponse.class, since = "4.2")
 public class ListResourceDetailsCmd extends BaseListProjectAndAccountResourcesCmd{
     private static final String s_name = "listresourcedetailsresponse";
 
-    @Parameter(name=ApiConstants.RESOURCE_TYPE, type=CommandType.STRING, description="list by resource type")
+    @Parameter(name=ApiConstants.RESOURCE_TYPE, type=CommandType.STRING, description="list by resource type", required=true)
     private String resourceType;
 
-    @Parameter(name=ApiConstants.RESOURCE_ID, type=CommandType.STRING, description="list by resource id")
+    @Parameter(name=ApiConstants.RESOURCE_ID, type=CommandType.STRING, description="list by resource id", required=true)
     private String resourceId;
 
     @Parameter(name=ApiConstants.KEY, type=CommandType.STRING, description="list by key")

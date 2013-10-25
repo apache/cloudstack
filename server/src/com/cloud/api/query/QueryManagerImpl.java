@@ -138,7 +138,6 @@ import com.cloud.event.dao.EventJoinDao;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.dao.NetworkDetailsDao;
@@ -3264,54 +3263,25 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public List<ResourceDetailResponse> listResource(ListResourceDetailsCmd cmd) {
         String key = cmd.getKey();
         ResourceTag.ResourceObjectType resourceType = cmd.getResourceType();
-        String resourceId = cmd.getResourceId();
-        long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
-        List<ResourceDetailResponse> responseList = new ArrayList<ResourceDetailResponse>();
-        List<? extends ResourceDetail> detailList = new ArrayList<ResourceDetail>();
+        String resourceIdStr = cmd.getResourceId();
+        long resourceId = _taggedResourceMgr.getResourceId(resourceIdStr, resourceType);
+        List<? extends ResourceDetail> detailList = new ArrayList<ResourceDetail>();        
         ResourceDetail requestedDetail = null;
 
-        
-        if (resourceType == ResourceTag.ResourceObjectType.Volume) {
-            if (key == null) {
-                detailList = _volumeDetailDao.findDetailsList(id);
-            } else {
-                requestedDetail = _volumeDetailDao.findDetail(id, key);
-            }
-        } else if (resourceType == ResourceTag.ResourceObjectType.Nic){
-            if (key == null) {
-                detailList = _nicDetailDao.findDetailsList(id);
-            } else {
-                requestedDetail = _nicDetailDao.findDetail(id, key);
-            }
-        } else if (resourceType == ResourceTag.ResourceObjectType.UserVm){
-            if (key == null) {
-                detailList = _userVmDetailDao.findDetailsList(id);
-            } else {
-                requestedDetail = _userVmDetailDao.findDetail(id, key);
-            }
-        } else if (resourceType == ResourceTag.ResourceObjectType.Zone){
-            if (key == null) {
-                detailList = _dcDetailsDao.findDetailsList(id);
-            } else {
-                requestedDetail = _dcDetailsDao.findDetail(id, key);
-            }
-        } else if (resourceType == ResourceObjectType.Network){
-            if (key == null) {
-                detailList = _networkDetailsDao.findDetailsList(id);
-            } else {
-                requestedDetail = _networkDetailsDao.findDetail(id, key);
-            }
-        }else {
-            throw new UnsupportedServiceException("Resource type " + resourceType + " is not supported by the cloudStack");
+        if (key == null) {
+            detailList = _resourceMetaDataMgr.getDetails(resourceId, resourceType);
+        } else {
+            requestedDetail = _resourceMetaDataMgr.getDetail(resourceId, resourceType, key);
         }
         
+        List<ResourceDetailResponse> responseList = new ArrayList<ResourceDetailResponse>();
         if (requestedDetail != null) {
-            ResourceDetailResponse detailResponse = createResourceDetailsResponse(id, requestedDetail.getName(), requestedDetail.getValue(),
+            ResourceDetailResponse detailResponse = createResourceDetailsResponse(resourceId, requestedDetail.getName(), requestedDetail.getValue(),
                     resourceType);
             responseList.add(detailResponse);
         } else {
             for (ResourceDetail detail : detailList) {
-                ResourceDetailResponse detailResponse = createResourceDetailsResponse(id, detail.getName(), detail.getValue(),
+                ResourceDetailResponse detailResponse = createResourceDetailsResponse(resourceId, detail.getName(), detail.getValue(),
                         resourceType);
                 responseList.add(detailResponse);
             }

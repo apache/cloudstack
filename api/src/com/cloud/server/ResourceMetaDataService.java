@@ -16,7 +16,10 @@
 // under the License.package com.cloud.server;
 
 package com.cloud.server;
+import java.util.List;
 import java.util.Map;
+
+import org.apache.cloudstack.api.ResourceDetail;
 
 import com.cloud.server.ResourceTag.ResourceObjectType;
 
@@ -39,6 +42,12 @@ public interface ResourceMetaDataService {
      * @return
      */
     public boolean deleteResourceMetaData(String resourceId, ResourceObjectType resourceType, String key);
+
+
+    List<? extends ResourceDetail> getDetails(long resourceId, ResourceObjectType resourceType);
+
+
+    ResourceDetail getDetail(long resourceId, ResourceObjectType resourceType, String key);
 
 
     }
