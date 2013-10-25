@@ -80,7 +80,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     private static final String ORDER_CLUSTERS_BY_AGGREGATE_OVERCOMMIT_CAPACITY_PART2= " AND capacity_type = ?  AND cluster_details.name =? GROUP BY capacity.cluster_id ORDER BY SUM(used_capacity+reserved_capacity)/SUM(total_capacity * cluster_details.value) ASC";
 
     private static final String LIST_PODSINZONE_BY_HOST_CAPACITY_TYPE = "SELECT DISTINCT capacity.pod_id FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`host_pod_ref` pod " +
-                                                          " ON (pod.id = capacity.pod_id AND pod.removed is NULL) INNER JOIN `cloud`.`cluster_details` cluster ON (capacity.cluster_id = cluster.cluster_id ) WHERE capacity.data_center_id = ? AND capacity_type = ? AND cluster_details.name= ? ((total_capacity * cluster.value ) - used_capacity + reserved_capacity) >= ? ";
+                                                          " ON (pod.id = capacity.pod_id AND pod.removed is NULL) INNER JOIN `cloud`.`cluster_details` cluster_details ON (capacity.cluster_id = cluster_details.cluster_id ) WHERE capacity.data_center_id = ? AND capacity_type = ? AND cluster_details.name= ? AND ((total_capacity * cluster_details.value ) - used_capacity + reserved_capacity) >= ? ";
 
     private static final String ORDER_PODS_BY_AGGREGATE_CAPACITY = " SELECT capacity.pod_id, SUM(used_capacity+reserved_capacity)/SUM(total_capacity) FROM `cloud`.`op_host_capacity` capacity WHERE data_center_id= ? AND capacity_type = ? GROUP BY capacity.pod_id ORDER BY SUM(used_capacity+reserved_capacity)/SUM(total_capacity) ASC ";
 
