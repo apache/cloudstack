@@ -306,11 +306,8 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             return false;
         }
 
-        Transaction txn = Transaction.currentTxn();
         boolean status = false;
         try {
-            txn.start();
-
             // ensure that there is an ASA 1000v assigned to this network
             CiscoAsa1000vDevice assignedAsa = assignAsa1000vToNetwork(network);
             if (assignedAsa == null) {
@@ -408,10 +405,9 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             }
 
             status = true;
-            txn.commit();
         } finally {
             if (!status) {
-                txn.rollback();
+                unassignAsa1000vFromNetwork(network);
                 //FIXME: also undo changes in VNMC, VSM if anything failed
             }
         }
