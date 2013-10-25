@@ -2184,11 +2184,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -s " + cmd.getVpnServerIp();
             args += " -l " + cmd.getLocalIp();
             args += " -c ";
-
         } else {
             args += " -d ";
             args += " -s " + cmd.getVpnServerIp();
         }
+        args += " -C " + cmd.getLocalCidr();
+        args += " -i " + cmd.getPublicInterface();
         String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "Configure VPN failed");

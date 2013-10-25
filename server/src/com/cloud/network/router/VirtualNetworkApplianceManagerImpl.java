@@ -3342,6 +3342,12 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     }
 
+    protected String getVpnCidr(RemoteAccessVpn vpn)
+    {
+    	Network network = _networkDao.findById(vpn.getNetworkId());
+    	return network.getCidr();
+    }
+    
     protected void createApplyVpnCommands(boolean isCreate, RemoteAccessVpn vpn, VirtualRouter router, Commands cmds) {
         List<VpnUserVO> vpnUsers = _vpnUsersDao.listByAccount(vpn.getAccountId());
 
@@ -3349,8 +3355,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
         IpAddress ip = _networkModel.getIp(vpn.getServerAddressId());
 
+        String cidr = getVpnCidr(vpn);
         RemoteAccessVpnCfgCommand startVpnCmd = new RemoteAccessVpnCfgCommand(isCreate, ip.getAddress().addr(),
-                vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey());
+                vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey(), (vpn.getVpcId() != null));
+        startVpnCmd.setLocalCidr(cidr);
         startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());

@@ -426,4 +426,26 @@ VpcVirtualNetworkApplianceService {
         // TODO Auto-generated method stub
         return false;
     }
+
+	@Override
+	public boolean startRemoteAccessVpn(RemoteAccessVpn vpn,
+			VirtualRouter router) throws ResourceUnavailableException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean stopRemoteAccessVpn(RemoteAccessVpn vpn, VirtualRouter router)
+			throws ResourceUnavailableException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public String[] applyVpnUsers(RemoteAccessVpn vpn,
+			List<? extends VpnUser> users, VirtualRouter router)
+			throws ResourceUnavailableException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

@@ -20,10 +20,13 @@ package com.cloud.agent.api.routing;
 public class RemoteAccessVpnCfgCommand extends NetworkElementCommand {
 
 	boolean create;
+	private boolean vpcEnabled;
     String vpnServerIp;
     String ipRange;
     String presharedKey;
     String localIp;
+    private String localCidr;
+    private String publicInterface;
 
     protected RemoteAccessVpnCfgCommand() {
     	this.create = false;
@@ -39,12 +42,18 @@ public class RemoteAccessVpnCfgCommand extends NetworkElementCommand {
     }
 
 
-	public RemoteAccessVpnCfgCommand(boolean create, String vpnServerAddress, String localIp, String ipRange, String ipsecPresharedKey) {
+	public RemoteAccessVpnCfgCommand(boolean create, String vpnServerAddress, String localIp, String ipRange, String ipsecPresharedKey, boolean vpcEnabled) {
 		this.vpnServerIp = vpnServerAddress;
 		this.ipRange  = ipRange;
 		this.presharedKey = ipsecPresharedKey;
 		this.localIp = localIp;
 		this.create = create;
+		this.vpcEnabled = vpcEnabled;
+		if (vpcEnabled) {
+			this.setPublicInterface("eth1");
+		} else {
+			this.setPublicInterface("eth2");
+		}
 	}
 
 	public String getVpnServerIp() {
@@ -73,6 +82,30 @@ public class RemoteAccessVpnCfgCommand extends NetworkElementCommand {
 
 	public String getLocalIp() {
 		return localIp;
+	}
+
+	public boolean isVpcEnabled() {
+		return vpcEnabled;
+	}
+
+	public void setVpcEnabled(boolean vpcEnabled) {
+		this.vpcEnabled = vpcEnabled;
+	}
+
+	public String getLocalCidr() {
+		return localCidr;
+	}
+
+	public void setLocalCidr(String localCidr) {
+		this.localCidr = localCidr;
+	}
+
+	public String getPublicInterface() {
+		return publicInterface;
+	}
+
+	public void setPublicInterface(String publicInterface) {
+		this.publicInterface = publicInterface;
 	}
 
 }
