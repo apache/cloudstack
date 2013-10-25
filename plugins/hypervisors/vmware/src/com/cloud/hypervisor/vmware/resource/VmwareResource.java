@@ -3591,6 +3591,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         } else {
             argsBuf.append(" -d ").append(" -s ").append(cmd.getVpnServerIp());
         }
+        argsBuf.append(" -C ").append(cmd.getLocalCidr());
+        argsBuf.append(" -i ").append(cmd.getPublicInterface());
 
         try {
             VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
