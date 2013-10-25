@@ -345,11 +345,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         vmMo.createDisk(volumeDatastorePath, (int) (volume.getSize() / (1024L * 1024L)), morDatastore, -1);
                         vmMo.detachDisk(volumeDatastorePath, false);
                     }
-
-                    VolumeObjectTO newVol = new VolumeObjectTO();
-                    newVol.setPath(vmdkName);
-                    newVol.setSize(volume.getSize());
-                    return new CopyCmdAnswer(newVol);
                 } finally {
                     vmMo.detachAllDisks();
 
@@ -383,11 +378,19 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                 String srcFile = dsMo.getDatastorePath(vmdkName, true);
                 dsMo.deleteFile(srcFile, dcMo.getMor(), true);
-                VolumeObjectTO newVol = new VolumeObjectTO();
-                newVol.setPath(vmdkName);
-                newVol.setSize(volume.getSize());
-                return new CopyCmdAnswer(newVol);
             }
+            // restoreVM - move the new ROOT disk into corresponding VM folder
+            String vmInternalCSName = volume.getVmName();
+            if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmInternalCSName)) {
+                String oldRootDisk = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmInternalCSName, vmdkName);
+                if (oldRootDisk != null)
+                    VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmInternalCSName, dsMo, vmdkName);
+            }
+
+            VolumeObjectTO newVol = new VolumeObjectTO();
+            newVol.setPath(vmdkName);
+            newVol.setSize(volume.getSize());
+            return new CopyCmdAnswer(newVol);
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
                 s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
