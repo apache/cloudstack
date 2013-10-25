@@ -30,7 +30,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
@@ -82,6 +81,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -135,6 +135,7 @@ import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.Upload;
+import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -176,7 +177,6 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -1627,8 +1627,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateVO template = _tmpltDao.persist(privateTemplate);
         // Increment the number of templates
         if (template != null) {
-            if (cmd.getDetails() != null) {
-                _templateDetailsDao.persist(template.getId(), cmd.getDetails());
+            Map<String, String> detailsStr = cmd.getDetails();
+            if (detailsStr != null) {
+                List<VMTemplateDetailVO> details = new ArrayList<VMTemplateDetailVO>();
+                for (String key : detailsStr.keySet()) {
+                    details.add(new VMTemplateDetailVO(template.getId(), key, detailsStr.get(key)));
+                }
+                _templateDetailsDao.addDetails(details);
             }
 
             _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.template);

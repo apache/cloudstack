@@ -14,16 +14,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.dao;
+package com.cloud.dc.dao;
 
-import javax.ejb.Local;
+import java.util.List;
+import java.util.Map;
 
-import org.springframework.stereotype.Component;
+import org.apache.cloudstack.api.ResourceDetail;
 
-import com.cloud.dc.dao.ResourceDetailDaoImpl;
-import com.cloud.storage.VMTemplateDetailVO;
+import com.cloud.utils.db.GenericDao;
 
-@Component
-@Local(value = VMTemplateDetailsDao.class)
-public class VMTemplateDetailsDaoImpl extends ResourceDetailDaoImpl<VMTemplateDetailVO> implements VMTemplateDetailsDao {
+public interface ResourceDetailDao<R extends ResourceDetail> extends GenericDao<R, Long>{
+    public R findDetail(long resourceId, String name);
+
+    public Map<String, String> findDetails(long resourceId);
+
+    public List<R> findDetailsList(long resourceId);
+
+    public void removeDetails(long resourceId);
+
+    public void removeDetail(long resourceId, String key);
+
+    public void addDetails(List<R> details);
+    
+    public void addDetail(R detail);
 }

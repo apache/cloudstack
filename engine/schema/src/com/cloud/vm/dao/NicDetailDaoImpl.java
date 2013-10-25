@@ -16,88 +16,15 @@
 // under the License.
 package com.cloud.vm.dao;
 
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.vm.NicDetailVO;
+import javax.ejb.Local;
+
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
-import java.util.List;
-import java.util.Map;
+import com.cloud.dc.dao.ResourceDetailDaoImpl;
+import com.cloud.vm.NicDetailVO;
 
 @Component
 @Local (value={NicDetailDao.class})
-public class NicDetailDaoImpl extends GenericDaoBase<NicDetailVO, Long> implements NicDetailDao {
-    protected final SearchBuilder<NicDetailVO> NicSearch;
-    protected final SearchBuilder<NicDetailVO> DetailSearch;
-
-    public NicDetailDaoImpl() {
-        NicSearch = createSearchBuilder();
-        NicSearch.and("nicId", NicSearch.entity().getNicId(), SearchCriteria.Op.EQ);
-        NicSearch.done();
-
-        DetailSearch = createSearchBuilder();
-        DetailSearch.and("nicId", DetailSearch.entity().getNicId(), SearchCriteria.Op.EQ);
-        DetailSearch.and("name", DetailSearch.entity().getName(), SearchCriteria.Op.EQ);
-        DetailSearch.done();
-    }
-
-    @Override
-    public void deleteDetails(long nicId) {
-        SearchCriteria<NicDetailVO> sc = NicSearch.create();
-        sc.setParameters("nicId", nicId);
-
-        List<NicDetailVO> results = search(sc, null);
-        for (NicDetailVO result : results) {
-            remove(result.getId());
-        }
-    }
-
-    @Override
-    public NicDetailVO findDetail(long nicId, String name) {
-        SearchCriteria<NicDetailVO> sc = DetailSearch.create();
-        sc.setParameters("nicId", nicId);
-        sc.setParameters("name", name);
-
-        return findOneBy(sc);
-    }
-
-    @Override
-    public List<NicDetailVO> findDetails(long nicId) {
-        SearchCriteria<NicDetailVO> sc = NicSearch.create();
-        sc.setParameters("nicId", nicId);
-
-        List<NicDetailVO> results = search(sc, null);
-        return results;
-    }
-
-    @Override
-    public void persist(long nicId, Map<String, String> details) {
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        txn.start();
-        SearchCriteria<NicDetailVO> sc = NicSearch.create();
-        sc.setParameters("nicId", nicId);
-        expunge(sc);
-
-        for (Map.Entry<String, String> detail : details.entrySet()) {
-            NicDetailVO vo = new NicDetailVO(nicId, detail.getKey(), detail.getValue());
-            persist(vo);
-        }
-        txn.commit();
-    }
-
-    @Override
-    public void removeDetails(long nicId, String key) {
-        if(key != null){
-            NicDetailVO detail = findDetail(nicId, key);
-            if(detail != null){
-                remove(detail.getId());
-            }
-        }else {
-            deleteDetails(nicId);
-        }
-    }
+public class NicDetailDaoImpl extends ResourceDetailDaoImpl<NicDetailVO> implements NicDetailDao {
     
 }

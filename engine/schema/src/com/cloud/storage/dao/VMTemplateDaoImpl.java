@@ -28,11 +28,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
@@ -44,6 +43,7 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
@@ -411,11 +411,17 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
     @Override
     public void saveDetails(VMTemplateVO tmpl) {
-        Map<String, String> details = tmpl.getDetails();
-        if (details == null) {
+        Map<String, String> detailsStr = tmpl.getDetails();
+        if (detailsStr == null) {
             return;
         }
-        _templateDetailsDao.persist(tmpl.getId(), details);
+        List<VMTemplateDetailVO> details = new ArrayList<VMTemplateDetailVO>();
+        for (String key : detailsStr.keySet()) {
+            VMTemplateDetailVO detail = new VMTemplateDetailVO(tmpl.getId(), key, detailsStr.get(key));
+            details.add(detail);
+        }
+        
+        _templateDetailsDao.addDetails(details);
     }
 
 
@@ -744,8 +750,13 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             if (persist(tmplt) == null) {
                 throw new CloudRuntimeException("Failed to persist the template " + tmplt);
             }
+            
             if (tmplt.getDetails() != null) {
-                _templateDetailsDao.persist(tmplt.getId(), tmplt.getDetails());
+                List<VMTemplateDetailVO> details = new ArrayList<VMTemplateDetailVO>();
+                for (String key : tmplt.getDetails().keySet()) {
+                    details.add(new VMTemplateDetailVO(tmplt.getId(), key, tmplt.getDetails().get(key)));
+                }
+                _templateDetailsDao.addDetails(details);
             }
         }
         VMTemplateZoneVO tmpltZoneVO = _templateZoneDao.findByZoneTemplate(zoneId, tmplt.getId());

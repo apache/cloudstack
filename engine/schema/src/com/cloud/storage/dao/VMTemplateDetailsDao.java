@@ -16,21 +16,10 @@
 // under the License.
 package com.cloud.storage.dao;
 
-import java.util.Map;
-
+import com.cloud.dc.dao.ResourceDetailDao;
 import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface VMTemplateDetailsDao extends GenericDao<VMTemplateDetailVO, Long> {
-    Map<String, String> findDetails(long templateId);
-
-    void persist(long templateId, Map<String, String> details);
-
-    VMTemplateDetailVO findDetail(long templateId, String name);
-
-    void deleteDetails(long vmId);
-    
-    void addTemplateDetail(long templateId, String key, String value);
-    
-    void removeDetails(long templateId, String key);
+public interface VMTemplateDetailsDao extends GenericDao<VMTemplateDetailVO, Long>, ResourceDetailDao<VMTemplateDetailVO> {
+  
 }

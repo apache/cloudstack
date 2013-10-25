@@ -76,8 +76,8 @@ public class ResourceMetaDataManagerTest {
         doReturn(1L).when(_taggedResourceMgr).getResourceId(anyString(), eq(ResourceTag.ResourceObjectType.Volume));
         //           _volumeDetailDao.removeDetails(id, key);
 
-        doNothing().when(_volumeDetailDao).removeDetails(anyLong(), anyString());
-        doNothing().when(_nicDetailDao).removeDetails(anyLong(), anyString());
+        doNothing().when(_volumeDetailDao).removeDetail(anyLong(), anyString());
+        doNothing().when(_nicDetailDao).removeDetail(anyLong(), anyString());
         _resourceMetaDataMgr.deleteResourceMetaData(anyString(), eq(ResourceTag.ResourceObjectType.Volume), anyString());
 
     }
@@ -91,8 +91,8 @@ public class ResourceMetaDataManagerTest {
         doReturn(1L).when(_taggedResourceMgr).getResourceId("1", ResourceTag.ResourceObjectType.Volume);
         //           _volumeDetailDao.removeDetails(id, key);
 
-        doNothing().when(_volumeDetailDao).removeDetails(anyLong(), anyString());
-        doNothing().when(_nicDetailDao).removeDetails(anyLong(), anyString());
+        doNothing().when(_volumeDetailDao).removeDetail(anyLong(), anyString());
+        doNothing().when(_nicDetailDao).removeDetail(anyLong(), anyString());
         Map<String, String> map = new HashedMap();
         map.put("key","value");
         _resourceMetaDataMgr.addResourceMetaData("1", ResourceTag.ResourceObjectType.Volume, map);

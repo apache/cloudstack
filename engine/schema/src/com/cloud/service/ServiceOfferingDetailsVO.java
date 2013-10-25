@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.service;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,16 +23,18 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.ResourceDetail;
+
 @Entity
 @Table(name="service_offering_details")
-public class ServiceOfferingDetailsVO implements InternalIdentity {
+public class ServiceOfferingDetailsVO implements ResourceDetail {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private long id;
 
     @Column(name="service_offering_id")
-    private long serviceOfferingId;
+    private long resourceId;
 
     @Column(name="name")
     private String name;
@@ -46,27 +46,27 @@ public class ServiceOfferingDetailsVO implements InternalIdentity {
     }
 
     public ServiceOfferingDetailsVO(long serviceOfferingId, String name, String value) {
-        this.serviceOfferingId = serviceOfferingId;
+        this.resourceId = serviceOfferingId;
         this.name = name;
         this.value = value;
     }
 
-    public long getServiceOfferingId() {
-        return serviceOfferingId;
+    @Override
+    public long getResourceId() {
+        return resourceId;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getValue() {
         return value;
     }
 
-    public void setValue(String value) {
-        this.value = value;
-    }
-
+    @Override
     public long getId() {
         return id;
     }

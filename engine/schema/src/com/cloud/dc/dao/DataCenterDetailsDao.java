@@ -16,22 +16,8 @@
 // under the License.
 package com.cloud.dc.dao;
 
-import java.util.List;
-import java.util.Map;
-
 import com.cloud.dc.DataCenterDetailVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface DataCenterDetailsDao extends GenericDao<DataCenterDetailVO, Long> {
-    Map<String, String> findDetails(long dcId);
-    
-    void persist(long dcId, Map<String, String> details);
-    
-    DataCenterDetailVO findDetail(long dcId, String name);
-
-	void deleteDetails(long dcId);
-
-    void removeDetails(long id, String key);
-
-    List<DataCenterDetailVO> findDetailsList(long dcId);
+public interface DataCenterDetailsDao extends GenericDao<DataCenterDetailVO, Long>, ResourceDetailDao<DataCenterDetailVO> {
 }

@@ -16,20 +16,9 @@
 // under the License.
 package com.cloud.vm.dao;
 
-import java.util.List;
-import java.util.Map;
-
+import com.cloud.dc.dao.ResourceDetailDao;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.NicDetailVO;
 
-public interface NicDetailDao extends GenericDao<NicDetailVO, Long> {
-    List<NicDetailVO> findDetails(long nicId);
-
-    void persist(long nicId, Map<String, String> details);
-
-    NicDetailVO findDetail(long nicId, String name);
-
-    void deleteDetails(long nicId);
-
-    void removeDetails(long nicId, String key);
+public interface NicDetailDao extends GenericDao<NicDetailVO, Long>, ResourceDetailDao<NicDetailVO> {
 }

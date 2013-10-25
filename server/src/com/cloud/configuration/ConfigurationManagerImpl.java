@@ -35,7 +35,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -83,6 +82,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -95,10 +95,10 @@ import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterDetailVO;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.DataCenterDetailVO;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
@@ -109,9 +109,9 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DataCenterDetailsDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDao;
-import com.cloud.dc.dao.DataCenterDetailsDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
@@ -167,6 +167,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementService;
+import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -450,14 +451,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (zone == null) {
                     throw new InvalidParameterValueException("unable to find zone by id " + resourceId);
                 }
-                DataCenterDetailVO dcDetailVO = _dcDetailsDao.findDetail(resourceId, name.toLowerCase());
-                if (dcDetailVO == null) {
-                    dcDetailVO = new DataCenterDetailVO(resourceId, name, value);
-                    _dcDetailsDao.persist(dcDetailVO);
-                } else {
-                    dcDetailVO.setValue(value);
-                    _dcDetailsDao.update(dcDetailVO.getId(), dcDetailVO);
-                }
+                DataCenterDetailVO dcDetailVO = new DataCenterDetailVO(resourceId, name, value);
+                _dcDetailsDao.addDetail(dcDetailVO);
                 break;
             case Cluster:
                 ClusterVO cluster = _clusterDao.findById(resourceId);
@@ -2113,7 +2108,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
             if (details != null) {
-                _serviceOfferingDetailsDao.persist(offering.getId(), details);
+                List<ServiceOfferingDetailsVO> detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
+                for (String key : details.keySet()) {
+                    detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), key, details.get(key)));
+                }
+                
+                _serviceOfferingDetailsDao.addDetails(detailsVO);
             }
             CallContext.current().setEventDetails("Service offering id=" + offering.getId());
             return offering;

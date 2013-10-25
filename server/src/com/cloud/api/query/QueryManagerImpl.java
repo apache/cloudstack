@@ -3273,13 +3273,13 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         
         if (resourceType == ResourceTag.ResourceObjectType.Volume) {
             if (key == null) {
-                detailList = _volumeDetailDao.findDetails(id);
+                detailList = _volumeDetailDao.findDetailsList(id);
             } else {
                 requestedDetail = _volumeDetailDao.findDetail(id, key);
             }
         } else if (resourceType == ResourceTag.ResourceObjectType.Nic){
             if (key == null) {
-                detailList = _nicDetailDao.findDetails(id);
+                detailList = _nicDetailDao.findDetailsList(id);
             } else {
                 requestedDetail = _nicDetailDao.findDetail(id, key);
             }
@@ -3297,7 +3297,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
         } else if (resourceType == ResourceObjectType.Network){
             if (key == null) {
-                detailList = _networkDetailsDao.findDetails(id);
+                detailList = _networkDetailsDao.findDetailsList(id);
             } else {
                 requestedDetail = _networkDetailsDao.findDetail(id, key);
             }

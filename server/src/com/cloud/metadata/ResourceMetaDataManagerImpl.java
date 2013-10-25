@@ -37,6 +37,7 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
+import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
@@ -46,6 +47,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.vm.NicDetailVO;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.dao.NicDetailDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
@@ -111,24 +113,26 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
                         long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
                         // TODO - Have a better design here for getting the DAO.
                         if(resourceType == ResourceObjectType.Volume){
-                            VolumeDetailVO v = new VolumeDetailVO(id, key, value);
-                            _volumeDetailDao.persist(v);
+                            VolumeDetailVO detail = new VolumeDetailVO(id, key, value);
+                            _volumeDetailDao.addDetail(detail);
                         } else if (resourceType == ResourceObjectType.Nic){
-                            NicDetailVO n = new NicDetailVO(id, key, value);
-                            _nicDetailDao.persist(n);
+                            NicDetailVO detail = new NicDetailVO(id, key, value);
+                            _nicDetailDao.addDetail(detail);
                         } else if (resourceType == ResourceObjectType.Zone){
                              DataCenterDetailVO dataCenterDetail = new DataCenterDetailVO(id, key, value);
-                             _dcDetailsDao.persist(dataCenterDetail);
+                             _dcDetailsDao.addDetail(dataCenterDetail);
                         } else if (resourceType == ResourceObjectType.Network){
-                            NetworkDetailVO networkDetail = new NetworkDetailVO(id, key, value);
-                            _networkDetailsDao.persist(networkDetail);
+                            NetworkDetailVO detail = new NetworkDetailVO(id, key, value);
+                            _networkDetailsDao.addDetail(detail);
                         } else if (resourceType == ResourceObjectType.UserVm) {
-                            _userVmDetailsDao.addVmDetail(id, key, value);
+                            UserVmDetailVO detail = new UserVmDetailVO(id, key, value);
+                            _userVmDetailsDao.addDetail(detail);
                         } else if (resourceType == ResourceObjectType.Template) {
-                            _templateDetailsDao.addTemplateDetail(id, key, value);
+                             VMTemplateDetailVO detail = new VMTemplateDetailVO(id, key, value);
+                            _templateDetailsDao.addDetail(detail);
                         } else if (resourceType == ResourceObjectType.ServiceOffering) {
-                            ServiceOfferingDetailsVO entity = new ServiceOfferingDetailsVO(id, key, value);
-                            _serviceOfferingDetailsDao.persist(entity);
+                            ServiceOfferingDetailsVO detail = new ServiceOfferingDetailsVO(id, key, value);
+                            _serviceOfferingDetailsDao.addDetail(detail);
                         }
                 }
                 
@@ -152,19 +156,19 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         
         // TODO - Have a better design here for getting the DAO.
         if (resourceType == ResourceObjectType.Volume){
-           _volumeDetailDao.removeDetails(id, key);
+           _volumeDetailDao.removeDetail(id, key);
         } else if (resourceType == ResourceObjectType.Nic){
-            _nicDetailDao.removeDetails(id, key);
+            _nicDetailDao.removeDetail(id, key);
         } else if (resourceType == ResourceObjectType.UserVm) {
-            _userVmDetailsDao.removeDetails(id, key); 
+            _userVmDetailsDao.removeDetail(id, key); 
         } else if (resourceType == ResourceObjectType.Template) {
-            _templateDetailsDao.removeDetails(id, key);
+            _templateDetailsDao.removeDetail(id, key);
         } else if (resourceType == ResourceObjectType.Zone){
-            _dcDetailsDao.removeDetails(id, key);
+            _dcDetailsDao.removeDetail(id, key);
         } else if (resourceType == ResourceObjectType.ServiceOffering) {
-            _serviceOfferingDetailsDao.removeDetails(id, key);
+            _serviceOfferingDetailsDao.removeDetail(id, key);
         } else if (resourceType == ResourceObjectType.Network) {
-            _networkDetailsDao.removeDetails(id, key);
+            _networkDetailsDao.removeDetail(id, key);
         }
 
         return true;

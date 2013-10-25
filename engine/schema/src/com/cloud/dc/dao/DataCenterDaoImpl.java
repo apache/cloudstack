@@ -26,9 +26,11 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.TableGenerator;
 
+import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.dc.DataCenterDetailVO;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
 import com.cloud.dc.DataCenterVO;
@@ -366,7 +368,13 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         if (details == null) {
             return;
         }
-        _detailsDao.persist(zone.getId(), details);
+        
+        List<DataCenterDetailVO> resourceDetails = new ArrayList<DataCenterDetailVO>();
+        for (String key : details.keySet()) {
+            resourceDetails.add(new DataCenterDetailVO(zone.getId(), key, details.get(key)));
+        }
+        
+        _detailsDao.addDetails(resourceDetails);
     }
 
     @Override

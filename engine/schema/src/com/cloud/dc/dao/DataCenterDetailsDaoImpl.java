@@ -16,117 +16,29 @@
 // under the License.
 package com.cloud.dc.dao;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import javax.ejb.Local;
 
-import com.cloud.vm.UserVmDetailVO;
+import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 
 import com.cloud.dc.DataCenterDetailVO;
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionLegacy;
 
 @Local(value=DataCenterDetailsDao.class)
-public class DataCenterDetailsDaoImpl extends GenericDaoBase<DataCenterDetailVO, Long> implements DataCenterDetailsDao, ScopedConfigStorage {
-    protected final SearchBuilder<DataCenterDetailVO> DcSearch;
-    protected final SearchBuilder<DataCenterDetailVO> DetailSearch;
+public class DataCenterDetailsDaoImpl extends ResourceDetailDaoImpl<DataCenterDetailVO> implements DataCenterDetailsDao, ScopedConfigStorage {
     
     public DataCenterDetailsDaoImpl() {
-        DcSearch = createSearchBuilder();
-        DcSearch.and("dcId", DcSearch.entity().getDcId(), SearchCriteria.Op.EQ);
-        DcSearch.done();
-        
-        DetailSearch = createSearchBuilder();
-        DetailSearch.and("dcId", DetailSearch.entity().getDcId(), SearchCriteria.Op.EQ);
-        DetailSearch.and("name", DetailSearch.entity().getName(), SearchCriteria.Op.EQ);
-        DetailSearch.done();
     }
-
-    @Override
-    public DataCenterDetailVO findDetail(long dcId, String name) {
-        SearchCriteria<DataCenterDetailVO> sc = DetailSearch.create();
-        sc.setParameters("dcId", dcId);
-        sc.setParameters("name", name);
-        
-        return findOneIncludingRemovedBy(sc);
-    }
-
-    @Override
-    public Map<String, String> findDetails(long dcId) {
-        SearchCriteria<DataCenterDetailVO> sc = DcSearch.create();
-        sc.setParameters("dcId", dcId);
-        
-        List<DataCenterDetailVO> results = search(sc, null);
-        Map<String, String> details = new HashMap<String, String>(results.size());
-        for (DataCenterDetailVO result : results) {
-            details.put(result.getName(), result.getValue());
-        }
-        return details;
-    }
-
-    @Override
-    public List<DataCenterDetailVO> findDetailsList(long dcId) {
-        SearchCriteria<DataCenterDetailVO> sc = DcSearch.create();
-        sc.setParameters("dcId", dcId);
-
-        List<DataCenterDetailVO> results = search(sc, null);
-        return results;
-    }
-
-
-    @Override
-    public void deleteDetails(long dcId) {
-        SearchCriteria<DataCenterDetailVO> sc = DcSearch.create();
-        sc.setParameters("dcId", dcId);
-        
-        List<DataCenterDetailVO> results = search(sc, null);
-        for (DataCenterDetailVO result : results) {
-        	remove(result.getId());
-        }
-    }
-
-    @Override
-    public void removeDetails(long id, String key) {
-        if(key != null){
-            DataCenterDetailVO detail = findDetail(id, key);
-            if(detail != null){
-                remove(detail.getId());
-            }
-        }else {
-            deleteDetails(id);
-        }
-    }
-
-    @Override
-    public void persist(long dcId, Map<String, String> details) {
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        txn.start();
-        SearchCriteria<DataCenterDetailVO> sc = DcSearch.create();
-        sc.setParameters("dcId", dcId);
-        expunge(sc);
-        
-        for (Map.Entry<String, String> detail : details.entrySet()) {
-            DataCenterDetailVO vo = new DataCenterDetailVO(dcId, detail.getKey(), detail.getValue());
-            persist(vo);
-        }
-        txn.commit();
-    }
-
+    
     @Override
     public Scope getScope() {
         return ConfigKey.Scope.Zone;
     }
-
+    
     @Override
     public String getConfigValue(long id, ConfigKey<?> key) {
-        DataCenterDetailVO vo = findDetail(id, key.key());
+        ResourceDetail vo = findDetail(id, key.key());
         return vo == null ? null : vo.getValue();
     }
 

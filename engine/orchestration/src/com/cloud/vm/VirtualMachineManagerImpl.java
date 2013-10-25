@@ -439,7 +439,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VirtualMachineGuru guru = getVmGuru(vm);
         guru.finalizeExpunge(vm);
         //remove the overcommit detials from the uservm details
-        _uservmDetailsDao.deleteDetails(vm.getId());
+        _uservmDetailsDao.removeDetails(vm.getId());
 
         // send hypervisor-dependent commands before removing
         List<Command> finalizeExpungeCommands = hvGuru.finalizeExpunge(vm);
@@ -810,11 +810,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     _uservmDetailsDao.persist(vmDetail_ram);
                 } else if (_uservmDetailsDao.findDetail(vm.getId(), "cpuOvercommitRatio") != null) {
                     UserVmDetailVO vmDetail_cpu = _uservmDetailsDao.findDetail(vm.getId(), "cpuOvercommitRatio");
-                    vmDetail_cpu.setValue(cluster_detail_cpu.getValue());
                     UserVmDetailVO vmDetail_ram = _uservmDetailsDao.findDetail(vm.getId(), "memoryOvercommitRatio");
-                    vmDetail_ram.setValue(cluster_detail_ram.getValue());
-                    _uservmDetailsDao.update(vmDetail_cpu.getId(), vmDetail_cpu);
-                    _uservmDetailsDao.update(vmDetail_ram.getId(), vmDetail_ram);
+                    _uservmDetailsDao.addDetail(vmDetail_cpu);
+                    _uservmDetailsDao.addDetail(vmDetail_ram);
                 }
                 vmProfile.setCpuOvercommitRatio(Float.parseFloat(cluster_detail_cpu.getValue()));
                 vmProfile.setMemoryOvercommitRatio(Float.parseFloat(cluster_detail_ram.getValue()));

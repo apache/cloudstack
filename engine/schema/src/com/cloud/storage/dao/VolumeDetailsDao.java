@@ -16,21 +16,10 @@
 // under the License.
 package com.cloud.storage.dao;
 
-import java.util.List;
-import java.util.Map;
-
+import com.cloud.dc.dao.ResourceDetailDao;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface VolumeDetailsDao extends GenericDao<VolumeDetailVO, Long> {
-    List<VolumeDetailVO> findDetails(long volumeId);
+public interface VolumeDetailsDao extends GenericDao<VolumeDetailVO, Long>, ResourceDetailDao<VolumeDetailVO> {
 
-    void persist(long vmId, Map<String, String> details);
-
-    VolumeDetailVO findDetail(long vmId, String name);
-
-    void deleteDetails(long vmId);
-
-    public void removeDetails(long volumeId, String key);
-
-    }
+}
