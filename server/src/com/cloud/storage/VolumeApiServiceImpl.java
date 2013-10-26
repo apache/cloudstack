@@ -1734,6 +1734,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         String _customDiskOfferingMinSizeStr = _configDao.getValue(Config.CustomDiskOfferingMinSize.toString());
         _customDiskOfferingMinSize = NumbersUtil.parseInt(_customDiskOfferingMinSizeStr, Integer.parseInt(Config.CustomDiskOfferingMinSize.getDefaultValue()));
 
+        String maxVolumeSizeInGbString = _configDao.getValue(Config.MaxVolumeSize.toString());
+        _maxVolumeSizeInGb = NumbersUtil.parseLong(maxVolumeSizeInGbString, 2000);
         return true;
     }
 
