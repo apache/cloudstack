@@ -599,8 +599,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class ManagementServerImpl extends ManagerBase implements ManagementServer {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
 
-    private static final LockMasterListener s_lockMasterListener = new LockMasterListener(ManagementServerNode.getManagementServerId());
-
     @Inject
     public AccountManager _accountMgr;
     @Inject
@@ -716,6 +714,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     DeploymentPlanningManager _dpMgr;
 
+    LockMasterListener _lockMasterListener;
+
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
     @Inject private KeystoreManager _ksMgr;
@@ -820,7 +820,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public boolean start() {
         s_logger.info("Startup CloudStack management server...");
 
-        _clusterMgr.registerListener(s_lockMasterListener);
+        if ( _lockMasterListener == null ) {
+            _lockMasterListener = new LockMasterListener(ManagementServerNode.getManagementServerId());
+        }
+
+        _clusterMgr.registerListener(_lockMasterListener);
 
         enableAdminUser("password");
         return true;
@@ -3880,5 +3884,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     public void setStoragePoolAllocators(List<StoragePoolAllocator> storagePoolAllocators) {
         this._storagePoolAllocators = storagePoolAllocators;
+    }
+
+    public LockMasterListener getLockMasterListener() {
+        return _lockMasterListener;
+    }
+
+    public void setLockMasterListener(LockMasterListener lockMasterListener) {
+        this._lockMasterListener = lockMasterListener;
     }
 }
