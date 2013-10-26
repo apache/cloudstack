@@ -60,7 +60,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     private DataStoreRole dataStoreRole;
 
     @Column(name = GenericDaoBase.CREATED_COLUMN)
-    private final Date created = null;
+    private Date created = null;
 
     @Column(name = "last_updated")
     @Temporal(value = TemporalType.TIMESTAMP)
