@@ -24,5 +24,5 @@ public interface VMSnapshotStrategy {
     VMSnapshot takeVMSnapshot(VMSnapshot vmSnapshot);
     boolean deleteVMSnapshot(VMSnapshot vmSnapshot);
     boolean revertVMSnapshot(VMSnapshot vmSnapshot);
-    boolean canHandle(VMSnapshot vmSnapshot);
+    StrategyPriority canHandle(VMSnapshot vmSnapshot);
 }

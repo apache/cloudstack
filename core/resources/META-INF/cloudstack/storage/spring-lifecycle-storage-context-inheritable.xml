@@ -64,6 +64,12 @@
     </bean>
 
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
+        <property name="registry" ref="vmSnapshotStrategiesRegistry" />
+        <property name="typeClass"
+            value="org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy" />
+    </bean>
+
+    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
         <property name="registry" ref="dataMotionStrategiesRegistry" />
         <property name="typeClass"
             value="org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy" />

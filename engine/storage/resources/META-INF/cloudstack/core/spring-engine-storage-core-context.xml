@@ -63,6 +63,7 @@
     <bean id="storageStrategyFactoryImpl" class="org.apache.cloudstack.storage.helper.StorageStrategyFactoryImpl" >
         <property name="dataMotionStrategies" value="#{dataMotionStrategiesRegistry.registered}" />
         <property name="snapshotStrategies" value="#{snapshotStrategiesRegistry.registered}" />
+        <property name="vmSnapshotStrategies" value="#{vmSnapshotStrategiesRegistry.registered}" />
     </bean>
 
 </beans>

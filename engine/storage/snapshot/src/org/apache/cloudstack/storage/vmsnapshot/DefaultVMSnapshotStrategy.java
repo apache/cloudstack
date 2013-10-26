@@ -24,6 +24,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -364,7 +365,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     }
 
     @Override
-    public boolean canHandle(VMSnapshot vmSnapshot) {
-        return true;
+    public StrategyPriority canHandle(VMSnapshot vmSnapshot) {
+        return StrategyPriority.DEFAULT;
     }
 }
