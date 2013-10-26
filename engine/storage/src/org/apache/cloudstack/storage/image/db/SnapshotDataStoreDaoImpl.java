@@ -250,12 +250,13 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     public void duplicateCacheRecordsOnRegionStore(long storeId) {
         // find all records on image cache
-        SearchCriteria<SnapshotDataStoreVO> sc = cacheSearch.create();
-        sc.setParameters("store_id", storeId);
+        SearchCriteria<SnapshotDataStoreVO> sc = storeSnapshotSearch.create();
+        sc.setParameters("store_role", DataStoreRole.ImageCache);
         sc.setParameters("destroyed", false);
         List<SnapshotDataStoreVO> snapshots = listBy(sc);
         // create an entry for each record, but with empty install path since the content is not yet on region-wide store yet
         if (snapshots != null) {
+            s_logger.info("Duplicate " + snapshots.size() + " snapshot cache store records to region store");
             for (SnapshotDataStoreVO snap : snapshots) {
                 SnapshotDataStoreVO ss = new SnapshotDataStoreVO();
                 ss.setSnapshotId(snap.getId());
@@ -279,6 +280,21 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         sc.setParameters("snapshot_id", snapshotId);
         sc.setParameters("store_role", DataStoreRole.ImageCache);
         return search(sc, null);
+    }
+
+    @Override
+    public void updateStoreRoleToCache(long storeId) {
+        SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("destroyed", false);
+        List<SnapshotDataStoreVO> snaps = listBy(sc);
+        if (snaps != null) {
+            s_logger.info("Update to cache store role for " + snaps.size() + " entries in snapshot_store_ref");
+            for (SnapshotDataStoreVO snap : snaps) {
+                snap.setRole(DataStoreRole.ImageCache);
+                update(snap.getId(), snap);
+            }
+        }
     }
 
 }

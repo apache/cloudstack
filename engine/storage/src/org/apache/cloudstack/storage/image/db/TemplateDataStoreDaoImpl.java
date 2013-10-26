@@ -376,12 +376,13 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     @Override
     public void duplicateCacheRecordsOnRegionStore(long storeId) {
         // find all records on image cache
-        SearchCriteria<TemplateDataStoreVO> sc = cacheSearch.create();
-        sc.setParameters("store_id", storeId);
+        SearchCriteria<TemplateDataStoreVO> sc = templateRoleSearch.create();
+        sc.setParameters("store_role", DataStoreRole.ImageCache);
         sc.setParameters("destroyed", false);
         List<TemplateDataStoreVO> tmpls = listBy(sc);
         // create an entry for each record, but with empty install path since the content is not yet on region-wide store yet
         if (tmpls != null) {
+            s_logger.info("Duplicate " + tmpls.size() + " template cache store records to region store");
             for (TemplateDataStoreVO tmpl : tmpls) {
                 TemplateDataStoreVO ts = new TemplateDataStoreVO();
                 ts.setTemplateId(tmpl.getTemplateId());
@@ -413,8 +414,24 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
             }
 
         }
+    }
 
+
+    @Override
+    public void updateStoreRoleToCachce(long storeId) {
+        SearchCriteria<TemplateDataStoreVO> sc = storeSearch.create();
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("destroyed", false);
+        List<TemplateDataStoreVO> tmpls = listBy(sc);
+        if (tmpls != null) {
+            s_logger.info("Update to cache store role for " + tmpls.size() + " entries in template_store_ref");
+            for (TemplateDataStoreVO tmpl : tmpls) {
+                tmpl.setDataStoreRole(DataStoreRole.ImageCache);
+                update(tmpl.getId(), tmpl);
+            }
+        }
 
     }
+
 
 }

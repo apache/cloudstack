@@ -16,16 +16,20 @@
 // under the License.
 package org.apache.cloudstack.storage.image.db;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
@@ -46,6 +50,9 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     private SearchBuilder<VolumeDataStoreVO> storeSearch;
     private SearchBuilder<VolumeDataStoreVO> cacheSearch;
     private SearchBuilder<VolumeDataStoreVO> storeVolumeSearch;
+    
+    @Inject
+    DataStoreManager storeMgr;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -191,12 +198,18 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     @Override
     public void duplicateCacheRecordsOnRegionStore(long storeId) {
         // find all records on image cache
-        SearchCriteria<VolumeDataStoreVO> sc = cacheSearch.create();
-        sc.setParameters("store_id", storeId);
-        sc.setParameters("destroyed", false);
-        List<VolumeDataStoreVO> vols = listBy(sc);
+        List<DataStore> cacheStores = storeMgr.listImageCacheStores();
+        if (cacheStores == null || cacheStores.size() == 0) {
+            return;
+        }
+        List<VolumeDataStoreVO> vols = new ArrayList<VolumeDataStoreVO>();
+        for (DataStore store : cacheStores) {
+            // check if the volume is stored there
+            vols.addAll(listByStoreId(store.getId()));
+        }
         // create an entry for each record, but with empty install path since the content is not yet on region-wide store yet
         if (vols != null) {
+            s_logger.info("Duplicate " + vols.size() + " volume cache store records to region store");
             for (VolumeDataStoreVO vol : vols) {
                 VolumeDataStoreVO vs = new VolumeDataStoreVO();
                 vs.setVolumeId(vol.getId());

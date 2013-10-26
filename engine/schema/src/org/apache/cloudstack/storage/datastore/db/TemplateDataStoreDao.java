@@ -68,4 +68,6 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
     TemplateDataStoreVO findReadyOnCache(long templateId);
 
     List<TemplateDataStoreVO> listOnCache(long templateId);
+
+    void updateStoreRoleToCachce(long storeId);
 }

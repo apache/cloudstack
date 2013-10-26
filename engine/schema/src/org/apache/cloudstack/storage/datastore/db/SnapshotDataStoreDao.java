@@ -48,4 +48,6 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
     void deleteSnapshotRecordsOnPrimary();
 
     List<SnapshotDataStoreVO> listOnCache(long snapshotId);
+
+    void updateStoreRoleToCache(long storeId);
 }
