@@ -155,6 +155,28 @@ namespace ServerResource.Tests
         [Fact]
         public void TestCreateCommand()
         {
+            DirectoryInfo localStorePath = new DirectoryInfo(testLocalStorePath);
+            if (!localStorePath.Exists)
+            {
+                try
+                {
+                    localStorePath.Create();
+                }
+                catch (System.IO.IOException ex)
+                {
+                    throw new NotImplementedException("Need to be able to create the folder " + localStorePath.FullName + " failed due to " + ex.Message);
+                }
+            }
+
+            FileInfo sampleTemplateFile = new FileInfo(Path.Combine(testLocalStorePath, testSampleTemplateUUID));
+            if (!sampleTemplateFile.Exists)
+            {
+                //Create a file to write to.
+                using (StreamWriter sw = sampleTemplateFile.CreateText())
+                {
+                    sw.WriteLine("This is fake template file for test");
+                }
+            }
             var counter = 0;
             wmiCalls.When(x => x.CreateDynamicVirtualHardDisk(Arg.Any<ulong>(), Arg.Any<String>())).Do(x => counter++);
             // TODO: Need sample to update the test.
@@ -188,6 +210,7 @@ namespace ServerResource.Tests
             FileInfo newFile = new FileInfo((string)ans.volume.path);
             Assert.True(newFile.Length > 0, "The new file should have a size greater than zero");
             newFile.Delete();
+            sampleTemplateFile.Delete();
         }
 
         /// <summary>
