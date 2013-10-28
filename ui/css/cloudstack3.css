@@ -63,7 +63,7 @@ body.install-wizard {
 
 #main-area {
   width: 1024px;
-  height: 100%;
+  height: 700px;
   margin: auto;
   border: 1px solid #D4D4D4;
   /*+box-shadow:0px -5px 11px #B7B7B7;*/
@@ -76,7 +76,7 @@ body.install-wizard {
 
 #container {
   /*[empty]width:;*/
-  height: 783px;
+  height: 700px;
   margin: auto;
   position: relative;
 }
@@ -1190,9 +1190,8 @@ div.notification.corner-alert:hover div.message span {
 div.panel div.list-view {
   overflow: auto;
   overflow-x: hidden;
-  height: 668px;
+  height: 632px;
   margin-top: 30px;
-  border-bottom: 1px solid #E7E7E7;
 }
 
 .detail-view div.list-view {
@@ -2420,8 +2419,7 @@ div.detail-group.actions td {
 }
 
 #navigation ul {
-  border-right: 1px solid #CECCCC;
-  height: 100%;
+  height: 700px;
   padding-top: 29px;
 }
 
@@ -2513,7 +2511,6 @@ div.detail-group.actions td {
 #navigation ul li.last {
   background-repeat: repeat;
   background-position: 0px 0px;
-  height: 57px;
   /*[empty]color:;*/
 }
 
@@ -2566,7 +2563,6 @@ div.detail-group.actions td {
 
 #navigation ul li.last.active,
 #navigation ul li.last:hover {
-  height: 52px;
 }
 
 /*Navigation icons*/
@@ -2635,6 +2631,7 @@ div.detail-group.actions td {
 /*Browser*/
 #browser {
   width: 794px;
+  height: 700px;
   max-width: 794px;
   position: relative;
   float: left;
@@ -2650,10 +2647,11 @@ div.detail-group.actions td {
 }
 
 #browser div.panel {
-  height: 698px;
-  background: #F7F7F7;
+  height: 100%;
+  background: #FFFFFF;
   border-right: 1px solid #A5A5A5;
   overflow: visible;
+  background-color: #F7F7F7;
 }
 
 #browser div.panel.panel-highlight-wrapper {
