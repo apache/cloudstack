@@ -16,13 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.db;
 
-import java.util.Map;
+import com.cloud.dc.dao.ResourceDetailDao;
 
-import com.cloud.utils.db.GenericDao;
-
-public interface PrimaryDataStoreDetailsDao extends GenericDao<PrimaryDataStoreDetailVO, Long> {
-
-    void update(long poolId, Map<String, String> details);
-
-    Map<String, String> getDetails(long poolId);
+public interface PrimaryDataStoreDetailsDao extends ResourceDetailDao<PrimaryDataStoreDetailVO> {
 }

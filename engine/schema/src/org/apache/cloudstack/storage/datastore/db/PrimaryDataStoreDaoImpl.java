@@ -28,6 +28,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.ScopeType;
@@ -43,6 +45,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+
 @Local(value = { PrimaryDataStoreDao.class })
 @DB()
 public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long> implements PrimaryDataStoreDao {
@@ -52,8 +55,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     protected final SearchBuilder<StoragePoolVO> DeleteLvmSearch;
     protected final GenericSearchBuilder<StoragePoolVO, Long> StatusCountSearch;
 
-    @Inject
-    protected StoragePoolDetailsDao _detailsDao;
+    @Inject protected StoragePoolDetailsDao _detailsDao;
 
     private final String DetailsSqlPrefix = "SELECT storage_pool.* from storage_pool LEFT JOIN storage_pool_details ON storage_pool.id = storage_pool_details.pool_id WHERE storage_pool.removed is null and storage_pool.status = 'Up' and storage_pool.data_center_id = ? and (storage_pool.pod_id = ? or storage_pool.pod_id is null) and storage_pool.scope = ? and (";
     private final String DetailsSqlSuffix = ") GROUP BY storage_pool_details.pool_id HAVING COUNT(storage_pool_details.name) >= ?";
@@ -380,13 +382,17 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     @Override
     public void updateDetails(long poolId, Map<String, String> details) {
         if (details != null) {
-            _detailsDao.update(poolId, details);
+            List<StoragePoolDetailVO> detailsVO = new ArrayList<StoragePoolDetailVO>();
+            for (String key : details.keySet()) {
+                detailsVO.add(new StoragePoolDetailVO(poolId, key, details.get(key)));
+            }
+            _detailsDao.addDetails(detailsVO);
         }
     }
 
     @Override
     public Map<String, String> getDetails(long poolId) {
-        return _detailsDao.getDetails(poolId);
+        return _detailsDao.findDetails(poolId);
     }
 
     @Override

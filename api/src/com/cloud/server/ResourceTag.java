@@ -43,7 +43,8 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         VMSnapshot (true, false),
         RemoteAccessVpn (true, false),
         Zone (false, true),
-        ServiceOffering (false, true);
+        ServiceOffering (false, true),
+        Storage(false, true);
         
         ResourceObjectType(boolean resourceTagsSupport, boolean resourceMetadataSupport) {
             this.resourceTagsSupport = resourceTagsSupport;

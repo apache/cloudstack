@@ -26,5 +26,7 @@ import com.cloud.storage.VolumeDetailVO;
 @Component
 @Local(value=VolumeDetailsDao.class)
 public class VolumeDetailsDaoImpl extends ResourceDetailDaoBase<VolumeDetailVO> implements VolumeDetailsDao {
-
+    public VolumeDetailsDaoImpl() {
+        
+    }
 }

@@ -26,5 +26,7 @@ import com.cloud.vm.UserVmDetailVO;
 @Component
 @Local(value=UserVmDetailsDao.class)
 public class UserVmDetailsDaoImpl extends ResourceDetailDaoBase<UserVmDetailVO> implements UserVmDetailsDao {
-
+    public UserVmDetailsDaoImpl() {
+        
+    }
 }

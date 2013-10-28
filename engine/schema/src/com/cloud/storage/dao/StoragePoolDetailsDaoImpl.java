@@ -16,10 +16,6 @@
 // under the License.
 package com.cloud.storage.dao;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import javax.ejb.Local;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -28,60 +24,12 @@ import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.dc.dao.ResourceDetailDaoBase;
 
 @Local(value = StoragePoolDetailsDao.class)
-public class StoragePoolDetailsDaoImpl extends GenericDaoBase<StoragePoolDetailVO, Long> implements StoragePoolDetailsDao, ScopedConfigStorage {
+public class StoragePoolDetailsDaoImpl extends ResourceDetailDaoBase<StoragePoolDetailVO> implements StoragePoolDetailsDao, ScopedConfigStorage {
 
-    protected final SearchBuilder<StoragePoolDetailVO> PoolSearch;
-
-    protected StoragePoolDetailsDaoImpl() {
-        super();
-        PoolSearch = createSearchBuilder();
-        PoolSearch.and("pool", PoolSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
-        PoolSearch.and("name", PoolSearch.entity().getName(), SearchCriteria.Op.EQ);
-        PoolSearch.done();
-    }
-
-    @Override
-    public void update(long poolId, Map<String, String> details) {
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        SearchCriteria<StoragePoolDetailVO> sc = PoolSearch.create();
-        sc.setParameters("pool", poolId);
-
-        txn.start();
-        expunge(sc);
-        for (Map.Entry<String, String> entry : details.entrySet()) {
-            StoragePoolDetailVO detail = new StoragePoolDetailVO(poolId, entry.getKey(), entry.getValue());
-            persist(detail);
-        }
-        txn.commit();
-    }
-
-    @Override
-    public Map<String, String> getDetails(long poolId) {
-        SearchCriteria<StoragePoolDetailVO> sc = PoolSearch.create();
-        sc.setParameters("pool", poolId);
-
-        List<StoragePoolDetailVO> details = listBy(sc);
-        Map<String, String> detailsMap = new HashMap<String, String>();
-        for (StoragePoolDetailVO detail : details) {
-            detailsMap.put(detail.getName(), detail.getValue());
-        }
-
-        return detailsMap;
-    }
-
-    @Override
-    public StoragePoolDetailVO findDetail(long poolId, String name) {
-        SearchCriteria<StoragePoolDetailVO> sc = PoolSearch.create();
-        sc.setParameters("pool", poolId);
-        sc.setParameters("name", name);
-
-        return findOneIncludingRemovedBy(sc);
+    public StoragePoolDetailsDaoImpl() {
     }
 
     @Override

@@ -23,16 +23,18 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.ResourceDetail;
+
 @Entity
 @Table(name = "storage_pool_details")
-public class PrimaryDataStoreDetailVO {
+public class PrimaryDataStoreDetailVO implements ResourceDetail{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     long id;
 
     @Column(name = "pool_id")
-    long poolId;
+    long resourceId;
 
     @Column(name = "name")
     String name;
@@ -41,39 +43,31 @@ public class PrimaryDataStoreDetailVO {
     String value;
 
     public PrimaryDataStoreDetailVO(long poolId, String name, String value) {
-        this.poolId = poolId;
+        this.resourceId = poolId;
         this.name = name;
         this.value = value;
     }
+    
+    protected PrimaryDataStoreDetailVO() {
+    }
 
+    @Override
     public long getId() {
         return id;
     }
 
-    public long getPoolId() {
-        return poolId;
+    @Override
+    public long getResourceId() {
+        return resourceId;
     }
 
-    public void setPoolId(long poolId) {
-        this.poolId = poolId;
-    }
-
+    @Override
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
+    @Override
     public String getValue() {
         return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
-    }
-
-    protected PrimaryDataStoreDetailVO() {
     }
 }

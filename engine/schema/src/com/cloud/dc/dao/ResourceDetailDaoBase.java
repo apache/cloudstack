@@ -103,6 +103,9 @@ public abstract class ResourceDetailDaoBase<R extends ResourceDetail> extends Ge
     
 
     public void addDetail(R detail) {
+        if (detail == null) {
+            return;
+        }
         R existingDetail = findDetail(detail.getResourceId(), detail.getName());
         if (existingDetail != null) {
             remove(existingDetail.getId());

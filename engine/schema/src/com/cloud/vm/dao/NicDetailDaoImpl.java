@@ -26,5 +26,7 @@ import com.cloud.vm.NicDetailVO;
 @Component
 @Local (value={NicDetailDao.class})
 public class NicDetailDaoImpl extends ResourceDetailDaoBase<NicDetailVO> implements NicDetailDao {
-    
+    public NicDetailDaoImpl() {
+        
+    }
 }

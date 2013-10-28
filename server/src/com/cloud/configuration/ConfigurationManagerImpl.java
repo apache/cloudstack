@@ -475,14 +475,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException("unable to find storage pool by id " + resourceId);
                 }
                 StoragePoolDetailVO storagePoolDetailVO = _storagePoolDetailsDao.findDetail(resourceId, name);
-                if (storagePoolDetailVO == null) {
-                    storagePoolDetailVO = new StoragePoolDetailVO(resourceId, name, value);
-                    _storagePoolDetailsDao.persist(storagePoolDetailVO);
-
-                } else {
-                    storagePoolDetailVO.setValue(value);
-                    _storagePoolDetailsDao.update(storagePoolDetailVO.getId(), storagePoolDetailVO);
-                }
+                _storagePoolDetailsDao.addDetail(storagePoolDetailVO);
+                
                 break;
 
             case Account:

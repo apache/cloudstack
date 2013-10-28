@@ -26,6 +26,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ResourceDetail;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -77,6 +79,8 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     VMTemplateDetailsDao _templateDetailsDao;
     @Inject
     ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+    @Inject
+    StoragePoolDetailsDao _storageDetailsDao;
     
     private static Map<ResourceObjectType, ResourceDetailDao<? extends ResourceDetail>> _daoMap= 
             new HashMap<ResourceObjectType, ResourceDetailDao<? extends ResourceDetail>>();
@@ -91,6 +95,8 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         _daoMap.put(ResourceObjectType.Nic, _nicDetailDao);
         _daoMap.put(ResourceObjectType.ServiceOffering, _serviceOfferingDetailsDao);
         _daoMap.put(ResourceObjectType.Zone, _dcDetailsDao);
+        _daoMap.put(ResourceObjectType.Storage, _storageDetailsDao);
+        
         return true;
     }
 
@@ -138,6 +144,10 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
                         detail = new VMTemplateDetailVO(id, key, value);
                     } else if (resourceType == ResourceObjectType.ServiceOffering) {
                         detail = new ServiceOfferingDetailsVO(id, key, value);
+                    } else if (resourceType == ResourceObjectType.Storage) {
+                        detail = new StoragePoolDetailVO(id, key, value);
+                    } else {
+                        throw new UnsupportedOperationException("ResourceType " + resourceType + " doesn't support metadata");
                     }
                     newDetailDaoHelper.addDetail(detail);
                         
@@ -174,6 +184,9 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         
         private void addDetail(ResourceDetail detail) {
             ResourceDetailDao<ResourceDetail> dao = (ResourceDetailDao<ResourceDetail>)_daoMap.get(resourceType);
+            if (dao == null) {
+                throw new UnsupportedOperationException("ResourceType " + resourceType + " doesn't support metadata");
+            }
             dao.addDetail(detail);   
         }
         
