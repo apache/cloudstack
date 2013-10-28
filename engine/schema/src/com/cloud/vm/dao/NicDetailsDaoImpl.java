@@ -20,12 +20,12 @@ import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
-import com.cloud.dc.dao.ResourceDetailDaoBase;
+import com.cloud.dc.dao.ResourceDetailsDaoBase;
 import com.cloud.vm.NicDetailVO;
 
 @Component
-@Local (value={NicDetailDao.class})
-public class NicDetailDaoImpl extends ResourceDetailDaoBase<NicDetailVO> implements NicDetailDao {
+@Local (value={NicDetailsDao.class})
+public class NicDetailsDaoImpl extends ResourceDetailsDaoBase<NicDetailVO> implements NicDetailsDao {
 
     @Override
     public NicDetailVO createDetail(long resourceId, String key, String value) {

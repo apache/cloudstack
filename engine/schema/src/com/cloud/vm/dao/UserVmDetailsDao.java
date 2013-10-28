@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.vm.dao;
 
-import com.cloud.dc.dao.ResourceDetailDao;
+import com.cloud.dc.dao.ResourceDetailsDao;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.UserVmDetailVO;
 
-public interface UserVmDetailsDao extends GenericDao<UserVmDetailVO, Long>, ResourceDetailDao<UserVmDetailVO> {
+public interface UserVmDetailsDao extends GenericDao<UserVmDetailVO, Long>, ResourceDetailsDao<UserVmDetailVO> {
 }

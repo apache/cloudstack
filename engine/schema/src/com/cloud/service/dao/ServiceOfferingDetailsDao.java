@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.service.dao;
 
-import com.cloud.dc.dao.ResourceDetailDao;
+import com.cloud.dc.dao.ResourceDetailsDao;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface ServiceOfferingDetailsDao extends GenericDao<ServiceOfferingDetailsVO, Long>, ResourceDetailDao<ServiceOfferingDetailsVO> {
+public interface ServiceOfferingDetailsDao extends GenericDao<ServiceOfferingDetailsVO, Long>, ResourceDetailsDao<ServiceOfferingDetailsVO> {
 }

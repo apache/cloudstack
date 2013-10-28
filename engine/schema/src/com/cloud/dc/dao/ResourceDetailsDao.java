@@ -16,33 +16,27 @@
 // under the License.
 package com.cloud.dc.dao;
 
-import javax.ejb.Local;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.ResourceDetail;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigKey.Scope;
-import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 
-import com.cloud.dc.DataCenterDetailVO;
+import com.cloud.utils.db.GenericDao;
 
-@Local(value=DataCenterDetailsDao.class)
-public class DataCenterDetailsDaoImpl extends ResourceDetailsDaoBase<DataCenterDetailVO> implements DataCenterDetailsDao, ScopedConfigStorage {
+public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao<R, Long>{
+    public R findDetail(long resourceId, String name);
 
+    public Map<String, String> findDetails(long resourceId);
+
+    public List<R> findDetailsList(long resourceId);
+
+    public void removeDetails(long resourceId);
+
+    public void removeDetail(long resourceId, String key);
+
+    public void addDetails(List<R> details);
     
-    @Override
-    public Scope getScope() {
-        return ConfigKey.Scope.Zone;
-    }
+    public void addDetail(R detail);
     
-    @Override
-    public String getConfigValue(long id, ConfigKey<?> key) {
-        ResourceDetail vo = findDetail(id, key.key());
-        return vo == null ? null : vo.getValue();
-    }
-
-    @Override
-    public DataCenterDetailVO createDetail(long resourceId, String key, String value) {
-        return new DataCenterDetailVO(resourceId, key, value);
-    }
-
+    public R createDetail(long resourceId, String key, String value);
 }

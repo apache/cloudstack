@@ -16,10 +16,10 @@
 // under the License.
 package com.cloud.storage.dao;
 
-import com.cloud.dc.dao.ResourceDetailDao;
+import com.cloud.dc.dao.ResourceDetailsDao;
 import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface VMTemplateDetailsDao extends GenericDao<VMTemplateDetailVO, Long>, ResourceDetailDao<VMTemplateDetailVO> {
+public interface VMTemplateDetailsDao extends GenericDao<VMTemplateDetailVO, Long>, ResourceDetailsDao<VMTemplateDetailVO> {
   
 }

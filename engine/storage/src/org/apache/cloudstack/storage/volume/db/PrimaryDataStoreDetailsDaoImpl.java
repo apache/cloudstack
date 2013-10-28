@@ -20,10 +20,10 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDetailVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDetailsDao;
 import org.springframework.stereotype.Component;
 
-import com.cloud.dc.dao.ResourceDetailDaoBase;
+import com.cloud.dc.dao.ResourceDetailsDaoBase;
 
 @Component
-public class PrimaryDataStoreDetailsDaoImpl extends ResourceDetailDaoBase<PrimaryDataStoreDetailVO> implements
+public class PrimaryDataStoreDetailsDaoImpl extends ResourceDetailsDaoBase<PrimaryDataStoreDetailVO> implements
         PrimaryDataStoreDetailsDao {
 
     @Override

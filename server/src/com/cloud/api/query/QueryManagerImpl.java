@@ -189,7 +189,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.NicDetailDao;
+import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
@@ -295,7 +295,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     private VolumeDetailsDao _volumeDetailDao;
 
     @Inject
-    private NicDetailDao _nicDetailDao;
+    private NicDetailsDao _nicDetailDao;
 
     @Inject
     UserVmDetailsDao _userVmDetailDao;

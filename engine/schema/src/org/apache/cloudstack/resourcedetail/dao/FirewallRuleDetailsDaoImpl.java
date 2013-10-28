@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -14,11 +14,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm.dao;
+package org.apache.cloudstack.resourcedetail.dao;
 
-import com.cloud.dc.dao.ResourceDetailDao;
-import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.NicDetailVO;
+import javax.ejb.Local;
 
-public interface NicDetailDao extends GenericDao<NicDetailVO, Long>, ResourceDetailDao<NicDetailVO> {
+import org.apache.cloudstack.resourcedetail.FirewallRuleDetailVO;
+import org.springframework.stereotype.Component;
+
+import com.cloud.dc.dao.ResourceDetailsDaoBase;
+
+@Component
+@Local (value={FirewallRuleDetailsDao.class})
+public class FirewallRuleDetailsDaoImpl extends ResourceDetailsDaoBase<FirewallRuleDetailVO> implements FirewallRuleDetailsDao {
+
+    @Override
+    public FirewallRuleDetailVO createDetail(long resourceId, String key, String value) {
+        return new FirewallRuleDetailVO(resourceId, key, value);
+    }
 }

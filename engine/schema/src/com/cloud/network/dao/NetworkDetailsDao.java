@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.network.dao;
 
-import com.cloud.dc.dao.ResourceDetailDao;
+import com.cloud.dc.dao.ResourceDetailsDao;
 import com.cloud.utils.db.GenericDao;
 
-public interface NetworkDetailsDao extends GenericDao<NetworkDetailVO, Long>, ResourceDetailDao<NetworkDetailVO> {
+public interface NetworkDetailsDao extends GenericDao<NetworkDetailVO, Long>, ResourceDetailsDao<NetworkDetailVO> {
 
 }

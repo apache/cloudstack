@@ -24,10 +24,10 @@ import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 
-import com.cloud.dc.dao.ResourceDetailDaoBase;
+import com.cloud.dc.dao.ResourceDetailsDaoBase;
 
 @Local(value = StoragePoolDetailsDao.class)
-public class StoragePoolDetailsDaoImpl extends ResourceDetailDaoBase<StoragePoolDetailVO> implements StoragePoolDetailsDao, ScopedConfigStorage {
+public class StoragePoolDetailsDaoImpl extends ResourceDetailsDaoBase<StoragePoolDetailVO> implements StoragePoolDetailsDao, ScopedConfigStorage {
 
     public StoragePoolDetailsDaoImpl() {
     }

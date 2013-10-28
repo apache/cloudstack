@@ -14,10 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.storage.datastore.db;
+package org.apache.cloudstack.resourcedetail.dao;
+
+import org.apache.cloudstack.resourcedetail.FirewallRuleDetailVO;
 
 import com.cloud.dc.dao.ResourceDetailsDao;
 import com.cloud.utils.db.GenericDao;
 
-public interface StoragePoolDetailsDao extends GenericDao<StoragePoolDetailVO, Long>, ResourceDetailsDao<StoragePoolDetailVO> {
+public interface FirewallRuleDetailsDao extends GenericDao<FirewallRuleDetailVO, Long>, ResourceDetailsDao<FirewallRuleDetailVO>{
+
 }

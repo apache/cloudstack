@@ -26,12 +26,13 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ResourceDetail;
+import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.dao.DataCenterDetailsDao;
-import com.cloud.dc.dao.ResourceDetailDao;
+import com.cloud.dc.dao.ResourceDetailsDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -47,7 +48,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
-import com.cloud.vm.dao.NicDetailDao;
+import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
 
@@ -58,7 +59,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     @Inject
     VolumeDetailsDao _volumeDetailDao;
     @Inject
-    NicDetailDao _nicDetailDao;
+    NicDetailsDao _nicDetailDao;
     @Inject
     UserVmDetailsDao _userVmDetailDao;
     @Inject
@@ -73,9 +74,11 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     StoragePoolDetailsDao _storageDetailsDao;
+    @Inject
+    FirewallRuleDetailsDao _firewallRuleDetailsDao;
     
-    private static Map<ResourceObjectType, ResourceDetailDao<? extends ResourceDetail>> _daoMap= 
-            new HashMap<ResourceObjectType, ResourceDetailDao<? extends ResourceDetail>>();
+    private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> _daoMap= 
+            new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
     
 
     @Override
@@ -88,6 +91,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         _daoMap.put(ResourceObjectType.ServiceOffering, _serviceOfferingDetailsDao);
         _daoMap.put(ResourceObjectType.Zone, _dcDetailsDao);
         _daoMap.put(ResourceObjectType.Storage, _storageDetailsDao);
+        _daoMap.put(ResourceObjectType.FirewallRule, _firewallRuleDetailsDao);
         
         return true;
     }
@@ -148,18 +152,18 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
 
     private class DetailDaoHelper {
         private ResourceObjectType resourceType;
-        private ResourceDetailDao<? super ResourceDetail> dao;
+        private ResourceDetailsDao<? super ResourceDetail> dao;
         
         private DetailDaoHelper(ResourceObjectType resourceType) {
             if (!resourceType.resourceMetadataSupport()) {
                 throw new UnsupportedOperationException("ResourceType " + resourceType + " doesn't support metadata");
             }
             this.resourceType = resourceType;
-            ResourceDetailDao<?> dao = _daoMap.get(resourceType);
+            ResourceDetailsDao<?> dao = _daoMap.get(resourceType);
             if (dao == null) {
                 throw new UnsupportedOperationException("ResourceType " + resourceType + " doesn't support metadata");
             }
-            this.dao = (ResourceDetailDao)_daoMap.get(resourceType);
+            this.dao = (ResourceDetailsDao)_daoMap.get(resourceType);
         }
         
         private void addDetail(ResourceDetail detail) {

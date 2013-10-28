@@ -37,7 +37,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.vm.dao.NicDetailDao;
+import com.cloud.vm.dao.NicDetailsDao;
 
 
 public class ResourceMetaDataManagerTest {
@@ -47,7 +47,7 @@ public class ResourceMetaDataManagerTest {
     @Spy ResourceMetaDataManagerImpl _resourceMetaDataMgr = new ResourceMetaDataManagerImpl();
     @Mock VolumeDetailsDao _volumeDetailDao;
     @Mock
-    NicDetailDao _nicDetailDao;
+    NicDetailsDao _nicDetailDao;
     @Mock TaggedResourceService _taggedResourceMgr;
 
     @Before

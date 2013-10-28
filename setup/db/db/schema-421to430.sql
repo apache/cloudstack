@@ -458,3 +458,16 @@ CREATE VIEW `cloud`.`storage_pool_view` AS
         `cloud`.`async_job` ON async_job.instance_id = storage_pool.id
             and async_job.instance_type = 'StoragePool'
             and async_job.job_status = 0;
+            
+            
+            DROP TABLE IF EXISTS `cloud`.`vm_snapshot_details`;
+            
+CREATE TABLE `cloud`.`firewall_rule_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `firewall_rule_id` bigint unsigned NOT NULL COMMENT 'firewall rule id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  `display_detail` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_firewall_rule_details__firewall_rule_id` FOREIGN KEY `fk_firewall_rule_details__firewall_rule_id`(`firewall_rule_id`) REFERENCES `firewall_rules`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

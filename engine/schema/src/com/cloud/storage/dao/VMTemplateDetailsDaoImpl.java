@@ -20,12 +20,12 @@ import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
-import com.cloud.dc.dao.ResourceDetailDaoBase;
+import com.cloud.dc.dao.ResourceDetailsDaoBase;
 import com.cloud.storage.VMTemplateDetailVO;
 
 @Component
 @Local(value = VMTemplateDetailsDao.class)
-public class VMTemplateDetailsDaoImpl extends ResourceDetailDaoBase<VMTemplateDetailVO> implements VMTemplateDetailsDao {
+public class VMTemplateDetailsDaoImpl extends ResourceDetailsDaoBase<VMTemplateDetailVO> implements VMTemplateDetailsDao {
 
     @Override
     public VMTemplateDetailVO createDetail(long resourceId, String key, String value) {
