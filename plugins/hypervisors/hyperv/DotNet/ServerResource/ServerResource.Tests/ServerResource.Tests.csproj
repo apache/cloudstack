@@ -96,7 +96,7 @@
   <ItemGroup>
     <Compile Include="HypervResourceController1Test.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="HypervResourceControllerTest.cs" />
+    <!--<Compile Include="HypervResourceControllerTest.cs" /> -->
   </ItemGroup>
   <ItemGroup>
     <Content Include="App.config">
