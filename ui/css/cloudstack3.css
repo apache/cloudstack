@@ -1590,10 +1590,13 @@ div.list-view td.state.off span {
   min-width: 91px;
   text-align: center;
   font-size: 11px;
-  margin-right: 1px;
+  margin-right: 12px;
   color: #4E6070;
   text-decoration: none;
-  background: #DEE3E5;
+  /*+placement:shift 0px 2px;*/
+  position: relative;
+  left: 0px;
+  top: 2px;
 }
 
 .ui-tabs li {
@@ -1601,10 +1604,13 @@ div.list-view td.state.off span {
 }
 
 .ui-tabs ul li.ui-state-default a {
-  border-right: 1px solid #97AFC5;
-  border-top: 2px solid #D6DCDE;
-  background: url(../images/bg-details-tab-gradient.png);
-  padding-bottom: 11px;
+  padding-bottom: 12px;
+  border: 1px solid #E2DDDD;
+  /*+border-radius:4px 4px 0 0;*/
+  -moz-border-radius: 4px 4px 0 0;
+  -webkit-border-radius: 4px 4px 0 0;
+  -khtml-border-radius: 4px 4px 0 0;
+  border-radius: 4px 4px 0 0;
 }
 
 .project-view .ui-tabs ul li.ui-state-default a {
@@ -1625,7 +1631,8 @@ div.list-view td.state.off span {
 }
 
 .ui-tabs ul li.ui-state-hover a {
-  background: url(../images/gradients.png) -8px -1413px;
+  text-decoration: underline;
+  color: #000000;
 }
 
 .ui-tabs ul li.ui-state-active {
@@ -1633,9 +1640,7 @@ div.list-view td.state.off span {
 }
 
 .ui-tabs ul li.ui-state-active a {
-  border-right: 1px solid #D6DCDE;
   background: #FFFFFF;
-  border-left: none;
   padding-bottom: 12px;
 }
 
@@ -1664,26 +1669,17 @@ div.list-view td.state.off span {
 
 .ui-tabs li.ui-state-active.first a,
 .ui-tabs li.ui-state-default.first a {
-  border-left: 1px solid #E2DDDD;
-  /*+placement:shift 0px 0px;*/
-  position: relative;
-  left: 0px;
-  top: 0px;
-  /*+border-radius:4px 0 0;*/
-  -moz-border-radius: 4px 0 0;
-  -webkit-border-radius: 4px 0 0;
-  -khtml-border-radius: 4px 0 0;
-  border-radius: 4px 0 0;
-  border-radius: 4px 0 0 0;
+  /*+border-radius:4px 4px 0 0;*/
+  -moz-border-radius: 4px 4px 0 0;
+  -webkit-border-radius: 4px 4px 0 0;
+  -khtml-border-radius: 4px 4px 0 0;
+  border-radius: 4px 4px 0 0;
+  border: 1px solid #E2DDDD;
+  border: 1px solid #E2DDDD;
 }
 
 .ui-tabs li.ui-state-active.last a,
 .ui-tabs li.ui-state-default.last a {
-  /*+border-radius:0 4px 0 0;*/
-  -moz-border-radius: 0 4px 0 0;
-  -webkit-border-radius: 0 4px 0 0;
-  -khtml-border-radius: 0 4px 0 0;
-  border-radius: 0 4px 0 0;
 }
 
 .ui-tabs li.ui-state-active.first.last a,
@@ -1727,8 +1723,13 @@ div.list-view td.state.off span {
 .detail-group table {
   width: 96%;
   font-size: 12px;
-  border: 1px solid #CFC9C9;
-  background: #E4E6E7;
+  /*+border-radius:5px;*/
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -khtml-border-radius: 5px;
+  border-radius: 5px;
+  border-bottom: none;
+  background: #F4F4F4;
   margin-top: 11px;
 }
 
