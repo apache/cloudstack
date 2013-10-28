@@ -83,6 +83,15 @@ def check_tool():
         print "Can not find ipmitool"
         return False
 
+def addInterfaceOption(cmd, args):
+    iface = args.get("interface")
+    if not iface or iface == "default":
+        return cmd
+
+    cmd.insert(0, iface)
+    cmd.insert(0, "-I")
+    return cmd
+
 def ping(args):
     hostname = args.get("hostname")
     usrname = args.get("usrname")
@@ -92,7 +101,7 @@ def ping(args):
         print "No hostname"
         return 1
 
-    o = ipmitool("-H", hostname, "-U", usrname, "-P", password, "chassis", "power", "status")
+    o = ipmitool(*addInterfaceOption(["-H", hostname, "-U", usrname, "-P", password, "chassis", "power", "status"], args))
     if o.ret:
         print o.stderr
         return 1
@@ -114,7 +123,7 @@ def boot_dev(args):
         print "No boot device specified"
         return 1
 
-    o = ipmitool("-H", hostname, "-U", usrname, "-P", password, "chassis", "bootdev", dev)
+    o = ipmitool(*addInterfaceOption(["-H", hostname, "-U", usrname, "-P", password, "chassis", "bootdev", dev], args))
     if o.ret:
         print o.stderr
         return 1
@@ -130,16 +139,16 @@ def reboot(args):
         print "No hostname"
         return 1
 
-    o = ipmitool("-H", hostname, "-U", usrname, "-P", password, "chassis", "power", "status")
+    o = ipmitool(*addInterfaceOption(["-H", hostname, "-U", usrname, "-P", password, "chassis", "power", "status"], args))
     if o.ret:
         print o.stderr
         return 1
     
 
     if "is on" in o.stdout:
-        o = ipmitool("-H", hostname, "-U", usrname, "-P", password, "chassis", "power", "cycle")
+        o = ipmitool(*addInterfaceOption(["-H", hostname, "-U", usrname, "-P", password, "chassis", "power", "cycle"], args))
     else:
-        o = ipmitool("-H", hostname, "-U", usrname, "-P", password, "chassis", "power", "reset")
+        o = ipmitool(*addInterfaceOption(["-H", hostname, "-U", usrname, "-P", password, "chassis", "power", "reset"], args))
         
     if o.ret:
         print o.stderr
@@ -157,7 +166,7 @@ def power(args):
         print "No hostname"
         return 1
 
-    o = ipmitool("-H", hostname, "-U", usrname, "-P", password, "chassis", "power", action)
+    o = ipmitool(*addInterfaceOption(["-H", hostname, "-U", usrname, "-P", password, "chassis", "power", action], args))
     if o.ret:
         print o.stderr
         return 1
@@ -168,7 +177,7 @@ def boot_or_reboot(args):
     hostname = args.get("hostname")
     usrname = args.get("usrname")
     password = args.get("password")
-    o = ipmitool("-H", hostname, "-U", usrname, "-P", password, "chassis", "power", "status")
+    o = ipmitool(*addInterfaceOption(["-H", hostname, "-U", usrname, "-P", password, "chassis", "power", "status"], args))
     if o.ret:
         print o.stderr
         return 1

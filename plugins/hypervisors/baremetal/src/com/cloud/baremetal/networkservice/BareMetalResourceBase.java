@@ -30,6 +30,8 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.*;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.log4j.Logger;
@@ -155,6 +157,14 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 		    _isEchoScAgent = Boolean.valueOf(echoScAgent);
 		}
 
+        String ipmiIface = "default";
+        try {
+            ConfigurationDao configDao = ComponentContext.getComponent(ConfigurationDao.class);
+            ipmiIface = configDao.getValue(Config.BaremetalIpmiLanInterface.key());
+        } catch (Exception e) {
+            s_logger.debug(e.getMessage(), e);
+        }
+
 		String injectScript = "scripts/util/ipmi.py";
 		String scriptPath = Script.findScript("", injectScript);
 		if (scriptPath == null) {
@@ -164,6 +174,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 		_pingCommand = new Script2(pythonPath, s_logger);
 		_pingCommand.add(scriptPath);
 		_pingCommand.add("ping");
+        _pingCommand.add("interface=" + ipmiIface);
 		_pingCommand.add("hostname=" + _ip);
 		_pingCommand.add("usrname=" + _username);
 		_pingCommand.add("password=" + _password, ParamType.PASSWORD);
@@ -171,6 +182,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 		_setPxeBootCommand = new Script2(pythonPath, s_logger);
 		_setPxeBootCommand.add(scriptPath);
 		_setPxeBootCommand.add("boot_dev");
+        _setPxeBootCommand.add("interface=" + ipmiIface);
 		_setPxeBootCommand.add("hostname=" + _ip);
 		_setPxeBootCommand.add("usrname=" + _username);
 		_setPxeBootCommand.add("password=" + _password, ParamType.PASSWORD);
@@ -179,6 +191,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 		_setDiskBootCommand = new Script2(pythonPath, s_logger);
 		_setDiskBootCommand.add(scriptPath);
 		_setDiskBootCommand.add("boot_dev");
+        _setDiskBootCommand.add("interface=" + ipmiIface);
 		_setDiskBootCommand.add("hostname=" + _ip);
 		_setDiskBootCommand.add("usrname=" + _username);
 		_setDiskBootCommand.add("password=" + _password, ParamType.PASSWORD);
@@ -187,6 +200,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 		_rebootCommand = new Script2(pythonPath, s_logger);
 		_rebootCommand.add(scriptPath);
 		_rebootCommand.add("reboot");
+        _rebootCommand.add("interface=" + ipmiIface);
 		_rebootCommand.add("hostname=" + _ip);
 		_rebootCommand.add("usrname=" + _username);
 		_rebootCommand.add("password=" + _password, ParamType.PASSWORD);
@@ -194,6 +208,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 		_getStatusCommand = new Script2(pythonPath, s_logger);
 		_getStatusCommand.add(scriptPath);
 		_getStatusCommand.add("ping");
+        _getStatusCommand.add("interface=" + ipmiIface);
 		_getStatusCommand.add("hostname=" + _ip);
 		_getStatusCommand.add("usrname=" + _username);
 		_getStatusCommand.add("password=" + _password, ParamType.PASSWORD);
@@ -201,6 +216,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 		_powerOnCommand = new Script2(pythonPath, s_logger);
 		_powerOnCommand.add(scriptPath);
 		_powerOnCommand.add("power");
+        _powerOnCommand.add("interface=" + ipmiIface);
 		_powerOnCommand.add("hostname=" + _ip);
 		_powerOnCommand.add("usrname=" + _username);
 		_powerOnCommand.add("password=" + _password, ParamType.PASSWORD);
@@ -209,6 +225,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 		_powerOffCommand = new Script2(pythonPath, s_logger);
 		_powerOffCommand.add(scriptPath);
 		_powerOffCommand.add("power");
+        _powerOffCommand.add("interface=" + ipmiIface);
 		_powerOffCommand.add("hostname=" + _ip);
 		_powerOffCommand.add("usrname=" + _username);
 		_powerOffCommand.add("password=" + _password, ParamType.PASSWORD);
@@ -217,6 +234,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 		_forcePowerOffCommand = new Script2(pythonPath, s_logger);
 		_forcePowerOffCommand.add(scriptPath);
 		_forcePowerOffCommand.add("power");
+        _forcePowerOffCommand.add("interface=" + ipmiIface);
 		_forcePowerOffCommand.add("hostname=" + _ip);
 		_forcePowerOffCommand.add("usrname=" + _username);
 		_forcePowerOffCommand.add("password=" + _password, ParamType.PASSWORD);
@@ -225,6 +243,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 		_bootOrRebootCommand = new Script2(pythonPath, s_logger);
 		_bootOrRebootCommand.add(scriptPath);
 		_bootOrRebootCommand.add("boot_or_reboot");
+        _bootOrRebootCommand.add("interface=" + ipmiIface);
 		_bootOrRebootCommand.add("hostname=" + _ip);
 		_bootOrRebootCommand.add("usrname=" + _username);
 		_bootOrRebootCommand.add("password=" + _password, ParamType.PASSWORD);
