@@ -30,6 +30,7 @@ import urlparse
 import datetime
 from marvin.cloudstackAPI import *
 from marvin.remoteSSHClient import remoteSSHClient
+from marvin.codes import *
 
 
 def restart_mgmt_server(server):
@@ -321,14 +322,14 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
 
 def validateList(inp):
         '''
-        @name: validateList
-        @Description: 1. A utility function to validate
+    @name: validateList
+    @Description: 1. A utility function to validate
                  whether the input passed is a list
-              2. The list is empty or not
+                2. The list is empty or not
               3. If it is list and not empty, return PASS and first element
               4. If not reason for FAIL
-        @Input: Input to be validated
-        @output: List, containing [ Result,FirstElement,Reason ]
+    @Input: Input to be validated
+    @output: List, containing [ Result,FirstElement,Reason ]
                  Ist Argument('Result') : FAIL : If it is not a list
                                           If it is list but empty
                                          PASS : If it is list and not empty
@@ -339,18 +340,18 @@ def validateList(inp):
                                               default to None.
                                               INVALID_INPUT
                                               EMPTY_LIST
-        '''
-        ret = [FAIL, None, None]
-        if inp is None:
-            ret[2] = INVALID_INPUT
-            return ret
-        if not isinstance(inp, list):
-            ret[2] = INVALID_INPUT
-            return ret
-        if len(inp) == 0:
-            ret[2] = EMPTY_LIST
-            return ret
-        return [PASS, inp[0], None]
+    '''
+    ret = [FAIL, None, None]
+    if inp is None:
+        ret[2] = INVALID_INPUT
+        return ret
+    if not isinstance(inp, list):
+        ret[2] = INVALID_INPUT
+        return ret
+    if len(inp) == 0:
+        ret[2] = EMPTY_LIST
+        return ret
+    return [PASS, inp[0], None]
 
 def verifyElementInList(inp, toverify, pos = 0):
        '''

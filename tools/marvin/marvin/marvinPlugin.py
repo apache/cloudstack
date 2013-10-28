@@ -33,13 +33,6 @@ class MarvinPlugin(Plugin):
     name = "marvin"
 
     def configure(self, options, config):
-        if hasattr(options, self.enableOpt):
-            if not getattr(options, self.enableOpt):
-                self.enabled = False
-                return
-            else:
-                self.enabled = True
-
         self.logformat = logging.Formatter("%(asctime)s - %(levelname)s - " +
                                            "%(name)s - %(message)s")
 
@@ -59,7 +52,7 @@ class MarvinPlugin(Plugin):
         else:
             self.result_stream = sys.stdout
 
-        deploy = deployDataCenter.deployDataCenters(options.config)
+        deploy = deployDataCenter.deployDataCenters(options.config_file)
         deploy.loadCfg() if options.load else deploy.deploy()
         self.setClient(deploy.testClient)
         self.setConfig(deploy.getCfg())
@@ -74,7 +67,7 @@ class MarvinPlugin(Plugin):
         """
         parser.add_option("--marvin-config", action="store",
                           default=env.get('MARVIN_CONFIG', './datacenter.cfg'),
-                          dest="config",
+                          dest="config_file",
                           help="Marvin's configuration file where the " +
                                "datacenter information is specified " +
                                "[MARVIN_CONFIG]")
@@ -146,10 +139,6 @@ class MarvinPlugin(Plugin):
                    str(time.ctime(self.startTime)), str(time.ctime(endTime))))
 
     def _injectClients(self, test):
-        self.debug_stream. \
-            setFormatter(logging.
-                         Formatter("%(asctime)s - %(levelname)s - %(name)s" +
-                                   " - %(message)s"))
         setattr(test, "debug", self.logger.debug)
         setattr(test, "info", self.logger.info)
         setattr(test, "warn", self.logger.warning)

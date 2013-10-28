@@ -88,11 +88,11 @@ specify a valid config file" % cfgFile)
             if cluster.hypervisor.lower() != "vmware":
                 self.addHosts(cluster.hosts, zoneId, podId, clusterId,
                               cluster.hypervisor)
-            self.wait_for_host(zoneId, clusterId)
+            self.waitForHost(zoneId, clusterId)
             self.createPrimaryStorages(cluster.primaryStorages, zoneId, podId,
                                        clusterId)
 
-    def wait_for_host(self, zoneId, clusterId):
+    def waitForHost(self, zoneId, clusterId):
         """
         Wait for the hosts in the zoneid, clusterid to be up
 
@@ -123,7 +123,7 @@ specify a valid config file" % cfgFile)
             primarycmd.clusterid = clusterId
             self.apiClient.createStoragePool(primarycmd)
 
-    def createpods(self, pods, zoneId, networkId=None):
+    def createPods(self, pods, zoneId, networkId=None):
         if pods is None:
             return
         for pod in pods:
@@ -208,7 +208,7 @@ specify a valid config file" % cfgFile)
                                             })
             self.apiClient.createSecondaryStagingStore(cachecmd)
 
-    def createnetworks(self, networks, zoneId):
+    def createNetworks(self, networks, zoneId):
         if networks is None:
             return
         for network in networks:
@@ -417,8 +417,8 @@ specify a valid config file" % cfgFile)
                 guestntwrk.networkofferingid = \
                     listnetworkofferingresponse[0].id
 
-                networkid = self.createnetworks([guestntwrk], zoneId)
-                self.createpods(zone.pods, zoneId, networkid)
+                networkid = self.createNetworks([guestntwrk], zoneId)
+                self.createPods(zone.pods, zoneId, networkid)
                 if self.isEipElbZone(zone):
                     self.createVlanIpRanges(zone.networktype, zone.ipranges,
                                             zoneId, forvirtualnetwork=True)
@@ -426,7 +426,7 @@ specify a valid config file" % cfgFile)
             isPureAdvancedZone = (zone.networktype == "Advanced"
                                   and zone.securitygroupenabled != "true")
             if isPureAdvancedZone:
-                self.createpods(zone.pods, zoneId)
+                self.createPods(zone.pods, zoneId)
                 self.createVlanIpRanges(zone.networktype, zone.ipranges,
                                         zoneId)
             elif (zone.networktype == "Advanced"
@@ -459,7 +459,7 @@ specify a valid config file" % cfgFile)
 
                 networkcmdresponse = self.apiClient.createNetwork(networkcmd)
                 networkId = networkcmdresponse.id
-                self.createpods(zone.pods, zoneId, networkId)
+                self.createPods(zone.pods, zoneId, networkId)
 
             '''Note: Swift needs cache storage first'''
             self.createCacheStorages(zone.cacheStorages, zoneId)
@@ -510,7 +510,7 @@ specify a valid config file" % cfgFile)
 
     def loadCfg(self):
         try:
-            self.config = configGenerator.get_setup_config(self.configFile)
+            self.config = configGenerator.getSetupConfig(self.configFile)
         except:
             raise cloudstackException.InvalidParameterException("Failed to load config %s" % self.configFile)
 
