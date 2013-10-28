@@ -165,7 +165,7 @@ namespace ServerResource.Tests
                             "\"volumeId\":10,\"hyperType\":\"Hyperv\"},\"templateUrl\":" + testSampleTemplateURLJSON + ",\"contextMap\":{},\"wait\":0}";
             dynamic jsonCreateCmd = JsonConvert.DeserializeObject(createCmd);
             HypervResourceController rsrcServer = new HypervResourceController();
-            rsrcServer.wmiCalls = wmiCalls;
+            HypervResourceController.wmiCalls = wmiCalls;
 
             Assert.True(Directory.Exists(testLocalStorePath), testLocalStorePath + " does not exist ");
             string filePath = Path.Combine(testLocalStorePath, (string)JsonConvert.DeserializeObject(testSampleTemplateURLJSON));
@@ -202,7 +202,7 @@ namespace ServerResource.Tests
 
             // Arrange
             HypervResourceController rsrcServer = new HypervResourceController();
-            rsrcServer.wmiCalls = wmiCalls;
+            HypervResourceController.wmiCalls = wmiCalls;
             String sample = getSampleStartCommand();
 
 
@@ -227,7 +227,7 @@ namespace ServerResource.Tests
 
             // Arrange
             HypervResourceController rsrcServer = new HypervResourceController();
-            rsrcServer.wmiCalls = wmiCalls;
+            HypervResourceController.wmiCalls = wmiCalls;
 
             String sampleStop = "{\"isProxy\":false,\"vmName\":\"i-2-17-VM\",\"contextMap\":{},\"wait\":0}";
             dynamic jsonStopCmd = JsonConvert.DeserializeObject(sampleStop);

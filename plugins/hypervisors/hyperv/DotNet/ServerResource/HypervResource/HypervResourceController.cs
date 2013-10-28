@@ -107,6 +107,8 @@ namespace HypervResource
         public static void Configure(HypervResourceControllerConfig config)
         {
             HypervResourceController.config = config;
+            wmiCalls = new WmiCalls();
+            wmiCallsV2 = new WmiCallsV2();
         }
 
         public static HypervResourceControllerConfig config = new HypervResourceControllerConfig();
@@ -118,8 +120,8 @@ namespace HypervResource
         {
         }
 
-        public IWmiCalls wmiCalls { get; set; }
-        public IWmiCallsV2 wmiCallsV2 { get; set;}
+        public static IWmiCalls wmiCalls { get; set; }
+        public static IWmiCallsV2 wmiCallsV2 { get; set;}
 
         // GET api/HypervResource
         public string Get()
