@@ -66,7 +66,29 @@ namespace HypervResource
                 bool isSuccess = LogonUser(cifsShareDetails.User, cifsShareDetails.Domain, cifsShareDetails.Password, LOGON32_LOGON_NEW_CREDENTIALS, LOGON32_PROVIDER_DEFAULT, ref token);
                 using (WindowsImpersonationContext remoteIdentity = new WindowsIdentity(token).Impersonate())
                 {
-                    String dest = Path.Combine(cifsShareDetails.UncPath, filePathRelativeToShare);
+
+                 // if the filePathRelativeToShare string don't have filename and only a dir point then find the vhd files in that folder and use
+                 // In the clean setup, first copy command wont be having the filename it contains onlyu dir path.
+                 // we need to scan the folder point and then copy the file to destination.
+                 String dest = "";
+                 if (!filePathRelativeToShare.Contains(".vhd"))
+                 {
+                     // scan the folder and get the vhd filename.
+                     String uncPath = cifsShareDetails.UncPath + "\\" + filePathRelativeToShare;
+                     uncPath = uncPath.Replace("/", "\\");
+                     DirectoryInfo dir = new DirectoryInfo(uncPath);
+                     FileInfo[] vhdFiles = dir.GetFiles("*.vhd");
+                     if (vhdFiles.Length > 0)
+                     {
+                         FileInfo file = vhdFiles[0];
+                         dest = file.FullName;
+                     }
+                 }
+                 else
+                 {
+                     dest = Path.Combine(cifsShareDetails.UncPath, filePathRelativeToShare);
+                     dest = dest.Replace("/", "\\");
+                 }
                     s_logger.Info(CloudStackTypes.CopyCommand + ": copy " + Path.Combine(cifsShareDetails.UncPath, filePathRelativeToShare) + " to " + destFile);
 
                     File.Copy(dest, destFile, true);
