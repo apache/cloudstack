@@ -27,6 +27,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using CloudStack.Plugin.WmiWrappers.ROOT.CIMV2;
 using System.IO;
+using System.Net.NetworkInformation;
+using System.Net;
 
 namespace HypervResource
 {
@@ -291,6 +293,7 @@ namespace HypervResource
             }
 
             // Add the Nics to the VM in the deviceId order.
+            String publicIpAddress ="";
             for (int i = 0; i <= 2; i++)
             {
                 foreach (var nic in nicInfo)
@@ -313,7 +316,10 @@ namespace HypervResource
                             throw ex;
                         }
                     }
-                    
+                    if (i == 2)
+                    {
+                        publicIpAddress = nic.ip;
+                    }
                     if (nicid == i)
                     {
                         CreateNICforVm(newVm, mac, vlan);
@@ -333,7 +339,7 @@ namespace HypervResource
             }
 
             // call patch systemvm iso only for systemvms
-            if (vmName.StartsWith("r-"))
+            if (vmName.StartsWith("r-") || vmName.StartsWith("s-") || vmName.StartsWith("v-"))
             {
                 patchSystemVmIso(vmName, systemVmIso);
             }
@@ -347,12 +353,42 @@ namespace HypervResource
                 System.Threading.Thread.Sleep(90000);
                 SetState(newVm, RequiredState.Reboot);
                 // wait for the second boot and then return with sucess
-                System.Threading.Thread.Sleep(50000);
+                if (pingResource(publicIpAddress) == true)
+                {
+                }
             }
             
             logger.InfoFormat("Started VM {0}", vmName);
             return newVm;
        }
+
+        public static Boolean pingResource(String ip)
+        {
+            PingOptions pingOptions = null;
+            PingReply pingReply = null;
+            IPAddress ipAddress = null;
+            Ping pingSender = new Ping();
+            int numberOfPings = 4;
+            int pingTimeout = 1000;
+            int byteSize = 32;
+            byte[] buffer = new byte[byteSize];
+            ipAddress = IPAddress.Parse(ip);
+            pingOptions = new PingOptions();
+            for (int i = 0; i < numberOfPings; i++)
+            {
+                pingReply = pingSender.Send(ipAddress, pingTimeout, buffer, pingOptions);
+                if (pingReply.Status == IPStatus.Success)
+                {
+                    return true;
+                }
+                else
+                {
+                    // wait for the second boot and then return with suces
+                    System.Threading.Thread.Sleep(30000);
+                }
+            }
+            return false;
+        }
 
         /// this method is to add a dvd drive and attach the systemvm iso.
         /// 
