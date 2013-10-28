@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION;
 using System.Management;
 using Newtonsoft.Json.Linq;
@@ -26,10 +25,10 @@ using HypervResource;
 using CloudStack.Plugin.AgentShell;
 using System.Collections.Generic;
 using System.Xml;
+using Xunit;
 
 namespace ServerResource.Tests
 {
-    [TestClass]
     public class HypervResourceControllerTest
     {
         protected static string testCifsUrl = AgentSettings.Default.testCifsUrl;
@@ -59,6 +58,9 @@ namespace ServerResource.Tests
         protected static String testSampleTemplateURLJSON;
         protected static String testLocalStorePathJSON;
 
+        protected static WmiCalls wmiCalls = new WmiCalls();
+        protected static WmiCallsV2 wmiCallsV2 = new WmiCallsV2();
+
         private static ILog s_logger = LogManager.GetLogger(typeof(HypervResourceControllerTest));
 
         /// <summary>
@@ -69,8 +71,7 @@ namespace ServerResource.Tests
         /// A second approximation would use the AgentShell settings files directly.
         /// A third approximation would look to invoke ServerResource methods via an HTTP request
         /// </summary>
-        [TestInitializeAttribute]
-        public void setUp()
+        public HypervResourceControllerTest()
         {
             AgentService.ConfigServerResource();
             HypervResourceController.config.PrivateMacAddress = AgentSettings.Default.private_mac_address;
@@ -95,7 +96,7 @@ namespace ServerResource.Tests
                 }
                 catch (System.IO.IOException ex)
                 {
-                    Assert.Fail("Need to be able to create the folder " + testSecondarStoreDir.FullName + " failed due to " + ex.Message);
+                    throw new NotImplementedException("Need to be able to create the folder " + testSecondarStoreDir.FullName + " failed due to " + ex.Message);
                 }
             }
 
@@ -105,7 +106,7 @@ namespace ServerResource.Tests
 
             // Make sure local primary storage is available
             DirectoryInfo testPoolDir = new DirectoryInfo(testLocalStorePath);
-            Assert.IsTrue(testPoolDir.Exists, "To simulate local file system Storage Pool, you need folder at " + testPoolDir.FullName);
+            Assert.True(testPoolDir.Exists, "To simulate local file system Storage Pool, you need folder at " + testPoolDir.FullName);
 
             // Convert to local primary storage string to canonical path
             testLocalStorePath = testPoolDir.FullName;
@@ -113,7 +114,7 @@ namespace ServerResource.Tests
 
             // Clean up old test files in local storage folder
             FileInfo testVolWorks = new FileInfo(Path.Combine(testLocalStorePath, testSampleVolumeWorkingUUID));
-            Assert.IsTrue(testVolWorks.Exists, "Create a working virtual disk at " + testVolWorks.FullName);
+            Assert.True(testVolWorks.Exists, "Create a working virtual disk at " + testVolWorks.FullName);
 
 
             // Delete all temporary files in local folder save the testVolWorks
@@ -125,7 +126,7 @@ namespace ServerResource.Tests
                 }
                 file.Delete();
                 file.Refresh();
-                Assert.IsFalse(file.Exists, "removed file from previous test called " + file.FullName);
+                Assert.False(file.Exists, "removed file from previous test called " + file.FullName);
             }
 
             // Recreate starting point files for test, and record JSON encoded paths for each ...
@@ -165,12 +166,12 @@ namespace ServerResource.Tests
                 newFileInfo = srcFile.CopyTo(newFullname);
             }
             newFileInfo.Refresh();
-            Assert.IsTrue(newFileInfo.Exists, "Attempted to create " + newFullname + " from " + newFileInfo.FullName);
+            Assert.True(newFileInfo.Exists, "Attempted to create " + newFullname + " from " + newFileInfo.FullName);
 
             return JsonConvert.SerializeObject(newFileInfo.FullName);
         }
 
-        [TestMethod]
+        [Fact(Skip="these are functional tests")]
         public void TestPrimaryStorageDownloadCommandHTTP()
         {
             string downloadURI = "https://s3-eu-west-1.amazonaws.com/cshv3eu/SmallDisk.vhdx";
@@ -190,7 +191,7 @@ namespace ServerResource.Tests
             // Assert
             JObject ansAsProperty = jsonResult[0];
             dynamic ans = ansAsProperty.GetValue(CloudStackTypes.PrimaryStorageDownloadAnswer);
-            Assert.IsTrue((bool)ans.result, "PrimaryStorageDownloadCommand did not succeed " + ans.details);
+            Assert.True((bool)ans.result, "PrimaryStorageDownloadCommand did not succeed " + ans.details);
 
             // Test that URL of downloaded template works for file creation.
             dynamic jsonCreateCmd = JsonConvert.DeserializeObject(CreateCommandSample());
@@ -199,10 +200,10 @@ namespace ServerResource.Tests
             JObject ansAsProperty2 = jsonAns2[0];
             dynamic ans2 = ansAsProperty2.GetValue(CloudStackTypes.CreateAnswer);
 
-            Assert.IsTrue((bool)ans2.result, (string)ans2.details);
+            Assert.True((bool)ans2.result, (string)ans2.details);
 
             FileInfo newFile = new FileInfo((string)ans2.volume.path);
-            Assert.IsTrue(newFile.Length > 0, "The new file should have a size greater than zero");
+            Assert.True(newFile.Length > 0, "The new file should have a size greater than zero");
             newFile.Delete();
         }
 
@@ -227,7 +228,7 @@ namespace ServerResource.Tests
             return sample;
         }
 
-        [TestMethod]
+        [Fact(Skip="these are functional tests")]
         public void TestDestroyCommand()
         {
             // Arrange
@@ -252,11 +253,11 @@ namespace ServerResource.Tests
             JObject ansAsProperty2 = destoryAns[0];
             dynamic ans = ansAsProperty2.GetValue(CloudStackTypes.Answer);
             String path = jsonDestoryCmd.volume.path;
-            Assert.IsTrue((bool)ans.result, "DestroyCommand did not succeed " + ans.details);
-            Assert.IsTrue(!File.Exists(path), "Failed to delete file " + path);
+            Assert.True((bool)ans.result, "DestroyCommand did not succeed " + ans.details);
+            Assert.True(!File.Exists(path), "Failed to delete file " + path);
         }
 
-        [TestMethod]
+        [Fact(Skip="these are functional tests")]
         public void TestCreateCommand()
         {
             // TODO: Need sample to update the test.
@@ -268,9 +269,9 @@ namespace ServerResource.Tests
             dynamic jsonCreateCmd = JsonConvert.DeserializeObject(createCmd);
             HypervResourceController rsrcServer = new HypervResourceController();
 
-            Assert.IsTrue(Directory.Exists(testLocalStorePath));
+            Assert.True(Directory.Exists(testLocalStorePath));
             string filePath = Path.Combine(testLocalStorePath, (string)JsonConvert.DeserializeObject(testSampleTemplateURLJSON));
-            Assert.IsTrue(File.Exists(filePath), "The template we make volumes from is missing from path " + filePath);
+            Assert.True(File.Exists(filePath), "The template we make volumes from is missing from path " + filePath);
             int fileCount = Directory.GetFiles(testLocalStorePath).Length;
             s_logger.Debug(" test local store has " + fileCount + "files");
 
@@ -280,18 +281,18 @@ namespace ServerResource.Tests
 
             JObject ansAsProperty2 = jsonResult[0];
             dynamic ans = ansAsProperty2.GetValue(CloudStackTypes.CreateAnswer);
-            Assert.IsNotNull(ans, "Should be an answer object of type CreateAnswer");
-            Assert.IsTrue((bool)ans.result, "Failed to CreateCommand due to " + (string)ans.result);
-            Assert.AreEqual(Directory.GetFiles(testLocalStorePath).Length, fileCount + 1);
+            Assert.NotNull(ans);
+            Assert.True((bool)ans.result, "Failed to CreateCommand due to " + (string)ans.result);
+            Assert.Equal(Directory.GetFiles(testLocalStorePath).Length, fileCount + 1);
             FileInfo newFile = new FileInfo((string)ans.volume.path);
-            Assert.IsTrue(newFile.Length > 0, "The new file should have a size greater than zero");
+            Assert.True(newFile.Length > 0, "The new file should have a size greater than zero");
             newFile.Delete();
         }
 
         /// <summary>
         /// Possible additional tests:  place an ISO in the drive
         /// </summary>
-        [TestMethod]
+        [Fact(Skip="these are functional tests")]
         public void TestStartStopCommand()
         {
             string vmName = TestStartCommand();
@@ -351,7 +352,7 @@ namespace ServerResource.Tests
         }
 
 
-        [TestMethod]
+        [Fact(Skip="these are functional tests")]
         public void TestCopyCommandFromCifs()
         {
             // Arrange
@@ -411,7 +412,7 @@ namespace ServerResource.Tests
             File.Delete(dwnldDest);
         }
 
-        [TestMethod]
+        [Fact(Skip="these are functional tests")]
         public void TestCopyCommand()
         {
             // Arrange
@@ -515,9 +516,9 @@ namespace ServerResource.Tests
             dynamic copyResult = rsrcServer.CopyCommand(jsonCloneCopyCmd);
 
             // Assert
-            Assert.IsNotNull(copyResult[0][CloudStackTypes.CopyCmdAnswer], "CopyCommand should return a StartAnswer in all cases");
-            Assert.IsTrue((bool)copyResult[0][CloudStackTypes.CopyCmdAnswer].result, "CopyCommand did not succeed " + copyResult[0][CloudStackTypes.CopyCmdAnswer].details);
-            Assert.IsTrue(File.Exists(newVolName), "CopyCommand failed to generate " + newVolName);
+            Assert.NotNull(copyResult[0][CloudStackTypes.CopyCmdAnswer]);
+            Assert.True((bool)copyResult[0][CloudStackTypes.CopyCmdAnswer].result, "CopyCommand did not succeed " + copyResult[0][CloudStackTypes.CopyCmdAnswer].details);
+            Assert.True(File.Exists(newVolName), "CopyCommand failed to generate " + newVolName);
         }
 
         private static void DownloadTemplateToPrimaryStorage(HypervResourceController rsrcServer, dynamic jsonDownloadCopyCmd, string dwnldDest)
@@ -525,12 +526,12 @@ namespace ServerResource.Tests
             dynamic dwnldResult = rsrcServer.CopyCommand(jsonDownloadCopyCmd);
 
             // Assert
-            Assert.IsNotNull(dwnldResult[0][CloudStackTypes.CopyCmdAnswer], "CopyCommand should return a StartAnswer in all cases");
-            Assert.IsTrue((bool)dwnldResult[0][CloudStackTypes.CopyCmdAnswer].result, "CopyCommand did not succeed " + dwnldResult[0][CloudStackTypes.CopyCmdAnswer].details);
-            Assert.IsTrue(File.Exists(dwnldDest), "CopyCommand failed to generate " + dwnldDest);
+            Assert.NotNull(dwnldResult[0][CloudStackTypes.CopyCmdAnswer]);
+            Assert.True((bool)dwnldResult[0][CloudStackTypes.CopyCmdAnswer].result, "CopyCommand did not succeed " + dwnldResult[0][CloudStackTypes.CopyCmdAnswer].details);
+            Assert.True(File.Exists(dwnldDest), "CopyCommand failed to generate " + dwnldDest);
         }
 
-        [TestMethod]
+        [Fact(Skip="these are functional tests")]
         public void TestCopyCommandBz2Img()
         {
             // Arrange
@@ -662,7 +663,7 @@ namespace ServerResource.Tests
             jsonCloneCopyCmd = null;
         }
 
-        [TestMethod]
+        [Fact(Skip="these are functional tests")]
         public void TestModifyStoragePoolCommand()
         {
             // Create dummy folder
@@ -696,7 +697,7 @@ namespace ServerResource.Tests
 
             // Assert
             dynamic ans = jsonResult[0][CloudStackTypes.ModifyStoragePoolAnswer];
-            Assert.IsTrue((bool)ans.result, (string)ans.details);  // always succeeds
+            Assert.True((bool)ans.result, (string)ans.details);  // always succeeds
 
             // Clean up
             var cmd2 = new
@@ -711,10 +712,10 @@ namespace ServerResource.Tests
 
             // Assert
             dynamic ans2 = jsonResult2[0][CloudStackTypes.Answer];
-            Assert.IsTrue((bool)ans2.result, (string)ans2.details);  // always succeeds
+            Assert.True((bool)ans2.result, (string)ans2.details);  // always succeeds
         }
 
-        [TestMethod]
+        [Fact(Skip="these are functional tests")]
         public void CreateStoragePoolCommand()
         {
             var cmd = new { localPath = "NULL" };
@@ -726,10 +727,10 @@ namespace ServerResource.Tests
 
             // Assert
             dynamic ans = jsonResult[0][CloudStackTypes.Answer];
-            Assert.IsTrue((bool)ans.result, (string)ans.details);  // always succeeds
+            Assert.True((bool)ans.result, (string)ans.details);  // always succeeds
         }
 
-        [TestMethod]
+        [Fact(Skip="these are functional tests")]
         public void MaintainCommand()
         {
             // Omit HostEnvironment object, as this is a series of settings currently not used.
@@ -742,10 +743,10 @@ namespace ServerResource.Tests
 
             // Assert
             dynamic ans = jsonResult[0][CloudStackTypes.MaintainAnswer];
-            Assert.IsTrue((bool)ans.result, (string)ans.details);  // always succeeds
+            Assert.True((bool)ans.result, (string)ans.details);  // always succeeds
         }
 
-        [TestMethod]
+        [Fact(Skip="these are functional tests")]
         public void SetupCommand()
         {
             // Omit HostEnvironment object, as this is a series of settings currently not used.
@@ -758,10 +759,10 @@ namespace ServerResource.Tests
 
             // Assert
             dynamic ans = jsonResult[0][CloudStackTypes.SetupAnswer];
-            Assert.IsTrue((bool)ans.result, (string)ans.details);  // always succeeds
+            Assert.True((bool)ans.result, (string)ans.details);  // always succeeds
         }
 
-        [TestMethod]
+        [Fact(Skip="these are functional tests")]
         public void TestPassingUserdataToVm()
         {
             // Sample data
@@ -769,14 +770,14 @@ namespace ServerResource.Tests
             String value = "username=root;password=1pass@word1";
 
             // Find the VM
-            List<String> vmNames = WmiCallsV2.GetVmElementNames();
+            List<String> vmNames = wmiCallsV2.GetVmElementNames();
 
             // Get associated WMI object
-            var vm = WmiCallsV2.GetComputerSystem(AgentSettings.Default.testKvpVmName);
+            var vm = wmiCallsV2.GetComputerSystem(AgentSettings.Default.testKvpVmName);
 
             // Get existing KVP
-            var vmSettings = WmiCallsV2.GetVmSettings(vm);
-            var kvpInfo = WmiCallsV2.GetKvpSettings(vmSettings);
+            var vmSettings = wmiCallsV2.GetVmSettings(vm);
+            var kvpInfo = wmiCallsV2.GetKvpSettings(vmSettings);
 
             // HostExchangesItems are embedded objects in the sense that the object value is stored and not a reference to the object.
             string[] kvpProps = kvpInfo.HostExchangeItems;
@@ -791,16 +792,16 @@ namespace ServerResource.Tests
 
                 if (existingKey == key)
                 {
-                    WmiCallsV2.DeleteHostKvpItem(vm, existingKey);
+                    wmiCallsV2.DeleteHostKvpItem(vm, existingKey);
                     break;
                 }
             }
 
             // Add new user data
-            WmiCallsV2.AddUserData(vm, value);
+            wmiCallsV2.AddUserData(vm, value);
 
             // Verify key added to subsystem
-            kvpInfo = WmiCallsV2.GetKvpSettings(vmSettings);
+            kvpInfo = wmiCallsV2.GetKvpSettings(vmSettings);
 
             // HostExchangesItems are embedded objects in the sense that the object value is stored and not a reference to the object.
             kvpProps = kvpInfo.HostExchangeItems;
@@ -816,13 +817,13 @@ namespace ServerResource.Tests
 
                 if (existingKey == key && existingValue == value)
                 {
-//                    WmiCallsV2.DeleteHostKvpItem(vm, existingKey);
+//                    wmiCallsV2.DeleteHostKvpItem(vm, existingKey);
                     userDataInPlace = true;
                     break;
                 }
             }
 
-            Assert.IsTrue(userDataInPlace, "User data key / value did no save properly");
+            Assert.True(userDataInPlace, "User data key / value did no save properly");
         }
 
         private static void ParseKVP(String wmiObjectXml, out String existingKey, out String existingValue)
@@ -844,7 +845,7 @@ namespace ServerResource.Tests
             existingValue = dataNode.InnerText;
         }
 
-        [TestMethod]
+        [Fact(Skip="these are functional tests")]
         public void GetVmStatsCommandFail()
         {
             // Use WMI to find existing VMs
@@ -865,14 +866,14 @@ namespace ServerResource.Tests
 
             // Assert
             dynamic ans = jsonResult[0][CloudStackTypes.GetVmStatsAnswer];
-            Assert.IsTrue((bool)ans.result, (string)ans.details);  // always succeeds, fake VM means no answer for the named VM
+            Assert.True((bool)ans.result, (string)ans.details);  // always succeeds, fake VM means no answer for the named VM
         }
 
-        [TestMethod]
+        [Fact(Skip="these are functional tests")]
         public void GetVmStatsCommand()
         {
             // Use WMI to find existing VMs
-            List<String> vmNames = WmiCalls.GetVmElementNames();
+            List<String> vmNames = wmiCalls.GetVmElementNames();
 
             var cmd = new
             {
@@ -888,10 +889,10 @@ namespace ServerResource.Tests
 
             // Assert
             dynamic ans = jsonResult[0][CloudStackTypes.GetVmStatsAnswer];
-            Assert.IsTrue((bool)ans.result, (string)ans.details);
+            Assert.True((bool)ans.result, (string)ans.details);
         }
 
-        [TestMethod]
+        [Fact(Skip="these are functional tests")]
         public void GetStorageStatsCommand()
         {
             // TODO:  Update sample data to unsure it is using correct info.
@@ -916,12 +917,12 @@ namespace ServerResource.Tests
 
             // Assert
             dynamic ans = jsonResult[0][CloudStackTypes.GetStorageStatsAnswer];
-            Assert.IsTrue((bool)ans.result, (string)ans.details);
-            Assert.IsTrue((long)ans.used <= (long)ans.capacity);  // TODO: verify that capacity is indeed capacity and not used.
+            Assert.True((bool)ans.result, (string)ans.details);
+            Assert.True((long)ans.used <= (long)ans.capacity);  // TODO: verify that capacity is indeed capacity and not used.
         }
 
         // TODO: can we speed up this command?  The logic takes over a second.
-        [TestMethod]
+        [Fact(Skip="these are functional tests")]
         public void GetHostStatsCommand()
         {
             // Arrange
@@ -945,19 +946,19 @@ namespace ServerResource.Tests
 
             // Assert
             dynamic ans = jsonResult[0][CloudStackTypes.GetHostStatsAnswer];
-            Assert.IsTrue((bool)ans.result);
-            Assert.IsTrue(hostIdVal == (long)ans.hostStats.hostId);
-            Assert.IsTrue(0.0 < (double)ans.hostStats.totalMemoryKBs);
-            Assert.IsTrue(0.0 < (double)ans.hostStats.freeMemoryKBs);
-            Assert.IsTrue(0.0 <= (double)ans.hostStats.networkReadKBs);
-            Assert.IsTrue(0.0 <= (double)ans.hostStats.networkWriteKBs);
-            Assert.IsTrue(0.0 <= (double)ans.hostStats.cpuUtilization);
-            Assert.IsTrue(100.0 >= (double)ans.hostStats.cpuUtilization);
-            Assert.IsTrue("host".Equals((string)ans.hostStats.entityType));
-            Assert.IsTrue(String.IsNullOrEmpty((string)ans.details));
+            Assert.True((bool)ans.result);
+            Assert.True(hostIdVal == (long)ans.hostStats.hostId);
+            Assert.True(0.0 < (double)ans.hostStats.totalMemoryKBs);
+            Assert.True(0.0 < (double)ans.hostStats.freeMemoryKBs);
+            Assert.True(0.0 <= (double)ans.hostStats.networkReadKBs);
+            Assert.True(0.0 <= (double)ans.hostStats.networkWriteKBs);
+            Assert.True(0.0 <= (double)ans.hostStats.cpuUtilization);
+            Assert.True(100.0 >= (double)ans.hostStats.cpuUtilization);
+            Assert.True("host".Equals((string)ans.hostStats.entityType));
+            Assert.True(String.IsNullOrEmpty((string)ans.details));
         }
 
-        [TestMethod]
+        [Fact(Skip="these are functional tests")]
         public void GetHostStatsCommandFail()
         {
             // Arrange
@@ -970,12 +971,12 @@ namespace ServerResource.Tests
 
             // Assert
             dynamic ans = jsonResult[0][CloudStackTypes.GetHostStatsAnswer];
-            Assert.IsFalse((bool)ans.result);
-            Assert.IsNull((string)ans.hostStats);
-            Assert.IsNotNull(ans.details);
+            Assert.False((bool)ans.result);
+            Assert.Null((string)ans.hostStats);
+            Assert.NotNull(ans.details);
         }
 
-        [TestMethod]
+        [Fact(Skip="these are functional tests")]
         public void TestStartupCommand()
         {
             // Arrange
@@ -1008,16 +1009,16 @@ namespace ServerResource.Tests
 
             uint cores;
             uint mhz;
-            WmiCalls.GetProcessorResources(out cores, out mhz);
+            wmiCalls.GetProcessorResources(out cores, out mhz);
             ulong memory_mb;
             ulong freememory;
-            WmiCalls.GetMemoryResources(out memory_mb, out freememory);
+            wmiCalls.GetMemoryResources(out memory_mb, out freememory);
             memory_mb *= 1024;
             long capacityBytes;
             long availableBytes;
-            HypervResourceController.GetCapacityForLocalPath(WmiCalls.GetDefaultVirtualDiskFolder(),
+            HypervResourceController.GetCapacityForLocalPath(wmiCalls.GetDefaultVirtualDiskFolder(),
                     out capacityBytes, out availableBytes);
-            var DefaultVirtualDiskFolder = JsonConvert.SerializeObject(WmiCalls.GetDefaultVirtualDiskFolder());
+            var DefaultVirtualDiskFolder = JsonConvert.SerializeObject(wmiCalls.GetDefaultVirtualDiskFolder());
             string expected =
             #region string_literal
                     "[{\"" + CloudStackTypes.StartupRoutingCommand + "\":{" +
@@ -1073,7 +1074,7 @@ namespace ServerResource.Tests
 
             // Assert
             string actual = JsonConvert.SerializeObject(jsonResult);
-            Assert.AreEqual(expected, actual, "StartupRoutingCommand not populated properly");
+            Assert.Equal(expected, actual);
         }
 
 
@@ -1090,40 +1091,40 @@ namespace ServerResource.Tests
             dynamic startAns = rsrcServer.StartCommand(jsonStartCmd);
 
             // Assert
-            Assert.IsNotNull(startAns[0][CloudStackTypes.StartAnswer], "StartCommand should return a StartAnswer in all cases");
-            Assert.IsTrue((bool)startAns[0][CloudStackTypes.StartAnswer].result, "StartCommand did not succeed " + startAns[0][CloudStackTypes.StartAnswer].details);
+            Assert.NotNull(startAns[0][CloudStackTypes.StartAnswer]);
+            Assert.True((bool)startAns[0][CloudStackTypes.StartAnswer].result, "StartCommand did not succeed " + startAns[0][CloudStackTypes.StartAnswer].details);
             string vmCmdName = jsonStartCmd.vm.name.Value;
-            var vm = WmiCalls.GetComputerSystem(vmCmdName);
-            VirtualSystemSettingData vmSettings = WmiCalls.GetVmSettings(vm);
-            MemorySettingData memSettings = WmiCalls.GetMemSettings(vmSettings);
-            ProcessorSettingData procSettings = WmiCalls.GetProcSettings(vmSettings);
+            var vm = wmiCalls.GetComputerSystem(vmCmdName);
+            VirtualSystemSettingData vmSettings = wmiCalls.GetVmSettings(vm);
+            MemorySettingData memSettings = wmiCalls.GetMemSettings(vmSettings);
+            ProcessorSettingData procSettings = wmiCalls.GetProcSettings(vmSettings);
             dynamic jsonObj = JsonConvert.DeserializeObject(sample);
             var vmInfo = jsonObj.vm;
             string vmName = vmInfo.name;
             var nicInfo = vmInfo.nics;
             int vcpus = vmInfo.cpus;
             int memSize = vmInfo.maxRam / 1048576;
-            Assert.IsTrue((long)memSettings.VirtualQuantity == memSize);
-            Assert.IsTrue((long)memSettings.Reservation == memSize);
-            Assert.IsTrue((long)memSettings.Limit == memSize);
-            Assert.IsTrue((int)procSettings.VirtualQuantity == vcpus);
-            Assert.IsTrue((int)procSettings.Reservation == vcpus);
-            Assert.IsTrue((int)procSettings.Limit == 100000);
+            Assert.True((long)memSettings.VirtualQuantity == memSize);
+            Assert.True((long)memSettings.Reservation == memSize);
+            Assert.True((long)memSettings.Limit == memSize);
+            Assert.True((int)procSettings.VirtualQuantity == vcpus);
+            Assert.True((int)procSettings.Reservation == vcpus);
+            Assert.True((int)procSettings.Limit == 100000);
 
             // examine NIC
-            SyntheticEthernetPortSettingData[] nicSettingsViaVm = WmiCalls.GetEthernetPorts(vm);
-            Assert.IsTrue(nicSettingsViaVm.Length > 0, "Should be at least one ethernet port on VM");
+            SyntheticEthernetPortSettingData[] nicSettingsViaVm = wmiCalls.GetEthernetPorts(vm);
+            Assert.True(nicSettingsViaVm.Length > 0, "Should be at least one ethernet port on VM");
             string expectedMac = (string)jsonStartCmd.vm.nics[0].mac;
             string strippedExpectedMac = expectedMac.Replace(":", string.Empty);
-            Assert.AreEqual(nicSettingsViaVm[0].Address.ToLower(), strippedExpectedMac.ToLower());
+            Assert.Equal(nicSettingsViaVm[0].Address.ToLower(), strippedExpectedMac.ToLower());
 
             // Assert switchport has correct VLAN 
-            SwitchPort[] switchPorts = WmiCalls.GetSwitchPorts(vm);
-            VirtualSwitchManagementService vmNetMgmtSvc = WmiCalls.GetVirtualSwitchManagementService();
-            VLANEndpointSettingData vlanSettings = WmiCalls.GetVlanEndpointSettings(vmNetMgmtSvc, switchPorts[0].Path);
+            SwitchPort[] switchPorts = wmiCalls.GetSwitchPorts(vm);
+            VirtualSwitchManagementService vmNetMgmtSvc = wmiCalls.GetVirtualSwitchManagementService();
+            VLANEndpointSettingData vlanSettings = wmiCalls.GetVlanEndpointSettings(vmNetMgmtSvc, switchPorts[0].Path);
             string isolationUri = (string)jsonStartCmd.vm.nics[0].isolationUri;
             string vlan = isolationUri.Replace("vlan://", string.Empty);
-            Assert.AreEqual(vlanSettings.AccessVLAN.ToString(), vlan);
+            Assert.Equal(vlanSettings.AccessVLAN.ToString(), vlan);
 
             return vmName;
         }
@@ -1139,10 +1140,10 @@ namespace ServerResource.Tests
             dynamic stopAns = rsrcServer.StopCommand(jsonStopCmd);
 
             // Assert VM is gone!
-            Assert.IsNotNull(stopAns[0][CloudStackTypes.StopAnswer], "StopCommand should return a StopAnswer in all cases");
-            Assert.IsTrue((bool)stopAns[0][CloudStackTypes.StopAnswer].result, "StopCommand did not succeed " + stopAns[0][CloudStackTypes.StopAnswer].details);
-            var finalVm = WmiCalls.GetComputerSystem(vmName);
-            Assert.IsTrue(WmiCalls.GetComputerSystem(vmName) == null);
+            Assert.NotNull(stopAns[0][CloudStackTypes.StopAnswer]);
+            Assert.True((bool)stopAns[0][CloudStackTypes.StopAnswer].result, "StopCommand did not succeed " + stopAns[0][CloudStackTypes.StopAnswer].details);
+            var finalVm = wmiCalls.GetComputerSystem(vmName);
+            Assert.True(wmiCalls.GetComputerSystem(vmName) == null);
         }
     }
 }

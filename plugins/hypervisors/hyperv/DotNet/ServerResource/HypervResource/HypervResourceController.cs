@@ -118,6 +118,9 @@ namespace HypervResource
         {
         }
 
+        public IWmiCalls wmiCalls { get; set; }
+        public IWmiCallsV2 wmiCallsV2 { get; set;}
+
         // GET api/HypervResource
         public string Get()
         {
@@ -152,7 +155,7 @@ namespace HypervResource
                     share.uri = new Uri(uriStr);
 
                     string systemVmIso = (string)cmd.systemVmIso;
-                    string defaultDataPath = WmiCallsV2.GetDefaultDataRoot();
+                    string defaultDataPath = wmiCallsV2.GetDefaultDataRoot();
                     string isoPath = Path.Combine(defaultDataPath, Path.GetFileName(systemVmIso));
                     if (!File.Exists(isoPath))
                     {
@@ -195,7 +198,7 @@ namespace HypervResource
                 {
                     string vmName = (string)cmd.vmName;
                     string isoPath = "\\\\10.102.192.150\\SMB-Share\\202-2-305ed1f7-1be8-345e-86c3-a976f7f57f10.iso";
-                    WmiCalls.AttachIso(vmName, isoPath);
+                    wmiCalls.AttachIso(vmName, isoPath);
 
                     result = true;
                 }
@@ -288,7 +291,7 @@ namespace HypervResource
                     string vmName = (string)cmd.vmName;
                     if (!string.IsNullOrEmpty(vmName) && File.Exists(path))
                     {
-                        var imgmgr = WmiCalls.GetImageManagementService();
+                        var imgmgr = wmiCalls.GetImageManagementService();
                         var returncode = imgmgr.Unmount(path);
                         if (returncode != ReturnCode.Completed)
                         {
@@ -367,7 +370,7 @@ namespace HypervResource
                                 newVolName = cmd.diskCharacteristics.name;
                                 newVolPath = Path.Combine(poolLocalPath, newVolName, diskType.ToLower());
                                 // TODO: how do you specify format as VHD or VHDX?
-                                WmiCalls.CreateDynamicVirtualHardDisk(disksize, newVolPath);
+                                wmiCalls.CreateDynamicVirtualHardDisk(disksize, newVolPath);
                                 if (File.Exists(newVolPath))
                                 {
                                     result = true;
@@ -632,7 +635,7 @@ namespace HypervResource
                 string state = null;
 
                 // TODO: Look up the VM, convert Hyper-V state to CloudStack version.
-                var sys = WmiCalls.GetComputerSystem(vmName);
+                var sys = wmiCalls.GetComputerSystem(vmName);
                 if (sys == null)
                 {
                     details = CloudStackTypes.CheckVirtualMachineCommand + " requested unknown VM " + vmName;
@@ -831,7 +834,7 @@ namespace HypervResource
 
                 try
                 {
-                    WmiCalls.DeployVirtualMachine(cmd, systemVmIso);
+                    wmiCalls.DeployVirtualMachine(cmd, systemVmIso);
                     result = true;
                 }
                 catch (Exception wmiEx)
@@ -863,7 +866,7 @@ namespace HypervResource
 
                 try
                 {
-                    WmiCalls.DestroyVm(cmd);
+                    wmiCalls.DestroyVm(cmd);
                     result = true;
                 }
                 catch (Exception wmiEx)
@@ -962,13 +965,13 @@ namespace HypervResource
                 var vmsToInspect = new List<System.Management.ManagementPath>();
                 foreach (var vmName in vmNames)
                 {
-                    var sys = WmiCalls.GetComputerSystem(vmName);
+                    var sys = wmiCalls.GetComputerSystem(vmName);
                     if (sys == null)
                     {
                         logger.InfoFormat("GetVmStatsCommand requested unknown VM {0}", vmNames);
                         continue;
                     }
-                    var sysInfo = WmiCalls.GetVmSettings(sys);
+                    var sysInfo = wmiCalls.GetVmSettings(sys);
                     vmsToInspect.Add(sysInfo.Path);
                 }
 
@@ -982,7 +985,7 @@ namespace HypervResource
                 };
 
                 System.Management.ManagementBaseObject[] sysSummary;
-                var vmsvc = WmiCalls.GetVirtualisationSystemManagementService();
+                var vmsvc = wmiCalls.GetVirtualisationSystemManagementService();
                 System.Management.ManagementPath[] vmPaths = vmsToInspect.ToArray();
                 vmsvc.GetSummaryInformation(requestedInfo, vmPaths, out sysSummary);
 
@@ -1315,8 +1318,8 @@ namespace HypervResource
                 try
                 {
                     long hostId = (long)cmd.hostId;
-                    WmiCalls.GetMemoryResources(out totalMemoryKBs, out freeMemoryKBs);
-                    WmiCalls.GetProcessorUsageInfo(out cpuUtilization);
+                    wmiCalls.GetMemoryResources(out totalMemoryKBs, out freeMemoryKBs);
+                    wmiCalls.GetProcessorUsageInfo(out cpuUtilization);
 
                     // TODO: can we assume that the host has only one adaptor?
                     string tmp;
@@ -1379,12 +1382,12 @@ namespace HypervResource
                 // Detect CPUs, speed, memory
                 uint cores;
                 uint mhz;
-                WmiCalls.GetProcessorResources(out cores, out mhz);
+                wmiCalls.GetProcessorResources(out cores, out mhz);
                 strtRouteCmd.cpus = cores;
                 strtRouteCmd.speed = mhz;
                 ulong memoryKBs;
                 ulong freeMemoryKBs;
-                WmiCalls.GetMemoryResources(out memoryKBs, out freeMemoryKBs);
+                wmiCalls.GetMemoryResources(out memoryKBs, out freeMemoryKBs);
                 strtRouteCmd.memory = memoryKBs * 1024;   // Convert to bytes
 
                 // Need 2 Gig for DOM0, see http://technet.microsoft.com/en-us/magazine/hh750394.aspx
@@ -1395,7 +1398,7 @@ namespace HypervResource
                 // Read the localStoragePath for virtual disks from the Hyper-V configuration
                 // See http://blogs.msdn.com/b/virtual_pc_guy/archive/2010/05/06/managing-the-default-virtual-machine-location-with-hyper-v.aspx
                 // for discussion of Hyper-V file locations paths.
-                string localStoragePath = WmiCalls.GetDefaultVirtualDiskFolder();
+                string localStoragePath = wmiCalls.GetDefaultVirtualDiskFolder();
                 if (localStoragePath != null)
                 {
                     // GUID arbitrary.  Host agents deals with storage pool in terms of localStoragePath.

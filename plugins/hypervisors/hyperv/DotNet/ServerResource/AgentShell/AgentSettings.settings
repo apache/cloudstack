@@ -60,7 +60,7 @@
       <Value Profile="(Default)">4294967296</Value>
     </Setting>
     <Setting Name="hyperv_plugin_root" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">..\..\..\..\..\</Value>
+      <Value Profile="(Default)">../../../../../</Value>
     </Setting>
     <Setting Name="RootDeviceName" Type="System.String" Scope="Application">
       <Value Profile="(Default)">e:\</Value>

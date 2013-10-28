@@ -5,4 +5,5 @@ WmiWrappers/bin/*
 AgentShell/bin/*
 ServerResource*/bin/*
 *.user
+!.nuget/
 

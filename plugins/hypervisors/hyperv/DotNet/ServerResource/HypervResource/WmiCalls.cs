@@ -30,8 +30,13 @@ using System.IO;
 
 namespace HypervResource
 {
-    public class WmiCalls
+    public class WmiCalls : IWmiCalls
     {
+        private IWmiCallsV2 wmiCallsV2;
+        public WmiCalls()
+        {
+            wmiCallsV2 = new WmiCallsV2();
+        }
         public static void Initialize()
         {
             // Trigger assembly load into curren appdomain
@@ -42,7 +47,7 @@ namespace HypervResource
         /// <summary>
         /// Returns ComputerSystem lacking any NICs and VOLUMEs
         /// </summary>
-        public static ComputerSystem CreateVM(string name, long memory_mb, int vcpus)
+        public ComputerSystem CreateVM(string name, long memory_mb, int vcpus)
         {
             // Obtain controller for Hyper-V virtualisation subsystem
             VirtualSystemManagementService vmMgmtSvc = GetVirtualisationSystemManagementService();
@@ -84,7 +89,7 @@ namespace HypervResource
         /// <param name="mac"></param>
         /// <param name="vlan"></param>
         /// <returns></returns>
-        public static SyntheticEthernetPortSettingData CreateNICforVm(ComputerSystem vm, string mac, string vlan)
+        public SyntheticEthernetPortSettingData CreateNICforVm(ComputerSystem vm, string mac, string vlan)
         {
             logger.DebugFormat("Creating nic for VM {0} (GUID {1})", vm.ElementName, vm.Name);
 
@@ -158,7 +163,8 @@ namespace HypervResource
         /// <summary>
         /// Create new VM.  By default we start it. 
         /// </summary>
-        public static ComputerSystem DeployVirtualMachine(dynamic jsonObj, string systemVmIso)
+
+        public ComputerSystem DeployVirtualMachine(dynamic jsonObj, string systemVmIso)
         {
             var vmInfo = jsonObj.vm;
             string vmName = vmInfo.name;
@@ -209,7 +215,7 @@ namespace HypervResource
 
             // Create vm carcase
             logger.DebugFormat("Going ahead with create VM {0}, {1} vcpus, {2}MB RAM", vmName, vcpus, memSize);
-            var newVm = WmiCalls.CreateVM(vmName, memSize, vcpus);
+            var newVm = CreateVM(vmName, memSize, vcpus);
 
             foreach (var diskDrive in diskDrives)
             {
@@ -319,12 +325,11 @@ namespace HypervResource
             // pass the boot args for the VM using KVP component.
             // We need to pass the boot args to system vm's to get them configured with cloudstack configuration.
             // Add new user data
-            var vm = WmiCallsV2.GetComputerSystem(vmName);
+            var vm = wmiCallsV2.GetComputerSystem(vmName);
             if (bootArgs != null)
             {
-               
                 String bootargs = bootArgs;
-                WmiCallsV2.AddUserData(vm, bootargs);
+                wmiCallsV2.AddUserData(vm, bootargs);
             }
 
             // call patch systemvm iso only for systemvms
@@ -352,11 +357,13 @@ namespace HypervResource
         /// this method is to add a dvd drive and attach the systemvm iso.
         /// 
 
-        public static void patchSystemVmIso(String vmName, String systemVmIso)
+
+        public void patchSystemVmIso(String vmName, String systemVmIso)
         {
-            ComputerSystem vmObject = WmiCalls.GetComputerSystem(vmName);
+            ComputerSystem vmObject = GetComputerSystem(vmName);
             AddDiskDriveToVm(vmObject, "", "1", IDE_ISO_DRIVE);
-            WmiCalls.AttachIso(vmName, systemVmIso);
+
+            AttachIso(vmName, systemVmIso);
         }
 
         /// <summary>
@@ -365,7 +372,7 @@ namespace HypervResource
         /// <param name="vm"></param>
         /// <param name="cntrllerAddr"></param>
         /// <param name="driveResourceType">IDE_HARDDISK_DRIVE or IDE_ISO_DRIVE</param>
-        public static ManagementPath AddDiskDriveToVm(ComputerSystem vm, string vhdfile, string cntrllerAddr, string driveResourceType)
+        public ManagementPath AddDiskDriveToVm(ComputerSystem vm, string vhdfile, string cntrllerAddr, string driveResourceType)
         {
             logger.DebugFormat("Creating DISK for VM {0} (GUID {1}) by attaching {2}", 
                         vm.ElementName,
@@ -406,7 +413,7 @@ namespace HypervResource
             return newDrivePath;
     }
 
-        private static ManagementPath AttachNewDriveToVm(ComputerSystem vm, string cntrllerAddr, string driveType)
+        private ManagementPath AttachNewDriveToVm(ComputerSystem vm, string cntrllerAddr, string driveType)
         {
             // Disk drives are attached to a 'Parent' IDE controller.  We IDE Controller's settings for the 'Path', which our new Disk drive will use to reference it.
             VirtualSystemSettingData vmSettings = GetVmSettings(vm);
@@ -453,7 +460,7 @@ namespace HypervResource
         /// </summary>
         /// <param name="vm"></param>
         /// <param name="isoPath"></param>
-        private static void AttachIsoToVm(ComputerSystem vm, string isoPath)
+        private void AttachIsoToVm(ComputerSystem vm, string isoPath)
         {
             // Disk drives are attached to a 'Parent' IDE controller.  We IDE Controller's settings for the 'Path', which our new Disk drive will use to reference it.
             VirtualSystemSettingData vmSettings = GetVmSettings(vm);
@@ -490,7 +497,7 @@ namespace HypervResource
                     isoPath);
         }
 
-        private static void InsertDiskImage(ComputerSystem vm, string vhdfile, string diskResourceSubType, ManagementPath drivePath)
+        private void InsertDiskImage(ComputerSystem vm, string vhdfile, string diskResourceSubType, ManagementPath drivePath)
         {
             // A description of the disk is created by modifying a clone of the default ResourceAllocationSettingData for that disk type
             string defaultDiskQuery = String.Format("ResourceSubType LIKE \"{0}\" AND InstanceID LIKE \"%Default\"", diskResourceSubType);
@@ -524,7 +531,7 @@ namespace HypervResource
                     vhdfile);
         }
 
-        private static ResourceAllocationSettingData CloneResourceAllocationSetting(string wmiQuery)
+        private ResourceAllocationSettingData CloneResourceAllocationSetting(string wmiQuery)
         {
             var defaultDiskDriveSettingsObjs = ResourceAllocationSettingData.GetInstances(wmiQuery);
 
@@ -541,7 +548,7 @@ namespace HypervResource
             return new ResourceAllocationSettingData((ManagementBaseObject)defaultDiskDriveSettings.LateBoundObject.Clone());
         }
 
-        public static void AttachIso(string displayName, string iso)
+        public void AttachIso(string displayName, string iso)
         {
             logger.DebugFormat("Got request to attach iso {0} to vm {1}", iso, displayName);
 
@@ -557,7 +564,7 @@ namespace HypervResource
             }
         }
 
-        public static void DestroyVm(dynamic jsonObj)
+        public void DestroyVm(dynamic jsonObj)
         {
             string vmToDestroy = jsonObj.vmName;
             DestroyVm(vmToDestroy);
@@ -567,7 +574,7 @@ namespace HypervResource
         /// Remove all VMs and all SwitchPorts with the displayName.  VHD gets deleted elsewhere.
         /// </summary>
         /// <param name="displayName"></param>
-        public static void DestroyVm(string displayName)
+        public void DestroyVm(string displayName)
         {
             logger.DebugFormat("Got request to destroy vm {0}", displayName);
 
@@ -614,7 +621,7 @@ namespace HypervResource
             while (vm != null);
         }
 
-        public static void SetState(ComputerSystem vm, ushort requiredState)
+        public void SetState(ComputerSystem vm, ushort requiredState)
         {
             logger.InfoFormat(
                 "Changing state of {0} (GUID {1}) to {2}", 
@@ -657,7 +664,7 @@ namespace HypervResource
 
 
         //TODO:  Write method to delete SwitchPort based on Name
-        public static bool DeleteSwitchPort(string elementName)
+        public bool DeleteSwitchPort(string elementName)
         {
             var virtSwitchMgmtSvc = GetVirtualSwitchManagementService();
             // Get NIC path
@@ -683,7 +690,7 @@ namespace HypervResource
         }
 
         // Add new 
-        private static ManagementPath[] AddVirtualResource(string[] resourceSettings, ComputerSystem vm )
+        private ManagementPath[] AddVirtualResource(string[] resourceSettings, ComputerSystem vm )
         {
             var virtSysMgmtSvc = GetVirtualisationSystemManagementService();
 
@@ -715,7 +722,7 @@ namespace HypervResource
             return resourcePaths;
         }
 
-        private static ManagementPath CreateSwitchPortForVm(ComputerSystem vm, VirtualSwitchManagementService vmNetMgmtSvc, VirtualSwitch vSwitch)
+        private ManagementPath CreateSwitchPortForVm(ComputerSystem vm, VirtualSwitchManagementService vmNetMgmtSvc, VirtualSwitch vSwitch)
         {
             ManagementPath newSwitchPath = null;
             var ret_val = vmNetMgmtSvc.CreateSwitchPort(
@@ -740,7 +747,7 @@ namespace HypervResource
         }
 
         // add vlan support by setting AccessVLAN on VLANEndpointSettingData for port
-        private static void SetPortVlan(string vlan, VirtualSwitchManagementService vmNetMgmtSvc, ManagementPath newSwitchPath)
+        private void SetPortVlan(string vlan, VirtualSwitchManagementService vmNetMgmtSvc, ManagementPath newSwitchPath)
         {
             logger.DebugFormat("Setting VLAN to {0}", vlan);
 
@@ -749,7 +756,7 @@ namespace HypervResource
             vlanEndpointSettings.CommitObject();
         }
 
-        public static VLANEndpointSettingData GetVlanEndpointSettings(VirtualSwitchManagementService vmNetMgmtSvc, ManagementPath newSwitchPath)
+        public VLANEndpointSettingData GetVlanEndpointSettings(VirtualSwitchManagementService vmNetMgmtSvc, ManagementPath newSwitchPath)
         {
             // Get Msvm_VLANEndpoint through associated with new Port
             var vlanEndpointQuery = new RelatedObjectQuery(newSwitchPath.Path, VLANEndpoint.CreatedClassName);
@@ -791,7 +798,7 @@ namespace HypervResource
         /// <param name="vmSettings"></param>
         /// <returns></returns>
         /// <throw>Throws if there is no vswitch</throw>
-        public static VirtualSwitch GetExternalVirtSwitch()
+        public VirtualSwitch GetExternalVirtSwitch()
         {
             // Work back from the first *bound* external NIC we find.
             var externNICs = ExternalEthernetPort.GetInstances("IsBound = TRUE");
@@ -857,7 +864,7 @@ namespace HypervResource
         }
 
 
-        private static void ModifyVmResources(VirtualSystemManagementService vmMgmtSvc, ComputerSystem vm, string[] resourceSettings)
+        private void ModifyVmResources(VirtualSystemManagementService vmMgmtSvc, ComputerSystem vm, string[] resourceSettings)
         {
             // Resource settings are changed through the management service
             System.Management.ManagementPath jobPath;
@@ -883,7 +890,7 @@ namespace HypervResource
             }
         }
 
-        private static ComputerSystem CreateDefaultVm(VirtualSystemManagementService vmMgmtSvc, string name)
+        private ComputerSystem CreateDefaultVm(VirtualSystemManagementService vmMgmtSvc, string name)
         {
             // Tweak default settings by basing new VM on default global setting object 
             // with designed display name.
@@ -936,7 +943,7 @@ namespace HypervResource
             return vm;
         }
 
-        public static VirtualSwitchManagementService GetVirtualSwitchManagementService()
+        public  VirtualSwitchManagementService GetVirtualSwitchManagementService()
         {
             // VirtualSwitchManagementService is a singleton, most anonymous way of lookup is by asking for the set
             // of local instances, which should be size 1.
@@ -952,7 +959,7 @@ namespace HypervResource
             throw ex;
         }
 
-        public static void CreateDynamicVirtualHardDisk(ulong MaxInternalSize, string Path)
+        public  void CreateDynamicVirtualHardDisk(ulong MaxInternalSize, string Path)
         {
             // Resource settings are changed through the management service
             System.Management.ManagementPath jobPath;
@@ -976,7 +983,7 @@ namespace HypervResource
             }
         }
 
-        public static ImageManagementService GetImageManagementService()
+        public  ImageManagementService GetImageManagementService()
         {
             // VirtualSystemManagementService is a singleton, most anonymous way of lookup is by asking for the set
             // of local instances, which should be size 1.
@@ -994,7 +1001,7 @@ namespace HypervResource
         }
 
 
-        public static VirtualSystemManagementService GetVirtualisationSystemManagementService()
+        public  VirtualSystemManagementService GetVirtualisationSystemManagementService()
         {
             // VirtualSystemManagementService is a singleton, most anonymous way of lookup is by asking for the set
             // of local instances, which should be size 1.
@@ -1016,7 +1023,7 @@ namespace HypervResource
         /// </summary>
         /// <param name="jobPath"></param>
         /// <returns></returns>
-        private static void JobCompleted(ManagementPath jobPath)
+        private  void JobCompleted(ManagementPath jobPath)
         {
             ConcreteJob jobObj = null;
             for(;;)
@@ -1044,7 +1051,7 @@ namespace HypervResource
             logger.DebugFormat("WMI job succeeded: {0}, Elapsed={1}", jobObj.Description, jobObj.ElapsedTime);
         }
 
-        public static void GetProcessorResources(out uint cores, out uint mhz)
+        public  void GetProcessorResources(out uint cores, out uint mhz)
         {
             //  Processor processors
             cores = 0;
@@ -1057,7 +1064,7 @@ namespace HypervResource
            }
         }
         
-        public static void GetProcessorUsageInfo(out double cpuUtilization)
+        public  void GetProcessorUsageInfo(out double cpuUtilization)
         {
             PerfFormattedData_Counters_ProcessorInformation.PerfFormattedData_Counters_ProcessorInformationCollection coll = 
                             PerfFormattedData_Counters_ProcessorInformation.GetInstances("Name=\"_Total\"");
@@ -1072,14 +1079,14 @@ namespace HypervResource
         }
 
 
-        public static void GetMemoryResources(out ulong physicalRamKBs, out ulong freeMemoryKBs)
+        public  void GetMemoryResources(out ulong physicalRamKBs, out ulong freeMemoryKBs)
         {
             OperatingSystem0 os = new OperatingSystem0();
             physicalRamKBs = os.TotalVisibleMemorySize;
             freeMemoryKBs = os.FreePhysicalMemory;
         }
 
-        public static string GetDefaultVirtualDiskFolder()
+        public  string GetDefaultVirtualDiskFolder()
         {
             VirtualSystemManagementServiceSettingData.VirtualSystemManagementServiceSettingDataCollection coll = VirtualSystemManagementServiceSettingData.GetInstances();
             string defaultVirtualHardDiskPath = null;
@@ -1099,7 +1106,7 @@ namespace HypervResource
             return defaultVirtualHardDiskPath;
         }
 
-        public static ComputerSystem GetComputerSystem(string displayName)
+        public  ComputerSystem GetComputerSystem(string displayName)
         {
             var wmiQuery = String.Format("ElementName=\"{0}\"", displayName);
             ComputerSystem.ComputerSystemCollection vmCollection = ComputerSystem.GetInstances(wmiQuery);
@@ -1112,7 +1119,7 @@ namespace HypervResource
             return null;
         }
 
-        public static List<string> GetVmElementNames()
+        public  List<string> GetVmElementNames()
         {
             List<string> result = new List<string>();
             ComputerSystem.ComputerSystemCollection vmCollection = ComputerSystem.GetInstances();
@@ -1129,7 +1136,7 @@ namespace HypervResource
             return result;
         }
 
-        public static ProcessorSettingData GetProcSettings(VirtualSystemSettingData vmSettings)
+        public  ProcessorSettingData GetProcSettings(VirtualSystemSettingData vmSettings)
         {
             // An ASSOCIATOR object provides the cross reference from the VirtualSystemSettingData and the 
             // ProcessorSettingData, but generated wrappers do not expose a ASSOCIATOR OF query as a method.
@@ -1154,7 +1161,7 @@ namespace HypervResource
             throw ex;
         }
 
-        public static MemorySettingData GetMemSettings(VirtualSystemSettingData vmSettings)
+        public  MemorySettingData GetMemSettings(VirtualSystemSettingData vmSettings)
         {
             // An ASSOCIATOR object provides the cross reference from the VirtualSystemSettingData and the 
             // MemorySettingData, but generated wrappers do not expose a ASSOCIATOR OF query as a method.
@@ -1179,7 +1186,7 @@ namespace HypervResource
             throw ex;
         }
 
-        public static ResourceAllocationSettingData GetDvdDriveSettings(VirtualSystemSettingData vmSettings)
+        public  ResourceAllocationSettingData GetDvdDriveSettings(VirtualSystemSettingData vmSettings)
         {
             var wmiObjCollection = GetResourceAllocationSettings(vmSettings);
 
@@ -1199,7 +1206,7 @@ namespace HypervResource
             throw ex;
         }
 
-        public static ResourceAllocationSettingData GetIDEControllerSettings(VirtualSystemSettingData vmSettings, string cntrllerAddr)
+        public  ResourceAllocationSettingData GetIDEControllerSettings(VirtualSystemSettingData vmSettings, string cntrllerAddr)
         {
             var wmiObjCollection = GetResourceAllocationSettings(vmSettings);
 
@@ -1228,7 +1235,7 @@ namespace HypervResource
         /// </summary>
         /// <param name="vmSettings"></param>
         /// <returns></returns>
-        public static ResourceAllocationSettingData.ResourceAllocationSettingDataCollection GetResourceAllocationSettings(VirtualSystemSettingData vmSettings)
+        public  ResourceAllocationSettingData.ResourceAllocationSettingDataCollection GetResourceAllocationSettings(VirtualSystemSettingData vmSettings)
         {
             // An ASSOCIATOR object provides the cross reference from the VirtualSystemSettingData and the 
             // ResourceAllocationSettingData, but generated wrappers do not expose a ASSOCIATOR OF query as a method.
@@ -1253,7 +1260,7 @@ namespace HypervResource
             throw ex;
         }
 
-        public static SwitchPort[] GetSwitchPorts(ComputerSystem vm)
+        public  SwitchPort[] GetSwitchPorts(ComputerSystem vm)
         {
             var virtSwitchMgmtSvc = GetVirtualSwitchManagementService();
             // Get NIC path
@@ -1274,7 +1281,7 @@ namespace HypervResource
         /// </summary>
         /// <param name="nic"></param>
         /// <returns></returns>
-        public static SwitchPort GetSwitchPort(SyntheticEthernetPort nic)
+        public  SwitchPort GetSwitchPort(SyntheticEthernetPort nic)
         {
             // An ASSOCIATOR object provides the cross reference between WMI objects, 
             // but generated wrappers do not expose a ASSOCIATOR OF query as a method.
@@ -1316,7 +1323,7 @@ namespace HypervResource
             return switchPort;
         }
 
-        public static SyntheticEthernetPortSettingData[] GetEthernetPorts(ComputerSystem vm)
+        public  SyntheticEthernetPortSettingData[] GetEthernetPorts(ComputerSystem vm)
         {
             // An ASSOCIATOR object provides the cross reference from the ComputerSettings and the 
             // SyntheticEthernetPortSettingData, via the VirtualSystemSettingData.
@@ -1343,7 +1350,7 @@ namespace HypervResource
             return results.ToArray();
         }
 
-        public static VirtualSystemSettingData GetVmSettings(ComputerSystem vm)
+        public  VirtualSystemSettingData GetVmSettings(ComputerSystem vm)
         {
             // An ASSOCIATOR object provides the cross reference from the ComputerSettings and the 
             // VirtualSystemSettingData, but generated wrappers do not expose a ASSOCIATOR OF query as a method.

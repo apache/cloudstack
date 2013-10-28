@@ -192,7 +192,7 @@ namespace CloudStack.Plugin.AgentShell {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("..\\..\\..\\..\\..\\")]
+        [global::System.Configuration.DefaultSettingValueAttribute("../../../../../")]
         public string hyperv_plugin_root {
             get {
                 return ((string)(this["hyperv_plugin_root"]));
