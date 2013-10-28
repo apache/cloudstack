@@ -36,6 +36,7 @@
     <bean id="unknown" class="org.apache.cloudstack.storage.image.format.Unknown" />
     <bean id="BAREMETAL" class="org.apache.cloudstack.storage.image.format.BAREMETAL" />
     
+    <bean id="hypervisorHelperImpl" class="org.apache.cloudstack.storage.helper.HypervisorHelperImpl" />
 
     <bean id="objectInDataStoreManagerImpl"
         class="org.apache.cloudstack.storage.datastore.ObjectInDataStoreManagerImpl" />
