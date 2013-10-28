@@ -42,4 +42,9 @@ public class StoragePoolDetailsDaoImpl extends ResourceDetailDaoBase<StoragePool
         StoragePoolDetailVO vo = findDetail(id, key.key());
         return vo == null ? null : vo.getValue();
     }
+
+    @Override
+    public StoragePoolDetailVO createDetail(long resourceId, String key, String value) {
+        return new StoragePoolDetailVO(resourceId, key, value);
+    }
 }

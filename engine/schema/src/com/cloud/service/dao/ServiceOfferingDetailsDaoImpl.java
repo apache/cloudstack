@@ -27,7 +27,10 @@ import com.cloud.service.ServiceOfferingDetailsVO;
 @Local(value=ServiceOfferingDetailsDao.class)
 public class ServiceOfferingDetailsDaoImpl extends ResourceDetailDaoBase<ServiceOfferingDetailsVO>
         implements ServiceOfferingDetailsDao {
-    public ServiceOfferingDetailsDaoImpl() {
-        
+
+    @Override
+    public ServiceOfferingDetailsVO createDetail(long resourceId, String key, String value) {
+        return new ServiceOfferingDetailsVO(resourceId, key, value);
     }
+    
 }

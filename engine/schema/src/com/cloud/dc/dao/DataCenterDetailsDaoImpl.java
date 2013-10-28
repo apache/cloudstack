@@ -28,9 +28,6 @@ import com.cloud.dc.DataCenterDetailVO;
 @Local(value=DataCenterDetailsDao.class)
 public class DataCenterDetailsDaoImpl extends ResourceDetailDaoBase<DataCenterDetailVO> implements DataCenterDetailsDao, ScopedConfigStorage {
     
-    public DataCenterDetailsDaoImpl() {
-    }
-    
     @Override
     public Scope getScope() {
         return ConfigKey.Scope.Zone;
@@ -40,6 +37,11 @@ public class DataCenterDetailsDaoImpl extends ResourceDetailDaoBase<DataCenterDe
     public String getConfigValue(long id, ConfigKey<?> key) {
         ResourceDetail vo = findDetail(id, key.key());
         return vo == null ? null : vo.getValue();
+    }
+
+    @Override
+    public DataCenterDetailVO createDetail(long resourceId, String key, String value) {
+        return new DataCenterDetailVO(resourceId, key, value);
     }
 
 }

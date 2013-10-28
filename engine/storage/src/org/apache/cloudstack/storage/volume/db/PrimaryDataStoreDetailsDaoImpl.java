@@ -25,8 +25,10 @@ import com.cloud.dc.dao.ResourceDetailDaoBase;
 @Component
 public class PrimaryDataStoreDetailsDaoImpl extends ResourceDetailDaoBase<PrimaryDataStoreDetailVO> implements
         PrimaryDataStoreDetailsDao {
-    
-    public PrimaryDataStoreDetailsDaoImpl() {
-        
+
+    @Override
+    public PrimaryDataStoreDetailVO createDetail(long resourceId, String key, String value) {
+        return new PrimaryDataStoreDetailVO(resourceId, key, value);
     }
+    
 }

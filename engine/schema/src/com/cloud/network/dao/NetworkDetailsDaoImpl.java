@@ -26,4 +26,9 @@ import com.cloud.dc.dao.ResourceDetailDaoBase;
 @Local(value=NetworkDetailsDao.class)
 public class NetworkDetailsDaoImpl extends ResourceDetailDaoBase<NetworkDetailVO> implements NetworkDetailsDao {
 
+    @Override
+    public NetworkDetailVO createDetail(long resourceId, String key, String value) {
+        return new NetworkDetailVO(resourceId, key, value);
+    }
+
 }

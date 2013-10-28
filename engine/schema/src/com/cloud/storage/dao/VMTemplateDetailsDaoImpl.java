@@ -26,8 +26,9 @@ import com.cloud.storage.VMTemplateDetailVO;
 @Component
 @Local(value = VMTemplateDetailsDao.class)
 public class VMTemplateDetailsDaoImpl extends ResourceDetailDaoBase<VMTemplateDetailVO> implements VMTemplateDetailsDao {
-    public VMTemplateDetailsDaoImpl(){
-        
+
+    @Override
+    public VMTemplateDetailVO createDetail(long resourceId, String key, String value) {
+        return new VMTemplateDetailVO(resourceId, key, value);
     }
-    
 }

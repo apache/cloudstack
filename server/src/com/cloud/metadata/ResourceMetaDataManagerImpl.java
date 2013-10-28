@@ -26,26 +26,20 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ResourceDetail;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.dc.DataCenterDetailVO;
 import com.cloud.dc.dao.DataCenterDetailsDao;
 import com.cloud.dc.dao.ResourceDetailDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.TaggedResourceService;
-import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
-import com.cloud.storage.VMTemplateDetailVO;
-import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.utils.component.ManagerBase;
@@ -53,8 +47,6 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
-import com.cloud.vm.NicDetailVO;
-import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.dao.NicDetailDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
@@ -119,7 +111,6 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 for (String key : details.keySet()) {
-                    long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
                     String value = details.get(key);
 
                     if (value == null || value.isEmpty()) {
@@ -127,32 +118,15 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
                     }
 
                     DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
-                    ResourceDetail detail = null;
+                    ResourceDetail detail = newDetailDaoHelper.createDetail( _taggedResourceMgr.getResourceId(resourceId, resourceType), key, value);
                     
-                    // TODO - Have a better design here for getting the DAO.
-                    if(resourceType == ResourceObjectType.Volume){
-                        detail = new VolumeDetailVO(id, key, value);
-                    } else if (resourceType == ResourceObjectType.Nic){
-                        detail = new NicDetailVO(id, key, value);
-                    } else if (resourceType == ResourceObjectType.Zone){
-                        detail = new DataCenterDetailVO(id, key, value);
-                    } else if (resourceType == ResourceObjectType.Network){
-                        detail = new NetworkDetailVO(id, key, value);
-                    } else if (resourceType == ResourceObjectType.UserVm) {
-                        detail = new UserVmDetailVO(id, key, value);
-                    } else if (resourceType == ResourceObjectType.Template) {
-                        detail = new VMTemplateDetailVO(id, key, value);
-                    } else if (resourceType == ResourceObjectType.ServiceOffering) {
-                        detail = new ServiceOfferingDetailsVO(id, key, value);
-                    } else if (resourceType == ResourceObjectType.Storage) {
-                        detail = new StoragePoolDetailVO(id, key, value);
-                    } else {
+                    if (detail == null) {
                         throw new UnsupportedOperationException("ResourceType " + resourceType + " doesn't support metadata");
+
                     }
                     newDetailDaoHelper.addDetail(detail);
                         
                 }
-                
                 
                 return true;
             }
@@ -174,38 +148,42 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
 
     private class DetailDaoHelper {
         private ResourceObjectType resourceType;
+        private ResourceDetailDao<? super ResourceDetail> dao;
         
         private DetailDaoHelper(ResourceObjectType resourceType) {
             if (!resourceType.resourceMetadataSupport()) {
                 throw new UnsupportedOperationException("ResourceType " + resourceType + " doesn't support metadata");
             }
             this.resourceType = resourceType;
-        }
-        
-        private void addDetail(ResourceDetail detail) {
-            ResourceDetailDao<ResourceDetail> dao = (ResourceDetailDao<ResourceDetail>)_daoMap.get(resourceType);
+            ResourceDetailDao<?> dao = _daoMap.get(resourceType);
             if (dao == null) {
                 throw new UnsupportedOperationException("ResourceType " + resourceType + " doesn't support metadata");
             }
+            this.dao = (ResourceDetailDao)_daoMap.get(resourceType);
+        }
+        
+        private void addDetail(ResourceDetail detail) {
             dao.addDetail(detail);   
         }
         
         private void removeDetail(long resourceId, String key) {
-            ResourceDetailDao<? extends ResourceDetail> dao = _daoMap.get(resourceType);
             dao.removeDetail(resourceId, key);
         }
         
         private List<? extends ResourceDetail> getDetails(long resourceId) {
-            ResourceDetailDao<? extends ResourceDetail> dao = _daoMap.get(resourceType);
             List<? extends ResourceDetail> detailList = new ArrayList<ResourceDetail>();        
             detailList = dao.findDetailsList(resourceId);
             return detailList;
         }
         
         private ResourceDetail getDetail(long resourceId, String key) {
-            ResourceDetailDao<? extends ResourceDetail> dao = _daoMap.get(resourceType);
             return dao.findDetail(resourceId, key);
         }
+        
+        private ResourceDetail createDetail(long resourceId, String key, String value) {
+            return dao.createDetail(resourceId, key, value);
+        }
+        
     }
     
     @Override
