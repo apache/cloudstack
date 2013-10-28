@@ -84,6 +84,16 @@ body.install-wizard {
   display: none;
 }
 
+a {
+  color: #0B84DC;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+  color: #000000;
+}
+
 /*Table*/
 table {
   width: 740px;
@@ -282,16 +292,6 @@ table th div.ui-resizable-handle {
 }
 
 /** Header, misc*/
-#header,
-#navigation {
-  /*+text-shadow:0px -1px 1px #000000;*/
-  -moz-text-shadow: 0px -1px 1px #000000;
-  -webkit-text-shadow: 0px -1px 1px #000000;
-  -o-text-shadow: 0px -1px 1px #000000;
-  text-shadow: 0px -1px 1px #000000;
-  /*[empty]padding:;*/
-}
-
 #template {
   display: none;
 }
@@ -2199,7 +2199,7 @@ div.detail-group.actions td {
 /*Header*/
 #header {
   width: 100%;
-  height: 56px;
+  height: 117px;
   background: url(../images/overlay-pattern.png) repeat 0, #1B5070 url(../images/header-gradient.png) no-repeat center;
   z-index: 10000;
   background-size: auto, cover;
@@ -2213,25 +2213,40 @@ div.detail-group.actions td {
 }
 
 #header.nologo div.logo {
-  width: 210px;
+  width: 1024px;
   height: 47px;
-  position: relative;
-  float: left;
-  margin: 4px 0 0 19px;
+  margin: auto;
   background: url(../images/logo.png) no-repeat 0 center;
 }
 
 #header div.controls {
-  height: 39px;
+  width: 1024px;
+  height: 48px;
   position: relative;
-  float: right;
-  margin-top: 8px;
-  display: inline-block;
-  padding: 0 96px 0 0;
+  margin: 8px auto;
+  padding-top: 14px;
+  /*+border-radius:4px 4px 0 0;*/
+  -moz-border-radius: 4px 4px 0 0;
+  -webkit-border-radius: 4px 4px 0 0;
+  -khtml-border-radius: 4px 4px 0 0;
+  border-radius: 4px 4px 0 0;
 }
 
 #header div.controls.nologo {
-  background-image: none;
+  background: #666666;
+  background: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/Pgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEgMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSI+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJncmFkLXVjZ2ctZ2VuZXJhdGVkIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIwJSIgeTI9IjEwMCUiPgogICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzY2NjY2NiIgc3RvcC1vcGFjaXR5PSIxIi8+CiAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMzZDNkM2QiIHN0b3Atb3BhY2l0eT0iMSIvPgogIDwvbGluZWFyR3JhZGllbnQ+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0idXJsKCNncmFkLXVjZ2ctZ2VuZXJhdGVkKSIgLz4KPC9zdmc+);
+  background: -moz-linear-gradient(top, #666666 0%, #3d3d3d 100%);
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#666666), color-stop(100%,#3d3d3d));
+  background: -webkit-linear-gradient(top, #666666 0%,#3d3d3d 100%);
+  background: -o-linear-gradient(top, #666666 0%,#3d3d3d 100%);
+  background: -ms-linear-gradient(top, #666666 0%,#3d3d3d 100%);
+  background: linear-gradient(to bottom, #666666 0%,#3d3d3d 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#666666', endColorstr='#3d3d3d',GradientType=0 );
+  /*+box-shadow:0px -1px 6px #0E3955;*/
+  -moz-box-shadow: 0px -1px 6px #0E3955;
+  -webkit-box-shadow: 0px -1px 6px #0E3955;
+  -o-box-shadow: 0px -1px 6px #0E3955;
+  box-shadow: 0px -1px 6px #0E3955;
 }
 
 .button {
@@ -2244,7 +2259,7 @@ div.detail-group.actions td {
   background: transparent;
   height: 18px;
   padding: 1px 0 0;
-  margin: 8px 36px 0 50px;
+  margin: 8px 36px 0 29px;
 }
 
 #header div.notifications span {
@@ -2295,7 +2310,9 @@ div.detail-group.actions td {
 #user {
   height: 30px;
   margin: 5px 6px 0 0;
-  position: relative;
+  position: absolute;
+  top: -48px;
+  left: 880px;
   cursor: default !important;
   display: inline-block;
   float: left;
@@ -2303,22 +2320,9 @@ div.detail-group.actions td {
 }
 
 #user div.name {
-  background: url(../images/bg-gradients.png) 0px -867px;
   display: inline-block;
   float: left;
   padding: 9px 18px 7px 12px;
-  border: 1px solid #7A7A7A;
-  border-bottom: 1px solid #ADADAD;
-  /*+box-shadow:inset 0px -1px 2px #6D6D6D;*/
-  -moz-box-shadow: inset 0px -1px 2px #6D6D6D;
-  -webkit-box-shadow: inset 0px -1px 2px #6D6D6D;
-  -o-box-shadow: inset 0px -1px 2px #6D6D6D;
-  box-shadow: inset 0px -1px 2px #6D6D6D;
-  /*+border-radius:4px 0 0 4px;*/
-  -moz-border-radius: 4px 0 0 4px;
-  -webkit-border-radius: 4px 0 0 4px;
-  -khtml-border-radius: 4px 0 0 4px;
-  border-radius: 4px 0 0 4px;
   border-right: none;
   /*[empty]border-top:;*/
   min-width: 75px;
@@ -2343,27 +2347,11 @@ div.detail-group.actions td {
   position: relative;
   left: 0px;
   top: 0px;
-  background: url(../images/bg-gradients.png);
   background-position: 0px -867px;
-  border-top: 1px solid #7A7A7A;
-  border-bottom: 1px solid #ADADAD;
-  border-left: 1px solid #B5B5B5;
-  /*+border-radius:0 4px 4px 0;*/
-  -moz-border-radius: 0 4px 4px 0;
-  -webkit-border-radius: 0 4px 4px 0;
-  -khtml-border-radius: 0 4px 4px 0;
-  border-radius: 0 4px 4px 0;
-  /*+box-shadow:inset 1px 0px 2px #6D6D6D;*/
-  -moz-box-shadow: inset 1px 0px 2px #6D6D6D;
-  -webkit-box-shadow: inset 1px 0px 2px #6D6D6D;
-  -o-box-shadow: inset 1px 0px 2px #6D6D6D;
-  box-shadow: inset 1px 0px 2px #6D6D6D;
   cursor: pointer;
 }
 
 #user div.options:hover {
-  background-position: 0px -904px;
-  /*[empty]background-color:;*/
 }
 
 #user div.options .arrow {
@@ -4028,68 +4016,31 @@ Dialogs*/
 
 /*User options*/
 #user-options {
-  width: 115px;
-  height: 33px;
-  display: none;
+  background: #FFFFFF;
+  z-index: 10000;
+  width: 104px;
   position: absolute;
-  z-index: 5000;
-  /*+placement:shift 804px 42px;*/
-  position: relative;
-  left: 804px;
-  top: 42px;
-  border-top: 1px solid #FFFFFF;
-  border-bottom: 1px solid #C6C4C5;
-  /*+border-radius:0 0 5px 5px;*/
-  -moz-border-radius: 0 0 5px 5px;
-  -webkit-border-radius: 0 0 5px 5px;
-  -khtml-border-radius: 0 0 5px 5px;
-  border-radius: 0 0 5px 5px;
-  /*+box-shadow:0px 8px 17px #505050;*/
-  -moz-box-shadow: 0px 8px 17px #505050;
-  -webkit-box-shadow: 0px 8px 17px #505050;
-  -o-box-shadow: 0px 8px 17px #505050;
-  box-shadow: 0px 8px 17px #505050;
-  padding: 0;
-  border: 1px solid #8A8888;
+  padding: 15px;
+  top: 30px;
+  /*+border-radius:0 0 3px 3px;*/
+  -moz-border-radius: 0 0 3px 3px;
+  -webkit-border-radius: 0 0 3px 3px;
+  -khtml-border-radius: 0 0 3px 3px;
+  border-radius: 0 0 3px 3px;
+  /*+box-shadow:0px 1px 7px #000000;*/
+  -moz-box-shadow: 0px 1px 7px #000000;
+  -webkit-box-shadow: 0px 1px 7px #000000;
+  -o-box-shadow: 0px 1px 7px #000000;
+  box-shadow: 0px 1px 7px #000000;
 }
 
 #user-options a {
-  position: relative;
-  background: #929292;
+  float: left;
   width: 100%;
-  display: block;
-  clear: both;
-  text-indent: 13px;
-  color: #FFFFFF;
-  text-decoration: none;
-  font-size: 12px;
-  /*+placement:shift 0px -51px;*/
-  position: relative;
-  left: 0px;
-  top: -51px;
-  padding: 11px 0 9px;
-  border-bottom: 1px solid #C5C5C5;
-  border-top: 1px solid #FFFFFF;
-  /*+text-shadow:0px 2px 1px #606060;*/
-  -moz-text-shadow: 0px 2px 1px #606060;
-  -webkit-text-shadow: 0px 2px 1px #606060;
-  -o-text-shadow: 0px 2px 1px #606060;
-  text-shadow: 0px 2px 1px #606060;
-  /*+border-radius:0 0 5px 5px;*/
-  -moz-border-radius: 0 0 5px 5px;
-  -webkit-border-radius: 0 0 5px 5px;
-  -khtml-border-radius: 0 0 5px 5px;
-  border-radius: 0 0 5px 5px;
+  padding: 10px 0;
 }
 
 #user-options a:hover {
-  background: #ADADAD;
-  color: #FFFFFF;
-  /*+text-shadow:0px 1px 2px #383838;*/
-  -moz-text-shadow: 0px 1px 2px #383838;
-  -webkit-text-shadow: 0px 1px 2px #383838;
-  -o-text-shadow: 0px 1px 2px #383838;
-  text-shadow: 0px 1px 2px #383838;
 }
 
 /*Dashboard
@@ -9128,7 +9079,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 
 .project-switcher label {
   position: absolute;
-  top: 15px;
+  top: 29px;
   color: #FFFFFF;
   font-size: 12px;
   font-weight: bold;
