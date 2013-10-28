@@ -451,8 +451,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (zone == null) {
                     throw new InvalidParameterValueException("unable to find zone by id " + resourceId);
                 }
-                DataCenterDetailVO dcDetailVO = new DataCenterDetailVO(resourceId, name, value);
-                _dcDetailsDao.addDetail(dcDetailVO);
+                _dcDetailsDao.addDetail(resourceId, name, value);
                 break;
             case Cluster:
                 ClusterVO cluster = _clusterDao.findById(resourceId);
@@ -474,8 +473,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (pool == null) {
                     throw new InvalidParameterValueException("unable to find storage pool by id " + resourceId);
                 }
-                StoragePoolDetailVO storagePoolDetailVO = _storagePoolDetailsDao.findDetail(resourceId, name);
-                _storagePoolDetailsDao.addDetail(storagePoolDetailVO);
+                _storagePoolDetailsDao.addDetail(resourceId, name, value);
                 
                 break;
 
@@ -2107,7 +2105,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), key, details.get(key)));
                 }
                 
-                _serviceOfferingDetailsDao.addDetails(detailsVO);
+                _serviceOfferingDetailsDao.saveDetails(detailsVO);
             }
             CallContext.current().setEventDetails("Service offering id=" + offering.getId());
             return offering;

@@ -27,8 +27,8 @@ public class PrimaryDataStoreDetailsDaoImpl extends ResourceDetailsDaoBase<Prima
         PrimaryDataStoreDetailsDao {
 
     @Override
-    public PrimaryDataStoreDetailVO createDetail(long resourceId, String key, String value) {
-        return new PrimaryDataStoreDetailVO(resourceId, key, value);
+    public void addDetail(long resourceId, String key, String value) {
+        super.addDetail(new PrimaryDataStoreDetailVO(resourceId, key, value));
     }
     
 }

@@ -44,7 +44,7 @@ public class StoragePoolDetailsDaoImpl extends ResourceDetailsDaoBase<StoragePoo
     }
 
     @Override
-    public StoragePoolDetailVO createDetail(long resourceId, String key, String value) {
-        return new StoragePoolDetailVO(resourceId, key, value);
+    public void addDetail(long resourceId, String key, String value) {
+        super.addDetail(new StoragePoolDetailVO(resourceId, key, value));
     }
 }

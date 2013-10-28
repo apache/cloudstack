@@ -41,6 +41,9 @@ public class FirewallRuleDetailVO implements ResourceDetail{
 
         @Column(name="value", length=1024)
         private String value;
+        
+        @Column(name="display")
+        private boolean display;
 
         public FirewallRuleDetailVO() {}
 
@@ -68,5 +71,10 @@ public class FirewallRuleDetailVO implements ResourceDetail{
         @Override
         public long getResourceId() {
             return resourceId;
+        }
+
+        @Override
+        public boolean isDisplay() {
+            return display;
         }
 }

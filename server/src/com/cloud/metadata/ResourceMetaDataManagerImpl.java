@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.metadata;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -122,14 +121,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
                     }
 
                     DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
-                    ResourceDetail detail = newDetailDaoHelper.createDetail( _taggedResourceMgr.getResourceId(resourceId, resourceType), key, value);
-                    
-                    if (detail == null) {
-                        throw new UnsupportedOperationException("ResourceType " + resourceType + " doesn't support metadata");
-
-                    }
-                    newDetailDaoHelper.addDetail(detail);
-                        
+                    newDetailDaoHelper.addDetail( _taggedResourceMgr.getResourceId(resourceId, resourceType), key, value);                    
                 }
                 
                 return true;
@@ -166,39 +158,50 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
             this.dao = (ResourceDetailsDao)_daoMap.get(resourceType);
         }
         
-        private void addDetail(ResourceDetail detail) {
-            dao.addDetail(detail);   
-        }
-        
         private void removeDetail(long resourceId, String key) {
             dao.removeDetail(resourceId, key);
-        }
-        
-        private List<? extends ResourceDetail> getDetails(long resourceId) {
-            List<? extends ResourceDetail> detailList = new ArrayList<ResourceDetail>();        
-            detailList = dao.findDetailsList(resourceId);
-            return detailList;
         }
         
         private ResourceDetail getDetail(long resourceId, String key) {
             return dao.findDetail(resourceId, key);
         }
         
-        private ResourceDetail createDetail(long resourceId, String key, String value) {
-            return dao.createDetail(resourceId, key, value);
+        private void addDetail(long resourceId, String key, String value) {
+            dao.addDetail(resourceId, key, value);
         }
         
+        private Map<String, String> getDetailsMap(long resourceId, Boolean forDisplay) {            
+            if (forDisplay == null) {
+                return dao.listDetailsKeyPairs(resourceId);
+            } else  {
+                return dao.listDetailsKeyPairs(resourceId, forDisplay);
+            }
+        }
+        
+        private List<? extends ResourceDetail> getDetailsList(long resourceId, Boolean forDisplay) {
+            if (forDisplay == null) {
+                return dao.listDetails(resourceId);
+            } else {
+                return dao.listDetails(resourceId, forDisplay);
+            }
+        }
     }
     
     @Override
-    public List<? extends ResourceDetail> getDetails(long resourceId, ResourceObjectType resourceType) {
+    public List<? extends ResourceDetail> getDetailsList(long resourceId, ResourceObjectType resourceType, Boolean forDisplay) {
         DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
-        return newDetailDaoHelper.getDetails(resourceId);  
+        return newDetailDaoHelper.getDetailsList(resourceId, forDisplay);  
     }
     
     @Override
     public ResourceDetail getDetail(long resourceId, ResourceObjectType resourceType, String key) {
         DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
-        return newDetailDaoHelper.getDetail(resourceId, key);  
+        return newDetailDaoHelper.getDetail(resourceId, key);
+    }
+    
+    @Override 
+    public Map<String, String> getDetailsMap(long resourceId, ResourceObjectType resourceType, Boolean forDisplay) {
+        DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
+        return newDetailDaoHelper.getDetailsMap(resourceId, forDisplay); 
     }
 }

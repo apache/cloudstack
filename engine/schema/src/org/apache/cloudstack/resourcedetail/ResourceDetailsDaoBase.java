@@ -35,6 +35,7 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("resourceId", AllFieldsSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("display", AllFieldsSearch.entity().isDisplay(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
 
@@ -47,7 +48,7 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
     }
 
 
-    public Map<String, String> findDetails(long resourceId) {
+    public Map<String, String> listDetailsKeyPairs(long resourceId) {
         SearchCriteria<R> sc = AllFieldsSearch.create();
         sc.setParameters("resourceId", resourceId);
         
@@ -59,7 +60,7 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         return details;
     }
 
-    public List<R> findDetailsList(long resourceId) {
+    public List<R> listDetails(long resourceId) {
         SearchCriteria<R> sc = AllFieldsSearch.create();
         sc.setParameters("resourceId", resourceId);
 
@@ -84,7 +85,7 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
     }
 
 
-    public void addDetails(List<R> details) {
+    public void saveDetails(List<R> details) {
         if (details.isEmpty()) {
             return;
         }
@@ -102,7 +103,7 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
     }
     
 
-    public void addDetail(R detail) {
+    protected void addDetail(R detail) {
         if (detail == null) {
             return;
         }
@@ -112,5 +113,27 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         }
         persist(detail);
     }
+    
+    public Map<String, String> listDetailsKeyPairs(long resourceId, boolean forDisplay) {
+        SearchCriteria<R> sc = AllFieldsSearch.create();
+        sc.setParameters("resourceId", resourceId);
+        sc.setParameters("display", forDisplay);
+        
+        List<R> results = search(sc, null);
+        Map<String, String> details = new HashMap<String, String>(results.size());
+        for (R result : results) {
+            details.put(result.getName(), result.getValue());
+        }
+        return details;
+    }
+    
 
+    public List<R> listDetails(long resourceId, boolean forDisplay) {
+        SearchCriteria<R> sc = AllFieldsSearch.create();
+        sc.setParameters("resourceId", resourceId);
+        sc.setParameters("display", forDisplay);
+
+        List<R> results = search(sc, null);
+        return results;
+    }
 }

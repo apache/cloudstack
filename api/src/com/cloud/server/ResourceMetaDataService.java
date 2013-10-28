@@ -44,10 +44,11 @@ public interface ResourceMetaDataService {
     public boolean deleteResourceMetaData(String resourceId, ResourceObjectType resourceType, String key);
 
 
-    List<? extends ResourceDetail> getDetails(long resourceId, ResourceObjectType resourceType);
-
-
     ResourceDetail getDetail(long resourceId, ResourceObjectType resourceType, String key);
 
 
-    }
+    Map<String, String> getDetailsMap(long resourceId, ResourceObjectType resourceType, Boolean forDisplay);
+
+    List<? extends ResourceDetail> getDetailsList(long resourceId, ResourceObjectType resourceType, Boolean forDisplay);
+
+}

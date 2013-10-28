@@ -332,7 +332,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
 	@Override
 	public void loadDetails(UserVmVO vm) {
-        Map<String, String> details = _detailsDao.findDetails(vm.getId());
+        Map<String, String> details = _detailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
 	}
 
@@ -347,7 +347,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             details.add(new UserVmDetailVO(vm.getId(), key, detailsStr.get(key)));
         }
         
-        _detailsDao.addDetails(details);
+        _detailsDao.saveDetails(details);
     }
 
     @Override

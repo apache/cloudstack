@@ -223,7 +223,7 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
 
     private boolean isServiceOfferingUsingPlannerInPreferredMode(long serviceOfferingId) {
         boolean preferred = false;
-        Map<String, String> details = serviceOfferingDetailsDao.findDetails(serviceOfferingId);
+        Map<String, String> details = serviceOfferingDetailsDao.listDetailsKeyPairs(serviceOfferingId);
         if (details != null && !details.isEmpty()) {
             String preferredAttribute = details.get("ImplicitDedicationMode");
             if (preferredAttribute != null && preferredAttribute.equals("Preferred")) {

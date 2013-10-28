@@ -28,7 +28,7 @@ import com.cloud.storage.VMTemplateDetailVO;
 public class VMTemplateDetailsDaoImpl extends ResourceDetailsDaoBase<VMTemplateDetailVO> implements VMTemplateDetailsDao {
 
     @Override
-    public VMTemplateDetailVO createDetail(long resourceId, String key, String value) {
-        return new VMTemplateDetailVO(resourceId, key, value);
+    public void addDetail(long resourceId, String key, String value) {
+        super.addDetail(new VMTemplateDetailVO(resourceId, key, value));
     }
 }

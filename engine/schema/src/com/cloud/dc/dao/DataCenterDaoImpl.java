@@ -358,7 +358,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
     @Override
     public void loadDetails(DataCenterVO zone) {
-        Map<String, String> details =_detailsDao.findDetails(zone.getId());
+        Map<String, String> details =_detailsDao.listDetailsKeyPairs(zone.getId());
         zone.setDetails(details);
     }
 
@@ -374,7 +374,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
             resourceDetails.add(new DataCenterDetailVO(zone.getId(), key, details.get(key)));
         }
         
-        _detailsDao.addDetails(resourceDetails);
+        _detailsDao.saveDetails(resourceDetails);
     }
 
     @Override

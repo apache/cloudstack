@@ -523,6 +523,7 @@ public class ApiConstants {
     public static final String SERVICE_STATE = "servicestate";
     public static final String RESOURCE_DETAILS = "resourcedetails";
     public static final String EXPUNGE = "expunge";
+    public static final String FOR_DISPLAY = "fordisplay";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

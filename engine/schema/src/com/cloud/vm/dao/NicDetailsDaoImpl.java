@@ -28,7 +28,7 @@ import com.cloud.vm.NicDetailVO;
 public class NicDetailsDaoImpl extends ResourceDetailsDaoBase<NicDetailVO> implements NicDetailsDao {
 
     @Override
-    public NicDetailVO createDetail(long resourceId, String key, String value) {
-        return new NicDetailVO(resourceId, key, value);
+    public void addDetail(long resourceId, String key, String value) {
+        super.addDetail(new NicDetailVO(resourceId, key, value));
     }
 }

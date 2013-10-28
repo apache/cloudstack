@@ -42,6 +42,9 @@ public class DataCenterDetailVO implements ResourceDetail {
     @Column(name="value")
     private String value;
     
+    @Column(name="display")
+    private boolean display;
+    
     protected DataCenterDetailVO() {
     }
     
@@ -70,5 +73,10 @@ public class DataCenterDetailVO implements ResourceDetail {
     @Override
     public long getResourceId() {
         return resourceId;
+    }
+    
+    @Override
+    public boolean isDisplay() {
+        return display;
     }
 }

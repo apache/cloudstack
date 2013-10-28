@@ -3260,8 +3260,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     @Override
-    public List<ResourceDetailResponse> listResource(ListResourceDetailsCmd cmd) {
+    public List<ResourceDetailResponse> listResourceDetails(ListResourceDetailsCmd cmd) {
         String key = cmd.getKey();
+        Boolean forDisplay = cmd.forDisplay();
         ResourceTag.ResourceObjectType resourceType = cmd.getResourceType();
         String resourceIdStr = cmd.getResourceId();
         long resourceId = _taggedResourceMgr.getResourceId(resourceIdStr, resourceType);
@@ -3269,20 +3270,21 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         ResourceDetail requestedDetail = null;
 
         if (key == null) {
-            detailList = _resourceMetaDataMgr.getDetails(resourceId, resourceType);
+            detailList = _resourceMetaDataMgr.getDetailsList(resourceId, resourceType, forDisplay);
         } else {
             requestedDetail = _resourceMetaDataMgr.getDetail(resourceId, resourceType, key);
+            if (forDisplay != null && requestedDetail.isDisplay() != forDisplay) {
+                requestedDetail = null;
+            }
         }
         
         List<ResourceDetailResponse> responseList = new ArrayList<ResourceDetailResponse>();
         if (requestedDetail != null) {
-            ResourceDetailResponse detailResponse = createResourceDetailsResponse(resourceId, requestedDetail.getName(), requestedDetail.getValue(),
-                    resourceType);
+            ResourceDetailResponse detailResponse = createResourceDetailsResponse(requestedDetail, resourceType);
             responseList.add(detailResponse);
         } else {
             for (ResourceDetail detail : detailList) {
-                ResourceDetailResponse detailResponse = createResourceDetailsResponse(resourceId, detail.getName(), detail.getValue(),
-                        resourceType);
+                ResourceDetailResponse detailResponse = createResourceDetailsResponse(detail, resourceType);
                 responseList.add(detailResponse);
             }
         }
@@ -3291,12 +3293,13 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     
-    protected ResourceDetailResponse createResourceDetailsResponse(long resourceId, String key, String value, ResourceTag.ResourceObjectType type) {
+    protected ResourceDetailResponse createResourceDetailsResponse(ResourceDetail requestedDetail, ResourceTag.ResourceObjectType resourceType) {
         ResourceDetailResponse resourceDetailResponse = new ResourceDetailResponse();
-        resourceDetailResponse.setResourceId(String.valueOf(resourceId));
-        resourceDetailResponse.setName(key);
-        resourceDetailResponse.setValue(value);
-        resourceDetailResponse.setResourceType(type.toString());
+        resourceDetailResponse.setResourceId(String.valueOf(requestedDetail.getResourceId()));
+        resourceDetailResponse.setName(requestedDetail.getName());
+        resourceDetailResponse.setValue(requestedDetail.getValue());
+        resourceDetailResponse.setForDisplay(requestedDetail.isDisplay());
+        resourceDetailResponse.setResourceType(resourceType.toString().toString());
         resourceDetailResponse.setObjectName("resourcedetail");
         return resourceDetailResponse;
     }

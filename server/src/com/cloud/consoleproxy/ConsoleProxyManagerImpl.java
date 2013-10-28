@@ -1326,7 +1326,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
 
         ConsoleProxyVO vm = _consoleProxyDao.findById(profile.getId());
-        Map<String, String> details = _vmDetailsDao.findDetails(vm.getId());
+        Map<String, String> details = _vmDetailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
 
         StringBuilder buf = profile.getBootArgsBuilder();

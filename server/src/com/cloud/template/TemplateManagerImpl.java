@@ -1639,7 +1639,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 for (String key : detailsStr.keySet()) {
                     details.add(new VMTemplateDetailVO(template.getId(), key, detailsStr.get(key)));
                 }
-                _templateDetailsDao.addDetails(details);
+                _templateDetailsDao.saveDetails(details);
             }
 
             _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.template);

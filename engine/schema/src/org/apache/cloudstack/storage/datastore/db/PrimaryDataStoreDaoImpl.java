@@ -386,13 +386,13 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
             for (String key : details.keySet()) {
                 detailsVO.add(new StoragePoolDetailVO(poolId, key, details.get(key)));
             }
-            _detailsDao.addDetails(detailsVO);
+            _detailsDao.saveDetails(detailsVO);
         }
     }
 
     @Override
     public Map<String, String> getDetails(long poolId) {
-        return _detailsDao.findDetails(poolId);
+        return _detailsDao.listDetailsKeyPairs(poolId);
     }
 
     @Override

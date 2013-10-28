@@ -162,7 +162,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
 
     @Override
     public void loadDetails(ServiceOfferingVO serviceOffering) {
-        Map<String, String> details = detailsDao.findDetails(serviceOffering.getId());
+        Map<String, String> details = detailsDao.listDetailsKeyPairs(serviceOffering.getId());
         serviceOffering.setDetails(details);
     }
 
@@ -178,6 +178,6 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
             resourceDetails.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), key, details.get(key)));
         }
         
-        detailsDao.addDetails(resourceDetails);
+        detailsDao.saveDetails(resourceDetails);
     }
 }

@@ -27,6 +27,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -79,7 +80,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setBytesWriteRate(offering.getBytesWriteRate());
         offeringResponse.setIopsReadRate(offering.getIopsReadRate());
         offeringResponse.setIopsWriteRate(offering.getIopsWriteRate());
-        offeringResponse.setDetails(ApiDBUtils.getServiceOfferingDetails(offering.getId()));
+        offeringResponse.setDetails(ApiDBUtils.getResourceDetails(offering.getId(), ResourceObjectType.ServiceOffering));
         offeringResponse.setObjectName("serviceoffering");
 
         return offeringResponse;

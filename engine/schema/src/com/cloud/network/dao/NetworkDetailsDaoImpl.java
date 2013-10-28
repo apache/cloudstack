@@ -27,8 +27,8 @@ import org.springframework.stereotype.Component;
 public class NetworkDetailsDaoImpl extends ResourceDetailsDaoBase<NetworkDetailVO> implements NetworkDetailsDao {
 
     @Override
-    public NetworkDetailVO createDetail(long resourceId, String key, String value) {
-        return new NetworkDetailVO(resourceId, key, value);
+    public void addDetail(long resourceId, String key, String value) {
+        super.addDetail(new NetworkDetailVO(resourceId, key, value));
     }
 
 }

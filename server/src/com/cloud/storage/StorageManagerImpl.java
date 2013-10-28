@@ -706,7 +706,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Map<String, String> updatedDetails = new HashMap<String, String>();
 
         if (tags != null) {
-            Map<String, String> existingDetails = _storagePoolDetailsDao.findDetails(id);
+            Map<String, String> existingDetails = _storagePoolDetailsDao.listDetailsKeyPairs(id);
             Set<String> existingKeys = existingDetails.keySet();
 
             Map<String, String> existingDetailsToKeep = new HashMap<String, String>();

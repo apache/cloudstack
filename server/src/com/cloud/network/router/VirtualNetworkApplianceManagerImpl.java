@@ -2008,7 +2008,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
         //1) Set router details
         DomainRouterVO router = _routerDao.findById(profile.getVirtualMachine().getId());
-        Map<String, String> details = _vmDetailsDao.findDetails(router.getId());
+        Map<String, String> details = _vmDetailsDao.listDetailsKeyPairs(router.getId());
         router.setDetails(details);
 
         //2) Prepare boot loader elements related with Control network

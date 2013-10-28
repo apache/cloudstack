@@ -3002,7 +3002,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
         UserVmVO vm = _vmDao.findById(profile.getId());
-        Map<String, String> details = _vmDetailsDao.findDetails(vm.getId());
+        Map<String, String> details = _vmDetailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
 
         if (vm.getIsoId() != null) {
@@ -4202,7 +4202,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
     private boolean isServiceOfferingUsingPlannerInPreferredMode(long serviceOfferingId) {
         boolean preferred = false;
-        Map<String, String> details = serviceOfferingDetailsDao.findDetails(serviceOfferingId);
+        Map<String, String> details = serviceOfferingDetailsDao.listDetailsKeyPairs(serviceOfferingId);
         if (details != null && !details.isEmpty()) {
             String preferredAttribute = details.get("ImplicitDedicationMode");
             if (preferredAttribute != null && preferredAttribute.equals("Preferred")) {

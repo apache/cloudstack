@@ -29,8 +29,8 @@ public class ServiceOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<Servic
         implements ServiceOfferingDetailsDao {
 
     @Override
-    public ServiceOfferingDetailsVO createDetail(long resourceId, String key, String value) {
-        return new ServiceOfferingDetailsVO(resourceId, key, value);
+    public void addDetail(long resourceId, String key, String value) {
+        super.addDetail(new ServiceOfferingDetailsVO(resourceId, key, value));
     }
     
 }

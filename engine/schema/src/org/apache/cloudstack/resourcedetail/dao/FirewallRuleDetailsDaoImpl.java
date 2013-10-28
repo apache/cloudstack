@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
 public class FirewallRuleDetailsDaoImpl extends ResourceDetailsDaoBase<FirewallRuleDetailVO> implements FirewallRuleDetailsDao {
 
     @Override
-    public FirewallRuleDetailVO createDetail(long resourceId, String key, String value) {
-        return new FirewallRuleDetailVO(resourceId, key, value);
+    public void addDetail(long resourceId, String key, String value) {
+        super.addDetail(new FirewallRuleDetailVO(resourceId, key, value));
     }
 }

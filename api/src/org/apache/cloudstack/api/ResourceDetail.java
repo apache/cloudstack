@@ -23,5 +23,7 @@ public interface ResourceDetail extends InternalIdentity{
     public String getName();
     
     public String getValue();
+    
+    public boolean isDisplay();
         
 }

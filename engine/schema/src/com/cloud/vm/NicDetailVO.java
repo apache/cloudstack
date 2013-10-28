@@ -41,6 +41,9 @@ public class NicDetailVO implements ResourceDetail {
 
     @Column(name="value", length=1024)
     private String value;
+    
+    @Column(name="display")
+    private boolean display;
 
     public NicDetailVO() {}
 
@@ -70,4 +73,8 @@ public class NicDetailVO implements ResourceDetail {
         return resourceId;
     }
 
+    @Override
+    public boolean isDisplay() {
+        return display;
+    }
 }

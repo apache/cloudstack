@@ -23,7 +23,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
@@ -42,6 +41,9 @@ public class VolumeDetailVO implements ResourceDetail {
 
     @Column(name="value", length=1024)
     private String value;
+    
+    @Column(name="display")
+    private boolean display;
 
     public VolumeDetailVO() {}
 
@@ -69,6 +71,11 @@ public class VolumeDetailVO implements ResourceDetail {
     @Override
     public long getResourceId() {
         return resourceId;
+    }
+    
+    @Override
+    public boolean isDisplay() {
+        return display;
     }
 
 }

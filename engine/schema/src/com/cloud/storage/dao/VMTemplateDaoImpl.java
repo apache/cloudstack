@@ -405,7 +405,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
     @Override
     public void loadDetails(VMTemplateVO tmpl) {
-        Map<String, String> details = _templateDetailsDao.findDetails(tmpl.getId());
+        Map<String, String> details = _templateDetailsDao.listDetailsKeyPairs(tmpl.getId());
         tmpl.setDetails(details);
     }
 
@@ -421,7 +421,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             details.add(detail);
         }
         
-        _templateDetailsDao.addDetails(details);
+        _templateDetailsDao.saveDetails(details);
     }
 
 
@@ -756,7 +756,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                 for (String key : tmplt.getDetails().keySet()) {
                     details.add(new VMTemplateDetailVO(tmplt.getId(), key, tmplt.getDetails().get(key)));
                 }
-                _templateDetailsDao.addDetails(details);
+                _templateDetailsDao.saveDetails(details);
             }
         }
         VMTemplateZoneVO tmpltZoneVO = _templateZoneDao.findByZoneTemplate(zoneId, tmplt.getId());

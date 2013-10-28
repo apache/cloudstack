@@ -41,6 +41,9 @@ public class ServiceOfferingDetailsVO implements ResourceDetail {
 
     @Column(name="value")
     private String value;
+    
+    @Column(name="display")
+    boolean display;
 
     protected ServiceOfferingDetailsVO() {
     }
@@ -69,5 +72,10 @@ public class ServiceOfferingDetailsVO implements ResourceDetail {
     @Override
     public long getId() {
         return id;
+    }
+    
+    @Override
+    public boolean isDisplay() {
+        return display;
     }
 }

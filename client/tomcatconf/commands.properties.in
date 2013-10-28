@@ -473,7 +473,7 @@ listTags=15
 #### Meta Data commands
 addResourceDetail=1
 removeResourceDetail=1
-listResourceDetails=1
+listResourceDetails=15
 
 ### Site-to-site VPN commands
 createVpnCustomerGateway=15

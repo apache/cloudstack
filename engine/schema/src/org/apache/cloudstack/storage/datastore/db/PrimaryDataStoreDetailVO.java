@@ -41,6 +41,9 @@ public class PrimaryDataStoreDetailVO implements ResourceDetail{
 
     @Column(name = "value")
     String value;
+    
+    @Column(name="display")
+    private boolean display;
 
     public PrimaryDataStoreDetailVO(long poolId, String name, String value) {
         this.resourceId = poolId;
@@ -69,5 +72,10 @@ public class PrimaryDataStoreDetailVO implements ResourceDetail{
     @Override
     public String getValue() {
         return value;
+    }
+    
+    @Override
+    public boolean isDisplay() {
+        return display;
     }
 }
