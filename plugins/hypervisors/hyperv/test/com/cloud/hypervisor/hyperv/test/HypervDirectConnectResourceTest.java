@@ -28,7 +28,6 @@ import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +42,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.io.Files;
 import com.google.gson.Gson;
 
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -265,7 +265,7 @@ public class HypervDirectConnectResourceTest {
         String newFileURIJSON = null;
         File testVolTemp = new File(dstPath + File.separator + dstFileName);
         try {
-            Files.copy(srcFile.toPath(), testVolTemp.toPath());
+            Files.copy(srcFile, testVolTemp);
         } catch (IOException e) {
             ; // NOP
         }
@@ -671,7 +671,7 @@ public class HypervDirectConnectResourceTest {
                         + "\","
                         + "\"type\":\"ROOT\",\"id\":9,\"size\":0}}";
         DestroyCommand cmd = s_gson.fromJson(sample2, DestroyCommand.class);
-        Answer ans = (Answer) s_hypervresource.executeRequest(cmd);
+        Answer ans = s_hypervresource.executeRequest(cmd);
         Assert.assertTrue(ans.getDetails(), ans.getResult());
     }
 
@@ -844,25 +844,25 @@ public class HypervDirectConnectResourceTest {
                         params.get("TestCoreMhz"),
                         params.get("TestMemoryMb"),
                         params.get("TestDom0MinMemoryMb"),
-                        s_gson.toJson((String) params.get("zone")),
-                        s_gson.toJson((String) params.get("pod")),
-                        s_gson.toJson((String) params.get("cluster")),
-                        s_gson.toJson((String) params.get("ipaddress")),
-                        s_gson.toJson((String) params
+                        s_gson.toJson(params.get("zone")),
+                        s_gson.toJson(params.get("pod")),
+                        s_gson.toJson(params.get("cluster")),
+                        s_gson.toJson(params.get("ipaddress")),
+                        s_gson.toJson(params
                                 .get("private.mac.address")),
-                        s_gson.toJson((String) params.get(
+                        s_gson.toJson(params.get(
                                 "private.ip.netmask")),
-                        s_gson.toJson((String) params.get("ipaddress")),
-                        s_gson.toJson((String) params.get(
+                        s_gson.toJson(params.get("ipaddress")),
+                        s_gson.toJson(params.get(
                                 "private.ip.netmask")),
-                        s_gson.toJson((String) params
+                        s_gson.toJson(params
                                 .get("private.mac.address")),
-                        s_gson.toJson((String) params.get(
+                        s_gson.toJson(params.get(
                                 "gateway.ip.address")),
-                        s_gson.toJson((String) params.get("ipaddress")),
-                        s_gson.toJson((String) params
+                        s_gson.toJson(params.get("ipaddress")),
+                        s_gson.toJson(params
                                 .get("DefaultVirtualDiskFolder")),
-                        s_gson.toJson((String) params
+                        s_gson.toJson(params
                                 .get("DefaultVirtualDiskFolder")),
                         s_gson.toJson(totalSpace),
                         s_gson.toJson(usableCapacity)
