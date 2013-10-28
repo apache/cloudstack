@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.db;
 
-import com.cloud.dc.dao.ResourceDetailsDao;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
 public interface PrimaryDataStoreDetailsDao extends ResourceDetailsDao<PrimaryDataStoreDetailVO> {
 }

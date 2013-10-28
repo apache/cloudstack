@@ -16,11 +16,11 @@
 // under the License.
 package org.apache.cloudstack.storage.volume.db;
 
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDetailVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDetailsDao;
 import org.springframework.stereotype.Component;
 
-import com.cloud.dc.dao.ResourceDetailsDaoBase;
 
 @Component
 public class PrimaryDataStoreDetailsDaoImpl extends ResourceDetailsDaoBase<PrimaryDataStoreDetailVO> implements

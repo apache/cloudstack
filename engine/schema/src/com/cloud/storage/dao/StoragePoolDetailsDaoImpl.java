@@ -21,10 +21,10 @@ import javax.ejb.Local;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 
-import com.cloud.dc.dao.ResourceDetailsDaoBase;
 
 @Local(value = StoragePoolDetailsDao.class)
 public class StoragePoolDetailsDaoImpl extends ResourceDetailsDaoBase<StoragePoolDetailVO> implements StoragePoolDetailsDao, ScopedConfigStorage {

@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.vm.dao;
 
-import com.cloud.dc.dao.ResourceDetailsDao;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
+
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.NicDetailVO;
 
