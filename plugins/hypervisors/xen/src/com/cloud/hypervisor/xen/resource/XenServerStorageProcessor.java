@@ -18,6 +18,37 @@
  */
 package com.cloud.hypervisor.xen.resource;
 
+import static com.cloud.utils.ReflectUtil.flattenProperties;
+import static com.google.common.collect.Lists.newArrayList;
+
+import java.io.File;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import org.apache.cloudstack.storage.command.AttachAnswer;
+import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
+import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.CreateObjectAnswer;
+import org.apache.cloudstack.storage.command.CreateObjectCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DettachAnswer;
+import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.to.DataObjectType;
@@ -51,36 +82,6 @@ import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.VMGuestMetrics;
-import org.apache.cloudstack.storage.command.AttachAnswer;
-import org.apache.cloudstack.storage.command.AttachCommand;
-import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
-import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.CreateObjectAnswer;
-import org.apache.cloudstack.storage.command.CreateObjectCommand;
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DettachAnswer;
-import org.apache.cloudstack.storage.command.DettachCommand;
-import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-
-import java.io.File;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import static com.cloud.utils.ReflectUtil.flattenProperties;
-import static com.google.common.collect.Lists.newArrayList;
 
 public class XenServerStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
@@ -1080,11 +1081,12 @@ public class XenServerStorageProcessor implements StorageProcessor {
                     S3Utils.ClientOptions.class));
             // https workaround for Introspector bug that does not
             // recognize Boolean accessor methods ...
+
             parameters.addAll(Arrays.asList("operation", "put", "filename",
                     dir + "/" + filename, "iSCSIFlag",
                     iSCSIFlag.toString(), "bucket", s3.getBucketName(),
                     "key", key, "https", s3.isHttps() != null ? s3.isHttps().toString()
-                            : "null"));
+                            : "null", "maxSingleUploadSizeInBytes", String.valueOf(s3.getMaxSingleUploadSizeInBytes())));
             final String result = hypervisorResource.callHostPluginAsync(connection, "s3xen",
                     "s3", wait,
                     parameters.toArray(new String[parameters.size()]));
