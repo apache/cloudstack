@@ -2883,7 +2883,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                     }
 
                     // get all child domain ID's
-                    if (_accountMgr.isAdmin(account.getType())) {
+                    if (_accountMgr.isAdmin(account.getType()) 
+                            || (templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community)) {
                         List<DomainVO> allChildDomains = _domainDao.findAllChildren(accountDomain.getPath(),
                                 accountDomain.getId());
                         for (DomainVO childDomain : allChildDomains) {
