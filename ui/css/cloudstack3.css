@@ -3270,7 +3270,7 @@ div.toolbar div.filters select {
 #breadcrumbs {
   height: 29px;
   max-height: 29px;
-  background: url(../images/bg-breadcrumbs.png) repeat-x;
+  background: #FFFFFF;
   overflow: hidden;
   width: 100%;
 }
@@ -3304,17 +3304,11 @@ div.toolbar div.filters select {
 
 #breadcrumbs ul li,
 #breadcrumbs div.active-project {
-  background: url(../images/gradients.png) repeat-x -522px -10px;
   height: 21px;
   float: left;
-  font-size: 12px;
-  /*+text-shadow:0px 1px 1px #2A3640;*/
-  -moz-text-shadow: 0px 1px 1px #2A3640;
-  -webkit-text-shadow: 0px 1px 1px #2A3640;
-  -o-text-shadow: 0px 1px 1px #2A3640;
-  text-shadow: 0px 1px 1px #2A3640;
+  font-size: 11px;
   color: #FFFFFF;
-  padding: 8px 5px 0px 8px;
+  padding: 9px 5px 0px 8px;
   cursor: pointer;
   /*+placement:shift -13px 0px;*/
   position: relative;
@@ -3322,6 +3316,16 @@ div.toolbar div.filters select {
   top: 0px;
   position: relative;
   margin: 0 0 0 2px;
+}
+
+#breadcrumbs ul li:after {
+  content: ">";
+  font-size: 11px;
+  /*+placement:shift 7px -1px;*/
+  position: relative;
+  left: 7px;
+  top: -1px;
+  color: #C4C4C4;
 }
 
 .project-view #breadcrumbs ul li {
@@ -3334,31 +3338,13 @@ div.toolbar div.filters select {
   position: relative;
   left: 0px;
   top: 0px;
-  color: #CED4D9;
-  /*+text-shadow:0px 0px;*/
-  -moz-text-shadow: 0px 0px;
-  -webkit-text-shadow: 0px 0px;
-  -o-text-shadow: 0px 0px;
-  text-shadow: 0px 0px;
-  -moz-text-shadow: 0px 0px none;
-  -webkit-text-shadow: 0px 0px none;
-  -o-text-shadow: 0px 0px none;
-  -moz-text-shadow: none;
-  -webkit-text-shadow: none;
-  -o-text-shadow: none;
-  font-weight: bold;
+  color: #63A9F1;
 }
 
 #breadcrumbs ul li:hover,
 #breadcrumbs ul li.active,
 #breadcrumbs ul li.maximized {
-  color: #FFFFFF;
-  /*+text-shadow:0px 1px 1px #000000;*/
-  -moz-text-shadow: 0px 1px 1px #000000;
-  -webkit-text-shadow: 0px 1px 1px #000000;
-  -o-text-shadow: 0px 1px 1px #000000;
-  text-shadow: 0px 1px 1px #000000;
-  font-size: 12px;
+  color: #000000;
 }
 
 #breadcrumbs div.end {
@@ -3380,6 +3366,8 @@ div.toolbar div.filters select {
   left: -37px;
   top: -1px;
   margin-right: 0px;
+  /*Disabled*/
+  display: none;
 }
 
 #breadcrumbs ul li {
@@ -3390,7 +3378,6 @@ div.toolbar div.filters select {
   top: 0px;
   margin-left: -10px;
   text-indent: 13px;
-  font-weight: bold;
 }
 
 #breadcrumbs div.active-project {
@@ -8629,10 +8616,10 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 }
 
 .system-dashboard .status_box .view-all {
-  /*+placement:shift 18px 128px;*/
+  /*+placement:shift 18px 110px;*/
   position: relative;
   left: 18px;
-  top: 128px;
+  top: 110px;
   width: 78%;
   position: absolute;
   text-align: center;
@@ -8641,7 +8628,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 
 .system-dashboard .status_box {
   font-size: 14px;
-  margin: 24px 0 0;
+  margin: 10px 0 0;
   background: transparent;
   border: none;
 }
@@ -8662,8 +8649,8 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 }
 
 .system-dashboard.zone .status_box li {
-  margin-bottom: 38px;
-  height: 170px;
+  margin-bottom: 8px;
+  height: 152px;
   background-color: #F4F4F4;
 }
 
@@ -8855,7 +8842,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 
 .system-dashboard-view .socket-info {
   width: 100%;
-  height: 134px;
+  height: 239px;
   overflow: auto;
   float: left;
   padding: 0;
@@ -8871,7 +8858,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 }
 
 .system-dashboard-view .socket-info li {
-  width: 143px;
+  width: 139px;
   padding: 13px;
   /*+border-radius:3px;*/
   -moz-border-radius: 3px;
@@ -8891,6 +8878,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 
 .system-dashboard-view .socket-info li .name {
   width: 100%;
+  font-weight: 100;
   margin-bottom: 13px;
 }
 

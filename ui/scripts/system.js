@@ -380,31 +380,23 @@
                         }
                     },
 
-                    socketInfo: function(args) {
-                        complete($.extend(args.data, {
-                            socketInfo: [
-                                {
-                                    name: 'XenServer',
-                                    hosts: 0,
-                                    sockets: 0
-                                },
-                                {
-                                    name: 'VMware',
-                                    hosts: 0,
-                                    sockets: 0
-                                },
-                                {
-                                    name: 'KVM',
-                                    hosts: 0,
-                                    sockets: 0
-                                },
-                                {
-                                    name: 'Hyper-V',
-                                    hosts: 0,
-                                    sockets: 0
-                                }
-                            ]
-                        }));
+                    socketInfo: function(data) {
+                        $.ajax({
+                            url: createURL('listHypervisors'),
+                            success: function(json) {
+                                var hypervisors = json.listhypervisorsresponse.hypervisor;
+
+                                complete($.extend(data, {
+                                    socketInfo: $(hypervisors).map(function(index, hypervisor) {
+                                        return {
+                                            name: hypervisor.name,
+                                            hosts: 0,
+                                            sockets: 0
+                                        };
+                                    })                                
+                                }));
+                            }
+                        });
                     }
                 };
 
