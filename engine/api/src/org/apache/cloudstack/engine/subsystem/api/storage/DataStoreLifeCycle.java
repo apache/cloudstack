@@ -37,4 +37,6 @@ public interface DataStoreLifeCycle {
     boolean cancelMaintain(DataStore store);
 
     boolean deleteDataStore(DataStore store);
+
+    boolean migrateToObjectStore(DataStore store);
 }

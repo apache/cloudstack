@@ -18,7 +18,13 @@
  */
 package org.apache.cloudstack.storage.image;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -28,8 +34,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStoragePoolVO;
@@ -87,7 +91,7 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
         TemplateDataStoreVO tmplStore = templateStoreDao.findByTemplate(templateId, storeRole);
         DataStore store = null;
         if (tmplStore != null) {
-            store = this.storeMgr.getDataStore(tmplStore.getDataStoreId(), storeRole);
+            store = storeMgr.getDataStore(tmplStore.getDataStoreId(), storeRole);
         }
         return this.getTemplate(templateId, store);
     }
@@ -97,7 +101,7 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
         TemplateDataStoreVO tmplStore = templateStoreDao.findByTemplateZone(templateId, zoneId, storeRole);
         DataStore store = null;
         if (tmplStore != null) {
-            store = this.storeMgr.getDataStore(tmplStore.getDataStoreId(), storeRole);
+            store = storeMgr.getDataStore(tmplStore.getDataStoreId(), storeRole);
         }
         return this.getTemplate(templateId, store);
     }
@@ -113,4 +117,30 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
         tmpObj.setUrl(origTmpl.getUrl());
         return tmpObj;
     }
+
+    @Override
+    public TemplateInfo getReadyTemplateOnCache(long templateId) {
+        TemplateDataStoreVO tmplStore = templateStoreDao.findReadyOnCache(templateId);
+        if (tmplStore != null) {
+            DataStore store = storeMgr.getDataStore(tmplStore.getDataStoreId(), DataStoreRole.ImageCache);
+            return getTemplate(templateId, store);
+        } else {
+            return null;
+        }
+
+    }
+
+    @Override
+    public List<TemplateInfo> listTemplateOnCache(long templateId) {
+        List<TemplateDataStoreVO> cacheTmpls = templateStoreDao.listOnCache(templateId);
+        List<TemplateInfo> tmplObjs = new ArrayList<TemplateInfo>();
+        for (TemplateDataStoreVO cacheTmpl : cacheTmpls) {
+            long storeId = cacheTmpl.getDataStoreId();
+            DataStore store = storeMgr.getDataStore(storeId, DataStoreRole.ImageCache);
+            TemplateInfo tmplObj = getTemplate(templateId, store);
+            tmplObjs.add(tmplObj);
+        }
+        return tmplObjs;
+    }
+
 }

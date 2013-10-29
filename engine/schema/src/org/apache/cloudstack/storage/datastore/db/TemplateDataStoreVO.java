@@ -35,7 +35,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.fsm.StateObject;
 
@@ -117,17 +116,17 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     public TemplateDataStoreVO(Long hostId, long templateId) {
         super();
-        this.dataStoreId = hostId;
+        dataStoreId = hostId;
         this.templateId = templateId;
-        this.state = ObjectInDataStoreStateMachine.State.Allocated;
-        this.refCnt = 0L;
+        state = ObjectInDataStoreStateMachine.State.Allocated;
+        refCnt = 0L;
     }
 
     public TemplateDataStoreVO(Long hostId, long templateId, Date lastUpdated, int downloadPercent,
             Status downloadState, String localDownloadPath, String errorString, String jobId, String installPath,
             String downloadUrl) {
         super();
-        this.dataStoreId = hostId;
+        dataStoreId = hostId;
         this.templateId = templateId;
         this.lastUpdated = lastUpdated;
         this.downloadPercent = downloadPercent;
@@ -135,33 +134,33 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         this.localDownloadPath = localDownloadPath;
         this.errorString = errorString;
         this.jobId = jobId;
-        this.refCnt = 0L;
+        refCnt = 0L;
         this.installPath = installPath;
-        this.setDownloadUrl(downloadUrl);
+        setDownloadUrl(downloadUrl);
         switch (downloadState) {
         case DOWNLOADED:
-            this.state = ObjectInDataStoreStateMachine.State.Ready;
+            state = ObjectInDataStoreStateMachine.State.Ready;
             break;
         case CREATING:
         case DOWNLOAD_IN_PROGRESS:
         case UPLOAD_IN_PROGRESS:
-            this.state = ObjectInDataStoreStateMachine.State.Creating2;
+            state = ObjectInDataStoreStateMachine.State.Creating2;
             break;
         case DOWNLOAD_ERROR:
         case UPLOAD_ERROR:
-            this.state = ObjectInDataStoreStateMachine.State.Failed;
+            state = ObjectInDataStoreStateMachine.State.Failed;
             break;
         case ABANDONED:
-            this.state = ObjectInDataStoreStateMachine.State.Destroyed;
+            state = ObjectInDataStoreStateMachine.State.Destroyed;
             break;
         default:
-            this.state = ObjectInDataStoreStateMachine.State.Allocated;
+            state = ObjectInDataStoreStateMachine.State.Allocated;
             break;
         }
     }
 
     public TemplateDataStoreVO() {
-        this.refCnt = 0L;
+        refCnt = 0L;
     }
 
     @Override
@@ -175,7 +174,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     }
 
     public void setDataStoreId(long storeId) {
-        this.dataStoreId = storeId;
+        dataStoreId = storeId;
     }
 
     public long getTemplateId() {
@@ -224,7 +223,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     }
 
     public void setLocalDownloadPath(String localPath) {
-        this.localDownloadPath = localPath;
+        localDownloadPath = localPath;
     }
 
     public String getLocalDownloadPath() {
@@ -251,7 +250,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     public boolean equals(Object obj) {
         if (obj instanceof TemplateDataStoreVO) {
             TemplateDataStoreVO other = (TemplateDataStoreVO) obj;
-            return (this.templateId == other.getTemplateId() && this.dataStoreId == other.getDataStoreId());
+            return (templateId == other.getTemplateId() && dataStoreId == other.getDataStoreId());
         }
         return false;
     }
@@ -316,7 +315,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Override
     public ObjectInDataStoreStateMachine.State getState() {
         // TODO Auto-generated method stub
-        return this.state;
+        return state;
     }
 
     public void setState(ObjectInDataStoreStateMachine.State state) {
@@ -324,15 +323,15 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     }
 
     public long getUpdatedCount() {
-        return this.updatedCount;
+        return updatedCount;
     }
 
     public void incrUpdatedCount() {
-        this.updatedCount++;
+        updatedCount++;
     }
 
     public void decrUpdatedCount() {
-        this.updatedCount--;
+        updatedCount--;
     }
 
     public Date getUpdated() {
@@ -341,12 +340,12 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     @Override
     public long getObjectId() {
-        return this.getTemplateId();
+        return getTemplateId();
     }
 
     @Override
     public State getObjectInStoreState() {
-        return this.state;
+        return state;
     }
 
     public DataStoreRole getDataStoreRole() {
@@ -361,12 +360,16 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         return refCnt;
     }
 
+    public void setRefCnt(Long refCnt) {
+        this.refCnt = refCnt;
+    }
+
     public void incrRefCnt() {
-        this.refCnt++;
+        refCnt++;
     }
 
     public void decrRefCnt() {
-        this.refCnt--;
+        refCnt--;
     }
 
 }

@@ -22,9 +22,9 @@ import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
-import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 
 import com.cloud.exception.DiscoveryException;
@@ -96,5 +96,19 @@ public interface StorageService{
     boolean deleteSecondaryStagingStore(DeleteSecondaryStagingStoreCmd cmd);
 
     ImageStore discoverImageStore(AddImageStoreCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+
+    /**
+     * Prepare NFS secondary storage for object store migration
+     *
+     * @param cmd
+     *            - the command specifying secondaryStorageId
+     * @return the storage pool
+     * @throws ResourceUnavailableException
+     *             TODO
+     * @throws InsufficientCapacityException
+     *             TODO
+     */
+    public ImageStore prepareSecondaryStorageForObjectStoreMigration(Long storeId) throws ResourceUnavailableException,
+            InsufficientCapacityException;
 
 }

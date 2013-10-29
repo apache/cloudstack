@@ -42,6 +42,9 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -156,6 +159,7 @@ import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStore
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageProvidersCmd;
 import org.apache.cloudstack.api.command.admin.storage.PreparePrimaryStorageForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.storage.PrepareSecondaryStorageForMigrationCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
@@ -437,8 +441,6 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -2225,21 +2227,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                if (domainName != null) {
-                    String updatedDomainPath = getUpdatedDomainPath(domain.getPath(), domainName);
-                    updateDomainChildren(domain, updatedDomainPath);
-                    domain.setName(domainName);
-                    domain.setPath(updatedDomainPath);
-                }
-        
-                if (networkDomain != null) {
-                    if (networkDomain.isEmpty()) {
-                        domain.setNetworkDomain(null);
-                    } else {
-                        domain.setNetworkDomain(networkDomain);
-                    }
-                }
-                _domainDao.update(domainId, domain);
+        if (domainName != null) {
+            String updatedDomainPath = getUpdatedDomainPath(domain.getPath(), domainName);
+            updateDomainChildren(domain, updatedDomainPath);
+            domain.setName(domainName);
+            domain.setPath(updatedDomainPath);
+        }
+
+        if (networkDomain != null) {
+            if (networkDomain.isEmpty()) {
+                domain.setNetworkDomain(null);
+            } else {
+                domain.setNetworkDomain(networkDomain);
+            }
+        }
+        _domainDao.update(domainId, domain);
             }
         });
 
@@ -2840,6 +2842,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CreateSecondaryStagingStoreCmd.class);
         cmdList.add(ListSecondaryStagingStoresCmd.class);
         cmdList.add(DeleteSecondaryStagingStoreCmd.class);
+        cmdList.add(PrepareSecondaryStorageForMigrationCmd.class);
         cmdList.add(CreateApplicationLoadBalancerCmd.class);
         cmdList.add(ListApplicationLoadBalancersCmd.class);
         cmdList.add(DeleteApplicationLoadBalancerCmd.class);
@@ -3683,24 +3686,24 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
-                    for (HostVO h : hosts) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Changing password for host name = " + h.getName());
-                        }
-                        // update password for this host
-                        DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
-                        if (nv.getValue().equals(cmd.getUsername())) {
-                            DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
-                            nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
-                            _detailsDao.persist(nvp);
-                        } else {
-                            // if one host in the cluster has diff username then
-                            // rollback to maintain consistency
-                            throw new InvalidParameterValueException(
-                                    "The username is not same for all hosts, please modify passwords for individual hosts.");
-                        }
+                for (HostVO h : hosts) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Changing password for host name = " + h.getName());
+                    }
+                    // update password for this host
+                    DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
+                    if (nv.getValue().equals(cmd.getUsername())) {
+                        DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
+                        nvp.setValue(DBEncryptionUtil.encrypt(cmd.getPassword()));
+                        _detailsDao.persist(nvp);
+                    } else {
+                        // if one host in the cluster has diff username then
+                        // rollback to maintain consistency
+                        throw new InvalidParameterValueException(
+                                "The username is not same for all hosts, please modify passwords for individual hosts.");
                     }
                 }
+            }
             });
         }
 
@@ -3883,7 +3886,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Inject
     public void setStoragePoolAllocators(List<StoragePoolAllocator> storagePoolAllocators) {
-        this._storagePoolAllocators = storagePoolAllocators;
+        _storagePoolAllocators = storagePoolAllocators;
     }
 
     public LockMasterListener getLockMasterListener() {

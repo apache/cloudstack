@@ -23,10 +23,11 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.springframework.stereotype.Component;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
@@ -115,6 +116,13 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
     public List<ImageStoreVO> listImageStores() {
         SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
         sc.addAnd("role", SearchCriteria.Op.EQ, DataStoreRole.Image);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<ImageStoreVO> listImageCacheStores() {
+        SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
+        sc.addAnd("role", SearchCriteria.Op.EQ, DataStoreRole.ImageCache);
         return listBy(sc);
     }
 

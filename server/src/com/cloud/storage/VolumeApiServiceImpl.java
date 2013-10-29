@@ -411,29 +411,29 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
-                VolumeVO volume = new VolumeVO(volumeName, zoneId, -1, -1, -1, new Long(-1), null, null, 0, Volume.Type.DATADISK);
-                volume.setPoolId(null);
-                volume.setDataCenterId(zoneId);
-                volume.setPodId(null);
-                volume.setAccountId(owner.getAccountId());
-                volume.setDomainId(owner.getDomainId());
-                long diskOfferingId = _diskOfferingDao.findByUniqueName("Cloud.com-Custom").getId();
-                volume.setDiskOfferingId(diskOfferingId);
-                // volume.setSize(size);
-                volume.setInstanceId(null);
-                volume.setUpdated(new Date());
-                volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
-                volume.setFormat(ImageFormat.valueOf(format));
-                volume = _volsDao.persist(volume);
-                CallContext.current().setEventDetails("Volume Id: " + volume.getId());
-        
-                // Increment resource count during allocation; if actual creation fails,
-                // decrement it
-                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
-                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
-                
-                return volume;
-            }
+        VolumeVO volume = new VolumeVO(volumeName, zoneId, -1, -1, -1, new Long(-1), null, null, 0, Volume.Type.DATADISK);
+        volume.setPoolId(null);
+        volume.setDataCenterId(zoneId);
+        volume.setPodId(null);
+        volume.setAccountId(owner.getAccountId());
+        volume.setDomainId(owner.getDomainId());
+        long diskOfferingId = _diskOfferingDao.findByUniqueName("Cloud.com-Custom").getId();
+        volume.setDiskOfferingId(diskOfferingId);
+        // volume.setSize(size);
+        volume.setInstanceId(null);
+        volume.setUpdated(new Date());
+        volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
+        volume.setFormat(ImageFormat.valueOf(format));
+        volume = _volsDao.persist(volume);
+        CallContext.current().setEventDetails("Volume Id: " + volume.getId());
+
+        // Increment resource count during allocation; if actual creation fails,
+        // decrement it
+        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
+        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
+
+        return volume;
+    }
         });
     }
 
@@ -615,42 +615,42 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
-                VolumeVO volume = new VolumeVO(userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, 0, Volume.Type.DATADISK);
-                volume.setPoolId(null);
-                volume.setDataCenterId(zoneId);
-                volume.setPodId(null);
-                volume.setAccountId(ownerId);
-                volume.setDomainId(((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId()));
-                volume.setDiskOfferingId(diskOfferingId);
-                volume.setSize(size);
-                volume.setMinIops(minIops);
-                volume.setMaxIops(maxIops);
-                volume.setInstanceId(null);
-                volume.setUpdated(new Date());
-                volume.setDomainId((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId());
-                volume.setDisplayVolume(displayVolumeEnabled);
-                if (parentVolume != null) {
-                    volume.setTemplateId(parentVolume.getTemplateId());
-                    volume.setFormat(parentVolume.getFormat());
-                } else {
-                    volume.setTemplateId(null);
-                }
-        
-                volume = _volsDao.persist(volume);
-                if (cmd.getSnapshotId() == null) {
-                    // for volume created from snapshot, create usage event after volume creation
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId,
-                            null, size, Volume.class.getName(), volume.getUuid());
-                }
-        
-                CallContext.current().setEventDetails("Volume Id: " + volume.getId());
-        
-                // Increment resource count during allocation; if actual creation fails,
-                // decrement it
-                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
-                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, new Long(volume.getSize()));
-                return volume;
-            }
+        VolumeVO volume = new VolumeVO(userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, 0, Volume.Type.DATADISK);
+        volume.setPoolId(null);
+        volume.setDataCenterId(zoneId);
+        volume.setPodId(null);
+        volume.setAccountId(ownerId);
+        volume.setDomainId(((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId()));
+        volume.setDiskOfferingId(diskOfferingId);
+        volume.setSize(size);
+        volume.setMinIops(minIops);
+        volume.setMaxIops(maxIops);
+        volume.setInstanceId(null);
+        volume.setUpdated(new Date());
+        volume.setDomainId((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId());
+        volume.setDisplayVolume(displayVolumeEnabled);
+        if (parentVolume != null) {
+            volume.setTemplateId(parentVolume.getTemplateId());
+            volume.setFormat(parentVolume.getFormat());
+        } else {
+            volume.setTemplateId(null);
+        }
+
+        volume = _volsDao.persist(volume);
+        if (cmd.getSnapshotId() == null) {
+            // for volume created from snapshot, create usage event after volume creation
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId,
+                    null, size, Volume.class.getName(), volume.getUuid());
+        }
+
+        CallContext.current().setEventDetails("Volume Id: " + volume.getId());
+
+        // Increment resource count during allocation; if actual creation fails,
+        // decrement it
+        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
+        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, new Long(volume.getSize()));
+        return volume;
+    }
         });
     }
 
@@ -957,6 +957,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 AsyncCallFuture<VolumeApiResult> future2 = volService.expungeVolumeAsync(volOnSecondary);
                 future2.get();
             }
+            // delete all cache entries for this volume
+            List<VolumeInfo> cacheVols = volFactory.listVolumeOnCache(volume.getId());
+            for (VolumeInfo volOnCache : cacheVols) {
+                s_logger.info("Delete volume from image cache store: " + volOnCache.getDataStore().getName());
+                volOnCache.delete();
+            }
+
         } catch (Exception e) {
             s_logger.warn("Failed to expunge volume:", e);
             return false;

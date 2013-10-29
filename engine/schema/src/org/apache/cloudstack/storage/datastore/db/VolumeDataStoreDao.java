@@ -40,4 +40,6 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
     VolumeDataStoreVO findByStoreVolume(long storeId, long volumeId, boolean lock);
 
     List<VolumeDataStoreVO> listDestroyed(long storeId);
+
+    void duplicateCacheRecordsOnRegionStore(long storeId);
 }

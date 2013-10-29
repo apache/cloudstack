@@ -28,6 +28,9 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
@@ -39,6 +42,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
@@ -59,9 +63,6 @@ import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
@@ -73,8 +74,9 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.StoragePool;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
@@ -128,6 +130,8 @@ public class TemplateServiceImpl implements TemplateService {
     TemplateManager _tmpltMgr;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    StorageCacheManager _cacheMgr;
 
     class TemplateOpContext<T> extends AsyncRpcContext<T> {
         final TemplateObject template;
@@ -466,7 +470,8 @@ public class TemplateServiceImpl implements TemplateService {
     // persist entry in template_zone_ref table. zoneId can be empty for
     // region-wide image store, in that case,
     // we will associate the template to all the zones.
-    private void associateTemplateToZone(long templateId, Long zoneId) {
+    @Override
+    public void associateTemplateToZone(long templateId, Long zoneId) {
         List<Long> dcs = new ArrayList<Long>();
         if (zoneId != null) {
             dcs.add(zoneId);
@@ -606,6 +611,86 @@ public class TemplateServiceImpl implements TemplateService {
     public AsyncCallFuture<TemplateApiResult> createTemplateFromVolumeAsync(VolumeInfo volume, TemplateInfo template,
             DataStore store) {
         return copyAsync(volume, template, store);
+    }
+
+    private AsyncCallFuture<TemplateApiResult> syncToRegionStoreAsync(TemplateInfo template, DataStore store) {
+        AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
+        // no need to create entry on template_store_ref here, since entries are already created when prepareSecondaryStorageForMigration is invoked.
+        // But we need to set default install path so that sync can be done in the right s3 path
+        TemplateInfo templateOnStore = _templateFactory.getTemplate(template, store);
+        String installPath = TemplateConstants.DEFAULT_TMPLT_ROOT_DIR + "/"
+                + TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR
+                + template.getAccountId() + "/" + template.getId() + "/" + template.getUniqueName();
+        ((TemplateObject)templateOnStore).setInstallPath(installPath);
+        TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(null,
+                (TemplateObject)templateOnStore, future);
+        AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().syncTemplateCallBack(null, null)).setContext(context);
+        _motionSrv.copyAsync(template, templateOnStore, caller);
+        return future;
+    }
+
+    protected Void syncTemplateCallBack(AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> callback,
+            TemplateOpContext<TemplateApiResult> context) {
+        TemplateInfo destTemplate = context.getTemplate();
+        CopyCommandResult result = callback.getResult();
+        AsyncCallFuture<TemplateApiResult> future = context.getFuture();
+        TemplateApiResult res = new TemplateApiResult(destTemplate);
+        try {
+            if (result.isFailed()) {
+                res.setResult(result.getResult());
+                // no change to existing template_store_ref, will try to re-sync later if other call triggers this sync operation, like copy template
+            } else {
+                // this will update install path properly, next time it will not sync anymore.
+                destTemplate.processEvent(Event.OperationSuccessed, result.getAnswer());
+            }
+            future.complete(res);
+        } catch (Exception e) {
+            s_logger.debug("Failed to process sync template callback", e);
+            res.setResult(e.toString());
+            future.complete(res);
+        }
+
+        return null;
+    }
+
+    private boolean isRegionStore(DataStore store) {
+        if (store.getScope().getScopeType() == ScopeType.ZONE && store.getScope().getScopeId() == null)
+            return true;
+        else
+            return false;
+    }
+
+    // This routine is used to push templates currently on cache store, but not in region store to region store.
+    // used in migrating existing NFS secondary storage to S3.
+    @Override
+    public void syncTemplateToRegionStore(long templateId, DataStore store) {
+        if (isRegionStore(store)) {
+            // if template is on region wide object store, check if it is really downloaded there (by checking install_path). Sync template to region
+            // wide store if it is not there physically.
+            TemplateInfo tmplOnStore = _templateFactory.getTemplate(templateId, store);
+            if (tmplOnStore == null) {
+                throw new CloudRuntimeException("Cannot find an entry in template_store_ref for template " + templateId + " on region store: " + store.getName());
+            }
+            if (tmplOnStore.getInstallPath() == null || tmplOnStore.getInstallPath().length() == 0) {
+                // template is not on region store yet, sync to region store
+                TemplateInfo srcTemplate = _templateFactory.getReadyTemplateOnCache(templateId);
+                if (srcTemplate == null) {
+                    throw new CloudRuntimeException("Cannot find template " + templateId + "  on cache store");
+                }
+                AsyncCallFuture<TemplateApiResult> future = syncToRegionStoreAsync(srcTemplate, store);
+                try {
+                    TemplateApiResult result = future.get();
+                    if (result.isFailed()) {
+                        throw new CloudRuntimeException("sync template from cache to region wide store failed for image store " + store.getName() + ":"
+                                + result.getResult());
+                    }
+                    _cacheMgr.releaseCacheObject(srcTemplate); // reduce reference count for template on cache, so it can recycled by schedule
+                } catch (Exception ex) {
+                    throw new CloudRuntimeException("sync template from cache to region wide store failed for image store " + store.getName());
+                }
+            }
+        }
     }
 
     @Override

@@ -58,6 +58,7 @@ public class TemplateObject implements TemplateInfo {
     private VMTemplateVO imageVO;
     private DataStore dataStore;
     private String url;
+    private String installPath; // temporarily set installPath before passing to resource for entries with empty installPath for object store migration case
     @Inject
     VMTemplateDao imageDao;
     @Inject
@@ -293,11 +294,18 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public String getInstallPath() {
+        if (installPath != null)
+            return installPath;
+
         if (dataStore == null) {
             return null;
         }
         DataObjectInStore obj = objectInStoreMgr.findObject(this, dataStore);
         return obj.getInstallPath();
+    }
+
+    public void setInstallPath(String installPath) {
+        this.installPath = installPath;
     }
 
     @Override
