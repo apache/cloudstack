@@ -2197,7 +2197,7 @@ div.detail-group.actions td {
 /*Header*/
 #header {
   width: 100%;
-  height: 117px;
+  height: 135px;
   background: url(../images/overlay-pattern.png) repeat 0, #1B5070 url(../images/header-gradient.png) no-repeat center;
   background-size: auto, cover;
   position: relative;
@@ -2214,17 +2214,17 @@ div.detail-group.actions td {
   height: 47px;
   margin: auto;
   background: url(../images/logo.png) no-repeat 0 center;
-  /*+placement:shift 0px 2px;*/
+  /*+placement:shift 0px 15px;*/
   position: relative;
   left: 0px;
-  top: 2px;
+  top: 15px;
 }
 
 #header div.controls {
-  width: 1024px;
+  width: 1026px;
   height: 48px;
   position: relative;
-  margin: 9px auto 8px;
+  margin: 27px auto 0;
   padding-top: 13px;
   /*+border-radius:4px 4px 0 0;*/
   -moz-border-radius: 4px 4px 0 0;
@@ -2261,10 +2261,10 @@ div.detail-group.actions td {
   float: right;
   height: 18px;
   padding: 1px 0 0;
-  /*+placement:shift -174px -54px;*/
+  /*+placement:shift -174px -57px;*/
   position: relative;
   left: -174px;
-  top: -54px;
+  top: -57px;
 }
 
 #header div.notifications:after {
@@ -2277,7 +2277,7 @@ div.detail-group.actions td {
 
 #header div.notifications span {
   position: relative;
-  top: 6px;
+  top: 5px;
   left: 7px;
 }
 
@@ -2321,10 +2321,10 @@ div.detail-group.actions td {
 
 #user {
   height: 30px;
-  margin: 5px 6px 0 0;
+  margin: 0;
   position: absolute;
-  top: -48px;
-  left: 880px;
+  top: -47px;
+  left: 890px;
   cursor: default !important;
   display: inline-block;
   float: left;
@@ -2369,10 +2369,10 @@ div.detail-group.actions td {
   width: 11px;
   height: 8px;
   background: url(../images/buttons.png) -402px -23px;
-  /*+placement:shift 10px 13px;*/
+  /*+placement:shift 8px 11px;*/
   position: relative;
-  left: 10px;
-  top: 13px;
+  left: 8px;
+  top: 11px;
 }
 
 /** Zone filter (mixed zone management)*/
