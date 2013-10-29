@@ -17,12 +17,15 @@
 // under the License.
 package com.cloud.network.guru;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 
 import com.cloud.configuration.ZoneConfig;
@@ -42,9 +45,12 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -66,6 +72,15 @@ import com.cloud.vm.VirtualMachineProfile;
 @Local(value = NetworkGuru.class)
 public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(DirectPodBasedNetworkGuru.class);
+
+    /**
+     * The supported networking configs
+     */
+    private static final EnumSet<NetworkType> _supportedNetworkTypes = EnumSet.of(NetworkType.Basic);
+    private static final EnumSet<GuestType> _supportedGuestTypes = EnumSet.of(GuestType.Isolated, GuestType.Shared);
+    private static final EnumSet<IsolationMethod> _supportedIsolationMethods = EnumSet.of(IsolationMethod.VLAN,
+            IsolationMethod.NONE);
+    private static final EnumSet<TrafficType> _supportedTrafficTypes = EnumSet.of(TrafficType.Guest);
 
     @Inject
     DataCenterDao _dcDao;
@@ -95,7 +110,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
 
     @Override
     public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException, ConcurrentOperationException {
+    InsufficientAddressCapacityException, ConcurrentOperationException {
 
         DataCenterVO dc = _dcDao.findById(network.getDataCenterId());
         ReservationStrategy rsStrategy = ReservationStrategy.Start;
@@ -127,10 +142,10 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     @Override @DB
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
-        
+
         String oldIp = nic.getIp4Address();
         boolean getNewIp = false;
-        
+
         if (oldIp == null) {
             getNewIp = true;
         } else {
@@ -166,7 +181,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
 
     @DB
     protected void getIp(final NicProfile nic, final Pod pod, final VirtualMachineProfile vm, final Network network) throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException, ConcurrentOperationException {
+    InsufficientAddressCapacityException, ConcurrentOperationException {
         final DataCenter dc = _dcDao.findById(pod.getDataCenterId());
         if (nic.getIp4Address() == null) {
             Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientAddressCapacityException>() {
@@ -187,11 +202,11 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                             s_logger.debug("Nic got an ip address " + placeholderNic.getIp4Address() + " stored in placeholder nic for the network " + network + " and gateway " + podRangeGateway);
                         }
                     }
-                    
+
                     if (ip == null) {
                         ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId(), null, false);
                     }
-                    
+
                     nic.setIp4Address(ip.getAddress().toString());
                     nic.setFormat(AddressFormat.Ip4);
                     nic.setGateway(ip.getGateway());
@@ -203,7 +218,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                     }
                     nic.setReservationId(String.valueOf(ip.getVlanTag()));
                     nic.setMacAddress(ip.getMacAddress());
-                    
+
                     //save the placeholder nic if the vm is the Virtual router
                     if (vm.getType() == VirtualMachine.Type.DomainRouter) {
                         Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, pod.getId());
@@ -217,6 +232,26 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
         }
         nic.setDns1(dc.getDns1());
         nic.setDns2(dc.getDns2());
+    }
+
+    @Override
+    public List<NetworkType> getSupportedNetworkTypes() {
+        return new ArrayList<NetworkType>(_supportedNetworkTypes);
+    }
+
+    @Override
+    public List<TrafficType> getSupportedTrafficTypes() {
+        return new ArrayList<TrafficType>(_supportedTrafficTypes);
+    }
+
+    @Override
+    public List<GuestType> getSupportedGuestTypes() {
+        return new ArrayList<GuestType>(_supportedGuestTypes);
+    }
+
+    @Override
+    public List<IsolationMethod> getSupportedIsolationMethods() {
+        return new ArrayList<IsolationMethod>(_supportedIsolationMethods);
     }
 
 }

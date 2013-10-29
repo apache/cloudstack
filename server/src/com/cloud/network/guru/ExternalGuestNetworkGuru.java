@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network.guru;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -42,6 +44,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.State;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.dao.IPAddressDao;
@@ -65,6 +68,16 @@ import com.cloud.vm.VirtualMachineProfile;
 @Local(value = NetworkGuru.class)
 public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(ExternalGuestNetworkGuru.class);
+
+    /**
+     * The supported networking configs
+     */
+    private static final EnumSet<NetworkType> _supportedNetworkTypes = EnumSet.of(NetworkType.Advanced);
+    private static final EnumSet<GuestType> _supportedGuestTypes = EnumSet.of(GuestType.Isolated);
+    private static final EnumSet<IsolationMethod> _supportedIsolationMethods = EnumSet.of(IsolationMethod.GRE, IsolationMethod.L3,
+            IsolationMethod.VLAN);
+    private static final EnumSet<TrafficType> _supportedTrafficTypes = EnumSet.of(TrafficType.Guest);
+
     @Inject
     NetworkOrchestrationService _networkMgr;
     @Inject
@@ -139,11 +152,11 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         int vlanTag;
         if (config.getBroadcastUri() == null) {
             String vnet = _dcDao.allocateVnet(zone.getId(), config.getPhysicalNetworkId(), config.getAccountId(), context.getReservationId(),
-                UseSystemGuestVlans.valueIn(config.getAccountId()));
+                    UseSystemGuestVlans.valueIn(config.getAccountId()));
 
             try {
                 // when supporting more types of networks this need to become
-//              int vlantag = Integer.parseInt(BroadcastDomainType.getValue(vnet));
+                //              int vlantag = Integer.parseInt(BroadcastDomainType.getValue(vnet));
                 vlanTag = Integer.parseInt(vnet);
             } catch (NumberFormatException e) {
                 throw new CloudRuntimeException("Obtained an invalid guest vlan tag. Exception: " + e.getMessage());
@@ -219,7 +232,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException {
+    InsufficientAddressCapacityException {
 
         if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId()) && nic != null && nic.getRequestedIpv4() != null) {
             throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
@@ -316,6 +329,26 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
 
     private long getIpMask(String ipAddress, long cidrSize) {
         return NetUtils.ip2Long(ipAddress) & ~(0xffffffffffffffffl << (32 - cidrSize));
+    }
+
+    @Override
+    public List<NetworkType> getSupportedNetworkTypes() {
+        return new ArrayList<NetworkType>(_supportedNetworkTypes);
+    }
+
+    @Override
+    public List<TrafficType> getSupportedTrafficTypes() {
+        return new ArrayList<TrafficType>(_supportedTrafficTypes);
+    }
+
+    @Override
+    public List<GuestType> getSupportedGuestTypes() {
+        return new ArrayList<GuestType>(_supportedGuestTypes);
+    }
+
+    @Override
+    public List<IsolationMethod> getSupportedIsolationMethods() {
+        return new ArrayList<IsolationMethod>(_supportedIsolationMethods);
     }
 
 }

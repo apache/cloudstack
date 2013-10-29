@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.network.guru;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Random;
 
 import javax.ejb.Local;
@@ -23,6 +26,7 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
@@ -30,13 +34,15 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.StorageNetworkManager;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -46,45 +52,54 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value={NetworkGuru.class})
 public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     private static final Logger s_logger = Logger.getLogger(PodBasedNetworkGuru.class);
+
+    /**
+     * The supported networking configs
+     */
+    private static final EnumSet<NetworkType> _supportedNetworkTypes = EnumSet.of(NetworkType.Basic, NetworkType.Advanced);
+    private static final EnumSet<GuestType> _supportedGuestTypes = EnumSet.of(GuestType.Isolated, GuestType.Shared);
+    private static final EnumSet<IsolationMethod> _supportedIsolationMethods = EnumSet.of(IsolationMethod.VLAN,
+            IsolationMethod.NONE);
+    private static final EnumSet<TrafficType> _supportedTrafficTypes = EnumSet.of(TrafficType.Management);
+
     @Inject DataCenterDao _dcDao;
     @Inject StorageNetworkManager _sNwMgr;
     Random _rand = new Random(System.currentTimeMillis());
-    
+
     private static final TrafficType[] _trafficTypes = {TrafficType.Management};
-    
+
     @Override
     public boolean isMyTrafficType(TrafficType type) {
-    	for (TrafficType t : _trafficTypes) {
-    		if (t == type) {
-    			return true;
-    		}
-    	}
-    	return false;
+        for (TrafficType t : _trafficTypes) {
+            if (t == type) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     public TrafficType[] getSupportedTrafficType() {
-    	return _trafficTypes;
+        return _trafficTypes;
     }
-    
+
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
         TrafficType type = offering.getTrafficType();
-        
+
         if (!isMyTrafficType(type)) {
             return null;
         }
-                        
+
         NetworkVO config = new NetworkVO(type, Mode.Static, BroadcastDomainType.Native, offering.getId(), Network.State.Setup, plan.getDataCenterId(), plan.getPhysicalNetworkId());
         return config;
     }
-    
+
     protected PodBasedNetworkGuru() {
         super();
     }
@@ -92,13 +107,13 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void deallocate(Network config, NicProfile nic, VirtualMachineProfile vm) {
     }
-    
+
     @Override
     public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException {
+    InsufficientAddressCapacityException {
         TrafficType trafficType = config.getTrafficType();
-        assert trafficType == TrafficType.Management || trafficType == TrafficType.Storage: "Well, I can't take care of this config now can I? " + config; 
-        
+        assert trafficType == TrafficType.Management || trafficType == TrafficType.Storage: "Well, I can't take care of this config now can I? " + config;
+
         if (nic != null) {
             if (nic.getRequestedIpv4() != null) {
                 throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
@@ -106,21 +121,21 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setStrategy(nic.getIp4Address() != null ? ReservationStrategy.Create : ReservationStrategy.Start);
         } else {
             nic  = new NicProfile(ReservationStrategy.Start, null, null, null, null);
-        } 
-        
+        }
+
         return nic;
     }
 
     @Override
     public void reserve(NicProfile nic, Network config, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException {
+    InsufficientAddressCapacityException {
         Pod pod = dest.getPod();
-        
+
         Pair<String, Long> ip = _dcDao.allocatePrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), nic.getId(), context.getReservationId());
         if (ip == null) {
             throw new InsufficientAddressCapacityException("Unable to get a management ip address", Pod.class, pod.getId());
         }
-        
+
         nic.setIp4Address(ip.first());
         nic.setMacAddress(NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ip.second())));
         nic.setGateway(pod.getGateway());
@@ -130,29 +145,29 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         nic.setBroadcastType(BroadcastDomainType.Native);
         nic.setBroadcastUri(null);
         nic.setIsolationUri(null);
-        
+
         s_logger.debug("Allocated a nic " + nic + " for " + vm);
     }
-    
-    
+
+
     @Override
     public void updateNicProfile(NicProfile profile, Network network) {
     }
-    
+
     @Override
     public void updateNetworkProfile(NetworkProfile networkProfile) {
     }
-    
+
     @Override
     public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
         _dcDao.releasePrivateIpAddress(nic.getId(), nic.getReservationId());
-        
+
         nic.deallocate();
-        
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Released nic: " + nic);
         }
-        
+
         return true;
     }
 
@@ -160,13 +175,34 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     public Network implement(Network config, NetworkOffering offering, DeployDestination destination, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
         return config;
     }
-    
+
     @Override
     public void shutdown(NetworkProfile config, NetworkOffering offering) {
     }
-    
+
     @Override
     public boolean trash(Network config, NetworkOffering offering) {
         return true;
     }
+
+    @Override
+    public List<NetworkType> getSupportedNetworkTypes() {
+        return new ArrayList<NetworkType>(_supportedNetworkTypes);
+    }
+
+    @Override
+    public List<TrafficType> getSupportedTrafficTypes() {
+        return new ArrayList<TrafficType>(_supportedTrafficTypes);
+    }
+
+    @Override
+    public List<GuestType> getSupportedGuestTypes() {
+        return new ArrayList<GuestType>(_supportedGuestTypes);
+    }
+
+    @Override
+    public List<IsolationMethod> getSupportedIsolationMethods() {
+        return new ArrayList<IsolationMethod>(_supportedIsolationMethods);
+    }
+
 }

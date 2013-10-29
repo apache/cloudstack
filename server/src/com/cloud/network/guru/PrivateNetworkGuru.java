@@ -16,6 +16,10 @@
 // under the License.
 package com.cloud.network.guru;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+
 import javax.ejb.Local;
 import javax.inject.Inject;
 
@@ -39,6 +43,7 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.vpc.PrivateIpAddress;
 import com.cloud.network.vpc.PrivateIpVO;
@@ -57,6 +62,15 @@ import com.cloud.vm.VirtualMachineProfile;
 @Local(value = NetworkGuru.class)
 public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     private static final Logger s_logger = Logger.getLogger(PrivateNetworkGuru.class);
+
+    /**
+     * The supported networking configs
+     */
+    private static final EnumSet<NetworkType> _supportedNetworkTypes = EnumSet.of(NetworkType.Advanced);
+    private static final EnumSet<GuestType> _supportedGuestTypes = EnumSet.of(GuestType.Isolated);
+    private static final EnumSet<IsolationMethod> _supportedIsolationMethods = EnumSet.of(IsolationMethod.VLAN);
+    private static final EnumSet<TrafficType> _supportedTrafficTypes = EnumSet.of(TrafficType.Guest);
+
     @Inject
     protected ConfigurationManager _configMgr;
     @Inject
@@ -222,7 +236,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm,
             DeployDestination dest, ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+                    throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         if (nic.getIp4Address() == null) {
             getIp(nic, _entityMgr.findById(DataCenter.class, network.getDataCenterId()), network);
             nic.setStrategy(ReservationStrategy.Create);
@@ -250,4 +264,25 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
         networkProfile.setDns1(dc.getDns1());
         networkProfile.setDns2(dc.getDns2());
     }
+
+    @Override
+    public List<NetworkType> getSupportedNetworkTypes() {
+        return new ArrayList<NetworkType>(_supportedNetworkTypes);
+    }
+
+    @Override
+    public List<TrafficType> getSupportedTrafficTypes() {
+        return new ArrayList<TrafficType>(_supportedTrafficTypes);
+    }
+
+    @Override
+    public List<GuestType> getSupportedGuestTypes() {
+        return new ArrayList<GuestType>(_supportedGuestTypes);
+    }
+
+    @Override
+    public List<IsolationMethod> getSupportedIsolationMethods() {
+        return new ArrayList<IsolationMethod>(_supportedIsolationMethods);
+    }
+
 }

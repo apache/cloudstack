@@ -16,13 +16,19 @@
 // under the License.
 package com.cloud.network.guru;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+
 import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
@@ -33,6 +39,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.AddressFormat;
@@ -40,6 +47,7 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -61,6 +69,15 @@ import com.cloud.vm.VirtualMachineProfile;
 @Local(value = { NetworkGuru.class })
 public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     private static final Logger s_logger = Logger.getLogger(PublicNetworkGuru.class);
+
+    /**
+     * The supported networking configs
+     */
+    private static final EnumSet<NetworkType> _supportedNetworkTypes = EnumSet.of(NetworkType.Basic, NetworkType.Advanced);
+    private static final EnumSet<GuestType> _supportedGuestTypes = EnumSet.of(GuestType.Isolated, GuestType.Shared);
+    private static final EnumSet<IsolationMethod> _supportedIsolationMethods = EnumSet.of(IsolationMethod.VLAN,
+            IsolationMethod.NONE);
+    private static final EnumSet<TrafficType> _supportedTrafficTypes = EnumSet.of(TrafficType.Public);
 
     @Inject
     DataCenterDao _dcDao;
@@ -143,7 +160,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm)
             throws InsufficientVirtualNetworkCapcityException,
-    InsufficientAddressCapacityException, ConcurrentOperationException {
+            InsufficientAddressCapacityException, ConcurrentOperationException {
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
 
@@ -204,7 +221,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             });
         }
         nic.deallocate();
-        
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deallocated nic: " + nic);
         }
@@ -224,6 +241,26 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         DataCenter dc = _dcDao.findById(networkProfile.getDataCenterId());
         networkProfile.setDns1(dc.getDns1());
         networkProfile.setDns2(dc.getDns2());
+    }
+
+    @Override
+    public List<NetworkType> getSupportedNetworkTypes() {
+        return new ArrayList<NetworkType>(_supportedNetworkTypes);
+    }
+
+    @Override
+    public List<TrafficType> getSupportedTrafficTypes() {
+        return new ArrayList<TrafficType>(_supportedTrafficTypes);
+    }
+
+    @Override
+    public List<GuestType> getSupportedGuestTypes() {
+        return new ArrayList<GuestType>(_supportedGuestTypes);
+    }
+
+    @Override
+    public List<IsolationMethod> getSupportedIsolationMethods() {
+        return new ArrayList<IsolationMethod>(_supportedIsolationMethods);
     }
 
 }

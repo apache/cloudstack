@@ -16,12 +16,15 @@
 // under the License.
 package com.cloud.network.guru;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 
 import com.cloud.dc.DataCenter;
@@ -46,6 +49,7 @@ import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
@@ -57,7 +61,6 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.ExceptionUtil;
@@ -74,6 +77,14 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 @Local(value = { NetworkGuru.class })
 public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     private static final Logger s_logger = Logger.getLogger(DirectNetworkGuru.class);
+
+    /**
+     * The supported networking configs
+     */
+    private static final EnumSet<NetworkType> _supportedNetworkTypes = EnumSet.of(NetworkType.Advanced);
+    private static final EnumSet<GuestType> _supportedGuestTypes = EnumSet.of(GuestType.Shared);
+    private static final EnumSet<IsolationMethod> _supportedIsolationMethods = EnumSet.of(IsolationMethod.VLAN);
+    private static final EnumSet<TrafficType> _supportedTrafficTypes = EnumSet.of(TrafficType.Guest);
 
     @Inject
     DataCenterDao _dcDao;
@@ -99,22 +110,22 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     IpAddressManager _ipAddrMgr;
 
     private static final TrafficType[] _trafficTypes = {TrafficType.Guest};
-    
+
     @Override
     public boolean isMyTrafficType(TrafficType type) {
-    	for (TrafficType t : _trafficTypes) {
-    		if (t == type) {
-    			return true;
-    		}
-    	}
-    	return false;
+        for (TrafficType t : _trafficTypes) {
+            if (t == type) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     public TrafficType[] getSupportedTrafficType() {
-    	return _trafficTypes;
+        return _trafficTypes;
     }
-    
+
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
         // this guru handles only Guest networks in Advance zone with source nat service disabled
         if (dc.getNetworkType() == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) && offering.getGuestType() == GuestType.Shared) {
@@ -171,9 +182,9 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
         boolean isSecurityGroupEnabled = _networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Service.SecurityGroup);
         if (isSecurityGroupEnabled) {
-        	if (userSpecified.getIp6Cidr() != null) {
+            if (userSpecified.getIp6Cidr() != null) {
                 throw new InvalidParameterValueException("Didn't support security group with IPv6");
-        	}
+            }
             config.setName("SecurityGroupEnabledNetwork");
             config.setDisplayText("SecurityGroupEnabledNetwork");
         }
@@ -198,7 +209,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException, ConcurrentOperationException {
+    InsufficientAddressCapacityException, ConcurrentOperationException {
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
 
@@ -271,11 +282,11 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override @DB
     public void deallocate(final Network network, final NicProfile nic, VirtualMachineProfile vm) {
-    	if (s_logger.isDebugEnabled()) {
+        if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIp4Address());
         }
-    	
-    	if (nic.getIp4Address() != null) {
+
+        if (nic.getIp4Address() != null) {
             final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
             if (ip != null) {
                 Transaction.execute(new TransactionCallbackNoReturn() {
@@ -289,7 +300,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                             _ipAddrMgr.markIpAsUnavailable(ip.getId());
                             _ipAddressDao.unassignIpAddress(ip.getId());
                         }
-                       
+
                         //unassign nic secondary ip address
                         s_logger.debug("remove nic " + nic.getId() + " secondary ip ");
                         List<String> nicSecIps = null;
@@ -302,11 +313,11 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                     }
                 });
             }
-    	}
-    	
-    	if (nic.getIp6Address() != null) {
-    		_ipv6Mgr.revokeDirectIpv6Address(nic.getNetworkId(), nic.getIp6Address());
-    	}
+        }
+
+        if (nic.getIp6Address() != null) {
+            _ipv6Mgr.revokeDirectIpv6Address(nic.getNetworkId(), nic.getIp6Address());
+        }
         nic.deallocate();
     }
 
@@ -344,4 +355,25 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         networkProfile.setDns1(dc.getDns1());
         networkProfile.setDns2(dc.getDns2());
     }
+
+    @Override
+    public List<NetworkType> getSupportedNetworkTypes() {
+        return new ArrayList<NetworkType>(_supportedNetworkTypes);
+    }
+
+    @Override
+    public List<TrafficType> getSupportedTrafficTypes() {
+        return new ArrayList<TrafficType>(_supportedTrafficTypes);
+    }
+
+    @Override
+    public List<GuestType> getSupportedGuestTypes() {
+        return new ArrayList<GuestType>(_supportedGuestTypes);
+    }
+
+    @Override
+    public List<IsolationMethod> getSupportedIsolationMethods() {
+        return new ArrayList<IsolationMethod>(_supportedIsolationMethods);
+    }
+
 }
