@@ -27,6 +27,7 @@ import java.util.TreeSet;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -167,6 +168,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     NetworkACLItemDao _networkACLItemDao;
     @Inject
     EntityManager _entityMgr;
+    
+    @Override
+    public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
+        _itMgr.registerGuru(VirtualMachine.Type.DomainRouter, this);
+        return super.configure(name, params);
+    }
     
     @Override
     public List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc, DeployDestination dest, Account owner,
