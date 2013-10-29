@@ -22,6 +22,18 @@ from cloudstackAPI import *
 import random
 import string
 import hashlib
+from configGenerator import ConfigManager
+
+'''
+@Desc  : CloudStackTestClient is encapsulated class for getting various \
+         clients viz., apiclient,dbconnection etc
+@Input : mgmtDetails : Management Server Details
+         dbSvrDetails: Database Server details of Management \
+                       Server. Retrieved from configuration file.
+         asyncTimeout :
+         defaultWorkerThreads :
+         logging :
+'''
 
 
 class cloudstackTestClient(object):
@@ -35,6 +47,21 @@ class cloudstackTestClient(object):
         self.apiClient =\
             cloudstackAPIClient.CloudStackAPIClient(self.connection)
         self.dbConnection = None
+        if dbSvrDetails is not None:
+                self.createDbConnection(dbSvrDetails.dbSvr, dbSvrDetails.port,
+                                        dbSvrDetails.user,
+                                        dbSvrDetails.passwd, dbSvrDetails.db)
+        '''
+        Provides the Configuration Object to users through getConfigParser
+        The purpose of this object is to parse the config
+        and provide dictionary of the config so users can
+        use that configuration.Users can later call getConfig
+        on this object and it will return the default parsed
+        config dictionary from default configuration file,
+        they can overwrite it with providing their own
+        configuration file as well.
+        '''
+        self.configObj = ConfigManager()
         self.asyncJobMgr = None
         self.ssh = None
         self.id = None
@@ -48,11 +75,10 @@ class cloudstackTestClient(object):
     def identifier(self, id):
         self.id = id
 
-    def dbConfigure(self, host="localhost", port=3306, user='cloud',
-                    passwd='cloud', db='cloud'):
-        self.dbConnection = dbConnection.dbConnection(host, port, user, passwd,
-                                                      db)
-
+    def createDbConnection(self, host="localhost", port=3306, user='cloud',
+                           passwd='cloud', db='cloud'):
+        self.dbConnection = dbConnection.dbConnection(host, port, user,
+                                                      passwd, db)
     def isAdminContext(self):
         """
         A user is a regular user if he fails to listDomains;
@@ -149,16 +175,8 @@ class cloudstackTestClient(object):
     def getDbConnection(self):
         return self.dbConnection
 
-    def executeSql(self, sql=None):
-        if sql is None or self.dbConnection is None:
-            return None
-
-        return self.dbConnection.execute()
-
-    def executeSqlFromFile(self, sqlFile=None):
-        if sqlFile is None or self.dbConnection is None:
-            return None
-        return self.dbConnection.executeSqlFromFile(sqlFile)
+    def getConfigParser(self):
+        return self.configObj
 
     def getApiClient(self):
         self.apiClient.id = self.identifier
