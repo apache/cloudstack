@@ -16,14 +16,19 @@
 // under the License.
 package com.cloud.network.guru;
 
+import java.util.List;
+
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Adapter;
@@ -201,8 +206,41 @@ public interface NetworkGuru extends Adapter {
 
     void updateNetworkProfile(NetworkProfile networkProfile);
 
+    @Deprecated
     TrafficType[] getSupportedTrafficType();
 
+    @Deprecated
     boolean isMyTrafficType(TrafficType type);
+
+    /**
+     * The guru needs to supply the information about what networking types are supported to
+     * the network orchestrator.
+     * @return list of supported NetworkTypes
+     */
+    List<NetworkType> getSupportedNetworkTypes();
+
+    /**
+     * The guru needs to supply the information about what traffic types are
+     * supported to the network orchestrator.
+     * 
+     * @return list of supported TrafficTypes
+     */
+    List<TrafficType> getSupportedTrafficTypes();
+
+    /**
+     * The guru needs to supply the information about what guest networking
+     * types are supported to the network orchestrator.
+     * 
+     * @return list of supported GuestTypes
+     */
+    List<GuestType> getSupportedGuestTypes();
+
+    /**
+     * The guru needs to supply the information about what networking types are
+     * supported to the network orchestrator.
+     * 
+     * @return list of supported IsolationMethods
+     */
+    List<IsolationMethod> getSupportedIsolationMethods();
 
 }

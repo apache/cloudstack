@@ -18,9 +18,10 @@ package com.cloud.network;
 
 import java.util.List;
 
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.Pair;
 
 /**
  *
@@ -33,6 +34,7 @@ public interface PhysicalNetwork extends Identity, InternalIdentity {
     }
 
     public enum IsolationMethod {
+        NONE,
         VLAN,
         L3,
         GRE,
