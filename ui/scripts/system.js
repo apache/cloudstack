@@ -364,7 +364,7 @@
                                         return total;
                                     };
 
-                                    complete($.extend(data, {
+                                    dataFns.socketInfo($.extend(data, {
                                         cpuCapacityTotal: capacityTotal(1, cloudStack.converters.convertHz),
                                         memCapacityTotal: capacityTotal(0, cloudStack.converters.convertBytes),
                                         storageCapacityTotal: capacityTotal(2, cloudStack.converters.convertBytes)
@@ -372,12 +372,39 @@
                                 }
                             });
                         } else {
-                            complete($.extend(data, {
+                            dataFns.socketInfo($.extend(data, {
                                 cpuCapacityTotal: cloudStack.converters.convertHz(0),
                                 memCapacityTotal: cloudStack.converters.convertBytes(0),
                                 storageCapacityTotal: cloudStack.converters.convertBytes(0)
                             }));
                         }
+                    },
+
+                    socketInfo: function(args) {
+                        complete($.extend(args.data, {
+                            socketInfo: [
+                                {
+                                    name: 'XenServer',
+                                    hosts: 0,
+                                    sockets: 0
+                                },
+                                {
+                                    name: 'VMware',
+                                    hosts: 0,
+                                    sockets: 0
+                                },
+                                {
+                                    name: 'KVM',
+                                    hosts: 0,
+                                    sockets: 0
+                                },
+                                {
+                                    name: 'Hyper-V',
+                                    hosts: 0,
+                                    sockets: 0
+                                }
+                            ]
+                        }));
                     }
                 };
 

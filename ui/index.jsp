@@ -1126,6 +1126,11 @@
                                   view-all-target="virtualRouters"><fmt:message key="label.view.all"/></span>
                         </li>
                     </ul>
+                    
+                    <div class="socket-info">
+                        <div class="title">Socket info</div>
+                        <ul></ul>
+                    </div>
                 </div>
             </div>
 
