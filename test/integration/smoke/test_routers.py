@@ -201,16 +201,17 @@ class TestRouterServices(cloudstackTestCase):
                                     router.linklocalip,
                                     "service dnsmasq status"
                                     )
-                res = str(result)
-                self.debug("Dnsmasq process status: %s" % res)
 
-                self.assertEqual(
-                                res.count("running"),
-                                1,
-                                "Check dnsmasq service is running or not"
-                        )
             except KeyError:
                 self.skipTest("Marvin configuration has no host credentials to check router services")
+        res = str(result)
+        self.debug("Dnsmasq process status: %s" % res)
+
+        self.assertEqual(
+            res.count("running"),
+            1,
+            "Check dnsmasq service is running or not"
+        )
         return
 
 
