@@ -196,7 +196,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     private static final long MIN_GRE_KEY = 0L;
     private static final long MAX_GRE_KEY = 4294967295L; // 2^32 -1
     private static final long MIN_VXLAN_VNI = 0L;
-    private static final long MAX_VXLAN_VNI = 16777215L; // 2^24 -1
+    private static final long MAX_VXLAN_VNI = 16777214L; // 2^24 -2
+    // MAX_VXLAN_VNI should be 16777215L (2^24-1), but Linux vxlan interface doesn't accept VNI:2^24-1 now.
+    // It seems a bug.
 
     @Inject
     DataCenterDao _dcDao = null;
