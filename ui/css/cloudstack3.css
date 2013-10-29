@@ -5315,38 +5315,34 @@ label.error {
   float: left;
   width: 128px;
   height: 40px;
-  border: 1px solid #5B7084;
-  border-left: 1px solid #000000;
-  border-right: none;
-  background: url(../images/bg-gradients.png) 0px -261px;
   padding: 0 0px;
   position: relative;
 }
 
 .multi-wizard.instance-wizard .progress ul li {
-  width: 109px;
+  width: 102px;
+  margin-left: 8px;
 }
 
 .multi-wizard .progress ul li.first {
-  /*+border-radius:5px 0 0 5px;*/
-  -moz-border-radius: 5px 0 0 5px;
-  -webkit-border-radius: 5px 0 0 5px;
-  -khtml-border-radius: 5px 0 0 5px;
-  border-radius: 5px 0 0 5px;
+  /*+border-radius:5px;*/
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -khtml-border-radius: 5px;
+  border-radius: 5px;
 }
 
 .multi-wizard .progress ul li.last {
-  /*+border-radius:0 5px 5px 0;*/
-  -moz-border-radius: 0 5px 5px 0;
-  -webkit-border-radius: 0 5px 5px 0;
-  -khtml-border-radius: 0 5px 5px 0;
-  border-radius: 0 5px 5px 0;
-  border-right: 1px solid #5B7084;
 }
 
 .multi-wizard .progress ul li.active {
   background: url(../images/bg-gradients.png) 0px -221px;
   height: 40px;
+  /*+border-radius:5px;*/
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -khtml-border-radius: 5px;
+  border-radius: 5px;
 }
 
 .multi-wizard .progress ul li span {
@@ -5356,7 +5352,7 @@ label.error {
   left: 46px;
   top: 17px;
   text-align: left;
-  color: #656565;
+  color: #000000;
   /*+text-shadow:0px 1px 1px #FFFFFF;*/
   -moz-text-shadow: 0px 1px 1px #FFFFFF;
   -webkit-text-shadow: 0px 1px 1px #FFFFFF;
@@ -5370,6 +5366,7 @@ label.error {
 
 .multi-wizard.instance-wizard .progress ul li span {
   left: 26px;
+  top: 16px;
 }
 
 .multi-wizard .progress ul li span.multiline {
@@ -5386,10 +5383,11 @@ label.error {
   margin-top: -3px;
   background: url(../images/icons.png) no-repeat 0px -422px;
   z-index: 1000;
+  display: none;
 }
 
 .multi-wizard.instance-wizard .progress ul li span.arrow {
-  left: 27px;
+  left: 19px;
 }
 
 .multi-wizard .progress ul li.active span.arrow {
@@ -5399,16 +5397,11 @@ label.error {
 .multi-wizard .progress ul li span.number {
   width: auto;
   position: absolute;
-  top: 8px;
+  top: 7px;
   left: 26px;
   font-size: 27px;
   font-weight: bold;
-  color: #E8E8E8;
-  /*+text-shadow:0px -1px 1px #C2BDBD;*/
-  -moz-text-shadow: 0px -1px 1px #C2BDBD;
-  -webkit-text-shadow: 0px -1px 1px #C2BDBD;
-  -o-text-shadow: 0px -1px 1px #C2BDBD;
-  text-shadow: 0px -1px 1px #C2BDBD;
+  color: #000000;
   background: transparent;
 }
 
@@ -5418,7 +5411,7 @@ label.error {
 
 .multi-wizard.instance-wizard .progress ul li span.multiline {
   width: 79px;
-  left: 23px;
+  left: 26px;
 }
 
 .multi-wizard .progress ul li.active span {
@@ -5431,16 +5424,6 @@ label.error {
 }
 
 .multi-wizard .progress ul li.active span.number {
-  /*+opacity:26%;*/
-  filter: alpha(opacity=26);
-  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=26);
-  -moz-opacity: 0.26;
-  opacity: 0.26;
-  /*+text-shadow:0px -1px 1px #000000;*/
-  -moz-text-shadow: 0px -1px 1px #000000;
-  -webkit-text-shadow: 0px -1px 1px #000000;
-  -o-text-shadow: 0px -1px 1px #000000;
-  text-shadow: 0px -1px 1px #000000;
 }
 
 /*** Content*/
@@ -5874,7 +5857,7 @@ label.error {
 .multi-wizard .buttons .button.previous {
   background: #D6D6D6;
   color: #62798E;
-  margin-left: 12px;
+  margin-left: 27px;
 }
 
 .multi-wizard .buttons .button.previous:hover {
@@ -6357,10 +6340,10 @@ label.error {
 
 .multi-wizard.zone-wizard ul.subnav {
   text-align: left;
-  /*+placement:shift 13px 87px;*/
+  /*+placement:shift 30px 104px;*/
   position: relative;
-  left: 13px;
-  top: 87px;
+  left: 30px;
+  top: 104px;
   position: absolute;
   list-style: disc inside;
 }
@@ -6369,7 +6352,9 @@ label.error {
   float: left;
   padding: 0;
   font-size: 12px;
+  white-space: nowrap;
   text-transform: uppercase;
+  list-style: none;
   height: 20px;
   margin-right: 34px;
   color: #9A9A9A;
@@ -6485,7 +6470,7 @@ label.error {
 }
 
 .multi-wizard.zone-wizard .buttons {
-  top: 584px;
+  top: 609px;
 }
 
 .multi-wizard.zone-wizard .progress ul {
@@ -6493,7 +6478,8 @@ label.error {
 }
 
 .multi-wizard.zone-wizard .progress ul li {
-  width: 114px;
+  width: 107px;
+  margin-left: 7px;
   padding: 0 32px 0 0;
 }
 
