@@ -8557,19 +8557,18 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   height: 258px;
   width: 762px;
   display: block;
-  background: #8DA4B9 url(../images/bg-gradients.png) repeat-x 0px -475px;
-  /*+border-radius:8px;*/
-  -moz-border-radius: 8px;
-  -webkit-border-radius: 8px;
-  -khtml-border-radius: 8px;
-  border-radius: 8px;
-  border-radius: 8px 8px 8px 8px;
+  background: #8DA4B9 repeat-x 0px -475px;
+  /*+border-radius:3px;*/
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  -khtml-border-radius: 3px;
+  border-radius: 3px;
   /*+box-shadow:inset 0px 0px 1px #FFFFFF;*/
   -moz-box-shadow: inset 0px 0px 1px #FFFFFF;
   -webkit-box-shadow: inset 0px 0px 1px #FFFFFF;
   -o-box-shadow: inset 0px 0px 1px #FFFFFF;
   box-shadow: inset 0px 0px 1px #FFFFFF;
-  border: 1px solid #BFD4E1;
+  border: 1px solid #7D7D7D;
   position: relative;
   margin: 18px 0 0 15px;
   font-weight: bold;
@@ -8586,15 +8585,14 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 }
 
 .system-dashboard .head {
-  color: #505F6F;
+  color: #000000;
   /*+text-shadow:0px 1px 1px #FFFFFF;*/
   -moz-text-shadow: 0px 1px 1px #FFFFFF;
   -webkit-text-shadow: 0px 1px 1px #FFFFFF;
   -o-text-shadow: 0px 1px 1px #FFFFFF;
   text-shadow: 0px 1px 1px #FFFFFF;
   text-indent: 11px;
-  padding: 12px 0 11px;
-  border-bottom: 1px solid #728EA7;
+  padding: 12px 0 0;
   /*+box-shadow:0px 0px 1px #FFFFFF;*/
   -moz-box-shadow: 0px 0px 1px #FFFFFF;
   -webkit-box-shadow: 0px 0px 1px #FFFFFF;
@@ -8605,13 +8603,11 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 .system-dashboard .view-more,
 .system-dashboard .view-all {
   float: right;
-  padding: 5px 21px 5px 9px;
   margin: -4px 19px 0 0;
   cursor: pointer;
-  font-size: 11px;
-  font-weight: bold;
-  background: #4B5B6A url(../images/bg-gradients.png) repeat-x 0px -735px;
-  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 100;
+  background: #DADADA repeat-x 0px -735px;
   /*+border-radius:3px;*/
   -moz-border-radius: 3px;
   -webkit-border-radius: 3px;
@@ -8619,92 +8615,74 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   border-radius: 3px;
   border-radius: 3px 3px 3px 3px;
   border: 1px solid #5A5A5A;
-  /*+box-shadow:inset 0px 0px 1px #FFFFFF;*/
-  -moz-box-shadow: inset 0px 0px 1px #FFFFFF;
-  -webkit-box-shadow: inset 0px 0px 1px #FFFFFF;
-  -o-box-shadow: inset 0px 0px 1px #FFFFFF;
-  box-shadow: inset 0px 0px 1px #FFFFFF;
-  /*+text-shadow:0px 1px 1px #000000;*/
-  -moz-text-shadow: 0px 1px 1px #000000;
-  -webkit-text-shadow: 0px 1px 1px #000000;
-  -o-text-shadow: 0px 1px 1px #000000;
-  text-shadow: 0px 1px 1px #000000;
 }
 
 .system-dashboard .view-more:hover,
 .system-dashboard .view-all:hover {
   background-position: 0px -763px;
-  /*+box-shadow:inset 0px 1px 1px #313131;*/
-  -moz-box-shadow: inset 0px 1px 1px #313131;
-  -webkit-box-shadow: inset 0px 1px 1px #313131;
-  -o-box-shadow: inset 0px 1px 1px #313131;
-  box-shadow: inset 0px 1px 1px #313131;
+  /*+box-shadow:inset 0px 1px 1px #000000;*/
+  -moz-box-shadow: inset 0px 1px 1px #000000;
+  -webkit-box-shadow: inset 0px 1px 1px #000000;
+  -o-box-shadow: inset 0px 1px 1px #000000;
+  box-shadow: inset 0px 1px 1px #000000;
+  background: #C1C1C1;
 }
 
 .system-dashboard .status_box .view-all {
-  /*+placement:shift 18px 136px;*/
+  /*+placement:shift 18px 128px;*/
   position: relative;
   left: 18px;
-  top: 136px;
+  top: 128px;
   width: 78%;
   position: absolute;
   text-align: center;
-  padding: 5px 0 8px;
+  padding: 8px 0;
 }
 
 .system-dashboard .status_box {
   font-size: 14px;
-  margin: 28px 0 0;
+  margin: 24px 0 0;
   background: transparent;
   border: none;
 }
 
 .system-dashboard .status_box li {
   height: 178px;
-  width: 180px;
+  width: 178px;
   padding: 0;
-  background: url(../images/bg-gradients.png) repeat-x 0px -1003px;
   margin: 0 0 0 8px;
-  /*+border-radius:7px;*/
-  -moz-border-radius: 7px;
-  -webkit-border-radius: 7px;
-  -khtml-border-radius: 7px;
-  border-radius: 7px;
-  border-radius: 7px 7px 7px 7px;
-  /*+box-shadow:inset 0px 1px 3px #000000;*/
-  -moz-box-shadow: inset 0px 1px 3px #000000;
-  -webkit-box-shadow: inset 0px 1px 3px #000000;
-  -o-box-shadow: inset 0px 1px 3px #000000;
-  box-shadow: inset 0px 1px 3px #000000;
+  /*+border-radius:3px;*/
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  -khtml-border-radius: 3px;
+  border-radius: 3px;
   position: relative;
-  border: none;
+  border: 1px solid #808080;
   float: left;
 }
 
 .system-dashboard.zone .status_box li {
-  margin-bottom: 120px;
-  height: 176px;
-  background-position: 0px -1005px;
-  background-color: #35404B;
+  margin-bottom: 38px;
+  height: 170px;
+  background-color: #F4F4F4;
 }
 
 .system-dashboard.zone .status_box li .icon {
   background: url(../images/infrastructure-icons.png) no-repeat 0px 0px;
   padding: 65px 80px 5px;
-  /*+placement:shift 25px 19px;*/
+  /*+placement:shift 31px 19px;*/
   position: relative;
-  left: 25px;
+  left: 31px;
   top: 19px;
   position: absolute;
+  /*+opacity:56%;*/
+  filter: alpha(opacity=56);
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=56);
+  -moz-opacity: 0.56;
+  opacity: 0.56;
 }
 
 .system-dashboard .status_box li span {
-  color: #FFFFFF;
-  /*+text-shadow:0px 1px 1px #000000;*/
-  -moz-text-shadow: 0px 1px 1px #000000;
-  -webkit-text-shadow: 0px 1px 1px #000000;
-  -o-text-shadow: 0px 1px 1px #000000;
-  text-shadow: 0px 1px 1px #000000;
 }
 
 .system-dashboard .status_box li span.label {
@@ -8732,15 +8710,12 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   position: relative;
   left: 13px;
   top: 5px;
-  /*+text-shadow:0px 1px 2px #000000;*/
-  -moz-text-shadow: 0px 1px 2px #000000;
-  -webkit-text-shadow: 0px 1px 2px #000000;
-  -o-text-shadow: 0px 1px 2px #000000;
-  text-shadow: 0px 1px 2px #000000;
+  font-weight: 100;
 }
 
 .system-dashboard.zone .status_box li span.header {
-  font-size: 13px;
+  font-size: 14px;
+  color: #4F4F4F;
 }
 
 .system-dashboard .status_box li span.status {
@@ -8876,6 +8851,59 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   left: 97px;
   top: 153px;
   position: absolute;
+}
+
+.system-dashboard-view .socket-info {
+  width: 100%;
+  height: 134px;
+  overflow: auto;
+  float: left;
+  padding: 0;
+}
+
+.system-dashboard-view .socket-info > .title {
+  border-bottom: 1px solid #7D7D7D;
+  padding: 8px;
+  font-size: 13px;
+}
+
+.system-dashboard-view .socket-info ul {
+}
+
+.system-dashboard-view .socket-info li {
+  width: 143px;
+  padding: 13px;
+  /*+border-radius:3px;*/
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  -khtml-border-radius: 3px;
+  border-radius: 3px;
+  margin: 7px 7px 7px 12px;
+  border: 1px solid #CCC;
+  background: #E2E2E2;
+  float: left;
+}
+
+.system-dashboard-view .socket-info li > div {
+  text-decoration: none;
+  float: left;
+}
+
+.system-dashboard-view .socket-info li .name {
+  width: 100%;
+  margin-bottom: 13px;
+}
+
+.system-dashboard-view .socket-info li .hosts,
+.system-dashboard-view .socket-info li .sockets {
+  width: 54px;
+}
+
+.system-dashboard-view .socket-info li div .title {
+  color: #424242;
+  border: none;
+  font-size: 13px;
+  padding-bottom: 3px;
 }
 
 .add-zone-resource .form-container {
