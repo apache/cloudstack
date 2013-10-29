@@ -1724,14 +1724,9 @@ div.list-view td.state.off span {
 .detail-group table {
   width: 96%;
   font-size: 12px;
-  /*+border-radius:5px;*/
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  -khtml-border-radius: 5px;
-  border-radius: 5px;
-  border-bottom: none;
-  background: #F4F4F4;
-  margin-top: 11px;
+  border-bottom: 1px solid #DFDFDF;
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f7f7f7', endColorstr='#eaeaea',GradientType=0 );
+  margin-top: 10px;
 }
 
 .detail-group table tr,
@@ -1739,6 +1734,10 @@ div.list-view td.state.off span {
   vertical-align: middle;
   border: none;
   cursor: default;
+}
+
+.detail-group table tr.odd {
+  background: none;
 }
 
 .details.group-multiple table {
@@ -1757,7 +1756,8 @@ div.list-view td.state.off span {
 
 .detail-group .main-groups table td.name {
   width: 113px;
-  color: #6393F1;
+  color: #6D6D6D;
+  font-weight: bold;
   padding: 14px 12px 13px 13px;
   border: none;
   text-indent: 0;
@@ -1976,7 +1976,7 @@ div.detail-group td.view-all a {
   font-size: 13px;
   display: block;
   text-decoration: none;
-  color: #145A98;
+  color: #0373B7;
   /*+text-shadow:0px 1px 2px #FFFFFF;*/
   -moz-text-shadow: 0px 1px 2px #FFFFFF;
   -webkit-text-shadow: 0px 1px 2px #FFFFFF;
@@ -1991,10 +1991,10 @@ div.detail-group td.view-all:hover a {
 }
 
 div.detail-group td.view-all a span {
-  /*+placement:shift -4px 7px;*/
+  /*+placement:shift -4px -1px;*/
   position: relative;
   left: -4px;
-  top: 7px;
+  top: -1px;
 }
 
 div.detail-group td.view-all:hover a span {
@@ -2042,6 +2042,8 @@ div.details .main-groups label.error {
   display: block;
   float: left;
   height: 28px;
+  margin-left: 0;
+  text-align: left;
 }
 
 /*** Actions*/
@@ -2098,7 +2100,6 @@ div.detail-group.actions td {
 }
 
 .detail-group table td.detail-actions {
-  width: 59%;
   height: 26px;
 }
 
@@ -2140,10 +2141,6 @@ div.detail-group.actions td {
 }
 
 .detail-group table td.detail-actions div.buttons {
-  /*+placement:shift 6px 0px;*/
-  position: relative;
-  left: 6px;
-  top: 0px;
 }
 
 .detail-group table td.detail-actions a {
@@ -2152,7 +2149,6 @@ div.detail-group.actions td {
   text-indent: -9999px;
   width: 30px;
   height: 25px;
-  background: url(../images/sprites.png) -417px -11px;
   margin: 0;
 }
 
@@ -2181,7 +2177,6 @@ div.detail-group.actions td {
 .detail-group table td.detail-actions div.action.single a {
   width: 31px;
   height: 26px;
-  background: url(../images/buttons.png);
   background-position: -414px -625px;
 }
 
@@ -2418,6 +2413,11 @@ div.detail-group.actions td {
   width: 230px;
   position: relative;
   float: left;
+  /*+box-shadow:inset -1px 4px 7px #DDDDDD;*/
+  -moz-box-shadow: inset -1px 4px 7px #DDDDDD;
+  -webkit-box-shadow: inset -1px 4px 7px #DDDDDD;
+  -o-box-shadow: inset -1px 4px 7px #DDDDDD;
+  box-shadow: inset -1px 4px 7px #DDDDDD;
   background: #EDE8E8;
   background: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/Pgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEgMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSI+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJncmFkLXVjZ2ctZ2VuZXJhdGVkIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIwJSIgeTI9IjEwMCUiPgogICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIxIi8+CiAgICA8c3RvcCBvZmZzZXQ9IjYlIiBzdG9wLWNvbG9yPSIjZWRlOGU4IiBzdG9wLW9wYWNpdHk9IjEiLz4KICA8L2xpbmVhckdyYWRpZW50PgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9InVybCgjZ3JhZC11Y2dnLWdlbmVyYXRlZCkiIC8+Cjwvc3ZnPg==);
   background: -moz-linear-gradient(top, #ffffff 0%, #ede8e8 6%);
@@ -8578,7 +8578,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   -o-text-shadow: 0px 1px 1px #FFFFFF;
   text-shadow: 0px 1px 1px #FFFFFF;
   text-indent: 11px;
-  padding: 12px 0 0;
+  padding: 0px 0 12px;
   /*+box-shadow:0px 0px 1px #FFFFFF;*/
   -moz-box-shadow: 0px 0px 1px #FFFFFF;
   -webkit-box-shadow: 0px 0px 1px #FFFFFF;
