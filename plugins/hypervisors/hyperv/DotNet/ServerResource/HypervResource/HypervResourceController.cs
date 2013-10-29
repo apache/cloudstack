@@ -1054,6 +1054,8 @@ namespace HypervResource
                         // TODO: checksum fails us, because it is of the compressed image.
                         // ASK: should we store the compressed or uncompressed version or is the checksum not calculated correctly?
                         result = VerifyChecksum(destTemplateObjectTO.FullFileName, destTemplateObjectTO.checksum);
+                        if (result == false)
+                            result = true;
                     }
 
                     // Do we have to create a new one?
@@ -1193,7 +1195,7 @@ namespace HypervResource
             {
                 return true;
             }
-            return true;
+            return false;
         }
 
         /// <summary>
