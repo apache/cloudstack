@@ -3571,20 +3571,15 @@ table tr.selected td.actions .action.disabled .icon {
 /*** Action icons
 Dialogs*/
 .ui-dialog {
-  background: #E9E9E9 url(../images/bg-dialog-body.png) repeat-x 0px 0px;
+  background: #FFFFFF;
   text-align: left;
-  /*+border-radius:7px;*/
-  -moz-border-radius: 7px;
-  -webkit-border-radius: 7px;
-  -khtml-border-radius: 7px;
-  border-radius: 7px;
-  border-radius: 7px 7px 7px 7px;
   /*+box-shadow:0px -4px 15px #4C4A4A;*/
   -moz-box-shadow: 0px -4px 15px #4C4A4A;
   -webkit-box-shadow: 0px -4px 15px #4C4A4A;
   -o-box-shadow: 0px -4px 15px #4C4A4A;
   box-shadow: 0px -4px 15px #4C4A4A;
   position: absolute;
+  padding: 15px;
 }
 
 .ui-dialog .ui-widget-content {
@@ -3719,8 +3714,8 @@ Dialogs*/
 }
 
 .ui-dialog-titlebar {
-  background: #4C5F70 url(../images/bg-dialog-header.png);
-  color: #FFFFFF;
+  background: #FFFFFF;
+  color: #000000;
   height: 33px;
   /*+border-radius:7px 7px 0 0;*/
   -moz-border-radius: 7px 7px 0 0;
@@ -3741,11 +3736,6 @@ Dialogs*/
   top: 9px;
   font-size: 14px;
   padding: 2px 0 5px 30px;
-  /*+text-shadow:0px -1px 1px #495968;*/
-  -moz-text-shadow: 0px -1px 1px #495968;
-  -webkit-text-shadow: 0px -1px 1px #495968;
-  -o-text-shadow: 0px -1px 1px #495968;
-  text-shadow: 0px -1px 1px #495968;
   background: url(../images/icons.png) no-repeat 0px -255px;
 }
 
@@ -3758,7 +3748,7 @@ Dialogs*/
 }
 
 .ui-dialog.create-form .ui-dialog-title {
-  background: url(../images/icons.png) no-repeat 0px -256px;
+  background: url(../images/icons.png) no-repeat 0px -255px;
 }
 
 .ui-dialog.confirm .ui-button {
@@ -3831,22 +3821,9 @@ Dialogs*/
 .ui-dialog div.form-container div.value input {
   width: 98%;
   font-size: 14px;
+  padding: 4px;
   background: #F6F6F6;
-  /*+border-radius:4px;*/
-  -moz-border-radius: 4px;
-  -webkit-border-radius: 4px;
-  -khtml-border-radius: 4px;
-  border-radius: 4px;
-  border-radius: 4px 4px 4px 4px;
   border: 1px solid #AFAFAF;
-  /*+box-shadow:inset 0px 1px #727272;*/
-  -moz-box-shadow: inset 0px 1px #727272;
-  -webkit-box-shadow: inset 0px 1px #727272;
-  -o-box-shadow: inset 0px 1px #727272;
-  box-shadow: inset 0px 1px #727272;
-  -moz-box-shadow: inset 0px 1px 0px #727272;
-  -webkit-box-shadow: inset 0px 1px 0px #727272;
-  -o-box-shadow: inset 0px 1px 0px #727272;
   float: left;
 }
 
