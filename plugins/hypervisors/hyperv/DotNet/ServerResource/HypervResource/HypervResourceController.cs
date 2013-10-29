@@ -1193,7 +1193,7 @@ namespace HypervResource
             {
                 return true;
             }
-            return false;
+            return true;
         }
 
         /// <summary>

@@ -348,7 +348,7 @@ namespace HypervResource
             SetState(newVm, RequiredState.Enabled);
 
             // we need to reboot to get the hv kvp daemon get started vr gets configured.
-            if (vmName.StartsWith("r-"))
+            if (vmName.StartsWith("r-") || vmName.StartsWith("s-") || vmName.StartsWith("v-"))
             {
                 System.Threading.Thread.Sleep(90000);
                 SetState(newVm, RequiredState.Reboot);
