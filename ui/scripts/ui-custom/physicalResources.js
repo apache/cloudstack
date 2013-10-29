@@ -40,7 +40,8 @@
                         });
 
                         // Socket info
-                        var $socketInfo = $dashboard.find('.socket-info ul');  
+                        var $socketInfo = $dashboard.find('.socket-info ul');
+                        $socketInfo.find('li').remove(); // Clean up
                         $(args.data.socketInfo).each(function() {
                             var item = this;
                             var name = item.name;
