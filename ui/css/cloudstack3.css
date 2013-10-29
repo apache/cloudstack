@@ -4093,7 +4093,7 @@ Dialogs*/
 /**** Head*/
 .dashboard.admin .dashboard-container.head {
   width: 766px;
-  height: 290px;
+  height: 331px;
   margin: 9px 0 0;
   float: left;
 }
@@ -4103,7 +4103,7 @@ Dialogs*/
   padding: 4px 4px 8px;
   width: 100%;
   float: left;
-  margin: 0 0 9px;
+  margin: 0;
   color: #FFFFFF;
 }
 
@@ -4153,7 +4153,7 @@ Dialogs*/
 /**** Charts / stats*/
 .dashboard.admin .zone-stats {
   width: 774px;
-  height: 274px;
+  height: 348px;
   overflow: auto;
   overflow-x: hidden;
   /*+placement:shift 0px -11px;*/
@@ -4164,20 +4164,16 @@ Dialogs*/
 
 .dashboard.admin .zone-stats ul {
   width: 796px;
-  /*+placement:shift -1px 0px;*/
+  /*+placement:shift -2px 11px;*/
   position: relative;
-  left: -1px;
-  top: 0px;
+  left: -2px;
+  top: 11px;
 }
 
 .dashboard.admin .zone-stats ul li {
-  background: #FFFFFF url(../images/bg-gradients.png) repeat-x 0px -1244px;
-  width: 387px;
-  font-size: 11px;
-  border: 1px solid #BDBDBD;
-  border-left: none;
-  border-top: none;
-  height: 73px;
+  width: 388px;
+  font-size: 14px;
+  height: 79px;
   float: left;
   position: absolute;
   position: relative;
@@ -4195,28 +4191,41 @@ Dialogs*/
 }
 
 .dashboard.admin .zone-stats ul li .label {
-  width: 138px;
+  width: 111px;
   float: left;
-  padding: 22px 0px 0 10px;
+  font-weight: 100;
+  border-bottom: 1px solid #E2E2E2;
+  margin: 5px 0 0 22px;
+  padding: 22px 0 7px;
 }
 
 .dashboard.admin .zone-stats ul li .info {
   float: left;
-  width: 120px;
+  width: 151px;
+  white-space: nowrap;
   margin: 12px 0 0;
   color: #636363;
 }
 
 .dashboard.admin .zone-stats ul li .info .name {
   font-weight: bold;
+  margin-top: 8px;
+  margin-bottom: 9px;
+  font-size: 12px;
+  font-weight: 100;
+  /*[empty]color:;*/
 }
 
 .dashboard.admin .zone-stats ul li .pie-chart-container {
-  width: 95px;
+  width: 91px;
   height: 69px;
   overflow: hidden;
   float: left;
   position: relative;
+  /*+placement:shift -8px 7px;*/
+  position: relative;
+  left: -8px;
+  top: 7px;
 }
 
 .dashboard.admin .zone-stats ul li .pie-chart-container .percent-label {
@@ -4343,7 +4352,7 @@ Dialogs*/
 .dashboard.admin .dashboard-container.sub.alerts {
   float: left;
   margin: 0 12px 0 0;
-  height: 313px;
+  height: 270px;
   overflow: hidden;
   position: relative;
 }
@@ -4354,7 +4363,7 @@ Dialogs*/
 
 .dashboard.admin .dashboard-container.sub.alerts ul {
   width: 368px;
-  height: 274px;
+  height: 234px;
   overflow: auto;
   overflow-x: hidden;
   position: relative;
@@ -4362,33 +4371,19 @@ Dialogs*/
 }
 
 .dashboard.admin .dashboard-container.sub.alerts ul li {
-  display: block;
-  width: 358px;
-  height: 42px;
-  color: #000000;
-  background: url(../images/bg-gradients.png) 0px -48px;
+  background: #F0F0F0;
+  float: left;
   border: 1px solid #D4D0D0;
-  clear: both;
-  /*+placement:shift 0px 15px;*/
-  position: relative;
-  left: 0px;
-  top: 15px;
-  /*+border-radius:5px;*/
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  -khtml-border-radius: 5px;
-  border-radius: 5px;
-  border-radius: 5px 5px 5px 5px;
-  margin: 0px 0 12px;
-  /*[empty]color:;*/
-  padding: 0;
+  /*+border-radius:3px;*/
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  -khtml-border-radius: 3px;
+  border-radius: 3px;
+  margin: 9px;
+  padding: 8px;
 }
 
 .dashboard.admin .dashboard-container.sub.alerts ul li .content {
-  height: 43px;
-  padding: 0 0px 0 63px;
-  margin: 0;
-  background: url(../images/icons.png) no-repeat -601px -428px;
 }
 
 .dashboard.admin .dashboard-container.sub.alerts ul li {
@@ -4396,8 +4391,10 @@ Dialogs*/
 
 .dashboard.admin .dashboard-container.sub.alerts ul li span.title {
   font-weight: bold;
-  font-size: 11px;
-  margin: 7px 0 0;
+  font-size: 14px;
+  font-weight: 100;
+  color: #266E9A;
+  margin: 3px 0 5px;
   /*+text-shadow:0px 1px #FFFFFF;*/
   -moz-text-shadow: 0px 1px #FFFFFF;
   -webkit-text-shadow: 0px 1px #FFFFFF;
@@ -4407,16 +4404,9 @@ Dialogs*/
 }
 
 .dashboard.admin .dashboard-container.sub.alerts ul li p {
-  display: block;
-  clear: both;
-  font-size: 11px;
   float: left;
-  height: 10px;
-  max-width: 287px;
-  margin-top: 1px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin: 4px 0px 0px;
+  color: #252525;
 }
 
 .dashboard.admin .dashboard-container.sub.alerts ul li p br {
