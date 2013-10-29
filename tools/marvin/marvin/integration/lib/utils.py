@@ -323,7 +323,7 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
 
 def validateList(inp):
         '''
-   @name: validateList
+        @name: validateList
         @Description: 1. A utility function to validate
                  whether the input passed is a list
               2. The list is empty or not

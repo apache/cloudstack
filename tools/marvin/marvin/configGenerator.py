@@ -19,6 +19,7 @@ import json
 import os
 from optparse import OptionParser
 import jsonHelper
+from marvin.codes import *
 
 
 class managementServer(object):
@@ -82,7 +83,7 @@ class zone(object):
         self.cacheStorages = []
 
 
-class traffictype(object):
+class trafficType(object):
     def __init__(self, typ, labeldict=None):
         self.typ = typ  # Guest/Management/Public
         if labeldict:
@@ -153,7 +154,7 @@ class host(object):
         self.memory = None
 
 
-class physical_network(object):
+class physicalNetwork(object):
     def __init__(self):
         self.name = None
         self.tags = []
@@ -299,6 +300,126 @@ class bigip(object):
                                              for r in req])
 
 
+class ConfigManager(object):
+
+    '''
+    @Name: configManager
+    @Desc: 1. It provides the basic configuration facilities to marvin.
+           2. User can just add configuration files for his tests, deployment
+              etc, under one config folder before running their tests.
+              cs/tools/marvin/marvin/config.
+              They can remove all hard coded values from code and separate
+              it out as config at this location.
+              Either add this to the existing setup.cfg as separate section
+              or add new configuration.
+           3. This will thus removes hard coded tests and separate
+              data from tests.
+           4. This API is provided as an additional facility under
+              cloudstackTestClient and users can get the
+              configuration object as similar to apiclient,dbconnection
+              etc to drive their test.
+           5. They just add their configuration for a test,
+              setup etc,at one single place under configuration dir
+              and use "getConfigParser" API of cloudstackTestClient
+              It will give them "configObj".They can either pass their own
+              config file for parsing to "getConfig" or it will use
+              default config file @ config/setup.cfg.
+           6. They will then get the dictionary of parsed
+              configuration and can use it further to drive their tests or
+              config drive
+           7. Test features, can  drive their setups thus removing hard coded
+              values. Configuration default file will be under config and as
+              setup.cfg.
+           8. Users can use their own configuration file passed to
+              "getConfig" API,once configObj is returned.
+    '''
+
+    def __init__(self):
+        self.filePath = "config/config.cfg"
+        self.parsedDict = None
+        if self.__verifyFile(self.filePath) is not False:
+            self.parsedDict = self.__parseConfig(self.filePath)
+
+    def __parseConfig(self, file):
+        '''
+        @Name : __parseConfig
+        @Description: Parses the Input configuration Json file
+                  and returns a dictionary from the file.
+        @Input      : NA
+        @Output     : Returns the parsed dictionary from json file
+                      Returns None for invalid input or if parsing failed
+        '''
+        config_dict = None
+        try:
+            configlines = []
+            with open(file, 'r') as fp:
+                for line in fp:
+                    if len(line) != 0:
+                        ws = line.strip()
+                        if ws[0] not in ["#"]:
+                            configlines.append(ws)
+            config_dict = json.loads("\n".join(configlines))
+        except Exception, e:
+            #Will replace with log once we have logging done
+            print "\n Exception occurred under __parseConfig", e
+        finally:
+            return config_dict
+
+    def __verifyFile(self, file):
+        '''
+        @Name : __parseConfig
+        @Description: Parses the Input configuration Json file
+                  and returns a dictionary from the file.
+        @Input      : file NA
+        @Output     : True or False based upon file input validity
+                      and availability
+        '''
+        if file is None or file == '':
+            return False
+        if os.path.exists(file) is False:
+            return False
+        return True
+
+    def __getSectionData(self, return_dict, section=None):
+        '''
+        @Name: getSectionData
+        @Desc: Gets the Section data of a particular section
+               under parsed dictionary
+        @Input: Parsed Dictionary from configuration file
+                section to be returned from this dict
+        @Output:Section matching inside the parsed data
+        '''
+        if return_dict is not None:
+            inp = return_dict
+        elif self.parsedDict is None:
+            return INVALID_INPUT
+        else:
+            inp = self.parsedDict
+
+        if section is not None:
+            return inp.get(section)
+        else:
+            return inp
+
+    def getConfig(self, file_path=None, section=None):
+        '''
+        @Name: getConfig
+        @Desc  : Parses and converts the given configuration file to dictionary
+        @Input : file_path: path where the configuration needs to be passed
+                 section: specific section inside the file
+        @Output: INVALID_INPUT: This value is returned if the input
+                              is invalid or not able to be parsed
+                 Parsed configuration dictionary from json file
+        '''
+        ret = None
+        if file not in [None, '']:
+            if self.__verifyFile(file_path) is False:
+                return INVALID_INPUT
+            else:
+                ret = self.__parseConfig(file_path)
+        return self.__getSectionData(ret, section)
+
+
 def getDeviceUrl(obj):
     req = zip(obj.__dict__.keys(), obj.__dict__.values())
     if obj.hostname:
@@ -309,7 +430,7 @@ def getDeviceUrl(obj):
         return None
 
 
-def describe_setup_in_basic_mode():
+def descSetupInBasicMode():
     '''sample code to generate setup configuration file'''
     zs = cloudstackConfiguration()
 
@@ -328,9 +449,9 @@ def describe_setup_in_basic_mode():
         sgprovider.broadcastdomainrange = 'Pod'
         sgprovider.name = 'SecurityGroupProvider'
 
-        pn = physical_network()
+        pn = physicalNetwork()
         pn.name = "test-network"
-        pn.traffictypes = [traffictype("Guest"), traffictype("Management")]
+        pn.traffictypes = [trafficType("Guest"), trafficType("Management")]
         pn.providers.append(sgprovider)
 
         z.physical_networks.append(pn)
@@ -428,7 +549,7 @@ def describe_setup_in_basic_mode():
     return zs
 
 
-def describe_setup_in_eip_mode():
+def descSetupInEipMode():
     """
     Setting up an EIP/ELB enabled zone with netscaler provider
     """
@@ -462,12 +583,12 @@ def describe_setup_in_eip_mode():
         ns.hostname = '10.147.40.100'
         nsprovider.devices.append(ns)
 
-        pn = physical_network()
+        pn = physicalNetwork()
         pn.name = "test-network"
-        pn.traffictypes = [traffictype("Guest",
+        pn.traffictypes = [trafficType("Guest",
                                        {"xen": "cloud-guest"}),
-                           traffictype("Management"),
-                           traffictype("Public", {"xen": "cloud-public"})]
+                           trafficType("Management"),
+                           trafficType("Public", {"xen": "cloud-public"})]
         pn.providers.extend([sgprovider, nsprovider])
         z.physical_networks.append(pn)
 
@@ -563,7 +684,7 @@ def describe_setup_in_eip_mode():
     return zs
 
 
-def describe_setup_in_advanced_mode():
+def descSetupInAdvancedMode():
     '''sample code to generate setup configuration file'''
     zs = cloudstackConfiguration()
 
@@ -578,10 +699,10 @@ def describe_setup_in_advanced_mode():
         z.guestcidraddress = "10.1.1.0/24"
         z.vlan = "100-2000"
 
-        pn = physical_network()
+        pn = physicalNetwork()
         pn.name = "test-network"
-        pn.traffictypes = [traffictype("Guest"), traffictype("Management"),
-                           traffictype("Public")]
+        pn.traffictypes = [trafficType("Guest"), trafficType("Management"),
+                           trafficType("Public")]
 
         vpcprovider = provider('VpcVirtualRouter')
 
@@ -697,7 +818,7 @@ def describe_setup_in_advanced_mode():
 '''sample code to generate setup configuration file'''
 
 
-def describe_setup_in_advancedsg_mode():
+def descSetupInAdvancedsgMode():
     zs = cloudstackConfiguration()
 
     for l in range(1):
@@ -711,9 +832,9 @@ def describe_setup_in_advancedsg_mode():
         z.vlan = "100-2000"
         z.securitygroupenabled = "true"
 
-        pn = physical_network()
+        pn = physicalNetwork()
         pn.name = "test-network"
-        pn.traffictypes = [traffictype("Guest"), traffictype("Management")]
+        pn.traffictypes = [trafficType("Guest"), trafficType("Management")]
 
         #If security groups are reqd
         sgprovider = provider()
@@ -864,10 +985,10 @@ by default is ./datacenterCfg")
     if options.inputfile:
         config = getSetupConfig(options.inputfile)
     if options.advanced:
-        config = describe_setup_in_advanced_mode()
+        config = descSetupInAdvancedMode()
     elif options.advancedsg:
-        config = describe_setup_in_advancedsg_mode()
+        config = descSetupInAdvancedsgMode()
     else:
-        config = describe_setup_in_basic_mode()
+        config = descSetupInBasicMode()
 
     generate_setup_config(config, options.output)

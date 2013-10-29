@@ -19,6 +19,10 @@ import cloudstackConnection
 import asyncJobMgr
 import dbConnection
 from cloudstackAPI import *
+import random
+import string
+import hashlib
+from configGenerator import ConfigManager
 
 '''
 @Desc  : CloudStackTestClient is encapsulated class for getting various \
@@ -48,6 +52,17 @@ class cloudstackTestClient(object):
                 self.createDbConnection(dbSvrDetails.dbSvr, dbSvrDetails.port,
                                         dbSvrDetails.user,
                                         dbSvrDetails.passwd, dbSvrDetails.db)
+        '''
+        Provides the Configuration Object to users through getConfigParser
+        The purpose of this object is to parse the config
+        and provide dictionary of the config so users can
+        use that configuration.Users can later call getConfig
+        on this object and it will return the default parsed
+        config dictionary from default configuration file,
+        they can overwrite it with providing their own
+        configuration file as well.
+        '''
+        self.configObj = ConfigManager()
         self.asyncJobMgr = None
         self.id = None
         self.defaultWorkerThreads = defaultWorkerThreads
@@ -153,6 +168,9 @@ class cloudstackTestClient(object):
 
     def getDbConnection(self):
         return self.dbConnection
+
+    def getConfigParser(self):
+        return self.configObj
 
     def getApiClient(self):
         self.apiClient.id = self.identifier
