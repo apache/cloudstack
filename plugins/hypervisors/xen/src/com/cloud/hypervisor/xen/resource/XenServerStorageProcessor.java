@@ -18,6 +18,11 @@
  */
 package com.cloud.hypervisor.xen.resource;
 
+
+import static com.cloud.utils.ReflectUtil.flattenProperties;
+import static com.google.common.collect.Lists.newArrayList;
+
+
 import java.io.File;
 import java.net.URI;
 import java.util.Arrays;
@@ -81,9 +86,6 @@ import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.VMGuestMetrics;
-
-import static com.cloud.utils.ReflectUtil.flattenProperties;
-import static com.google.common.collect.Lists.newArrayList;
 
 public class XenServerStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
@@ -1091,11 +1093,12 @@ public class XenServerStorageProcessor implements StorageProcessor {
                     S3Utils.ClientOptions.class));
             // https workaround for Introspector bug that does not
             // recognize Boolean accessor methods ...
+
             parameters.addAll(Arrays.asList("operation", "put", "filename",
                     dir + "/" + filename, "iSCSIFlag",
                     iSCSIFlag.toString(), "bucket", s3.getBucketName(),
                     "key", key, "https", s3.isHttps() != null ? s3.isHttps().toString()
-                            : "null"));
+                            : "null", "maxSingleUploadSizeInBytes", String.valueOf(s3.getMaxSingleUploadSizeInBytes())));
             final String result = hypervisorResource.callHostPluginAsync(connection, "s3xen",
                     "s3", wait,
                     parameters.toArray(new String[parameters.size()]));
