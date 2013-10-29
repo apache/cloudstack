@@ -2203,7 +2203,6 @@ div.detail-group.actions td {
   width: 100%;
   height: 117px;
   background: url(../images/overlay-pattern.png) repeat 0, #1B5070 url(../images/header-gradient.png) no-repeat center;
-  z-index: 100;
   background-size: auto, cover;
   position: relative;
 }
@@ -11582,12 +11581,12 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   width: 318px;
   background: url(../images/bg-notifications.png) center;
   height: 372px;
-  /*+placement:shift 321px 49px;*/
+  /*+placement:shift 185px 49px;*/
   position: relative;
-  left: 321px;
+  left: 185px;
   top: 49px;
   position: absolute;
-  z-index: 1000;
+  z-index: 5500;
 }
 
 .region-selector h2 {
