@@ -62,6 +62,10 @@ import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -430,6 +434,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     PlannerHostReservationDao _plannerHostReservationDao;
     @Inject
     private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+    @Inject
+    VolumeService _volService;
+    @Inject
+    VolumeDataFactory volFactory;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -4909,6 +4917,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         _volsDao.detachVolume(root.getId());
         volumeMgr.destroyVolume(root);
+
+        // For VMware hypervisor since the old root volume is replaced by the new root volume in storage, force expunge old root volume
+        if (vm.getHypervisorType() == HypervisorType.VMware) {
+            s_logger.info("Expunging volume " + root.getId() + " from primary data store");
+            AsyncCallFuture<VolumeApiResult> future = _volService.expungeVolumeAsync(volFactory.getVolume(root.getId()));
+            try {
+                future.get();
+            } catch (Exception e) {
+                s_logger.debug("Failed to expunge volume:" + root.getId(), e);
+            }
+        }
 
         if (template.getEnablePassword()) {
             String password = generateRandomPassword();
