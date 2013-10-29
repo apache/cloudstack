@@ -238,8 +238,12 @@
                         templates: templatesObj,
                         hypervisors: hypervisorObjs
                     },
-                    customHidden: function(args) {
-                        return true;
+                    customHidden: function(args) {                        
+                        if (selectedTemplate == 'select-template') {
+                            return false; //show Root Disk Size field
+                        } else { //selectedTemplate == 'select-iso'
+                        	return true;  //hide Root Disk Size field
+                        }                       
                     }
                 });
             },
