@@ -23,19 +23,18 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
 @Table(name="nic_details")
-public class NicDetailVO implements InternalIdentity, ResourceDetail {
+public class NicDetailVO implements ResourceDetail {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private long id;
 
     @Column(name="nic_id")
-    private long nicId;
+    private long resourceId;
 
     @Column(name="name")
     private String name;
@@ -46,46 +45,29 @@ public class NicDetailVO implements InternalIdentity, ResourceDetail {
     public NicDetailVO() {}
 
     public NicDetailVO(long nicId, String name, String value) {
-        this.nicId = nicId;
+        this.resourceId = nicId;
         this.name = name;
-        this.value = value;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public long getNicId() {
-        return nicId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public void setNicId(long nicId) {
-        this.nicId = nicId;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setValue(String value) {
         this.value = value;
     }
 
     @Override
-    public long getResourceDetail() {
-        return nicId;
+    public long getId() {
+        return id;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String getValue() {
+        return value;
+    }
+
+    @Override
+    public long getResourceId() {
+        return resourceId;
     }
 
 }

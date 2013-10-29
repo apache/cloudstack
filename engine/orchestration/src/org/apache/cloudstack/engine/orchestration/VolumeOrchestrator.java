@@ -32,6 +32,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -886,7 +887,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         for (VolumeVO vol : vols) {
             DataTO volTO = volFactory.getVolume(vol.getId()).getTO();
-            DiskTO disk = new DiskTO(volTO, vol.getDeviceId(), null, vol.getVolumeType());
+            DiskTO disk = new DiskTO(volTO, vol.getDeviceId(), vol.getPath(), vol.getVolumeType());
+            VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
+            DataStore dataStore = dataStoreMgr.getDataStore(vol.getPoolId(), DataStoreRole.Primary);
+
+            disk.setDetails(getDetails(volumeInfo, dataStore));
+
             vm.addDisk(disk);
         }
 
@@ -895,6 +901,29 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             DiskTO iso = new DiskTO(dataTO, 3L, null, Volume.Type.ISO);
             vm.addDisk(iso);
         }
+    }
+
+    private Map<String, String> getDetails(VolumeInfo volumeInfo, DataStore dataStore) {
+        Map<String, String> details = new HashMap<String, String>();
+
+        StoragePoolVO storagePool = _storagePoolDao.findById(dataStore.getId());
+
+        details.put(DiskTO.MANAGED, String.valueOf(storagePool.isManaged()));
+        details.put(DiskTO.STORAGE_HOST, storagePool.getHostAddress());
+        details.put(DiskTO.STORAGE_PORT, String.valueOf(storagePool.getPort()));
+        details.put(DiskTO.VOLUME_SIZE, String.valueOf(volumeInfo.getSize()));
+        details.put(DiskTO.IQN, volumeInfo.get_iScsiName());
+
+        ChapInfo chapInfo = volService.getChapInfo(volumeInfo, dataStore);
+
+        if (chapInfo != null) {
+            details.put(DiskTO.CHAP_INITIATOR_USERNAME, chapInfo.getInitiatorUsername());
+            details.put(DiskTO.CHAP_INITIATOR_SECRET, chapInfo.getInitiatorSecret());
+            details.put(DiskTO.CHAP_TARGET_USERNAME, chapInfo.getTargetUsername());
+            details.put(DiskTO.CHAP_TARGET_SECRET, chapInfo.getTargetSecret());
+        }
+
+        return details;
     }
 
     private static enum VolumeTaskType {
@@ -1084,7 +1113,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 vol = result.first();
             }
             DataTO volumeTO = volFactory.getVolume(vol.getId()).getTO();
-            DiskTO disk = new DiskTO(volumeTO, vol.getDeviceId(), null, vol.getVolumeType());
+            DiskTO disk = new DiskTO(volumeTO, vol.getDeviceId(), vol.getPath(), vol.getVolumeType());
+            VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
+            DataStore dataStore = dataStoreMgr.getDataStore(vol.getPoolId(), DataStoreRole.Primary);
+
+            disk.setDetails(getDetails(volumeInfo, dataStore));
+
             vm.addDisk(disk);
         }
     }

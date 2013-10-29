@@ -38,6 +38,8 @@ public class VolumeObjectTO implements DataTO {
     private String chainInfo;
     private Storage.ImageFormat format;
     private long id;
+
+    private Long deviceId;
     private Long bytesReadRate;
     private Long bytesWriteRate;
     private Long iopsReadRate;
@@ -70,6 +72,7 @@ public class VolumeObjectTO implements DataTO {
         this.iopsReadRate = volume.getIopsReadRate();
         this.iopsWriteRate = volume.getIopsWriteRate();
         this.hypervisorType = volume.getHypervisorType();
+        setDeviceId(volume.getDeviceId());
     }
 
     public String getUuid() {
@@ -219,5 +222,14 @@ public class VolumeObjectTO implements DataTO {
     public Long getIopsWriteRate() {
         return iopsWriteRate;
     }
+
+    public Long getDeviceId() {
+        return deviceId;
+    }
+
+    public void setDeviceId(Long deviceId) {
+        this.deviceId = deviceId;
+    }
+
 
 }

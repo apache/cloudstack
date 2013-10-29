@@ -600,7 +600,7 @@
                                     //***** updateTemplate *****
                                     var data = {
                                         id: args.context.templates[0].id,
-                                        zoneid: args.context.templates[0].zoneid,
+                                        //zoneid: args.context.templates[0].zoneid, //can't update template/ISO in only one zone. It always get updated in all zones.
                                         name: args.data.name,
                                         displaytext: args.data.displaytext,
                                         ostypeid: args.data.ostypeid,
@@ -620,7 +620,7 @@
                                     //***** updateTemplatePermissions *****
                                     var data = {
                                         id: args.context.templates[0].id,
-                                        zoneid: args.context.templates[0].zoneid
+                                        //zoneid: args.context.templates[0].zoneid //can't update template/ISO in only one zone. It always get updated in all zones.
                                     };
 
                                     //if args.data.ispublic is undefined, do not pass ispublic to API call.
@@ -670,12 +670,40 @@
   					                		url: createURL('addResourceDetail'),
   					                		data: {
   					                			resourceType: 'template',
-  					                			resourceId: 1,
+  					                			resourceId: args.context.templates[0].id,
   					                			'details[0].key': 'hypervisortoolsversion',
   					                			'details[0].value': (args.data.xenserverToolsVersion61plus == "on") ? 'xenserver61' : 'xenserver56'
   					                		},
   					                		success: function(json) {
-  					                			//do nothing  					                			
+  					                			 var jobId = json.addResourceDetailresponse.jobid;
+  		                                         var addResourceDetailIntervalID = setInterval(function() {
+  		                                             $.ajax({
+  		                                                 url: createURL("queryAsyncJobResult&jobid=" + jobId),
+  		                                                 dataType: "json",
+  		                                                 success: function(json) {
+  		                                                     var result = json.queryasyncjobresultresponse;
+  		                                                     
+  		                                                     if (result.jobstatus == 0) {
+  		                                                         return; //Job has not completed
+  		                                                     } else {
+  		                                                         clearInterval(addResourceDetailIntervalID);
+
+  		                                                         if (result.jobstatus == 1) {                                                        	 
+  		                                                        	 //do nothing                                                        	 
+  		                                                         } else if (result.jobstatus == 2) {
+  		                                                        	 cloudStack.dialog.notice({
+  		                                                                 message: "Failed to update XenServer Tools Version 6.1+ field. Error: " + _s(result.jobresult.errortext)
+  		                                                             });                                                             
+  		                                                         }
+  		                                                     }
+  		                                                 },
+  		                                                 error: function(XMLHttpResponse) {                                                    
+  		                                                     cloudStack.dialog.notice({
+  		                                                         message: "Failed to update XenServer Tools Version 6.1+ field. Error: " + parseXMLHttpResponse(XMLHttpResponse)
+  		                                                     });                                                          
+  		                                                 }
+  		                                             });
+  		                                         }, g_queryAsyncJobResultInterval);		 					                			
   					                		}
   					                	});  					                					                	               
   								    }				      
@@ -1391,7 +1419,7 @@
                                     //***** updateIso *****
                                     var data = {
                                         id: args.context.isos[0].id,
-                                        zoneid: args.context.isos[0].zoneid,
+                                        //zoneid: args.context.isos[0].zoneid, //can't update template/ISO in only one zone. It always get updated in all zones.
                                         name: args.data.name,
                                         displaytext: args.data.displaytext,
                                         ostypeid: args.data.ostypeid
@@ -1409,7 +1437,7 @@
                                     //***** updateIsoPermissions *****
                                     var data = {
                                         id: args.context.isos[0].id,
-                                        zoneid: args.context.isos[0].zoneid
+                                        //zoneid: args.context.isos[0].zoneid //can't update template/ISO in only one zone. It always get updated in all zones.
                                     };
                                     //if args.data.ispublic is undefined, do not pass ispublic to API call.
                                     if (args.data.ispublic == "on") {

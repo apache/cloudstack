@@ -136,7 +136,7 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
@@ -1671,7 +1671,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         if (tags != null && !tags.isEmpty()) {
             int count = 0;
-            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.Network.toString());
+            sc.setJoinParameters("tagSearch", "resourceType", ResourceObjectType.Network.toString());
             for (String key : tags.keySet()) {
                 sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
                 sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));

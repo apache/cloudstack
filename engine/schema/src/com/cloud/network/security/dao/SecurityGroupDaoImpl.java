@@ -24,7 +24,7 @@ import javax.inject.Inject;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.security.SecurityGroupVO;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 
@@ -113,7 +113,7 @@ public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> 
         txn.start();
         SecurityGroupVO entry = findById(id);
         if (entry != null) {
-            _tagsDao.removeByIdAndType(id, TaggedResourceType.SecurityGroup);
+            _tagsDao.removeByIdAndType(id, ResourceObjectType.SecurityGroup);
         }
         boolean result = super.remove(id);
         txn.commit();
@@ -127,7 +127,7 @@ public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> 
         txn.start();
         SecurityGroupVO entry = findById(id);
         if (entry != null) {
-            _tagsDao.removeByIdAndType(id, TaggedResourceType.SecurityGroup);
+            _tagsDao.removeByIdAndType(id, ResourceObjectType.SecurityGroup);
         }
         boolean result = super.expunge(id);
         txn.commit();

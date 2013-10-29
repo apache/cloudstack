@@ -41,6 +41,15 @@ ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `power_state_update_count` INT DEFA
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `power_host` bigint unsigned;
 ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__power_host` FOREIGN KEY (`power_host`) REFERENCES `cloud`.`host`(`id`);
 
+DROP TABLE IF EXISTS `cloud`.`vm_snapshot_details`;
+CREATE TABLE `cloud`.`vm_snapshot_details` (
+  `id` bigint unsigned UNIQUE NOT NULL,
+  `vm_snapshot_id` bigint unsigned NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `cloud`.`vm_work_job` (
   `id` bigint unsigned UNIQUE NOT NULL,
   `step` char(32) NOT NULL COMMENT 'state',
@@ -106,6 +115,9 @@ UPDATE `cloud`.`disk_offering` SET `removed`=NULL;
 UPDATE `cloud`.`vm_template` SET `state`='Inactive' WHERE `removed` IS NOT NULL;
 UPDATE `cloud`.`vm_template` SET `state`='Active' WHERE `removed` IS NULL;
 UPDATE `cloud`.`vm_template` SET `removed`=NULL;
+
+ALTER TABLE `cloud`.`remote_access_vpn` MODIFY COLUMN `network_id` bigint unsigned;
+ALTER TABLE `cloud`.`remote_access_vpn` ADD COLUMN `vpc_id` bigint unsigned default NULL;
 
 DROP VIEW IF EXISTS `cloud`.`disk_offering_view`;
 CREATE VIEW `cloud`.`disk_offering_view` AS
@@ -446,3 +458,16 @@ CREATE VIEW `cloud`.`storage_pool_view` AS
         `cloud`.`async_job` ON async_job.instance_id = storage_pool.id
             and async_job.instance_type = 'StoragePool'
             and async_job.job_status = 0;
+            
+            
+            DROP TABLE IF EXISTS `cloud`.`vm_snapshot_details`;
+            
+CREATE TABLE `cloud`.`firewall_rule_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `firewall_rule_id` bigint unsigned NOT NULL COMMENT 'firewall rule id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  `display_detail` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_firewall_rule_details__firewall_rule_id` FOREIGN KEY `fk_firewall_rule_details__firewall_rule_id`(`firewall_rule_id`) REFERENCES `firewall_rules`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

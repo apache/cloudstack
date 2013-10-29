@@ -27,8 +27,10 @@
                       http://www.springframework.org/schema/context/spring-context-3.0.xsd"
                       >
 
-    <bean id="BareMetalPlanner" class="com.cloud.baremetal.manager.BareMetalPlanner">
-        <property name="name" value="BareMetalPlanner" />
+    <bean id="lockMasterListener" class="com.cloud.server.LockMasterListener" >
+        <constructor-arg>
+            <bean class="org.apache.cloudstack.utils.identity.ManagementServerNode" factory-method="getManagementServerId" />
+        </constructor-arg>
     </bean>
-    
+
 </beans>

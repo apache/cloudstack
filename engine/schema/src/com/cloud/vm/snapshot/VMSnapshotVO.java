@@ -41,7 +41,7 @@ public class VMSnapshotVO implements VMSnapshot {
     @TableGenerator(name = "vm_snapshots_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "vm_snapshots_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.TABLE)
     @Column(name = "id")
-    long id;
+    Long id;
 
     @Column(name = "uuid")
     String uuid = UUID.randomUUID().toString();

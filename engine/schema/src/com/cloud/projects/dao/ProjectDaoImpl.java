@@ -26,7 +26,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectVO;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 
@@ -84,7 +84,7 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
             return false;
         } 
         
-        _tagsDao.removeByIdAndType(projectId, TaggedResourceType.Project);
+        _tagsDao.removeByIdAndType(projectId, ResourceObjectType.Project);
         result = super.remove(projectId);
         txn.commit();
 

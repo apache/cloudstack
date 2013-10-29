@@ -19,11 +19,9 @@ package com.cloud.server;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 
 public interface TaggedResourceService {
-
-    TaggedResourceType getResourceType (String resourceTypeStr);
 
     /**
      * @param resourceIds TODO
@@ -32,14 +30,7 @@ public interface TaggedResourceService {
      * @param customer TODO
      * @return
      */
-    List<ResourceTag> createTags(List<String> resourceIds, TaggedResourceType resourceType, Map<String, String> tags, String customer);
-
-    /**
-     * @param resourceId
-     * @param resourceType
-     * @return
-     */
-    String getUuid(String resourceId, TaggedResourceType resourceType);
+    List<ResourceTag> createTags(List<String> resourceIds, ResourceObjectType resourceType, Map<String, String> tags, String customer);
 
 
     /**
@@ -48,10 +39,19 @@ public interface TaggedResourceService {
      * @param tags
      * @return
      */
-    boolean deleteTags(List<String> resourceIds, TaggedResourceType resourceType, Map<String, String> tags);
+    boolean deleteTags(List<String> resourceIds, ResourceObjectType resourceType, Map<String, String> tags);
 
-    List<? extends ResourceTag> listByResourceTypeAndId(TaggedResourceType type, long resourceId);
+    List<? extends ResourceTag> listByResourceTypeAndId(ResourceObjectType type, long resourceId);
 
-    public Long getResourceId(String resourceId, TaggedResourceType resourceType);
+    //FIXME - the methods below should be extracted to its separate manager/service responsible just for retrieving object details
+    ResourceObjectType getResourceType (String resourceTypeStr);
 
-    }
+    /**
+     * @param resourceId
+     * @param resourceType
+     * @return
+     */
+    String getUuid(String resourceId, ResourceObjectType resourceType);
+    
+    public long getResourceId(String resourceId, ResourceObjectType resourceType);
+}

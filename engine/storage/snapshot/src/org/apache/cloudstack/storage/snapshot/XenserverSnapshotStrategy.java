@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.snapshot;
 
+
 import java.util.List;
 
 import javax.inject.Inject;
@@ -55,8 +56,6 @@ import com.cloud.utils.fsm.NoTransitionException;
 public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     private static final Logger s_logger = Logger.getLogger(XenserverSnapshotStrategy.class);
 
-    @Inject
-    SnapshotManager snapshotMgr;
     @Inject
     SnapshotService snapshotSvr;
     @Inject

@@ -27,7 +27,7 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.Event;
@@ -308,7 +308,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         txn.start();
         SnapshotVO entry = findById(id);
         if (entry != null) {
-            _tagsDao.removeByIdAndType(id, TaggedResourceType.Snapshot);
+            _tagsDao.removeByIdAndType(id, ResourceObjectType.Snapshot);
         }
         boolean result = super.remove(id);
         txn.commit();

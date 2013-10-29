@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -104,6 +105,10 @@ public class ZoneResponse extends BaseResponse {
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with zone.",
             responseObject = ResourceTagResponse.class, since="4.3")
     private Set<ResourceTagResponse> tags;
+    
+    @SerializedName(ApiConstants.RESOURCE_DETAILS)
+    @Param(description = "Meta data associated with the zone (key/value pairs)", since = "4.3.0")
+    private Map<String, String> resourceDetails;
     
     
     public ZoneResponse(){
@@ -212,5 +217,9 @@ public class ZoneResponse extends BaseResponse {
 	
     public void addTag(ResourceTagResponse tag){
         this.tags.add(tag);
+    }
+    
+    public void setResourceDetails(Map<String, String> details) {
+        this.resourceDetails = details;
     }
 }

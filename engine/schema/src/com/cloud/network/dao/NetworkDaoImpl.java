@@ -40,7 +40,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.db.*;
 import com.cloud.utils.db.JoinBuilder.JoinType;
@@ -580,7 +580,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         txn.start();
         NetworkVO entry = findById(id);
         if (entry != null) {
-            _tagsDao.removeByIdAndType(id, TaggedResourceType.Network);
+            _tagsDao.removeByIdAndType(id, ResourceObjectType.Network);
         }
         boolean result = super.remove(id);
         txn.commit();

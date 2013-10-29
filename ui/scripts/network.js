@@ -1092,7 +1092,7 @@
                                         label: 'label.restart.required',
                                         converter: function(booleanValue) {
                                             if (booleanValue == true)
-                                                return "<font color='red'>Yes</font>";
+                                                return "Yes";
                                             else if (booleanValue == false)
                                                 return "No";
                                         }

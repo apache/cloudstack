@@ -59,6 +59,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
@@ -116,6 +117,7 @@ import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterDetailVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Vlan;
@@ -123,6 +125,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DataCenterDetailsDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
@@ -217,7 +220,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
 import com.cloud.server.ResourceTag;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.StatsCollector;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
@@ -400,6 +403,8 @@ public class ApiDBUtils {
     static NetworkACLDao _networkACLDao;
     static ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     static AccountService _accountService;
+    static DataCenterDetailsDao _zoneDetailsDao;
+
 
 
     @Inject
@@ -513,8 +518,8 @@ public class ApiDBUtils {
     @Inject private NetworkACLDao networkACLDao;
     @Inject private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
     @Inject private AccountService accountService;
-    @Inject
-    private ConfigurationManager configMgr;
+    @Inject private ConfigurationManager configMgr;
+    @Inject private DataCenterDetailsDao zoneDetailsDao;
 
     @PostConstruct
     void init() {
@@ -626,6 +631,8 @@ public class ApiDBUtils {
         _networkACLDao = networkACLDao;
         _serviceOfferingDetailsDao = serviceOfferingDetailsDao;
         _accountService = accountService;
+        _zoneDetailsDao = zoneDetailsDao;
+
     }
 
     // ///////////////////////////////////////////////////////////
@@ -1154,11 +1161,11 @@ public class ApiDBUtils {
         return vmSnapshot;
     }
 
-    public static String getUuid(String resourceId, TaggedResourceType resourceType) {
+    public static String getUuid(String resourceId, ResourceObjectType resourceType) {
         return _taggedResourceService.getUuid(resourceId, resourceType);
     }
 
-    public static List<? extends ResourceTag> listByResourceTypeAndId(TaggedResourceType type, long resourceId) {
+    public static List<? extends ResourceTag> listByResourceTypeAndId(ResourceObjectType type, long resourceId) {
         return _taggedResourceService.listByResourceTypeAndId(type, resourceId);
     }
     public static List<ConditionVO> getAutoScalePolicyConditions(long policyId)
@@ -1689,7 +1696,12 @@ public class ApiDBUtils {
         return _accountService.isAdmin(account.getType());
     }
     
-    public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, TaggedResourceType resourceType){
+    public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType){
         return  _tagJoinDao.listBy(resourceUUID, resourceType);
+    }
+    
+    public static Map<String, String> getZoneDetails(long zoneId) {
+        Map<String, String> details = _zoneDetailsDao.findDetails(zoneId);
+        return details.isEmpty() ? null : details;
     }
 }

@@ -31,7 +31,7 @@ import javax.persistence.Transient;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.utils.db.Encrypt;
@@ -366,7 +366,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name="tag_resource_type")
     @Enumerated(value=EnumType.STRING)
-    private TaggedResourceType tagResourceType;
+    private ResourceObjectType tagResourceType;
 
     @Column(name="tag_customer")
     private String tagCustomer;
@@ -798,7 +798,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
         return tagResourceUuid;
     }
 
-    public TaggedResourceType getTagResourceType() {
+    public ResourceObjectType getTagResourceType() {
         return tagResourceType;
     }
 

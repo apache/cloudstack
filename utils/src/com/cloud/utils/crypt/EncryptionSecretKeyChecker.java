@@ -18,7 +18,6 @@ package com.cloud.utils.crypt;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -62,7 +61,7 @@ public class EncryptionSecretKeyChecker extends AdapterBase implements SystemInt
         final File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
         final Properties dbProps = new Properties();
         try {
-            dbProps.load(new FileInputStream(dbPropsFile));
+            PropertiesUtil.loadFromFile(dbProps, dbPropsFile);
 
             final String encryptionType = dbProps.getProperty("db.cloud.encryption.type");
 

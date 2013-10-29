@@ -14,22 +14,29 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm.dao;
+package org.apache.cloudstack.resourcedetail;
 
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.ResourceDetail;
+
 import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.NicDetailVO;
 
-public interface NicDetailDao extends GenericDao<NicDetailVO, Long> {
-    List<NicDetailVO> findDetails(long nicId);
+public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao<R, Long>{
+    public R findDetail(long resourceId, String name);
 
-    void persist(long nicId, Map<String, String> details);
+    public Map<String, String> findDetails(long resourceId);
 
-    NicDetailVO findDetail(long nicId, String name);
+    public List<R> findDetailsList(long resourceId);
 
-    void deleteDetails(long nicId);
+    public void removeDetails(long resourceId);
 
-    void removeDetails(Long id, String key);
+    public void removeDetail(long resourceId, String key);
+
+    public void addDetails(List<R> details);
+    
+    public void addDetail(R detail);
+    
+    public R createDetail(long resourceId, String key, String value);
 }

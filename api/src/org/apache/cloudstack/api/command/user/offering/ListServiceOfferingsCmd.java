@@ -63,9 +63,6 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.SYSTEM_VM_TYPE, type=CommandType.STRING, description="the system VM type. Possible types are \"consoleproxy\", \"secondarystoragevm\" or \"domainrouter\".")
     private String systemVmType;
-    
-    @Parameter(name = ApiConstants.RESOURCE_TAGS, type = CommandType.MAP, description = "List service offerings by resource tags (key/value pairs)", since="4.3")
-    private Map resourceTag;
 
 
     /////////////////////////////////////////////////////
@@ -94,25 +91,6 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
 
     public String getSystemVmType(){
         return systemVmType;
-    }
-    
-    public Map<String, String> getResourceTags() {
-        Map<String, String> tagsMap = null;
-        if (resourceTag != null && !resourceTag.isEmpty()) {
-            tagsMap = new HashMap<String, String>();
-            Collection<?> servicesCollection = resourceTag.values();
-            Iterator<?> iter = servicesCollection.iterator();
-            while (iter.hasNext()) {
-                HashMap<String, String> services = (HashMap<String, String>) iter.next();
-                String key = services.get("key");
-                String value = services.get("value");
-                if (value == null) {
-                    throw new InvalidParameterValueException("No value is passed in for key " + key);
-                }
-                tagsMap.put(key, value);
-            }
-        }
-        return tagsMap;
     }
 
     /////////////////////////////////////////////////////

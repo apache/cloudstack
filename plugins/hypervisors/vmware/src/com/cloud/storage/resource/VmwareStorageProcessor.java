@@ -345,11 +345,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         vmMo.createDisk(volumeDatastorePath, (int) (volume.getSize() / (1024L * 1024L)), morDatastore, -1);
                         vmMo.detachDisk(volumeDatastorePath, false);
                     }
-
-                    VolumeObjectTO newVol = new VolumeObjectTO();
-                    newVol.setPath(vmdkName);
-                    newVol.setSize(volume.getSize());
-                    return new CopyCmdAnswer(newVol);
                 } finally {
                     vmMo.detachAllDisks();
 
@@ -383,11 +378,19 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                 String srcFile = dsMo.getDatastorePath(vmdkName, true);
                 dsMo.deleteFile(srcFile, dcMo.getMor(), true);
-                VolumeObjectTO newVol = new VolumeObjectTO();
-                newVol.setPath(vmdkName);
-                newVol.setSize(volume.getSize());
-                return new CopyCmdAnswer(newVol);
             }
+            // restoreVM - move the new ROOT disk into corresponding VM folder
+            String vmInternalCSName = volume.getVmName();
+            if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmInternalCSName)) {
+                String oldRootDisk = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmInternalCSName, vmdkName);
+                if (oldRootDisk != null)
+                    VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmInternalCSName, dsMo, vmdkName);
+            }
+
+            VolumeObjectTO newVol = new VolumeObjectTO();
+            newVol.setPath(vmdkName);
+            newVol.setSize(volume.getSize());
+            return new CopyCmdAnswer(newVol);
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
                 s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
@@ -1164,19 +1167,16 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer attachVolume(AttachCommand cmd) {
-        return this.attachVolume(cmd, cmd.getDisk(), true, cmd.isManaged(), cmd.getVmName(), cmd.get_iScsiName(),
-                cmd.getStorageHost(), cmd.getStoragePort(), cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword(),
-                cmd.getChapTargetUsername(), cmd.getChapTargetPassword());
+        Map<String, String> details = cmd.getDisk().getDetails();
+        boolean isManaged = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+        String iScsiName = details.get(DiskTO.IQN);
+        String storageHost = details.get(DiskTO.STORAGE_HOST);
+        int storagePort = Integer.parseInt(details.get(DiskTO.STORAGE_PORT));
+
+        return this.attachVolume(cmd, cmd.getDisk(), true, isManaged, cmd.getVmName(), iScsiName, storageHost, storagePort);
     }
 
     private Answer attachVolume(Command cmd, DiskTO disk, boolean isAttach, boolean isManaged, String vmName, String iScsiName, String storageHost, int storagePort) {
-        return attachVolume(cmd, disk, isAttach, isManaged, vmName, iScsiName, storageHost, storagePort, null, null, null, null);
-    }
-
-    private Answer attachVolume(Command cmd, DiskTO disk, boolean isAttach, boolean isManaged, String vmName,
-            String iScsiName, String storageHost, int storagePort, String initiatorUsername, String initiatorPassword,
-            String targetUsername, String targetPassword) {
-
         VolumeObjectTO volumeTO = (VolumeObjectTO)disk.getData();
         PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
         try {
@@ -1191,8 +1191,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
             ManagedObjectReference morDs = null;
 
             if (isAttach && isManaged) {
+                Map<String, String> details = disk.getDetails();
+
                 morDs = hostService.getVmfsDatastore(hyperHost, VmwareResource.getDatastoreName(iScsiName), storageHost, storagePort,
-                            VmwareResource.trimIqn(iScsiName), initiatorUsername, initiatorPassword, targetUsername, targetPassword);
+                            VmwareResource.trimIqn(iScsiName),  details.get(DiskTO.CHAP_INITIATOR_USERNAME), details.get(DiskTO.CHAP_INITIATOR_SECRET),
+                            details.get(DiskTO.CHAP_TARGET_USERNAME), details.get(DiskTO.CHAP_TARGET_SECRET));
 
                 DatastoreMO dsMo = new DatastoreMO(hostService.getServiceContext(null), morDs);
 
@@ -1236,7 +1239,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
             }
 
-            disk.setVdiUuid(datastoreVolumePath);
+            disk.setPath(datastoreVolumePath);
 
             AttachAnswer answer = new AttachAnswer(disk);
 

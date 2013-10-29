@@ -16,123 +16,54 @@
 // under the License.
 package com.cloud.metadata;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ResourceDetail;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
+import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.api.query.dao.ResourceTagJoinDao;
-import com.cloud.dc.DcDetailVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.DcDetailsDao;
+import com.cloud.dc.dao.DataCenterDetailsDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.dao.FirewallRulesDao;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.LoadBalancerDao;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
-import com.cloud.network.dao.RemoteAccessVpnDao;
-import com.cloud.network.rules.dao.PortForwardingRulesDao;
-import com.cloud.network.security.dao.SecurityGroupDao;
-import com.cloud.network.vpc.dao.StaticRouteDao;
-import com.cloud.network.vpc.dao.VpcDao;
-import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.ResourceMetaDataService;
-import com.cloud.server.ResourceTag;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.TaggedResourceService;
-import com.cloud.storage.VolumeDetailVO;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.user.AccountManager;
-import com.cloud.user.DomainManager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
-import com.cloud.uuididentity.dao.IdentityDao;
-import com.cloud.vm.NicDetailVO;
-import com.cloud.vm.dao.NicDao;
-import com.cloud.vm.dao.NicDetailDao;
-import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
-import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 
 @Component
 @Local(value = { ResourceMetaDataService.class, ResourceMetaDataManager.class })
 public class ResourceMetaDataManagerImpl extends ManagerBase implements ResourceMetaDataService, ResourceMetaDataManager {
     public static final Logger s_logger = Logger.getLogger(ResourceMetaDataManagerImpl.class);
-
-
-    private static Map<TaggedResourceType, GenericDao<?, Long>> _daoMap=
-            new HashMap<TaggedResourceType, GenericDao<?, Long>>();
     @Inject
-    AccountManager _accountMgr;
+    VolumeDetailsDao _volumeDetailDao;
     @Inject
-    ResourceTagDao _resourceTagDao;
-    @Inject
-    ResourceTagJoinDao _resourceTagJoinDao;
-    @Inject
-    IdentityDao _identityDao;
-    @Inject
-    DomainManager _domainMgr;
-    @Inject
-    UserVmDao _userVmDao;
-    @Inject
-    VolumeDao _volumeDao;
-    @Inject
-    VMTemplateDao _templateDao;
-    @Inject
-    SnapshotDao _snapshotDao;
-    @Inject
-    NetworkDao _networkDao;
-    @Inject
-    DataCenterDao _dataCenterDao;
-    @Inject
-    LoadBalancerDao _lbDao;
-    @Inject
-    PortForwardingRulesDao _pfDao;
-    @Inject
-    FirewallRulesDao _firewallDao;
-    @Inject
-    SecurityGroupDao _securityGroupDao;
-    @Inject
-    RemoteAccessVpnDao _vpnDao;
-    @Inject
-    IPAddressDao _publicIpDao;
-    @Inject
-    ProjectDao _projectDao;
-    @Inject
-    VpcDao _vpcDao;
-    @Inject
-    StaticRouteDao _staticRouteDao;
-    @Inject
-    VMSnapshotDao _vmSnapshotDao;
-    @Inject
-    protected VolumeDetailsDao _volumeDetailDao;
-    @Inject
-    NicDetailDao _nicDetailDao;
+    NicDetailsDao _nicDetailDao;
     @Inject
     UserVmDetailsDao _userVmDetailDao;
     @Inject
-    NicDao _nicDao;
-    @Inject
-    DcDetailsDao _dcDetailsDao;
+    DataCenterDetailsDao _dcDetailsDao;
     @Inject
     NetworkDetailsDao _networkDetailsDao;
     @Inject
@@ -140,30 +71,28 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     @Inject
     VMTemplateDetailsDao _templateDetailsDao;
     @Inject
-    UserVmDetailsDao _userVmDetailsDao;
+    ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+    @Inject
+    StoragePoolDetailsDao _storageDetailsDao;
+    @Inject
+    FirewallRuleDetailsDao _firewallRuleDetailsDao;
+    
+    private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> _daoMap= 
+            new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
+    
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-
-        _daoMap.put(TaggedResourceType.UserVm, _userVmDao);
-        _daoMap.put(TaggedResourceType.Volume, _volumeDao);
-        _daoMap.put(TaggedResourceType.Template, _templateDao);
-        _daoMap.put(TaggedResourceType.ISO, _templateDao);
-        _daoMap.put(TaggedResourceType.Snapshot, _snapshotDao);
-        _daoMap.put(TaggedResourceType.Network, _networkDao);
-        _daoMap.put(TaggedResourceType.LoadBalancer, _lbDao);
-        _daoMap.put(TaggedResourceType.PortForwardingRule, _pfDao);
-        _daoMap.put(TaggedResourceType.FirewallRule, _firewallDao);
-        _daoMap.put(TaggedResourceType.SecurityGroup, _securityGroupDao);
-        _daoMap.put(TaggedResourceType.PublicIpAddress, _publicIpDao);
-        _daoMap.put(TaggedResourceType.Project, _projectDao);
-        _daoMap.put(TaggedResourceType.Vpc, _vpcDao);
-        _daoMap.put(TaggedResourceType.NetworkACL, _firewallDao);
-        _daoMap.put(TaggedResourceType.Nic, _nicDao);
-        _daoMap.put(TaggedResourceType.StaticRoute, _staticRouteDao);
-        _daoMap.put(TaggedResourceType.VMSnapshot, _vmSnapshotDao);
-        _daoMap.put(TaggedResourceType.RemoteAccessVpn, _vpnDao);
-        _daoMap.put(TaggedResourceType.Zone, _dataCenterDao);
+        _daoMap.put(ResourceObjectType.UserVm, _userVmDetailDao);
+        _daoMap.put(ResourceObjectType.Volume, _volumeDetailDao);
+        _daoMap.put(ResourceObjectType.Template, _templateDetailsDao);
+        _daoMap.put(ResourceObjectType.Network, _networkDetailsDao);
+        _daoMap.put(ResourceObjectType.Nic, _nicDetailDao);
+        _daoMap.put(ResourceObjectType.ServiceOffering, _serviceOfferingDetailsDao);
+        _daoMap.put(ResourceObjectType.Zone, _dcDetailsDao);
+        _daoMap.put(ResourceObjectType.Storage, _storageDetailsDao);
+        _daoMap.put(ResourceObjectType.FirewallRule, _firewallRuleDetailsDao);
+        
         return true;
     }
 
@@ -176,66 +105,33 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     public boolean stop() {
         return true;
     }
-
-
-
-
-    @Override
-    public TaggedResourceType getResourceType(String resourceTypeStr) {
-
-        for (TaggedResourceType type : ResourceTag.TaggedResourceType.values()) {
-            if (type.toString().equalsIgnoreCase(resourceTypeStr)) {
-                return type;
-            }
-        }
-        throw new InvalidParameterValueException("Invalid resource type " + resourceTypeStr);
-    }
+    
 
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_DETAILS_CREATE, eventDescription = "creating resource meta data")
-    public boolean addResourceMetaData(final String resourceId, final TaggedResourceType resourceType, final Map<String, String> details){
+    public boolean addResourceMetaData(final String resourceId, final ResourceObjectType resourceType, final Map<String, String> details){
         return Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 for (String key : details.keySet()) {
-                        Long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
+                    String value = details.get(key);
 
-                        //check if object exists
-                        if (_daoMap.get(resourceType).findById(id) == null) {
-                            throw new InvalidParameterValueException("Unable to find resource by id " + resourceId +
-                                    " and type " + resourceType);
-                        }
+                    if (value == null || value.isEmpty()) {
+                        throw new InvalidParameterValueException("Value for the key " + key + " is either null or empty");
+                    }
 
-                        String value = details.get(key);
+                    DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
+                    ResourceDetail detail = newDetailDaoHelper.createDetail( _taggedResourceMgr.getResourceId(resourceId, resourceType), key, value);
+                    
+                    if (detail == null) {
+                        throw new UnsupportedOperationException("ResourceType " + resourceType + " doesn't support metadata");
 
-                        if (value == null || value.isEmpty()) {
-                            throw new InvalidParameterValueException("Value for the key " + key + " is either null or empty");
-                        }
-
-                        // TODO - Have a better design here.
-                        if(resourceType == TaggedResourceType.Volume){
-                            VolumeDetailVO v = new VolumeDetailVO(id, key, value);
-                            _volumeDetailDao.persist(v);
-                        } else if (resourceType == TaggedResourceType.Nic){
-                            NicDetailVO n = new NicDetailVO(id, key, value);
-                            _nicDetailDao.persist(n);
-                        } else if (resourceType == TaggedResourceType.Zone){
-                             DcDetailVO dataCenterDetail = new DcDetailVO(id, key, value);
-                             _dcDetailsDao.persist(dataCenterDetail);
-                        } else if (resourceType == TaggedResourceType.Network){
-                            NetworkDetailVO networkDetail = new NetworkDetailVO(id, key, value);
-                            _networkDetailsDao.persist(networkDetail);
-                        } else if (resourceType == TaggedResourceType.UserVm) {
-                            _userVmDetailsDao.addVmDetail(id, key, value);
-                        } else if (resourceType == TaggedResourceType.Template) {
-                            _templateDetailsDao.addTemplateDetail(id, key, value);
-                        } else{
-                            throw new InvalidParameterValueException("The resource type " + resourceType + " is not supported by the API yet");
-                        }
-
+                    }
+                    newDetailDaoHelper.addDetail(detail);
+                        
                 }
-
+                
                 return true;
             }
         });
@@ -245,26 +141,64 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_DETAILS_DELETE, eventDescription = "deleting resource meta data")
-    public boolean deleteResourceMetaData(String resourceId, TaggedResourceType resourceType, String key){
-
-        Long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
-        // TODO - Have a better design here.
-        if(resourceType == TaggedResourceType.Volume){
-           _volumeDetailDao.removeDetails(id, key);
-        } else if(resourceType == TaggedResourceType.Nic){
-            _nicDetailDao.removeDetails(id, key);
-        } else if(resourceType == TaggedResourceType.UserVm){
-            _userVmDetailDao.removeDetails(id, key);
-        } else if (resourceType == TaggedResourceType.Zone){
-            _dcDetailsDao.removeDetails(id, key);
-        } else if (resourceType == TaggedResourceType.Network){
-            _networkDetailsDao.removeDetails(id, key);
-        } else{
-            throw new InvalidParameterValueException("The resource type " + resourceType + " is not supported by the API yet");
-        }
+    public boolean deleteResourceMetaData(String resourceId, ResourceObjectType resourceType, String key){
+        long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
+        
+        DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
+        newDetailDaoHelper.removeDetail(id, key);
 
         return true;
     }
 
-
+    private class DetailDaoHelper {
+        private ResourceObjectType resourceType;
+        private ResourceDetailsDao<? super ResourceDetail> dao;
+        
+        private DetailDaoHelper(ResourceObjectType resourceType) {
+            if (!resourceType.resourceMetadataSupport()) {
+                throw new UnsupportedOperationException("ResourceType " + resourceType + " doesn't support metadata");
+            }
+            this.resourceType = resourceType;
+            ResourceDetailsDao<?> dao = _daoMap.get(resourceType);
+            if (dao == null) {
+                throw new UnsupportedOperationException("ResourceType " + resourceType + " doesn't support metadata");
+            }
+            this.dao = (ResourceDetailsDao)_daoMap.get(resourceType);
+        }
+        
+        private void addDetail(ResourceDetail detail) {
+            dao.addDetail(detail);   
+        }
+        
+        private void removeDetail(long resourceId, String key) {
+            dao.removeDetail(resourceId, key);
+        }
+        
+        private List<? extends ResourceDetail> getDetails(long resourceId) {
+            List<? extends ResourceDetail> detailList = new ArrayList<ResourceDetail>();        
+            detailList = dao.findDetailsList(resourceId);
+            return detailList;
+        }
+        
+        private ResourceDetail getDetail(long resourceId, String key) {
+            return dao.findDetail(resourceId, key);
+        }
+        
+        private ResourceDetail createDetail(long resourceId, String key, String value) {
+            return dao.createDetail(resourceId, key, value);
+        }
+        
+    }
+    
+    @Override
+    public List<? extends ResourceDetail> getDetails(long resourceId, ResourceObjectType resourceType) {
+        DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
+        return newDetailDaoHelper.getDetails(resourceId);  
+    }
+    
+    @Override
+    public ResourceDetail getDetail(long resourceId, ResourceObjectType resourceType, String key) {
+        DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
+        return newDetailDaoHelper.getDetail(resourceId, key);  
+    }
 }

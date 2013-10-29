@@ -198,6 +198,7 @@ import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ListVlanIpRangesCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.ExpungeVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVirtualMachineWithVolumeCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
@@ -520,7 +521,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
@@ -715,6 +716,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     DeploymentPlanningManager _dpMgr;
 
+    LockMasterListener _lockMasterListener;
+
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
     @Inject private KeystoreManager _ksMgr;
@@ -819,7 +822,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public boolean start() {
         s_logger.info("Startup CloudStack management server...");
 
-        _clusterMgr.registerListener(new LockMasterListener(ManagementServerNode.getManagementServerId()));
+        if ( _lockMasterListener == null ) {
+            _lockMasterListener = new LockMasterListener(ManagementServerNode.getManagementServerId());
+        }
+
+        _clusterMgr.registerListener(_lockMasterListener);
 
         enableAdminUser("password");
         return true;
@@ -2000,7 +2007,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (tags != null && !tags.isEmpty()) {
             int count = 0;
-            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.PublicIpAddress.toString());
+            sc.setJoinParameters("tagSearch", "resourceType", ResourceObjectType.PublicIpAddress.toString());
             for (String key : tags.keySet()) {
                 sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
                 sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
@@ -2755,6 +2762,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AddNicToVMCmd.class);
         cmdList.add(DeployVMCmd.class);
         cmdList.add(DestroyVMCmd.class);
+        cmdList.add(ExpungeVMCmd.class);
         cmdList.add(GetVMPasswordCmd.class);
         cmdList.add(ListVMsCmd.class);
         cmdList.add(ScaleVMCmd.class);
@@ -3879,5 +3887,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     public void setStoragePoolAllocators(List<StoragePoolAllocator> storagePoolAllocators) {
         _storagePoolAllocators = storagePoolAllocators;
+    }
+
+    public LockMasterListener getLockMasterListener() {
+        return _lockMasterListener;
+    }
+
+    public void setLockMasterListener(LockMasterListener lockMasterListener) {
+        this._lockMasterListener = lockMasterListener;
     }
 }

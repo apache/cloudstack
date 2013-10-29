@@ -37,7 +37,6 @@ import org.apache.cloudstack.api.command.user.vpn.ResetVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -86,7 +85,7 @@ import com.cloud.vm.DomainRouterVO;
 public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpnManager {
     private static final Logger s_logger = Logger.getLogger(Site2SiteVpnManagerImpl.class);
 
-    @Inject List<Site2SiteVpnServiceProvider> _s2sProviders;
+    List<Site2SiteVpnServiceProvider> _s2sProviders;
     @Inject Site2SiteCustomerGatewayDao _customerGatewayDao;
     @Inject Site2SiteVpnGatewayDao _vpnGatewayDao;
     @Inject Site2SiteVpnConnectionDao _vpnConnectionDao;
@@ -760,5 +759,14 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                 }
             }
         }
+    }
+
+    public List<Site2SiteVpnServiceProvider> getS2sProviders() {
+        return _s2sProviders;
+    }
+
+    @Inject
+    public void setS2sProviders(List<Site2SiteVpnServiceProvider> s2sProviders) {
+        this._s2sProviders = s2sProviders;
     }
 }

@@ -29,7 +29,7 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -314,13 +314,13 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         FirewallRuleVO entry = findById(id);
         if (entry != null) {
             if (entry.getPurpose() == Purpose.LoadBalancing) {
-                _tagsDao.removeByIdAndType(id, TaggedResourceType.LoadBalancer);
+                _tagsDao.removeByIdAndType(id, ResourceObjectType.LoadBalancer);
             } else if (entry.getPurpose() == Purpose.PortForwarding) {
-                _tagsDao.removeByIdAndType(id, TaggedResourceType.PortForwardingRule);
+                _tagsDao.removeByIdAndType(id, ResourceObjectType.PortForwardingRule);
             } else if (entry.getPurpose() == Purpose.Firewall) {
-                _tagsDao.removeByIdAndType(id, TaggedResourceType.FirewallRule);
+                _tagsDao.removeByIdAndType(id, ResourceObjectType.FirewallRule);
             } else if (entry.getPurpose() == Purpose.NetworkACL) {
-                _tagsDao.removeByIdAndType(id, TaggedResourceType.NetworkACL);
+                _tagsDao.removeByIdAndType(id, ResourceObjectType.NetworkACL);
             }
         }
         boolean result = super.remove(id);

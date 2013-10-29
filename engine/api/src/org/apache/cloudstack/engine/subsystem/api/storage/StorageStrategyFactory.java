@@ -18,28 +18,22 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import java.util.Collection;
 import java.util.Map;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
 
 import com.cloud.host.Host;
 import com.cloud.storage.Snapshot;
+import com.cloud.vm.snapshot.VMSnapshot;
 
 public interface StorageStrategyFactory {
 
-    Collection<DataMotionStrategy> getDataMotionStrategies(DataObject srcData, DataObject destData);
-
     DataMotionStrategy getDataMotionStrategy(DataObject srcData, DataObject destData);
-
-
-    Collection<DataMotionStrategy> getDataMotionStrategies(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost);
 
     DataMotionStrategy getDataMotionStrategy(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost);
 
+    SnapshotStrategy getSnapshotStrategy(Snapshot snapshot, SnapshotOperation op);
 
-    Collection<SnapshotStrategy> getSnapshotStrategies(Snapshot snapshot, SnapshotOperation op);
-
-    SnapshotStrategy getSnapshotStrategy(Snapshot snapshot, SnapshotOperation op); 
+    VMSnapshotStrategy getVmSnapshotStrategy(VMSnapshot vmSnapshot);
 
 }

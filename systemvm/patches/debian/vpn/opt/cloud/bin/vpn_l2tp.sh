@@ -22,8 +22,8 @@
 #set -x
 usage() {
   printf "Usage:\n"
-  printf "Create VPN     : %s -c -r <ip range for clients> -l <localip> -p <ipsec psk> -s <public ip> \n" $(basename $0)
-  printf "Delete VPN     : %s -d -s <public ip>\n" $(basename $0)
+  printf "Create VPN     : %s -c -r <ip range for clients> -l <local ip> -p <ipsec psk> -s <public ip> -i <eth for public ip> \n" $(basename $0)
+  printf "Delete VPN     : %s -d -l <local ip> -s <public ip> -D <eth for public ip> -C < local cidr> \n" $(basename $0)
   printf "Add VPN User   : %s -u <username,password> \n" $(basename $0)
   printf "Remote VPN User: %s -U <username \n" $(basename $0)
 }
@@ -32,25 +32,27 @@ get_intf_ip() {
   ip addr show $1 | grep -w inet | awk '{print $2}' | awk -F'/' '{print $1}'
 }
 
-
 iptables_() {
    local op=$1
    local public_ip=$2
-   local public_if="eth2"
-   local subnet_if="eth0"
-   local subnet_ip=$(get_intf_ip $subnet_if)
 
-   sudo iptables $op INPUT -i $public_if --dst $public_ip -p udp -m udp --dport 500 -j ACCEPT
-   sudo iptables $op INPUT -i $public_if --dst $public_ip -p udp -m udp --dport 4500 -j ACCEPT
-   sudo iptables $op INPUT -i $public_if --dst $public_ip -p udp -m udp --dport 1701 -j ACCEPT
-   sudo iptables $op INPUT -i eth2 -p ah -j ACCEPT
-   sudo iptables $op INPUT -i eth2 -p esp -j ACCEPT
-   sudo iptables $op FORWARD -i ppp+ -o $subnet_if -j ACCEPT 
-   sudo iptables $op FORWARD -i $subnet_if -o ppp+ -j ACCEPT 
-   sudo iptables $op FORWARD -i ppp+ -o ppp+ -j ACCEPT 
+   sudo iptables $op INPUT -i $dev --dst $public_ip -p udp -m udp --dport 500 -j ACCEPT
+   sudo iptables $op INPUT -i $dev --dst $public_ip -p udp -m udp --dport 4500 -j ACCEPT
+   sudo iptables $op INPUT -i $dev --dst $public_ip -p udp -m udp --dport 1701 -j ACCEPT
+   sudo iptables $op INPUT -i $dev -p ah -j ACCEPT
+   sudo iptables $op INPUT -i $dev -p esp -j ACCEPT
+   sudo iptables $op FORWARD -i ppp+ -d $cidr -j ACCEPT
+   sudo iptables $op FORWARD -s $cidr -o ppp+ -j ACCEPT
+   sudo iptables $op FORWARD -i ppp+ -o ppp+ -j ACCEPT
    sudo iptables $op INPUT -i ppp+ -m udp -p udp --dport 53 -j ACCEPT
    sudo iptables $op INPUT -i ppp+ -m tcp -p tcp --dport 53 -j ACCEPT
-   sudo iptables -t nat $op PREROUTING -i ppp+ -p tcp -m tcp --dport 53 -j  DNAT --to-destination $subnet_ip
+   sudo iptables -t nat $op PREROUTING -i ppp+ -p tcp -m tcp --dport 53 -j  DNAT --to-destination $local_ip
+   sudo iptables -t nat $op PREROUTING -i ppp+ -p udp -m udp --dport 53 -j  DNAT --to-destination $local_ip
+
+   if grep "vpcrouter" /var/cache/cloud/cmdline &> /dev/null
+   then
+       return
+   fi
 
    if sudo iptables -t mangle -N VPN_$public_ip &> /dev/null
    then
@@ -64,17 +66,42 @@ iptables_() {
    sudo iptables -t mangle $op VPN_$public_ip  -p esp -j ACCEPT
 }
 
+start_ipsec() {
+  service ipsec status > /dev/null
+  if [ $? -ne 0 ]
+  then
+    service ipsec start > /dev/null
+    #Wait until ipsec started, 5 seconds at most
+    for i in {1..5}
+    do
+      logger -t cloud "$(basename $0): waiting ipsec start..."
+      service ipsec status > /dev/null
+      result=$?
+      if [ $result -eq 0 ]
+      then
+          break
+      fi
+      sleep 1
+    done
+  fi
+  service ipsec status > /dev/null
+  return $?
+}
+
 ipsec_server() {
    local op=$1
-   if [ "$op" == "restart" ]; then
-     service ipsec stop
-     service xl2tpd stop
-     service ipsec start
-     service xl2tpd start
-     return $?
-   fi
-   service ipsec $op
-   service xl2tpd $op
+   case $op in
+       "start")     start_ipsec
+                    sudo service xl2tpd start
+                    ;;
+        "stop")     sudo service xl2tpd stop
+                    ;;
+        "restart")  start_ipsec
+                    sudo ipsec auto --rereadall
+                    service xl2tpd stop
+                    service xl2tpd start
+                    ;;
+   esac
 }
 
 create_l2tp_ipsec_vpn_server() {
@@ -135,8 +162,10 @@ create=
 destroy=
 useradd=
 userdel=
+dev=
+cidr=
 
-while getopts 'cdl:p:r:s:u:U:' OPTION
+while getopts 'cdl:p:r:s:u:U:i:C:' OPTION
 do
   case $OPTION in
   c)	create=1
@@ -161,11 +190,25 @@ do
   s)	sflag=1
 		server_ip="$OPTARG"
 		;;
+  i)    dev="$OPTARG"
+                ;;
+  C)    cidr="$OPTARG"
+                ;;
   ?)	usage
 		exit 2
 		;;
   esac
 done
+
+if [ "$dev" == "" ]
+then
+    $dev="eth2"
+fi
+
+if [ "$cidr" == "" ]
+then
+    $cidr=$(get_intf_ip "eth0")
+fi
 
 [ "$create$destroy" == "11" ] || [ "$create$destroy$useradd$userdel" == "" ] && usage && exit 2
 [ "$create" == "1" ] && [ "$lflag$pflag$rflag$sflag" != "1111" ] && usage && exit 2

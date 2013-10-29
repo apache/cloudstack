@@ -110,6 +110,7 @@
                 $treeView.find('li .name').removeClass('selected');
                 $target.addClass('selected');
                 $browser.cloudBrowser('addPanel', {
+                    partial: true,
                     title: $target.html(),
                     data: '',
                     parent: $treeView.closest('div.panel'),

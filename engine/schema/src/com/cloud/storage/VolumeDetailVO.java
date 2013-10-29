@@ -28,14 +28,14 @@ import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
 @Table(name="volume_details")
-public class VolumeDetailVO implements InternalIdentity, ResourceDetail {
+public class VolumeDetailVO implements ResourceDetail {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private long id;
 
     @Column(name="volume_id")
-    private long volumeId;
+    private long resourceId;
 
     @Column(name="name")
     private String name;
@@ -46,46 +46,29 @@ public class VolumeDetailVO implements InternalIdentity, ResourceDetail {
     public VolumeDetailVO() {}
 
     public VolumeDetailVO(long volumeId, String name, String value) {
-        this.volumeId = volumeId;
+        this.resourceId = volumeId;
         this.name = name;
-        this.value = value;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public long getVolumeId() {
-        return volumeId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public void setVolumeId(long volumeId) {
-        this.volumeId = volumeId;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setValue(String value) {
         this.value = value;
     }
 
     @Override
-    public long getResourceDetail() {
-        return volumeId;
+    public long getId() {
+        return id;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String getValue() {
+        return value;
+    }
+
+    @Override
+    public long getResourceId() {
+        return resourceId;
     }
 
 }

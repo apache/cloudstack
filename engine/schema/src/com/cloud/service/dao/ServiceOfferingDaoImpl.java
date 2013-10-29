@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.service.dao;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import javax.persistence.EntityExistsException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -167,8 +169,15 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     @Override
     public void saveDetails(ServiceOfferingVO serviceOffering) {
         Map<String, String> details = serviceOffering.getDetails();
-        if (details != null) {
-            detailsDao.persist(serviceOffering.getId(), details);
+        if (details == null) {
+            return;
         }
+        
+        List<ServiceOfferingDetailsVO> resourceDetails = new ArrayList<ServiceOfferingDetailsVO>();
+        for (String key : details.keySet()) {
+            resourceDetails.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), key, details.get(key)));
+        }
+        
+        detailsDao.addDetails(resourceDetails);
     }
 }

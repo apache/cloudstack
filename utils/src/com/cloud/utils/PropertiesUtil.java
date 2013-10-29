@@ -130,7 +130,7 @@ public class PropertiesUtil {
             File commandsFile = findConfigFile(configFile);
             if (commandsFile != null) {
                 try {
-                    preProcessedCommands.load(new FileInputStream(commandsFile));
+                    loadFromFile(preProcessedCommands, commandsFile);
                 } catch (FileNotFoundException fnfex) {
                     // in case of a file within a jar in classpath, try to open stream using url
                     InputStream stream = PropertiesUtil.openStreamFromURL(configFile);

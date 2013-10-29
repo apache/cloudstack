@@ -130,7 +130,7 @@ import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.tags.ResourceTagVO;
@@ -247,7 +247,6 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     DataCenterDao _dcDao = null;
     @Inject
     UserDao _userDao;
-    @Inject
     List<LoadBalancingServiceProvider> _lbProviders;
     @Inject ApplicationLoadBalancerRuleDao _appLbRuleDao;
     @Inject
@@ -2055,7 +2054,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         if (tags != null && !tags.isEmpty()) {
             int count = 0;
-            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.LoadBalancer.toString());
+            sc.setJoinParameters("tagSearch", "resourceType", ResourceObjectType.LoadBalancer.toString());
             for (String key : tags.keySet()) {
                 sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
                 sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
@@ -2171,6 +2170,15 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         if (lbProvider == null) {
             throw new InvalidParameterValueException("Lb rule with scheme " + scheme.toString() + " is not supported by lb providers in network " + network);
         }
+    }
+
+    public List<LoadBalancingServiceProvider> getLbProviders() {
+        return _lbProviders;
+    }
+
+    @Inject
+    public void setLbProviders(List<LoadBalancingServiceProvider> lbProviders) {
+        this._lbProviders = lbProviders;
     }
 
 }

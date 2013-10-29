@@ -94,7 +94,7 @@
                         <li class="first"><span class="number">1</span><span><fmt:message key="label.setup"/></span><span class="arrow"></span></li>
                         <li><span class="number">2</span><span class="multiline"><fmt:message key="label.select.a.template"/></span><span class="arrow"></span></li>
                         <li><span class="number">3</span><span class="multiline"><fmt:message key="label.compute.offering"/></span><span class="arrow"></span></li>
-                        <li><span class="number">4</span><span class="multiline"><fmt:message key="label.data.disk.offering"/></span><span class="arrow"></span></li>
+                        <li><span class="number">4</span><span class="multiline"><fmt:message key="label.disk.offering"/></span><span class="arrow"></span></li>
                         <li><span class="number">5</span><span><fmt:message key="label.affinity"/></span><span class="arrow"></span></li>
                         <li><span class="number">6</span><span><fmt:message key="label.menu.network"/></span><span class="arrow"></span></li>
                         <li class="last"><span class="number">7</span><span><fmt:message key="label.review"/></span></li>
@@ -421,10 +421,10 @@
                                             <a href="3"><fmt:message key="label.edit"/></a>
                                         </div>
                                     </div>
-                                    <!-- Data disk offering -->
+                                    <!-- Disk offering -->
                                     <div class="select">
                                         <div class="name">
-                                            <span><fmt:message key="label.data.disk.offering"/></span>
+                                            <span><fmt:message key="label.disk.offering"/></span>
                                         </div>
                                         <div class="value">
                                             <span wizard-field="disk-offering"></span>

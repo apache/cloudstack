@@ -291,7 +291,7 @@
         var $options = $('<div>').attr({
             id: 'user-options'
         })
-            .appendTo($('#header'));
+            .appendTo($('#user'));
 
         $(['label.logout', 'label.help', 'label.about']).each(function() {
             var $link = $('<a>')

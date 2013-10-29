@@ -129,7 +129,7 @@ import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.dc.DedicatedResourceVO;
-import com.cloud.dc.dao.DcDetailsDao;
+import com.cloud.dc.dao.DataCenterDetailsDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
@@ -138,7 +138,6 @@ import com.cloud.event.dao.EventJoinDao;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.dao.NetworkDetailsDao;
@@ -155,7 +154,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -190,7 +189,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.NicDetailDao;
+import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
@@ -296,7 +295,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     private VolumeDetailsDao _volumeDetailDao;
 
     @Inject
-    private NicDetailDao _nicDetailDao;
+    private NicDetailsDao _nicDetailDao;
 
     @Inject
     UserVmDetailsDao _userVmDetailDao;
@@ -328,7 +327,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     private DedicatedResourceDao _dedicatedDao;
 
     @Inject
-    DcDetailsDao _dcDetailsDao;
+    DataCenterDetailsDao _dcDetailsDao;
 
     @Inject
     DomainManager _domainMgr;
@@ -2390,22 +2389,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Long domainId = cmd.getDomainId();
         Boolean isSystem = cmd.getIsSystem();
         String vmTypeStr = cmd.getSystemVmType();
-        Map<String, String> resourceTags = cmd.getResourceTags();
         
-        SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
-        if (resourceTags != null && !resourceTags.isEmpty()) {
-            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
-            for (int count=0; count < resourceTags.size(); count++) {
-                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
-                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
-                tagSearch.cp();
-            }
-            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
-            sb.groupBy(sb.entity().getId());
-            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
-        }
-        
-        SearchCriteria<ServiceOfferingJoinVO> sc = sb.create();
+        SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
 
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && isSystem) {
             throw new InvalidParameterValueException("Only ROOT admins can access system's offering");
@@ -2514,17 +2499,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (vmTypeStr != null) {
             sc.addAnd("vm_type", SearchCriteria.Op.EQ, vmTypeStr);
-        }
-        
-        
-        if (resourceTags != null && !resourceTags.isEmpty()) {
-            int count = 0;
-            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.ServiceOffering.toString());
-            for (String key : resourceTags.keySet()) {
-                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
-                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), resourceTags.get(key));
-                count++;
-            }
         }
 
         return _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
@@ -2715,7 +2689,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         
         if (resourceTags != null && !resourceTags.isEmpty()) {
             int count = 0;
-            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.Zone.toString());
+            sc.setJoinParameters("tagSearch", "resourceType", ResourceObjectType.Zone.toString());
             for (String key : resourceTags.keySet()) {
                 sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
                 sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), resourceTags.get(key));
@@ -2971,9 +2945,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                     scTag.addAnd("tagKey", SearchCriteria.Op.EQ, key);
                     scTag.addAnd("tagValue", SearchCriteria.Op.EQ, tags.get(key));
                     if (isIso) {
-                        scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, TaggedResourceType.ISO);
+                        scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, ResourceObjectType.ISO);
                     } else {
-                        scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, TaggedResourceType.Template);
+                        scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, ResourceObjectType.Template);
                     }
                     scc.addOr("tagKey", SearchCriteria.Op.SC, scTag);
                     count++;
@@ -3288,55 +3262,26 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     @Override
     public List<ResourceDetailResponse> listResource(ListResourceDetailsCmd cmd) {
         String key = cmd.getKey();
-        ResourceTag.TaggedResourceType resourceType = cmd.getResourceType();
-        String resourceId = cmd.getResourceId();
-        Long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
-        List<ResourceDetailResponse> responseList = new ArrayList<ResourceDetailResponse>();
-        List<? extends ResourceDetail> detailList = new ArrayList<ResourceDetail>();
+        ResourceTag.ResourceObjectType resourceType = cmd.getResourceType();
+        String resourceIdStr = cmd.getResourceId();
+        long resourceId = _taggedResourceMgr.getResourceId(resourceIdStr, resourceType);
+        List<? extends ResourceDetail> detailList = new ArrayList<ResourceDetail>();        
         ResourceDetail requestedDetail = null;
 
-        
-        if (resourceType == ResourceTag.TaggedResourceType.Volume) {
-            if (key == null) {
-                detailList = _volumeDetailDao.findDetails(id);
-            } else {
-                requestedDetail = _volumeDetailDao.findDetail(id, key);
-            }
-        } else if (resourceType == ResourceTag.TaggedResourceType.Nic){
-            if (key == null) {
-                detailList = _nicDetailDao.findDetails(id);
-            } else {
-                requestedDetail = _nicDetailDao.findDetail(id, key);
-            }
-        } else if (resourceType == ResourceTag.TaggedResourceType.UserVm){
-            if (key == null) {
-                detailList = _userVmDetailDao.findDetailsList(id);
-            } else {
-                requestedDetail = _userVmDetailDao.findDetail(id, key);
-            }
-        } else if (resourceType == ResourceTag.TaggedResourceType.Zone){
-            if (key == null) {
-                detailList = _dcDetailsDao.findDetailsList(id);
-            } else {
-                requestedDetail = _dcDetailsDao.findDetail(id, key);
-            }
-        } else if (resourceType == TaggedResourceType.Network){
-            if (key == null) {
-                detailList = _networkDetailsDao.findDetails(id);
-            } else {
-                requestedDetail = _networkDetailsDao.findDetail(id, key);
-            }
-        }else {
-            throw new UnsupportedServiceException("Resource type " + resourceType + " is not supported by the cloudStack");
+        if (key == null) {
+            detailList = _resourceMetaDataMgr.getDetails(resourceId, resourceType);
+        } else {
+            requestedDetail = _resourceMetaDataMgr.getDetail(resourceId, resourceType, key);
         }
         
+        List<ResourceDetailResponse> responseList = new ArrayList<ResourceDetailResponse>();
         if (requestedDetail != null) {
-            ResourceDetailResponse detailResponse = createResourceDetailsResponse(id, requestedDetail.getName(), requestedDetail.getValue(),
+            ResourceDetailResponse detailResponse = createResourceDetailsResponse(resourceId, requestedDetail.getName(), requestedDetail.getValue(),
                     resourceType);
             responseList.add(detailResponse);
         } else {
             for (ResourceDetail detail : detailList) {
-                ResourceDetailResponse detailResponse = createResourceDetailsResponse(id, detail.getName(), detail.getValue(),
+                ResourceDetailResponse detailResponse = createResourceDetailsResponse(resourceId, detail.getName(), detail.getValue(),
                         resourceType);
                 responseList.add(detailResponse);
             }
@@ -3346,7 +3291,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     
-    protected ResourceDetailResponse createResourceDetailsResponse(long resourceId, String key, String value, ResourceTag.TaggedResourceType type) {
+    protected ResourceDetailResponse createResourceDetailsResponse(long resourceId, String key, String value, ResourceTag.ResourceObjectType type) {
         ResourceDetailResponse resourceDetailResponse = new ResourceDetailResponse();
         resourceDetailResponse.setResourceId(String.valueOf(resourceId));
         resourceDetailResponse.setName(key);

@@ -35,7 +35,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Attribute;
@@ -658,7 +658,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         txn.start();
         VMInstanceVO vm = findById(id);
         if (vm != null && vm.getType() == Type.User) {
-            _tagsDao.removeByIdAndType(id, TaggedResourceType.UserVm);
+            _tagsDao.removeByIdAndType(id, ResourceObjectType.UserVm);
         }
         boolean result = super.remove(id);
         txn.commit();

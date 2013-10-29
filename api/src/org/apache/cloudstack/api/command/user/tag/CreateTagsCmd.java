@@ -34,7 +34,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.server.ResourceTag;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 @APICommand(name = "createTags", description = "Creates resource tag(s)", responseObject = SuccessResponse.class, since = "4.0.0")
 public class CreateTagsCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(CreateTagsCmd.class.getName());
@@ -64,7 +64,7 @@ public class CreateTagsCmd extends BaseAsyncCmd{
     /////////////////////////////////////////////////////
 
 
-    public TaggedResourceType getResourceType(){
+    public ResourceObjectType getResourceType(){
         return _taggedResourceService.getResourceType(resourceType);
     }
 

@@ -17,7 +17,6 @@
 package com.cloud.utils;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -44,10 +43,8 @@ public class ProcessUtil {
 				s_logger.debug("environment.properties could not be opened");
 			}
 			else {
-				final FileInputStream finputstream = new FileInputStream(propsFile);
 				final Properties props = new Properties();
-				props.load(finputstream);
-				finputstream.close();
+				PropertiesUtil.loadFromFile(props, propsFile);
 				dir = props.getProperty("paths.pid");
 				if (dir == null) {
 					dir = pidDir==null?"/var/run":pidDir;

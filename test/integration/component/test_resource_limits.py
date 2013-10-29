@@ -1185,7 +1185,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                               self.apiclient,
                               2, # Volume
                               domainid=self.account.domainid,
-                              max=2
+                              max=1
                               )
 
         self.debug("Deploying VM for account: %s" % self.account.name)

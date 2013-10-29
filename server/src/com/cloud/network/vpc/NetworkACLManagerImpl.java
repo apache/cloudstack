@@ -68,7 +68,6 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     NetworkACLDao _networkACLDao;
     @Inject
     NetworkACLItemDao _networkACLItemDao;
-    @Inject
     List<NetworkACLServiceProvider> _networkAclElements;
     @Inject
     NetworkModel _networkModel;
@@ -472,6 +471,15 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
             s_logger.debug("Unable to find NetworkACL service provider for network: "+network.getId());
         }
         return handled;
+    }
+
+    public List<NetworkACLServiceProvider> getNetworkAclElements() {
+        return _networkAclElements;
+    }
+
+    @Inject
+    public void setNetworkAclElements(List<NetworkACLServiceProvider> networkAclElements) {
+        this._networkAclElements = networkAclElements;
     }
 
 }

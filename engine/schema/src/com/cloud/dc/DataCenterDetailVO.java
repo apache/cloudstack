@@ -23,19 +23,18 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
 @Table(name="data_center_details")
-public class DcDetailVO implements InternalIdentity, ResourceDetail {
+public class DataCenterDetailVO implements ResourceDetail {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private long id;
     
     @Column(name="dc_id")
-    private long dcId;
+    private long resourceId;
     
     @Column(name="name")
     private String name;
@@ -43,37 +42,33 @@ public class DcDetailVO implements InternalIdentity, ResourceDetail {
     @Column(name="value")
     private String value;
     
-    protected DcDetailVO() {
+    protected DataCenterDetailVO() {
     }
     
-    public DcDetailVO(long dcId, String name, String value) {
-        this.dcId = dcId;
+    public DataCenterDetailVO(long dcId, String name, String value) {
+        this.resourceId = dcId;
         this.name = name;
         this.value = value;
     }
+    
 
-    public long getDcId() {
-        return dcId;
-    }
-
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getValue() {
         return value;
     }
 
-    public void setValue(String value) {
-        this.value = value;
-    }
-
+    @Override
     public long getId() {
         return id;
     }
 
     @Override
-    public long getResourceDetail() {
-        return dcId;
+    public long getResourceId() {
+        return resourceId;
     }
 }

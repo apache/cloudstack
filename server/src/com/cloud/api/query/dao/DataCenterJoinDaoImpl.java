@@ -31,7 +31,7 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.dc.DataCenter;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -99,11 +99,13 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         zoneResponse.setDhcpProvider(dataCenter.getDhcpProvider());
         
         // update tag information
-        List<ResourceTagJoinVO> resourceTags = ApiDBUtils.listResourceTagViewByResourceUUID(dataCenter.getUuid(), TaggedResourceType.Zone);
+        List<ResourceTagJoinVO> resourceTags = ApiDBUtils.listResourceTagViewByResourceUUID(dataCenter.getUuid(), ResourceObjectType.Zone);
         for (ResourceTagJoinVO resourceTag : resourceTags) {            
             ResourceTagResponse tagResponse = ApiDBUtils.newResourceTagResponse(resourceTag, false);
             zoneResponse.addTag(tagResponse);
         }
+        
+        zoneResponse.setResourceDetails(ApiDBUtils.getZoneDetails(dataCenter.getId()));
         
         zoneResponse.setObjectName("zone");
         return zoneResponse;

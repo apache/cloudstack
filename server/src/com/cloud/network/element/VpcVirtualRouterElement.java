@@ -39,9 +39,11 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.VirtualRouterProvider.Type;
+import com.cloud.network.VpnUser;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
@@ -531,4 +533,47 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         return _vpcRouterMgr.stopSite2SiteVpn(conn, routers.get(0));
     }
+
+    @Override
+    public String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users) throws ResourceUnavailableException {
+    	if (vpn.getVpcId() == null) {
+    		return null;
+    	}
+
+    	List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(vpn.getVpcId());
+    	if (routers == null || routers.size() != 1) {
+    		s_logger.debug("Cannot apply vpn users on the backend; virtual router doesn't exist in the network " + vpn.getVpcId());
+    		return null;
+    	}
+    	return _vpcRouterMgr.applyVpnUsers(vpn, users, routers.get(0));
+    }
+
+    @Override
+    public boolean startVpn(RemoteAccessVpn vpn) throws ResourceUnavailableException {
+    	if (vpn.getVpcId() == null) {
+    		return false;
+    	}
+
+    	List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(vpn.getVpcId());
+    	if (routers == null || routers.size() != 1) {
+    		s_logger.debug("Cannot apply vpn users on the backend; virtual router doesn't exist in the network " + vpn.getVpcId());
+    		return true;
+    	}
+        return _vpcRouterMgr.startRemoteAccessVpn(vpn, routers.get(0));
+    }
+
+    @Override
+    public boolean stopVpn(RemoteAccessVpn vpn) throws ResourceUnavailableException {
+    	if (vpn.getVpcId() == null) {
+    		return false;
+    	}
+
+    	List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(vpn.getVpcId());
+    	if (routers == null || routers.size() != 1) {
+    		s_logger.debug("Cannot apply vpn users on the backend; virtual router doesn't exist in the network " + vpn.getVpcId());
+    		return true;
+    	}
+    	return _vpcRouterMgr.stopRemoteAccessVpn(vpn, routers.get(0));
+    }
+
 }

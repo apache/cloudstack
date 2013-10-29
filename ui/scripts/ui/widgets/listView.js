@@ -1387,8 +1387,7 @@
                         });
                         $quickViewTooltip.css({
                             position: 'absolute',
-                            left: $tr.width() + ($quickViewTooltip.width() -
-                                ($quickViewTooltip.width() / 2)),
+                            left: $tr.offset().left + $tr.width() - $quickViewTooltip.width(),
                             top: $quickView.offset().top - 50,
                             zIndex: $tr.closest('.panel').zIndex() + 1
                         });

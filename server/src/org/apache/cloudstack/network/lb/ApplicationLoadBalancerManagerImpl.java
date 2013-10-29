@@ -57,7 +57,7 @@ import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
@@ -459,7 +459,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         
         if (tags != null && !tags.isEmpty()) {
             int count = 0;
-            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.LoadBalancer.toString());
+            sc.setJoinParameters("tagSearch", "resourceType", ResourceObjectType.LoadBalancer.toString());
             for (String key : tags.keySet()) {
                 sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
                 sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));

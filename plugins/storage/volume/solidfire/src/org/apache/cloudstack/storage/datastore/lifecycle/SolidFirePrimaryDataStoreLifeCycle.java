@@ -18,10 +18,14 @@
  */
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
 import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -37,17 +41,24 @@ import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolAutomation;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
-    @Inject PrimaryDataStoreDao storagePoolDao;
-    @Inject PrimaryDataStoreHelper dataStoreHelper;
-    @Inject StoragePoolAutomation storagePoolAutomation;
-    @Inject StoragePoolDetailsDao storagePoolDetailsDao;
-    @Inject DataCenterDao zoneDao;
+    private static final Logger s_logger = Logger.getLogger(SolidFirePrimaryDataStoreLifeCycle.class);
+
+    @Inject private DataCenterDao zoneDao;
+    @Inject private PrimaryDataStoreDao storagePoolDao;
+    @Inject private PrimaryDataStoreHelper dataStoreHelper;
+    @Inject private ResourceManager _resourceMgr;
+    @Inject StorageManager _storageMgr;
+    @Inject private StoragePoolAutomation storagePoolAutomation;
+    @Inject private StoragePoolDetailsDao storagePoolDetailsDao;
     
     private static final int DEFAULT_MANAGEMENT_PORT = 443;
     private static final int DEFAULT_STORAGE_PORT = 3260;
@@ -305,9 +316,23 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
     public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType) {
     	dataStoreHelper.attachZone(dataStore);
     	
-        return true;
+        List<HostVO> xenServerHosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType.XenServer, scope.getScopeId());
+        List<HostVO> kvmHosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType.KVM, scope.getScopeId());
+        List<HostVO> hosts = new ArrayList<HostVO>();
+
+        hosts.addAll(xenServerHosts);
+        hosts.addAll(kvmHosts);
+
+        for (HostVO host : hosts) {
+            try {
+                _storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
+            } catch (Exception e) {
+                s_logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
+            }
     }
 
+        return true;
+    }
     
     @Override
     public boolean maintain(DataStore dataStore) {

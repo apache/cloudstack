@@ -135,6 +135,7 @@ import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.Upload;
+import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -1632,8 +1633,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateVO template = _tmpltDao.persist(privateTemplate);
         // Increment the number of templates
         if (template != null) {
-            if (cmd.getDetails() != null) {
-                _templateDetailsDao.persist(template.getId(), cmd.getDetails());
+            Map<String, String> detailsStr = cmd.getDetails();
+            if (detailsStr != null) {
+                List<VMTemplateDetailVO> details = new ArrayList<VMTemplateDetailVO>();
+                for (String key : detailsStr.keySet()) {
+                    details.add(new VMTemplateDetailVO(template.getId(), key, detailsStr.get(key)));
+                }
+                _templateDetailsDao.addDetails(details);
             }
 
             _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.template);
