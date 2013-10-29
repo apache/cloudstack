@@ -7535,6 +7535,9 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 
 .multi-edit table th {
   min-width: 88px;
+  white-space: nowrap;
+  text-align: center;
+  text-indent: 0;
 }
 
 .detail-group .multi-edit table td {
