@@ -1706,9 +1706,10 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                 sch = SocketChannel.open();
                 sch.configureBlocking(true);
                 sch.socket().setSoTimeout(5000);
-
+                // we need to connect to the public ip address to check the status of the VM
+/*
                 InetSocketAddress addr = new InetSocketAddress(ipAddress, port);
-                sch.connect(addr);
+                sch.connect(addr);*/
                 return null;
             } catch (IOException e) {
                 s_logger.info("Could not connect to " + ipAddress + " due to " + e.toString());
