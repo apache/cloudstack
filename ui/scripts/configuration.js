@@ -95,8 +95,15 @@
                                             });
                                         }
                                     },
+                                    isCustomized: {
+                                        label: 'Custom',                                       
+                                        isBoolean: true,
+                                        isReverse: true,
+                                        isChecked: false
+                                    },
                                     cpuNumber: {
                                         label: 'label.num.cpu.cores',
+                                        dependsOn: 'isCustomized',
                                         docID: 'helpComputeOfferingCPUCores',
                                         validation: {
                                             required: true,
@@ -105,6 +112,7 @@
                                     },
                                     cpuSpeed: {
                                         label: 'label.cpu.mhz',
+                                        dependsOn: 'isCustomized',
                                         docID: 'helpComputeOfferingCPUMHz',
                                         validation: {
                                             required: true,
@@ -113,6 +121,7 @@
                                     },
                                     memory: {
                                         label: 'label.memory.mb',
+                                        dependsOn: 'isCustomized',
                                         docID: 'helpComputeOfferingMemory',
                                         validation: {
                                             required: true,
@@ -280,11 +289,27 @@
                                     name: args.data.name,
                                     displaytext: args.data.description,
                                     storageType: args.data.storageType,
-                                    cpuNumber: args.data.cpuNumber,
-                                    cpuSpeed: args.data.cpuSpeed,
-                                    memory: args.data.memory
+                                    customized: (args.data.isCustomized == "on")                                    
                                 };
-
+                                
+                                //custom fields (begin)
+                                if (args.$form.find('.form-item[rel=cpuNumber]').css("display") != "none") {
+                                    $.extend(data, {
+                                    	cpuNumber: args.data.cpuNumber
+                                    });
+                                }
+                                if (args.$form.find('.form-item[rel=cpuSpeed]').css("display") != "none") {
+                                    $.extend(data, {
+                                    	cpuSpeed: args.data.cpuSpeed
+                                    });
+                                }
+                                if (args.$form.find('.form-item[rel=memory]').css("display") != "none") {
+                                    $.extend(data, {
+                                    	memory: args.data.memory
+                                    });
+                                }      
+                                //custom fields (end)
+                                
                                 if (args.data.deploymentPlanner != null && args.data.deploymentPlanner.length > 0) {
                                     $.extend(data, {
                                         deploymentplanner: args.data.deploymentPlanner
