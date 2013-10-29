@@ -4045,12 +4045,11 @@ Dialogs*/
 .dashboard.admin .dashboard-container {
   background: #FFFFFF;
   border: 1px solid #C8C2C2;
-  /*+border-radius:6px;*/
-  -moz-border-radius: 6px;
-  -webkit-border-radius: 6px;
-  -khtml-border-radius: 6px;
-  border-radius: 6px;
-  border-radius: 6px 6px 6px 6px;
+  /*+border-radius:3px;*/
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  -khtml-border-radius: 3px;
+  border-radius: 3px;
   padding: 0px 8px 18px 0px;
   margin: 0 0 11px;
 }
@@ -4059,69 +4058,45 @@ Dialogs*/
   width: 368px;
 }
 
-.dashboard.admin .dashboard-container.sub .button.view-all {
-  font-size: 10px;
+.dashboard.admin .dashboard-container.sub .button.view-all,
+.dashboard.admin .dashboard-container .button.fetch-latest {
+  font-size: 13px;
   float: right;
   clear: none;
-  /*+text-shadow:0px 1px #333E49;*/
-  -moz-text-shadow: 0px 1px #333E49;
-  -webkit-text-shadow: 0px 1px #333E49;
-  -o-text-shadow: 0px 1px #333E49;
-  text-shadow: 0px 1px #333E49;
+  /*+text-shadow:none;*/
+  -moz-text-shadow: none;
+  -webkit-text-shadow: none;
+  -o-text-shadow: none;
+  text-shadow: none;
   -moz-text-shadow: 0px 1px 0px #333E49;
   -webkit-text-shadow: 0px 1px 0px #333E49;
   -o-text-shadow: 0px 1px 0px #333E49;
   padding: 3px 8px 3px 10px;
-  background: url(../images/bg-gradients.png) repeat-x 0px -411px;
+  background: #E7E7E7;
   border: 1px solid #383838;
-  /*+border-radius:6px;*/
-  -moz-border-radius: 6px;
-  -webkit-border-radius: 6px;
-  -khtml-border-radius: 6px;
-  border-radius: 6px;
-  border-radius: 6px 6px 6px 6px;
-  /*+box-shadow:0px 1px 1px #718CA5;*/
-  -moz-box-shadow: 0px 1px 1px #718CA5;
-  -webkit-box-shadow: 0px 1px 1px #718CA5;
-  -o-box-shadow: 0px 1px 1px #718CA5;
-  box-shadow: 0px 1px 1px #718CA5;
+  /*+border-radius:3px;*/
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  -khtml-border-radius: 3px;
+  border-radius: 3px;
+  /*+box-shadow:0px 1px #CACACA;*/
+  -moz-box-shadow: 0px 1px #CACACA;
+  -webkit-box-shadow: 0px 1px #CACACA;
+  -o-box-shadow: 0px 1px #CACACA;
+  box-shadow: 0px 1px #CACACA;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 100;
+  color: #000000;
 }
 
-.button.fetch-latest {
-  font-size: 10px;
-  float: right;
-  clear: none;
-  /*+text-shadow:0px 1px #333E49;*/
-  -moz-text-shadow: 0px 1px #333E49;
-  -webkit-text-shadow: 0px 1px #333E49;
-  -o-text-shadow: 0px 1px #333E49;
-  text-shadow: 0px 1px #333E49;
-  -moz-text-shadow: 0px 1px 0px #333E49;
-  -webkit-text-shadow: 0px 1px 0px #333E49;
-  -o-text-shadow: 0px 1px 0px #333E49;
-  padding: 3px 8px 3px 10px;
-  background: url(../images/bg-gradients.png) repeat-x 0px -411px;
-  border: 1px solid #383838;
-  /*+border-radius:6px;*/
-  -moz-border-radius: 6px;
-  -webkit-border-radius: 6px;
-  -khtml-border-radius: 6px;
-  border-radius: 6px;
-  border-radius: 6px 6px 6px 6px;
-  /*+box-shadow:0px 1px 1px #718CA5;*/
-  -moz-box-shadow: 0px 1px 1px #718CA5;
-  -webkit-box-shadow: 0px 1px 1px #718CA5;
-  -o-box-shadow: 0px 1px 1px #718CA5;
-  box-shadow: 0px 1px 1px #718CA5;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.button.fetch-latest:hover {
-  background-position: 0 -132px;
-  border-left: 1px solid #585D60;
+.dashboard.admin .dashboard-container.sub .button.view-all:hover,
+.dashboard.admin .dashboard-container .button.fetch-latest:hover {
+  background: #E8E8E8;
+  /*+box-shadow:inset 0px 0px 6px #636363;*/
+  -moz-box-shadow: inset 0px 0px 6px #636363;
+  -webkit-box-shadow: inset 0px 0px 6px #636363;
+  -o-box-shadow: inset 0px 0px 6px #636363;
+  box-shadow: inset 0px 0px 6px #636363;
 }
 
 .dashboard.admin .dashboard-container.sub .title {
@@ -4131,29 +4106,24 @@ Dialogs*/
 /**** Head*/
 .dashboard.admin .dashboard-container.head {
   width: 766px;
-  height: 304px;
+  height: 290px;
   margin: 9px 0 0;
   float: left;
 }
 
 .dashboard.admin .dashboard-container .top {
-  background: url(../images/bg-breadcrumb.png) repeat-x 0px -1px;
+  background: #E2E2E2;
   padding: 4px 4px 8px;
   width: 100%;
   float: left;
   margin: 0 0 9px;
   color: #FFFFFF;
-  /*+border-radius:7px 7px 0 0;*/
-  -moz-border-radius: 7px 7px 0 0;
-  -webkit-border-radius: 7px 7px 0 0;
-  -khtml-border-radius: 7px 7px 0 0;
-  border-radius: 7px 7px 0 0;
 }
 
 .dashboard.admin .dashboard-container .title {
   float: left;
-  font-size: 12px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 100;
   /*+text-shadow:0px 1px 1px #9A9A9A;*/
   -moz-text-shadow: 0px 1px 1px #9A9A9A;
   -webkit-text-shadow: 0px 1px 1px #9A9A9A;
@@ -4163,11 +4133,12 @@ Dialogs*/
 }
 
 .dashboard.admin .dashboard-container .title span {
-  /*+text-shadow:0px 1px 1px #050607;*/
-  -moz-text-shadow: 0px 1px 1px #050607;
-  -webkit-text-shadow: 0px 1px 1px #050607;
-  -o-text-shadow: 0px 1px 1px #050607;
-  text-shadow: 0px 1px 1px #050607;
+  color: #000000;
+  /*+text-shadow:none;*/
+  -moz-text-shadow: none;
+  -webkit-text-shadow: none;
+  -o-text-shadow: none;
+  text-shadow: none;
 }
 
 .dashboard.admin .dashboard-container.head .selects {
@@ -4195,7 +4166,7 @@ Dialogs*/
 /**** Charts / stats*/
 .dashboard.admin .zone-stats {
   width: 774px;
-  height: 297px;
+  height: 274px;
   overflow: auto;
   overflow-x: hidden;
   /*+placement:shift 0px -11px;*/
