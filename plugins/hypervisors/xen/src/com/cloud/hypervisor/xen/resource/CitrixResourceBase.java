@@ -174,6 +174,7 @@ import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.xen.resource.CitrixHelper;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.Networks;
@@ -1249,68 +1250,107 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         return vbd;
     }
+    
+
+    public long getStaticMax(String os, boolean b, long dynamicMinRam, long dynamicMaxRam){
+        return dynamicMaxRam;
+    }
+
+    public long getStaticMin(String os, boolean b, long dynamicMinRam, long dynamicMaxRam){
+        return dynamicMinRam;
+    }
 
     protected VM createVmFromTemplate(Connection conn, VirtualMachineTO vmSpec, Host host) throws XenAPIException, XmlRpcException {
         String guestOsTypeName = getGuestOsType(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD);
-        if ( guestOsTypeName == null ) {
-            String msg =  " Hypervisor " + this.getClass().getName() + " doesn't support guest OS type " + vmSpec.getOs()
-                    + ". you can choose 'Other install media' to run it as HVM";
-            s_logger.warn(msg);
-            throw new CloudRuntimeException(msg);
-        }
         Set<VM> templates = VM.getByNameLabel(conn, guestOsTypeName);
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
-        if (!templates.iterator().hasNext()) {
-            throw new CloudRuntimeException("No matching OS type found for starting a [" + vmSpec.getOs()
-                    + "] VM on host " + host.getHostname(conn));
-        }
         VM template = templates.iterator().next();
-        VM vm = template.createClone(conn, vmSpec.getName());
-        VM.Record vmr = vm.getRecord(conn);
+
+        VM.Record vmr = template.getRecord(conn);
+        vmr.affinity = host;
+        vmr.otherConfig.remove("disks");
+        vmr.otherConfig.remove("default_template");
+        vmr.otherConfig.remove("mac_seed");
+        vmr.isATemplate = false;
+        vmr.nameLabel = vmSpec.getName();
+        vmr.actionsAfterCrash = Types.OnCrashBehaviour.DESTROY;
+        vmr.actionsAfterShutdown = Types.OnNormalExit.DESTROY;
+
+        if (isDmcEnabled(conn, host) && vmSpec.isEnableDynamicallyScaleVm()) {
+            //scaling is allowed
+            vmr.memoryStaticMin = getStaticMin(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD, vmSpec.getMinRam(), vmSpec.getMaxRam());
+            vmr.memoryStaticMax = getStaticMax(vmSpec.getOs(), vmSpec.getBootloader() == BootloaderType.CD, vmSpec.getMinRam(), vmSpec.getMaxRam());
+            vmr.memoryDynamicMin = vmSpec.getMinRam();
+            vmr.memoryDynamicMax = vmSpec.getMaxRam();
+        } else {
+            //scaling disallowed, set static memory target
+            if (vmSpec.isEnableDynamicallyScaleVm() && !isDmcEnabled(conn, host)) {
+                s_logger.warn("Host "+ host.getHostname(conn) +" does not support dynamic scaling, so the vm " + vmSpec.getName() + " is not dynamically scalable");
+            }
+            vmr.memoryStaticMin = vmSpec.getMinRam();
+            vmr.memoryStaticMax = vmSpec.getMaxRam();
+            vmr.memoryDynamicMin = vmSpec.getMinRam();
+            vmr.memoryDynamicMax = vmSpec.getMaxRam();
+        }
+
+        if (guestOsTypeName.toLowerCase().contains("windows")) {
+            vmr.VCPUsMax = (long) vmSpec.getCpus();
+        } else {
+            vmr.VCPUsMax = 32L;
+        }
+
+        Map<String, String> details = vmSpec.getDetails();
+        if ( details != null ) {
+            String timeoffset = details.get("timeoffset");
+            if (timeoffset != null) {
+                Map<String, String> platform = vmr.platform;
+                platform.put("timeoffset", timeoffset);
+                vmr.platform = platform;
+            }
+
+            String coresPerSocket = details.get("cpu.corespersocket");
+            if (coresPerSocket != null) {
+                Map<String, String> platform = vmr.platform;
+                platform.put("cores-per-socket", coresPerSocket);
+                vmr.platform = platform;
+            }            
+        }
+
+        vmr.VCPUsAtStartup = (long) vmSpec.getCpus();
+        vmr.consoles.clear();
+
+        VM vm = VM.create(conn, vmr);
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Created VM " + vmr.uuid + " for " + vmSpec.getName());
+            s_logger.debug("Created VM " + vm.getUuid(conn) + " for " + vmSpec.getName());
         }
-
-        for (Console console : vmr.consoles) {
-            console.destroy(conn);
-        }
-
-        vm.setIsATemplate(conn, false);
-        vm.setAffinity(conn, host);
-        vm.removeFromOtherConfig(conn, "disks");
-        vm.setNameLabel(conn, vmSpec.getName());
-        setMemory(conn, vm, vmSpec.getMinRam(),vmSpec.getMaxRam());
-        vm.setVCPUsMax(conn, (long)vmSpec.getCpus());
-        vm.setVCPUsAtStartup(conn, (long)vmSpec.getCpus());
 
         Map<String, String> vcpuParams = new HashMap<String, String>();
 
         Integer speed = vmSpec.getMinSpeed();
         if (speed != null) {
 
-            int cpuWeight = _maxWeight; //cpu_weight
-            long utilization = 0; // max CPU cap, default is unlimited
+            int cpuWeight = _maxWeight; // cpu_weight
+            int utilization = 0; // max CPU cap, default is unlimited
 
-            // weight based allocation
-            cpuWeight = (int)((speed*0.99) / _host.speed * _maxWeight);
+            // weight based allocation, CPU weight is calculated per VCPU
+            cpuWeight = (int) ((speed * 0.99) / _host.speed * _maxWeight);
             if (cpuWeight > _maxWeight) {
                 cpuWeight = _maxWeight;
             }
 
             if (vmSpec.getLimitCpuUse()) {
-                utilization = ((long)speed * 100 * vmSpec.getCpus()) / _host.speed ;
+                // CPU cap is per VM, so need to assign cap based on the number of vcpus
+                utilization = (int) ((speed * 0.99 * vmSpec.getCpus()) / _host.speed * 100);
             }
 
             vcpuParams.put("weight", Integer.toString(cpuWeight));
-            vcpuParams.put("cap", Long.toString(utilization));
+            vcpuParams.put("cap", Integer.toString(utilization));
+
         }
 
         if (vcpuParams.size() > 0) {
             vm.setVCPUsParams(conn, vcpuParams);
         }
-
-        vm.setActionsAfterCrash(conn, Types.OnCrashBehaviour.DESTROY);
-        vm.setActionsAfterShutdown(conn, Types.OnNormalExit.DESTROY);
 
         String bootArgs = vmSpec.getBootArgs();
         if (bootArgs != null && bootArgs.length() > 0) {
@@ -1324,36 +1364,32 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (!(guestOsTypeName.startsWith("Windows") || guestOsTypeName.startsWith("Citrix") || guestOsTypeName.startsWith("Other"))) {
             if (vmSpec.getBootloader() == BootloaderType.CD) {
-                DiskTO [] disks = vmSpec.getDisks();
+                DiskTO[] disks = vmSpec.getDisks();
                 for (DiskTO disk : disks) {
-                    Volume.Type type = disk.getType();
-                    if (type == Volume.Type.ISO) {
-                        TemplateObjectTO tmpl = (TemplateObjectTO)disk.getData();
-                        String osType = tmpl.getGuestOsType();
-                        if (tmpl.getFormat() == ImageFormat.ISO && osType != null ) {
-                            String isoGuestOsName = getGuestOsType(osType, vmSpec.getBootloader() == BootloaderType.CD);
-                            if (!isoGuestOsName.equals(guestOsTypeName)) {
-                                vmSpec.setBootloader(BootloaderType.PyGrub);
-                            }
-                        }
+                    if (disk.getType() == Volume.Type.ISO ) {
+                    	TemplateObjectTO iso = (TemplateObjectTO)disk.getData();
+                    	String osType = iso.getGuestOsType();
+                    	if (osType != null) {
+                    		String isoGuestOsName = getGuestOsType(osType, vmSpec.getBootloader() == BootloaderType.CD);
+                    		if (!isoGuestOsName.equals(guestOsTypeName)) {
+                    			vmSpec.setBootloader(BootloaderType.PyGrub);
+                    		}
+                    	}
                     }
                 }
             }
             if (vmSpec.getBootloader() == BootloaderType.CD) {
                 vm.setPVBootloader(conn, "eliloader");
-                Map<String, String> otherConfig = vm.getOtherConfig(conn);
-                if ( ! vm.getOtherConfig(conn).containsKey("install-repository") ) {
-                    otherConfig.put( "install-repository", "cdrom");
+                if (!vm.getOtherConfig(conn).containsKey("install-repository")) {
+                    vm.addToOtherConfig(conn, "install-repository", "cdrom");
                 }
-                vm.setOtherConfig(conn, otherConfig);
-            } else if (vmSpec.getBootloader() == BootloaderType.PyGrub ){
+            } else if (vmSpec.getBootloader() == BootloaderType.PyGrub) {
                 vm.setPVBootloader(conn, "pygrub");
             } else {
                 vm.destroy(conn);
                 throw new CloudRuntimeException("Unable to handle boot loader type: " + vmSpec.getBootloader());
             }
         }
-
         try {
             finalizeVmMetaData(vm, conn, vmSpec);
         } catch ( Exception e) {
@@ -1361,6 +1397,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
         return vm;
     }
+ 
     
     protected void finalizeVmMetaData(VM vm, Connection conn, VirtualMachineTO vmSpec) throws Exception {
     }
