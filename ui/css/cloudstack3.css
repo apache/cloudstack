@@ -9053,54 +9053,28 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 }
 
 .project-switcher label {
-  position: absolute;
   top: 29px;
   color: #FFFFFF;
   font-size: 12px;
   font-weight: bold;
+  float: left;
+  margin-right: 7px;
+  margin-top: 5px;
 }
 
 .project-switcher select {
-  width: 79%;
-  font-weight: bold;
-  font-size: 12px;
-  /*+text-shadow:0px -1px 1px #000000;*/
-  -moz-text-shadow: 0px -1px 1px #000000;
-  -webkit-text-shadow: 0px -1px 1px #000000;
-  -o-text-shadow: 0px -1px 1px #000000;
-  text-shadow: 0px -1px 1px #000000;
-  border: 1px solid #9A9A9A;
-  border-bottom: #FFFFFF;
-  /*+box-shadow:inset 0px -1px #A2A2A2;*/
-  -moz-box-shadow: inset 0px -1px #A2A2A2;
-  -webkit-box-shadow: inset 0px -1px #A2A2A2;
-  -o-box-shadow: inset 0px -1px #A2A2A2;
-  box-shadow: inset 0px -1px #A2A2A2;
-  /*+border-radius:4px;*/
-  -moz-border-radius: 4px;
-  -webkit-border-radius: 4px;
-  -khtml-border-radius: 4px;
-  border-radius: 4px;
+  width: 70%;
+  float: left;
+  margin-top: -1px;
+  border: 1px solid #393939;
+  /*+text-shadow:0px -1px 1px #373737;*/
+  -moz-text-shadow: 0px -1px 1px #373737;
+  -webkit-text-shadow: 0px -1px 1px #373737;
+  -o-text-shadow: 0px -1px 1px #373737;
+  text-shadow: 0px -1px 1px #373737;
+  background: #515151;
+  font-size: 15px;
   color: #FFFFFF;
-  margin-top: -2px;
-  margin-left: 53px;
-  background: url(../images/bg-gradients.png) 0px -867px;
-  padding: 5px;
-  height: 28px;
-}
-
-.project-switcher select:hover {
-  /*+box-shadow:inset 0px 2px 6px #3B3B3B;*/
-  -moz-box-shadow: inset 0px 2px 6px #3B3B3B;
-  -webkit-box-shadow: inset 0px 2px 6px #3B3B3B;
-  -o-box-shadow: inset 0px 2px 6px #3B3B3B;
-  box-shadow: inset 0px 2px 6px #3B3B3B;
-  cursor: pointer;
-  border-bottom: 1px solid #828282;
-}
-
-.project-switcher select option {
-  background: #7F8487;
 }
 
 /*** Select project*/
