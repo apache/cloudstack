@@ -19,9 +19,6 @@ import cloudstackConnection
 import asyncJobMgr
 import dbConnection
 from cloudstackAPI import *
-import random
-import string
-import hashlib
 
 '''
 @Desc  : CloudStackTestClient is encapsulated class for getting various \

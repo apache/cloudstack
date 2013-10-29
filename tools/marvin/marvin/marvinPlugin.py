@@ -33,6 +33,18 @@ class MarvinPlugin(Plugin):
     name = "marvin"
 
     def configure(self, options, config):
+        """enable the marvin plugin when the --with-marvin directive
+        is given to nose. The enableOpt value is set from the command line directive
+        and self.enabled (True|False) determines whether marvin's tests will run.
+        By default non-default plugins like marvin will be disabled
+        """
+        if hasattr(options, self.enableOpt):
+            if not getattr(options, self.enableOpt):
+                self.enabled = False
+                return
+            else:
+                self.enabled = True
+
         self.logformat = logging.Formatter("%(asctime)s - %(levelname)s - " +
                                            "%(name)s - %(message)s")
 
