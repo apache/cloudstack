@@ -39,18 +39,24 @@ addVxlan() {
 	
 	if [ "$brif " == " " ]
 	then
-	printf "Failed to lookup bridge interface which includes pif: $pif."
-		return 1
+		if [ -d "/sys/class/net/${pif}" ]
+		then
+			# if bridge is not found, but matches a pif, use it
+			brif=$pif
+		else
+			printf "Failed to lookup bridge interface which includes pif: $pif."
+			return 1
+		fi
+	else
+		# confirm ip address of $brif
+		ip addr show $brif | grep -w inet
+		if [ $? -gt 0 ]
+		then
+			printf "Failed to find vxlan multicast source ip address on brif: $brif."
+			return 1
+		fi
 	fi
-	
-	# confirm ip address of $brif
-	ip addr show $brif | grep -w inet
-	if [ $? -gt 0 ]
-	then
-		printf "Failed to find vxlan multicast source ip address on brif: $brif."
-		return 1
-	fi
-	
+
 	# mcast route
 	## TODO(VXLAN): Can we assume there're only one IP address which can be multicast src IP on the IF?
 	ip route get $mcastGrp | grep -w "dev $brif"

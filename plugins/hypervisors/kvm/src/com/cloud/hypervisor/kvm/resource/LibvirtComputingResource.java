@@ -986,6 +986,18 @@ ServerResource {
             }
             _pifs.put(bridge, pif);
         }
+
+        // guest(private) creates bridges on a pif, if private bridge not found try pif direct
+        // This addresses the unnecessary requirement of someone to create an unused bridge just for traffic label
+        if (_pifs.get("private") == null) {
+            s_logger.debug("guest(private) traffic label '" + _guestBridgeName+ "' not found as bridge, looking for physical interface");
+            File dev = new File("/sys/class/net/" + _guestBridgeName);
+            if (dev.exists()) {
+                s_logger.debug("guest(private) traffic label '" + _guestBridgeName + "' found as a physical device");
+                _pifs.put("private", _guestBridgeName);
+            }
+        }
+
         s_logger.debug("done looking for pifs, no more bridges");
     }
 
@@ -1023,16 +1035,21 @@ ServerResource {
     }
 
     private String matchPifFileInDirectory(String bridgeName){
-        File f = new File("/sys/devices/virtual/net/" + bridgeName + "/brif");
+        File brif = new File("/sys/devices/virtual/net/" + bridgeName + "/brif");
 
-        if (! f.isDirectory()){
+        if (! brif.isDirectory()){
+            File pif = new File("/sys/class/net/" + bridgeName);
+            if (pif.isDirectory()) {
+                // if bridgeName already refers to a pif, return it as-is
+                return bridgeName;
+            }
             s_logger.debug("failing to get physical interface from bridge "
-                           + bridgeName + ", does " + f.getAbsolutePath()
+                           + bridgeName + ", does " + brif.getAbsolutePath()
                            + "exist?");
             return "";
         }
 
-        File[] interfaces = f.listFiles();
+        File[] interfaces = brif.listFiles();
 
         for (int i = 0; i < interfaces.length; i++) {
             String fname = interfaces[i].getName();
@@ -1046,7 +1063,7 @@ ServerResource {
 
         s_logger.debug("failing to get physical interface from bridge "
                         + bridgeName + ", did not find an eth*, bond*, vlan*, em*, or p*p* in "
-                        + f.getAbsolutePath());
+                        + brif.getAbsolutePath());
         return "";
     }
 

@@ -2694,6 +2694,20 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             } else if (network.getIsolationMethods().contains("VXLAN")) {
                 minVnet = MIN_VXLAN_VNI;
                 maxVnet = MAX_VXLAN_VNI;
+                // fail if zone already contains VNI, need to be unique per zone.
+                // since adding a range adds each VNI to the database, need only check min/max
+                for(String vnet : VnetRange) {
+                    s_logger.debug("Looking to see if VNI " + vnet + " already exists on another network in zone " + network.getDataCenterId());
+                    List<DataCenterVnetVO> vnis = _datacneter_vnet.findVnet(network.getDataCenterId(), vnet);
+                    if (vnis != null && ! vnis.isEmpty()) {
+                        for (DataCenterVnetVO vni : vnis) {
+                            if (vni.getPhysicalNetworkId() != network.getId()) {
+                                s_logger.debug("VNI " + vnet + " already exists on another network in zone, please specify a unique range");
+                                throw new InvalidParameterValueException("VNI " + vnet + " already exists on another network in zone, please specify a unique range");
+                            }
+                        }
+                    }
+                }
             }
             String rangeMessage = " between " + minVnet + " and " + maxVnet;
             if (VnetRange.length == 1 && VnetRange[0].equals("")) {

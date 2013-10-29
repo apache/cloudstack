@@ -110,10 +110,10 @@ public class BridgeVifDriver extends VifDriverBase {
                 || nic.getBroadcastType() == Networks.BroadcastDomainType.Vxlan) {
                 if(trafficLabel != null && !trafficLabel.isEmpty()) {
                     s_logger.debug("creating a vNet dev and bridge for guest traffic per traffic label " + trafficLabel);
-                    String brName = createVnetBr(vNetId, _pifs.get(trafficLabel), protocol);
+                    String brName = createVnetBr(vNetId, trafficLabel, protocol);
                     intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType), networkRateKBps);
                 } else {
-                    String brName = createVnetBr(vNetId, _pifs.get("private"), protocol);
+                    String brName = createVnetBr(vNetId, "private", protocol);
                     intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType), networkRateKBps);
                 }
             } else {
@@ -129,10 +129,10 @@ public class BridgeVifDriver extends VifDriverBase {
                     && !vNetId.equalsIgnoreCase("untagged")) {
                 if(trafficLabel != null && !trafficLabel.isEmpty()){
                     s_logger.debug("creating a vNet dev and bridge for public traffic per traffic label " + trafficLabel);
-                    String brName = createVnetBr(vNetId, _pifs.get(trafficLabel), protocol);
+                    String brName = createVnetBr(vNetId, trafficLabel, protocol);
                     intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType), networkRateKBps);
                 } else {
-                    String brName = createVnetBr(vNetId, _pifs.get("public"), protocol);
+                    String brName = createVnetBr(vNetId, "public", protocol);
                     intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType), networkRateKBps);
                 }
             } else {
@@ -157,9 +157,26 @@ public class BridgeVifDriver extends VifDriverBase {
         return "br" + pifName + "-"+ vnetId;
     }
 
-    private String createVnetBr(String vNetId, String nic, String protocol)
+    private String setVxnetBrName(String pifName, String vnetId) {
+        return "brvx-" + vnetId;
+    }
+
+    private String createVnetBr(String vNetId, String pifKey, String protocol)
             throws InternalErrorException {
-        String brName = setVnetBrName(nic, vNetId);
+        String nic = _pifs.get(pifKey);
+        if (nic == null) {
+            // if not found in bridge map, maybe traffic label refers to pif already?
+            File pif = new File("/sys/class/net/" + pifKey);
+            if (pif.isDirectory()){
+                nic = pifKey;
+            }
+        }
+        String brName = "";
+        if (protocol.equals(Networks.BroadcastDomainType.Vxlan.scheme())) {
+            brName = setVxnetBrName(nic, vNetId);
+        } else {
+            brName = setVnetBrName(nic, vNetId);
+        }
         createVnet(vNetId, nic, brName, protocol);
         return brName;
     }
