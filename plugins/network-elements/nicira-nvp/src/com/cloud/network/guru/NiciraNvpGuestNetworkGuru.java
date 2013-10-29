@@ -18,6 +18,8 @@ package com.cloud.network.guru;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -47,6 +49,7 @@ import com.cloud.network.Network.State;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.NiciraNvpDeviceVO;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
@@ -62,12 +65,19 @@ import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = NetworkGuru.class)
 public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(NiciraNvpGuestNetworkGuru.class);
+
+    /**
+     * The supported networking configs
+     */
+    private static final EnumSet<NetworkType> _supportedNetworkTypes = EnumSet.of(NetworkType.Advanced);
+    private static final EnumSet<GuestType> _supportedGuestTypes = EnumSet.of(GuestType.Isolated);
+    private static final EnumSet<IsolationMethod> _supportedIsolationMethods = EnumSet.of(IsolationMethod.STT);
+    private static final EnumSet<TrafficType> _supportedTrafficTypes = EnumSet.of(TrafficType.Guest);
 
     @Inject
     NetworkModel _networkModel;
@@ -144,7 +154,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     public Network implement(Network network, NetworkOffering offering,
             DeployDestination dest, ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException {
+                    throws InsufficientVirtualNetworkCapcityException {
         assert (network.getState() == State.Implementing) : "Why are we implementing " + network;
 
         long dcId = dest.getDataCenter().getId();
@@ -213,8 +223,8 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     public void reserve(NicProfile nic, Network network,
             VirtualMachineProfile vm,
             DeployDestination dest, ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException {
+                    throws InsufficientVirtualNetworkCapcityException,
+                    InsufficientAddressCapacityException {
         // TODO Auto-generated method stub
         super.reserve(nic, network, vm, dest, context);
     }
@@ -259,4 +269,25 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
         return super.trash(network, offering);
     }
 
+    @Override
+    public List<NetworkType> getSupportedNetworkTypes() {
+        return new ArrayList<NetworkType>(_supportedNetworkTypes);
+    }
+
+    @Override
+    public List<TrafficType> getSupportedTrafficTypes() {
+        return new ArrayList<TrafficType>(_supportedTrafficTypes);
+    }
+
+    @Override
+    public List<GuestType> getSupportedGuestTypes() {
+        return new ArrayList<GuestType>(_supportedGuestTypes);
+    }
+
+    @Override
+    public List<IsolationMethod> getSupportedIsolationMethods() {
+        return new ArrayList<IsolationMethod>(_supportedIsolationMethods);
+    }
+
 }
+

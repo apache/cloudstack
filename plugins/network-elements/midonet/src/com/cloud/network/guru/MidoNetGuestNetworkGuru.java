@@ -19,30 +19,47 @@
 
 package com.cloud.network.guru;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
-import com.cloud.network.*;
+import com.cloud.network.Network;
+import com.cloud.network.Network.GuestType;
+import com.cloud.network.NetworkProfile;
+import com.cloud.network.Networks;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetwork.IsolationMethod;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.vm.*;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.PhysicalNetworkVO;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VirtualMachineProfile;
 
 @Component
 @Local(value = NetworkGuru.class)
 public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(MidoNetGuestNetworkGuru.class);
+
+    private static final EnumSet<NetworkType> _supportedNetworkTypes = EnumSet.of(NetworkType.Advanced);
+    private static final EnumSet<GuestType> _supportedGuestTypes = EnumSet.of(GuestType.Isolated);
+    private static final EnumSet<IsolationMethod> _supportedIsolationMethods = EnumSet.of(IsolationMethod.MIDO);
+    private static final EnumSet<TrafficType> _supportedTrafficTypes = EnumSet.of(TrafficType.Guest);
 
     @Inject
     AccountDao _accountDao;
@@ -54,7 +71,7 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     protected boolean canHandle(NetworkOffering offering, NetworkType networkType,
-                                PhysicalNetwork physicalNetwork) {
+            PhysicalNetwork physicalNetwork) {
         // This guru handles only Guest Isolated network that supports Source nat service
         if (networkType == NetworkType.Advanced
                 && isMyTrafficType(offering.getTrafficType())
@@ -70,7 +87,7 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan,
-                          Network userSpecified, Account owner) {
+            Network userSpecified, Account owner) {
         s_logger.debug("design called");
         // Check if the isolation type of the related physical network is MIDO
         PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
@@ -92,8 +109,8 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public Network implement(Network network, NetworkOffering offering,
-                             DeployDestination dest, ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException {
+            DeployDestination dest, ReservationContext context)
+                    throws InsufficientVirtualNetworkCapcityException {
         assert (network.getState() == Network.State.Implementing) : "Why are we implementing " + network;
         s_logger.debug("implement called network: " + network.toString());
 
@@ -123,8 +140,8 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
         }
 
         String broadcastUriStr = accountUUIDStr + "."
-                                 + String.valueOf(network.getId())
-                                 + ":" + routerName;
+                + String.valueOf(network.getId())
+                + ":" + routerName;
 
         implemented.setBroadcastUri(Networks.BroadcastDomainType.Mido.toUri(broadcastUriStr));
         s_logger.debug("Broadcast URI set to " + broadcastUriStr);
@@ -134,10 +151,10 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public void reserve(NicProfile nic, Network network,
-                        VirtualMachineProfile vm,
-                        DeployDestination dest, ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException {
+            VirtualMachineProfile vm,
+            DeployDestination dest, ReservationContext context)
+                    throws InsufficientVirtualNetworkCapcityException,
+                    InsufficientAddressCapacityException {
         s_logger.debug("reserve called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
 
         super.reserve(nic, network, vm, dest, context);
@@ -145,8 +162,8 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public boolean release(NicProfile nic,
-                           VirtualMachineProfile vm,
-                           String reservationId) {
+            VirtualMachineProfile vm,
+            String reservationId) {
         s_logger.debug("release called with nic: " + nic.toString() + " vm: " + vm.toString());
         return super.release(nic, vm, reservationId);
     }
@@ -164,4 +181,25 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
 
         return super.trash(network, offering);
     }
+
+    @Override
+    public List<NetworkType> getSupportedNetworkTypes() {
+        return new ArrayList<NetworkType>(_supportedNetworkTypes);
+    }
+
+    @Override
+    public List<TrafficType> getSupportedTrafficTypes() {
+        return new ArrayList<TrafficType>(_supportedTrafficTypes);
+    }
+
+    @Override
+    public List<GuestType> getSupportedGuestTypes() {
+        return new ArrayList<GuestType>(_supportedGuestTypes);
+    }
+
+    @Override
+    public List<IsolationMethod> getSupportedIsolationMethods() {
+        return new ArrayList<IsolationMethod>(_supportedIsolationMethods);
+    }
+
 }

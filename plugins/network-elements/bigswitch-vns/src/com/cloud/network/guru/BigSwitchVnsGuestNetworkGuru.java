@@ -21,6 +21,8 @@ package com.cloud.network.guru;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -48,6 +50,7 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.dao.BigSwitchVnsDao;
@@ -66,6 +69,14 @@ import com.cloud.vm.VirtualMachineProfile;
 @Local(value = NetworkGuru.class)
 public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(BigSwitchVnsGuestNetworkGuru.class);
+
+    /**
+     * The supported networking configs
+     */
+    private static final EnumSet<NetworkType> _supportedNetworkTypes = EnumSet.of(NetworkType.Advanced);
+    private static final EnumSet<GuestType> _supportedGuestTypes = EnumSet.of(GuestType.Isolated);
+    private static final EnumSet<IsolationMethod> _supportedIsolationMethods = EnumSet.of(IsolationMethod.VNS);
+    private static final EnumSet<TrafficType> _supportedTrafficTypes = EnumSet.of(TrafficType.Guest);
 
     @Inject
     DataCenterDao _zoneDao;
@@ -91,7 +102,7 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     protected boolean canHandle(NetworkOffering offering, NetworkType networkType,
-                                PhysicalNetwork physicalNetwork) {
+            PhysicalNetwork physicalNetwork) {
         if (networkType == NetworkType.Advanced
                 && isMyTrafficType(offering.getTrafficType())
                 && offering.getGuestType() == Network.GuestType.Isolated
@@ -99,7 +110,7 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
             return true;
         } else {
             s_logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated +
-                        " in zone of type " + NetworkType.Advanced);
+                    " in zone of type " + NetworkType.Advanced);
             return false;
         }
     }
@@ -107,11 +118,11 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan,
             Network userSpecified, Account owner) {
-         // Check of the isolation type of the related physical network is VNS
+        // Check of the isolation type of the related physical network is VNS
         PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
         if (physnet == null ||
-                        physnet.getIsolationMethods() == null ||
-                        !physnet.getIsolationMethods().contains("VNS")) {
+                physnet.getIsolationMethods() == null ||
+                !physnet.getIsolationMethods().contains("VNS")) {
             s_logger.debug("Refusing to design this network, the physical isolation type is not VNS");
             return null;
         }
@@ -122,7 +133,7 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
             return null;
         }
         s_logger.debug("BigSwitch Controller " + devices.get(0).getUuid() +
-                        " found on physical network " + physnet.getId());
+                " found on physical network " + physnet.getId());
 
         s_logger.debug("Physical isolation type is VNS, asking GuestNetworkGuru to design this network");
         NetworkVO networkObject = (NetworkVO) super.design(offering, plan, userSpecified, owner);
@@ -138,18 +149,18 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     public Network implement(Network network, NetworkOffering offering,
             DeployDestination dest, ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException {
+                    throws InsufficientVirtualNetworkCapcityException {
         assert (network.getState() == State.Implementing) : "Why are we implementing " + network;
 
         long dcId = dest.getDataCenter().getId();
 
         //get physical network id
         long physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId,
-                                                        offering.getTags(),
-                                                        offering.getTrafficType());
+                offering.getTags(),
+                offering.getTrafficType());
 
         NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(),
-                        network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
+                network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
                 network.getDataCenterId(), physicalNetworkId);
 
         if (network.getGateway() != null) {
@@ -163,10 +174,10 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
         String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), context.getReservationId(), UseSystemGuestVlans.valueIn(network.getAccountId()));
         if (vnet == null) {
             throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a " +
-                        "part of network " + network + " implement ", DataCenter.class, dcId);
+                    "part of network " + network + " implement ", DataCenter.class, dcId);
         }
         // when supporting more types of networks this need to become
-//        int vlan = Integer.parseInt(BroadcastDomainType.getValue(vnet));
+        //        int vlan = Integer.parseInt(BroadcastDomainType.getValue(vnet));
         int vlan = Integer.parseInt(vnet);
 
         // Name is either the given name or the uuid
@@ -201,7 +212,7 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
             implemented.setBroadcastUri(new URI("vns", cmd.getNetworkUuid(), null));
             implemented.setBroadcastDomainType(BroadcastDomainType.Lswitch);
             s_logger.info("Implemented OK, network " + networkUuid + " in tenant " +
-                        tenantId + " linked to " + implemented.getBroadcastUri().toString());
+                    tenantId + " linked to " + implemented.getBroadcastUri().toString());
         } catch (URISyntaxException e) {
             s_logger.error("Unable to store network id in broadcast uri, uuid = " + implemented.getUuid(), e);
         }
@@ -213,8 +224,8 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
     public void reserve(NicProfile nic, Network network,
             VirtualMachineProfile vm,
             DeployDestination dest, ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException {
+                    throws InsufficientVirtualNetworkCapcityException,
+                    InsufficientAddressCapacityException {
         // TODO Auto-generated method stub
         super.reserve(nic, network, vm, dest, context);
     }
@@ -256,5 +267,25 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     public boolean trash(Network network, NetworkOffering offering) {
         return super.trash(network, offering);
+    }
+
+    @Override
+    public List<NetworkType> getSupportedNetworkTypes() {
+        return new ArrayList<NetworkType>(_supportedNetworkTypes);
+    }
+
+    @Override
+    public List<TrafficType> getSupportedTrafficTypes() {
+        return new ArrayList<TrafficType>(_supportedTrafficTypes);
+    }
+
+    @Override
+    public List<GuestType> getSupportedGuestTypes() {
+        return new ArrayList<GuestType>(_supportedGuestTypes);
+    }
+
+    @Override
+    public List<IsolationMethod> getSupportedIsolationMethods() {
+        return new ArrayList<IsolationMethod>(_supportedIsolationMethods);
     }
 }
