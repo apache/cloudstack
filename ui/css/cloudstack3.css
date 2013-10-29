@@ -234,7 +234,7 @@ table tbody tr {
 }
 
 table tbody tr.even {
-  background: #DFE1E3;
+  background: #FFFFFF;
 }
 
 table tbody tr.odd {
@@ -2283,7 +2283,6 @@ div.detail-group.actions td {
   position: relative;
   top: 6px;
   left: 7px;
-  font-weight: 100;
 }
 
 #header div.notifications:hover {
@@ -2347,7 +2346,6 @@ div.detail-group.actions td {
   text-align: center;
   height: 12px;
   overflow: hidden;
-  font-weight: normal;
   /*+text-shadow:0px -1px 1px #464646;*/
   -moz-text-shadow: 0px -1px 1px #464646;
   -webkit-text-shadow: 0px -1px 1px #464646;
@@ -2878,7 +2876,7 @@ div.toolbar div.button.main-action,
   position: relative;
   left: 0px;
   top: 5px;
-  background: url(../images/gradients.png) 0px -98px;
+  background: #EAEAEA;
   font-size: 12px;
   font-weight: 100;
   color: #000000;
@@ -2890,8 +2888,17 @@ div.toolbar div.button.main-action,
   -o-text-shadow: 0px 1px 1px #DEE5EA;
   text-shadow: 0px 1px 1px #DEE5EA;
   padding: 5px 7px 5px 6px;
-  border-left: 1px solid #808080;
-  border-right: 1px solid #808080;
+  background: #F7F7F7;
+  background: rgb(247, 247, 247);
+  background: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/Pgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEgMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSI+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJncmFkLXVjZ2ctZ2VuZXJhdGVkIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIwJSIgeTI9IjEwMCUiPgogICAgPHN0b3Agb2Zmc2V0PSIxJSIgc3RvcC1jb2xvcj0iI2Y3ZjdmNyIgc3RvcC1vcGFjaXR5PSIxIi8+CiAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNlYWVhZWEiIHN0b3Atb3BhY2l0eT0iMSIvPgogIDwvbGluZWFyR3JhZGllbnQ+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0idXJsKCNncmFkLXVjZ2ctZ2VuZXJhdGVkKSIgLz4KPC9zdmc+);
+  background: -moz-linear-gradient(top, rgba(247,247,247,1) 1%, rgba(234,234,234,1) 100%);
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(1%,rgba(247,247,247,1)), color-stop(100%,rgba(234,234,234,1)));
+  background: -webkit-linear-gradient(top, rgba(247,247,247,1) 1%,rgba(234,234,234,1) 100%);
+  background: -o-linear-gradient(top, rgba(247,247,247,1) 1%,rgba(234,234,234,1) 100%);
+  background: -ms-linear-gradient(top, rgba(247,247,247,1) 1%,rgba(234,234,234,1) 100%);
+  background: linear-gradient(to bottom, rgba(247,247,247,1) 1%,rgba(234,234,234,1) 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f7f7f7', endColorstr='#eaeaea',GradientType=0 );
+  border: 1px solid #B7B7B7;
   float: right;
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
@@ -2907,8 +2914,12 @@ div.toolbar div.button.refresh:hover,
 div.toolbar div.button.main-action:hover,
 .toolbar div.button.header-action:hover,
 .detail-group .button.add:hover {
-  background-position: 0 -132px;
-  border-left: 1px solid #585D60;
+  background: #E5E5E5;
+  /*+box-shadow:inset 0px 0px 5px #C3C3C3;*/
+  -moz-box-shadow: inset 0px 0px 5px #C3C3C3;
+  -webkit-box-shadow: inset 0px 0px 5px #C3C3C3;
+  -o-box-shadow: inset 0px 0px 5px #C3C3C3;
+  box-shadow: inset 0px 0px 5px #C3C3C3;
 }
 
 div.toolbar div.button.main-action span.icon {
@@ -4052,8 +4063,16 @@ Dialogs*/
   -webkit-text-shadow: 0px 1px 0px #333E49;
   -o-text-shadow: 0px 1px 0px #333E49;
   padding: 3px 8px 3px 10px;
-  background: #E7E7E7;
-  border: 1px solid #383838;
+  background: rgb(234, 234, 234);
+  background: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/Pgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEgMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSI+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJncmFkLXVjZ2ctZ2VuZXJhdGVkIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIwJSIgeTI9IjEwMCUiPgogICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2VhZWFlYSIgc3RvcC1vcGFjaXR5PSIxIi8+CiAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNkNmQ2ZDYiIHN0b3Atb3BhY2l0eT0iMSIvPgogIDwvbGluZWFyR3JhZGllbnQ+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0idXJsKCNncmFkLXVjZ2ctZ2VuZXJhdGVkKSIgLz4KPC9zdmc+);
+  background: -moz-linear-gradient(top, rgba(234,234,234,1) 0%, rgba(214,214,214,1) 100%);
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(234,234,234,1)), color-stop(100%,rgba(214,214,214,1)));
+  background: -webkit-linear-gradient(top, rgba(234,234,234,1) 0%,rgba(214,214,214,1) 100%);
+  background: -o-linear-gradient(top, rgba(234,234,234,1) 0%,rgba(214,214,214,1) 100%);
+  background: -ms-linear-gradient(top, rgba(234,234,234,1) 0%,rgba(214,214,214,1) 100%);
+  background: linear-gradient(to bottom, rgba(234,234,234,1) 0%,rgba(214,214,214,1) 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#eaeaea', endColorstr='#d6d6d6',GradientType=0 );
+  border: 1px solid #9D9D9D;
   /*+border-radius:3px;*/
   -moz-border-radius: 3px;
   -webkit-border-radius: 3px;
@@ -4092,7 +4111,7 @@ Dialogs*/
 }
 
 .dashboard.admin .dashboard-container .top {
-  background: #E2E2E2;
+  background: #EFEFEF 0px -4px;
   padding: 4px 4px 8px;
   width: 100%;
   float: left;
@@ -9086,6 +9105,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   text-shadow: 0px -1px 1px #373737;
   background: #515151;
   font-size: 15px;
+  font-weight: 100;
   color: #FFFFFF;
 }
 
