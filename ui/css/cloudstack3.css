@@ -3282,14 +3282,13 @@ div.toolbar div.filters select {
 }
 
 #breadcrumbs div.home {
-  width: 41px;
-  height: 32px;
+  width: 71px;
+  height: 23px;
   float: left;
-  background: url(../images/buttons.png) -9px -96px;
-  /*+placement:shift -1px -1px;*/
+  /*+placement:shift -1px 0px;*/
   position: relative;
   left: -1px;
-  top: -1px;
+  top: 0px;
   cursor: pointer;
   z-index: 5;
 }
@@ -3303,7 +3302,8 @@ div.toolbar div.filters select {
 }
 
 #breadcrumbs ul li,
-#breadcrumbs div.active-project {
+#breadcrumbs div.active-project,
+#breadcrumbs .home {
   height: 21px;
   float: left;
   font-size: 11px;
@@ -3318,7 +3318,8 @@ div.toolbar div.filters select {
   margin: 0 0 0 2px;
 }
 
-#breadcrumbs ul li:after {
+#breadcrumbs ul li:after,
+#breadcrumbs .home:after {
   content: ">";
   font-size: 11px;
   /*+placement:shift 7px -1px;*/
@@ -3333,7 +3334,8 @@ div.toolbar div.filters select {
 }
 
 #breadcrumbs ul li,
-#breadcrumbs div.active-project {
+#breadcrumbs div.active-project,
+#breadcrumbs .home {
   /*+placement:shift 0px 0px;*/
   position: relative;
   left: 0px;
@@ -3347,17 +3349,8 @@ div.toolbar div.filters select {
   color: #000000;
 }
 
+/*NOTE: End divs are not displayed per UI changes*/
 #breadcrumbs div.end {
-  background: url(../images/buttons.png) no-repeat -10px -130px;
-  height: 35px;
-  width: 13px;
-  float: left;
-  /*+placement:shift -13px -1px;*/
-  position: relative;
-  left: -13px;
-  top: -1px;
-  z-index: 5;
-  margin-right: 23px;
 }
 
 #breadcrumbs ul div.end {
