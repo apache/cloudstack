@@ -211,8 +211,14 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         if (vols != null) {
             s_logger.info("Duplicate " + vols.size() + " volume cache store records to region store");
             for (VolumeDataStoreVO vol : vols) {
+                VolumeDataStoreVO volStore = findByStoreVolume(storeId, vol.getVolumeId());
+                if (volStore != null) {
+                    s_logger.info("There is already entry for volume " + vol.getVolumeId() + " on region store " + storeId);
+                    continue;
+                }
+                s_logger.info("Persisting an entry for volume " + vol.getVolumeId() + " on region store " + storeId);
                 VolumeDataStoreVO vs = new VolumeDataStoreVO();
-                vs.setVolumeId(vol.getId());
+                vs.setVolumeId(vol.getVolumeId());
                 vs.setDataStoreId(storeId);
                 vs.setState(vol.getState());
                 vs.setDownloadPercent(vol.getDownloadPercent());
@@ -220,8 +226,11 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
                 vs.setSize(vol.getSize());
                 vs.setPhysicalSize(vol.getPhysicalSize());
                 vs.setErrorString(vol.getErrorString());
-                vs.setRefCnt(vol.getRefCnt() + 1); // increase ref_cnt so that this will not be recycled before the content is pushed to region-wide store
+                vs.setRefCnt(vol.getRefCnt());
                 persist(vs);
+                // increase ref_cnt so that this will not be recycled before the content is pushed to region-wide store
+                vol.incrRefCnt();
+                this.update(vol.getId(), vol);
             }
         }
 

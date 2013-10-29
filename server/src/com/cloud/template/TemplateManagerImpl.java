@@ -31,6 +31,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
@@ -51,7 +52,6 @@ import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -176,7 +176,6 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -484,9 +483,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // Handle NFS to S3 object store migration case, we trigger template sync from NFS to S3 during extract template or copy template
         _tmpltSvr.syncTemplateToRegionStore(templateId, tmpltStore);
 
-        DataObject templateObject = _tmplFactory.getTemplate(templateId, tmpltStore);
+        TemplateInfo templateObject = _tmplFactory.getTemplate(templateId, tmpltStore);
 
-        return tmpltStore.createEntityExtractUrl(tmpltStoreRef.getInstallPath(), template.getFormat(), templateObject);
+        return tmpltStore.createEntityExtractUrl(templateObject.getInstallPath(), template.getFormat(), templateObject);
     }
 
     public void prepareTemplateInAllStoragePools(final VMTemplateVO template, long zoneId) {
@@ -1292,7 +1291,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Account owner = _accountMgr.getAccount(ownerId);
         final Domain domain = _domainDao.findById(owner.getDomainId());
         if ("add".equalsIgnoreCase(operation)) {
-            final List<String> accountNamesFinal = accountNames; 
+            final List<String> accountNamesFinal = accountNames;
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {

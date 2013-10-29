@@ -616,7 +616,12 @@ public class TemplateServiceImpl implements TemplateService {
     private AsyncCallFuture<TemplateApiResult> syncToRegionStoreAsync(TemplateInfo template, DataStore store) {
         AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
         // no need to create entry on template_store_ref here, since entries are already created when prepareSecondaryStorageForMigration is invoked.
+        // But we need to set default install path so that sync can be done in the right s3 path
         TemplateInfo templateOnStore = _templateFactory.getTemplate(template, store);
+        String installPath = TemplateConstants.DEFAULT_TMPLT_ROOT_DIR + "/"
+                + TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR
+                + template.getAccountId() + "/" + template.getId() + "/" + template.getUniqueName();
+        ((TemplateObject)templateOnStore).setInstallPath(installPath);
         TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(null,
                 (TemplateObject)templateOnStore, future);
         AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
@@ -649,11 +654,18 @@ public class TemplateServiceImpl implements TemplateService {
         return null;
     }
 
+    private boolean isRegionStore(DataStore store) {
+        if (store.getScope().getScopeType() == ScopeType.ZONE && store.getScope().getScopeId() == null)
+            return true;
+        else
+            return false;
+    }
+
     // This routine is used to push templates currently on cache store, but not in region store to region store.
     // used in migrating existing NFS secondary storage to S3.
     @Override
     public void syncTemplateToRegionStore(long templateId, DataStore store) {
-        if (store.getScope().getScopeType() == ScopeType.REGION) {
+        if (isRegionStore(store)) {
             // if template is on region wide object store, check if it is really downloaded there (by checking install_path). Sync template to region
             // wide store if it is not there physically.
             TemplateInfo tmplOnStore = _templateFactory.getTemplate(templateId, store);

@@ -258,8 +258,14 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         if (snapshots != null) {
             s_logger.info("Duplicate " + snapshots.size() + " snapshot cache store records to region store");
             for (SnapshotDataStoreVO snap : snapshots) {
+                SnapshotDataStoreVO snapStore = findByStoreSnapshot(DataStoreRole.Image, storeId, snap.getSnapshotId());
+                if (snapStore != null) {
+                    s_logger.info("There is already entry for snapshot " + snap.getSnapshotId() + " on region store " + storeId);
+                    continue;
+                }
+                s_logger.info("Persisting an entry for snapshot " + snap.getSnapshotId() + " on region store " + storeId);
                 SnapshotDataStoreVO ss = new SnapshotDataStoreVO();
-                ss.setSnapshotId(snap.getId());
+                ss.setSnapshotId(snap.getSnapshotId());
                 ss.setDataStoreId(storeId);
                 ss.setRole(DataStoreRole.Image);
                 ss.setVolumeId(snap.getVolumeId());
@@ -267,8 +273,11 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
                 ss.setState(snap.getState());
                 ss.setSize(snap.getSize());
                 ss.setPhysicalSize(snap.getPhysicalSize());
-                ss.setRefCnt(snap.getRefCnt() + 1); // increase ref_cnt so that this will not be recycled before the content is pushed to region-wide store
+                ss.setRefCnt(snap.getRefCnt());
                 persist(ss);
+                // increase ref_cnt so that this will not be recycled before the content is pushed to region-wide store
+                snap.incrRefCnt();
+                update(snap.getId(), snap);
             }
         }
 

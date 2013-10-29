@@ -40,6 +40,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -380,10 +381,25 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         sc.setParameters("store_role", DataStoreRole.ImageCache);
         sc.setParameters("destroyed", false);
         List<TemplateDataStoreVO> tmpls = listBy(sc);
-        // create an entry for each record, but with empty install path since the content is not yet on region-wide store yet
+        // create an entry for each template record, but with empty install path since the content is not yet on region-wide store yet
         if (tmpls != null) {
             s_logger.info("Duplicate " + tmpls.size() + " template cache store records to region store");
             for (TemplateDataStoreVO tmpl : tmpls) {
+                long templateId = tmpl.getTemplateId();
+                VMTemplateVO template = _tmpltDao.findById(templateId);
+                if (template == null) {
+                    throw new CloudRuntimeException("No template is found for template id: " + templateId);
+                }
+                if (template.getTemplateType() == TemplateType.SYSTEM) {
+                    s_logger.info("No need to duplicate system template since it will be automatically downloaded while adding region store");
+                    continue;
+                }
+                TemplateDataStoreVO tmpStore = findByStoreTemplate(storeId, tmpl.getTemplateId());
+                if (tmpStore != null) {
+                    s_logger.info("There is already entry for template " + tmpl.getTemplateId() + " on region store " + storeId);
+                    continue;
+                }
+                s_logger.info("Persisting an entry for template " + tmpl.getTemplateId() + " on region store " + storeId);
                 TemplateDataStoreVO ts = new TemplateDataStoreVO();
                 ts.setTemplateId(tmpl.getTemplateId());
                 ts.setDataStoreId(storeId);
@@ -395,17 +411,12 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
                 ts.setPhysicalSize(tmpl.getPhysicalSize());
                 ts.setErrorString(tmpl.getErrorString());
                 ts.setDownloadUrl(tmpl.getDownloadUrl());
-                ts.setRefCnt(tmpl.getRefCnt() + 1); // increase ref_cnt so that this will not be recycled before the content is pushed to region-wide store
+                ts.setRefCnt(tmpl.getRefCnt());
                 persist(ts);
-            }
+                // increase ref_cnt of cache store entry so that this will not be recycled before the content is pushed to region-wide store
+                tmpl.incrRefCnt();
+                this.update(tmpl.getId(), tmpl);
 
-            // mark template as cross-zones and add template_zone association
-            for (TemplateDataStoreVO tmpl : tmpls) {
-                long templateId = tmpl.getTemplateId();
-                VMTemplateVO template = _tmpltDao.findById(templateId);
-                if (template == null) {
-                    throw new CloudRuntimeException("No template is found for template id: " + templateId);
-                }
                 // mark the template as cross-zones
                 template.setCrossZones(true);
                 _tmpltDao.update(templateId, template);
