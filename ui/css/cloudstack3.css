@@ -2219,14 +2219,18 @@ div.detail-group.actions td {
   height: 47px;
   margin: auto;
   background: url(../images/logo.png) no-repeat 0 center;
+  /*+placement:shift 0px 2px;*/
+  position: relative;
+  left: 0px;
+  top: 2px;
 }
 
 #header div.controls {
   width: 1024px;
   height: 48px;
   position: relative;
-  margin: 8px auto;
-  padding-top: 14px;
+  margin: 9px auto 8px;
+  padding-top: 13px;
   /*+border-radius:4px 4px 0 0;*/
   -moz-border-radius: 4px 4px 0 0;
   -webkit-border-radius: 4px 4px 0 0;
@@ -2259,16 +2263,28 @@ div.detail-group.actions td {
 
 #header div.notifications {
   background: transparent;
+  float: right;
   height: 18px;
   padding: 1px 0 0;
-  margin: 8px 36px 0 29px;
+  /*+placement:shift -174px -54px;*/
+  position: relative;
+  left: -174px;
+  top: -54px;
+}
+
+#header div.notifications:after {
+  content: "|";
+  /*+placement:shift 28px 7px;*/
+  position: relative;
+  left: 28px;
+  top: 7px;
 }
 
 #header div.notifications span {
   position: relative;
   top: 6px;
   left: 7px;
-  font-weight: bold;
+  font-weight: 100;
 }
 
 #header div.notifications:hover {
@@ -2332,7 +2348,7 @@ div.detail-group.actions td {
   text-align: center;
   height: 12px;
   overflow: hidden;
-  font-weight: bold;
+  font-weight: normal;
   /*+text-shadow:0px -1px 1px #464646;*/
   -moz-text-shadow: 0px -1px 1px #464646;
   -webkit-text-shadow: 0px -1px 1px #464646;
@@ -9043,7 +9059,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 .project-switcher {
   float: left;
   width: 223px;
-  padding: 9px 17px 0 0;
+  padding: 9px 17px 0 19px;
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
@@ -11556,24 +11572,19 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .region-switcher {
   display: inline-block;
   position: relative;
-  background: url(../images/bg-gradients.png) repeat-x 0px -867px;
-  border: 1px solid #5E5E5E;
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
   border-radius: 4px;
-  border-top: 1px solid #717171;
-  border-bottom: 1px solid #FFFFFF;
   height: 28px;
   float: left;
   margin: 5px 13px 0 0;
   cursor: pointer;
-  /*+box-shadow:inset 0px 1px 1px #000000;*/
-  -moz-box-shadow: inset 0px 1px 1px #000000;
-  -webkit-box-shadow: inset 0px 1px 1px #000000;
-  -o-box-shadow: inset 0px 1px 1px #000000;
-  box-shadow: inset 0px 1px 1px #000000;
+  /*+placement:shift 27px 1px;*/
+  position: relative;
+  left: 27px;
+  top: 1px;
 }
 
 .region-selector {
@@ -11711,8 +11722,11 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   font-weight: bold;
   max-width: 67px;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  /*+placement:shift -1px 0px;*/
+  position: relative;
+  left: -1px;
+  top: 0px;
 }
 
 .region-switcher:hover,
