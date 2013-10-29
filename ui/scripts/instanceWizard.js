@@ -290,6 +290,7 @@
                     success: function(json) {
                         serviceOfferingObjs = json.listserviceofferingsresponse.serviceoffering;
                         args.response.success({
+                            customFlag: 'iscustomized',
                             data: {
                                 serviceOfferings: serviceOfferingObjs
                             }

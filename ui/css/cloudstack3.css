@@ -5910,7 +5910,7 @@ label.error {
 
 .multi-wizard.instance-wizard .section.custom-size {
   position: relative;
-  background: #FFFFFF;
+  background: #F4F4F4;
   padding: 7px;
   border-radius: 4px;
 }
@@ -5930,6 +5930,37 @@ label.error {
   top: 29px;
   left: 242px;
   font-size: 10px;
+}
+
+/*** Compute offering*/
+.instance-wizard .step.service-offering {
+}
+
+.instance-wizard .step.service-offering.custom-size .select-container {
+  height: 235px;
+}
+
+.instance-wizard .step.service-offering .custom-size {
+  display: none;
+}
+
+.instance-wizard .step.service-offering.custom-size .custom-size {
+  display: block;
+}
+
+.instance-wizard .step.service-offering .custom-size .field {
+  width: 30%;
+  float: left;
+  margin-bottom: 13px;
+}
+
+.instance-wizard .step.service-offering .custom-size .field label {
+  text-indent: 20px;
+}
+
+.instance-wizard .step.service-offering .custom-size .field input {
+  width: 88%;
+  margin-left: 26px;
 }
 
 /*** Network*/

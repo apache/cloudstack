@@ -424,7 +424,27 @@
                                         }, {
                                             'wizard-field': 'service-offering'
                                         })
-                                    );
+                                    );                                    
+
+                                    $step.find('input[type=radio]').bind('change', function() {
+                                        var $target = $(this);
+                                        var val = $target.val();
+                                        var item = $.grep(args.data.serviceOfferings, function(elem) {
+                                            return elem.id == val;
+                                        })[0];
+
+                                        if (!item) return true;
+
+                                        var custom = item[args.customFlag];
+
+                                        if (custom) {
+                                            $step.addClass('custom-size');
+                                        } else {
+                                            $step.removeClass('custom-size');
+                                        }
+
+                                        return true;
+                                    });
 
                                     originalValues(formData);
                                 }

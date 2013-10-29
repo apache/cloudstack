@@ -1,3 +1,4 @@
+
 <%--
      Licensed to the Apache Software Foundation (ASF) under one
      or more contributor license agreements.  See the NOTICE file
@@ -209,6 +210,21 @@
                         <div class="step service-offering" wizard-step-id="service-offering">
                             <div class="content">
                                 <div class="select-container">
+                                </div>
+                                <!-- Custom size slider -->
+                                <div class="section custom-size">
+                                    <div class="field">
+                                        <label><fmt:message key="label.num.cpu.cores"/></label>
+                                        <input type="text" name="compute-cpu-cores" />
+                                    </div>
+                                    <div class="field">
+                                        <label><fmt:message key="label.cpu.mhz"/></label>
+                                        <input type="text" name="compute-cpu" />
+                                    </div>
+                                    <div class="field">
+                                        <label><fmt:message key="label.memory.mb"/></label>
+                                        <input type="text" name="compute-memory" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
