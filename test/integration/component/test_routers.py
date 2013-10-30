@@ -1110,7 +1110,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         self.cleanup = []
         return
 
-    @attr(tags = ["advanced", "advancedns","test"])
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_RouterStopCreateFW(self):
         """Test router stop create Firewall rule
         """
