@@ -22,7 +22,6 @@ chmod a+x ./DotNet/ServerResource/.nuget/NuGet.exe
 if [ "$1" ==  "true" ] ; then
   echo " skipping tests"
   xbuild /p:Configuration="NoUnitTests" /p:BuildWithMono="true" ./DotNet/ServerResource/ServerResource.sln
-  
 else
   echo " running tests "
   xbuild /p:BuildWithMono="true" ./DotNet/ServerResource/ServerResource.sln
