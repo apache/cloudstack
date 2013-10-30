@@ -27,16 +27,16 @@ import os
 import sys
 import subprocess
 import time
+from optparse import OptionParser, OptionGroup, OptParseError, BadOptionError, OptionError, OptionConflictError, OptionValueError
 
 from time import localtime as _localtime, asctime as _asctime
-
-lib.setup_logging("/var/log/ovstunnel.log")
 
 def setup_ovs_bridge(bridge, key, cs_host_id):
 
     res = lib.check_switch()
     if res != "SUCCESS":
-        return "FAILURE:%s" % res
+        #return "FAILURE:%s" % res
+	return 'false'
 
     logging.debug("About to manually create the bridge:%s" % bridge)
     #set gre_key to bridge
@@ -44,15 +44,18 @@ def setup_ovs_bridge(bridge, key, cs_host_id):
                                      "other_config:gre_key=%s" % key])
     logging.debug("Bridge has been manually created:%s" % res)
     if res:
-        result = "FAILURE:%s" % res
+#        result = "FAILURE:%s" % res
+	result = 'false'
     else:
         # Verify the bridge actually exists, with the gre_key properly set
         res = lib.do_cmd([lib.VSCTL_PATH, "get", "bridge",
                                           bridge, "other_config:gre_key"])
         if key in res:
-            result = "SUCCESS:%s" % bridge
+#            result = "SUCCESS:%s" % bridge
+            result = 'true'
         else:
-            result = "FAILURE:%s" % res
+#            result = "FAILURE:%s" % res
+            result = 'false'
 
 	lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge, "other_config:is-ovs-tun-network=True"])
 	#get list of hosts using this bridge
@@ -69,29 +72,34 @@ def destroy_ovs_bridge(bridge):
 
     res = lib.check_switch()
     if res != "SUCCESS":
-        return res
+#        return res
+        return 'false'
+
     res = lib.do_cmd([lib.VSCTL_PATH, "del-br", bridge])
     logging.debug("Bridge has been manually removed:%s" % res)
     if res:
-        result = "FAILURE:%s" % res
+#        result = "FAILURE:%s" % res
+        result = 'false'
     else:
-        result = "SUCCESS:%s" % bridge
+#        result = "SUCCESS:%s" % bridge
+        result = 'true'
 
     logging.debug("Destroy_ovs_bridge completed with result:%s" % result)
     return result
 
-def create_tunnel(bridge, remote_ip, gre_key, src_host, dst_host):
+def create_tunnel(bridge, remote_ip, key, src_host, dst_host):
 
     logging.debug("Entering create_tunnel")
 
     res = lib.check_switch()
     if res != "SUCCESS":
         logging.debug("Openvswitch running: NO")
-        return "FAILURE:%s" % res
+#        return "FAILURE:%s" % res
+        return 'false'
 
     # We need to keep the name below 14 characters
     # src and target are enough - consider a fixed length hash
-    name = "t%s-%s-%s" % (gre_key, src_host, dst_host)
+    name = "t%s-%s-%s" % (key, src_host, dst_host)
 
     # Verify the bridge to be created
     # NOTE: Timeout should not be necessary anymore
@@ -101,7 +109,9 @@ def create_tunnel(bridge, remote_ip, gre_key, src_host, dst_host):
     if bridge not in res:
         logging.debug("WARNING:Can't find bridge %s for creating " +
                                   "tunnel!" % bridge)
-        return "FAILURE:NO_BRIDGE"
+#        return "FAILURE:NO_BRIDGE"
+        return 'false'
+
     logging.debug("bridge %s for creating tunnel - VERIFIED" % bridge)
     tunnel_setup = False
     drop_flow_setup = False
@@ -109,7 +119,7 @@ def create_tunnel(bridge, remote_ip, gre_key, src_host, dst_host):
         # Create a port and configure the tunnel interface for it
         add_tunnel = [lib.VSCTL_PATH, "add-port", bridge,
                                   name, "--", "set", "interface",
-                                  name, "type=gre", "options:key=%s" % gre_key,
+                                  name, "type=gre", "options:key=%s" % key,
                                   "options:remote_ip=%s" % remote_ip]
         lib.do_cmd(add_tunnel)
         tunnel_setup = True
@@ -123,7 +133,8 @@ def create_tunnel(bridge, remote_ip, gre_key, src_host, dst_host):
         if len(iface_list) != 1:
             logging.debug("WARNING: Unexpected output while verifying " +
                                       "port %s on bridge %s" % (name, bridge))
-            return "FAILURE:VERIFY_PORT_FAILED"
+#            return "FAILURE:VERIFY_PORT_FAILED"
+            return 'false'
 
         # verify interface
         iface_uuid = iface_list[0]
@@ -135,10 +146,12 @@ def create_tunnel(bridge, remote_ip, gre_key, src_host, dst_host):
         key_validation = lib.do_cmd(verify_interface_key)
         ip_validation = lib.do_cmd(verify_interface_ip)
 
-        if not gre_key in key_validation or not remote_ip in ip_validation:
+        if not key in key_validation or not remote_ip in ip_validation:
             logging.debug("WARNING: Unexpected output while verifying " +
                           "interface %s on bridge %s" % (name, bridge))
-            return "FAILURE:VERIFY_INTERFACE_FAILED"
+#            return "FAILURE:VERIFY_INTERFACE_FAILED"
+            return 'false'
+
         logging.debug("Tunnel interface validated:%s" % verify_interface_ip)
         cmd_tun_ofport = [lib.VSCTL_PATH, "get", "interface",
                                           iface_uuid, "ofport"]
@@ -153,7 +166,8 @@ def create_tunnel(bridge, remote_ip, gre_key, src_host, dst_host):
                      nw_dst='224.0.0.0/24', actions='drop')
         drop_flow_setup = True
         logging.debug("Broadcast drop rules added")
-        return "SUCCESS:%s" % name
+#        return "SUCCESS:%s" % name
+        return 'true'
     except:
         logging.debug("An unexpected error occured. Rolling back")
         if tunnel_setup:
@@ -174,9 +188,38 @@ def destroy_tunnel(bridge, iface_name):
     ofport = get_field_of_interface(iface_name, "ofport")
     lib.del_flows(bridge, in_port=ofport)
     lib.del_port(bridge, iface_name)
-    return "SUCCESS"
+#    return "SUCCESS"
+    return 'true'
 
 def get_field_of_interface(iface_name, field):
     get_iface_cmd = [lib.VSCTL_PATH, "get", "interface", iface_name, field]
     res = lib.do_cmd(get_iface_cmd)
     return res
+
+if __name__ == '__main__':
+    logging.basicConfig(filename="/var/log/cloudstack/agent/ovstunnel.log", format="%(asctime)s - %(message)s", level=logging.DEBUG)
+    parser = OptionParser()
+    parser.add_option("--key", dest="key")
+    parser.add_option("--cs_host_id", dest="cs_host_id")
+    parser.add_option("--bridge", dest="bridge")
+    parser.add_option("--remote_ip", dest="remote_ip")
+    parser.add_option("--src_host", dest="src_host")
+    parser.add_option("--dst_host", dest="dst_host")
+    parser.add_option("--iface_name", dest="iface_name")
+    (option, args) = parser.parse_args()
+    if len(args) == 0:
+        logging.debug("No command to execute")
+        sys.exit(1)
+    cmd = args[0]
+    if cmd == "setup_ovs_bridge":
+        setup_ovs_bridge(option.bridge, option.key, option.cs_host_id)
+    elif cmd == "destroy_ovs_bridge":
+        destroy_ovs_bridge(option.bridge)
+    elif cmd == "create_tunnel":
+        create_tunnel(option.bridge, option.remote_ip, option.key, option.src_host, option.dst_host)
+    elif cmd == "destroy_tunnel":
+        destroy_tunnel(option.bridge, option.iface_name)
+    else:
+        logging.debug("Unknown command: " + cmd)
+        sys.exit(1)
+

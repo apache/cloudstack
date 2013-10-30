@@ -1344,14 +1344,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			cmd.add("destroy_ovs_bridge");
 			cmd.add("--bridge", bridge);
 			String result = cmd.execute();
-			String[] res = result.split(":");
-			if (res.length != 2 || !res[0].equalsIgnoreCase("SUCCESS")) {
+			if (result != null) {
 				// TODO: Should make this error not fatal?
 				// Can Concurrent VM shutdown/migration/reboot events can cause
 				// this method
 				// to be executed on a bridge which has already been removed?
-				throw new CloudRuntimeException("Unable to remove OVS bridge "
-						+ bridge + ":" + res);
+				throw new CloudRuntimeException("Unable to remove OVS bridge " + bridge);
 			}
 			return;
 		} catch (Exception e) {
@@ -1360,16 +1358,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		}
 	}
 
-	private boolean networkExist(String nwName) {
-		Script.runSimpleBashScript("ifconfig " + nwName);
-		String result = Script.runSimpleBashScript("echo $?");
-		return result.equals("0");
-	}
-
 	private synchronized boolean findOrCreateTunnelNetwork(long key) {
 		try {
 			String nwName = "OVSTunnel" + key;
-			if (networkExist(nwName)) {
+			if (checkNetwork(nwName)) {
 				return true;
 			}
 			// if not found, create a new one
@@ -1377,7 +1369,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			otherConfig.put("ovs-host-setup", "");
 			Script.runSimpleBashScript("ovs-vsctl -- --may-exist add-br "
 					+ nwName + " -- set bridge " + nwName
-					+ " other_config:ovs_host_setup=\" \"");
+					+ " other_config:ovs_host_setup='-1'");
 			s_logger.debug("### KVM network for tunnels created:" + nwName);
 		} catch (Exception e) {
 			s_logger.warn("createTunnelNetwork failed", e);
@@ -1410,12 +1402,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 				cmd.add("--cs_host_id", ((Long) hostId).toString());
 				cmd.add("--bridge", nwName);
 				String result = cmd.execute();
-				String[] res = result.split(":");
-				if (res.length != 2 || !res[0].equalsIgnoreCase("SUCCESS")) {
+				if (result != null) {
 					throw new CloudRuntimeException(
 							"Unable to pre-configure OVS bridge " + nwName
-									+ " for network ID:" + networkId + " - "
-									+ res);
+									+ " for network ID:" + networkId);
 				}
 			}
 		} catch (Exception e) {
@@ -1445,9 +1435,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			command.add("--dst_host", cmd.getTo().toString());
 
 			String result = command.execute();
-			String[] res = result.split(":");
-			if (res.length == 2 && res[0].equalsIgnoreCase("SUCCESS")) {
-				return new OvsCreateTunnelAnswer(cmd, true, result, res[1],
+			if (result != null) {
+				return new OvsCreateTunnelAnswer(cmd, true, result, null,
 						bridge);
 			} else {
 				return new OvsCreateTunnelAnswer(cmd, false, result, bridge);
@@ -1473,7 +1462,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			command.add("--bridge", bridge);
 			command.add("--iface_name", cmd.getInPortName());
 			String result = command.execute();
-			if (result.equalsIgnoreCase("SUCCESS")) {
+			if (result == null) {
 				return new Answer(cmd, true, result);
 			} else {
 				return new Answer(cmd, false, result);
