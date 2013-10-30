@@ -1121,7 +1121,7 @@
                     </ul>
                     
                     <div class="socket-info">
-                        <div class="title">Socket info</div>
+                        <div class="title"><fmt:message key="label.hypervisors"/></div>
                         <ul></ul>
                     </div>
                 </div>
