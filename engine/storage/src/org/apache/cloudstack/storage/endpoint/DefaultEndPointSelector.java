@@ -27,11 +27,9 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.log4j.Logger;
@@ -194,6 +192,21 @@ public class DefaultEndPointSelector implements EndPointSelector {
         return null;
     }
 
+    @Override
+    public EndPoint select(DataObject srcData, DataObject destData, StorageAction action) {
+        if (action == StorageAction.BACKUPSNAPSHOT) {
+            SnapshotInfo srcSnapshot = (SnapshotInfo)srcData;
+            if (srcSnapshot.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
+                VolumeInfo volumeInfo = srcSnapshot.getBaseVolume();
+                VirtualMachine vm = volumeInfo.getAttachedVM();
+                if (vm != null && vm.getState() == VirtualMachine.State.Running) {
+                    return getEndPointFromHostId(vm.getHostId());
+                }
+            }
+        }
+        return select(srcData, destData);
+    }
+
     protected EndPoint findEndpointForPrimaryStorage(DataStore store) {
         return findEndPointInScope(store.getScope(), findOneHostOnPrimaryStorage, store.getId());
     }
@@ -248,6 +261,28 @@ public class DefaultEndPointSelector implements EndPointSelector {
         } else {
             throw new CloudRuntimeException("not implemented yet");
         }
+    }
+
+    private EndPoint getEndPointFromHostId(Long hostId) {
+        HostVO host = hostDao.findById(hostId);
+        return RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(),
+                host.getPublicIpAddress());
+    }
+
+    @Override
+    public EndPoint select(DataObject object, StorageAction action) {
+        if (action == StorageAction.TAKESNAPSHOT) {
+            SnapshotInfo snapshotInfo = (SnapshotInfo)object;
+            if (snapshotInfo.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
+                VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
+                VirtualMachine vm = volumeInfo.getAttachedVM();
+                if ((vm != null) && (vm.getState() == VirtualMachine.State.Running)) {
+                    Long hostId = vm.getHostId();
+                    return getEndPointFromHostId(hostId);
+                }
+            }
+        }
+        return select(object);
     }
 
     @Override
