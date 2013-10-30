@@ -46,75 +46,74 @@
     </dependency>    
   </dependencies>
   <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <artifactId>maven-antrun-plugin</artifactId>
-          <executions>
-            <execution>
-              <id>generate-resource</id>
-              <phase>generate-resources</phase>
-              <goals>
-                <goal>run</goal>
-              </goals>
-              <configuration>
-                <target>
-                  <copy todir="${basedir}/target/transformed">
-                    <fileset dir="${basedir}/conf">
-                      <include name="agent.properties" />
-                    </fileset>
-                  </copy>
-                  <copy overwrite="true"
-                    todir="${basedir}/target/transformed">
-                    <fileset dir="${basedir}/conf">
-                      <include name="*.in" />
-                    </fileset>
-                    <globmapper from="*.in" to="*" />
-                    <filterchain>
-                      <filterreader
-                        classname="org.apache.tools.ant.filters.ReplaceTokens">
-                        <param type="propertiesfile"
-                          value="${cs.replace.properties}" />
-                      </filterreader>
-                    </filterchain>
-                  </copy>
-                  <copy overwrite="true"
-                    todir="${basedir}/target/transformed">
-                    <fileset dir="${basedir}/bindir">
-                      <include name="*.in" />
-                    </fileset>
-                    <globmapper from="*.in" to="*" />
-                    <filterchain>
-                      <filterreader
-                        classname="org.apache.tools.ant.filters.ReplaceTokens">
-                        <param type="propertiesfile"
-                           value="${cs.replace.properties}" />
-                      </filterreader>
-                    </filterchain>
-                  </copy>
-                </target>
-              </configuration>
-            </execution>
-          </executions>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-dependency-plugin</artifactId>
-          <executions>
-            <execution>
-              <id>copy-dependencies</id>
-              <phase>package</phase>
-              <goals>
-                <goal>copy-dependencies</goal>
-              </goals>
-              <configuration>
-                <outputDirectory>${project.build.directory}/dependencies</outputDirectory>
-                <includeScope>runtime</includeScope>
-              </configuration>
-            </execution>
-          </executions>
-        </plugin>
-      </plugins>
-    </pluginManagement>
+    <plugins>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>generate-resource</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <copy
+                  todir="${basedir}/target/transformed">
+                  <fileset dir="${basedir}/conf">
+                    <include name="agent.properties" />
+                  </fileset>
+                </copy>
+                <copy overwrite="true"
+                  todir="${basedir}/target/transformed">
+                  <fileset dir="${basedir}/conf">
+                    <include name="*.in" />
+                  </fileset>
+                  <globmapper from="*.in" to="*" />
+                  <filterchain>
+                    <filterreader
+                      classname="org.apache.tools.ant.filters.ReplaceTokens">
+                      <param type="propertiesfile"
+                        value="${cs.replace.properties}" />
+                    </filterreader>
+                  </filterchain>
+                </copy>
+                <copy overwrite="true"
+                  todir="${basedir}/target/transformed">
+                  <fileset dir="${basedir}/bindir">
+                    <include name="*.in" />
+                  </fileset>
+                  <globmapper from="*.in" to="*" />
+                  <filterchain>
+                    <filterreader
+                      classname="org.apache.tools.ant.filters.ReplaceTokens">
+                      <param type="propertiesfile"
+                        value="${cs.replace.properties}" />
+                    </filterreader>
+                  </filterchain>
+                </copy>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/dependencies</outputDirectory>
+              <includeScope>runtime</includeScope>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </build>
 </project>
