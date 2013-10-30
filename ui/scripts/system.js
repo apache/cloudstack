@@ -1152,7 +1152,7 @@
                                         label: 'label.state'
                                     },
                                     vlan: {
-                                        label: 'VLAN Range(s)',
+                                        label: 'VLAN/VNI Range(s)',
                                         isEditable: true
                                     },
                                     tags: {
@@ -1384,7 +1384,7 @@
                                             label: 'label.type'
                                         },
                                         vlan: {
-                                            label: 'label.vlan.id'
+                                            label: 'label.vnet.id'
                                         },
                                         broadcasturi: {
                                             label: 'broadcast URI'
@@ -1820,13 +1820,13 @@
                             },
 
                             dedicatedGuestVlanRanges: {
-                                title: 'Dedicated VLAN Ranges',
+                                title: 'Dedicated VLAN/VNI Ranges',
                                 listView: {
                                     section: 'dedicatedGuestVlanRanges',
                                     id: 'dedicatedGuestVlanRanges',
                                     fields: {
                                         guestvlanrange: {
-                                            label: 'VLAN Range(s)'
+                                            label: 'VLAN/VNI Range(s)'
                                         },
                                         domain: {
                                             label: 'label.domain'
@@ -1851,17 +1851,17 @@
                                     },
                                     actions: {
                                         add: {
-                                            label: 'Dedicate VLAN Range',
+                                            label: 'Dedicate VLAN/VNI Range',
                                             messages: {
                                                 notification: function(args) {
-                                                    return 'Dedicate VLAN Range';
+                                                    return 'Dedicate VLAN/VNI Range';
                                                 }
                                             },
                                             createForm: {
-                                                title: 'Dedicate VLAN Range',
+                                                title: 'Dedicate VLAN/VNI Range',
                                                 fields: {
                                                     vlanrange: {
-                                                        label: 'VLAN Range',
+                                                        label: 'VLAN/VNI Range',
                                                         /*  select: function(args) {
                               var items = [];
                               if(args.context.physicalNetworks[0].vlan != null && args.context.physicalNetworks[0].vlan.length > 0) {
