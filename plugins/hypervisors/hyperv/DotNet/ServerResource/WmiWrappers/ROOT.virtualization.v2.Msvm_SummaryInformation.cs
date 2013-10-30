@@ -1,5 +1,4 @@
-﻿namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2
-{
+﻿namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
     using System;
     using System.ComponentModel;
     using System.Management;
@@ -14,14 +13,53 @@
     // Functions Reset<PropertyName> are added for Nullable Read/Write properties. These functions are used by VS designer in property browser to set a property to NULL.
     // Every property added to the class for WMI property has attributes set to define its behavior in Visual Studio designer and also to define a TypeConverter to be used.
     // Datetime conversion functions ToDateTime and ToDmtfDateTime are added to the class to convert DMTF datetime to System.DateTime and vice-versa.
-    // An Early Bound class generated for the WMI class.Msvm_KvpExchangeComponent
-    public class KvpExchangeComponent : System.ComponentModel.Component {
+    // 
+    // 
+    // 
+    // 
+    // If the embedded property is strongly typed then, to strongly type the property to the type of
+    // the embedded object, you have to do the following things.
+    // 	1. Generate Managed class for the WMI class of the embedded property. This can be done with MgmtClassGen.exe tool or from Server Explorer.
+    // 	2. Include the namespace of the generated class.
+    // 	3. Change the property get/set functions so as return the instance of the Managed class.
+    // Below is a sample code.
+    // 
+    // VB Code
+    // 
+    // 
+    // 
+    // Property name
+    // Managed class name of Embedded Property
+    // 
+    // 
+    // 
+    // 
+    // 
+    // 
+    // C# Code
+    // 
+    // 
+    // 
+    // Managed class name of Embedded property
+    // Property name
+    // 
+    // 
+    // 
+    // 
+    // 
+    // 
+    // 
+    // 
+    // 
+    // 
+    // An Early Bound class generated for the WMI class.Msvm_SummaryInformation
+    public class SummaryInformation : System.ComponentModel.Component {
         
         // Private property to hold the WMI namespace in which the class resides.
         private static string CreatedWmiNamespace = "ROOT\\virtualization\\v2";
         
         // Private property to hold the name of WMI class which created this class.
-        private static string CreatedClassName = "Msvm_KvpExchangeComponent";
+        private static string CreatedClassName = "Msvm_SummaryInformation";
         
         // Private member variable to hold the ManagementScope which is used by the various methods.
         private static System.Management.ManagementScope statMgmtScope = null;
@@ -44,35 +82,27 @@
         private bool isEmbedded;
         
         // Below are different overloads of constructors to initialize an instance of the class with a WMI object.
-        public KvpExchangeComponent() {
+        public SummaryInformation() {
             this.InitializeObject(null, null, null);
         }
         
-        public KvpExchangeComponent(string keyCreationClassName, string keyDeviceID, string keySystemCreationClassName, string keySystemName) {
-            this.InitializeObject(null, new System.Management.ManagementPath(KvpExchangeComponent.ConstructPath(keyCreationClassName, keyDeviceID, keySystemCreationClassName, keySystemName)), null);
-        }
-        
-        public KvpExchangeComponent(System.Management.ManagementScope mgmtScope, string keyCreationClassName, string keyDeviceID, string keySystemCreationClassName, string keySystemName) {
-            this.InitializeObject(((System.Management.ManagementScope)(mgmtScope)), new System.Management.ManagementPath(KvpExchangeComponent.ConstructPath(keyCreationClassName, keyDeviceID, keySystemCreationClassName, keySystemName)), null);
-        }
-        
-        public KvpExchangeComponent(System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
+        public SummaryInformation(System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(null, path, getOptions);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path) {
+        public SummaryInformation(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path) {
             this.InitializeObject(mgmtScope, path, null);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementPath path) {
+        public SummaryInformation(System.Management.ManagementPath path) {
             this.InitializeObject(null, path, null);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
+        public SummaryInformation(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(mgmtScope, path, getOptions);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementObject theObject) {
+        public SummaryInformation(System.Management.ManagementObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
                 PrivateLateBoundObject = theObject;
@@ -84,7 +114,7 @@
             }
         }
         
-        public KvpExchangeComponent(System.Management.ManagementBaseObject theObject) {
+        public SummaryInformation(System.Management.ManagementBaseObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
                 embeddedObj = theObject;
@@ -208,17 +238,19 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public ushort[] AdditionalAvailability {
+        [Description("The identifier of the physical graphics processing unit (GPU) allocated to this v" +
+            "irtual machine (VM). This property only applies to VMs that use RemoteFX.")]
+        public string AllocatedGPU {
             get {
-                return ((ushort[])(curObj["AdditionalAvailability"]));
+                return ((string)(curObj["AllocatedGPU"]));
             }
         }
         
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsAvailabilityNull {
+        public bool IsApplicationHealthNull {
             get {
-                if ((curObj["Availability"] == null)) {
+                if ((curObj["ApplicationHealth"] == null)) {
                     return true;
                 }
                 else {
@@ -229,37 +261,34 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description(@"The current application health status for the virtual system. This property may be one of the following values: ""OK""; ""Application Critical""; ""Disabled"".For more information, see the documentation for the StatusDescriptions property of the Msvm_HeartbeatComponent class. This property is not valid for instances of Msvm_SummaryInformation representing a virtual system snapshot.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort Availability {
+        public ApplicationHealthValues ApplicationHealth {
             get {
-                if ((curObj["Availability"] == null)) {
-                    return System.Convert.ToUInt16(0);
+                if ((curObj["ApplicationHealth"] == null)) {
+                    return ((ApplicationHealthValues)(System.Convert.ToInt32(0)));
                 }
-                return ((ushort)(curObj["Availability"]));
+                return ((ApplicationHealthValues)(System.Convert.ToInt32(curObj["ApplicationHealth"])));
             }
         }
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public ushort[] AvailableRequestedStates {
+        [Description("An array of Msvm_ConcreteJob instances representing any asynchronous operations r" +
+            "elated to the virtual system which are currently executing. This property is not" +
+            " valid for instances of Msvm_SummaryInformation representing a virtual system sn" +
+            "apshot.")]
+        public System.Management.ManagementBaseObject[] AsynchronousTasks {
             get {
-                return ((ushort[])(curObj["AvailableRequestedStates"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string Caption {
-            get {
-                return ((string)(curObj["Caption"]));
+                return ((System.Management.ManagementBaseObject[])(curObj["AsynchronousTasks"]));
             }
         }
         
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsCommunicationStatusNull {
+        public bool IsAvailableMemoryBufferNull {
             get {
-                if ((curObj["CommunicationStatus"] == null)) {
+                if ((curObj["AvailableMemoryBuffer"] == null)) {
                     return true;
                 }
                 else {
@@ -270,37 +299,22 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The available memory buffer percentage in the virtual system.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort CommunicationStatus {
+        public int AvailableMemoryBuffer {
             get {
-                if ((curObj["CommunicationStatus"] == null)) {
-                    return System.Convert.ToUInt16(0);
+                if ((curObj["AvailableMemoryBuffer"] == null)) {
+                    return System.Convert.ToInt32(0);
                 }
-                return ((ushort)(curObj["CommunicationStatus"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string CreationClassName {
-            get {
-                return ((string)(curObj["CreationClassName"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string Description {
-            get {
-                return ((string)(curObj["Description"]));
+                return ((int)(curObj["AvailableMemoryBuffer"]));
             }
         }
         
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsDetailedStatusNull {
+        public bool IsCreationTimeNull {
             get {
-                if ((curObj["DetailedStatus"] == null)) {
+                if ((curObj["CreationTime"] == null)) {
                     return true;
                 }
                 else {
@@ -311,54 +325,25 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The time at which the virtual system or snapshot was created.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort DetailedStatus {
+        public System.DateTime CreationTime {
             get {
-                if ((curObj["DetailedStatus"] == null)) {
-                    return System.Convert.ToUInt16(0);
+                if ((curObj["CreationTime"] != null)) {
+                    return ToDateTime(((string)(curObj["CreationTime"])));
                 }
-                return ((ushort)(curObj["DetailedStatus"]));
+                else {
+                    return System.DateTime.MinValue;
+                }
             }
         }
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string DeviceID {
-            get {
-                return ((string)(curObj["DeviceID"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The friendly name for the virtual system or snapshot.")]
         public string ElementName {
             get {
                 return ((string)(curObj["ElementName"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsEnabledDefaultNull {
-            get {
-                if ((curObj["EnabledDefault"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort EnabledDefault {
-            get {
-                if ((curObj["EnabledDefault"] == null)) {
-                    return System.Convert.ToUInt16(0);
-                }
-                return ((ushort)(curObj["EnabledDefault"]));
             }
         }
         
@@ -377,6 +362,7 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The current state of the virtual system or snapshot.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
         public ushort EnabledState {
             get {
@@ -387,54 +373,14 @@
             }
         }
         
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsErrorClearedNull {
-            get {
-                if ((curObj["ErrorCleared"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public bool ErrorCleared {
+        [Description("The name of the guest operating system, if available. If this information is not " +
+            "available, the value of this property is NULL. This property is not valid for in" +
+            "stances of Msvm_SummaryInformation representing a virtual system snapshot.")]
+        public string GuestOperatingSystem {
             get {
-                if ((curObj["ErrorCleared"] == null)) {
-                    return System.Convert.ToBoolean(0);
-                }
-                return ((bool)(curObj["ErrorCleared"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string ErrorDescription {
-            get {
-                return ((string)(curObj["ErrorDescription"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description(@"An array of embedded Msvm_KvpExchangeDataItem instances which contain the set of key-value pairs that components running within the guest operating system have pushed up to be available for access by external clients. This array will not contain any intrinsic items that are pushed by the integration component directly.")]
-        public string[] GuestExchangeItems {
-            get {
-                return ((string[])(curObj["GuestExchangeItems"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description(@"An array of embedded Msvm_KvpExchangeDataItem instances which contain the set of key-value pairs that the guest operating system has pushed up to be available for access by external clients. This array will not contain any data items pushed by other components running within the guest operating system.")]
-        public string[] GuestIntrinsicExchangeItems {
-            get {
-                return ((string[])(curObj["GuestIntrinsicExchangeItems"]));
+                return ((string)(curObj["GuestOperatingSystem"]));
             }
         }
         
@@ -453,6 +399,8 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The current health state for the virtual system. This property is not valid for i" +
+            "nstances of Msvm_SummaryInformation representing a virtual system snapshot.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
         public ushort HealthState {
             get {
@@ -463,19 +411,11 @@
             }
         }
         
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string[] IdentifyingDescriptions {
-            get {
-                return ((string[])(curObj["IdentifyingDescriptions"]));
-            }
-        }
-        
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsInstallDateNull {
+        public bool IsHeartbeatNull {
             get {
-                if ((curObj["InstallDate"] == null)) {
+                if ((curObj["Heartbeat"] == null)) {
                     return true;
                 }
                 else {
@@ -486,31 +426,22 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description(@"The current heartbeat status for the virtual system. This property may be one of the following values: ""OK""; ""Error""; ""No Contact""; or ""Lost Communication"". For more information, see the documentation for the StatusDescriptions property of the Msvm_HeartbeatComponent class. This property is not valid for instances of Msvm_SummaryInformation representing a virtual system snapshot.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public System.DateTime InstallDate {
+        public ushort Heartbeat {
             get {
-                if ((curObj["InstallDate"] != null)) {
-                    return ToDateTime(((string)(curObj["InstallDate"])));
+                if ((curObj["Heartbeat"] == null)) {
+                    return System.Convert.ToUInt16(0);
                 }
-                else {
-                    return System.DateTime.MinValue;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string InstanceID {
-            get {
-                return ((string)(curObj["InstanceID"]));
+                return ((ushort)(curObj["Heartbeat"]));
             }
         }
         
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsLastErrorCodeNull {
+        public bool IsIntegrationServicesVersionStateNull {
             get {
-                if ((curObj["LastErrorCode"] == null)) {
+                if ((curObj["IntegrationServicesVersionState"] == null)) {
                     return true;
                 }
                 else {
@@ -521,21 +452,23 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("Whether or not the integration services installed in the virtual machine are up t" +
+            "o date")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public uint LastErrorCode {
+        public IntegrationServicesVersionStateValues IntegrationServicesVersionState {
             get {
-                if ((curObj["LastErrorCode"] == null)) {
-                    return System.Convert.ToUInt32(0);
+                if ((curObj["IntegrationServicesVersionState"] == null)) {
+                    return ((IntegrationServicesVersionStateValues)(System.Convert.ToInt32(3)));
                 }
-                return ((uint)(curObj["LastErrorCode"]));
+                return ((IntegrationServicesVersionStateValues)(System.Convert.ToInt32(curObj["IntegrationServicesVersionState"])));
             }
         }
         
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsMaxQuiesceTimeNull {
+        public bool IsMemoryAvailableNull {
             get {
-                if ((curObj["MaxQuiesceTime"] == null)) {
+                if ((curObj["MemoryAvailable"] == null)) {
                     return true;
                 }
                 else {
@@ -546,29 +479,95 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The memory available percentage in the virtual system.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ulong MaxQuiesceTime {
+        public int MemoryAvailable {
             get {
-                if ((curObj["MaxQuiesceTime"] == null)) {
+                if ((curObj["MemoryAvailable"] == null)) {
+                    return System.Convert.ToInt32(0);
+                }
+                return ((int)(curObj["MemoryAvailable"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsMemorySpansPhysicalNumaNodesNull {
+            get {
+                if ((curObj["MemorySpansPhysicalNumaNodes"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("Indicates whether or not the memory of the one or more of the virtual non-uniform" +
+            " memory access (NUMA) nodes of the virtual machine spans multiple physical NUMA " +
+            "nodes of the hosting computer system.")]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public bool MemorySpansPhysicalNumaNodes {
+            get {
+                if ((curObj["MemorySpansPhysicalNumaNodes"] == null)) {
+                    return System.Convert.ToBoolean(0);
+                }
+                return ((bool)(curObj["MemorySpansPhysicalNumaNodes"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsMemoryUsageNull {
+            get {
+                if ((curObj["MemoryUsage"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The current memory usage of the virtual system. This property is not valid for in" +
+            "stances of Msvm_SummaryInformation representing a virtual system snapshot.")]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ulong MemoryUsage {
+            get {
+                if ((curObj["MemoryUsage"] == null)) {
                     return System.Convert.ToUInt64(0);
                 }
-                return ((ulong)(curObj["MaxQuiesceTime"]));
+                return ((ulong)(curObj["MemoryUsage"]));
             }
         }
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The unique name for the virtual system or snapshot.")]
         public string Name {
             get {
                 return ((string)(curObj["Name"]));
             }
         }
         
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The notes associated with the virtual system or snapshot.")]
+        public string Notes {
+            get {
+                return ((string)(curObj["Notes"]));
+            }
+        }
+        
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsOperatingStatusNull {
+        public bool IsNumberOfProcessorsNull {
             get {
-                if ((curObj["OperatingStatus"] == null)) {
+                if ((curObj["NumberOfProcessors"] == null)) {
                     return true;
                 }
                 else {
@@ -579,18 +578,21 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The total number of virtual processors allocated to the virtual system or snapsho" +
+            "t.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort OperatingStatus {
+        public ushort NumberOfProcessors {
             get {
-                if ((curObj["OperatingStatus"] == null)) {
+                if ((curObj["NumberOfProcessors"] == null)) {
                     return System.Convert.ToUInt16(0);
                 }
-                return ((ushort)(curObj["OperatingStatus"]));
+                return ((ushort)(curObj["NumberOfProcessors"]));
             }
         }
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The current status of the element.")]
         public ushort[] OperationalStatus {
             get {
                 return ((ushort[])(curObj["OperationalStatus"]));
@@ -599,33 +601,20 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("A string that describes the enabled or disabled state of the element when the Ena" +
+            "bledState property is set to 1 (\"Other\"). This property must be set to null when" +
+            " EnabledState is any value other than 1.")]
         public string OtherEnabledState {
             get {
                 return ((string)(curObj["OtherEnabledState"]));
             }
         }
         
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string[] OtherIdentifyingInfo {
-            get {
-                return ((string[])(curObj["OtherIdentifyingInfo"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public ushort[] PowerManagementCapabilities {
-            get {
-                return ((ushort[])(curObj["PowerManagementCapabilities"]));
-            }
-        }
-        
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsPowerManagementSupportedNull {
+        public bool IsProcessorLoadNull {
             get {
-                if ((curObj["PowerManagementSupported"] == null)) {
+                if ((curObj["ProcessorLoad"] == null)) {
                     return true;
                 }
                 else {
@@ -636,71 +625,34 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The current processor usage of the virtual system. This property is not valid for" +
+            " instances of Msvm_SummaryInformation representing a virtual system snapshot.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public bool PowerManagementSupported {
+        public ushort ProcessorLoad {
             get {
-                if ((curObj["PowerManagementSupported"] == null)) {
-                    return System.Convert.ToBoolean(0);
-                }
-                return ((bool)(curObj["PowerManagementSupported"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsPowerOnHoursNull {
-            get {
-                if ((curObj["PowerOnHours"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ulong PowerOnHours {
-            get {
-                if ((curObj["PowerOnHours"] == null)) {
-                    return System.Convert.ToUInt64(0);
-                }
-                return ((ulong)(curObj["PowerOnHours"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsPrimaryStatusNull {
-            get {
-                if ((curObj["PrimaryStatus"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort PrimaryStatus {
-            get {
-                if ((curObj["PrimaryStatus"] == null)) {
+                if ((curObj["ProcessorLoad"] == null)) {
                     return System.Convert.ToUInt16(0);
                 }
-                return ((ushort)(curObj["PrimaryStatus"]));
+                return ((ushort)(curObj["ProcessorLoad"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("An array of the previous 100 samples of the processor usage for the virtual syste" +
+            "m. This property is not valid for instances of Msvm_SummaryInformation represent" +
+            "ing a virtual system snapshot.")]
+        public ushort[] ProcessorLoadHistory {
+            get {
+                return ((ushort[])(curObj["ProcessorLoadHistory"]));
             }
         }
         
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsRequestedStateNull {
+        public bool IsReplicationHealthNull {
             get {
-                if ((curObj["RequestedState"] == null)) {
+                if ((curObj["ReplicationHealth"] == null)) {
                     return true;
                 }
                 else {
@@ -711,26 +663,83 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("Replication health for the virtual machine.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort RequestedState {
+        public ReplicationHealthValues ReplicationHealth {
             get {
-                if ((curObj["RequestedState"] == null)) {
-                    return System.Convert.ToUInt16(0);
+                if ((curObj["ReplicationHealth"] == null)) {
+                    return ((ReplicationHealthValues)(System.Convert.ToInt32(4)));
                 }
-                return ((ushort)(curObj["RequestedState"]));
+                return ((ReplicationHealthValues)(System.Convert.ToInt32(curObj["ReplicationHealth"])));
             }
         }
         
-        [Browsable(true)]
+        [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string Status {
+        public bool IsReplicationModeNull {
             get {
-                return ((string)(curObj["Status"]));
+                if ((curObj["ReplicationMode"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
             }
         }
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("Identifies replication type for the virtual machine.")]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ReplicationModeValues ReplicationMode {
+            get {
+                if ((curObj["ReplicationMode"] == null)) {
+                    return ((ReplicationModeValues)(System.Convert.ToInt32(4)));
+                }
+                return ((ReplicationModeValues)(System.Convert.ToInt32(curObj["ReplicationMode"])));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsReplicationStateNull {
+            get {
+                if ((curObj["ReplicationState"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("Replication state for the virtual machine.")]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ReplicationStateValues ReplicationState {
+            get {
+                if ((curObj["ReplicationState"] == null)) {
+                    return ((ReplicationStateValues)(System.Convert.ToInt32(12)));
+                }
+                return ((ReplicationStateValues)(System.Convert.ToInt32(curObj["ReplicationState"])));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("An array of Msvm_VirtualSystemSettingData instances representing the snapshots fo" +
+            "r the virtual system. This property is not valid for instances of Msvm_SummaryIn" +
+            "formation representing a virtual system snapshot.")]
+        public System.Management.ManagementBaseObject[] Snapshots {
+            get {
+                return ((System.Management.ManagementBaseObject[])(curObj["Snapshots"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("Strings that describe the various OperationalStatus array values.")]
         public string[] StatusDescriptions {
             get {
                 return ((string[])(curObj["StatusDescriptions"]));
@@ -739,9 +748,9 @@
         
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsStatusInfoNull {
+        public bool IsSwapFilesInUseNull {
             get {
-                if ((curObj["StatusInfo"] == null)) {
+                if ((curObj["SwapFilesInUse"] == null)) {
                     return true;
                 }
                 else {
@@ -752,37 +761,46 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("Indecates if smart paging is active.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort StatusInfo {
+        public bool SwapFilesInUse {
             get {
-                if ((curObj["StatusInfo"] == null)) {
-                    return System.Convert.ToUInt16(0);
+                if ((curObj["SwapFilesInUse"] == null)) {
+                    return System.Convert.ToBoolean(0);
                 }
-                return ((ushort)(curObj["StatusInfo"]));
+                return ((bool)(curObj["SwapFilesInUse"]));
             }
         }
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string SystemCreationClassName {
+        [Description("Reference to the CIM_ComputerSystem instance representing the test replica virtua" +
+            "l system for the virtual machine. This property is not valid for instances of Ms" +
+            "vm_SummaryInformation representing a virtual system snapshot.")]
+        public System.Management.ManagementPath TestReplicaSystem {
             get {
-                return ((string)(curObj["SystemCreationClassName"]));
+                if ((curObj["TestReplicaSystem"] != null)) {
+                    return new System.Management.ManagementPath(curObj["TestReplicaSystem"].ToString());
+                }
+                return null;
             }
         }
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string SystemName {
+        [Description("An array containing a small, thumbnail-sized image of the desktop for the virtual" +
+            " system or snapshot in RGB565 format.")]
+        public byte[] ThumbnailImage {
             get {
-                return ((string)(curObj["SystemName"]));
+                return ((byte[])(curObj["ThumbnailImage"]));
             }
         }
         
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsTimeOfLastStateChangeNull {
+        public bool IsUpTimeNull {
             get {
-                if ((curObj["TimeOfLastStateChange"] == null)) {
+                if ((curObj["UpTime"] == null)) {
                     return true;
                 }
                 else {
@@ -793,65 +811,16 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The amount of time since the virtual system was last booted. This property is not" +
+            " valid for instances of Msvm_SummaryInformation representing a virtual system sn" +
+            "apshot.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public System.DateTime TimeOfLastStateChange {
+        public ulong UpTime {
             get {
-                if ((curObj["TimeOfLastStateChange"] != null)) {
-                    return ToDateTime(((string)(curObj["TimeOfLastStateChange"])));
-                }
-                else {
-                    return System.DateTime.MinValue;
-                }
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsTotalPowerOnHoursNull {
-            get {
-                if ((curObj["TotalPowerOnHours"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ulong TotalPowerOnHours {
-            get {
-                if ((curObj["TotalPowerOnHours"] == null)) {
+                if ((curObj["UpTime"] == null)) {
                     return System.Convert.ToUInt64(0);
                 }
-                return ((ulong)(curObj["TotalPowerOnHours"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsTransitioningToStateNull {
-            get {
-                if ((curObj["TransitioningToState"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort TransitioningToState {
-            get {
-                if ((curObj["TransitioningToState"] == null)) {
-                    return System.Convert.ToUInt16(0);
-                }
-                return ((ushort)(curObj["TransitioningToState"]));
+                return ((ulong)(curObj["UpTime"]));
             }
         }
         
@@ -884,50 +853,15 @@
             return false;
         }
         
-        private bool ShouldSerializeAvailability() {
-            if ((this.IsAvailabilityNull == false)) {
+        private bool ShouldSerializeApplicationHealth() {
+            if ((this.IsApplicationHealthNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeCommunicationStatus() {
-            if ((this.IsCommunicationStatusNull == false)) {
-                return true;
-            }
-            return false;
-        }
-        
-        private bool ShouldSerializeDetailedStatus() {
-            if ((this.IsDetailedStatusNull == false)) {
-                return true;
-            }
-            return false;
-        }
-        
-        private bool ShouldSerializeEnabledDefault() {
-            if ((this.IsEnabledDefaultNull == false)) {
-                return true;
-            }
-            return false;
-        }
-        
-        private bool ShouldSerializeEnabledState() {
-            if ((this.IsEnabledStateNull == false)) {
-                return true;
-            }
-            return false;
-        }
-        
-        private bool ShouldSerializeErrorCleared() {
-            if ((this.IsErrorClearedNull == false)) {
-                return true;
-            }
-            return false;
-        }
-        
-        private bool ShouldSerializeHealthState() {
-            if ((this.IsHealthStateNull == false)) {
+        private bool ShouldSerializeAvailableMemoryBuffer() {
+            if ((this.IsAvailableMemoryBufferNull == false)) {
                 return true;
             }
             return false;
@@ -1057,85 +991,106 @@
             return dmtfDateTime;
         }
         
-        private bool ShouldSerializeInstallDate() {
-            if ((this.IsInstallDateNull == false)) {
+        private bool ShouldSerializeCreationTime() {
+            if ((this.IsCreationTimeNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeLastErrorCode() {
-            if ((this.IsLastErrorCodeNull == false)) {
+        private bool ShouldSerializeEnabledState() {
+            if ((this.IsEnabledStateNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeMaxQuiesceTime() {
-            if ((this.IsMaxQuiesceTimeNull == false)) {
+        private bool ShouldSerializeHealthState() {
+            if ((this.IsHealthStateNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeOperatingStatus() {
-            if ((this.IsOperatingStatusNull == false)) {
+        private bool ShouldSerializeHeartbeat() {
+            if ((this.IsHeartbeatNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializePowerManagementSupported() {
-            if ((this.IsPowerManagementSupportedNull == false)) {
+        private bool ShouldSerializeIntegrationServicesVersionState() {
+            if ((this.IsIntegrationServicesVersionStateNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializePowerOnHours() {
-            if ((this.IsPowerOnHoursNull == false)) {
+        private bool ShouldSerializeMemoryAvailable() {
+            if ((this.IsMemoryAvailableNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializePrimaryStatus() {
-            if ((this.IsPrimaryStatusNull == false)) {
+        private bool ShouldSerializeMemorySpansPhysicalNumaNodes() {
+            if ((this.IsMemorySpansPhysicalNumaNodesNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeRequestedState() {
-            if ((this.IsRequestedStateNull == false)) {
+        private bool ShouldSerializeMemoryUsage() {
+            if ((this.IsMemoryUsageNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeStatusInfo() {
-            if ((this.IsStatusInfoNull == false)) {
+        private bool ShouldSerializeNumberOfProcessors() {
+            if ((this.IsNumberOfProcessorsNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeTimeOfLastStateChange() {
-            if ((this.IsTimeOfLastStateChangeNull == false)) {
+        private bool ShouldSerializeProcessorLoad() {
+            if ((this.IsProcessorLoadNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeTotalPowerOnHours() {
-            if ((this.IsTotalPowerOnHoursNull == false)) {
+        private bool ShouldSerializeReplicationHealth() {
+            if ((this.IsReplicationHealthNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeTransitioningToState() {
-            if ((this.IsTransitioningToStateNull == false)) {
+        private bool ShouldSerializeReplicationMode() {
+            if ((this.IsReplicationModeNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializeReplicationState() {
+            if ((this.IsReplicationStateNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializeSwapFilesInUse() {
+            if ((this.IsSwapFilesInUseNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializeUpTime() {
+            if ((this.IsUpTimeNull == false)) {
                 return true;
             }
             return false;
@@ -1160,12 +1115,8 @@
             isEmbedded = false;
         }
         
-        private static string ConstructPath(string keyCreationClassName, string keyDeviceID, string keySystemCreationClassName, string keySystemName) {
-            string strPath = "ROOT\\virtualization\\v2:Msvm_KvpExchangeComponent";
-            strPath = string.Concat(strPath, string.Concat(".CreationClassName=", string.Concat("\"", string.Concat(keyCreationClassName, "\""))));
-            strPath = string.Concat(strPath, string.Concat(",DeviceID=", string.Concat("\"", string.Concat(keyDeviceID, "\""))));
-            strPath = string.Concat(strPath, string.Concat(",SystemCreationClassName=", string.Concat("\"", string.Concat(keySystemCreationClassName, "\""))));
-            strPath = string.Concat(strPath, string.Concat(",SystemName=", string.Concat("\"", string.Concat(keySystemName, "\""))));
+        private static string ConstructPath() {
+            string strPath = "ROOT\\virtualization\\v2:Msvm_SummaryInformation";
             return strPath;
         }
         
@@ -1182,23 +1133,23 @@
         }
         
         // Different overloads of GetInstances() help in enumerating instances of the WMI class.
-        public static KvpExchangeComponentCollection GetInstances() {
+        public static SummaryInformationCollection GetInstances() {
             return GetInstances(null, null, null);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(string condition) {
+        public static SummaryInformationCollection GetInstances(string condition) {
             return GetInstances(null, condition, null);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(string[] selectedProperties) {
+        public static SummaryInformationCollection GetInstances(string[] selectedProperties) {
             return GetInstances(null, null, selectedProperties);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(string condition, string[] selectedProperties) {
+        public static SummaryInformationCollection GetInstances(string condition, string[] selectedProperties) {
             return GetInstances(null, condition, selectedProperties);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(System.Management.ManagementScope mgmtScope, System.Management.EnumerationOptions enumOptions) {
+        public static SummaryInformationCollection GetInstances(System.Management.ManagementScope mgmtScope, System.Management.EnumerationOptions enumOptions) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
                     mgmtScope = new System.Management.ManagementScope();
@@ -1209,25 +1160,25 @@
                 }
             }
             System.Management.ManagementPath pathObj = new System.Management.ManagementPath();
-            pathObj.ClassName = "Msvm_KvpExchangeComponent";
+            pathObj.ClassName = "Msvm_SummaryInformation";
             pathObj.NamespacePath = "root\\virtualization\\v2";
             System.Management.ManagementClass clsObject = new System.Management.ManagementClass(mgmtScope, pathObj, null);
             if ((enumOptions == null)) {
                 enumOptions = new System.Management.EnumerationOptions();
                 enumOptions.EnsureLocatable = true;
             }
-            return new KvpExchangeComponentCollection(clsObject.GetInstances(enumOptions));
+            return new SummaryInformationCollection(clsObject.GetInstances(enumOptions));
         }
         
-        public static KvpExchangeComponentCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition) {
+        public static SummaryInformationCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition) {
             return GetInstances(mgmtScope, condition, null);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(System.Management.ManagementScope mgmtScope, string[] selectedProperties) {
+        public static SummaryInformationCollection GetInstances(System.Management.ManagementScope mgmtScope, string[] selectedProperties) {
             return GetInstances(mgmtScope, null, selectedProperties);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition, string[] selectedProperties) {
+        public static SummaryInformationCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition, string[] selectedProperties) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
                     mgmtScope = new System.Management.ManagementScope();
@@ -1237,15 +1188,15 @@
                     mgmtScope = statMgmtScope;
                 }
             }
-            System.Management.ManagementObjectSearcher ObjectSearcher = new System.Management.ManagementObjectSearcher(mgmtScope, new SelectQuery("Msvm_KvpExchangeComponent", condition, selectedProperties));
+            System.Management.ManagementObjectSearcher ObjectSearcher = new System.Management.ManagementObjectSearcher(mgmtScope, new SelectQuery("Msvm_SummaryInformation", condition, selectedProperties));
             System.Management.EnumerationOptions enumOptions = new System.Management.EnumerationOptions();
             enumOptions.EnsureLocatable = true;
             ObjectSearcher.Options = enumOptions;
-            return new KvpExchangeComponentCollection(ObjectSearcher.Get());
+            return new SummaryInformationCollection(ObjectSearcher.Get());
         }
         
         [Browsable(true)]
-        public static KvpExchangeComponent CreateInstance() {
+        public static SummaryInformation CreateInstance() {
             System.Management.ManagementScope mgmtScope = null;
             if ((statMgmtScope == null)) {
                 mgmtScope = new System.Management.ManagementScope();
@@ -1256,7 +1207,7 @@
             }
             System.Management.ManagementPath mgmtPath = new System.Management.ManagementPath(CreatedClassName);
             System.Management.ManagementClass tmpMgmtClass = new System.Management.ManagementClass(mgmtScope, mgmtPath, null);
-            return new KvpExchangeComponent(tmpMgmtClass.CreateInstance());
+            return new SummaryInformation(tmpMgmtClass.CreateInstance());
         }
         
         [Browsable(true)]
@@ -1264,118 +1215,89 @@
             PrivateLateBoundObject.Delete();
         }
         
-        public uint EnableDevice(bool Enabled) {
-            if ((isEmbedded == false)) {
-                System.Management.ManagementBaseObject inParams = null;
-                inParams = PrivateLateBoundObject.GetMethodParameters("EnableDevice");
-                inParams["Enabled"] = ((bool)(Enabled));
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("EnableDevice", inParams, null);
-                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
-            }
-            else {
-                return System.Convert.ToUInt32(0);
-            }
+        public enum ApplicationHealthValues {
+            
+            OK = 2,
+            
+            Application_Critical = 32782,
+            
+            Disabled = 32896,
+            
+            NULL_ENUM_VALUE = 0,
         }
         
-        public uint OnlineDevice(bool Online) {
-            if ((isEmbedded == false)) {
-                System.Management.ManagementBaseObject inParams = null;
-                inParams = PrivateLateBoundObject.GetMethodParameters("OnlineDevice");
-                inParams["Online"] = ((bool)(Online));
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("OnlineDevice", inParams, null);
-                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
-            }
-            else {
-                return System.Convert.ToUInt32(0);
-            }
+        public enum IntegrationServicesVersionStateValues {
+            
+            Unknown0 = 0,
+            
+            UpToDate = 1,
+            
+            Mismatch = 2,
+            
+            NULL_ENUM_VALUE = 3,
         }
         
-        public uint QuiesceDevice(bool Quiesce) {
-            if ((isEmbedded == false)) {
-                System.Management.ManagementBaseObject inParams = null;
-                inParams = PrivateLateBoundObject.GetMethodParameters("QuiesceDevice");
-                inParams["Quiesce"] = ((bool)(Quiesce));
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("QuiesceDevice", inParams, null);
-                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
-            }
-            else {
-                return System.Convert.ToUInt32(0);
-            }
+        public enum ReplicationHealthValues {
+            
+            Not_applicable = 0,
+            
+            Ok = 1,
+            
+            Warning = 2,
+            
+            Critical = 3,
+            
+            NULL_ENUM_VALUE = 4,
         }
         
-        public uint RequestStateChange(ushort RequestedState, System.DateTime TimeoutPeriod, out System.Management.ManagementPath Job) {
-            if ((isEmbedded == false)) {
-                System.Management.ManagementBaseObject inParams = null;
-                inParams = PrivateLateBoundObject.GetMethodParameters("RequestStateChange");
-                inParams["RequestedState"] = ((ushort)(RequestedState));
-                inParams["TimeoutPeriod"] = ToDmtfDateTime(((System.DateTime)(TimeoutPeriod)));
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("RequestStateChange", inParams, null);
-                Job = null;
-                if ((outParams.Properties["Job"] != null))
-                {
-                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
-                }
-                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
-            }
-            else {
-                Job = null;
-                return System.Convert.ToUInt32(0);
-            }
+        public enum ReplicationModeValues {
+            
+            None = 0,
+            
+            Primary = 1,
+            
+            Recovery = 2,
+            
+            Test_Replica = 3,
+            
+            NULL_ENUM_VALUE = 4,
         }
         
-        public uint Reset() {
-            if ((isEmbedded == false)) {
-                System.Management.ManagementBaseObject inParams = null;
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("Reset", inParams, null);
-                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
-            }
-            else {
-                return System.Convert.ToUInt32(0);
-            }
-        }
-        
-        public uint RestoreProperties() {
-            if ((isEmbedded == false)) {
-                System.Management.ManagementBaseObject inParams = null;
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("RestoreProperties", inParams, null);
-                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
-            }
-            else {
-                return System.Convert.ToUInt32(0);
-            }
-        }
-        
-        public uint SaveProperties() {
-            if ((isEmbedded == false)) {
-                System.Management.ManagementBaseObject inParams = null;
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("SaveProperties", inParams, null);
-                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
-            }
-            else {
-                return System.Convert.ToUInt32(0);
-            }
-        }
-        
-        public uint SetPowerState(ushort PowerState, System.DateTime Time) {
-            if ((isEmbedded == false)) {
-                System.Management.ManagementBaseObject inParams = null;
-                inParams = PrivateLateBoundObject.GetMethodParameters("SetPowerState");
-                inParams["PowerState"] = ((ushort)(PowerState));
-                inParams["Time"] = ToDmtfDateTime(((System.DateTime)(Time)));
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("SetPowerState", inParams, null);
-                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
-            }
-            else {
-                return System.Convert.ToUInt32(0);
-            }
+        public enum ReplicationStateValues {
+            
+            Disabled = 0,
+            
+            Ready_for_replication = 1,
+            
+            Waiting_to_complete_initial_replication = 2,
+            
+            Replicating = 3,
+            
+            Synced_replication_complete = 4,
+            
+            Recovered = 5,
+            
+            Committed = 6,
+            
+            Suspended = 7,
+            
+            Critical = 8,
+            
+            Waiting_to_start_resynchronization = 9,
+            
+            Resynchronizing = 10,
+            
+            Resynchronization_suspended = 11,
+            
+            NULL_ENUM_VALUE = 12,
         }
         
         // Enumerator implementation for enumerating instances of the class.
-        public class KvpExchangeComponentCollection : object, ICollection {
+        public class SummaryInformationCollection : object, ICollection {
             
             private ManagementObjectCollection privColObj;
             
-            public KvpExchangeComponentCollection(ManagementObjectCollection objCollection) {
+            public SummaryInformationCollection(ManagementObjectCollection objCollection) {
                 privColObj = objCollection;
             }
             
@@ -1401,25 +1323,25 @@
                 privColObj.CopyTo(array, index);
                 int nCtr;
                 for (nCtr = 0; (nCtr < array.Length); nCtr = (nCtr + 1)) {
-                    array.SetValue(new KvpExchangeComponent(((System.Management.ManagementObject)(array.GetValue(nCtr)))), nCtr);
+                    array.SetValue(new SummaryInformation(((System.Management.ManagementObject)(array.GetValue(nCtr)))), nCtr);
                 }
             }
             
             public virtual System.Collections.IEnumerator GetEnumerator() {
-                return new KvpExchangeComponentEnumerator(privColObj.GetEnumerator());
+                return new SummaryInformationEnumerator(privColObj.GetEnumerator());
             }
             
-            public class KvpExchangeComponentEnumerator : object, System.Collections.IEnumerator {
+            public class SummaryInformationEnumerator : object, System.Collections.IEnumerator {
                 
                 private ManagementObjectCollection.ManagementObjectEnumerator privObjEnum;
                 
-                public KvpExchangeComponentEnumerator(ManagementObjectCollection.ManagementObjectEnumerator objEnum) {
+                public SummaryInformationEnumerator(ManagementObjectCollection.ManagementObjectEnumerator objEnum) {
                     privObjEnum = objEnum;
                 }
                 
                 public virtual object Current {
                     get {
-                        return new KvpExchangeComponent(((System.Management.ManagementObject)(privObjEnum.Current)));
+                        return new SummaryInformation(((System.Management.ManagementObject)(privObjEnum.Current)));
                     }
                 }
                 

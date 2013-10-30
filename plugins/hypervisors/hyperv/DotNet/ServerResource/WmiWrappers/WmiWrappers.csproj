@@ -87,73 +87,25 @@
     <Compile Include="ROOT.CIMV2.Win32_Processor.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_ComputerSystem.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_ConcreteJob.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_ExternalEthernetPort.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_ImageManagementService.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_MemorySettingData.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_ProcessorSettingData.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_ResourceAllocationSettingData.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_SummaryInformation.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_SwitchLANEndpoint.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_SwitchPort.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_SyntheticEthernetPort.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_SyntheticEthernetPortSettingData.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_VirtualSwitch.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_VirtualSwitchManagementService.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_VirtualSystemGlobalSettingData.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_VirtualSystemManagementService.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_VirtualSystemManagementServiceSettingData.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_VirtualSystemSettingData.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_VLANEndpoint.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_VLANEndpointSettingData.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ROOT.virtualization.Msvm_VmLANEndpoint.cs">
-      <SubType>Component</SubType>
-    </Compile>
     <Compile Include="ROOT.virtualization.v2.Msvm_ComputerSystem.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="ROOT.virtualization.v2.Msvm_ConcreteJob.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_EthernetPortAllocationSettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_EthernetSwitchPort.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_EthernetSwitchPortVlanSettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_ExternalEthernetPort.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_ImageManagementService.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="ROOT.virtualization.v2.Msvm_KvpExchangeComponent.cs">
@@ -163,6 +115,36 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="ROOT.virtualization.v2.Msvm_KvpExchangeDataItem.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_LANEndpoint.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_MemorySettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_ProcessorSettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_ResourceAllocationSettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_StorageAllocationSettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_SummaryInformation.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_SyntheticEthernetPortSettingData.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_VirtualEthernetSwitch.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_VirtualEthernetSwitchManagementService.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_VirtualHardDiskSettingData.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="ROOT.virtualization.v2.Msvm_VirtualSystemManagementService.cs">

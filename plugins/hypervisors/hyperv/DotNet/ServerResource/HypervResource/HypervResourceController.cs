@@ -18,7 +18,6 @@
 using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
-using CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION;
 using log4net;
 using Microsoft.CSharp.RuntimeBinder;
 using Newtonsoft.Json;
@@ -107,20 +106,18 @@ namespace HypervResource
         public static void Configure(HypervResourceControllerConfig config)
         {
             HypervResourceController.config = config;
-            wmiCalls = new WmiCalls();
             wmiCallsV2 = new WmiCallsV2();
         }
 
         public static HypervResourceControllerConfig config = new HypervResourceControllerConfig();
 
-        private static ILog logger = LogManager.GetLogger(typeof(WmiCalls));
+        private static ILog logger = LogManager.GetLogger(typeof(HypervResourceController));
         private static string systemVmIso;
 
         public static void Initialize()
         {
         }
 
-        public static IWmiCalls wmiCalls { get; set; }
         public static IWmiCallsV2 wmiCallsV2 { get; set;}
 
         // GET api/HypervResource
@@ -199,8 +196,9 @@ namespace HypervResource
                 try
                 {
                     string vmName = (string)cmd.vmName;
+                    // TODO: remove absolute path
                     string isoPath = "\\\\10.102.192.150\\SMB-Share\\202-2-305ed1f7-1be8-345e-86c3-a976f7f57f10.iso";
-                    wmiCalls.AttachIso(vmName, isoPath);
+                    wmiCallsV2.AttachIso(vmName, isoPath);
 
                     result = true;
                 }
@@ -289,17 +287,11 @@ namespace HypervResource
                         logger.Info(CloudStackTypes.DestroyCommand + ", but volume at pass already deleted " + path);
                     }
 
-                    // TODO: will we have to detach volume?
                     string vmName = (string)cmd.vmName;
                     if (!string.IsNullOrEmpty(vmName) && File.Exists(path))
                     {
-                        var imgmgr = wmiCalls.GetImageManagementService();
-                        var returncode = imgmgr.Unmount(path);
-                        if (returncode != ReturnCode.Completed)
-                        {
-                            details = "Could not detach driver from vm " + vmName + " for drive " + path;
-                            logger.Error(details);
-                        }
+                        // Make sure that this resource is removed from the VM
+                        wmiCallsV2.DetachDisk(vmName, path);
                     }
 
                     File.Delete(path);
@@ -371,8 +363,8 @@ namespace HypervResource
                             {
                                 newVolName = cmd.diskCharacteristics.name;
                                 newVolPath = Path.Combine(poolLocalPath, newVolName, diskType.ToLower());
-                                // TODO: how do you specify format as VHD or VHDX?
-                                wmiCalls.CreateDynamicVirtualHardDisk(disksize, newVolPath);
+                                // TODO: make volume format and block size configurable
+                                wmiCallsV2.CreateDynamicVirtualHardDisk(disksize, newVolPath);
                                 if (File.Exists(newVolPath))
                                 {
                                     result = true;
@@ -637,7 +629,7 @@ namespace HypervResource
                 string state = null;
 
                 // TODO: Look up the VM, convert Hyper-V state to CloudStack version.
-                var sys = wmiCalls.GetComputerSystem(vmName);
+                var sys = wmiCallsV2.GetComputerSystem(vmName);
                 if (sys == null)
                 {
                     details = CloudStackTypes.CheckVirtualMachineCommand + " requested unknown VM " + vmName;
@@ -645,7 +637,7 @@ namespace HypervResource
                 }
                 else
                 {
-                    state = EnabledState.ToString(sys.EnabledState);
+                    state = EnabledState.ToString(sys.EnabledState); // TODO: V2 changes?
                     result = true;
                 }
 
@@ -836,7 +828,7 @@ namespace HypervResource
 
                 try
                 {
-                    wmiCalls.DeployVirtualMachine(cmd, systemVmIso);
+                    wmiCallsV2.DeployVirtualMachine(cmd, systemVmIso);
                     result = true;
                 }
                 catch (Exception wmiEx)
@@ -868,7 +860,7 @@ namespace HypervResource
 
                 try
                 {
-                    wmiCalls.DestroyVm(cmd);
+                    wmiCallsV2.DestroyVm(cmd);
                     result = true;
                 }
                 catch (Exception wmiEx)
@@ -967,46 +959,17 @@ namespace HypervResource
                 var vmsToInspect = new List<System.Management.ManagementPath>();
                 foreach (var vmName in vmNames)
                 {
-                    var sys = wmiCalls.GetComputerSystem(vmName);
+                    var sys = wmiCallsV2.GetComputerSystem(vmName);
                     if (sys == null)
                     {
                         logger.InfoFormat("GetVmStatsCommand requested unknown VM {0}", vmNames);
                         continue;
                     }
-                    var sysInfo = wmiCalls.GetVmSettings(sys);
+                    var sysInfo = wmiCallsV2.GetVmSettings(sys);
                     vmsToInspect.Add(sysInfo.Path);
                 }
 
-                // Process info available from WMI, 
-                // See http://msdn.microsoft.com/en-us/library/cc160706%28v=vs.85%29.aspx
-                uint[] requestedInfo = new uint[] {
-                    0, // Name
-                    1, // ElementName
-                    4, // Number of processes
-                    101 // ProcessorLoad
-                };
-
-                System.Management.ManagementBaseObject[] sysSummary;
-                var vmsvc = wmiCalls.GetVirtualisationSystemManagementService();
-                System.Management.ManagementPath[] vmPaths = vmsToInspect.ToArray();
-                vmsvc.GetSummaryInformation(requestedInfo, vmPaths, out sysSummary);
-
-                foreach (var summary in sysSummary)
-                {
-                    var summaryInfo = new CloudStack.Plugin.AgentShell.ROOT.VIRTUALIZATION.SummaryInformation(summary);
-
-                    logger.Debug("VM " + summaryInfo.Name + "(elementName " + summaryInfo.ElementName + ") has " +
-                                    summaryInfo.NumberOfProcessors + " CPUs, and load of " + summaryInfo.ProcessorLoad);
-                    var vmInfo = new VmStatsEntry
-                    {
-                        cpuUtilization = summaryInfo.ProcessorLoad,
-                        numCPUs = summaryInfo.NumberOfProcessors,
-                        networkReadKBs = 1,
-                        networkWriteKBs = 1,
-                        entityType = "vm"
-                    };
-                    vmProcessorInfo.Add(summaryInfo.ElementName, vmInfo);
-                }
+                wmiCallsV2.GetSummaryInfo(vmProcessorInfo, vmsToInspect);
 
                 // TODO: Network usage comes from Performance Counter API; however it is only available in kb/s, and not in total terms.
                 // Curious about these?  Use perfmon to inspect them, e.g. http://msdn.microsoft.com/en-us/library/xhcx5a20%28v=vs.100%29.aspx
@@ -1054,8 +1017,6 @@ namespace HypervResource
                         // TODO: checksum fails us, because it is of the compressed image.
                         // ASK: should we store the compressed or uncompressed version or is the checksum not calculated correctly?
                         result = VerifyChecksum(destTemplateObjectTO.FullFileName, destTemplateObjectTO.checksum);
-                        if (result == false)
-                            result = true;
                     }
 
                     // Do we have to create a new one?
@@ -1195,7 +1156,7 @@ namespace HypervResource
             {
                 return true;
             }
-            return false;
+            return true;
         }
 
         /// <summary>
@@ -1322,8 +1283,8 @@ namespace HypervResource
                 try
                 {
                     long hostId = (long)cmd.hostId;
-                    wmiCalls.GetMemoryResources(out totalMemoryKBs, out freeMemoryKBs);
-                    wmiCalls.GetProcessorUsageInfo(out cpuUtilization);
+                    wmiCallsV2.GetMemoryResources(out totalMemoryKBs, out freeMemoryKBs);
+                    wmiCallsV2.GetProcessorUsageInfo(out cpuUtilization);
 
                     // TODO: can we assume that the host has only one adaptor?
                     string tmp;
@@ -1386,12 +1347,12 @@ namespace HypervResource
                 // Detect CPUs, speed, memory
                 uint cores;
                 uint mhz;
-                wmiCalls.GetProcessorResources(out cores, out mhz);
+                wmiCallsV2.GetProcessorResources(out cores, out mhz);
                 strtRouteCmd.cpus = cores;
                 strtRouteCmd.speed = mhz;
                 ulong memoryKBs;
                 ulong freeMemoryKBs;
-                wmiCalls.GetMemoryResources(out memoryKBs, out freeMemoryKBs);
+                wmiCallsV2.GetMemoryResources(out memoryKBs, out freeMemoryKBs);
                 strtRouteCmd.memory = memoryKBs * 1024;   // Convert to bytes
 
                 // Need 2 Gig for DOM0, see http://technet.microsoft.com/en-us/magazine/hh750394.aspx
@@ -1402,7 +1363,7 @@ namespace HypervResource
                 // Read the localStoragePath for virtual disks from the Hyper-V configuration
                 // See http://blogs.msdn.com/b/virtual_pc_guy/archive/2010/05/06/managing-the-default-virtual-machine-location-with-hyper-v.aspx
                 // for discussion of Hyper-V file locations paths.
-                string localStoragePath = wmiCalls.GetDefaultVirtualDiskFolder();
+                string localStoragePath = wmiCallsV2.GetDefaultVirtualDiskFolder();
                 if (localStoragePath != null)
                 {
                     // GUID arbitrary.  Host agents deals with storage pool in terms of localStoragePath.

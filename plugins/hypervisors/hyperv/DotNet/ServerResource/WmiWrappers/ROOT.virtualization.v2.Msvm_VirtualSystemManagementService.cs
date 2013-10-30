@@ -1006,13 +1006,13 @@
                 inParams["FeatureSettings"] = ((string[])(FeatureSettings));
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("AddFeatureSettings", inParams, null);
                 Job = null;
-                //                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null))
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
                 ResultingFeatureSettings = null;
-                if ((outParams.Properties["ResultingFeatureSettings"] != null)) {
+                if ((outParams.Properties["ResultingFeatureSettings"] != null && outParams.Properties["ResultingFeatureSettings"].Value != null))
+                {
                     int len = ((System.Array)(outParams.Properties["ResultingFeatureSettings"].Value)).Length;
                     System.Management.ManagementPath[] arrToRet = new System.Management.ManagementPath[len];
                     for (int iCounter = 0; (iCounter < len); iCounter = (iCounter + 1)) {
@@ -1052,11 +1052,9 @@
                 inParams["TargetSystem"] = ((System.Management.ManagementPath)(TargetSystem)).Path;
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("AddKvpItems", inParams, null);
                 Job = null;
-//                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null))
                 {
-//                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
-                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].Value.ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
@@ -1074,13 +1072,13 @@
                 inParams["ResourceSettings"] = ((string[])(ResourceSettings));
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("AddResourceSettings", inParams, null);
                 Job = null;
-                //                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null))
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
                 ResultingResourceSettings = null;
-                if ((outParams.Properties["ResultingResourceSettings"] != null)) {
+                if ((outParams.Properties["ResultingResourceSettings"] != null && outParams.Properties["ResultingResourceSettings"].Value != null))
+                {
                     int len = ((System.Array)(outParams.Properties["ResultingResourceSettings"].Value)).Length;
                     System.Management.ManagementPath[] arrToRet = new System.Management.ManagementPath[len];
                     for (int iCounter = 0; (iCounter < len); iCounter = (iCounter + 1)) {
@@ -1097,23 +1095,23 @@
             }
         }
         
-        public uint DefineSystem(System.Management.ManagementPath ReferenceConfiguration, string[] ResourceSettings, string SystemSettings, out System.Management.ManagementPath Job, out System.Management.ManagementPath ResultingSystem) {
+        public uint DefineSystem(string ReferenceConfigurationPath, string[] ResourceSettings, string SystemSettings, out System.Management.ManagementPath Job, out System.Management.ManagementPath ResultingSystem) {
             if ((isEmbedded == false)) {
                 System.Management.ManagementBaseObject inParams = null;
                 inParams = PrivateLateBoundObject.GetMethodParameters("DefineSystem");
-                inParams["ReferenceConfiguration"] = ((System.Management.ManagementPath)(ReferenceConfiguration)).Path;
-                inParams["ResourceSettings"] = ((string[])(ResourceSettings));
-                inParams["SystemSettings"] = ((string)(SystemSettings));
+                inParams["ReferenceConfiguration"] = ReferenceConfigurationPath;
+                inParams["ResourceSettings"] = ResourceSettings;
+                inParams["SystemSettings"] = SystemSettings;
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("DefineSystem", inParams, null);
                 Job = null;
-                //                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null) && outParams.Properties["Job"].Value != null)
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
                 ResultingSystem = null;
-                if ((outParams.Properties["ResultingSystem"] != null)) {
-                    ResultingSystem = new System.Management.ManagementPath(outParams.Properties["ResultingSystem"].ToString());
+                if ((outParams.Properties["ResultingSystem"] != null && outParams.Properties["ResultingSystem"].Value != null))
+                {
+                    ResultingSystem = new System.Management.ManagementPath((string)outParams.Properties["ResultingSystem"].Value);
                 }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
@@ -1131,10 +1129,9 @@
                 inParams["AffectedSystem"] = ((System.Management.ManagementPath)(AffectedSystem)).Path;
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("DestroySystem", inParams, null);
                 Job = null;
-                //                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null))
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
@@ -1153,11 +1150,11 @@
                 inParams["ExportSettingData"] = ((string)(ExportSettingData));
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("ExportSystemDefinition", inParams, null);
                 Job = null;
-                //                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null))
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
+
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
             else {
@@ -1290,7 +1287,8 @@
                 inParams["SnapshotFolder"] = ((string)(SnapshotFolder));
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("ImportSnapshotDefinitions", inParams, null);
                 ImportedSnapshots = null;
-                if ((outParams.Properties["ImportedSnapshots"] != null)) {
+                if ((outParams.Properties["ImportedSnapshots"] != null && outParams.Properties["ImportedSnapshots"].Value != null))
+                {
                     int len = ((System.Array)(outParams.Properties["ImportedSnapshots"].Value)).Length;
                     System.Management.ManagementPath[] arrToRet = new System.Management.ManagementPath[len];
                     for (int iCounter = 0; (iCounter < len); iCounter = (iCounter + 1)) {
@@ -1299,10 +1297,9 @@
                     ImportedSnapshots = arrToRet;
                 }
                 Job = null;
-                //                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null))
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
@@ -1322,15 +1319,16 @@
                 inParams["SystemDefinitionFile"] = ((string)(SystemDefinitionFile));
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("ImportSystemDefinition", inParams, null);
                 ImportedSystem = null;
-                if ((outParams.Properties["ImportedSystem"] != null)) {
+                if ((outParams.Properties["ImportedSystem"] != null && outParams.Properties["ImportedSystem"].Value != null))
+                {
                     ImportedSystem = new System.Management.ManagementPath(outParams.Properties["ImportedSystem"].ToString());
                 }
                 Job = null;
-                //                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null))
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
+
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
             else {
@@ -1347,10 +1345,9 @@
                 inParams["SettingData"] = ((string)(SettingData));
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("ModifyDiskMergeSettings", inParams, null);
                 Job = null;
-                //                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null))
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
@@ -1367,13 +1364,13 @@
                 inParams["FeatureSettings"] = ((string[])(FeatureSettings));
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("ModifyFeatureSettings", inParams, null);
                 Job = null;
-                //                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null))
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
                 ResultingFeatureSettings = null;
-                if ((outParams.Properties["ResultingFeatureSettings"] != null)) {
+                if ((outParams.Properties["ResultingFeatureSettings"] != null && outParams.Properties["ResultingFeatureSettings"].Value != null))
+                {
                     int len = ((System.Array)(outParams.Properties["ResultingFeatureSettings"].Value)).Length;
                     System.Management.ManagementPath[] arrToRet = new System.Management.ManagementPath[len];
                     for (int iCounter = 0; (iCounter < len); iCounter = (iCounter + 1)) {
@@ -1398,10 +1395,9 @@
                 inParams["TargetSystem"] = ((System.Management.ManagementPath)(TargetSystem)).Path;
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("ModifyKvpItems", inParams, null);
                 Job = null;
-                //                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null))
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
@@ -1418,13 +1414,13 @@
                 inParams["ResourceSettings"] = ((string[])(ResourceSettings));
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("ModifyResourceSettings", inParams, null);
                 Job = null;
-                //                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null) && outParams.Properties["Job"].Value != null)
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
                 ResultingResourceSettings = null;
-                if ((outParams.Properties["ResultingResourceSettings"] != null)) {
+                if ((outParams.Properties["ResultingResourceSettings"] != null && outParams.Properties["ResultingResourceSettings"].Value != null))
+                {
                     int len = ((System.Array)(outParams.Properties["ResultingResourceSettings"].Value)).Length;
                     System.Management.ManagementPath[] arrToRet = new System.Management.ManagementPath[len];
                     for (int iCounter = 0; (iCounter < len); iCounter = (iCounter + 1)) {
@@ -1448,10 +1444,9 @@
                 inParams["SettingData"] = ((string)(SettingData));
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("ModifyServiceSettings", inParams, null);
                 Job = null;
-                //                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null))
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
@@ -1468,10 +1463,9 @@
                 inParams["SystemSettings"] = ((string)(SystemSettings));
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("ModifySystemSettings", inParams, null);
                 Job = null;
-                //                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null))
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
@@ -1488,10 +1482,9 @@
                 inParams["PlannedSystem"] = ((System.Management.ManagementPath)(PlannedSystem)).Path;
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("RealizePlannedSystem", inParams, null);
                 Job = null;
-                //                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null))
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
                 ResultingSystem = null;
                 if ((outParams.Properties["ResultingSystem"] != null)) {
@@ -1523,10 +1516,9 @@
                 }
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("RemoveFeatureSettings", inParams, null);
                 Job = null;
-                //                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null))
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
@@ -1557,11 +1549,9 @@
                 inParams["TargetSystem"] = ((System.Management.ManagementPath)(TargetSystem)).Path;
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("RemoveKvpItems", inParams, null);
                 Job = null;
-                //                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null))
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
-                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].Value.ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
@@ -1588,11 +1578,9 @@
                 }
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("RemoveResourceSettings", inParams, null);
                 Job = null;
-                //                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null))
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
-                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].Value.ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
@@ -1610,11 +1598,9 @@
                 inParams["TimeoutPeriod"] = ToDmtfDateTime(((System.DateTime)(TimeoutPeriod)));
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("RequestStateChange", inParams, null);
                 Job = null;
-                //                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null))
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
-                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].Value.ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
@@ -1632,11 +1618,9 @@
                 inParams["NetworkConfiguration"] = ((string[])(NetworkConfiguration));
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("SetGuestNetworkAdapterConfiguration", inParams, null);
                 Job = null;
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
-                //                if (outParams.Properties["Job"] != null)
+                if ((outParams.Properties["Job"] != null))
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
-                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].Value.ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
@@ -1675,10 +1659,9 @@
                 inParams["PlannedSystem"] = ((System.Management.ManagementPath)(PlannedSystem)).Path;
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("ValidatePlannedSystem", inParams, null);
                 Job = null;
-                //                if (outParams.Properties["Job"] != null)
-                if (outParams.Properties["Job"] != null || outParams.Properties["Job"].Value != null)
+                if ((outParams.Properties["Job"] != null))
                 {
-                    //                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
                 }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }

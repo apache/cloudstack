@@ -1,5 +1,4 @@
-﻿namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2
-{
+﻿namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
     using System;
     using System.ComponentModel;
     using System.Management;
@@ -14,14 +13,14 @@
     // Functions Reset<PropertyName> are added for Nullable Read/Write properties. These functions are used by VS designer in property browser to set a property to NULL.
     // Every property added to the class for WMI property has attributes set to define its behavior in Visual Studio designer and also to define a TypeConverter to be used.
     // Datetime conversion functions ToDateTime and ToDmtfDateTime are added to the class to convert DMTF datetime to System.DateTime and vice-versa.
-    // An Early Bound class generated for the WMI class.Msvm_KvpExchangeComponent
-    public class KvpExchangeComponent : System.ComponentModel.Component {
+    // An Early Bound class generated for the WMI class.Msvm_ImageManagementService
+    public class ImageManagementService : System.ComponentModel.Component {
         
         // Private property to hold the WMI namespace in which the class resides.
         private static string CreatedWmiNamespace = "ROOT\\virtualization\\v2";
         
         // Private property to hold the name of WMI class which created this class.
-        private static string CreatedClassName = "Msvm_KvpExchangeComponent";
+        private static string CreatedClassName = "Msvm_ImageManagementService";
         
         // Private member variable to hold the ManagementScope which is used by the various methods.
         private static System.Management.ManagementScope statMgmtScope = null;
@@ -44,35 +43,35 @@
         private bool isEmbedded;
         
         // Below are different overloads of constructors to initialize an instance of the class with a WMI object.
-        public KvpExchangeComponent() {
+        public ImageManagementService() {
             this.InitializeObject(null, null, null);
         }
         
-        public KvpExchangeComponent(string keyCreationClassName, string keyDeviceID, string keySystemCreationClassName, string keySystemName) {
-            this.InitializeObject(null, new System.Management.ManagementPath(KvpExchangeComponent.ConstructPath(keyCreationClassName, keyDeviceID, keySystemCreationClassName, keySystemName)), null);
+        public ImageManagementService(string keyCreationClassName, string keyName, string keySystemCreationClassName, string keySystemName) {
+            this.InitializeObject(null, new System.Management.ManagementPath(ImageManagementService.ConstructPath(keyCreationClassName, keyName, keySystemCreationClassName, keySystemName)), null);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementScope mgmtScope, string keyCreationClassName, string keyDeviceID, string keySystemCreationClassName, string keySystemName) {
-            this.InitializeObject(((System.Management.ManagementScope)(mgmtScope)), new System.Management.ManagementPath(KvpExchangeComponent.ConstructPath(keyCreationClassName, keyDeviceID, keySystemCreationClassName, keySystemName)), null);
+        public ImageManagementService(System.Management.ManagementScope mgmtScope, string keyCreationClassName, string keyName, string keySystemCreationClassName, string keySystemName) {
+            this.InitializeObject(((System.Management.ManagementScope)(mgmtScope)), new System.Management.ManagementPath(ImageManagementService.ConstructPath(keyCreationClassName, keyName, keySystemCreationClassName, keySystemName)), null);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
+        public ImageManagementService(System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(null, path, getOptions);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path) {
+        public ImageManagementService(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path) {
             this.InitializeObject(mgmtScope, path, null);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementPath path) {
+        public ImageManagementService(System.Management.ManagementPath path) {
             this.InitializeObject(null, path, null);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
+        public ImageManagementService(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(mgmtScope, path, getOptions);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementObject theObject) {
+        public ImageManagementService(System.Management.ManagementObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
                 PrivateLateBoundObject = theObject;
@@ -84,7 +83,7 @@
             }
         }
         
-        public KvpExchangeComponent(System.Management.ManagementBaseObject theObject) {
+        public ImageManagementService(System.Management.ManagementBaseObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
                 embeddedObj = theObject;
@@ -208,39 +207,6 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public ushort[] AdditionalAvailability {
-            get {
-                return ((ushort[])(curObj["AdditionalAvailability"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsAvailabilityNull {
-            get {
-                if ((curObj["Availability"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort Availability {
-            get {
-                if ((curObj["Availability"] == null)) {
-                    return System.Convert.ToUInt16(0);
-                }
-                return ((ushort)(curObj["Availability"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public ushort[] AvailableRequestedStates {
             get {
                 return ((ushort[])(curObj["AvailableRequestedStates"]));
@@ -323,14 +289,6 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string DeviceID {
-            get {
-                return ((string)(curObj["DeviceID"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string ElementName {
             get {
                 return ((string)(curObj["ElementName"]));
@@ -389,57 +347,6 @@
         
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsErrorClearedNull {
-            get {
-                if ((curObj["ErrorCleared"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public bool ErrorCleared {
-            get {
-                if ((curObj["ErrorCleared"] == null)) {
-                    return System.Convert.ToBoolean(0);
-                }
-                return ((bool)(curObj["ErrorCleared"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string ErrorDescription {
-            get {
-                return ((string)(curObj["ErrorDescription"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description(@"An array of embedded Msvm_KvpExchangeDataItem instances which contain the set of key-value pairs that components running within the guest operating system have pushed up to be available for access by external clients. This array will not contain any intrinsic items that are pushed by the integration component directly.")]
-        public string[] GuestExchangeItems {
-            get {
-                return ((string[])(curObj["GuestExchangeItems"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description(@"An array of embedded Msvm_KvpExchangeDataItem instances which contain the set of key-value pairs that the guest operating system has pushed up to be available for access by external clients. This array will not contain any data items pushed by other components running within the guest operating system.")]
-        public string[] GuestIntrinsicExchangeItems {
-            get {
-                return ((string[])(curObj["GuestIntrinsicExchangeItems"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsHealthStateNull {
             get {
                 if ((curObj["HealthState"] == null)) {
@@ -460,14 +367,6 @@
                     return System.Convert.ToUInt16(0);
                 }
                 return ((ushort)(curObj["HealthState"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string[] IdentifyingDescriptions {
-            get {
-                return ((string[])(curObj["IdentifyingDescriptions"]));
             }
         }
         
@@ -503,56 +402,6 @@
         public string InstanceID {
             get {
                 return ((string)(curObj["InstanceID"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsLastErrorCodeNull {
-            get {
-                if ((curObj["LastErrorCode"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public uint LastErrorCode {
-            get {
-                if ((curObj["LastErrorCode"] == null)) {
-                    return System.Convert.ToUInt32(0);
-                }
-                return ((uint)(curObj["LastErrorCode"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsMaxQuiesceTimeNull {
-            get {
-                if ((curObj["MaxQuiesceTime"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ulong MaxQuiesceTime {
-            get {
-                if ((curObj["MaxQuiesceTime"] == null)) {
-                    return System.Convert.ToUInt64(0);
-                }
-                return ((ulong)(curObj["MaxQuiesceTime"]));
             }
         }
         
@@ -607,67 +456,17 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string[] OtherIdentifyingInfo {
+        public string PrimaryOwnerContact {
             get {
-                return ((string[])(curObj["OtherIdentifyingInfo"]));
+                return ((string)(curObj["PrimaryOwnerContact"]));
             }
         }
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public ushort[] PowerManagementCapabilities {
+        public string PrimaryOwnerName {
             get {
-                return ((ushort[])(curObj["PowerManagementCapabilities"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsPowerManagementSupportedNull {
-            get {
-                if ((curObj["PowerManagementSupported"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public bool PowerManagementSupported {
-            get {
-                if ((curObj["PowerManagementSupported"] == null)) {
-                    return System.Convert.ToBoolean(0);
-                }
-                return ((bool)(curObj["PowerManagementSupported"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsPowerOnHoursNull {
-            get {
-                if ((curObj["PowerOnHours"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ulong PowerOnHours {
-            get {
-                if ((curObj["PowerOnHours"] == null)) {
-                    return System.Convert.ToUInt64(0);
-                }
-                return ((ulong)(curObj["PowerOnHours"]));
+                return ((string)(curObj["PrimaryOwnerName"]));
             }
         }
         
@@ -721,6 +520,39 @@
             }
         }
         
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsStartedNull {
+            get {
+                if ((curObj["Started"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public bool Started {
+            get {
+                if ((curObj["Started"] == null)) {
+                    return System.Convert.ToBoolean(0);
+                }
+                return ((bool)(curObj["Started"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string StartMode {
+            get {
+                return ((string)(curObj["StartMode"]));
+            }
+        }
+        
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string Status {
@@ -734,31 +566,6 @@
         public string[] StatusDescriptions {
             get {
                 return ((string[])(curObj["StatusDescriptions"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsStatusInfoNull {
-            get {
-                if ((curObj["StatusInfo"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort StatusInfo {
-            get {
-                if ((curObj["StatusInfo"] == null)) {
-                    return System.Convert.ToUInt16(0);
-                }
-                return ((ushort)(curObj["StatusInfo"]));
             }
         }
         
@@ -802,31 +609,6 @@
                 else {
                     return System.DateTime.MinValue;
                 }
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsTotalPowerOnHoursNull {
-            get {
-                if ((curObj["TotalPowerOnHours"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ulong TotalPowerOnHours {
-            get {
-                if ((curObj["TotalPowerOnHours"] == null)) {
-                    return System.Convert.ToUInt64(0);
-                }
-                return ((ulong)(curObj["TotalPowerOnHours"]));
             }
         }
         
@@ -884,13 +666,6 @@
             return false;
         }
         
-        private bool ShouldSerializeAvailability() {
-            if ((this.IsAvailabilityNull == false)) {
-                return true;
-            }
-            return false;
-        }
-        
         private bool ShouldSerializeCommunicationStatus() {
             if ((this.IsCommunicationStatusNull == false)) {
                 return true;
@@ -914,13 +689,6 @@
         
         private bool ShouldSerializeEnabledState() {
             if ((this.IsEnabledStateNull == false)) {
-                return true;
-            }
-            return false;
-        }
-        
-        private bool ShouldSerializeErrorCleared() {
-            if ((this.IsErrorClearedNull == false)) {
                 return true;
             }
             return false;
@@ -1064,36 +832,8 @@
             return false;
         }
         
-        private bool ShouldSerializeLastErrorCode() {
-            if ((this.IsLastErrorCodeNull == false)) {
-                return true;
-            }
-            return false;
-        }
-        
-        private bool ShouldSerializeMaxQuiesceTime() {
-            if ((this.IsMaxQuiesceTimeNull == false)) {
-                return true;
-            }
-            return false;
-        }
-        
         private bool ShouldSerializeOperatingStatus() {
             if ((this.IsOperatingStatusNull == false)) {
-                return true;
-            }
-            return false;
-        }
-        
-        private bool ShouldSerializePowerManagementSupported() {
-            if ((this.IsPowerManagementSupportedNull == false)) {
-                return true;
-            }
-            return false;
-        }
-        
-        private bool ShouldSerializePowerOnHours() {
-            if ((this.IsPowerOnHoursNull == false)) {
                 return true;
             }
             return false;
@@ -1113,8 +853,8 @@
             return false;
         }
         
-        private bool ShouldSerializeStatusInfo() {
-            if ((this.IsStatusInfoNull == false)) {
+        private bool ShouldSerializeStarted() {
+            if ((this.IsStartedNull == false)) {
                 return true;
             }
             return false;
@@ -1122,13 +862,6 @@
         
         private bool ShouldSerializeTimeOfLastStateChange() {
             if ((this.IsTimeOfLastStateChangeNull == false)) {
-                return true;
-            }
-            return false;
-        }
-        
-        private bool ShouldSerializeTotalPowerOnHours() {
-            if ((this.IsTotalPowerOnHoursNull == false)) {
                 return true;
             }
             return false;
@@ -1160,10 +893,10 @@
             isEmbedded = false;
         }
         
-        private static string ConstructPath(string keyCreationClassName, string keyDeviceID, string keySystemCreationClassName, string keySystemName) {
-            string strPath = "ROOT\\virtualization\\v2:Msvm_KvpExchangeComponent";
+        private static string ConstructPath(string keyCreationClassName, string keyName, string keySystemCreationClassName, string keySystemName) {
+            string strPath = "ROOT\\virtualization\\v2:Msvm_ImageManagementService";
             strPath = string.Concat(strPath, string.Concat(".CreationClassName=", string.Concat("\"", string.Concat(keyCreationClassName, "\""))));
-            strPath = string.Concat(strPath, string.Concat(",DeviceID=", string.Concat("\"", string.Concat(keyDeviceID, "\""))));
+            strPath = string.Concat(strPath, string.Concat(",Name=", string.Concat("\"", string.Concat(keyName, "\""))));
             strPath = string.Concat(strPath, string.Concat(",SystemCreationClassName=", string.Concat("\"", string.Concat(keySystemCreationClassName, "\""))));
             strPath = string.Concat(strPath, string.Concat(",SystemName=", string.Concat("\"", string.Concat(keySystemName, "\""))));
             return strPath;
@@ -1182,23 +915,23 @@
         }
         
         // Different overloads of GetInstances() help in enumerating instances of the WMI class.
-        public static KvpExchangeComponentCollection GetInstances() {
+        public static ImageManagementServiceCollection GetInstances() {
             return GetInstances(null, null, null);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(string condition) {
+        public static ImageManagementServiceCollection GetInstances(string condition) {
             return GetInstances(null, condition, null);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(string[] selectedProperties) {
+        public static ImageManagementServiceCollection GetInstances(string[] selectedProperties) {
             return GetInstances(null, null, selectedProperties);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(string condition, string[] selectedProperties) {
+        public static ImageManagementServiceCollection GetInstances(string condition, string[] selectedProperties) {
             return GetInstances(null, condition, selectedProperties);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(System.Management.ManagementScope mgmtScope, System.Management.EnumerationOptions enumOptions) {
+        public static ImageManagementServiceCollection GetInstances(System.Management.ManagementScope mgmtScope, System.Management.EnumerationOptions enumOptions) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
                     mgmtScope = new System.Management.ManagementScope();
@@ -1209,25 +942,25 @@
                 }
             }
             System.Management.ManagementPath pathObj = new System.Management.ManagementPath();
-            pathObj.ClassName = "Msvm_KvpExchangeComponent";
+            pathObj.ClassName = "Msvm_ImageManagementService";
             pathObj.NamespacePath = "root\\virtualization\\v2";
             System.Management.ManagementClass clsObject = new System.Management.ManagementClass(mgmtScope, pathObj, null);
             if ((enumOptions == null)) {
                 enumOptions = new System.Management.EnumerationOptions();
                 enumOptions.EnsureLocatable = true;
             }
-            return new KvpExchangeComponentCollection(clsObject.GetInstances(enumOptions));
+            return new ImageManagementServiceCollection(clsObject.GetInstances(enumOptions));
         }
         
-        public static KvpExchangeComponentCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition) {
+        public static ImageManagementServiceCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition) {
             return GetInstances(mgmtScope, condition, null);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(System.Management.ManagementScope mgmtScope, string[] selectedProperties) {
+        public static ImageManagementServiceCollection GetInstances(System.Management.ManagementScope mgmtScope, string[] selectedProperties) {
             return GetInstances(mgmtScope, null, selectedProperties);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition, string[] selectedProperties) {
+        public static ImageManagementServiceCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition, string[] selectedProperties) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
                     mgmtScope = new System.Management.ManagementScope();
@@ -1237,15 +970,15 @@
                     mgmtScope = statMgmtScope;
                 }
             }
-            System.Management.ManagementObjectSearcher ObjectSearcher = new System.Management.ManagementObjectSearcher(mgmtScope, new SelectQuery("Msvm_KvpExchangeComponent", condition, selectedProperties));
+            System.Management.ManagementObjectSearcher ObjectSearcher = new System.Management.ManagementObjectSearcher(mgmtScope, new SelectQuery("Msvm_ImageManagementService", condition, selectedProperties));
             System.Management.EnumerationOptions enumOptions = new System.Management.EnumerationOptions();
             enumOptions.EnsureLocatable = true;
             ObjectSearcher.Options = enumOptions;
-            return new KvpExchangeComponentCollection(ObjectSearcher.Get());
+            return new ImageManagementServiceCollection(ObjectSearcher.Get());
         }
         
         [Browsable(true)]
-        public static KvpExchangeComponent CreateInstance() {
+        public static ImageManagementService CreateInstance() {
             System.Management.ManagementScope mgmtScope = null;
             if ((statMgmtScope == null)) {
                 mgmtScope = new System.Management.ManagementScope();
@@ -1256,7 +989,7 @@
             }
             System.Management.ManagementPath mgmtPath = new System.Management.ManagementPath(CreatedClassName);
             System.Management.ManagementClass tmpMgmtClass = new System.Management.ManagementClass(mgmtScope, mgmtPath, null);
-            return new KvpExchangeComponent(tmpMgmtClass.CreateInstance());
+            return new ImageManagementService(tmpMgmtClass.CreateInstance());
         }
         
         [Browsable(true)]
@@ -1264,41 +997,163 @@
             PrivateLateBoundObject.Delete();
         }
         
-        public uint EnableDevice(bool Enabled) {
+        public uint AttachVirtualHardDisk(bool AssignDriveLetter, string Path, bool ReadOnly, out System.Management.ManagementPath Job) {
             if ((isEmbedded == false)) {
                 System.Management.ManagementBaseObject inParams = null;
-                inParams = PrivateLateBoundObject.GetMethodParameters("EnableDevice");
-                inParams["Enabled"] = ((bool)(Enabled));
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("EnableDevice", inParams, null);
+                inParams = PrivateLateBoundObject.GetMethodParameters("AttachVirtualHardDisk");
+                inParams["AssignDriveLetter"] = ((bool)(AssignDriveLetter));
+                inParams["Path"] = ((string)(Path));
+                inParams["ReadOnly"] = ((bool)(ReadOnly));
+                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("AttachVirtualHardDisk", inParams, null);
+                Job = null;
+                if ((outParams.Properties["Job"] != null))
+                {
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
+                }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
             else {
+                Job = null;
                 return System.Convert.ToUInt32(0);
             }
         }
         
-        public uint OnlineDevice(bool Online) {
+        public uint CompactVirtualHardDisk(ushort Mode, string Path, out System.Management.ManagementPath Job) {
             if ((isEmbedded == false)) {
                 System.Management.ManagementBaseObject inParams = null;
-                inParams = PrivateLateBoundObject.GetMethodParameters("OnlineDevice");
-                inParams["Online"] = ((bool)(Online));
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("OnlineDevice", inParams, null);
+                inParams = PrivateLateBoundObject.GetMethodParameters("CompactVirtualHardDisk");
+                inParams["Mode"] = ((ushort)(Mode));
+                inParams["Path"] = ((string)(Path));
+                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("CompactVirtualHardDisk", inParams, null);
+                Job = null;
+                if ((outParams.Properties["Job"] != null))
+                {
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
+                }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
             else {
+                Job = null;
                 return System.Convert.ToUInt32(0);
             }
         }
         
-        public uint QuiesceDevice(bool Quiesce) {
+        public uint ConvertVirtualHardDisk(string SourcePath, string VirtualDiskSettingData, out System.Management.ManagementPath Job) {
             if ((isEmbedded == false)) {
                 System.Management.ManagementBaseObject inParams = null;
-                inParams = PrivateLateBoundObject.GetMethodParameters("QuiesceDevice");
-                inParams["Quiesce"] = ((bool)(Quiesce));
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("QuiesceDevice", inParams, null);
+                inParams = PrivateLateBoundObject.GetMethodParameters("ConvertVirtualHardDisk");
+                inParams["SourcePath"] = ((string)(SourcePath));
+                inParams["VirtualDiskSettingData"] = ((string)(VirtualDiskSettingData));
+                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("ConvertVirtualHardDisk", inParams, null);
+                Job = null;
+                if ((outParams.Properties["Job"] != null))
+                {
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
+                }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
             else {
+                Job = null;
+                return System.Convert.ToUInt32(0);
+            }
+        }
+        
+        public uint CreateVirtualFloppyDisk(string Path, out System.Management.ManagementPath Job) {
+            if ((isEmbedded == false)) {
+                System.Management.ManagementBaseObject inParams = null;
+                inParams = PrivateLateBoundObject.GetMethodParameters("CreateVirtualFloppyDisk");
+                inParams["Path"] = ((string)(Path));
+                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("CreateVirtualFloppyDisk", inParams, null);
+                Job = null;
+                if ((outParams.Properties["Job"] != null))
+                {
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
+                }
+                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
+            }
+            else {
+                Job = null;
+                return System.Convert.ToUInt32(0);
+            }
+        }
+        
+        public uint CreateVirtualHardDisk(string VirtualDiskSettingData, out System.Management.ManagementPath Job) {
+            if ((isEmbedded == false)) {
+                System.Management.ManagementBaseObject inParams = null;
+                inParams = PrivateLateBoundObject.GetMethodParameters("CreateVirtualHardDisk");
+                inParams["VirtualDiskSettingData"] = ((string)(VirtualDiskSettingData));
+                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("CreateVirtualHardDisk", inParams, null);
+                Job = null;
+                if ((outParams.Properties["Job"] != null))
+                {
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
+                }
+                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
+            }
+            else {
+                Job = null;
+                return System.Convert.ToUInt32(0);
+            }
+        }
+        
+        public uint GetVirtualHardDiskSettingData(string Path, out System.Management.ManagementPath Job, out string SettingData) {
+            if ((isEmbedded == false)) {
+                System.Management.ManagementBaseObject inParams = null;
+                inParams = PrivateLateBoundObject.GetMethodParameters("GetVirtualHardDiskSettingData");
+                inParams["Path"] = ((string)(Path));
+                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("GetVirtualHardDiskSettingData", inParams, null);
+                Job = null;
+                if ((outParams.Properties["Job"] != null))
+                {
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
+                }
+                SettingData = System.Convert.ToString(outParams.Properties["SettingData"].Value);
+                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
+            }
+            else {
+                Job = null;
+                SettingData = null;
+                return System.Convert.ToUInt32(0);
+            }
+        }
+        
+        public uint GetVirtualHardDiskState(string Path, out System.Management.ManagementPath Job, out string State) {
+            if ((isEmbedded == false)) {
+                System.Management.ManagementBaseObject inParams = null;
+                inParams = PrivateLateBoundObject.GetMethodParameters("GetVirtualHardDiskState");
+                inParams["Path"] = ((string)(Path));
+                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("GetVirtualHardDiskState", inParams, null);
+                Job = null;
+                if ((outParams.Properties["Job"] != null))
+                {
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
+                }
+                State = System.Convert.ToString(outParams.Properties["State"].Value);
+                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
+            }
+            else {
+                Job = null;
+                State = null;
+                return System.Convert.ToUInt32(0);
+            }
+        }
+        
+        public uint MergeVirtualHardDisk(string DestinationPath, string SourcePath, out System.Management.ManagementPath Job) {
+            if ((isEmbedded == false)) {
+                System.Management.ManagementBaseObject inParams = null;
+                inParams = PrivateLateBoundObject.GetMethodParameters("MergeVirtualHardDisk");
+                inParams["DestinationPath"] = ((string)(DestinationPath));
+                inParams["SourcePath"] = ((string)(SourcePath));
+                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("MergeVirtualHardDisk", inParams, null);
+                Job = null;
+                if ((outParams.Properties["Job"] != null))
+                {
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
+                }
+                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
+            }
+            else {
+                Job = null;
                 return System.Convert.ToUInt32(0);
             }
         }
@@ -1323,10 +1178,71 @@
             }
         }
         
-        public uint Reset() {
+        public uint ResizeVirtualHardDisk(ulong MaxInternalSize, string Path, out System.Management.ManagementPath Job) {
             if ((isEmbedded == false)) {
                 System.Management.ManagementBaseObject inParams = null;
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("Reset", inParams, null);
+                inParams = PrivateLateBoundObject.GetMethodParameters("ResizeVirtualHardDisk");
+                inParams["MaxInternalSize"] = ((ulong)(MaxInternalSize));
+                inParams["Path"] = ((string)(Path));
+                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("ResizeVirtualHardDisk", inParams, null);
+                Job = null;
+                if ((outParams.Properties["Job"] != null))
+                {
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
+                }
+                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
+            }
+            else {
+                Job = null;
+                return System.Convert.ToUInt32(0);
+            }
+        }
+        
+        public uint SetParentVirtualHardDisk(string ChildPath, bool IgnoreIDMismatch, string LeafPath, string ParentPath, out System.Management.ManagementPath Job) {
+            if ((isEmbedded == false)) {
+                System.Management.ManagementBaseObject inParams = null;
+                inParams = PrivateLateBoundObject.GetMethodParameters("SetParentVirtualHardDisk");
+                inParams["ChildPath"] = ((string)(ChildPath));
+                inParams["IgnoreIDMismatch"] = ((bool)(IgnoreIDMismatch));
+                inParams["LeafPath"] = ((string)(LeafPath));
+                inParams["ParentPath"] = ((string)(ParentPath));
+                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("SetParentVirtualHardDisk", inParams, null);
+                Job = null;
+                if ((outParams.Properties["Job"] != null))
+                {
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
+                }
+                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
+            }
+            else {
+                Job = null;
+                return System.Convert.ToUInt32(0);
+            }
+        }
+        
+        public uint SetVirtualHardDiskSettingData(string VirtualDiskSettingData, out System.Management.ManagementPath Job) {
+            if ((isEmbedded == false)) {
+                System.Management.ManagementBaseObject inParams = null;
+                inParams = PrivateLateBoundObject.GetMethodParameters("SetVirtualHardDiskSettingData");
+                inParams["VirtualDiskSettingData"] = ((string)(VirtualDiskSettingData));
+                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("SetVirtualHardDiskSettingData", inParams, null);
+                Job = null;
+                if ((outParams.Properties["Job"] != null))
+                {
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
+                }
+                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
+            }
+            else {
+                Job = null;
+                return System.Convert.ToUInt32(0);
+            }
+        }
+        
+        public uint StartService() {
+            if ((isEmbedded == false)) {
+                System.Management.ManagementBaseObject inParams = null;
+                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("StartService", inParams, null);
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
             else {
@@ -1334,10 +1250,10 @@
             }
         }
         
-        public uint RestoreProperties() {
+        public uint StopService() {
             if ((isEmbedded == false)) {
                 System.Management.ManagementBaseObject inParams = null;
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("RestoreProperties", inParams, null);
+                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("StopService", inParams, null);
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
             else {
@@ -1345,37 +1261,31 @@
             }
         }
         
-        public uint SaveProperties() {
+        public uint ValidateVirtualHardDisk(string Path, out System.Management.ManagementPath Job) {
             if ((isEmbedded == false)) {
                 System.Management.ManagementBaseObject inParams = null;
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("SaveProperties", inParams, null);
+                inParams = PrivateLateBoundObject.GetMethodParameters("ValidateVirtualHardDisk");
+                inParams["Path"] = ((string)(Path));
+                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("ValidateVirtualHardDisk", inParams, null);
+                Job = null;
+                if ((outParams.Properties["Job"] != null))
+                {
+                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
+                }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
             else {
-                return System.Convert.ToUInt32(0);
-            }
-        }
-        
-        public uint SetPowerState(ushort PowerState, System.DateTime Time) {
-            if ((isEmbedded == false)) {
-                System.Management.ManagementBaseObject inParams = null;
-                inParams = PrivateLateBoundObject.GetMethodParameters("SetPowerState");
-                inParams["PowerState"] = ((ushort)(PowerState));
-                inParams["Time"] = ToDmtfDateTime(((System.DateTime)(Time)));
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("SetPowerState", inParams, null);
-                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
-            }
-            else {
+                Job = null;
                 return System.Convert.ToUInt32(0);
             }
         }
         
         // Enumerator implementation for enumerating instances of the class.
-        public class KvpExchangeComponentCollection : object, ICollection {
+        public class ImageManagementServiceCollection : object, ICollection {
             
             private ManagementObjectCollection privColObj;
             
-            public KvpExchangeComponentCollection(ManagementObjectCollection objCollection) {
+            public ImageManagementServiceCollection(ManagementObjectCollection objCollection) {
                 privColObj = objCollection;
             }
             
@@ -1401,25 +1311,25 @@
                 privColObj.CopyTo(array, index);
                 int nCtr;
                 for (nCtr = 0; (nCtr < array.Length); nCtr = (nCtr + 1)) {
-                    array.SetValue(new KvpExchangeComponent(((System.Management.ManagementObject)(array.GetValue(nCtr)))), nCtr);
+                    array.SetValue(new ImageManagementService(((System.Management.ManagementObject)(array.GetValue(nCtr)))), nCtr);
                 }
             }
             
             public virtual System.Collections.IEnumerator GetEnumerator() {
-                return new KvpExchangeComponentEnumerator(privColObj.GetEnumerator());
+                return new ImageManagementServiceEnumerator(privColObj.GetEnumerator());
             }
             
-            public class KvpExchangeComponentEnumerator : object, System.Collections.IEnumerator {
+            public class ImageManagementServiceEnumerator : object, System.Collections.IEnumerator {
                 
                 private ManagementObjectCollection.ManagementObjectEnumerator privObjEnum;
                 
-                public KvpExchangeComponentEnumerator(ManagementObjectCollection.ManagementObjectEnumerator objEnum) {
+                public ImageManagementServiceEnumerator(ManagementObjectCollection.ManagementObjectEnumerator objEnum) {
                     privObjEnum = objEnum;
                 }
                 
                 public virtual object Current {
                     get {
-                        return new KvpExchangeComponent(((System.Management.ManagementObject)(privObjEnum.Current)));
+                        return new ImageManagementService(((System.Management.ManagementObject)(privObjEnum.Current)));
                     }
                 }
                 

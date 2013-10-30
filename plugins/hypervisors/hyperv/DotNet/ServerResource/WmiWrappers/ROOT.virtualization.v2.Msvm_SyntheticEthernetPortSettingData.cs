@@ -1,5 +1,4 @@
-﻿namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 
-{
+﻿namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
     using System;
     using System.ComponentModel;
     using System.Management;
@@ -13,14 +12,14 @@
     // Functions Is<PropertyName>Null() are used to check if a property is NULL.
     // Functions Reset<PropertyName> are added for Nullable Read/Write properties. These functions are used by VS designer in property browser to set a property to NULL.
     // Every property added to the class for WMI property has attributes set to define its behavior in Visual Studio designer and also to define a TypeConverter to be used.
-    // An Early Bound class generated for the WMI class.Msvm_VirtualSystemManagementServiceSettingData
-    public class VirtualSystemManagementServiceSettingData : System.ComponentModel.Component {
+    // An Early Bound class generated for the WMI class.Msvm_SyntheticEthernetPortSettingData
+    public class SyntheticEthernetPortSettingData : System.ComponentModel.Component {
         
         // Private property to hold the WMI namespace in which the class resides.
         private static string CreatedWmiNamespace = "ROOT\\virtualization\\v2";
         
         // Private property to hold the name of WMI class which created this class.
-        public static string CreatedClassName = "Msvm_VirtualSystemManagementServiceSettingData";
+        public static string CreatedClassName = "Msvm_SyntheticEthernetPortSettingData";
         
         // Private member variable to hold the ManagementScope which is used by the various methods.
         private static System.Management.ManagementScope statMgmtScope = null;
@@ -43,35 +42,35 @@
         private bool isEmbedded;
         
         // Below are different overloads of constructors to initialize an instance of the class with a WMI object.
-        public VirtualSystemManagementServiceSettingData() {
+        public SyntheticEthernetPortSettingData() {
             this.InitializeObject(null, null, null);
         }
         
-        public VirtualSystemManagementServiceSettingData(string keyInstanceID) {
-            this.InitializeObject(null, new System.Management.ManagementPath(VirtualSystemManagementServiceSettingData.ConstructPath(keyInstanceID)), null);
+        public SyntheticEthernetPortSettingData(string keyInstanceID) {
+            this.InitializeObject(null, new System.Management.ManagementPath(SyntheticEthernetPortSettingData.ConstructPath(keyInstanceID)), null);
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementScope mgmtScope, string keyInstanceID) {
-            this.InitializeObject(((System.Management.ManagementScope)(mgmtScope)), new System.Management.ManagementPath(VirtualSystemManagementServiceSettingData.ConstructPath(keyInstanceID)), null);
+        public SyntheticEthernetPortSettingData(System.Management.ManagementScope mgmtScope, string keyInstanceID) {
+            this.InitializeObject(((System.Management.ManagementScope)(mgmtScope)), new System.Management.ManagementPath(SyntheticEthernetPortSettingData.ConstructPath(keyInstanceID)), null);
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
+        public SyntheticEthernetPortSettingData(System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(null, path, getOptions);
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path) {
+        public SyntheticEthernetPortSettingData(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path) {
             this.InitializeObject(mgmtScope, path, null);
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementPath path) {
+        public SyntheticEthernetPortSettingData(System.Management.ManagementPath path) {
             this.InitializeObject(null, path, null);
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
+        public SyntheticEthernetPortSettingData(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(mgmtScope, path, getOptions);
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementObject theObject) {
+        public SyntheticEthernetPortSettingData(System.Management.ManagementObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
                 PrivateLateBoundObject = theObject;
@@ -83,7 +82,7 @@
             }
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementBaseObject theObject) {
+        public SyntheticEthernetPortSettingData(System.Management.ManagementBaseObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
                 embeddedObj = theObject;
@@ -207,11 +206,75 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description(@"Used by OEMs to allow BIOS-locked Windows operating systems to run in the virtual machine. This string must be exactly 32 characters in length.
-This is a read-only property, but it can be changed using the ModifyServiceSettings method of the Msvm_VirtualSystemManagementService class.")]
-        public string BiosLockString {
+        public string Address {
             get {
-                return ((string)(curObj["BiosLockString"]));
+                return ((string)(curObj["Address"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string AddressOnParent {
+            get {
+                return ((string)(curObj["AddressOnParent"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string AllocationUnits {
+            get {
+                return ((string)(curObj["AllocationUnits"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsAutomaticAllocationNull {
+            get {
+                if ((curObj["AutomaticAllocation"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public bool AutomaticAllocation {
+            get {
+                if ((curObj["AutomaticAllocation"] == null)) {
+                    return System.Convert.ToBoolean(0);
+                }
+                return ((bool)(curObj["AutomaticAllocation"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsAutomaticDeallocationNull {
+            get {
+                if ((curObj["AutomaticDeallocation"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public bool AutomaticDeallocation {
+            get {
+                if ((curObj["AutomaticDeallocation"] == null)) {
+                    return System.Convert.ToBoolean(0);
+                }
+                return ((bool)(curObj["AutomaticDeallocation"]));
             }
         }
         
@@ -225,35 +288,34 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The WorldWideNodeName address for dynamically generated WorldWideName addresses u" +
-            "sed for Synthetic HBAs.\nThis is a read-only property, but it can be changed usin" +
-            "g the ModifyServiceSettings method of the Msvm_VirtualSystemManagementService cl" +
-            "ass.")]
-        public string CurrentWWNNAddress {
+        public string[] Connection {
             get {
-                return ((string)(curObj["CurrentWWNNAddress"]));
+                return ((string[])(curObj["Connection"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsConsumerVisibilityNull {
+            get {
+                if ((curObj["ConsumerVisibility"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
             }
         }
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The default external data root. By default, \"root\\ProgramData\\Microsoft\\Windows\\V" +
-            "irtualization\".\nThis is a read-only property, but it can be changed using the Mo" +
-            "difyServiceSettings method of the Msvm_VirtualSystemManagementService class.")]
-        public string DefaultExternalDataRoot {
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ushort ConsumerVisibility {
             get {
-                return ((string)(curObj["DefaultExternalDataRoot"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The default virtual hard disk path. By default, \"root\\Users\\Public\\Documents\\Virt" +
-            "ual Hard Disks\".\nThis is a read-only property, but it can be changed using the M" +
-            "odifyServiceSettings method of the Msvm_VirtualSystemManagementService class.")]
-        public string DefaultVirtualHardDiskPath {
-            get {
-                return ((string)(curObj["DefaultVirtualHardDiskPath"]));
+                if ((curObj["ConsumerVisibility"] == null)) {
+                    return System.Convert.ToUInt16(0);
+                }
+                return ((ushort)(curObj["ConsumerVisibility"]));
             }
         }
         
@@ -265,19 +327,11 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
             }
         }
         
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string ElementName {
-            get {
-                return ((string)(curObj["ElementName"]));
-            }
-        }
-        
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsHbaLunTimeoutNull {
+        public bool IsDesiredVLANEndpointModeNull {
             get {
-                if ((curObj["HbaLunTimeout"] == null)) {
+                if ((curObj["DesiredVLANEndpointMode"] == null)) {
                     return true;
                 }
                 else {
@@ -288,15 +342,29 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description(@"This property describes the amount of time that the Synthetic FC virtual device will wait for a LUN to appear before starting a virtual machine.
-This is a read-only property, but it can be changed using the ModifyServiceSettings method of the Msvm_VirtualSystemManagementService class.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public uint HbaLunTimeout {
+        public ushort DesiredVLANEndpointMode {
             get {
-                if ((curObj["HbaLunTimeout"] == null)) {
-                    return System.Convert.ToUInt32(0);
+                if ((curObj["DesiredVLANEndpointMode"] == null)) {
+                    return System.Convert.ToUInt16(0);
                 }
-                return ((uint)(curObj["HbaLunTimeout"]));
+                return ((ushort)(curObj["DesiredVLANEndpointMode"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string ElementName {
+            get {
+                return ((string)(curObj["ElementName"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string[] HostResource {
+            get {
+                return ((string[])(curObj["HostResource"]));
             }
         }
         
@@ -308,57 +376,11 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
             }
         }
         
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The maximum MAC address for dynamically generated MAC addresses.\nThis is a read-o" +
-            "nly property, but it can be changed using the ModifyServiceSettings method of th" +
-            "e Msvm_VirtualSystemManagementService class.")]
-        public string MaximumMacAddress {
-            get {
-                return ((string)(curObj["MaximumMacAddress"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The maximum WorldWidePortName address for dynamically generated WorldWideName add" +
-            "resses used for Synthetic HBAs.\nThis is a read-only property, but it can be chan" +
-            "ged using the ModifyServiceSettings method of the Msvm_VirtualSystemManagementSe" +
-            "rvice class.")]
-        public string MaximumWWPNAddress {
-            get {
-                return ((string)(curObj["MaximumWWPNAddress"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The minimum MAC address for dynamically generated MAC addresses.\nThis is a read-o" +
-            "nly property, but it can be changed using the ModifyServiceSettings method of th" +
-            "e Msvm_VirtualSystemManagementService class.")]
-        public string MinimumMacAddress {
-            get {
-                return ((string)(curObj["MinimumMacAddress"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The minimum WorldWidePortName address for dynamically generated WorldWideName add" +
-            "resses used for Synthetic HBAs.\nThis is a read-only property, but it can be chan" +
-            "ged using the ModifyServiceSettings method of the Msvm_VirtualSystemManagementSe" +
-            "rvice class.")]
-        public string MinimumWWPNAddress {
-            get {
-                return ((string)(curObj["MinimumWWPNAddress"]));
-            }
-        }
-        
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsNumaSpanningEnabledNull {
+        public bool IsLimitNull {
             get {
-                if ((curObj["NumaSpanningEnabled"] == null)) {
+                if ((curObj["Limit"] == null)) {
                     return true;
                 }
                 else {
@@ -369,35 +391,224 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("Reserved for future use.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public bool NumaSpanningEnabled {
+        public ulong Limit {
             get {
-                if ((curObj["NumaSpanningEnabled"] == null)) {
+                if ((curObj["Limit"] == null)) {
+                    return System.Convert.ToUInt64(0);
+                }
+                return ((ulong)(curObj["Limit"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsMappingBehaviorNull {
+            get {
+                if ((curObj["MappingBehavior"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ushort MappingBehavior {
+            get {
+                if ((curObj["MappingBehavior"] == null)) {
+                    return System.Convert.ToUInt16(0);
+                }
+                return ((ushort)(curObj["MappingBehavior"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string OtherEndpointMode {
+            get {
+                return ((string)(curObj["OtherEndpointMode"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string OtherResourceType {
+            get {
+                return ((string)(curObj["OtherResourceType"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string Parent {
+            get {
+                return ((string)(curObj["Parent"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string PoolID {
+            get {
+                return ((string)(curObj["PoolID"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsReservationNull {
+            get {
+                if ((curObj["Reservation"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ulong Reservation {
+            get {
+                if ((curObj["Reservation"] == null)) {
+                    return System.Convert.ToUInt64(0);
+                }
+                return ((ulong)(curObj["Reservation"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string ResourceSubType {
+            get {
+                return ((string)(curObj["ResourceSubType"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsResourceTypeNull {
+            get {
+                if ((curObj["ResourceType"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ushort ResourceType {
+            get {
+                if ((curObj["ResourceType"] == null)) {
+                    return System.Convert.ToUInt16(0);
+                }
+                return ((ushort)(curObj["ResourceType"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsStaticMacAddressNull {
+            get {
+                if ((curObj["StaticMacAddress"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("Indicates a static MAC address.\nThis is a read-only property, but it can be chang" +
+            "ed using the ModifyVirtualSystemResources method of the Msvm_VirtualSystemManage" +
+            "mentService class.")]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public bool StaticMacAddress {
+            get {
+                if ((curObj["StaticMacAddress"] == null)) {
                     return System.Convert.ToBoolean(0);
                 }
-                return ((bool)(curObj["NumaSpanningEnabled"]));
+                return ((bool)(curObj["StaticMacAddress"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsVirtualQuantityNull {
+            get {
+                if ((curObj["VirtualQuantity"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
             }
         }
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("Controls memory allocation for the VMs on non-uniform memory access (NUMA) system" +
-            "s.\nThis is a read-only property, but it can be changed using the ModifyServiceSe" +
-            "ttings method of the Msvm_VirtualSystemManagementService class.")]
-        public string PrimaryOwnerContact {
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ulong VirtualQuantity {
             get {
-                return ((string)(curObj["PrimaryOwnerContact"]));
+                if ((curObj["VirtualQuantity"] == null)) {
+                    return System.Convert.ToUInt64(0);
+                }
+                return ((ulong)(curObj["VirtualQuantity"]));
             }
         }
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description(@"Describes how the primary system owner can be reached (for example, phone number or e-mail address). By default, empty. This name may not exceed 256 characters in length.
-This is a read-only property, but it can be changed using the ModifyServiceSettings method of the Msvm_VirtualSystemManagementService class.")]
-        public string PrimaryOwnerName {
+        public string VirtualQuantityUnits {
             get {
-                return ((string)(curObj["PrimaryOwnerName"]));
+                return ((string)(curObj["VirtualQuantityUnits"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description(@"A free-form string array of identifiers of this resource presented to the virtual computer system's operating system. The indexes and values per index are defined on a per resource basis (that is, for each enumerated ResourceType value). This property is set to ""GUID"".
+This is a read-only property, but it can be changed using the ModifyVirtualSystemResources method of the sd class.")]
+        public string[] VirtualSystemIdentifiers {
+            get {
+                return ((string[])(curObj["VirtualSystemIdentifiers"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsWeightNull {
+            get {
+                if ((curObj["Weight"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public uint Weight {
+            get {
+                if ((curObj["Weight"] == null)) {
+                    return System.Convert.ToUInt32(0);
+                }
+                return ((uint)(curObj["Weight"]));
             }
         }
         
@@ -430,15 +641,78 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
             return false;
         }
         
-        private bool ShouldSerializeHbaLunTimeout() {
-            if ((this.IsHbaLunTimeoutNull == false)) {
+        private bool ShouldSerializeAutomaticAllocation() {
+            if ((this.IsAutomaticAllocationNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeNumaSpanningEnabled() {
-            if ((this.IsNumaSpanningEnabledNull == false)) {
+        private bool ShouldSerializeAutomaticDeallocation() {
+            if ((this.IsAutomaticDeallocationNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializeConsumerVisibility() {
+            if ((this.IsConsumerVisibilityNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializeDesiredVLANEndpointMode() {
+            if ((this.IsDesiredVLANEndpointModeNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializeLimit() {
+            if ((this.IsLimitNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializeMappingBehavior() {
+            if ((this.IsMappingBehaviorNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializeReservation() {
+            if ((this.IsReservationNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializeResourceType() {
+            if ((this.IsResourceTypeNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializeStaticMacAddress() {
+            if ((this.IsStaticMacAddressNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializeVirtualQuantity() {
+            if ((this.IsVirtualQuantityNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializeWeight() {
+            if ((this.IsWeightNull == false)) {
                 return true;
             }
             return false;
@@ -464,7 +738,7 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
         }
         
         private static string ConstructPath(string keyInstanceID) {
-            string strPath = "ROOT\\virtualization\\v2:Msvm_VirtualSystemManagementServiceSettingData";
+            string strPath = "ROOT\\virtualization\\v2:Msvm_SyntheticEthernetPortSettingData";
             strPath = string.Concat(strPath, string.Concat(".InstanceID=", string.Concat("\"", string.Concat(keyInstanceID, "\""))));
             return strPath;
         }
@@ -482,23 +756,23 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
         }
         
         // Different overloads of GetInstances() help in enumerating instances of the WMI class.
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances() {
+        public static SyntheticEthernetPortSettingDataCollection GetInstances() {
             return GetInstances(null, null, null);
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(string condition) {
+        public static SyntheticEthernetPortSettingDataCollection GetInstances(string condition) {
             return GetInstances(null, condition, null);
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(string[] selectedProperties) {
+        public static SyntheticEthernetPortSettingDataCollection GetInstances(string[] selectedProperties) {
             return GetInstances(null, null, selectedProperties);
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(string condition, string[] selectedProperties) {
+        public static SyntheticEthernetPortSettingDataCollection GetInstances(string condition, string[] selectedProperties) {
             return GetInstances(null, condition, selectedProperties);
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, System.Management.EnumerationOptions enumOptions) {
+        public static SyntheticEthernetPortSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, System.Management.EnumerationOptions enumOptions) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
                     mgmtScope = new System.Management.ManagementScope();
@@ -509,25 +783,25 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
                 }
             }
             System.Management.ManagementPath pathObj = new System.Management.ManagementPath();
-            pathObj.ClassName = "Msvm_VirtualSystemManagementServiceSettingData";
+            pathObj.ClassName = "Msvm_SyntheticEthernetPortSettingData";
             pathObj.NamespacePath = "root\\virtualization\\v2";
             System.Management.ManagementClass clsObject = new System.Management.ManagementClass(mgmtScope, pathObj, null);
             if ((enumOptions == null)) {
                 enumOptions = new System.Management.EnumerationOptions();
                 enumOptions.EnsureLocatable = true;
             }
-            return new VirtualSystemManagementServiceSettingDataCollection(clsObject.GetInstances(enumOptions));
+            return new SyntheticEthernetPortSettingDataCollection(clsObject.GetInstances(enumOptions));
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition) {
+        public static SyntheticEthernetPortSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition) {
             return GetInstances(mgmtScope, condition, null);
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string[] selectedProperties) {
+        public static SyntheticEthernetPortSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string[] selectedProperties) {
             return GetInstances(mgmtScope, null, selectedProperties);
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition, string[] selectedProperties) {
+        public static SyntheticEthernetPortSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition, string[] selectedProperties) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
                     mgmtScope = new System.Management.ManagementScope();
@@ -537,15 +811,15 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
                     mgmtScope = statMgmtScope;
                 }
             }
-            System.Management.ManagementObjectSearcher ObjectSearcher = new System.Management.ManagementObjectSearcher(mgmtScope, new SelectQuery("Msvm_VirtualSystemManagementServiceSettingData", condition, selectedProperties));
+            System.Management.ManagementObjectSearcher ObjectSearcher = new System.Management.ManagementObjectSearcher(mgmtScope, new SelectQuery("Msvm_SyntheticEthernetPortSettingData", condition, selectedProperties));
             System.Management.EnumerationOptions enumOptions = new System.Management.EnumerationOptions();
             enumOptions.EnsureLocatable = true;
             ObjectSearcher.Options = enumOptions;
-            return new VirtualSystemManagementServiceSettingDataCollection(ObjectSearcher.Get());
+            return new SyntheticEthernetPortSettingDataCollection(ObjectSearcher.Get());
         }
         
         [Browsable(true)]
-        public static VirtualSystemManagementServiceSettingData CreateInstance() {
+        public static SyntheticEthernetPortSettingData CreateInstance() {
             System.Management.ManagementScope mgmtScope = null;
             if ((statMgmtScope == null)) {
                 mgmtScope = new System.Management.ManagementScope();
@@ -556,7 +830,7 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
             }
             System.Management.ManagementPath mgmtPath = new System.Management.ManagementPath(CreatedClassName);
             System.Management.ManagementClass tmpMgmtClass = new System.Management.ManagementClass(mgmtScope, mgmtPath, null);
-            return new VirtualSystemManagementServiceSettingData(tmpMgmtClass.CreateInstance());
+            return new SyntheticEthernetPortSettingData(tmpMgmtClass.CreateInstance());
         }
         
         [Browsable(true)]
@@ -565,11 +839,11 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
         }
         
         // Enumerator implementation for enumerating instances of the class.
-        public class VirtualSystemManagementServiceSettingDataCollection : object, ICollection {
+        public class SyntheticEthernetPortSettingDataCollection : object, ICollection {
             
             private ManagementObjectCollection privColObj;
             
-            public VirtualSystemManagementServiceSettingDataCollection(ManagementObjectCollection objCollection) {
+            public SyntheticEthernetPortSettingDataCollection(ManagementObjectCollection objCollection) {
                 privColObj = objCollection;
             }
             
@@ -595,25 +869,25 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
                 privColObj.CopyTo(array, index);
                 int nCtr;
                 for (nCtr = 0; (nCtr < array.Length); nCtr = (nCtr + 1)) {
-                    array.SetValue(new VirtualSystemManagementServiceSettingData(((System.Management.ManagementObject)(array.GetValue(nCtr)))), nCtr);
+                    array.SetValue(new SyntheticEthernetPortSettingData(((System.Management.ManagementObject)(array.GetValue(nCtr)))), nCtr);
                 }
             }
             
             public virtual System.Collections.IEnumerator GetEnumerator() {
-                return new VirtualSystemManagementServiceSettingDataEnumerator(privColObj.GetEnumerator());
+                return new SyntheticEthernetPortSettingDataEnumerator(privColObj.GetEnumerator());
             }
             
-            public class VirtualSystemManagementServiceSettingDataEnumerator : object, System.Collections.IEnumerator {
+            public class SyntheticEthernetPortSettingDataEnumerator : object, System.Collections.IEnumerator {
                 
                 private ManagementObjectCollection.ManagementObjectEnumerator privObjEnum;
                 
-                public VirtualSystemManagementServiceSettingDataEnumerator(ManagementObjectCollection.ManagementObjectEnumerator objEnum) {
+                public SyntheticEthernetPortSettingDataEnumerator(ManagementObjectCollection.ManagementObjectEnumerator objEnum) {
                     privObjEnum = objEnum;
                 }
                 
                 public virtual object Current {
                     get {
-                        return new VirtualSystemManagementServiceSettingData(((System.Management.ManagementObject)(privObjEnum.Current)));
+                        return new SyntheticEthernetPortSettingData(((System.Management.ManagementObject)(privObjEnum.Current)));
                     }
                 }
                 

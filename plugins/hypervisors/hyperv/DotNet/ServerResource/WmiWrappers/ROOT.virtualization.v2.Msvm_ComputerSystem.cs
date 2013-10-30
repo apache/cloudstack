@@ -1447,8 +1447,8 @@
                 inParams["TimeoutPeriod"] = ToDmtfDateTime(((System.DateTime)(TimeoutPeriod)));
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("RequestReplicationStateChange", inParams, null);
                 Job = null;
-                if ((outParams.Properties["Job"] != null)) {
-                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
+                if ((outParams.Properties["Job"] != null) && outParams.Properties["Job"].Value != null) {
+                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].Value.ToString());
                 }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
@@ -1462,12 +1462,13 @@
             if ((isEmbedded == false)) {
                 System.Management.ManagementBaseObject inParams = null;
                 inParams = PrivateLateBoundObject.GetMethodParameters("RequestStateChange");
-                inParams["RequestedState"] = ((ushort)(RequestedState));
-                inParams["TimeoutPeriod"] = ToDmtfDateTime(((System.DateTime)(TimeoutPeriod)));
+                inParams["RequestedState"] = RequestedState;
+                inParams["TimeoutPeriod"] = null; // ToDmtfDateTime(((System.DateTime)(TimeoutPeriod)));
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("RequestStateChange", inParams, null);
                 Job = null;
-                if ((outParams.Properties["Job"] != null)) {
-                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].ToString());
+                if ((outParams.Properties["Job"] != null) && outParams.Properties["Job"].Value != null)
+                {
+                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].Value.ToString());
                 }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
