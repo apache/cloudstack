@@ -255,8 +255,15 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 		return doScript(cmd, null);
 	}
 
-	protected boolean doScript(Script cmd, OutputInterpreter interpreter) {
-		int retry = 5;
+    protected boolean doScript(Script cmd, int retry) {
+        return doScript(cmd, null, retry);
+    }
+
+    protected boolean doScript(Script cmd, OutputInterpreter interpreter) {
+        return doScript(cmd, interpreter, 5);
+    }
+
+	protected boolean doScript(Script cmd, OutputInterpreter interpreter, int retry) {
 		String res = null;
 		while (retry-- > 0) {
 			if (interpreter == null) {
@@ -266,7 +273,11 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 			}
 			if (res != null && res.startsWith("Error: Unable to establish LAN")) {
 				s_logger.warn("IPMI script timeout(" + cmd.toString() + "), will retry " + retry + " times");
-				continue;
+                try {
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException e) {
+                }
+                continue;
 			} else if (res == null) {
 				return true;
 			} else {
@@ -489,8 +500,17 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 	}
 
 	protected RebootAnswer execute(final RebootCommand cmd) {
-		if (!doScript(_rebootCommand)) {
-			return new RebootAnswer(cmd, "IPMI reboot failed", false);
+        String infoStr = "Command not supported in present state";
+        OutputInterpreter.AllLinesParser interpreter = new OutputInterpreter.AllLinesParser();
+		if (!doScript(_rebootCommand, interpreter, 10)) {
+            if (interpreter.getLines().contains(infoStr)) {
+                // try again, this error should be temporary
+                if (!doScript(_rebootCommand, interpreter, 10)) {
+                    return new RebootAnswer(cmd, "IPMI reboot failed", false);
+                }
+            } else {
+			    return new RebootAnswer(cmd, "IPMI reboot failed", false);
+            }
 		}
 
 		return new RebootAnswer(cmd, "reboot succeeded", true);
@@ -514,7 +534,8 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 
 			OutputInterpreter.AllLinesParser interpreter = new OutputInterpreter.AllLinesParser();
 			if (!doScript(_getStatusCommand, interpreter)) {
-				s_logger.warn("Cannot get power status of " + _name + ", assume VM state was not changed");
+                success = true;
+				s_logger.warn("Cannot get power status of " + _name + ", assume VM state changed successfully");
 				break;
 			}
 
