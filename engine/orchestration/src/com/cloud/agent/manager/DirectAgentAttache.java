@@ -132,6 +132,11 @@ public class DirectAgentAttache extends AgentAttache {
         @Override
         protected synchronized void runInContext() {
             try {
+                if (_outstandingTaskCount.incrementAndGet() > _agentMgr.getDirectAgentThreadCap()) {
+                    s_logger.warn("Task execution for direct attache(" + _id + ") has reached maximum outstanding limit(" + _agentMgr.getDirectAgentThreadCap() + "), bailing out");
+                    return;
+                }
+
                 ServerResource resource = _resource;
 
                 if (resource != null) {
@@ -156,6 +161,8 @@ public class DirectAgentAttache extends AgentAttache {
                 }
             } catch (Exception e) {
                 s_logger.warn("Unable to complete the ping task", e);
+            } finally {
+                _outstandingTaskCount.decrementAndGet();
             }
         }
     }
@@ -168,10 +175,32 @@ public class DirectAgentAttache extends AgentAttache {
             _req = req;
         }
 
+        private void bailout() {
+            long seq = _req.getSequence();
+            try {
+                Command[] cmds = _req.getCommands();
+                ArrayList<Answer> answers = new ArrayList<Answer>(cmds.length);
+                for (Command cmd : cmds) {
+                    Answer answer = new Answer(cmd, false, "Bailed out as maximum oustanding task limit reached");
+                    answers.add(answer);
+                }
+                Response resp = new Response(_req, answers.toArray(new Answer[answers.size()]));
+                processAnswers(seq, resp);
+            } catch (Exception e) {
+                s_logger.warn(log(seq, "Exception caught in bailout "), e);
+            }
+        }
+
         @Override
         protected void runInContext() {
             long seq = _req.getSequence();
             try {
+                if (_outstandingTaskCount.incrementAndGet() > _agentMgr.getDirectAgentThreadCap()) {
+                    s_logger.warn("Task execution for direct attache(" + _id + ") has reached maximum outstanding limit(" + _agentMgr.getDirectAgentThreadCap() + "), bailing out");
+                    bailout();
+                    return;
+                }
+
                 ServerResource resource = _resource;
                 Command[] cmds = _req.getCommands();
                 boolean stopOnError = _req.stopOnError();
@@ -186,7 +215,7 @@ public class DirectAgentAttache extends AgentAttache {
                         if (resource != null) {
                             answer = resource.executeRequest(cmds[i]);
                             if(answer == null) {
-                            	s_logger.warn("Resource returned null answer!");
+                                s_logger.warn("Resource returned null answer!");
                                 answer = new Answer(cmds[i], false, "Resource returned null answer");
                             }
                         } else {
@@ -213,6 +242,8 @@ public class DirectAgentAttache extends AgentAttache {
                 processAnswers(seq, resp);
             } catch (Exception e) {
                 s_logger.warn(log(seq, "Exception caught "), e);
+            } finally {
+                _outstandingTaskCount.decrementAndGet();
             }
         }
     }
