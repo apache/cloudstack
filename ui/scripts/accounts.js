@@ -66,7 +66,7 @@
                         add: {
                             label: 'label.add.account',
                             preFilter: function(args) {
-                                if (isAdmin())
+                                if (isAdmin() || isDomainAdmin())
                                     return true;
                                 else
                                     return false;
@@ -901,7 +901,7 @@
                             label: 'label.add.user',
 
                             preFilter: function(args) {
-                                if (isAdmin())
+                                if (isAdmin() || isDomainAdmin())
                                     return true;
                                 else
                                     return false;
@@ -1409,6 +1409,16 @@
             }
             allowedActions.push("updateResourceCount");
         } else if (isDomainAdmin()) {
+            if (jsonObj.name != g_account) {
+                allowedActions.push("edit"); //updating networkdomain is allowed on any account, including system-generated default admin account
+                if (jsonObj.state == "enabled") {
+                    allowedActions.push("disable");
+                    allowedActions.push("lock");
+                } else if (jsonObj.state == "disabled" || jsonObj.state == "locked") {
+                    allowedActions.push("enable");
+                }
+                allowedActions.push("remove");
+            }
             allowedActions.push("updateResourceCount");
         }
         return allowedActions;
@@ -1434,6 +1444,14 @@
             }
         } else {
             if (isSelfOrChildDomainUser(jsonObj.username, jsonObj.accounttype, jsonObj.domainid, jsonObj.iscallerchilddomain)) {
+                if (isDomainAdmin() && jsonObj.username != g_username) {
+                    allowedActions.push("edit");
+                    if (jsonObj.state == "enabled")
+                        allowedActions.push("disable");
+                    if (jsonObj.state == "disabled")
+                        allowedActions.push("enable");
+                    allowedActions.push("remove");
+                }
                 allowedActions.push("changePassword");
                 allowedActions.push("generateKeys");
             }

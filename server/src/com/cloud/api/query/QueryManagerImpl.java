@@ -352,8 +352,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
         Pair<List<UserAccountJoinVO>, Integer> result = searchForUsersInternal(cmd);
         ListResponse<UserResponse> response = new ListResponse<UserResponse>();
-        List<UserResponse> userResponses = ViewResponseHelper.createUserResponse(result.first().toArray(
-                new UserAccountJoinVO[result.first().size()]));
+        List<UserResponse> userResponses = ViewResponseHelper.createUserResponse(UserContext.current().getCaller().getDomainId(), 
+                result.first().toArray(new UserAccountJoinVO[result.first().size()]));
         response.setResponses(userResponses, result.second());
         return response;
     }

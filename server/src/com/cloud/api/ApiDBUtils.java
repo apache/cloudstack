@@ -1474,7 +1474,15 @@ public class ApiDBUtils {
     }
 
     public static UserResponse newUserResponse(UserAccountJoinVO usr) {
-        return _userAccountJoinDao.newUserResponse(usr);
+        return newUserResponse(usr, null);
+    }
+    public static UserResponse newUserResponse(UserAccountJoinVO usr, Long domainId) {
+        UserResponse response = _userAccountJoinDao.newUserResponse(usr);
+        if (domainId != null && usr.getDomainId() != domainId)
+            response.setIsCallerChildDomain(true);
+        else
+            response.setIsCallerChildDomain(false);
+        return response;
     }
 
     public static UserAccountJoinVO newUserView(User usr){
