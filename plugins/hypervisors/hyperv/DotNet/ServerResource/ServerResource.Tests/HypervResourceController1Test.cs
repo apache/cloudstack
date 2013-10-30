@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 using System;
-using CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION;
+using CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2;
 using System.Management;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
@@ -32,7 +32,6 @@ namespace ServerResource.Tests
 {
     public class HypervResourceController1Test
     {
-
         protected static string testCifsUrl = AgentSettings.Default.testCifsUrl;
         protected static string testCifsPath = AgentSettings.Default.testCifsPath;
         protected static String testPrimaryDataStoreHost = HypervResourceController.config.StorageIpAddress;
@@ -60,7 +59,7 @@ namespace ServerResource.Tests
         protected static String testSampleTemplateURLJSON;
         protected static String testLocalStorePathJSON;
 
-        protected static IWmiCalls wmiCalls;
+        protected static IWmiCallsV2 wmiCallsV2;
 
 
         private static ILog s_logger = LogManager.GetLogger(typeof(HypervResourceController1Test));
@@ -76,7 +75,7 @@ namespace ServerResource.Tests
 
         public HypervResourceController1Test()
         {
-            wmiCalls = Substitute.For<IWmiCalls>();
+            wmiCallsV2 = Substitute.For<IWmiCallsV2>();
             //AgentService.ConfigServerResource();
             HypervResourceController.config.PrivateMacAddress = AgentSettings.Default.private_mac_address;
             HypervResourceController.config.PrivateNetmask = AgentSettings.Default.private_ip_netmask;
@@ -178,7 +177,7 @@ namespace ServerResource.Tests
                 }
             }
             var counter = 0;
-            wmiCalls.When(x => x.CreateDynamicVirtualHardDisk(Arg.Any<ulong>(), Arg.Any<String>())).Do(x => counter++);
+            wmiCallsV2.When(x => x.CreateDynamicVirtualHardDisk(Arg.Any<ulong>(), Arg.Any<String>())).Do(x => counter++);
             // TODO: Need sample to update the test.
             // Arrange
             String createCmd = "{\"volId\":10,\"pool\":{\"id\":201,\"uuid\":\"" + testLocalStoreUUID + "\",\"host\":\"" + HypervResourceController.config.StorageIpAddress + "\"" +
@@ -187,7 +186,7 @@ namespace ServerResource.Tests
                             "\"volumeId\":10,\"hyperType\":\"Hyperv\"},\"templateUrl\":" + testSampleTemplateURLJSON + ",\"contextMap\":{},\"wait\":0}";
             dynamic jsonCreateCmd = JsonConvert.DeserializeObject(createCmd);
             HypervResourceController rsrcServer = new HypervResourceController();
-            HypervResourceController.wmiCalls = wmiCalls;
+            HypervResourceController.wmiCallsV2 = wmiCallsV2;
 
             Assert.True(Directory.Exists(testLocalStorePath), testLocalStorePath + " does not exist ");
             string filePath = Path.Combine(testLocalStorePath, (string)JsonConvert.DeserializeObject(testSampleTemplateURLJSON));
@@ -221,11 +220,11 @@ namespace ServerResource.Tests
         public void TestStartCommand()
         {
             ComputerSystem system = new ComputerSystem();
-            wmiCalls.DeployVirtualMachine(Arg.Any<Object>(), Arg.Any<string>()).Returns(system);
+            wmiCallsV2.DeployVirtualMachine(Arg.Any<Object>(), Arg.Any<string>()).Returns(system);
 
             // Arrange
             HypervResourceController rsrcServer = new HypervResourceController();
-            HypervResourceController.wmiCalls = wmiCalls;
+            HypervResourceController.wmiCallsV2 = wmiCallsV2;
             String sample = getSampleStartCommand();
 
 
@@ -246,11 +245,11 @@ namespace ServerResource.Tests
         {
             //string vmName = "Test VM";
             var counter = 0;
-            wmiCalls.When(x => x.DestroyVm(Arg.Any<Object>())).Do(x => counter++);
+            wmiCallsV2.When(x => x.DestroyVm(Arg.Any<Object>())).Do(x => counter++);
 
             // Arrange
             HypervResourceController rsrcServer = new HypervResourceController();
-            HypervResourceController.wmiCalls = wmiCalls;
+            HypervResourceController.wmiCallsV2 = wmiCallsV2;
 
             String sampleStop = "{\"isProxy\":false,\"vmName\":\"i-2-17-VM\",\"contextMap\":{},\"wait\":0}";
             dynamic jsonStopCmd = JsonConvert.DeserializeObject(sampleStop);

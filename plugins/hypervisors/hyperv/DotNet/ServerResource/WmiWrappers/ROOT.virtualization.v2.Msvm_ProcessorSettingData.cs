@@ -1,5 +1,4 @@
-﻿namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2
-{
+﻿namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
     using System;
     using System.ComponentModel;
     using System.Management;
@@ -13,15 +12,14 @@
     // Functions Is<PropertyName>Null() are used to check if a property is NULL.
     // Functions Reset<PropertyName> are added for Nullable Read/Write properties. These functions are used by VS designer in property browser to set a property to NULL.
     // Every property added to the class for WMI property has attributes set to define its behavior in Visual Studio designer and also to define a TypeConverter to be used.
-    // Datetime conversion functions ToDateTime and ToDmtfDateTime are added to the class to convert DMTF datetime to System.DateTime and vice-versa.
-    // An Early Bound class generated for the WMI class.Msvm_KvpExchangeComponent
-    public class KvpExchangeComponent : System.ComponentModel.Component {
+    // An Early Bound class generated for the WMI class.Msvm_ProcessorSettingData
+    public class ProcessorSettingData : System.ComponentModel.Component {
         
         // Private property to hold the WMI namespace in which the class resides.
         private static string CreatedWmiNamespace = "ROOT\\virtualization\\v2";
         
         // Private property to hold the name of WMI class which created this class.
-        private static string CreatedClassName = "Msvm_KvpExchangeComponent";
+        public static string CreatedClassName = "Msvm_ProcessorSettingData";
         
         // Private member variable to hold the ManagementScope which is used by the various methods.
         private static System.Management.ManagementScope statMgmtScope = null;
@@ -44,35 +42,35 @@
         private bool isEmbedded;
         
         // Below are different overloads of constructors to initialize an instance of the class with a WMI object.
-        public KvpExchangeComponent() {
+        public ProcessorSettingData() {
             this.InitializeObject(null, null, null);
         }
         
-        public KvpExchangeComponent(string keyCreationClassName, string keyDeviceID, string keySystemCreationClassName, string keySystemName) {
-            this.InitializeObject(null, new System.Management.ManagementPath(KvpExchangeComponent.ConstructPath(keyCreationClassName, keyDeviceID, keySystemCreationClassName, keySystemName)), null);
+        public ProcessorSettingData(string keyInstanceID) {
+            this.InitializeObject(null, new System.Management.ManagementPath(ProcessorSettingData.ConstructPath(keyInstanceID)), null);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementScope mgmtScope, string keyCreationClassName, string keyDeviceID, string keySystemCreationClassName, string keySystemName) {
-            this.InitializeObject(((System.Management.ManagementScope)(mgmtScope)), new System.Management.ManagementPath(KvpExchangeComponent.ConstructPath(keyCreationClassName, keyDeviceID, keySystemCreationClassName, keySystemName)), null);
+        public ProcessorSettingData(System.Management.ManagementScope mgmtScope, string keyInstanceID) {
+            this.InitializeObject(((System.Management.ManagementScope)(mgmtScope)), new System.Management.ManagementPath(ProcessorSettingData.ConstructPath(keyInstanceID)), null);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
+        public ProcessorSettingData(System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(null, path, getOptions);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path) {
+        public ProcessorSettingData(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path) {
             this.InitializeObject(mgmtScope, path, null);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementPath path) {
+        public ProcessorSettingData(System.Management.ManagementPath path) {
             this.InitializeObject(null, path, null);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
+        public ProcessorSettingData(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(mgmtScope, path, getOptions);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementObject theObject) {
+        public ProcessorSettingData(System.Management.ManagementObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
                 PrivateLateBoundObject = theObject;
@@ -84,7 +82,7 @@
             }
         }
         
-        public KvpExchangeComponent(System.Management.ManagementBaseObject theObject) {
+        public ProcessorSettingData(System.Management.ManagementBaseObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
                 embeddedObj = theObject;
@@ -208,17 +206,33 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public ushort[] AdditionalAvailability {
+        public string Address {
             get {
-                return ((ushort[])(curObj["AdditionalAvailability"]));
+                return ((string)(curObj["Address"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string AddressOnParent {
+            get {
+                return ((string)(curObj["AddressOnParent"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string AllocationUnits {
+            get {
+                return ((string)(curObj["AllocationUnits"]));
             }
         }
         
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsAvailabilityNull {
+        public bool IsAutomaticAllocationNull {
             get {
-                if ((curObj["Availability"] == null)) {
+                if ((curObj["AutomaticAllocation"] == null)) {
                     return true;
                 }
                 else {
@@ -230,20 +244,37 @@
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort Availability {
+        public bool AutomaticAllocation {
             get {
-                if ((curObj["Availability"] == null)) {
-                    return System.Convert.ToUInt16(0);
+                if ((curObj["AutomaticAllocation"] == null)) {
+                    return System.Convert.ToBoolean(0);
                 }
-                return ((ushort)(curObj["Availability"]));
+                return ((bool)(curObj["AutomaticAllocation"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsAutomaticDeallocationNull {
+            get {
+                if ((curObj["AutomaticDeallocation"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
             }
         }
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public ushort[] AvailableRequestedStates {
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public bool AutomaticDeallocation {
             get {
-                return ((ushort[])(curObj["AvailableRequestedStates"]));
+                if ((curObj["AutomaticDeallocation"] == null)) {
+                    return System.Convert.ToBoolean(0);
+                }
+                return ((bool)(curObj["AutomaticDeallocation"]));
             }
         }
         
@@ -255,11 +286,19 @@
             }
         }
         
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string[] Connection {
+            get {
+                return ((string[])(curObj["Connection"]));
+            }
+        }
+        
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsCommunicationStatusNull {
+        public bool IsConsumerVisibilityNull {
             get {
-                if ((curObj["CommunicationStatus"] == null)) {
+                if ((curObj["ConsumerVisibility"] == null)) {
                     return true;
                 }
                 else {
@@ -271,20 +310,12 @@
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort CommunicationStatus {
+        public ushort ConsumerVisibility {
             get {
-                if ((curObj["CommunicationStatus"] == null)) {
+                if ((curObj["ConsumerVisibility"] == null)) {
                     return System.Convert.ToUInt16(0);
                 }
-                return ((ushort)(curObj["CommunicationStatus"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string CreationClassName {
-            get {
-                return ((string)(curObj["CreationClassName"]));
+                return ((ushort)(curObj["ConsumerVisibility"]));
             }
         }
         
@@ -296,39 +327,6 @@
             }
         }
         
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsDetailedStatusNull {
-            get {
-                if ((curObj["DetailedStatus"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort DetailedStatus {
-            get {
-                if ((curObj["DetailedStatus"] == null)) {
-                    return System.Convert.ToUInt16(0);
-                }
-                return ((ushort)(curObj["DetailedStatus"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string DeviceID {
-            get {
-                return ((string)(curObj["DeviceID"]));
-            }
-        }
-        
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string ElementName {
@@ -337,164 +335,11 @@
             }
         }
         
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsEnabledDefaultNull {
-            get {
-                if ((curObj["EnabledDefault"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort EnabledDefault {
+        public string[] HostResource {
             get {
-                if ((curObj["EnabledDefault"] == null)) {
-                    return System.Convert.ToUInt16(0);
-                }
-                return ((ushort)(curObj["EnabledDefault"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsEnabledStateNull {
-            get {
-                if ((curObj["EnabledState"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort EnabledState {
-            get {
-                if ((curObj["EnabledState"] == null)) {
-                    return System.Convert.ToUInt16(0);
-                }
-                return ((ushort)(curObj["EnabledState"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsErrorClearedNull {
-            get {
-                if ((curObj["ErrorCleared"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public bool ErrorCleared {
-            get {
-                if ((curObj["ErrorCleared"] == null)) {
-                    return System.Convert.ToBoolean(0);
-                }
-                return ((bool)(curObj["ErrorCleared"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string ErrorDescription {
-            get {
-                return ((string)(curObj["ErrorDescription"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description(@"An array of embedded Msvm_KvpExchangeDataItem instances which contain the set of key-value pairs that components running within the guest operating system have pushed up to be available for access by external clients. This array will not contain any intrinsic items that are pushed by the integration component directly.")]
-        public string[] GuestExchangeItems {
-            get {
-                return ((string[])(curObj["GuestExchangeItems"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description(@"An array of embedded Msvm_KvpExchangeDataItem instances which contain the set of key-value pairs that the guest operating system has pushed up to be available for access by external clients. This array will not contain any data items pushed by other components running within the guest operating system.")]
-        public string[] GuestIntrinsicExchangeItems {
-            get {
-                return ((string[])(curObj["GuestIntrinsicExchangeItems"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsHealthStateNull {
-            get {
-                if ((curObj["HealthState"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort HealthState {
-            get {
-                if ((curObj["HealthState"] == null)) {
-                    return System.Convert.ToUInt16(0);
-                }
-                return ((ushort)(curObj["HealthState"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string[] IdentifyingDescriptions {
-            get {
-                return ((string[])(curObj["IdentifyingDescriptions"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsInstallDateNull {
-            get {
-                if ((curObj["InstallDate"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public System.DateTime InstallDate {
-            get {
-                if ((curObj["InstallDate"] != null)) {
-                    return ToDateTime(((string)(curObj["InstallDate"])));
-                }
-                else {
-                    return System.DateTime.MinValue;
-                }
+                return ((string[])(curObj["HostResource"]));
             }
         }
         
@@ -508,9 +353,9 @@
         
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsLastErrorCodeNull {
+        public bool IsLimitNull {
             get {
-                if ((curObj["LastErrorCode"] == null)) {
+                if ((curObj["Limit"] == null)) {
                     return true;
                 }
                 else {
@@ -522,53 +367,20 @@
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public uint LastErrorCode {
+        public ulong Limit {
             get {
-                if ((curObj["LastErrorCode"] == null)) {
-                    return System.Convert.ToUInt32(0);
-                }
-                return ((uint)(curObj["LastErrorCode"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsMaxQuiesceTimeNull {
-            get {
-                if ((curObj["MaxQuiesceTime"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ulong MaxQuiesceTime {
-            get {
-                if ((curObj["MaxQuiesceTime"] == null)) {
+                if ((curObj["Limit"] == null)) {
                     return System.Convert.ToUInt64(0);
                 }
-                return ((ulong)(curObj["MaxQuiesceTime"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string Name {
-            get {
-                return ((string)(curObj["Name"]));
+                return ((ulong)(curObj["Limit"]));
             }
         }
         
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsOperatingStatusNull {
+        public bool IsLimitCPUIDNull {
             get {
-                if ((curObj["OperatingStatus"] == null)) {
+                if ((curObj["LimitCPUID"] == null)) {
                     return true;
                 }
                 else {
@@ -579,78 +391,50 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("Indicates whether the virtual machine should lower the CPU identifier. Some older" +
+            " operating systems may require you to limit processor functionality in this way " +
+            "in order to run.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort OperatingStatus {
+        public bool LimitCPUID {
             get {
-                if ((curObj["OperatingStatus"] == null)) {
-                    return System.Convert.ToUInt16(0);
-                }
-                return ((ushort)(curObj["OperatingStatus"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public ushort[] OperationalStatus {
-            get {
-                return ((ushort[])(curObj["OperationalStatus"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string OtherEnabledState {
-            get {
-                return ((string)(curObj["OtherEnabledState"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string[] OtherIdentifyingInfo {
-            get {
-                return ((string[])(curObj["OtherIdentifyingInfo"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public ushort[] PowerManagementCapabilities {
-            get {
-                return ((ushort[])(curObj["PowerManagementCapabilities"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsPowerManagementSupportedNull {
-            get {
-                if ((curObj["PowerManagementSupported"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public bool PowerManagementSupported {
-            get {
-                if ((curObj["PowerManagementSupported"] == null)) {
+                if ((curObj["LimitCPUID"] == null)) {
                     return System.Convert.ToBoolean(0);
                 }
-                return ((bool)(curObj["PowerManagementSupported"]));
+                return ((bool)(curObj["LimitCPUID"]));
             }
         }
         
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsPowerOnHoursNull {
+        public bool IsLimitProcessorFeaturesNull {
             get {
-                if ((curObj["PowerOnHours"] == null)) {
+                if ((curObj["LimitProcessorFeatures"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description(@"Indicates whether the VM should limit the CPU features exposed to the operating system. Limiting the processor features enables the VM to be migrated to different host computer systems with different processors. Migrating VMs between computers with processors from different vendors is not supported.")]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public bool LimitProcessorFeatures {
+            get {
+                if ((curObj["LimitProcessorFeatures"] == null)) {
+                    return System.Convert.ToBoolean(0);
+                }
+                return ((bool)(curObj["LimitProcessorFeatures"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsMappingBehaviorNull {
+            get {
+                if ((curObj["MappingBehavior"] == null)) {
                     return true;
                 }
                 else {
@@ -662,20 +446,47 @@
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ulong PowerOnHours {
+        public ushort MappingBehavior {
             get {
-                if ((curObj["PowerOnHours"] == null)) {
+                if ((curObj["MappingBehavior"] == null)) {
+                    return System.Convert.ToUInt16(0);
+                }
+                return ((ushort)(curObj["MappingBehavior"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsMaxNumaNodesPerSocketNull {
+            get {
+                if ((curObj["MaxNumaNodesPerSocket"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The maximum number of NUMA nodes that can be observed within the VM as belonging " +
+            "to a single processor socket.")]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ulong MaxNumaNodesPerSocket {
+            get {
+                if ((curObj["MaxNumaNodesPerSocket"] == null)) {
                     return System.Convert.ToUInt64(0);
                 }
-                return ((ulong)(curObj["PowerOnHours"]));
+                return ((ulong)(curObj["MaxNumaNodesPerSocket"]));
             }
         }
         
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsPrimaryStatusNull {
+        public bool IsMaxProcessorsPerNumaNodeNull {
             get {
-                if ((curObj["PrimaryStatus"] == null)) {
+                if ((curObj["MaxProcessorsPerNumaNode"] == null)) {
                     return true;
                 }
                 else {
@@ -686,155 +497,47 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The maximum number of virtual processors that can be observed within the VM as be" +
+            "longing to a single virtual NUMA node.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort PrimaryStatus {
+        public ulong MaxProcessorsPerNumaNode {
             get {
-                if ((curObj["PrimaryStatus"] == null)) {
-                    return System.Convert.ToUInt16(0);
-                }
-                return ((ushort)(curObj["PrimaryStatus"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsRequestedStateNull {
-            get {
-                if ((curObj["RequestedState"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort RequestedState {
-            get {
-                if ((curObj["RequestedState"] == null)) {
-                    return System.Convert.ToUInt16(0);
-                }
-                return ((ushort)(curObj["RequestedState"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string Status {
-            get {
-                return ((string)(curObj["Status"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string[] StatusDescriptions {
-            get {
-                return ((string[])(curObj["StatusDescriptions"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsStatusInfoNull {
-            get {
-                if ((curObj["StatusInfo"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort StatusInfo {
-            get {
-                if ((curObj["StatusInfo"] == null)) {
-                    return System.Convert.ToUInt16(0);
-                }
-                return ((ushort)(curObj["StatusInfo"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string SystemCreationClassName {
-            get {
-                return ((string)(curObj["SystemCreationClassName"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public string SystemName {
-            get {
-                return ((string)(curObj["SystemName"]));
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsTimeOfLastStateChangeNull {
-            get {
-                if ((curObj["TimeOfLastStateChange"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public System.DateTime TimeOfLastStateChange {
-            get {
-                if ((curObj["TimeOfLastStateChange"] != null)) {
-                    return ToDateTime(((string)(curObj["TimeOfLastStateChange"])));
-                }
-                else {
-                    return System.DateTime.MinValue;
-                }
-            }
-        }
-        
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsTotalPowerOnHoursNull {
-            get {
-                if ((curObj["TotalPowerOnHours"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ulong TotalPowerOnHours {
-            get {
-                if ((curObj["TotalPowerOnHours"] == null)) {
+                if ((curObj["MaxProcessorsPerNumaNode"] == null)) {
                     return System.Convert.ToUInt64(0);
                 }
-                return ((ulong)(curObj["TotalPowerOnHours"]));
+                return ((ulong)(curObj["MaxProcessorsPerNumaNode"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string OtherResourceType {
+            get {
+                return ((string)(curObj["OtherResourceType"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string Parent {
+            get {
+                return ((string)(curObj["Parent"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string PoolID {
+            get {
+                return ((string)(curObj["PoolID"]));
             }
         }
         
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsTransitioningToStateNull {
+        public bool IsReservationNull {
             get {
-                if ((curObj["TransitioningToState"] == null)) {
+                if ((curObj["Reservation"] == null)) {
                     return true;
                 }
                 else {
@@ -846,12 +549,103 @@
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public ushort TransitioningToState {
+        public ulong Reservation {
             get {
-                if ((curObj["TransitioningToState"] == null)) {
+                if ((curObj["Reservation"] == null)) {
+                    return System.Convert.ToUInt64(0);
+                }
+                return ((ulong)(curObj["Reservation"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string ResourceSubType {
+            get {
+                return ((string)(curObj["ResourceSubType"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsResourceTypeNull {
+            get {
+                if ((curObj["ResourceType"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ushort ResourceType {
+            get {
+                if ((curObj["ResourceType"] == null)) {
                     return System.Convert.ToUInt16(0);
                 }
-                return ((ushort)(curObj["TransitioningToState"]));
+                return ((ushort)(curObj["ResourceType"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsVirtualQuantityNull {
+            get {
+                if ((curObj["VirtualQuantity"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ulong VirtualQuantity {
+            get {
+                if ((curObj["VirtualQuantity"] == null)) {
+                    return System.Convert.ToUInt64(0);
+                }
+                return ((ulong)(curObj["VirtualQuantity"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string VirtualQuantityUnits {
+            get {
+                return ((string)(curObj["VirtualQuantityUnits"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsWeightNull {
+            get {
+                if ((curObj["Weight"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public uint Weight {
+            get {
+                if ((curObj["Weight"] == null)) {
+                    return System.Convert.ToUInt32(0);
+                }
+                return ((uint)(curObj["Weight"]));
             }
         }
         
@@ -884,258 +678,92 @@
             return false;
         }
         
-        private bool ShouldSerializeAvailability() {
-            if ((this.IsAvailabilityNull == false)) {
+        private bool ShouldSerializeAutomaticAllocation() {
+            if ((this.IsAutomaticAllocationNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeCommunicationStatus() {
-            if ((this.IsCommunicationStatusNull == false)) {
+        private bool ShouldSerializeAutomaticDeallocation() {
+            if ((this.IsAutomaticDeallocationNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeDetailedStatus() {
-            if ((this.IsDetailedStatusNull == false)) {
+        private bool ShouldSerializeConsumerVisibility() {
+            if ((this.IsConsumerVisibilityNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeEnabledDefault() {
-            if ((this.IsEnabledDefaultNull == false)) {
+        private bool ShouldSerializeLimit() {
+            if ((this.IsLimitNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeEnabledState() {
-            if ((this.IsEnabledStateNull == false)) {
+        private bool ShouldSerializeLimitCPUID() {
+            if ((this.IsLimitCPUIDNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeErrorCleared() {
-            if ((this.IsErrorClearedNull == false)) {
+        private bool ShouldSerializeLimitProcessorFeatures() {
+            if ((this.IsLimitProcessorFeaturesNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeHealthState() {
-            if ((this.IsHealthStateNull == false)) {
+        private bool ShouldSerializeMappingBehavior() {
+            if ((this.IsMappingBehaviorNull == false)) {
                 return true;
             }
             return false;
         }
         
-        // Converts a given datetime in DMTF format to System.DateTime object.
-        static System.DateTime ToDateTime(string dmtfDate) {
-            System.DateTime initializer = System.DateTime.MinValue;
-            int year = initializer.Year;
-            int month = initializer.Month;
-            int day = initializer.Day;
-            int hour = initializer.Hour;
-            int minute = initializer.Minute;
-            int second = initializer.Second;
-            long ticks = 0;
-            string dmtf = dmtfDate;
-            System.DateTime datetime = System.DateTime.MinValue;
-            string tempString = string.Empty;
-            if ((dmtf == null)) {
-                throw new System.ArgumentOutOfRangeException();
-            }
-            if ((dmtf.Length == 0)) {
-                throw new System.ArgumentOutOfRangeException();
-            }
-            if ((dmtf.Length != 25)) {
-                throw new System.ArgumentOutOfRangeException();
-            }
-            try {
-                tempString = dmtf.Substring(0, 4);
-                if (("****" != tempString)) {
-                    year = int.Parse(tempString);
-                }
-                tempString = dmtf.Substring(4, 2);
-                if (("**" != tempString)) {
-                    month = int.Parse(tempString);
-                }
-                tempString = dmtf.Substring(6, 2);
-                if (("**" != tempString)) {
-                    day = int.Parse(tempString);
-                }
-                tempString = dmtf.Substring(8, 2);
-                if (("**" != tempString)) {
-                    hour = int.Parse(tempString);
-                }
-                tempString = dmtf.Substring(10, 2);
-                if (("**" != tempString)) {
-                    minute = int.Parse(tempString);
-                }
-                tempString = dmtf.Substring(12, 2);
-                if (("**" != tempString)) {
-                    second = int.Parse(tempString);
-                }
-                tempString = dmtf.Substring(15, 6);
-                if (("******" != tempString)) {
-                    ticks = (long.Parse(tempString) * ((long)((System.TimeSpan.TicksPerMillisecond / 1000))));
-                }
-                if (((((((((year < 0) 
-                            || (month < 0)) 
-                            || (day < 0)) 
-                            || (hour < 0)) 
-                            || (minute < 0)) 
-                            || (minute < 0)) 
-                            || (second < 0)) 
-                            || (ticks < 0))) {
-                    throw new System.ArgumentOutOfRangeException();
-                }
-            }
-            catch (System.Exception e) {
-                throw new System.ArgumentOutOfRangeException(null, e.Message);
-            }
-            datetime = new System.DateTime(year, month, day, hour, minute, second, 0);
-            datetime = datetime.AddTicks(ticks);
-            System.TimeSpan tickOffset = System.TimeZone.CurrentTimeZone.GetUtcOffset(datetime);
-            int UTCOffset = 0;
-            int OffsetToBeAdjusted = 0;
-            long OffsetMins = ((long)((tickOffset.Ticks / System.TimeSpan.TicksPerMinute)));
-            tempString = dmtf.Substring(22, 3);
-            if ((tempString != "******")) {
-                tempString = dmtf.Substring(21, 4);
-                try {
-                    UTCOffset = int.Parse(tempString);
-                }
-                catch (System.Exception e) {
-                    throw new System.ArgumentOutOfRangeException(null, e.Message);
-                }
-                OffsetToBeAdjusted = ((int)((OffsetMins - UTCOffset)));
-                datetime = datetime.AddMinutes(((double)(OffsetToBeAdjusted)));
-            }
-            return datetime;
-        }
-        
-        // Converts a given System.DateTime object to DMTF datetime format.
-        static string ToDmtfDateTime(System.DateTime date) {
-            string utcString = string.Empty;
-            System.TimeSpan tickOffset = System.TimeZone.CurrentTimeZone.GetUtcOffset(date);
-            long OffsetMins = ((long)((tickOffset.Ticks / System.TimeSpan.TicksPerMinute)));
-            if ((System.Math.Abs(OffsetMins) > 999)) {
-                date = date.ToUniversalTime();
-                utcString = "+000";
-            }
-            else {
-                if ((tickOffset.Ticks >= 0)) {
-                    utcString = string.Concat("+", ((long)((tickOffset.Ticks / System.TimeSpan.TicksPerMinute))).ToString().PadLeft(3, '0'));
-                }
-                else {
-                    string strTemp = ((long)(OffsetMins)).ToString();
-                    utcString = string.Concat("-", strTemp.Substring(1, (strTemp.Length - 1)).PadLeft(3, '0'));
-                }
-            }
-            string dmtfDateTime = ((int)(date.Year)).ToString().PadLeft(4, '0');
-            dmtfDateTime = string.Concat(dmtfDateTime, ((int)(date.Month)).ToString().PadLeft(2, '0'));
-            dmtfDateTime = string.Concat(dmtfDateTime, ((int)(date.Day)).ToString().PadLeft(2, '0'));
-            dmtfDateTime = string.Concat(dmtfDateTime, ((int)(date.Hour)).ToString().PadLeft(2, '0'));
-            dmtfDateTime = string.Concat(dmtfDateTime, ((int)(date.Minute)).ToString().PadLeft(2, '0'));
-            dmtfDateTime = string.Concat(dmtfDateTime, ((int)(date.Second)).ToString().PadLeft(2, '0'));
-            dmtfDateTime = string.Concat(dmtfDateTime, ".");
-            System.DateTime dtTemp = new System.DateTime(date.Year, date.Month, date.Day, date.Hour, date.Minute, date.Second, 0);
-            long microsec = ((long)((((date.Ticks - dtTemp.Ticks) 
-                        * 1000) 
-                        / System.TimeSpan.TicksPerMillisecond)));
-            string strMicrosec = ((long)(microsec)).ToString();
-            if ((strMicrosec.Length > 6)) {
-                strMicrosec = strMicrosec.Substring(0, 6);
-            }
-            dmtfDateTime = string.Concat(dmtfDateTime, strMicrosec.PadLeft(6, '0'));
-            dmtfDateTime = string.Concat(dmtfDateTime, utcString);
-            return dmtfDateTime;
-        }
-        
-        private bool ShouldSerializeInstallDate() {
-            if ((this.IsInstallDateNull == false)) {
+        private bool ShouldSerializeMaxNumaNodesPerSocket() {
+            if ((this.IsMaxNumaNodesPerSocketNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeLastErrorCode() {
-            if ((this.IsLastErrorCodeNull == false)) {
+        private bool ShouldSerializeMaxProcessorsPerNumaNode() {
+            if ((this.IsMaxProcessorsPerNumaNodeNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeMaxQuiesceTime() {
-            if ((this.IsMaxQuiesceTimeNull == false)) {
+        private bool ShouldSerializeReservation() {
+            if ((this.IsReservationNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeOperatingStatus() {
-            if ((this.IsOperatingStatusNull == false)) {
+        private bool ShouldSerializeResourceType() {
+            if ((this.IsResourceTypeNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializePowerManagementSupported() {
-            if ((this.IsPowerManagementSupportedNull == false)) {
+        private bool ShouldSerializeVirtualQuantity() {
+            if ((this.IsVirtualQuantityNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializePowerOnHours() {
-            if ((this.IsPowerOnHoursNull == false)) {
-                return true;
-            }
-            return false;
-        }
-        
-        private bool ShouldSerializePrimaryStatus() {
-            if ((this.IsPrimaryStatusNull == false)) {
-                return true;
-            }
-            return false;
-        }
-        
-        private bool ShouldSerializeRequestedState() {
-            if ((this.IsRequestedStateNull == false)) {
-                return true;
-            }
-            return false;
-        }
-        
-        private bool ShouldSerializeStatusInfo() {
-            if ((this.IsStatusInfoNull == false)) {
-                return true;
-            }
-            return false;
-        }
-        
-        private bool ShouldSerializeTimeOfLastStateChange() {
-            if ((this.IsTimeOfLastStateChangeNull == false)) {
-                return true;
-            }
-            return false;
-        }
-        
-        private bool ShouldSerializeTotalPowerOnHours() {
-            if ((this.IsTotalPowerOnHoursNull == false)) {
-                return true;
-            }
-            return false;
-        }
-        
-        private bool ShouldSerializeTransitioningToState() {
-            if ((this.IsTransitioningToStateNull == false)) {
+        private bool ShouldSerializeWeight() {
+            if ((this.IsWeightNull == false)) {
                 return true;
             }
             return false;
@@ -1160,12 +788,9 @@
             isEmbedded = false;
         }
         
-        private static string ConstructPath(string keyCreationClassName, string keyDeviceID, string keySystemCreationClassName, string keySystemName) {
-            string strPath = "ROOT\\virtualization\\v2:Msvm_KvpExchangeComponent";
-            strPath = string.Concat(strPath, string.Concat(".CreationClassName=", string.Concat("\"", string.Concat(keyCreationClassName, "\""))));
-            strPath = string.Concat(strPath, string.Concat(",DeviceID=", string.Concat("\"", string.Concat(keyDeviceID, "\""))));
-            strPath = string.Concat(strPath, string.Concat(",SystemCreationClassName=", string.Concat("\"", string.Concat(keySystemCreationClassName, "\""))));
-            strPath = string.Concat(strPath, string.Concat(",SystemName=", string.Concat("\"", string.Concat(keySystemName, "\""))));
+        private static string ConstructPath(string keyInstanceID) {
+            string strPath = "ROOT\\virtualization\\v2:Msvm_ProcessorSettingData";
+            strPath = string.Concat(strPath, string.Concat(".InstanceID=", string.Concat("\"", string.Concat(keyInstanceID, "\""))));
             return strPath;
         }
         
@@ -1182,23 +807,23 @@
         }
         
         // Different overloads of GetInstances() help in enumerating instances of the WMI class.
-        public static KvpExchangeComponentCollection GetInstances() {
+        public static ProcessorSettingDataCollection GetInstances() {
             return GetInstances(null, null, null);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(string condition) {
+        public static ProcessorSettingDataCollection GetInstances(string condition) {
             return GetInstances(null, condition, null);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(string[] selectedProperties) {
+        public static ProcessorSettingDataCollection GetInstances(string[] selectedProperties) {
             return GetInstances(null, null, selectedProperties);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(string condition, string[] selectedProperties) {
+        public static ProcessorSettingDataCollection GetInstances(string condition, string[] selectedProperties) {
             return GetInstances(null, condition, selectedProperties);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(System.Management.ManagementScope mgmtScope, System.Management.EnumerationOptions enumOptions) {
+        public static ProcessorSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, System.Management.EnumerationOptions enumOptions) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
                     mgmtScope = new System.Management.ManagementScope();
@@ -1209,25 +834,25 @@
                 }
             }
             System.Management.ManagementPath pathObj = new System.Management.ManagementPath();
-            pathObj.ClassName = "Msvm_KvpExchangeComponent";
+            pathObj.ClassName = "Msvm_ProcessorSettingData";
             pathObj.NamespacePath = "root\\virtualization\\v2";
             System.Management.ManagementClass clsObject = new System.Management.ManagementClass(mgmtScope, pathObj, null);
             if ((enumOptions == null)) {
                 enumOptions = new System.Management.EnumerationOptions();
                 enumOptions.EnsureLocatable = true;
             }
-            return new KvpExchangeComponentCollection(clsObject.GetInstances(enumOptions));
+            return new ProcessorSettingDataCollection(clsObject.GetInstances(enumOptions));
         }
         
-        public static KvpExchangeComponentCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition) {
+        public static ProcessorSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition) {
             return GetInstances(mgmtScope, condition, null);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(System.Management.ManagementScope mgmtScope, string[] selectedProperties) {
+        public static ProcessorSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string[] selectedProperties) {
             return GetInstances(mgmtScope, null, selectedProperties);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition, string[] selectedProperties) {
+        public static ProcessorSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition, string[] selectedProperties) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
                     mgmtScope = new System.Management.ManagementScope();
@@ -1237,15 +862,15 @@
                     mgmtScope = statMgmtScope;
                 }
             }
-            System.Management.ManagementObjectSearcher ObjectSearcher = new System.Management.ManagementObjectSearcher(mgmtScope, new SelectQuery("Msvm_KvpExchangeComponent", condition, selectedProperties));
+            System.Management.ManagementObjectSearcher ObjectSearcher = new System.Management.ManagementObjectSearcher(mgmtScope, new SelectQuery("Msvm_ProcessorSettingData", condition, selectedProperties));
             System.Management.EnumerationOptions enumOptions = new System.Management.EnumerationOptions();
             enumOptions.EnsureLocatable = true;
             ObjectSearcher.Options = enumOptions;
-            return new KvpExchangeComponentCollection(ObjectSearcher.Get());
+            return new ProcessorSettingDataCollection(ObjectSearcher.Get());
         }
         
         [Browsable(true)]
-        public static KvpExchangeComponent CreateInstance() {
+        public static ProcessorSettingData CreateInstance() {
             System.Management.ManagementScope mgmtScope = null;
             if ((statMgmtScope == null)) {
                 mgmtScope = new System.Management.ManagementScope();
@@ -1256,7 +881,7 @@
             }
             System.Management.ManagementPath mgmtPath = new System.Management.ManagementPath(CreatedClassName);
             System.Management.ManagementClass tmpMgmtClass = new System.Management.ManagementClass(mgmtScope, mgmtPath, null);
-            return new KvpExchangeComponent(tmpMgmtClass.CreateInstance());
+            return new ProcessorSettingData(tmpMgmtClass.CreateInstance());
         }
         
         [Browsable(true)]
@@ -1264,118 +889,12 @@
             PrivateLateBoundObject.Delete();
         }
         
-        public uint EnableDevice(bool Enabled) {
-            if ((isEmbedded == false)) {
-                System.Management.ManagementBaseObject inParams = null;
-                inParams = PrivateLateBoundObject.GetMethodParameters("EnableDevice");
-                inParams["Enabled"] = ((bool)(Enabled));
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("EnableDevice", inParams, null);
-                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
-            }
-            else {
-                return System.Convert.ToUInt32(0);
-            }
-        }
-        
-        public uint OnlineDevice(bool Online) {
-            if ((isEmbedded == false)) {
-                System.Management.ManagementBaseObject inParams = null;
-                inParams = PrivateLateBoundObject.GetMethodParameters("OnlineDevice");
-                inParams["Online"] = ((bool)(Online));
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("OnlineDevice", inParams, null);
-                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
-            }
-            else {
-                return System.Convert.ToUInt32(0);
-            }
-        }
-        
-        public uint QuiesceDevice(bool Quiesce) {
-            if ((isEmbedded == false)) {
-                System.Management.ManagementBaseObject inParams = null;
-                inParams = PrivateLateBoundObject.GetMethodParameters("QuiesceDevice");
-                inParams["Quiesce"] = ((bool)(Quiesce));
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("QuiesceDevice", inParams, null);
-                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
-            }
-            else {
-                return System.Convert.ToUInt32(0);
-            }
-        }
-        
-        public uint RequestStateChange(ushort RequestedState, System.DateTime TimeoutPeriod, out System.Management.ManagementPath Job) {
-            if ((isEmbedded == false)) {
-                System.Management.ManagementBaseObject inParams = null;
-                inParams = PrivateLateBoundObject.GetMethodParameters("RequestStateChange");
-                inParams["RequestedState"] = ((ushort)(RequestedState));
-                inParams["TimeoutPeriod"] = ToDmtfDateTime(((System.DateTime)(TimeoutPeriod)));
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("RequestStateChange", inParams, null);
-                Job = null;
-                if ((outParams.Properties["Job"] != null))
-                {
-                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
-                }
-                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
-            }
-            else {
-                Job = null;
-                return System.Convert.ToUInt32(0);
-            }
-        }
-        
-        public uint Reset() {
-            if ((isEmbedded == false)) {
-                System.Management.ManagementBaseObject inParams = null;
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("Reset", inParams, null);
-                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
-            }
-            else {
-                return System.Convert.ToUInt32(0);
-            }
-        }
-        
-        public uint RestoreProperties() {
-            if ((isEmbedded == false)) {
-                System.Management.ManagementBaseObject inParams = null;
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("RestoreProperties", inParams, null);
-                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
-            }
-            else {
-                return System.Convert.ToUInt32(0);
-            }
-        }
-        
-        public uint SaveProperties() {
-            if ((isEmbedded == false)) {
-                System.Management.ManagementBaseObject inParams = null;
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("SaveProperties", inParams, null);
-                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
-            }
-            else {
-                return System.Convert.ToUInt32(0);
-            }
-        }
-        
-        public uint SetPowerState(ushort PowerState, System.DateTime Time) {
-            if ((isEmbedded == false)) {
-                System.Management.ManagementBaseObject inParams = null;
-                inParams = PrivateLateBoundObject.GetMethodParameters("SetPowerState");
-                inParams["PowerState"] = ((ushort)(PowerState));
-                inParams["Time"] = ToDmtfDateTime(((System.DateTime)(Time)));
-                System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("SetPowerState", inParams, null);
-                return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
-            }
-            else {
-                return System.Convert.ToUInt32(0);
-            }
-        }
-        
         // Enumerator implementation for enumerating instances of the class.
-        public class KvpExchangeComponentCollection : object, ICollection {
+        public class ProcessorSettingDataCollection : object, ICollection {
             
             private ManagementObjectCollection privColObj;
             
-            public KvpExchangeComponentCollection(ManagementObjectCollection objCollection) {
+            public ProcessorSettingDataCollection(ManagementObjectCollection objCollection) {
                 privColObj = objCollection;
             }
             
@@ -1401,25 +920,25 @@
                 privColObj.CopyTo(array, index);
                 int nCtr;
                 for (nCtr = 0; (nCtr < array.Length); nCtr = (nCtr + 1)) {
-                    array.SetValue(new KvpExchangeComponent(((System.Management.ManagementObject)(array.GetValue(nCtr)))), nCtr);
+                    array.SetValue(new ProcessorSettingData(((System.Management.ManagementObject)(array.GetValue(nCtr)))), nCtr);
                 }
             }
             
             public virtual System.Collections.IEnumerator GetEnumerator() {
-                return new KvpExchangeComponentEnumerator(privColObj.GetEnumerator());
+                return new ProcessorSettingDataEnumerator(privColObj.GetEnumerator());
             }
             
-            public class KvpExchangeComponentEnumerator : object, System.Collections.IEnumerator {
+            public class ProcessorSettingDataEnumerator : object, System.Collections.IEnumerator {
                 
                 private ManagementObjectCollection.ManagementObjectEnumerator privObjEnum;
                 
-                public KvpExchangeComponentEnumerator(ManagementObjectCollection.ManagementObjectEnumerator objEnum) {
+                public ProcessorSettingDataEnumerator(ManagementObjectCollection.ManagementObjectEnumerator objEnum) {
                     privObjEnum = objEnum;
                 }
                 
                 public virtual object Current {
                     get {
-                        return new KvpExchangeComponent(((System.Management.ManagementObject)(privObjEnum.Current)));
+                        return new ProcessorSettingData(((System.Management.ManagementObject)(privObjEnum.Current)));
                     }
                 }
                 

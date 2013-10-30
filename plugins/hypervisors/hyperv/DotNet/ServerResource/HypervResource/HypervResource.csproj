@@ -76,13 +76,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CloudStackTypes.cs" />
-    <Compile Include="IWmiCalls.cs" />
     <Compile Include="IWmiCallsV2.cs" />
     <Compile Include="WmiCallsV2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="HypervResourceController.cs" />
     <Compile Include="Utils.cs" />
-    <Compile Include="WmiCalls.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

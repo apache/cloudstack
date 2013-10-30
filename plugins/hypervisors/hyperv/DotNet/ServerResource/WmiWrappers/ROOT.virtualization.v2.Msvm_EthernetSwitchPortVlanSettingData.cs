@@ -1,5 +1,4 @@
-﻿namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 
-{
+﻿namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
     using System;
     using System.ComponentModel;
     using System.Management;
@@ -13,14 +12,14 @@
     // Functions Is<PropertyName>Null() are used to check if a property is NULL.
     // Functions Reset<PropertyName> are added for Nullable Read/Write properties. These functions are used by VS designer in property browser to set a property to NULL.
     // Every property added to the class for WMI property has attributes set to define its behavior in Visual Studio designer and also to define a TypeConverter to be used.
-    // An Early Bound class generated for the WMI class.Msvm_VirtualSystemManagementServiceSettingData
-    public class VirtualSystemManagementServiceSettingData : System.ComponentModel.Component {
+    // An Early Bound class generated for the WMI class.Msvm_EthernetSwitchPortVlanSettingData
+    public class EthernetSwitchPortVlanSettingData : System.ComponentModel.Component {
         
         // Private property to hold the WMI namespace in which the class resides.
         private static string CreatedWmiNamespace = "ROOT\\virtualization\\v2";
         
         // Private property to hold the name of WMI class which created this class.
-        public static string CreatedClassName = "Msvm_VirtualSystemManagementServiceSettingData";
+        public static string CreatedClassName = "Msvm_EthernetSwitchPortVlanSettingData";
         
         // Private member variable to hold the ManagementScope which is used by the various methods.
         private static System.Management.ManagementScope statMgmtScope = null;
@@ -43,35 +42,35 @@
         private bool isEmbedded;
         
         // Below are different overloads of constructors to initialize an instance of the class with a WMI object.
-        public VirtualSystemManagementServiceSettingData() {
+        public EthernetSwitchPortVlanSettingData() {
             this.InitializeObject(null, null, null);
         }
         
-        public VirtualSystemManagementServiceSettingData(string keyInstanceID) {
-            this.InitializeObject(null, new System.Management.ManagementPath(VirtualSystemManagementServiceSettingData.ConstructPath(keyInstanceID)), null);
+        public EthernetSwitchPortVlanSettingData(string keyInstanceID) {
+            this.InitializeObject(null, new System.Management.ManagementPath(EthernetSwitchPortVlanSettingData.ConstructPath(keyInstanceID)), null);
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementScope mgmtScope, string keyInstanceID) {
-            this.InitializeObject(((System.Management.ManagementScope)(mgmtScope)), new System.Management.ManagementPath(VirtualSystemManagementServiceSettingData.ConstructPath(keyInstanceID)), null);
+        public EthernetSwitchPortVlanSettingData(System.Management.ManagementScope mgmtScope, string keyInstanceID) {
+            this.InitializeObject(((System.Management.ManagementScope)(mgmtScope)), new System.Management.ManagementPath(EthernetSwitchPortVlanSettingData.ConstructPath(keyInstanceID)), null);
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
+        public EthernetSwitchPortVlanSettingData(System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(null, path, getOptions);
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path) {
+        public EthernetSwitchPortVlanSettingData(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path) {
             this.InitializeObject(mgmtScope, path, null);
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementPath path) {
+        public EthernetSwitchPortVlanSettingData(System.Management.ManagementPath path) {
             this.InitializeObject(null, path, null);
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
+        public EthernetSwitchPortVlanSettingData(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(mgmtScope, path, getOptions);
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementObject theObject) {
+        public EthernetSwitchPortVlanSettingData(System.Management.ManagementObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
                 PrivateLateBoundObject = theObject;
@@ -83,7 +82,7 @@
             }
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementBaseObject theObject) {
+        public EthernetSwitchPortVlanSettingData(System.Management.ManagementBaseObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
                 embeddedObj = theObject;
@@ -205,13 +204,36 @@
             }
         }
         
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsAccessVlanIdNull {
+            get {
+                if ((curObj["AccessVlanId"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description(@"Used by OEMs to allow BIOS-locked Windows operating systems to run in the virtual machine. This string must be exactly 32 characters in length.
-This is a read-only property, but it can be changed using the ModifyServiceSettings method of the Msvm_VirtualSystemManagementService class.")]
-        public string BiosLockString {
+        [Description("The vlan ID in access mode.")]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ushort AccessVlanId {
             get {
-                return ((string)(curObj["BiosLockString"]));
+                if ((curObj["AccessVlanId"] == null)) {
+                    return System.Convert.ToUInt16(0);
+                }
+                return ((ushort)(curObj["AccessVlanId"]));
+            }
+            set {
+                curObj["AccessVlanId"] = value;
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
             }
         }
         
@@ -220,40 +242,6 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
         public string Caption {
             get {
                 return ((string)(curObj["Caption"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The WorldWideNodeName address for dynamically generated WorldWideName addresses u" +
-            "sed for Synthetic HBAs.\nThis is a read-only property, but it can be changed usin" +
-            "g the ModifyServiceSettings method of the Msvm_VirtualSystemManagementService cl" +
-            "ass.")]
-        public string CurrentWWNNAddress {
-            get {
-                return ((string)(curObj["CurrentWWNNAddress"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The default external data root. By default, \"root\\ProgramData\\Microsoft\\Windows\\V" +
-            "irtualization\".\nThis is a read-only property, but it can be changed using the Mo" +
-            "difyServiceSettings method of the Msvm_VirtualSystemManagementService class.")]
-        public string DefaultExternalDataRoot {
-            get {
-                return ((string)(curObj["DefaultExternalDataRoot"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The default virtual hard disk path. By default, \"root\\Users\\Public\\Documents\\Virt" +
-            "ual Hard Disks\".\nThis is a read-only property, but it can be changed using the M" +
-            "odifyServiceSettings method of the Msvm_VirtualSystemManagementService class.")]
-        public string DefaultVirtualHardDiskPath {
-            get {
-                return ((string)(curObj["DefaultVirtualHardDiskPath"]));
             }
         }
         
@@ -273,33 +261,6 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
             }
         }
         
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsHbaLunTimeoutNull {
-            get {
-                if ((curObj["HbaLunTimeout"] == null)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description(@"This property describes the amount of time that the Synthetic FC virtual device will wait for a LUN to appear before starting a virtual machine.
-This is a read-only property, but it can be changed using the ModifyServiceSettings method of the Msvm_VirtualSystemManagementService class.")]
-        [TypeConverter(typeof(WMIValueTypeConverter))]
-        public uint HbaLunTimeout {
-            get {
-                if ((curObj["HbaLunTimeout"] == null)) {
-                    return System.Convert.ToUInt32(0);
-                }
-                return ((uint)(curObj["HbaLunTimeout"]));
-            }
-        }
-        
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string InstanceID {
@@ -308,57 +269,11 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
             }
         }
         
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The maximum MAC address for dynamically generated MAC addresses.\nThis is a read-o" +
-            "nly property, but it can be changed using the ModifyServiceSettings method of th" +
-            "e Msvm_VirtualSystemManagementService class.")]
-        public string MaximumMacAddress {
-            get {
-                return ((string)(curObj["MaximumMacAddress"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The maximum WorldWidePortName address for dynamically generated WorldWideName add" +
-            "resses used for Synthetic HBAs.\nThis is a read-only property, but it can be chan" +
-            "ged using the ModifyServiceSettings method of the Msvm_VirtualSystemManagementSe" +
-            "rvice class.")]
-        public string MaximumWWPNAddress {
-            get {
-                return ((string)(curObj["MaximumWWPNAddress"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The minimum MAC address for dynamically generated MAC addresses.\nThis is a read-o" +
-            "nly property, but it can be changed using the ModifyServiceSettings method of th" +
-            "e Msvm_VirtualSystemManagementService class.")]
-        public string MinimumMacAddress {
-            get {
-                return ((string)(curObj["MinimumMacAddress"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The minimum WorldWidePortName address for dynamically generated WorldWideName add" +
-            "resses used for Synthetic HBAs.\nThis is a read-only property, but it can be chan" +
-            "ged using the ModifyServiceSettings method of the Msvm_VirtualSystemManagementSe" +
-            "rvice class.")]
-        public string MinimumWWPNAddress {
-            get {
-                return ((string)(curObj["MinimumWWPNAddress"]));
-            }
-        }
-        
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsNumaSpanningEnabledNull {
+        public bool IsNativeVlanIdNull {
             get {
-                if ((curObj["NumaSpanningEnabled"] == null)) {
+                if ((curObj["NativeVlanId"] == null)) {
                     return true;
                 }
                 else {
@@ -369,35 +284,211 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("Reserved for future use.")]
+        [Description("The vlan ID in trunk mode.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public bool NumaSpanningEnabled {
+        public ushort NativeVlanId {
             get {
-                if ((curObj["NumaSpanningEnabled"] == null)) {
-                    return System.Convert.ToBoolean(0);
+                if ((curObj["NativeVlanId"] == null)) {
+                    return System.Convert.ToUInt16(0);
                 }
-                return ((bool)(curObj["NumaSpanningEnabled"]));
+                return ((ushort)(curObj["NativeVlanId"]));
+            }
+            set {
+                curObj["NativeVlanId"] = value;
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsOperationModeNull {
+            get {
+                if ((curObj["OperationMode"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
             }
         }
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("Controls memory allocation for the VMs on non-uniform memory access (NUMA) system" +
-            "s.\nThis is a read-only property, but it can be changed using the ModifyServiceSe" +
-            "ttings method of the Msvm_VirtualSystemManagementService class.")]
-        public string PrimaryOwnerContact {
+        [Description("The vlan operation modes.")]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public OperationModeValues OperationMode {
             get {
-                return ((string)(curObj["PrimaryOwnerContact"]));
+                if ((curObj["OperationMode"] == null)) {
+                    return ((OperationModeValues)(System.Convert.ToInt32(0)));
+                }
+                return ((OperationModeValues)(System.Convert.ToInt32(curObj["OperationMode"])));
+            }
+            set {
+                if ((OperationModeValues.NULL_ENUM_VALUE == value)) {
+                    curObj["OperationMode"] = null;
+                }
+                else {
+                    curObj["OperationMode"] = value;
+                }
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsPrimaryVlanIdNull {
+            get {
+                if ((curObj["PrimaryVlanId"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
             }
         }
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description(@"Describes how the primary system owner can be reached (for example, phone number or e-mail address). By default, empty. This name may not exceed 256 characters in length.
-This is a read-only property, but it can be changed using the ModifyServiceSettings method of the Msvm_VirtualSystemManagementService class.")]
-        public string PrimaryOwnerName {
+        [Description("The primary vlan ID in private mode.")]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ushort PrimaryVlanId {
             get {
-                return ((string)(curObj["PrimaryOwnerName"]));
+                if ((curObj["PrimaryVlanId"] == null)) {
+                    return System.Convert.ToUInt16(0);
+                }
+                return ((ushort)(curObj["PrimaryVlanId"]));
+            }
+            set {
+                curObj["PrimaryVlanId"] = value;
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The prune vlan ID bitmap in trunk mode.")]
+        public ushort[] PruneVlanIdArray {
+            get {
+                return ((ushort[])(curObj["PruneVlanIdArray"]));
+            }
+            set {
+                curObj["PruneVlanIdArray"] = value;
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsPvlanModeNull {
+            get {
+                if ((curObj["PvlanMode"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The private vlan modes.")]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public PvlanModeValues PvlanMode {
+            get {
+                if ((curObj["PvlanMode"] == null)) {
+                    return ((PvlanModeValues)(System.Convert.ToInt32(0)));
+                }
+                return ((PvlanModeValues)(System.Convert.ToInt32(curObj["PvlanMode"])));
+            }
+            set {
+                if ((PvlanModeValues.NULL_ENUM_VALUE == value)) {
+                    curObj["PvlanMode"] = null;
+                }
+                else {
+                    curObj["PvlanMode"] = value;
+                }
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsSecondaryVlanIdNull {
+            get {
+                if ((curObj["SecondaryVlanId"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The secondary vlan ID in private mode.")]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ushort SecondaryVlanId {
+            get {
+                if ((curObj["SecondaryVlanId"] == null)) {
+                    return System.Convert.ToUInt16(0);
+                }
+                return ((ushort)(curObj["SecondaryVlanId"]));
+            }
+            set {
+                curObj["SecondaryVlanId"] = value;
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The secondary vlan ID bitmap in private mode.")]
+        public ushort[] SecondaryVlanIdArray {
+            get {
+                return ((ushort[])(curObj["SecondaryVlanIdArray"]));
+            }
+            set {
+                curObj["SecondaryVlanIdArray"] = value;
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The trunk vlan ID bitmap in trunk mode.")]
+        public ushort[] TrunkVlanIdArray {
+            get {
+                return ((ushort[])(curObj["TrunkVlanIdArray"]));
+            }
+            set {
+                curObj["TrunkVlanIdArray"] = value;
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
             }
         }
         
@@ -430,18 +521,118 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
             return false;
         }
         
-        private bool ShouldSerializeHbaLunTimeout() {
-            if ((this.IsHbaLunTimeoutNull == false)) {
+        private bool ShouldSerializeAccessVlanId() {
+            if ((this.IsAccessVlanIdNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeNumaSpanningEnabled() {
-            if ((this.IsNumaSpanningEnabledNull == false)) {
+        private void ResetAccessVlanId() {
+            curObj["AccessVlanId"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
+        }
+        
+        private bool ShouldSerializeNativeVlanId() {
+            if ((this.IsNativeVlanIdNull == false)) {
                 return true;
             }
             return false;
+        }
+        
+        private void ResetNativeVlanId() {
+            curObj["NativeVlanId"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
+        }
+        
+        private bool ShouldSerializeOperationMode() {
+            if ((this.IsOperationModeNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private void ResetOperationMode() {
+            curObj["OperationMode"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
+        }
+        
+        private bool ShouldSerializePrimaryVlanId() {
+            if ((this.IsPrimaryVlanIdNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private void ResetPrimaryVlanId() {
+            curObj["PrimaryVlanId"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
+        }
+        
+        private void ResetPruneVlanIdArray() {
+            curObj["PruneVlanIdArray"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
+        }
+        
+        private bool ShouldSerializePvlanMode() {
+            if ((this.IsPvlanModeNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private void ResetPvlanMode() {
+            curObj["PvlanMode"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
+        }
+        
+        private bool ShouldSerializeSecondaryVlanId() {
+            if ((this.IsSecondaryVlanIdNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private void ResetSecondaryVlanId() {
+            curObj["SecondaryVlanId"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
+        }
+        
+        private void ResetSecondaryVlanIdArray() {
+            curObj["SecondaryVlanIdArray"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
+        }
+        
+        private void ResetTrunkVlanIdArray() {
+            curObj["TrunkVlanIdArray"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
         }
         
         [Browsable(true)]
@@ -464,7 +655,7 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
         }
         
         private static string ConstructPath(string keyInstanceID) {
-            string strPath = "ROOT\\virtualization\\v2:Msvm_VirtualSystemManagementServiceSettingData";
+            string strPath = "ROOT\\virtualization\\v2:Msvm_EthernetSwitchPortVlanSettingData";
             strPath = string.Concat(strPath, string.Concat(".InstanceID=", string.Concat("\"", string.Concat(keyInstanceID, "\""))));
             return strPath;
         }
@@ -482,23 +673,23 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
         }
         
         // Different overloads of GetInstances() help in enumerating instances of the WMI class.
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances() {
+        public static EthernetSwitchPortVlanSettingDataCollection GetInstances() {
             return GetInstances(null, null, null);
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(string condition) {
+        public static EthernetSwitchPortVlanSettingDataCollection GetInstances(string condition) {
             return GetInstances(null, condition, null);
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(string[] selectedProperties) {
+        public static EthernetSwitchPortVlanSettingDataCollection GetInstances(string[] selectedProperties) {
             return GetInstances(null, null, selectedProperties);
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(string condition, string[] selectedProperties) {
+        public static EthernetSwitchPortVlanSettingDataCollection GetInstances(string condition, string[] selectedProperties) {
             return GetInstances(null, condition, selectedProperties);
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, System.Management.EnumerationOptions enumOptions) {
+        public static EthernetSwitchPortVlanSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, System.Management.EnumerationOptions enumOptions) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
                     mgmtScope = new System.Management.ManagementScope();
@@ -509,25 +700,25 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
                 }
             }
             System.Management.ManagementPath pathObj = new System.Management.ManagementPath();
-            pathObj.ClassName = "Msvm_VirtualSystemManagementServiceSettingData";
+            pathObj.ClassName = "Msvm_EthernetSwitchPortVlanSettingData";
             pathObj.NamespacePath = "root\\virtualization\\v2";
             System.Management.ManagementClass clsObject = new System.Management.ManagementClass(mgmtScope, pathObj, null);
             if ((enumOptions == null)) {
                 enumOptions = new System.Management.EnumerationOptions();
                 enumOptions.EnsureLocatable = true;
             }
-            return new VirtualSystemManagementServiceSettingDataCollection(clsObject.GetInstances(enumOptions));
+            return new EthernetSwitchPortVlanSettingDataCollection(clsObject.GetInstances(enumOptions));
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition) {
+        public static EthernetSwitchPortVlanSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition) {
             return GetInstances(mgmtScope, condition, null);
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string[] selectedProperties) {
+        public static EthernetSwitchPortVlanSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string[] selectedProperties) {
             return GetInstances(mgmtScope, null, selectedProperties);
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition, string[] selectedProperties) {
+        public static EthernetSwitchPortVlanSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition, string[] selectedProperties) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
                     mgmtScope = new System.Management.ManagementScope();
@@ -537,15 +728,15 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
                     mgmtScope = statMgmtScope;
                 }
             }
-            System.Management.ManagementObjectSearcher ObjectSearcher = new System.Management.ManagementObjectSearcher(mgmtScope, new SelectQuery("Msvm_VirtualSystemManagementServiceSettingData", condition, selectedProperties));
+            System.Management.ManagementObjectSearcher ObjectSearcher = new System.Management.ManagementObjectSearcher(mgmtScope, new SelectQuery("Msvm_EthernetSwitchPortVlanSettingData", condition, selectedProperties));
             System.Management.EnumerationOptions enumOptions = new System.Management.EnumerationOptions();
             enumOptions.EnsureLocatable = true;
             ObjectSearcher.Options = enumOptions;
-            return new VirtualSystemManagementServiceSettingDataCollection(ObjectSearcher.Get());
+            return new EthernetSwitchPortVlanSettingDataCollection(ObjectSearcher.Get());
         }
         
         [Browsable(true)]
-        public static VirtualSystemManagementServiceSettingData CreateInstance() {
+        public static EthernetSwitchPortVlanSettingData CreateInstance() {
             System.Management.ManagementScope mgmtScope = null;
             if ((statMgmtScope == null)) {
                 mgmtScope = new System.Management.ManagementScope();
@@ -556,7 +747,7 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
             }
             System.Management.ManagementPath mgmtPath = new System.Management.ManagementPath(CreatedClassName);
             System.Management.ManagementClass tmpMgmtClass = new System.Management.ManagementClass(mgmtScope, mgmtPath, null);
-            return new VirtualSystemManagementServiceSettingData(tmpMgmtClass.CreateInstance());
+            return new EthernetSwitchPortVlanSettingData(tmpMgmtClass.CreateInstance());
         }
         
         [Browsable(true)]
@@ -564,12 +755,34 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
             PrivateLateBoundObject.Delete();
         }
         
+        public enum OperationModeValues {
+            
+            Access = 1,
+            
+            Trunk = 2,
+            
+            Private = 3,
+            
+            NULL_ENUM_VALUE = 0,
+        }
+        
+        public enum PvlanModeValues {
+            
+            Isolated = 1,
+            
+            Community = 2,
+            
+            Promiscuous = 3,
+            
+            NULL_ENUM_VALUE = 0,
+        }
+        
         // Enumerator implementation for enumerating instances of the class.
-        public class VirtualSystemManagementServiceSettingDataCollection : object, ICollection {
+        public class EthernetSwitchPortVlanSettingDataCollection : object, ICollection {
             
             private ManagementObjectCollection privColObj;
             
-            public VirtualSystemManagementServiceSettingDataCollection(ManagementObjectCollection objCollection) {
+            public EthernetSwitchPortVlanSettingDataCollection(ManagementObjectCollection objCollection) {
                 privColObj = objCollection;
             }
             
@@ -595,25 +808,25 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
                 privColObj.CopyTo(array, index);
                 int nCtr;
                 for (nCtr = 0; (nCtr < array.Length); nCtr = (nCtr + 1)) {
-                    array.SetValue(new VirtualSystemManagementServiceSettingData(((System.Management.ManagementObject)(array.GetValue(nCtr)))), nCtr);
+                    array.SetValue(new EthernetSwitchPortVlanSettingData(((System.Management.ManagementObject)(array.GetValue(nCtr)))), nCtr);
                 }
             }
             
             public virtual System.Collections.IEnumerator GetEnumerator() {
-                return new VirtualSystemManagementServiceSettingDataEnumerator(privColObj.GetEnumerator());
+                return new EthernetSwitchPortVlanSettingDataEnumerator(privColObj.GetEnumerator());
             }
             
-            public class VirtualSystemManagementServiceSettingDataEnumerator : object, System.Collections.IEnumerator {
+            public class EthernetSwitchPortVlanSettingDataEnumerator : object, System.Collections.IEnumerator {
                 
                 private ManagementObjectCollection.ManagementObjectEnumerator privObjEnum;
                 
-                public VirtualSystemManagementServiceSettingDataEnumerator(ManagementObjectCollection.ManagementObjectEnumerator objEnum) {
+                public EthernetSwitchPortVlanSettingDataEnumerator(ManagementObjectCollection.ManagementObjectEnumerator objEnum) {
                     privObjEnum = objEnum;
                 }
                 
                 public virtual object Current {
                     get {
-                        return new VirtualSystemManagementServiceSettingData(((System.Management.ManagementObject)(privObjEnum.Current)));
+                        return new EthernetSwitchPortVlanSettingData(((System.Management.ManagementObject)(privObjEnum.Current)));
                     }
                 }
                 

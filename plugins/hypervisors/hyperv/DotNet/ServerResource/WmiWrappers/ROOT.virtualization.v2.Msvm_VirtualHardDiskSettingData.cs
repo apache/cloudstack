@@ -1,5 +1,4 @@
-﻿namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 
-{
+﻿namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
     using System;
     using System.ComponentModel;
     using System.Management;
@@ -13,14 +12,14 @@
     // Functions Is<PropertyName>Null() are used to check if a property is NULL.
     // Functions Reset<PropertyName> are added for Nullable Read/Write properties. These functions are used by VS designer in property browser to set a property to NULL.
     // Every property added to the class for WMI property has attributes set to define its behavior in Visual Studio designer and also to define a TypeConverter to be used.
-    // An Early Bound class generated for the WMI class.Msvm_VirtualSystemManagementServiceSettingData
-    public class VirtualSystemManagementServiceSettingData : System.ComponentModel.Component {
+    // An Early Bound class generated for the WMI class.Msvm_VirtualHardDiskSettingData
+    public class VirtualHardDiskSettingData : System.ComponentModel.Component {
         
         // Private property to hold the WMI namespace in which the class resides.
         private static string CreatedWmiNamespace = "ROOT\\virtualization\\v2";
         
         // Private property to hold the name of WMI class which created this class.
-        public static string CreatedClassName = "Msvm_VirtualSystemManagementServiceSettingData";
+        private static string CreatedClassName = "Msvm_VirtualHardDiskSettingData";
         
         // Private member variable to hold the ManagementScope which is used by the various methods.
         private static System.Management.ManagementScope statMgmtScope = null;
@@ -43,35 +42,35 @@
         private bool isEmbedded;
         
         // Below are different overloads of constructors to initialize an instance of the class with a WMI object.
-        public VirtualSystemManagementServiceSettingData() {
+        public VirtualHardDiskSettingData() {
             this.InitializeObject(null, null, null);
         }
         
-        public VirtualSystemManagementServiceSettingData(string keyInstanceID) {
-            this.InitializeObject(null, new System.Management.ManagementPath(VirtualSystemManagementServiceSettingData.ConstructPath(keyInstanceID)), null);
+        public VirtualHardDiskSettingData(string keyInstanceID) {
+            this.InitializeObject(null, new System.Management.ManagementPath(VirtualHardDiskSettingData.ConstructPath(keyInstanceID)), null);
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementScope mgmtScope, string keyInstanceID) {
-            this.InitializeObject(((System.Management.ManagementScope)(mgmtScope)), new System.Management.ManagementPath(VirtualSystemManagementServiceSettingData.ConstructPath(keyInstanceID)), null);
+        public VirtualHardDiskSettingData(System.Management.ManagementScope mgmtScope, string keyInstanceID) {
+            this.InitializeObject(((System.Management.ManagementScope)(mgmtScope)), new System.Management.ManagementPath(VirtualHardDiskSettingData.ConstructPath(keyInstanceID)), null);
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
+        public VirtualHardDiskSettingData(System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(null, path, getOptions);
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path) {
+        public VirtualHardDiskSettingData(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path) {
             this.InitializeObject(mgmtScope, path, null);
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementPath path) {
+        public VirtualHardDiskSettingData(System.Management.ManagementPath path) {
             this.InitializeObject(null, path, null);
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
+        public VirtualHardDiskSettingData(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(mgmtScope, path, getOptions);
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementObject theObject) {
+        public VirtualHardDiskSettingData(System.Management.ManagementObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
                 PrivateLateBoundObject = theObject;
@@ -83,7 +82,7 @@
             }
         }
         
-        public VirtualSystemManagementServiceSettingData(System.Management.ManagementBaseObject theObject) {
+        public VirtualHardDiskSettingData(System.Management.ManagementBaseObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
                 embeddedObj = theObject;
@@ -205,13 +204,36 @@
             }
         }
         
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsBlockSizeNull {
+            get {
+                if ((curObj["BlockSize"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description(@"Used by OEMs to allow BIOS-locked Windows operating systems to run in the virtual machine. This string must be exactly 32 characters in length.
-This is a read-only property, but it can be changed using the ModifyServiceSettings method of the Msvm_VirtualSystemManagementService class.")]
-        public string BiosLockString {
+        [Description("The block size used by the virtual hard disk")]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public uint BlockSize {
             get {
-                return ((string)(curObj["BiosLockString"]));
+                if ((curObj["BlockSize"] == null)) {
+                    return System.Convert.ToUInt32(0);
+                }
+                return ((uint)(curObj["BlockSize"]));
+            }
+            set {
+                curObj["BlockSize"] = value;
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
             }
         }
         
@@ -221,39 +243,12 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
             get {
                 return ((string)(curObj["Caption"]));
             }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The WorldWideNodeName address for dynamically generated WorldWideName addresses u" +
-            "sed for Synthetic HBAs.\nThis is a read-only property, but it can be changed usin" +
-            "g the ModifyServiceSettings method of the Msvm_VirtualSystemManagementService cl" +
-            "ass.")]
-        public string CurrentWWNNAddress {
-            get {
-                return ((string)(curObj["CurrentWWNNAddress"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The default external data root. By default, \"root\\ProgramData\\Microsoft\\Windows\\V" +
-            "irtualization\".\nThis is a read-only property, but it can be changed using the Mo" +
-            "difyServiceSettings method of the Msvm_VirtualSystemManagementService class.")]
-        public string DefaultExternalDataRoot {
-            get {
-                return ((string)(curObj["DefaultExternalDataRoot"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The default virtual hard disk path. By default, \"root\\Users\\Public\\Documents\\Virt" +
-            "ual Hard Disks\".\nThis is a read-only property, but it can be changed using the M" +
-            "odifyServiceSettings method of the Msvm_VirtualSystemManagementService class.")]
-        public string DefaultVirtualHardDiskPath {
-            get {
-                return ((string)(curObj["DefaultVirtualHardDiskPath"]));
+            set {
+                curObj["Caption"] = value;
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
             }
         }
         
@@ -263,6 +258,13 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
             get {
                 return ((string)(curObj["Description"]));
             }
+            set {
+                curObj["Description"] = value;
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
+            }
         }
         
         [Browsable(true)]
@@ -271,13 +273,20 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
             get {
                 return ((string)(curObj["ElementName"]));
             }
+            set {
+                curObj["ElementName"] = value;
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
+            }
         }
         
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsHbaLunTimeoutNull {
+        public bool IsFormatNull {
             get {
-                if ((curObj["HbaLunTimeout"] == null)) {
+                if ((curObj["Format"] == null)) {
                     return true;
                 }
                 else {
@@ -288,15 +297,26 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description(@"This property describes the amount of time that the Synthetic FC virtual device will wait for a LUN to appear before starting a virtual machine.
-This is a read-only property, but it can be changed using the ModifyServiceSettings method of the Msvm_VirtualSystemManagementService class.")]
+        [Description("The format for the virtual hard disk.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public uint HbaLunTimeout {
+        public FormatValues Format {
             get {
-                if ((curObj["HbaLunTimeout"] == null)) {
-                    return System.Convert.ToUInt32(0);
+                if ((curObj["Format"] == null)) {
+                    return ((FormatValues)(System.Convert.ToInt32(0)));
                 }
-                return ((uint)(curObj["HbaLunTimeout"]));
+                return ((FormatValues)(System.Convert.ToInt32(curObj["Format"])));
+            }
+            set {
+                if ((FormatValues.NULL_ENUM_VALUE == value)) {
+                    curObj["Format"] = null;
+                }
+                else {
+                    curObj["Format"] = value;
+                }
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
             }
         }
         
@@ -306,59 +326,20 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
             get {
                 return ((string)(curObj["InstanceID"]));
             }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The maximum MAC address for dynamically generated MAC addresses.\nThis is a read-o" +
-            "nly property, but it can be changed using the ModifyServiceSettings method of th" +
-            "e Msvm_VirtualSystemManagementService class.")]
-        public string MaximumMacAddress {
-            get {
-                return ((string)(curObj["MaximumMacAddress"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The maximum WorldWidePortName address for dynamically generated WorldWideName add" +
-            "resses used for Synthetic HBAs.\nThis is a read-only property, but it can be chan" +
-            "ged using the ModifyServiceSettings method of the Msvm_VirtualSystemManagementSe" +
-            "rvice class.")]
-        public string MaximumWWPNAddress {
-            get {
-                return ((string)(curObj["MaximumWWPNAddress"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The minimum MAC address for dynamically generated MAC addresses.\nThis is a read-o" +
-            "nly property, but it can be changed using the ModifyServiceSettings method of th" +
-            "e Msvm_VirtualSystemManagementService class.")]
-        public string MinimumMacAddress {
-            get {
-                return ((string)(curObj["MinimumMacAddress"]));
-            }
-        }
-        
-        [Browsable(true)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("The minimum WorldWidePortName address for dynamically generated WorldWideName add" +
-            "resses used for Synthetic HBAs.\nThis is a read-only property, but it can be chan" +
-            "ged using the ModifyServiceSettings method of the Msvm_VirtualSystemManagementSe" +
-            "rvice class.")]
-        public string MinimumWWPNAddress {
-            get {
-                return ((string)(curObj["MinimumWWPNAddress"]));
+            set {
+                curObj["InstanceID"] = value;
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
             }
         }
         
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsNumaSpanningEnabledNull {
+        public bool IsLogicalSectorSizeNull {
             get {
-                if ((curObj["NumaSpanningEnabled"] == null)) {
+                if ((curObj["LogicalSectorSize"] == null)) {
                     return true;
                 }
                 else {
@@ -369,35 +350,160 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("Reserved for future use.")]
+        [Description("The logical sector size used by the virtual hard disk")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
-        public bool NumaSpanningEnabled {
+        public uint LogicalSectorSize {
             get {
-                if ((curObj["NumaSpanningEnabled"] == null)) {
-                    return System.Convert.ToBoolean(0);
+                if ((curObj["LogicalSectorSize"] == null)) {
+                    return System.Convert.ToUInt32(0);
                 }
-                return ((bool)(curObj["NumaSpanningEnabled"]));
+                return ((uint)(curObj["LogicalSectorSize"]));
+            }
+            set {
+                curObj["LogicalSectorSize"] = value;
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsMaxInternalSizeNull {
+            get {
+                if ((curObj["MaxInternalSize"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
             }
         }
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("Controls memory allocation for the VMs on non-uniform memory access (NUMA) system" +
-            "s.\nThis is a read-only property, but it can be changed using the ModifyServiceSe" +
-            "ttings method of the Msvm_VirtualSystemManagementService class.")]
-        public string PrimaryOwnerContact {
+        [Description("The maximum size of the virtual hard disk as viewable by the virtual machine, in " +
+            "bytes. The specified size will be rounded up to the next largest multiple of the" +
+            " sector size.")]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ulong MaxInternalSize {
             get {
-                return ((string)(curObj["PrimaryOwnerContact"]));
+                if ((curObj["MaxInternalSize"] == null)) {
+                    return System.Convert.ToUInt64(0);
+                }
+                return ((ulong)(curObj["MaxInternalSize"]));
+            }
+            set {
+                curObj["MaxInternalSize"] = value;
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
             }
         }
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description(@"Describes how the primary system owner can be reached (for example, phone number or e-mail address). By default, empty. This name may not exceed 256 characters in length.
-This is a read-only property, but it can be changed using the ModifyServiceSettings method of the Msvm_VirtualSystemManagementService class.")]
-        public string PrimaryOwnerName {
+        [Description("The parent of the virtual hard disk. If the virtual hard disk does not have a par" +
+            "ent, then this field is empty.")]
+        public string ParentPath {
             get {
-                return ((string)(curObj["PrimaryOwnerName"]));
+                return ((string)(curObj["ParentPath"]));
+            }
+            set {
+                curObj["ParentPath"] = value;
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The path of the virtual hard disk.")]
+        public string Path0 {
+            get {
+                return ((string)(curObj["Path"]));
+            }
+            set {
+                curObj["Path"] = value;
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsPhysicalSectorSizeNull {
+            get {
+                if ((curObj["PhysicalSectorSize"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The physical sector size used by the virtual hard disk")]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public uint PhysicalSectorSize {
+            get {
+                if ((curObj["PhysicalSectorSize"] == null)) {
+                    return System.Convert.ToUInt32(0);
+                }
+                return ((uint)(curObj["PhysicalSectorSize"]));
+            }
+            set {
+                curObj["PhysicalSectorSize"] = value;
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsTypeNull {
+            get {
+                if ((curObj["Type"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The type of virtual hard disk.")]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public TypeValues Type {
+            get {
+                if ((curObj["Type"] == null)) {
+                    return ((TypeValues)(System.Convert.ToInt32(0)));
+                }
+                return ((TypeValues)(System.Convert.ToInt32(curObj["Type"])));
+            }
+            set {
+                if ((TypeValues.NULL_ENUM_VALUE == value)) {
+                    curObj["Type"] = null;
+                }
+                else {
+                    curObj["Type"] = value;
+                }
+                if (((isEmbedded == false) 
+                            && (AutoCommitProp == true))) {
+                    PrivateLateBoundObject.Put();
+                }
             }
         }
         
@@ -430,18 +536,134 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
             return false;
         }
         
-        private bool ShouldSerializeHbaLunTimeout() {
-            if ((this.IsHbaLunTimeoutNull == false)) {
+        private bool ShouldSerializeBlockSize() {
+            if ((this.IsBlockSizeNull == false)) {
                 return true;
             }
             return false;
         }
         
-        private bool ShouldSerializeNumaSpanningEnabled() {
-            if ((this.IsNumaSpanningEnabledNull == false)) {
+        private void ResetBlockSize() {
+            curObj["BlockSize"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
+        }
+        
+        private void ResetCaption() {
+            curObj["Caption"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
+        }
+        
+        private void ResetDescription() {
+            curObj["Description"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
+        }
+        
+        private void ResetElementName() {
+            curObj["ElementName"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
+        }
+        
+        private bool ShouldSerializeFormat() {
+            if ((this.IsFormatNull == false)) {
                 return true;
             }
             return false;
+        }
+        
+        private void ResetFormat() {
+            curObj["Format"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
+        }
+        
+        private bool ShouldSerializeLogicalSectorSize() {
+            if ((this.IsLogicalSectorSizeNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private void ResetLogicalSectorSize() {
+            curObj["LogicalSectorSize"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
+        }
+        
+        private bool ShouldSerializeMaxInternalSize() {
+            if ((this.IsMaxInternalSizeNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private void ResetMaxInternalSize() {
+            curObj["MaxInternalSize"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
+        }
+        
+        private void ResetParentPath() {
+            curObj["ParentPath"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
+        }
+        
+        private void ResetPath0() {
+            curObj["Path"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
+        }
+        
+        private bool ShouldSerializePhysicalSectorSize() {
+            if ((this.IsPhysicalSectorSizeNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private void ResetPhysicalSectorSize() {
+            curObj["PhysicalSectorSize"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
+        }
+        
+        private bool ShouldSerializeType() {
+            if ((this.IsTypeNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private void ResetType() {
+            curObj["Type"] = null;
+            if (((isEmbedded == false) 
+                        && (AutoCommitProp == true))) {
+                PrivateLateBoundObject.Put();
+            }
         }
         
         [Browsable(true)]
@@ -464,7 +686,7 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
         }
         
         private static string ConstructPath(string keyInstanceID) {
-            string strPath = "ROOT\\virtualization\\v2:Msvm_VirtualSystemManagementServiceSettingData";
+            string strPath = "ROOT\\virtualization\\v2:Msvm_VirtualHardDiskSettingData";
             strPath = string.Concat(strPath, string.Concat(".InstanceID=", string.Concat("\"", string.Concat(keyInstanceID, "\""))));
             return strPath;
         }
@@ -482,23 +704,23 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
         }
         
         // Different overloads of GetInstances() help in enumerating instances of the WMI class.
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances() {
+        public static VirtualHardDiskSettingDataCollection GetInstances() {
             return GetInstances(null, null, null);
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(string condition) {
+        public static VirtualHardDiskSettingDataCollection GetInstances(string condition) {
             return GetInstances(null, condition, null);
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(string[] selectedProperties) {
+        public static VirtualHardDiskSettingDataCollection GetInstances(string[] selectedProperties) {
             return GetInstances(null, null, selectedProperties);
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(string condition, string[] selectedProperties) {
+        public static VirtualHardDiskSettingDataCollection GetInstances(string condition, string[] selectedProperties) {
             return GetInstances(null, condition, selectedProperties);
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, System.Management.EnumerationOptions enumOptions) {
+        public static VirtualHardDiskSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, System.Management.EnumerationOptions enumOptions) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
                     mgmtScope = new System.Management.ManagementScope();
@@ -509,25 +731,25 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
                 }
             }
             System.Management.ManagementPath pathObj = new System.Management.ManagementPath();
-            pathObj.ClassName = "Msvm_VirtualSystemManagementServiceSettingData";
+            pathObj.ClassName = "Msvm_VirtualHardDiskSettingData";
             pathObj.NamespacePath = "root\\virtualization\\v2";
             System.Management.ManagementClass clsObject = new System.Management.ManagementClass(mgmtScope, pathObj, null);
             if ((enumOptions == null)) {
                 enumOptions = new System.Management.EnumerationOptions();
                 enumOptions.EnsureLocatable = true;
             }
-            return new VirtualSystemManagementServiceSettingDataCollection(clsObject.GetInstances(enumOptions));
+            return new VirtualHardDiskSettingDataCollection(clsObject.GetInstances(enumOptions));
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition) {
+        public static VirtualHardDiskSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition) {
             return GetInstances(mgmtScope, condition, null);
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string[] selectedProperties) {
+        public static VirtualHardDiskSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string[] selectedProperties) {
             return GetInstances(mgmtScope, null, selectedProperties);
         }
         
-        public static VirtualSystemManagementServiceSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition, string[] selectedProperties) {
+        public static VirtualHardDiskSettingDataCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition, string[] selectedProperties) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
                     mgmtScope = new System.Management.ManagementScope();
@@ -537,15 +759,15 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
                     mgmtScope = statMgmtScope;
                 }
             }
-            System.Management.ManagementObjectSearcher ObjectSearcher = new System.Management.ManagementObjectSearcher(mgmtScope, new SelectQuery("Msvm_VirtualSystemManagementServiceSettingData", condition, selectedProperties));
+            System.Management.ManagementObjectSearcher ObjectSearcher = new System.Management.ManagementObjectSearcher(mgmtScope, new SelectQuery("Msvm_VirtualHardDiskSettingData", condition, selectedProperties));
             System.Management.EnumerationOptions enumOptions = new System.Management.EnumerationOptions();
             enumOptions.EnsureLocatable = true;
             ObjectSearcher.Options = enumOptions;
-            return new VirtualSystemManagementServiceSettingDataCollection(ObjectSearcher.Get());
+            return new VirtualHardDiskSettingDataCollection(ObjectSearcher.Get());
         }
         
         [Browsable(true)]
-        public static VirtualSystemManagementServiceSettingData CreateInstance() {
+        public static VirtualHardDiskSettingData CreateInstance() {
             System.Management.ManagementScope mgmtScope = null;
             if ((statMgmtScope == null)) {
                 mgmtScope = new System.Management.ManagementScope();
@@ -556,7 +778,7 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
             }
             System.Management.ManagementPath mgmtPath = new System.Management.ManagementPath(CreatedClassName);
             System.Management.ManagementClass tmpMgmtClass = new System.Management.ManagementClass(mgmtScope, mgmtPath, null);
-            return new VirtualSystemManagementServiceSettingData(tmpMgmtClass.CreateInstance());
+            return new VirtualHardDiskSettingData(tmpMgmtClass.CreateInstance());
         }
         
         [Browsable(true)]
@@ -564,12 +786,32 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
             PrivateLateBoundObject.Delete();
         }
         
+        public enum FormatValues {
+            
+            VHD = 2,
+            
+            VHDX = 3,
+            
+            NULL_ENUM_VALUE = 0,
+        }
+        
+        public enum TypeValues {
+            
+            Fixed = 2,
+            
+            Dynamic = 3,
+            
+            Differencing = 4,
+            
+            NULL_ENUM_VALUE = 0,
+        }
+        
         // Enumerator implementation for enumerating instances of the class.
-        public class VirtualSystemManagementServiceSettingDataCollection : object, ICollection {
+        public class VirtualHardDiskSettingDataCollection : object, ICollection {
             
             private ManagementObjectCollection privColObj;
             
-            public VirtualSystemManagementServiceSettingDataCollection(ManagementObjectCollection objCollection) {
+            public VirtualHardDiskSettingDataCollection(ManagementObjectCollection objCollection) {
                 privColObj = objCollection;
             }
             
@@ -595,25 +837,25 @@ This is a read-only property, but it can be changed using the ModifyServiceSetti
                 privColObj.CopyTo(array, index);
                 int nCtr;
                 for (nCtr = 0; (nCtr < array.Length); nCtr = (nCtr + 1)) {
-                    array.SetValue(new VirtualSystemManagementServiceSettingData(((System.Management.ManagementObject)(array.GetValue(nCtr)))), nCtr);
+                    array.SetValue(new VirtualHardDiskSettingData(((System.Management.ManagementObject)(array.GetValue(nCtr)))), nCtr);
                 }
             }
             
             public virtual System.Collections.IEnumerator GetEnumerator() {
-                return new VirtualSystemManagementServiceSettingDataEnumerator(privColObj.GetEnumerator());
+                return new VirtualHardDiskSettingDataEnumerator(privColObj.GetEnumerator());
             }
             
-            public class VirtualSystemManagementServiceSettingDataEnumerator : object, System.Collections.IEnumerator {
+            public class VirtualHardDiskSettingDataEnumerator : object, System.Collections.IEnumerator {
                 
                 private ManagementObjectCollection.ManagementObjectEnumerator privObjEnum;
                 
-                public VirtualSystemManagementServiceSettingDataEnumerator(ManagementObjectCollection.ManagementObjectEnumerator objEnum) {
+                public VirtualHardDiskSettingDataEnumerator(ManagementObjectCollection.ManagementObjectEnumerator objEnum) {
                     privObjEnum = objEnum;
                 }
                 
                 public virtual object Current {
                     get {
-                        return new VirtualSystemManagementServiceSettingData(((System.Management.ManagementObject)(privObjEnum.Current)));
+                        return new VirtualHardDiskSettingData(((System.Management.ManagementObject)(privObjEnum.Current)));
                     }
                 }
                 

@@ -58,7 +58,6 @@ namespace ServerResource.Tests
         protected static String testSampleTemplateURLJSON;
         protected static String testLocalStorePathJSON;
 
-        protected static WmiCalls wmiCalls = new WmiCalls();
         protected static WmiCallsV2 wmiCallsV2 = new WmiCallsV2();
 
         private static ILog s_logger = LogManager.GetLogger(typeof(HypervResourceControllerTest));
@@ -873,7 +872,7 @@ namespace ServerResource.Tests
         public void GetVmStatsCommand()
         {
             // Use WMI to find existing VMs
-            List<String> vmNames = wmiCalls.GetVmElementNames();
+            List<String> vmNames = wmiCallsV2.GetVmElementNames();
 
             var cmd = new
             {
@@ -1009,16 +1008,16 @@ namespace ServerResource.Tests
 
             uint cores;
             uint mhz;
-            wmiCalls.GetProcessorResources(out cores, out mhz);
+            wmiCallsV2.GetProcessorResources(out cores, out mhz);
             ulong memory_mb;
             ulong freememory;
-            wmiCalls.GetMemoryResources(out memory_mb, out freememory);
+            wmiCallsV2.GetMemoryResources(out memory_mb, out freememory);
             memory_mb *= 1024;
             long capacityBytes;
             long availableBytes;
-            HypervResourceController.GetCapacityForLocalPath(wmiCalls.GetDefaultVirtualDiskFolder(),
+            HypervResourceController.GetCapacityForLocalPath(wmiCallsV2.GetDefaultVirtualDiskFolder(),
                     out capacityBytes, out availableBytes);
-            var DefaultVirtualDiskFolder = JsonConvert.SerializeObject(wmiCalls.GetDefaultVirtualDiskFolder());
+            var DefaultVirtualDiskFolder = JsonConvert.SerializeObject(wmiCallsV2.GetDefaultVirtualDiskFolder());
             string expected =
             #region string_literal
                     "[{\"" + CloudStackTypes.StartupRoutingCommand + "\":{" +
@@ -1094,10 +1093,10 @@ namespace ServerResource.Tests
             Assert.NotNull(startAns[0][CloudStackTypes.StartAnswer]);
             Assert.True((bool)startAns[0][CloudStackTypes.StartAnswer].result, "StartCommand did not succeed " + startAns[0][CloudStackTypes.StartAnswer].details);
             string vmCmdName = jsonStartCmd.vm.name.Value;
-            var vm = wmiCalls.GetComputerSystem(vmCmdName);
-            VirtualSystemSettingData vmSettings = wmiCalls.GetVmSettings(vm);
-            MemorySettingData memSettings = wmiCalls.GetMemSettings(vmSettings);
-            ProcessorSettingData procSettings = wmiCalls.GetProcSettings(vmSettings);
+            var vm = wmiCallsV2.GetComputerSystem(vmCmdName);
+            var vmSettings = wmiCallsV2.GetVmSettings(vm);
+            var memSettings = wmiCallsV2.GetMemSettings(vmSettings);
+            var procSettings = wmiCallsV2.GetProcSettings(vmSettings);
             dynamic jsonObj = JsonConvert.DeserializeObject(sample);
             var vmInfo = jsonObj.vm;
             string vmName = vmInfo.name;
@@ -1111,20 +1110,19 @@ namespace ServerResource.Tests
             Assert.True((int)procSettings.Reservation == vcpus);
             Assert.True((int)procSettings.Limit == 100000);
 
-            // examine NIC
-            SyntheticEthernetPortSettingData[] nicSettingsViaVm = wmiCalls.GetEthernetPorts(vm);
+            // examine NIC for correctness
+            var nicSettingsViaVm = wmiCallsV2.GetEthernetPortSettings(vm);
             Assert.True(nicSettingsViaVm.Length > 0, "Should be at least one ethernet port on VM");
             string expectedMac = (string)jsonStartCmd.vm.nics[0].mac;
             string strippedExpectedMac = expectedMac.Replace(":", string.Empty);
             Assert.Equal(nicSettingsViaVm[0].Address.ToLower(), strippedExpectedMac.ToLower());
 
             // Assert switchport has correct VLAN 
-            SwitchPort[] switchPorts = wmiCalls.GetSwitchPorts(vm);
-            VirtualSwitchManagementService vmNetMgmtSvc = wmiCalls.GetVirtualSwitchManagementService();
-            VLANEndpointSettingData vlanSettings = wmiCalls.GetVlanEndpointSettings(vmNetMgmtSvc, switchPorts[0].Path);
+            var ethernetConnections = wmiCallsV2.GetEthernetConnections(vm);
+            var vlanSettings = wmiCallsV2.GetVlanSettings(ethernetConnections[0]);
             string isolationUri = (string)jsonStartCmd.vm.nics[0].isolationUri;
             string vlan = isolationUri.Replace("vlan://", string.Empty);
-            Assert.Equal(vlanSettings.AccessVLAN.ToString(), vlan);
+            Assert.Equal(vlanSettings.AccessVlanId.ToString(), vlan);
 
             return vmName;
         }
@@ -1142,8 +1140,8 @@ namespace ServerResource.Tests
             // Assert VM is gone!
             Assert.NotNull(stopAns[0][CloudStackTypes.StopAnswer]);
             Assert.True((bool)stopAns[0][CloudStackTypes.StopAnswer].result, "StopCommand did not succeed " + stopAns[0][CloudStackTypes.StopAnswer].details);
-            var finalVm = wmiCalls.GetComputerSystem(vmName);
-            Assert.True(wmiCalls.GetComputerSystem(vmName) == null);
+            var finalVm = wmiCallsV2.GetComputerSystem(vmName);
+            Assert.True(wmiCallsV2.GetComputerSystem(vmName) == null);
         }
     }
 }

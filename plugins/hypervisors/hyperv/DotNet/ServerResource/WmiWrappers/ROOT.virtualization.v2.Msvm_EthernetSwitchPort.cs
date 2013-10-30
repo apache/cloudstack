@@ -1,5 +1,4 @@
-﻿namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2
-{
+﻿namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
     using System;
     using System.ComponentModel;
     using System.Management;
@@ -14,14 +13,14 @@
     // Functions Reset<PropertyName> are added for Nullable Read/Write properties. These functions are used by VS designer in property browser to set a property to NULL.
     // Every property added to the class for WMI property has attributes set to define its behavior in Visual Studio designer and also to define a TypeConverter to be used.
     // Datetime conversion functions ToDateTime and ToDmtfDateTime are added to the class to convert DMTF datetime to System.DateTime and vice-versa.
-    // An Early Bound class generated for the WMI class.Msvm_KvpExchangeComponent
-    public class KvpExchangeComponent : System.ComponentModel.Component {
+    // An Early Bound class generated for the WMI class.Msvm_EthernetSwitchPort
+    public class EthernetSwitchPort : System.ComponentModel.Component {
         
         // Private property to hold the WMI namespace in which the class resides.
         private static string CreatedWmiNamespace = "ROOT\\virtualization\\v2";
         
         // Private property to hold the name of WMI class which created this class.
-        private static string CreatedClassName = "Msvm_KvpExchangeComponent";
+        public static string CreatedClassName = "Msvm_EthernetSwitchPort";
         
         // Private member variable to hold the ManagementScope which is used by the various methods.
         private static System.Management.ManagementScope statMgmtScope = null;
@@ -44,35 +43,35 @@
         private bool isEmbedded;
         
         // Below are different overloads of constructors to initialize an instance of the class with a WMI object.
-        public KvpExchangeComponent() {
+        public EthernetSwitchPort() {
             this.InitializeObject(null, null, null);
         }
         
-        public KvpExchangeComponent(string keyCreationClassName, string keyDeviceID, string keySystemCreationClassName, string keySystemName) {
-            this.InitializeObject(null, new System.Management.ManagementPath(KvpExchangeComponent.ConstructPath(keyCreationClassName, keyDeviceID, keySystemCreationClassName, keySystemName)), null);
+        public EthernetSwitchPort(string keyCreationClassName, string keyDeviceID, string keySystemCreationClassName, string keySystemName) {
+            this.InitializeObject(null, new System.Management.ManagementPath(EthernetSwitchPort.ConstructPath(keyCreationClassName, keyDeviceID, keySystemCreationClassName, keySystemName)), null);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementScope mgmtScope, string keyCreationClassName, string keyDeviceID, string keySystemCreationClassName, string keySystemName) {
-            this.InitializeObject(((System.Management.ManagementScope)(mgmtScope)), new System.Management.ManagementPath(KvpExchangeComponent.ConstructPath(keyCreationClassName, keyDeviceID, keySystemCreationClassName, keySystemName)), null);
+        public EthernetSwitchPort(System.Management.ManagementScope mgmtScope, string keyCreationClassName, string keyDeviceID, string keySystemCreationClassName, string keySystemName) {
+            this.InitializeObject(((System.Management.ManagementScope)(mgmtScope)), new System.Management.ManagementPath(EthernetSwitchPort.ConstructPath(keyCreationClassName, keyDeviceID, keySystemCreationClassName, keySystemName)), null);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
+        public EthernetSwitchPort(System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(null, path, getOptions);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path) {
+        public EthernetSwitchPort(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path) {
             this.InitializeObject(mgmtScope, path, null);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementPath path) {
+        public EthernetSwitchPort(System.Management.ManagementPath path) {
             this.InitializeObject(null, path, null);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
+        public EthernetSwitchPort(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(mgmtScope, path, getOptions);
         }
         
-        public KvpExchangeComponent(System.Management.ManagementObject theObject) {
+        public EthernetSwitchPort(System.Management.ManagementObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
                 PrivateLateBoundObject = theObject;
@@ -84,7 +83,7 @@
             }
         }
         
-        public KvpExchangeComponent(System.Management.ManagementBaseObject theObject) {
+        public EthernetSwitchPort(System.Management.ManagementBaseObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
                 embeddedObj = theObject;
@@ -206,11 +205,61 @@
             }
         }
         
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsActiveMaximumTransmissionUnitNull {
+            get {
+                if ((curObj["ActiveMaximumTransmissionUnit"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ulong ActiveMaximumTransmissionUnit {
+            get {
+                if ((curObj["ActiveMaximumTransmissionUnit"] == null)) {
+                    return System.Convert.ToUInt64(0);
+                }
+                return ((ulong)(curObj["ActiveMaximumTransmissionUnit"]));
+            }
+        }
+        
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public ushort[] AdditionalAvailability {
             get {
                 return ((ushort[])(curObj["AdditionalAvailability"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsAutoSenseNull {
+            get {
+                if ((curObj["AutoSense"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public bool AutoSense {
+            get {
+                if ((curObj["AutoSense"] == null)) {
+                    return System.Convert.ToBoolean(0);
+                }
+                return ((bool)(curObj["AutoSense"]));
             }
         }
         
@@ -244,6 +293,22 @@
         public ushort[] AvailableRequestedStates {
             get {
                 return ((ushort[])(curObj["AvailableRequestedStates"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public ushort[] Capabilities {
+            get {
+                return ((ushort[])(curObj["Capabilities"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string[] CapabilityDescriptions {
+            get {
+                return ((string[])(curObj["CapabilityDescriptions"]));
             }
         }
         
@@ -337,6 +402,14 @@
             }
         }
         
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public ushort[] EnabledCapabilities {
+            get {
+                return ((ushort[])(curObj["EnabledCapabilities"]));
+            }
+        }
+        
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsEnabledDefaultNull {
@@ -420,21 +493,28 @@
             }
         }
         
-        [Browsable(true)]
+        [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description(@"An array of embedded Msvm_KvpExchangeDataItem instances which contain the set of key-value pairs that components running within the guest operating system have pushed up to be available for access by external clients. This array will not contain any intrinsic items that are pushed by the integration component directly.")]
-        public string[] GuestExchangeItems {
+        public bool IsFullDuplexNull {
             get {
-                return ((string[])(curObj["GuestExchangeItems"]));
+                if ((curObj["FullDuplex"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
             }
         }
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description(@"An array of embedded Msvm_KvpExchangeDataItem instances which contain the set of key-value pairs that the guest operating system has pushed up to be available for access by external clients. This array will not contain any data items pushed by other components running within the guest operating system.")]
-        public string[] GuestIntrinsicExchangeItems {
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public bool FullDuplex {
             get {
-                return ((string[])(curObj["GuestIntrinsicExchangeItems"]));
+                if ((curObj["FullDuplex"] == null)) {
+                    return System.Convert.ToBoolean(0);
+                }
+                return ((bool)(curObj["FullDuplex"]));
             }
         }
         
@@ -508,6 +588,33 @@
         
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsIOVOffloadUsageNull {
+            get {
+                if ((curObj["IOVOffloadUsage"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The current I/O virtualization (IOV) offload usage on this port. The usage is the" +
+            "amount of IOV resources in use on the port.")]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public uint IOVOffloadUsage {
+            get {
+                if ((curObj["IOVOffloadUsage"] == null)) {
+                    return System.Convert.ToUInt32(0);
+                }
+                return ((uint)(curObj["IOVOffloadUsage"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsLastErrorCodeNull {
             get {
                 if ((curObj["LastErrorCode"] == null)) {
@@ -528,6 +635,56 @@
                     return System.Convert.ToUInt32(0);
                 }
                 return ((uint)(curObj["LastErrorCode"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsLinkTechnologyNull {
+            get {
+                if ((curObj["LinkTechnology"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ushort LinkTechnology {
+            get {
+                if ((curObj["LinkTechnology"] == null)) {
+                    return System.Convert.ToUInt16(0);
+                }
+                return ((ushort)(curObj["LinkTechnology"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsMaxDataSizeNull {
+            get {
+                if ((curObj["MaxDataSize"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public uint MaxDataSize {
+            get {
+                if ((curObj["MaxDataSize"] == null)) {
+                    return System.Convert.ToUInt32(0);
+                }
+                return ((uint)(curObj["MaxDataSize"]));
             }
         }
         
@@ -556,11 +713,44 @@
             }
         }
         
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsMaxSpeedNull {
+            get {
+                if ((curObj["MaxSpeed"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ulong MaxSpeed {
+            get {
+                if ((curObj["MaxSpeed"] == null)) {
+                    return System.Convert.ToUInt64(0);
+                }
+                return ((ulong)(curObj["MaxSpeed"]));
+            }
+        }
+        
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string Name {
             get {
                 return ((string)(curObj["Name"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string[] NetworkAddresses {
+            get {
+                return ((string[])(curObj["NetworkAddresses"]));
             }
         }
         
@@ -599,6 +789,14 @@
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string[] OtherEnabledCapabilities {
+            get {
+                return ((string[])(curObj["OtherEnabledCapabilities"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string OtherEnabledState {
             get {
                 return ((string)(curObj["OtherEnabledState"]));
@@ -610,6 +808,88 @@
         public string[] OtherIdentifyingInfo {
             get {
                 return ((string[])(curObj["OtherIdentifyingInfo"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string OtherLinkTechnology {
+            get {
+                return ((string)(curObj["OtherLinkTechnology"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string OtherNetworkPortType {
+            get {
+                return ((string)(curObj["OtherNetworkPortType"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string OtherPortType {
+            get {
+                return ((string)(curObj["OtherPortType"]));
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string PermanentAddress {
+            get {
+                return ((string)(curObj["PermanentAddress"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsPortNumberNull {
+            get {
+                if ((curObj["PortNumber"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ushort PortNumber {
+            get {
+                if ((curObj["PortNumber"] == null)) {
+                    return System.Convert.ToUInt16(0);
+                }
+                return ((ushort)(curObj["PortNumber"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsPortTypeNull {
+            get {
+                if ((curObj["PortType"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ushort PortType {
+            get {
+                if ((curObj["PortType"] == null)) {
+                    return System.Convert.ToUInt16(0);
+                }
+                return ((ushort)(curObj["PortType"]));
             }
         }
         
@@ -698,6 +978,31 @@
         
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsRequestedSpeedNull {
+            get {
+                if ((curObj["RequestedSpeed"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ulong RequestedSpeed {
+            get {
+                if ((curObj["RequestedSpeed"] == null)) {
+                    return System.Convert.ToUInt64(0);
+                }
+                return ((ulong)(curObj["RequestedSpeed"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsRequestedStateNull {
             get {
                 if ((curObj["RequestedState"] == null)) {
@@ -718,6 +1023,31 @@
                     return System.Convert.ToUInt16(0);
                 }
                 return ((ushort)(curObj["RequestedState"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsSpeedNull {
+            get {
+                if ((curObj["Speed"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ulong Speed {
+            get {
+                if ((curObj["Speed"] == null)) {
+                    return System.Convert.ToUInt64(0);
+                }
+                return ((ulong)(curObj["Speed"]));
             }
         }
         
@@ -759,6 +1089,31 @@
                     return System.Convert.ToUInt16(0);
                 }
                 return ((ushort)(curObj["StatusInfo"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsSupportedMaximumTransmissionUnitNull {
+            get {
+                if ((curObj["SupportedMaximumTransmissionUnit"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ulong SupportedMaximumTransmissionUnit {
+            get {
+                if ((curObj["SupportedMaximumTransmissionUnit"] == null)) {
+                    return System.Convert.ToUInt64(0);
+                }
+                return ((ulong)(curObj["SupportedMaximumTransmissionUnit"]));
             }
         }
         
@@ -855,6 +1210,58 @@
             }
         }
         
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsUsageRestrictionNull {
+            get {
+                if ((curObj["UsageRestriction"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public ushort UsageRestriction {
+            get {
+                if ((curObj["UsageRestriction"] == null)) {
+                    return System.Convert.ToUInt16(0);
+                }
+                return ((ushort)(curObj["UsageRestriction"]));
+            }
+        }
+        
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool IsVMQOffloadUsageNull {
+            get {
+                if ((curObj["VMQOffloadUsage"] == null)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("The current VMQ offloading usage on this port. The usage is the amount of VMQ res" +
+            "ources in use on the port.")]
+        [TypeConverter(typeof(WMIValueTypeConverter))]
+        public uint VMQOffloadUsage {
+            get {
+                if ((curObj["VMQOffloadUsage"] == null)) {
+                    return System.Convert.ToUInt32(0);
+                }
+                return ((uint)(curObj["VMQOffloadUsage"]));
+            }
+        }
+        
         private bool CheckIfProperClass(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions OptionsParam) {
             if (((path != null) 
                         && (string.Compare(path.ClassName, this.ManagementClassName, true, System.Globalization.CultureInfo.InvariantCulture) == 0))) {
@@ -880,6 +1287,20 @@
                         }
                     }
                 }
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializeActiveMaximumTransmissionUnit() {
+            if ((this.IsActiveMaximumTransmissionUnitNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializeAutoSense() {
+            if ((this.IsAutoSenseNull == false)) {
+                return true;
             }
             return false;
         }
@@ -921,6 +1342,13 @@
         
         private bool ShouldSerializeErrorCleared() {
             if ((this.IsErrorClearedNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializeFullDuplex() {
+            if ((this.IsFullDuplexNull == false)) {
                 return true;
             }
             return false;
@@ -1064,8 +1492,29 @@
             return false;
         }
         
+        private bool ShouldSerializeIOVOffloadUsage() {
+            if ((this.IsIOVOffloadUsageNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
         private bool ShouldSerializeLastErrorCode() {
             if ((this.IsLastErrorCodeNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializeLinkTechnology() {
+            if ((this.IsLinkTechnologyNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializeMaxDataSize() {
+            if ((this.IsMaxDataSizeNull == false)) {
                 return true;
             }
             return false;
@@ -1078,8 +1527,29 @@
             return false;
         }
         
+        private bool ShouldSerializeMaxSpeed() {
+            if ((this.IsMaxSpeedNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
         private bool ShouldSerializeOperatingStatus() {
             if ((this.IsOperatingStatusNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializePortNumber() {
+            if ((this.IsPortNumberNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializePortType() {
+            if ((this.IsPortTypeNull == false)) {
                 return true;
             }
             return false;
@@ -1106,6 +1576,13 @@
             return false;
         }
         
+        private bool ShouldSerializeRequestedSpeed() {
+            if ((this.IsRequestedSpeedNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
         private bool ShouldSerializeRequestedState() {
             if ((this.IsRequestedStateNull == false)) {
                 return true;
@@ -1113,8 +1590,22 @@
             return false;
         }
         
+        private bool ShouldSerializeSpeed() {
+            if ((this.IsSpeedNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
         private bool ShouldSerializeStatusInfo() {
             if ((this.IsStatusInfoNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializeSupportedMaximumTransmissionUnit() {
+            if ((this.IsSupportedMaximumTransmissionUnitNull == false)) {
                 return true;
             }
             return false;
@@ -1141,6 +1632,20 @@
             return false;
         }
         
+        private bool ShouldSerializeUsageRestriction() {
+            if ((this.IsUsageRestrictionNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
+        private bool ShouldSerializeVMQOffloadUsage() {
+            if ((this.IsVMQOffloadUsageNull == false)) {
+                return true;
+            }
+            return false;
+        }
+        
         [Browsable(true)]
         public void CommitObject() {
             if ((isEmbedded == false)) {
@@ -1161,7 +1666,7 @@
         }
         
         private static string ConstructPath(string keyCreationClassName, string keyDeviceID, string keySystemCreationClassName, string keySystemName) {
-            string strPath = "ROOT\\virtualization\\v2:Msvm_KvpExchangeComponent";
+            string strPath = "ROOT\\virtualization\\v2:Msvm_EthernetSwitchPort";
             strPath = string.Concat(strPath, string.Concat(".CreationClassName=", string.Concat("\"", string.Concat(keyCreationClassName, "\""))));
             strPath = string.Concat(strPath, string.Concat(",DeviceID=", string.Concat("\"", string.Concat(keyDeviceID, "\""))));
             strPath = string.Concat(strPath, string.Concat(",SystemCreationClassName=", string.Concat("\"", string.Concat(keySystemCreationClassName, "\""))));
@@ -1182,23 +1687,23 @@
         }
         
         // Different overloads of GetInstances() help in enumerating instances of the WMI class.
-        public static KvpExchangeComponentCollection GetInstances() {
+        public static EthernetSwitchPortCollection GetInstances() {
             return GetInstances(null, null, null);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(string condition) {
+        public static EthernetSwitchPortCollection GetInstances(string condition) {
             return GetInstances(null, condition, null);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(string[] selectedProperties) {
+        public static EthernetSwitchPortCollection GetInstances(string[] selectedProperties) {
             return GetInstances(null, null, selectedProperties);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(string condition, string[] selectedProperties) {
+        public static EthernetSwitchPortCollection GetInstances(string condition, string[] selectedProperties) {
             return GetInstances(null, condition, selectedProperties);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(System.Management.ManagementScope mgmtScope, System.Management.EnumerationOptions enumOptions) {
+        public static EthernetSwitchPortCollection GetInstances(System.Management.ManagementScope mgmtScope, System.Management.EnumerationOptions enumOptions) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
                     mgmtScope = new System.Management.ManagementScope();
@@ -1209,25 +1714,25 @@
                 }
             }
             System.Management.ManagementPath pathObj = new System.Management.ManagementPath();
-            pathObj.ClassName = "Msvm_KvpExchangeComponent";
+            pathObj.ClassName = "Msvm_EthernetSwitchPort";
             pathObj.NamespacePath = "root\\virtualization\\v2";
             System.Management.ManagementClass clsObject = new System.Management.ManagementClass(mgmtScope, pathObj, null);
             if ((enumOptions == null)) {
                 enumOptions = new System.Management.EnumerationOptions();
                 enumOptions.EnsureLocatable = true;
             }
-            return new KvpExchangeComponentCollection(clsObject.GetInstances(enumOptions));
+            return new EthernetSwitchPortCollection(clsObject.GetInstances(enumOptions));
         }
         
-        public static KvpExchangeComponentCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition) {
+        public static EthernetSwitchPortCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition) {
             return GetInstances(mgmtScope, condition, null);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(System.Management.ManagementScope mgmtScope, string[] selectedProperties) {
+        public static EthernetSwitchPortCollection GetInstances(System.Management.ManagementScope mgmtScope, string[] selectedProperties) {
             return GetInstances(mgmtScope, null, selectedProperties);
         }
         
-        public static KvpExchangeComponentCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition, string[] selectedProperties) {
+        public static EthernetSwitchPortCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition, string[] selectedProperties) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
                     mgmtScope = new System.Management.ManagementScope();
@@ -1237,15 +1742,15 @@
                     mgmtScope = statMgmtScope;
                 }
             }
-            System.Management.ManagementObjectSearcher ObjectSearcher = new System.Management.ManagementObjectSearcher(mgmtScope, new SelectQuery("Msvm_KvpExchangeComponent", condition, selectedProperties));
+            System.Management.ManagementObjectSearcher ObjectSearcher = new System.Management.ManagementObjectSearcher(mgmtScope, new SelectQuery("Msvm_EthernetSwitchPort", condition, selectedProperties));
             System.Management.EnumerationOptions enumOptions = new System.Management.EnumerationOptions();
             enumOptions.EnsureLocatable = true;
             ObjectSearcher.Options = enumOptions;
-            return new KvpExchangeComponentCollection(ObjectSearcher.Get());
+            return new EthernetSwitchPortCollection(ObjectSearcher.Get());
         }
         
         [Browsable(true)]
-        public static KvpExchangeComponent CreateInstance() {
+        public static EthernetSwitchPort CreateInstance() {
             System.Management.ManagementScope mgmtScope = null;
             if ((statMgmtScope == null)) {
                 mgmtScope = new System.Management.ManagementScope();
@@ -1256,7 +1761,7 @@
             }
             System.Management.ManagementPath mgmtPath = new System.Management.ManagementPath(CreatedClassName);
             System.Management.ManagementClass tmpMgmtClass = new System.Management.ManagementClass(mgmtScope, mgmtPath, null);
-            return new KvpExchangeComponent(tmpMgmtClass.CreateInstance());
+            return new EthernetSwitchPort(tmpMgmtClass.CreateInstance());
         }
         
         [Browsable(true)]
@@ -1311,9 +1816,8 @@
                 inParams["TimeoutPeriod"] = ToDmtfDateTime(((System.DateTime)(TimeoutPeriod)));
                 System.Management.ManagementBaseObject outParams = PrivateLateBoundObject.InvokeMethod("RequestStateChange", inParams, null);
                 Job = null;
-                if ((outParams.Properties["Job"] != null))
-                {
-                    Job = new System.Management.ManagementPath((string)outParams.Properties["Job"].Value);
+                if ((outParams.Properties["Job"] != null) && outParams.Properties["Job"].Value != null) {
+                    Job = new System.Management.ManagementPath(outParams.Properties["Job"].Value.ToString());
                 }
                 return System.Convert.ToUInt32(outParams.Properties["ReturnValue"].Value);
             }
@@ -1371,11 +1875,11 @@
         }
         
         // Enumerator implementation for enumerating instances of the class.
-        public class KvpExchangeComponentCollection : object, ICollection {
+        public class EthernetSwitchPortCollection : object, ICollection {
             
             private ManagementObjectCollection privColObj;
             
-            public KvpExchangeComponentCollection(ManagementObjectCollection objCollection) {
+            public EthernetSwitchPortCollection(ManagementObjectCollection objCollection) {
                 privColObj = objCollection;
             }
             
@@ -1401,25 +1905,25 @@
                 privColObj.CopyTo(array, index);
                 int nCtr;
                 for (nCtr = 0; (nCtr < array.Length); nCtr = (nCtr + 1)) {
-                    array.SetValue(new KvpExchangeComponent(((System.Management.ManagementObject)(array.GetValue(nCtr)))), nCtr);
+                    array.SetValue(new EthernetSwitchPort(((System.Management.ManagementObject)(array.GetValue(nCtr)))), nCtr);
                 }
             }
             
             public virtual System.Collections.IEnumerator GetEnumerator() {
-                return new KvpExchangeComponentEnumerator(privColObj.GetEnumerator());
+                return new EthernetSwitchPortEnumerator(privColObj.GetEnumerator());
             }
             
-            public class KvpExchangeComponentEnumerator : object, System.Collections.IEnumerator {
+            public class EthernetSwitchPortEnumerator : object, System.Collections.IEnumerator {
                 
                 private ManagementObjectCollection.ManagementObjectEnumerator privObjEnum;
                 
-                public KvpExchangeComponentEnumerator(ManagementObjectCollection.ManagementObjectEnumerator objEnum) {
+                public EthernetSwitchPortEnumerator(ManagementObjectCollection.ManagementObjectEnumerator objEnum) {
                     privObjEnum = objEnum;
                 }
                 
                 public virtual object Current {
                     get {
-                        return new KvpExchangeComponent(((System.Management.ManagementObject)(privObjEnum.Current)));
+                        return new EthernetSwitchPort(((System.Management.ManagementObject)(privObjEnum.Current)));
                     }
                 }
                 
