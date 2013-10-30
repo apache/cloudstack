@@ -411,7 +411,7 @@ namespace HypervResource
             if (vmName.StartsWith("r-") || vmName.StartsWith("s-") || vmName.StartsWith("v-"))
             {
                 System.Threading.Thread.Sleep(90000);
-                SetState(newVm, RequiredState.Reboot);
+                SetState(newVm, RequiredState.Reset);
                 // wait for the second boot and then return with sucesss
                 pingResource(publicIpAddress);
             }
@@ -1947,13 +1947,13 @@ namespace HypervResource
         public const UInt16 Disabled = 3;       // Turns the VM off.
         public const UInt16 ShutDown = 4;
         public const UInt16 Offline = 6;
-        public const UInt16 Test = 7;
+        //public const UInt16 Test = 7;
         public const UInt16 Defer = 8;
-        public const UInt16 Quiesce = 9;
-        public const UInt16 Reboot = 10;        // A hard reset of the VM.
+        // public const UInt16 Quiesce = 9;
+        // public const UInt16 Reboot = 10;        // A hard reset of the VM.
         public const UInt16 Reset = 11;         // For future use.
-        public const UInt16 Paused = 32768;     // Pauses the VM.
-        public const UInt16 Suspended = 32769;  // Saves the state of the VM.
+        public const UInt16 Paused = 9;     // Pauses the VM.
+        public const UInt16 Suspended = 32779;  // Saves the state of the VM.
 
         public static string ToString(UInt16 value)
         {
@@ -1964,10 +1964,7 @@ namespace HypervResource
                 case Disabled: result = "Disabled"; break;
                 case ShutDown: result = "ShutDown"; break;
                 case Offline: result = "Offline"; break;
-                case Test: result = "Test"; break;
                 case Defer: result = "Defer"; break;
-                case Quiesce: result = "Quiesce"; break;
-                case Reboot: result = "Reboot"; break;
                 case Reset: result = "Reset"; break;
             }
             return result;
