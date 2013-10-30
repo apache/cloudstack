@@ -8519,6 +8519,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             } else {
                 args += "0";
             }
+            if (cmd.isPassive()) {
+            	args += " -p ";
+            }
         } else {
             args += " -D";
             args += " -r ";

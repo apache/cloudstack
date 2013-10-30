@@ -68,6 +68,9 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     @SerializedName(ApiConstants.STATE) @Param(description="State of vpn connection")
     private String state;
 
+    @SerializedName(ApiConstants.PASSIVE) @Param(description="State of vpn connection")
+    private boolean passive;
+
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner")
     private String accountName;
 
@@ -140,6 +143,10 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     public void setState(String state) {
         this.state = state;
     }
+
+	public void setPassive(boolean passive) {
+		this.passive = passive;
+	}
 
     public void setCreated(Date created) {
         this.created = created;

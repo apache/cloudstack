@@ -290,7 +290,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             }
         }
 
-        Site2SiteVpnConnectionVO conn = new Site2SiteVpnConnectionVO(owner.getAccountId(), owner.getDomainId(), vpnGatewayId, customerGatewayId);
+        Site2SiteVpnConnectionVO conn = new Site2SiteVpnConnectionVO(owner.getAccountId(), owner.getDomainId(), vpnGatewayId, customerGatewayId, cmd.isPassive());
         conn.setState(State.Pending);
         _vpnConnectionDao.persist(conn);
         return conn;
@@ -317,7 +317,11 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             }
 
             if (result) {
-                conn.setState(State.Connected);
+            	if (conn.isPassive()) {
+            		conn.setState(State.Disconnected);
+            	} else {
+            		conn.setState(State.Connected);
+            	}
                 _vpnConnectionDao.persist(conn);
                 return conn;
             }

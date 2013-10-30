@@ -1559,6 +1559,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             } else {
                 args += "0";
             }
+            if (cmd.isPassive()) {
+            	args += " -p ";
+            }
         } else {
             args += " -D";
             args += " -r ";
