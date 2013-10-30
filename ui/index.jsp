@@ -164,17 +164,10 @@
                                         </div>
                                     </div>
 
-                                    <!-- Custom size slider -->
+                                    <!-- Root disk size -->
                                     <div class="section custom-size">
                                         <label><fmt:message key="label.root.disk.size"/></label>
-
-                                        <!-- Slider -->
-                                        <label class="size">1 GB</label>
-                                        <div class="slider custom-size"></div>
-                                        <label class="size max"><span></span> GB</label>
-
-                                        <input type="text" class="required digits" name="root-size" value="1" />
-                                        <label class="size">GB</label>
+                                        <input type="text" name="rootDiskSize" />
                                     </div>
                                 </div>
                             </div>
