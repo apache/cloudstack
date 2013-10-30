@@ -20,13 +20,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.Map;
-import java.util.HashMap;
 import org.apache.log4j.Logger;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.cloudstack.utils.qemu.QemuImg;
@@ -37,7 +34,6 @@ import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 import org.libvirt.Secret;
 import org.libvirt.StoragePool;
-import org.libvirt.StoragePoolInfo;
 import org.libvirt.StorageVol;
 import org.libvirt.StoragePoolInfo.StoragePoolState;
 import com.ceph.rados.Rados;
@@ -48,7 +44,6 @@ import com.ceph.rbd.RbdImage;
 import com.ceph.rbd.RbdException;
 import com.ceph.rbd.jna.RbdSnapInfo;
 
-import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtSecretDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtSecretDef.usage;
@@ -63,7 +58,6 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 public class LibvirtStorageAdaptor implements StorageAdaptor {
@@ -72,8 +66,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     private StorageLayer _storageLayer;
     private String _mountPoint = "/mnt";
     private String _manageSnapshotPath;
-    private String _lockfile = "KVMFILELOCK" + File.separator + ".lock";
-    private static final int ACQUIRE_GLOBAL_FILELOCK_TIMEOUT_FOR_KVM = 300; // 300 seconds
 
     private String rbdTemplateSnapName = "cloudstack-base-snap";
     private int rbdFeatures = (1<<0); /* Feature 1<<0 means layering in RBD format 2 */
@@ -1222,10 +1214,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         return deleteStoragePool(pool.getUuid());
     }
 
-    // refreshPool and deleteVol are used to fix CLOUDSTACK-2729/CLOUDSTACK-2780
-    // They are caused by a libvirt bug (https://bugzilla.redhat.com/show_bug.cgi?id=977706)
-    // However, we also need to fix the issues in CloudStack source code.
-    // A file lock is used to prevent deleting a volume from a KVM storage pool when refresh it.
     private void refreshPool(StoragePool pool) throws LibvirtException {
         pool.refresh(0);
         return;
@@ -1235,28 +1223,4 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         vol.delete(0);
     }
 
-    private boolean lock(String path, int wait) {
-        File lockFile = new File(path);
-        lockFile.getParentFile().mkdir();
-        boolean havelock = false;
-        try {
-            while (wait > 0) {
-                if (lockFile.createNewFile()) {
-                    havelock = true;
-                    break;
-                }
-                s_logger.debug("lockFile " + _lockfile + " already exists, waiting 1000 ms");
-                Thread.sleep(1000);
-                wait--;
-            }
-        } catch (IOException e) {
-        } catch (InterruptedException e) {
-        }
-        return havelock;
-    }
-
-    private void unlock(String path) {
-        File lockFile = new File(path);
-        lockFile.delete();
-    }
 }
