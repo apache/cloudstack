@@ -212,9 +212,39 @@ namespace ServerResource.Tests
             sampleTemplateFile.Delete();
         }
 
-        /// <summary>
-        /// Possible additional tests:  place an ISO in the drive
-        /// </summary>        
+        [Fact]
+        public void TestDestroyCommand()
+        {
+            testSampleVolumeTempURIJSON = "\"storagepool\"";
+            // Arrange
+            String destoryCmd = //"{\"volume\":" + getSampleVolumeObjectTO() + "}";
+                            "{\"volume\":{\"name\":\"" + testSampleVolumeTempUUIDNoExt
+                                    + "\",\"storagePoolType\":\"Filesystem\","
+                                    + "\"mountPoint\":"
+                                    + testLocalStorePathJSON
+                                   + ",\"path\":" + testSampleVolumeTempURIJSON
+                                    + ",\"storagePoolUuid\":\"" + testLocalStoreUUID
+                                    + "\","
+                                    + "\"type\":\"ROOT\",\"id\":9,\"size\":0}}";
+
+            ImageManagementService imgmgr = new ImageManagementService();
+            wmiCallsV2.GetImageManagementService().Returns(imgmgr);
+
+            HypervResourceController rsrcServer = new HypervResourceController();
+            HypervResourceController.wmiCallsV2 = wmiCallsV2;
+
+            dynamic jsonDestoryCmd = JsonConvert.DeserializeObject(destoryCmd);
+
+            // Act
+            dynamic destoryAns = rsrcServer.DestroyCommand(jsonDestoryCmd);
+
+            // Assert
+            JObject ansAsProperty2 = destoryAns[0];
+            dynamic ans = ansAsProperty2.GetValue(CloudStackTypes.Answer);
+            String path = jsonDestoryCmd.volume.path;
+            Assert.True((bool)ans.result, "DestroyCommand did not succeed " + ans.details);
+            Assert.True(!File.Exists(path), "Failed to delete file " + path);
+        }
 
         [Fact]
         public void TestStartCommand()

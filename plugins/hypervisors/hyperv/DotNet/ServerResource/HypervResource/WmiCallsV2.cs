@@ -27,6 +27,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using CloudStack.Plugin.WmiWrappers.ROOT.CIMV2;
 using System.IO;
+using System.Net.NetworkInformation;
+using System.Net;
 
 namespace HypervResource
 {
@@ -186,6 +188,7 @@ namespace HypervResource
         }
 
         public const string IDE_HARDDISK_CONTROLLER = "Microsoft:Hyper-V:Emulated IDE Controller";
+        public const string SCSI_CONTROLLER = "Microsoft:Hyper-V:Synthetic SCSI Controller";
         public const string IDE_HARDDISK_DRIVE = "Microsoft:Hyper-V:Synthetic Disk Drive";
         public const string IDE_ISO_DRIVE = "Microsoft:Hyper-V:Synthetic DVD Drive";
 
@@ -233,10 +236,17 @@ namespace HypervResource
                     logger.InfoFormat("Deleting existing VM with name {0}, before we go on to create a VM with the same name", vmName);
                     DestroyVm(vmName);
                 }
+                else if (vmWmiObj.EnabledState == EnabledState.Enabled)
+                {
+                    string infoMsg = string.Format("Create VM discovered there exists a VM with name {0}, state {1}",
+                        vmName,
+                        EnabledState.ToString(vmWmiObj.EnabledState));
+                    logger.Info(infoMsg);
+                    return vmWmiObj;
+                }
                 else
                 {
-                    // TODO: revise exception type
-                    errMsg = string.Format("Create VM failing, because there exists a VM with name {0}, state {1}", 
+                    errMsg = string.Format("Create VM failing, because there exists a VM with name {0}, state {1}",
                         vmName,
                         EnabledState.ToString(vmWmiObj.EnabledState));
                     var ex = new WmiException(errMsg);
@@ -248,6 +258,9 @@ namespace HypervResource
             // Create vm carcase
             logger.DebugFormat("Going ahead with create VM {0}, {1} vcpus, {2}MB RAM", vmName, vcpus, memSize);
             var newVm = CreateVM(vmName, memSize, vcpus);
+
+            // Add a SCSI controller for attaching/detaching data volumes.
+            AddScsiControllerToVm(newVm);
 
             foreach (var diskDrive in diskDrives)
             {
@@ -322,6 +335,7 @@ namespace HypervResource
                 AddDiskDriveToVm(newVm, vhdFile, ideCtrllr, driveResourceType);
             }
 
+            String publicIpAddress = "";
             // Add the Nics to the VM in the deviceId order.
             for (int i = 0; i <= 2; i++)
             {
@@ -345,7 +359,12 @@ namespace HypervResource
                             throw ex;
                         }
                     }
-                    
+
+                    if (i == 2)
+                    {
+                         publicIpAddress = nic.ip;
+                    }
+
                     if (nicid == i)
                     {
                         // Create network adapter
@@ -391,7 +410,7 @@ namespace HypervResource
 
             }
             // call patch systemvm iso only for systemvms
-            if (vmName.StartsWith("r-"))
+            if (vmName.StartsWith("r-") || vmName.StartsWith("s-") || vmName.StartsWith("v-"))
             {
                 patchSystemVmIso(vmName, systemVmIso);
             }
@@ -400,16 +419,44 @@ namespace HypervResource
             SetState(newVm, RequiredState.Enabled);
 
             // we need to reboot to get the hv kvp daemon get started vr gets configured.
-            if (vmName.StartsWith("r-"))
+            if (vmName.StartsWith("r-") || vmName.StartsWith("s-") || vmName.StartsWith("v-"))
             {
                 System.Threading.Thread.Sleep(90000);
-                SetState(newVm, RequiredState.Reboot);
-               // wait for the second boot and then return with suces
-                System.Threading.Thread.Sleep(50000);
+                SetState(newVm, RequiredState.Reset);
+                // wait for the second boot and then return with sucesss
+                pingResource(publicIpAddress);
             }
             logger.InfoFormat("Started VM {0}", vmName);
             return newVm;
-       }
+        }
+
+        public static Boolean pingResource(String ip)
+        {
+            PingOptions pingOptions = null;
+            PingReply pingReply = null;
+            IPAddress ipAddress = null;
+            Ping pingSender = new Ping();
+            int numberOfPings = 4;
+            int pingTimeout = 1000;
+            int byteSize = 32;
+            byte[] buffer = new byte[byteSize];
+            ipAddress = IPAddress.Parse(ip);
+            pingOptions = new PingOptions();
+            for (int i = 0; i < numberOfPings; i++)
+            {
+                pingReply = pingSender.Send(ipAddress, pingTimeout, buffer, pingOptions);
+                if (pingReply.Status == IPStatus.Success)
+                {
+                    return true;
+                }
+                else
+                {
+                    // wait for the second boot and then return with suces
+                    System.Threading.Thread.Sleep(30000);
+                }
+            }
+            return false;
+        }
 
         private EthernetPortAllocationSettingData AttachNicToPort(ComputerSystem newVm, SyntheticEthernetPortSettingData newAdapter)
         {
@@ -612,6 +659,38 @@ namespace HypervResource
                 newDiskDriveSettings.ResourceSubType,
                 newDrivePaths[0].Path);
             return newDrivePaths[0];
+        }
+
+        private ManagementPath AddScsiControllerToVm(ComputerSystem vm)
+        {
+            // A description of the controller is created by modifying a clone of the default ResourceAllocationSettingData for scsi controller
+            string scsiQuery = String.Format("ResourceSubType LIKE \"{0}\" AND InstanceID LIKE \"%Default\"", SCSI_CONTROLLER);
+            var scsiSettings = CloneResourceAllocationSetting(scsiQuery);
+
+            scsiSettings.LateBoundObject["ElementName"] = "SCSI Controller";
+            scsiSettings.CommitObject();
+
+            // Insert SCSI controller into vm
+            string[] newResources = new string[] { scsiSettings.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20) };
+            ManagementPath[] newResourcePaths = AddVirtualResource(newResources, vm);
+
+            // assert
+            if (newResourcePaths.Length != 1)
+            {
+                var errMsg = string.Format(
+                    "Failed to add scsi controller to VM {0} (GUID {1}): number of resource created {2}",
+                    vm.ElementName,
+                    vm.Name,
+                    newResourcePaths.Length);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+
+            logger.DebugFormat("New controller type {0} WMI path is {1}s",
+                scsiSettings.ResourceSubType,
+                newResourcePaths[0].Path);
+            return newResourcePaths[0];
         }
 
 
@@ -1911,13 +1990,13 @@ namespace HypervResource
         public const UInt16 Disabled = 3;       // Turns the VM off.
         public const UInt16 ShutDown = 4;
         public const UInt16 Offline = 6;
-        public const UInt16 Test = 7;
+        //public const UInt16 Test = 7;
         public const UInt16 Defer = 8;
-        public const UInt16 Quiesce = 9;
-        public const UInt16 Reboot = 10;        // A hard reset of the VM.
+        // public const UInt16 Quiesce = 9;
+        // public const UInt16 Reboot = 10;        // A hard reset of the VM.
         public const UInt16 Reset = 11;         // For future use.
-        public const UInt16 Paused = 32768;     // Pauses the VM.
-        public const UInt16 Suspended = 32769;  // Saves the state of the VM.
+        public const UInt16 Paused = 9;     // Pauses the VM.
+        public const UInt16 Suspended = 32779;  // Saves the state of the VM.
 
         public static string ToString(UInt16 value)
         {
@@ -1928,10 +2007,7 @@ namespace HypervResource
                 case Disabled: result = "Disabled"; break;
                 case ShutDown: result = "ShutDown"; break;
                 case Offline: result = "Offline"; break;
-                case Test: result = "Test"; break;
                 case Defer: result = "Defer"; break;
-                case Quiesce: result = "Quiesce"; break;
-                case Reboot: result = "Reboot"; break;
                 case Reset: result = "Reset"; break;
             }
             return result;

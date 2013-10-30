@@ -196,10 +196,6 @@ namespace HypervResource
                 try
                 {
                     string vmName = (string)cmd.vmName;
-                    // TODO: remove absolute path
-                    string isoPath = "\\\\10.102.192.150\\SMB-Share\\202-2-305ed1f7-1be8-345e-86c3-a976f7f57f10.iso";
-                    wmiCallsV2.AttachIso(vmName, isoPath);
-
                     result = true;
                 }
                 catch (Exception sysEx)
@@ -986,7 +982,7 @@ namespace HypervResource
             }
         }
 
-        // POST api/HypervResource/StartupCommand
+        // POST api/HypervResource/CopyCommand
         [HttpPost]
         [ActionName(CloudStackTypes.CopyCommand)]
         public JContainer CopyCommand(dynamic cmd)
