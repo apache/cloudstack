@@ -23,7 +23,7 @@ under the License.
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 <% long now = System.currentTimeMillis(); %>
-<script language="javascript">
+<script type="text/javascript">
 dictionary = {
 'label.hypervisors': '<fmt:message key="label.hypervisors" />',
 'label.home': '<fmt:message key="label.home" />',
