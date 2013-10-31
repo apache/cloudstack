@@ -1789,8 +1789,9 @@
                                                 $.ajax({
                                                     url: createURL('listNetworks'),
                                                     data: {
-                                                        listAll: true,
-                                                        zoneid: args.context.instances[0].zoneid
+                                                        zoneid: args.context.instances[0].zoneid,
+                                                        account: args.context.instances[0].account,
+                                                        domainid: args.context.instances[0].domainid
                                                     },
                                                     success: function(json) {
                                                         args.response.success({

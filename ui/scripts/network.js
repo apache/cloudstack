@@ -617,12 +617,10 @@
                                     });
                                 }
 
-                                if (args.$form.find('.form-item[rel=domain]').css("display") != "none") {
-                                    if (args.data.domain != null && args.data.domain.length > 0) {
-                                        $.extend(dataObj, {
-                                            domainid: args.data.domain
-                                        });
-                                    }
+                                if (args.data.domain != null && args.data.domain.length > 0) {
+                                    $.extend(dataObj, {
+                                        domainid: args.data.domain
+                                    });
                                     if (args.data.account != null && args.data.account.length > 0) {
                                         $.extend(dataObj, {
                                             account: args.data.account
