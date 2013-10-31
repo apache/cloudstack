@@ -18,6 +18,7 @@
 (function($, cloudStack) {
     var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, featuredIsoObjs, community, networkObjs;
     var selectedZoneObj, selectedTemplateObj, selectedHypervisor, selectedDiskOfferingObj;
+    var selectedTemplateOrIso; //'select-template', 'select-iso'
     var step6ContainerType = 'nothing-to-select'; //'nothing-to-select', 'select-network', 'select-security-group', 'select-advanced-sg'(advanced sg-enabled zone)
 
     cloudStack.instanceWizard = {
@@ -122,8 +123,8 @@
                 });
 
                 //***** get templates/ISOs (begin) *****
-                var selectedTemplate = args.currentData['select-template'];
-                if (selectedTemplate == 'select-template') {
+                selectedTemplateOrIso = args.currentData['select-template'];
+                if (selectedTemplateOrIso == 'select-template') {
                     var hypervisorArray = [];
                     $(hypervisorObjs).each(function(index, item) {
                         hypervisorArray.push(item.name);
@@ -174,7 +175,7 @@
                             }
                         }
                     });
-                } else if (selectedTemplate == 'select-iso') {
+                } else if (selectedTemplateOrIso == 'select-iso') {
                     $.ajax({
                         url: createURL("listIsos&isofilter=featured&zoneid=" + args.currentData.zoneid + "&bootable=true"),
                         dataType: "json",
@@ -216,13 +217,13 @@
 
 
                 var templatesObj = {};
-                if (selectedTemplate == 'select-template') {
+                if (selectedTemplateOrIso == 'select-template') {
                     templatesObj = {
                         featuredtemplates: featuredTemplateObjs,
                         communitytemplates: communityTemplateObjs,
                         mytemplates: myTemplateObjs
                     }
-                } else if (selectedTemplate == 'select-iso') {
+                } else if (selectedTemplateOrIso == 'select-iso') {
                     templatesObj = {
                         featuredisos: featuredIsoObjs,
                         communityisos: communityIsoObjs,
@@ -239,9 +240,9 @@
                         hypervisors: hypervisorObjs
                     },
                     customHidden: function(args) {                        
-                        if (selectedTemplate == 'select-template') {
+                        if (selectedTemplateOrIso == 'select-template') {
                             return false; //show Root Disk Size field
-                        } else { //selectedTemplate == 'select-iso'
+                        } else { //selectedTemplateOrIso == 'select-iso'
                         	return true;  //hide Root Disk Size field
                         }                       
                     }
@@ -295,6 +296,7 @@
                         serviceOfferingObjs = json.listserviceofferingsresponse.serviceoffering;
                         args.response.success({
                             customFlag: 'iscustomized',
+                        	//customFlag: 'offerha', //for testing only
                             data: {
                                 serviceOfferings: serviceOfferingObjs
                             }
@@ -587,10 +589,28 @@
             //step 2: select template
             array1.push("&templateId=" + args.data.templateid);
             array1.push("&hypervisor=" + selectedHypervisor);
-
+           
+            if (args.$wizard.find('input[name=rootDiskSize]').parent().css('display') != 'none')  {
+            	if (args.$wizard.find('input[name=rootDiskSize]').val().length > 0) {
+            	    array1.push("&rootdisksize=" + args.$wizard.find('input[name=rootDiskSize]').val());     
+            	}
+            }
+            
             //step 3: select service offering
             array1.push("&serviceOfferingId=" + args.data.serviceofferingid);
-
+            
+            if (args.$wizard.find('input[name=compute-cpu-cores]').parent().parent().css('display') != 'none') {
+	            if (args.$wizard.find('input[name=compute-cpu-cores]').val().length > 0)  {   
+	            	array1.push("&cpunumber=" + args.$wizard.find('input[name=compute-cpu-cores]').val());
+	            }            
+	            if (args.$wizard.find('input[name=compute-cpu]').val().length > 0)  {          
+	            	array1.push("&cpuspeed=" + args.$wizard.find('input[name=compute-cpu]').val());
+	            }            
+	            if (args.$wizard.find('input[name=compute-memory]').val().length > 0)  {        
+	            	array1.push("&memory=" + args.$wizard.find('input[name=compute-memory]').val());
+	            }               
+            }
+            
             //step 4: select disk offering
             if (args.data.diskofferingid != null && args.data.diskofferingid != "0") {
                 array1.push("&diskOfferingId=" + args.data.diskofferingid);
