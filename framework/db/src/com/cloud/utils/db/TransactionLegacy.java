@@ -1025,8 +1025,10 @@ public class TransactionLegacy {
     public static void initDataSource(String propsFileName) throws IOException {
         Properties dbProps = new Properties();
         File dbPropsFile = PropertiesUtil.findConfigFile(propsFileName);
-        PropertiesUtil.loadFromFile(dbProps, dbPropsFile);
-        initDataSource(dbProps);
+        if (dbPropsFile != null && dbPropsFile.exists()) {
+            PropertiesUtil.loadFromFile(dbProps, dbPropsFile);
+            initDataSource(dbProps);
+        }
     }
 
     public static void initDataSource(Properties dbProps) {

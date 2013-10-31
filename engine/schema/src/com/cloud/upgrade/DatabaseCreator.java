@@ -169,6 +169,12 @@ public class DatabaseCreator {
             System.exit(1);
         }
 
+        try {
+            TransactionLegacy.initDataSource(dbPropsFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
         initDB(dbPropsFile, rootPassword, databases, dryRun);
 
         // Process sql files
