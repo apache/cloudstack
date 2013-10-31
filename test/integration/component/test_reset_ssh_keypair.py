@@ -19,13 +19,28 @@
 """
 
 #Import Local Modules
-from marvin.cloudstackTestCase import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.integration.lib.base import (VirtualMachine,
+                                         SSHKeyPair,
+                                         Account,
+                                         Template,
+                                         ServiceOffering,
+                                         EgressFireWallRule)
+from marvin.integration.lib.common import (get_domain,
+                                           get_zone,
+                                           get_template,
+                                           list_virtual_machines,
+                                           list_volumes)
+from marvin.integration.lib.utils import (cleanup_resources,
+                                          random_gen,
+                                          validateList)
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.codes import PASS, RUNNING
+
 #Import System modules
 import tempfile
 import os
 from nose.plugins.attrib import attr
+import time
 
 
 class Services:
@@ -82,17 +97,12 @@ class Services:
             "mode": 'advanced',
         }
 
-def wait_vm_start(apiclient, account, timeout, sleep):
+def wait_vm_start(apiclient, vmid, timeout, sleep):
     while timeout:
-        vms = VirtualMachine.list(
-                              apiclient,
-                              account=account.name,
-                              domainid=account.domainid,
-                              listall=True
-                              )
-        if vms and vms[0].state == "Running":
+        vms = VirtualMachine.list(apiclient, id=vmid)
+        vm_list_validation_result = validateList(vms)
+        if vm_list_validation_result[0] == PASS and vm_list_validation_result[1].state == RUNNING:
             return timeout
-
         time.sleep(sleep)
         timeout = timeout - 1
 
@@ -363,7 +373,7 @@ class TestResetSSHKeypair(cloudstackTestCase):
             self.fail("Failed to start virtual machine: %s, %s" %
                                                     (virtual_machine.name, e))
 
-        timeout = wait_vm_start(self.apiclient, self.account, self.services["timeout"],
+        timeout = wait_vm_start(self.apiclient, virtual_machine.id, self.services["timeout"],
                             self.services["sleep"])
 
         if timeout == 0:
@@ -473,7 +483,7 @@ class TestResetSSHKeypair(cloudstackTestCase):
             self.fail("Failed to start virtual machine: %s, %s" %
                                                     (virtual_machine.name, e))
 
-        timeout = wait_vm_start(self.apiclient, self.account, self.services["timeout"],
+        timeout = wait_vm_start(self.apiclient, virtual_machine.id, self.services["timeout"],
                             self.services["sleep"])
 
         if timeout == 0:
@@ -583,7 +593,7 @@ class TestResetSSHKeypair(cloudstackTestCase):
             self.fail("Failed to start virtual machine: %s, %s" %
                                                     (virtual_machine.name, e))
 
-        timeout = wait_vm_start(self.apiclient, self.account, self.services["timeout"],
+        timeout = wait_vm_start(self.apiclient, virtual_machine.id, self.services["timeout"],
                             self.services["sleep"])
 
         if timeout == 0:
@@ -694,7 +704,7 @@ class TestResetSSHKeypair(cloudstackTestCase):
             self.fail("Failed to start virtual machine: %s, %s" %
                                                     (virtual_machine.name, e))
 
-        timeout = wait_vm_start(self.apiclient, self.account, self.services["timeout"],
+        timeout = wait_vm_start(self.apiclient, virtual_machine.id, self.services["timeout"],
                             self.services["sleep"])
 
         if timeout == 0:
@@ -1207,7 +1217,7 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
             self.fail("Failed to start virtual machine: %s, %s" %
                                            (virtual_machine.name, e))
 
-        timeout = wait_vm_start(self.apiclient, self.account, self.services["timeout"],
+        timeout = wait_vm_start(self.apiclient, virtual_machine.id, self.services["timeout"],
                             self.services["sleep"])
 
         if timeout == 0:
@@ -1346,7 +1356,7 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
             self.fail("Failed to start virtual machine: %s, %s" %
                                                     (virtual_machine.name, e))
 
-        timeout = wait_vm_start(self.apiclient, self.account, self.services["timeout"],
+        timeout = wait_vm_start(self.apiclient, virtual_machine.id, self.services["timeout"],
                             self.services["sleep"])
 
         if timeout == 0:
@@ -1486,7 +1496,7 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
             self.fail("Failed to start virtual machine: %s, %s" %
                                                     (virtual_machine.name, e))
 
-        timeout = wait_vm_start(self.apiclient, self.account, self.services["timeout"],
+        timeout = wait_vm_start(self.apiclient, virtual_machine.id, self.services["timeout"],
                             self.services["sleep"])
 
         if timeout == 0:

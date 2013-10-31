@@ -30,6 +30,7 @@
 @DateAdded: 20th October 2013
 """
 
+RUNNING = "Running"
 RECURRING = "RECURRING"
 ENABLED = "Enabled"
 NETWORK_OFFERING = "network_offering"
