@@ -30,6 +30,8 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
+import com.cloud.utils.db.DbProperties;
+
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
@@ -43,6 +45,7 @@ import org.springframework.stereotype.Component;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -71,23 +74,7 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
-        File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
-        final Properties dbProps;
-        if (EncryptionSecretKeyChecker.useEncryption()) {
-            StandardPBEStringEncryptor encryptor = EncryptionSecretKeyChecker.getEncryptor();
-            dbProps = new EncryptableProperties(encryptor);
-        } else {
-            dbProps = new Properties();
-        }
-        try {
-            PropertiesUtil.loadFromFile(dbProps, dbPropsFile);
-        } catch (IOException e) {
-            s_logger.fatal("Unable to load db properties file, pl. check the classpath and file path configuration", e);
-            return false;
-        } catch (NullPointerException e) {
-            s_logger.fatal("Unable to locate db properties file within classpath or absolute path: db.properties");
-            return false;
-        }
+        final Properties dbProps = DbProperties.getDbProperties();
         String regionId = dbProps.getProperty("region.id");
         _id = 1;
         if(regionId != null){

@@ -18,21 +18,16 @@
 package com.cloud.upgrade.dao;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Properties;
 
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.db.DbProperties;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
-import org.jasypt.properties.EncryptableProperties;
 
 public class Upgrade307to410 implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade307to410.class);
@@ -68,23 +63,7 @@ public class Upgrade307to410 implements DbUpgrade {
     }
     
     private void updateRegionEntries(Connection conn) {
-        File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
-        final Properties dbProps;
-        if (EncryptionSecretKeyChecker.useEncryption()) {
-            StandardPBEStringEncryptor encryptor = EncryptionSecretKeyChecker.getEncryptor();
-            dbProps = new EncryptableProperties(encryptor);
-        } else {
-            dbProps = new Properties();
-        }
-        try {
-            dbProps.load(new FileInputStream(dbPropsFile));
-        } catch (IOException e) {
-            s_logger.fatal("Unable to load db properties file, pl. check the classpath and file path configuration", e);
-            return;
-        } catch (NullPointerException e) {
-            s_logger.fatal("Unable to locate db properties file within classpath or absolute path: db.properties");
-            return;
-        }
+        final Properties dbProps = DbProperties.getDbProperties();
         int region_id = 1;
         String regionId = dbProps.getProperty("region.id");
         if(regionId != null){

@@ -16,18 +16,13 @@
 // under the License.package com.cloud.utils.crypt;
 package com.cloud.utils.crypt;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
-import org.jasypt.properties.EncryptableProperties;
 
-import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.db.DbProperties;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DBEncryptionUtil {
@@ -69,27 +64,16 @@ public class DBEncryptionUtil {
 		}
     	return plain;
     }
-    
+
     private static void initialize(){
-    	final File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
-        final Properties dbProps; 
-        
+        final Properties dbProps = DbProperties.getDbProperties(); 
+
         if(EncryptionSecretKeyChecker.useEncryption()){
-        	StandardPBEStringEncryptor encryptor = EncryptionSecretKeyChecker.getEncryptor();
-        	dbProps = new EncryptableProperties(encryptor);
-        	try {
-        	    PropertiesUtil.loadFromFile(dbProps, dbPropsFile);
-			} catch (FileNotFoundException e) {
-				throw new CloudRuntimeException("db.properties file not found while reading DB secret key", e);
-			} catch (IOException e) {
-				throw new CloudRuntimeException("Erroe while reading DB secret key from db.properties", e);
-			}
-        	
         	String dbSecretKey = dbProps.getProperty("db.cloud.encrypt.secret");
         	if(dbSecretKey == null || dbSecretKey.isEmpty()){
         		throw new CloudRuntimeException("Empty DB secret key in db.properties");
         	}
-        	
+
         	s_encryptor = new StandardPBEStringEncryptor();
         	s_encryptor.setAlgorithm("PBEWithMD5AndDES");
         	s_encryptor.setPassword(dbSecretKey);

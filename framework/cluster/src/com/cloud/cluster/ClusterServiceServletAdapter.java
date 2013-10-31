@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.cluster;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.Map;
 import java.util.Properties;
@@ -26,14 +23,13 @@ import java.util.Properties;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.log4j.Logger;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.db.DbProperties;
 
 public class ClusterServiceServletAdapter extends AdapterBase implements ClusterServiceAdapter {
 
@@ -122,15 +118,7 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
         if (_mshostDao != null)
             return;
 
-        File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
-        Properties dbProps = new Properties();
-        try {
-            PropertiesUtil.loadFromFile(dbProps, dbPropsFile);
-        } catch (FileNotFoundException e) {
-            throw new ConfigurationException("Unable to find db.properties");
-        } catch (IOException e) {
-            throw new ConfigurationException("Unable to load db.properties content");
-        }
+        Properties dbProps = DbProperties.getDbProperties();
 
         _clusterServicePort = NumbersUtil.parseInt(dbProps.getProperty("cluster.servlet.port"), DEFAULT_SERVICE_PORT);
         if (s_logger.isInfoEnabled())

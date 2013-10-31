@@ -41,12 +41,12 @@ public class PropertiesUtil {
     public static File findConfigFile(String path) {
         ClassLoader cl = PropertiesUtil.class.getClassLoader();
         URL url = cl.getResource(path);
-        if (url != null) {
+        if (url != null && "file".equals(url.getProtocol())) {
             return new File(url.getFile());
         }
         
         url =  ClassLoader.getSystemResource(path);
-        if (url != null) {
+        if (url != null && "file".equals(url.getProtocol())) {
             return new File(url.getFile());
         }
         
@@ -57,12 +57,12 @@ public class PropertiesUtil {
         
         String newPath = "conf" + (path.startsWith(File.separator) ? "" : "/") + path;
         url = ClassLoader.getSystemResource(newPath);
-        if (url != null) {
+        if (url != null && "file".equals(url.getProtocol())) {
             return new File(url.getFile());
         }
         
         url = cl.getResource(newPath);
-        if (url != null) {
+        if (url != null && "file".equals(url.getProtocol())) {
             return new File(url.getFile());
         }
         

@@ -93,12 +93,6 @@ public class TransactionLegacy {
         } catch (Exception e) {
             s_logger.error("Unable to register mbean for transaction", e);
         }
-        
-        /* FIXME: We need a better solution for this
-         * Initialize encryption if we need it for db.properties
-         */ 
-        EncryptionSecretKeyChecker enc = new EncryptionSecretKeyChecker();
-        enc.check();  
     }
 
     private final LinkedList<StackElement> _stack;
@@ -1025,30 +1019,21 @@ public class TransactionLegacy {
 
     static {
         // Initialize with assumed db.properties file
-        initDataSource("db.properties");
+        initDataSource(DbProperties.getDbProperties());
     }
 
-    public static void initDataSource(String propsFileName) {
-        try {
-            File dbPropsFile = PropertiesUtil.findConfigFile(propsFileName);
-            final Properties dbProps;
-            if (EncryptionSecretKeyChecker.useEncryption()) {
-                StandardPBEStringEncryptor encryptor = EncryptionSecretKeyChecker.getEncryptor();
-                dbProps = new EncryptableProperties(encryptor);
-            } else {
-                dbProps = new Properties();
-            }
-            try {
-                PropertiesUtil.loadFromFile(dbProps, dbPropsFile);
-                dbProps.load(new FileInputStream(dbPropsFile));
-            } catch (IOException e) {
-                s_logger.fatal("Unable to load db properties file, pl. check the classpath and file path configuration", e);
-                return;
-            } catch (NullPointerException e) {
-                s_logger.fatal("Unable to locate db properties file within classpath or absolute path: " + propsFileName);
-                return;
-            }
+    public static void initDataSource(String propsFileName) throws IOException {
+        Properties dbProps = new Properties();
+        File dbPropsFile = PropertiesUtil.findConfigFile(propsFileName);
+        PropertiesUtil.loadFromFile(dbProps, dbPropsFile);
+        initDataSource(dbProps);
+    }
 
+    public static void initDataSource(Properties dbProps) {
+        try {
+            if (dbProps.size() == 0)
+                return;
+            
             // FIXME:  If params are missing...default them????
             final int cloudMaxActive = Integer.parseInt(dbProps.getProperty("db.cloud.maxActive"));
             final int cloudMaxIdle = Integer.parseInt(dbProps.getProperty("db.cloud.maxIdle"));
