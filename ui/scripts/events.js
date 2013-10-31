@@ -34,6 +34,7 @@
                 listView: {
                     id: 'events',
                     label: 'label.menu.events',
+                    multiSelect: true,
                     fields: {
                         description: {
                             label: 'label.description'
@@ -58,6 +59,40 @@
 
                     actions: {
                         // Remove multiple events
+                        removeMulti: {
+                            label: 'label.delete.events',
+                            isHeader: true,
+                            addRow: false,
+                            isMultiSelectAction: true,
+                            messages: {
+                                confirm: function(args) {
+                                    return 'Please confirm you would like to remove the selected events';
+                                },
+                                notification: function(args) {
+                                    return 'label.delete.events';
+                                }
+                            },
+                            action: function(args) {
+                                var events = args.context.events;
+                                
+                                $.ajax({
+                                    url: createURL("deleteEvents"),
+                                    data: {
+                                        ids: $(events).map(function(index, event) {
+                                            return event.id;
+                                        }).toArray().join(',')
+                                    },
+                                    success: function(data) {
+                                        args.response.success();
+                                        $(window).trigger('cloudStack.fullRefresh');
+                                    },
+                                    error:function(data) {
+                                        args.response.error(parseXMLHttpResponse(data));
+                                    }
+                                }); 
+                            }
+                        },
+
                         remove: {
                             label: 'label.delete.events',
                             isHeader: true,
@@ -118,8 +153,7 @@
                                 });
                             }
                         },
-
-                        // Archive multiple events
+                        
                         archive: {
                             label: 'label.archive.events',
                             isHeader: true,
@@ -178,6 +212,41 @@
                                     }
                                 });
 
+                            }
+                        },
+                        
+                        // Archive multiple events
+                        archiveMulti: {
+                            label: 'label.archive.events',
+                            isHeader: true,
+                            addRow: false,
+                            isMultiSelectAction: true,
+                            messages: {
+                                confirm: function(args) {
+                                    return 'Please confirm you would like to archive the selected events';
+                                },
+                                notification: function(args) {
+                                    return 'label.archive.events';
+                                }
+                            },
+                            action: function(args) {
+                                var events = args.context.events;
+                                
+                                $.ajax({
+                                    url: createURL("archiveEvents"),
+                                    data: {
+                                        ids: $(events).map(function(index, event) {
+                                            return event.id;
+                                        }).toArray().join(',')
+                                    },
+                                    success: function(data) {
+                                        args.response.success();
+                                        $(window).trigger('cloudStack.fullRefresh');
+                                    },
+                                    error:function(data) {
+                                        args.response.error(parseXMLHttpResponse(data));
+                                    }
+                                }); 
                             }
                         }
 
