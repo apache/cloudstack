@@ -124,7 +124,11 @@
                         }, {
                             error: _l('label.error')
                         });
-                        $item.removeClass('pending').addClass('error');
+                        $item.removeClass('pending').addClass('error').append(
+                            $('<div>').addClass('subtitle').html(args && args.message ?
+                                                                 args.message : _l('label.error'))
+                        );
+                        $item.attr('title', args && args.message ? args.message : _l('label.error'));
 
                         if (additionalComplete) additionalComplete();
                     }

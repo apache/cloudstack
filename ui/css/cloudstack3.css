@@ -988,9 +988,9 @@ div.notification-box .container ul {
 }
 
 div.notification-box .container ul li {
-  height: 40px;
+  width: 100%;
+  height: 41px;
   border-bottom: 1px solid #CECECE;
-  overflow: auto;
   overflow-x: hidden;
   text-indent: 0;
   font-size: 12px;
@@ -1000,16 +1000,37 @@ div.notification-box .container ul li {
 }
 
 div.notification-box .container ul li.error {
-  background: url(../images/icons.png) no-repeat 10px -179px;
+  height: 53px;
+  background: url(../images/icons.png) no-repeat 10px -171px;
+}
+
+div.notification-box .container ul li.error .subtitle {
+  display: block;
+  width: 213px;
+  height: 10px;
+  overflow: hidden;
+  white-space: nowrap;
+  float: left;
+  text-overflow: ellipsis;
+  color: #808080;
+  text-indent: 0;
+  padding: 0;
+  margin: 0;
+  /*+placement:shift 48px 17px;*/
+  position: relative;
+  left: 48px;
+  top: 17px;
 }
 
 div.notification-box .container ul li span {
   float: left;
-  /*+placement:shift 48px 16px;*/
+  /*+placement:shift 48px 15px;*/
   position: relative;
   left: 48px;
-  top: 16px;
+  top: 15px;
   max-width: 202px;
+  font-size: 14px;
+  font-weight: 100;
   overflow: hidden;
 }
 
