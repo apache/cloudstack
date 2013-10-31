@@ -2192,6 +2192,7 @@
                 false,
                 null,
                 listViewArgs.actions, {
+                    multiSelect: listViewArgs.multiSelect,
                     context: this.data('view-args').context,
                     detailView: listViewArgs.detailView
                 }
