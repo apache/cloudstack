@@ -19,6 +19,7 @@
 package com.cloud.upgrade;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -36,7 +37,6 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.SystemIntegrityChecker;
-import com.cloud.utils.db.DbProperties;
 import com.cloud.utils.db.ScriptRunner;
 import com.cloud.utils.db.TransactionLegacy;
 
@@ -47,7 +47,7 @@ public class DatabaseCreator {
     protected static void printHelp(String cmd) {
         System.out.println(
                 "\nDatabaseCreator creates the database schema by removing the \n" +
-                        "previous schema, creating the schema, and running \n" +
+                "previous schema, creating the schema, and running \n" +
                 "through the database updaters.");
         System.out.println("Usage: " + cmd + " [options] [db.properties file] [schema.sql files] [database upgrade class]\nOptions:"
                 + "\n   --database=a,b comma separate databases to initialize, use the db name in db.properties defined as db.xyz.host, xyz should be passed"
@@ -94,7 +94,13 @@ public class DatabaseCreator {
     }
 
     private static void initDB(String dbPropsFile, String rootPassword, String[] databases, boolean dryRun) {
-        Properties dbProperties = DbProperties.getDbProperties();
+        Properties dbProperties = new Properties();
+        try {
+            dbProperties.load(new FileInputStream(new File(dbPropsFile)));
+        } catch (IOException e) {
+            System.out.println("IOError: unable to load/read db properties file: " + e);
+            System.exit(1);
+        }
 
         for (String database: databases) {
             String host = dbProperties.getProperty(String.format("db.%s.host", database));
@@ -117,11 +123,11 @@ public class DatabaseCreator {
     }
 
     public static void main(String[] args) {
-
-        ClassPathXmlApplicationContext appContext = new ClassPathXmlApplicationContext(
-                new String[] {"/com/cloud/upgrade/databaseCreatorContext.xml"});
-        appContext.getBean(ComponentContext.class);
-
+    	
+    	ClassPathXmlApplicationContext appContext = new ClassPathXmlApplicationContext(
+    	        new String[] {"/com/cloud/upgrade/databaseCreatorContext.xml"});
+    	appContext.getBean(ComponentContext.class);
+    	
         String dbPropsFile = "";
         List<String> sqlFiles = new ArrayList<String>();
         List<String> upgradeClasses = new ArrayList<String>();
@@ -146,12 +152,12 @@ public class DatabaseCreator {
             } else if (arg.endsWith(".sql")) {
                 sqlFiles.add(arg);
             } else if (arg.endsWith(".sql.override")) {
-                if (fileExists(arg)) {
-                    int index = arg.lastIndexOf(".override");
-                    String fileToOverride = arg.substring(0, index);
-                    sqlFiles.remove(fileToOverride);
-                    sqlFiles.add(arg);
-                }
+            	if (fileExists(arg)) {
+            		int index = arg.lastIndexOf(".override");
+            		String fileToOverride = arg.substring(0, index);
+            		sqlFiles.remove(fileToOverride);
+            		sqlFiles.add(arg);
+            	}
             } else if (arg.endsWith(".properties")) {
                 if (!dbPropsFile.endsWith("properties.override") && fileExists(arg))
                     dbPropsFile = arg;
@@ -209,30 +215,30 @@ public class DatabaseCreator {
 
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         try {
-            // Process db upgrade classes
-            for (String upgradeClass: upgradeClasses) {
-                System.out.println("========> Processing upgrade: " + upgradeClass);
-                Class<?> clazz = null;
-                try {
-                    clazz = Class.forName(upgradeClass);
-                    if (!SystemIntegrityChecker.class.isAssignableFrom(clazz)) {
-                        System.err.println("The class must be of SystemIntegrityChecker: " + clazz.getName());
-                        System.exit(1);
-                    }
-                    SystemIntegrityChecker checker = (SystemIntegrityChecker)clazz.newInstance();
-                    checker.check();
-                } catch (ClassNotFoundException e) {
-                    System.err.println("Unable to find " + upgradeClass + ": " + e.getMessage());
-                    System.exit(1);
-                } catch (InstantiationException e) {
-                    System.err.println("Unable to instantiate " + upgradeClass + ": " + e.getMessage());
-                    System.exit(1);
-                } catch (IllegalAccessException e) {
-                    System.err.println("Unable to access " + upgradeClass + ": " + e.getMessage());
+        // Process db upgrade classes
+        for (String upgradeClass: upgradeClasses) {
+            System.out.println("========> Processing upgrade: " + upgradeClass);
+            Class<?> clazz = null;
+            try {
+                clazz = Class.forName(upgradeClass);
+                if (!SystemIntegrityChecker.class.isAssignableFrom(clazz)) {
+                    System.err.println("The class must be of SystemIntegrityChecker: " + clazz.getName());
                     System.exit(1);
                 }
-
+                SystemIntegrityChecker checker = (SystemIntegrityChecker)clazz.newInstance();
+                checker.check();
+            } catch (ClassNotFoundException e) {
+                System.err.println("Unable to find " + upgradeClass + ": " + e.getMessage());
+                System.exit(1);
+            } catch (InstantiationException e) {
+                System.err.println("Unable to instantiate " + upgradeClass + ": " + e.getMessage());
+                System.exit(1);
+            } catch (IllegalAccessException e) {
+                System.err.println("Unable to access " + upgradeClass + ": " + e.getMessage());
+                System.exit(1);
             }
+
+         }
         } finally {
             txn.close();
         }
