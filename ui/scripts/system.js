@@ -387,6 +387,7 @@
                                 var hypervisors = json.listhypervisorsresponse.hypervisor;
 
                                 complete($.extend(data, {
+                                    socketCount: 0,
                                     socketInfo: $(hypervisors).map(function(index, hypervisor) {
                                         return {
                                             name: hypervisor.name,
@@ -7130,6 +7131,35 @@
                                     }
                                 }
                             });
+
+                            return listView;
+                        },
+
+                        sockets: function() {
+                            var listView = {
+                                id: 'sockets',
+                                fields: {
+                                    hypervisor: { label: 'label.hypervisor' },
+                                    sockets: { label: 'label.sockets' },
+                                    hosts: { label: 'label.hosts' }
+                                },
+                                dataProvider: function(args) {
+                                    $.ajax({
+                                        url: createURL('listHypervisors'),
+                                        success: function(json) {
+                                            args.response.success({
+                                                data: $(json.listhypervisorsresponse.hypervisor).map(function(index, hypervisor) {
+                                                    return {
+                                                        hypervisor: hypervisor.name,
+                                                        sockets: 0,
+                                                        hosts: 0
+                                                    };
+                                                })
+                                            });
+                                        }
+                                    });
+                                }
+                            };
 
                             return listView;
                         }

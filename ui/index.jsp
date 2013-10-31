@@ -1110,7 +1110,7 @@
                                   view-all-title="<fmt:message key="label.system.vms"/>"
                                   view-all-target="systemVms"><fmt:message key="label.view.all"/></span>
                         </li>
-                        <li class="block last virtual-routers">
+                        <li class="block virtual-routers">
                             <span class="header"><fmt:message key="label.virtual.routers"/></span>
                             <span class="icon">&nbsp;</span>
                             <span class="overview total" data-item="virtualRouterCount"></span>
@@ -1118,12 +1118,15 @@
                                   view-all-title="<fmt:message key="label.virtual.routers"/>"
                                   view-all-target="virtualRouters"><fmt:message key="label.view.all"/></span>
                         </li>
+                        <li class="block sockets">
+                            <span class="header"><fmt:message key="label.sockets"/></span>
+                            <span class="icon">&nbsp;</span>
+                            <span class="overview total" data-item="socketCount"></span>
+                            <span class="button view-all sockets"
+                                  view-all-title="<fmt:message key="label.sockets"/>"
+                                  view-all-target="sockets"><fmt:message key="label.view.all"/></span>
+                        </li>
                     </ul>
-                    
-                    <div class="socket-info">
-                        <div class="title"><fmt:message key="label.hypervisors"/></div>
-                        <ul></ul>
-                    </div>
                 </div>
             </div>
 
