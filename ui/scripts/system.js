@@ -381,23 +381,9 @@
                     },
 
                     socketInfo: function(data) {
-                        $.ajax({
-                            url: createURL('listHypervisors'),
-                            success: function(json) {
-                                var hypervisors = json.listhypervisorsresponse.hypervisor;
-
-                                complete($.extend(data, {
-                                    socketCount: 0,
-                                    socketInfo: $(hypervisors).map(function(index, hypervisor) {
-                                        return {
-                                            name: hypervisor.name,
-                                            hosts: 0,
-                                            sockets: 0
-                                        };
-                                    })                                
-                                }));
-                            }
-                        });
+                        complete($.extend(data, {
+                            socketCount: 0
+                        }));
                     }
                 };
 
