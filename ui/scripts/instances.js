@@ -16,10 +16,90 @@
 // under the License.
 (function($, cloudStack) {
     var vmMigrationHostObjs;
+
+    var vmSnapshotAction = function(args) {
+        var action = {
+            messages: {
+                notification: function(args) {
+                    return 'label.action.vmsnapshot.create';
+                }
+            },
+            label: 'label.action.vmsnapshot.create',
+            addRow: 'false',
+            createForm: {
+                title: 'label.action.vmsnapshot.create',
+                fields: {
+                    name: {
+                        label: 'label.name',
+                        isInput: true
+                    },
+                    description: {
+                        label: 'label.description',
+                        isTextarea: true
+                    },
+                    snapshotMemory: {
+                        label: 'label.vmsnapshot.memory',
+                        isBoolean: true,
+                        isChecked: false
+                    }
+                }
+            },
+            action: function(args) {
+                var instances = args.context.instances;
+                
+                $(instances).map(function(index, instance) {
+                    var array1 = [];
+                    array1.push("&snapshotmemory=" + (args.data.snapshotMemory == "on"));
+                    var displayname = args.data.name;
+                    if (displayname != null && displayname.length > 0) {
+                        array1.push("&name=" + todb(displayname));
+                    }
+                    var description = args.data.description;
+                    if (description != null && description.length > 0) {
+                        array1.push("&description=" + todb(description));
+                    }
+                    $.ajax({
+                        url: createURL("createVMSnapshot&virtualmachineid=" + instance.id + array1.join("")),
+                        dataType: "json",
+                        async: true,
+                        success: function(json) {
+                            var jid = json.createvmsnapshotresponse.jobid;
+                            args.response.success({
+                                _custom: {
+                                    jobId: jid,
+                                    getUpdatedItem: function(json) {
+                                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                    },
+                                    getActionFilter: function() {
+                                        return vmActionfilter;
+                                    }
+                                }
+                            });
+                        }
+                    });       
+                });
+
+            },
+            notification: {
+                poll: pollAsyncJobResult
+            }
+        };
+
+        if (args && args.listView) {
+            $.extend(action, {
+                isHeader: true,
+                isMultiSelectAction: true
+            });
+        }
+        
+        return action;
+    };    
+    
     cloudStack.sections.instances = {
         title: 'label.instances',
         id: 'instances',
         listView: {
+            multiSelect: true,
             section: 'instances',
             filters: {
                 all: {
@@ -181,7 +261,8 @@
                     notification: {
                         poll: pollAsyncJobResult
                     }
-                }
+                },
+                snapshot: vmSnapshotAction({ listView: true })
             },
 
             dataProvider: function(args) {
@@ -246,7 +327,6 @@
                     success: function(json) {
                         var items = json.listvirtualmachinesresponse.virtualmachine;
                         args.response.success({
-                            actionFilter: vmActionfilter,
                             data: items
                         });
                     }
@@ -470,68 +550,7 @@
                             poll: pollAsyncJobResult
                         }
                     },
-                    snapshot: {
-                        messages: {
-                            notification: function(args) {
-                                return 'label.action.vmsnapshot.create';
-                            }
-                        },
-                        label: 'label.action.vmsnapshot.create',
-                        addRow: 'false',
-                        createForm: {
-                            title: 'label.action.vmsnapshot.create',
-                            fields: {
-                                name: {
-                                    label: 'label.name',
-                                    isInput: true
-                                },
-                                description: {
-                                    label: 'label.description',
-                                    isTextarea: true
-                                },
-                                snapshotMemory: {
-                                    label: 'label.vmsnapshot.memory',
-                                    isBoolean: true,
-                                    isChecked: false
-                                }
-                            }
-                        },
-                        action: function(args) {
-                            var array1 = [];
-                            array1.push("&snapshotmemory=" + (args.data.snapshotMemory == "on"));
-                            var displayname = args.data.name;
-                            if (displayname != null && displayname.length > 0) {
-                                array1.push("&name=" + todb(displayname));
-                            }
-                            var description = args.data.description;
-                            if (description != null && description.length > 0) {
-                                array1.push("&description=" + todb(description));
-                            }
-                            $.ajax({
-                                url: createURL("createVMSnapshot&virtualmachineid=" + args.context.instances[0].id + array1.join("")),
-                                dataType: "json",
-                                async: true,
-                                success: function(json) {
-                                    var jid = json.createvmsnapshotresponse.jobid;
-                                    args.response.success({
-                                        _custom: {
-                                            jobId: jid,
-                                            getUpdatedItem: function(json) {
-                                                return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                                            },
-                                            getActionFilter: function() {
-                                                return vmActionfilter;
-                                            }
-                                        }
-                                    });
-                                }
-                            });
-
-                        },
-                        notification: {
-                            poll: pollAsyncJobResult
-                        }
-                    },
+                    snapshot: vmSnapshotAction(),
                     destroy: {
                         label: 'label.action.destroy.instance',
                         compactLabel: 'label.destroy',
