@@ -188,6 +188,7 @@ namespace HypervResource
         }
 
         public const string IDE_HARDDISK_CONTROLLER = "Microsoft:Hyper-V:Emulated IDE Controller";
+        public const string SCSI_CONTROLLER = "Microsoft:Hyper-V:Synthetic SCSI Controller";
         public const string IDE_HARDDISK_DRIVE = "Microsoft:Hyper-V:Synthetic Disk Drive";
         public const string IDE_ISO_DRIVE = "Microsoft:Hyper-V:Synthetic DVD Drive";
 
@@ -257,6 +258,9 @@ namespace HypervResource
             // Create vm carcase
             logger.DebugFormat("Going ahead with create VM {0}, {1} vcpus, {2}MB RAM", vmName, vcpus, memSize);
             var newVm = CreateVM(vmName, memSize, vcpus);
+
+            // Add a SCSI controller for attaching/detaching data volumes.
+            AddScsiControllerToVm(newVm);
 
             foreach (var diskDrive in diskDrives)
             {
@@ -655,6 +659,38 @@ namespace HypervResource
                 newDiskDriveSettings.ResourceSubType,
                 newDrivePaths[0].Path);
             return newDrivePaths[0];
+        }
+
+        private ManagementPath AddScsiControllerToVm(ComputerSystem vm)
+        {
+            // A description of the controller is created by modifying a clone of the default ResourceAllocationSettingData for scsi controller
+            string scsiQuery = String.Format("ResourceSubType LIKE \"{0}\" AND InstanceID LIKE \"%Default\"", SCSI_CONTROLLER);
+            var scsiSettings = CloneResourceAllocationSetting(scsiQuery);
+
+            scsiSettings.LateBoundObject["ElementName"] = "SCSI Controller";
+            scsiSettings.CommitObject();
+
+            // Insert SCSI controller into vm
+            string[] newResources = new string[] { scsiSettings.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20) };
+            ManagementPath[] newResourcePaths = AddVirtualResource(newResources, vm);
+
+            // assert
+            if (newResourcePaths.Length != 1)
+            {
+                var errMsg = string.Format(
+                    "Failed to add scsi controller to VM {0} (GUID {1}): number of resource created {2}",
+                    vm.ElementName,
+                    vm.Name,
+                    newResourcePaths.Length);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+
+            logger.DebugFormat("New controller type {0} WMI path is {1}s",
+                scsiSettings.ResourceSubType,
+                newResourcePaths[0].Path);
+            return newResourcePaths[0];
         }
 
 

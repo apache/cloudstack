@@ -986,7 +986,7 @@ namespace HypervResource
             }
         }
 
-        // POST api/HypervResource/StartupCommand
+        // POST api/HypervResource/CopyCommand
         [HttpPost]
         [ActionName(CloudStackTypes.CopyCommand)]
         public JContainer CopyCommand(dynamic cmd)
