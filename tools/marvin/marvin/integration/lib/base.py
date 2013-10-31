@@ -449,6 +449,14 @@ class VirtualMachine:
         cmd.id = self.id
         apiclient.recoverVirtualMachine(cmd)
 
+    def restore(self, apiclient, templateid=None):
+        """Restore the instance"""
+        cmd = restoreVirtualMachine.restoreVirtualMachineCmd()
+        cmd.virtualmachineid = self.id
+        if templateid:
+            cmd.templateid = templateid
+        return apiclient.restoreVirtualMachine(cmd)
+
     def get_ssh_client(self, ipaddress=None, reconnect=False, port=None, keyPairFileLocation=None):
         """Get SSH object of VM"""
 
@@ -1408,6 +1416,9 @@ class ServiceOffering:
 
         if "deploymentplanner" in services:
             cmd.deploymentplanner = services["deploymentplanner"]
+
+        if "isvolatile" in services:
+            cmd.isvolatile = services["isvolatile"]
 
         # Service Offering private to that domain
         if domainid:
