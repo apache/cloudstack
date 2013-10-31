@@ -51,7 +51,8 @@
             },
             addSection: function(section) {
                 cloudStack.sections[section.id] = $.extend(section, {
-                    customIcon: 'plugins/' + section.id + '/icon.png'
+                    customIcon: 'plugins/' + section.id + '/icon.png',
+                    isPlugin: true
                 });
             },
             extend: function(obj) {
