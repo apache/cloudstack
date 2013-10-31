@@ -235,10 +235,17 @@ namespace HypervResource
                     logger.InfoFormat("Deleting existing VM with name {0}, before we go on to create a VM with the same name", vmName);
                     DestroyVm(vmName);
                 }
+                else if (vmWmiObj.EnabledState == EnabledState.Enabled)
+                {
+                    string infoMsg = string.Format("Create VM discovered there exists a VM with name {0}, state {1}",
+                        vmName,
+                        EnabledState.ToString(vmWmiObj.EnabledState));
+                    logger.Info(infoMsg);
+                    return vmWmiObj;
+                }
                 else
                 {
-                    // TODO: revise exception type
-                    errMsg = string.Format("Create VM failing, because there exists a VM with name {0}, state {1}", 
+                    errMsg = string.Format("Create VM failing, because there exists a VM with name {0}, state {1}",
                         vmName,
                         EnabledState.ToString(vmWmiObj.EnabledState));
                     var ex = new WmiException(errMsg);
