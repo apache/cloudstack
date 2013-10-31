@@ -216,3 +216,8 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         `cloud`.`affinity_group` ON affinity_group_vm_map.affinity_group_id = affinity_group.id
             left join
         `cloud`.`user_vm_details` as all_details ON all_details.vm_id = vm_instance.id;
+
+--Add the format for volumes table for uploaded volumes (CLOUDSTACK-5013)
+update  `cloud`.`volumes` v,  `cloud`.`volume_host_ref` vhr  set v.format=vhr.format where v.id=vhr.volume_id and v.format is null;
+
+
