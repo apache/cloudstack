@@ -173,6 +173,23 @@ table tbody td.truncated > span {
   text-overflow: ellipsis;
 }
 
+/** Multiselect*/
+table thead th.multiselect,
+table tbody td.multiselect {
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+}
+
+table thead th.multiselect input,
+table tbody td.multiselect input {
+  margin: 0;
+}
+
+table thead th.multiselect input {
+  margin-left: 2px;
+}
+
 /** Actions table cell*/
 table tbody td.actions {
   width: 130px;
