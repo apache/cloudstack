@@ -29,7 +29,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.vmsnapshot.DefaultVMSnapshotStrategy;
-import org.apache.cloudstack.storage.vmsnapshot.VMSnapshotHelper;
+import org.apache.cloudstack.storage.snapshot.VMSnapshotHelper;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.Before;
 import org.junit.Test;

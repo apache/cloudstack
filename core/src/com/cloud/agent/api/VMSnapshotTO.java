@@ -16,6 +16,10 @@
 // under the License.
 package com.cloud.agent.api;
 
+import java.util.List;
+
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+
 import com.cloud.vm.snapshot.VMSnapshot;
 
 public class VMSnapshotTO {
@@ -26,6 +30,7 @@ public class VMSnapshotTO {
     private Boolean current;
     private String description;
     private VMSnapshotTO parent;
+    private List<VolumeObjectTO> volumes;
     
     public Long getId() {
 		return id;
@@ -87,4 +92,11 @@ public class VMSnapshotTO {
         this.parent = parent;
     }
 
+    public List<VolumeObjectTO> getVolumes() {
+        return this.volumes;
+    }
+
+    public void setVolumes(List<VolumeObjectTO> volumes) {
+        this.volumes = volumes;
+    }
 }

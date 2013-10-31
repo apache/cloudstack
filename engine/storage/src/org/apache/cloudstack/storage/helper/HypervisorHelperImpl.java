@@ -18,25 +18,50 @@
  */
 package org.apache.cloudstack.storage.helper;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.util.List;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectAnswer;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.snapshot.VMSnapshotHelper;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CreateVMSnapshotAnswer;
+import com.cloud.agent.api.CreateVMSnapshotCommand;
+import com.cloud.agent.api.DeleteVMSnapshotCommand;
+import com.cloud.agent.api.VMSnapshotTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.snapshot.VMSnapshot;
 
 public class HypervisorHelperImpl implements HypervisorHelper {
     private static final Logger s_logger = Logger.getLogger(HypervisorHelperImpl.class);
     @Inject
     EndPointSelector selector;
-
+    @Inject
+    VMSnapshotHelper vmSnapshotHelper;
+    @Inject
+    GuestOSDao guestOSDao;
+    @Inject
+    ConfigurationDao configurationDao;
+    @Inject
+    AgentManager agentMgr;
     @Override
     public DataTO introduceObject(DataTO object, Scope scope, Long storeId) {
         EndPoint ep = selector.select(scope, storeId);
@@ -66,12 +91,52 @@ public class HypervisorHelperImpl implements HypervisorHelper {
     }
 
     @Override
-    public SnapshotObjectTO takeSnapshot(SnapshotObjectTO snapshotObjectTO, Scope scope) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public VMSnapshotTO quiesceVm(VirtualMachine virtualMachine) {
+        String value = configurationDao.getValue("vmsnapshot.create.wait");
+        int wait = NumbersUtil.parseInt(value, 1800);
+        Long hostId = vmSnapshotHelper.pickRunningHost(virtualMachine.getId());
+        VMSnapshotTO vmSnapshotTO = new VMSnapshotTO(1L,  UUID.randomUUID().toString(), VMSnapshot.Type.DiskAndMemory, null, null, false,
+                null);
+        GuestOSVO guestOS = guestOSDao.findById(virtualMachine.getGuestOSId());
+        List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(virtualMachine.getId());
+        CreateVMSnapshotCommand ccmd = new CreateVMSnapshotCommand(virtualMachine.getInstanceName(),vmSnapshotTO ,volumeTOs, guestOS.getDisplayName(),virtualMachine.getState());
+        ccmd.setWait(wait);
+        try {
+            Answer answer = agentMgr.send(hostId, ccmd);
+            if (answer != null && answer.getResult()) {
+                CreateVMSnapshotAnswer snapshotAnswer = (CreateVMSnapshotAnswer)answer;
+                vmSnapshotTO.setVolumes(snapshotAnswer.getVolumeTOs());
+            } else {
+                String errMsg = (answer != null) ? answer.getDetails() : null;
+                throw new CloudRuntimeException("Failed to quiesce vm, due to " + errMsg);
+            }
+        } catch (AgentUnavailableException e) {
+            throw new CloudRuntimeException("Failed to quiesce vm", e);
+        } catch (OperationTimedoutException e) {
+            throw new CloudRuntimeException("Failed to quiesce vm", e);
+        }
+        return vmSnapshotTO;
     }
 
     @Override
-    public boolean revertSnapshot(SnapshotObjectTO snapshotObjectTO, Scope scope) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    public boolean unquiesceVM(VirtualMachine virtualMachine, VMSnapshotTO vmSnapshotTO) {
+        Long hostId = vmSnapshotHelper.pickRunningHost(virtualMachine.getId());
+        List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(virtualMachine.getId());
+        GuestOSVO guestOS = guestOSDao.findById(virtualMachine.getGuestOSId());
+
+        DeleteVMSnapshotCommand deleteSnapshotCommand = new DeleteVMSnapshotCommand(virtualMachine.getInstanceName(), vmSnapshotTO, volumeTOs, guestOS.getDisplayName());
+        try {
+            Answer answer = agentMgr.send(hostId, deleteSnapshotCommand);
+            if (answer != null && answer.getResult()) {
+                return true;
+            } else {
+                String errMsg = (answer != null) ? answer.getDetails() : null;
+                throw new CloudRuntimeException("Failed to unquiesce vm, due to " + errMsg);
+            }
+        } catch (AgentUnavailableException e) {
+            throw new CloudRuntimeException("Failed to unquiesce vm", e);
+        } catch (OperationTimedoutException e) {
+            throw new CloudRuntimeException("Failed to unquiesce vm", e);
+        }
     }
 }

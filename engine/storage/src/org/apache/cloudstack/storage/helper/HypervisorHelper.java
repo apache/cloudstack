@@ -18,14 +18,15 @@
  */
 package org.apache.cloudstack.storage.helper;
 
-import com.cloud.agent.api.to.DataTO;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+
+import com.cloud.agent.api.VMSnapshotTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.vm.VirtualMachine;
 
 public interface HypervisorHelper {
     DataTO introduceObject(DataTO object, Scope scope, Long storeId);
     boolean forgetObject(DataTO object, Scope scope, Long storeId);
-    SnapshotObjectTO takeSnapshot(SnapshotObjectTO snapshotObjectTO, Scope scope);
-    boolean revertSnapshot(SnapshotObjectTO snapshotObjectTO, Scope scope);
+    VMSnapshotTO quiesceVm(VirtualMachine virtualMachine);
+    boolean unquiesceVM(VirtualMachine virtualMachine, VMSnapshotTO vmSnapshotTO);
 }
