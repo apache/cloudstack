@@ -356,4 +356,20 @@ class LdapManagerImplSpec extends spock.lang.Specification {
 		then: "true is returned because a configuration was found"
 		result == true;
 	}
+
+    def "Test success getUsersInGroup"() {
+	given: "We have an LdapConfigurationDao, LdapContextFactory, LdapUserManager and LdapManager"
+	def ldapConfigurationDao = Mock(LdapConfigurationDaoImpl)
+	def ldapContextFactory = Mock(LdapContextFactory)
+	def ldapUserManager = Mock(LdapUserManager)
+	ldapContextFactory.createBindContext() >> null
+	List<LdapUser> users = new ArrayList<>();
+	users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", "engineering"))
+	ldapUserManager.getUsersInGroup("engineering", _) >> users;
+	def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManager)
+	when: "We search for a group of users"
+	def result = ldapManager.getUsersInGroup("engineering")
+	then: "A list greater of size one is returned"
+	result.size() == 1;
+    }
 }

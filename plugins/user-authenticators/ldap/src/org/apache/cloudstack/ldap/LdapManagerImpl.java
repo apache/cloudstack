@@ -194,7 +194,20 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
 		}
 	}
 
-	@Override
+    @Override
+    public List<LdapUser> getUsersInGroup(String groupName) throws NoLdapUserMatchingQueryException {
+	DirContext context = null;
+	try {
+	    context = _ldapContextFactory.createBindContext();
+	    return _ldapUserManager.getUsersInGroup(groupName, context);
+	} catch (final NamingException e) {
+	    throw new NoLdapUserMatchingQueryException("groupName=" + groupName);
+	} finally {
+	    closeContext(context);
+	}
+    }
+
+    @Override
 	public boolean isLdapEnabled() {
 		return listConfigurations(new LdapListConfigurationCmd(this)).second() > 0;
 	}

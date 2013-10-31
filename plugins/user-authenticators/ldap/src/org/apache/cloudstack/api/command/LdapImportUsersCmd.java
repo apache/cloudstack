@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.ldap.LdapManager;
 import org.apache.cloudstack.ldap.LdapUser;
 import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
 
@@ -55,6 +56,15 @@ public class LdapImportUsersCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
     private Map<String, String> details;
 
+    @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING,
+	       description = "Specifies the domain to which the ldap users are to be imported. If no domain is specified, a domain will created using group parameter. If the " +
+		   "group is also not specified, a domain name based on the OU information will be created. If no OU hierarchy exists, will be defaulted to ROOT domain")
+    private String domainName;
+
+    @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING,
+	       description = "Specifies the group name from which the ldap users are to be imported. If no group is specified, all the users will be imported.")
+    private String groupName;
+
     @Inject
     private LdapManager _ldapManager;
 
@@ -75,14 +85,15 @@ public class LdapImportUsersCmd extends BaseListCmd {
 	List<LdapUserResponse> ldapResponses = null;
 	final ListResponse<LdapUserResponse> response = new ListResponse<LdapUserResponse>();
 	try {
-	    final List<LdapUser> users = _ldapManager.getUsers();
+	List<LdapUser> users;
+	if(StringUtils.isNotBlank(groupName)) {
+	    users = _ldapManager.getUsersInGroup(groupName);
+	} else {
+		users = _ldapManager.getUsers();
+	}
 	    for (LdapUser user : users) {
-		Domain domain = _domainService.getDomainByName(user.getDomain(), Domain.ROOT_DOMAIN);
-
-		if (domain == null) {
-		    domain = _domainService.createDomain(user.getDomain(), Domain.ROOT_DOMAIN, user.getDomain(), UUID.randomUUID().toString());
-		}
-		_accountService.createUserAccount(user.getUsername(), generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, user.getUsername(),
+	    Domain domain = getDomain(user);
+		    _accountService.createUserAccount(user.getUsername(), generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, user.getUsername(),
 						  accountType, domain.getId(), domain.getNetworkDomain(), details, UUID.randomUUID().toString(), UUID.randomUUID().toString());
 	    }
 	    ldapResponses = createLdapUserResponse(users);
@@ -93,6 +104,33 @@ public class LdapImportUsersCmd extends BaseListCmd {
 	    response.setResponseName(getCommandName());
 	    setResponseObject(response);
 	}
+    }
+
+    private Domain getDomain(LdapUser user) {
+	String csDomainName = null;
+	if (StringUtils.isNotBlank(domainName)) {
+	    csDomainName = domainName;
+	} else {
+	    if (StringUtils.isNotBlank(groupName)) {
+		csDomainName = groupName;
+	    } else if (StringUtils.isNotBlank(user.getDomain())) {
+		csDomainName = user.getDomain();
+	    }
+	    //removing all the special characters and trimming it length 190 to make the domain valid.
+	    csDomainName = StringUtils.substring(csDomainName.replaceAll("\\W",""),0,190);
+	}
+	Domain domain;
+	if (StringUtils.isNotBlank(csDomainName)) {
+	    domain = _domainService.getDomainByName(csDomainName, Domain.ROOT_DOMAIN);
+
+	    if (domain == null) {
+		domain = _domainService.createDomain(csDomainName, Domain.ROOT_DOMAIN, csDomainName, UUID.randomUUID().toString());
+	    }
+	} else {
+	    domain = _domainService.getDomain(Domain.ROOT_DOMAIN);
+	}
+
+	return domain;
     }
 
     private List<LdapUserResponse> createLdapUserResponse(List<LdapUser> users) {
