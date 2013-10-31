@@ -41,6 +41,11 @@
                         label: 'label.vmsnapshot.memory',
                         isBoolean: true,
                         isChecked: false
+                    },
+                    quiescevm: {
+                        label: 'Quiesce VM',
+                        isBoolean: true,
+                        isChecked: false
                     }
                 }
             },
@@ -50,6 +55,7 @@
                 $(instances).map(function(index, instance) {
                     var array1 = [];
                     array1.push("&snapshotmemory=" + (args.data.snapshotMemory == "on"));
+                    array1.push("&quiescevm=" + (args.data.quiescevm == "on"));
                     var displayname = args.data.name;
                     if (displayname != null && displayname.length > 0) {
                         array1.push("&name=" + todb(displayname));
