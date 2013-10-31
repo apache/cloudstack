@@ -1233,6 +1233,19 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         String errorMsg = "Failed to detach volume: " + volume.getName() + " from VM: " + vm.getHostName();
         boolean sendCommand = (vm.getState() == State.Running);
+
+        Long hostId = vm.getHostId();
+
+        if (hostId == null) {
+            hostId = vm.getLastHostId();
+
+            HostVO host = _hostDao.findById(hostId);
+
+            if (host != null && host.getHypervisorType() == HypervisorType.VMware) {
+                sendCommand = true;
+            }
+        }
+
         Answer answer = null;
 
         if (sendCommand) {
@@ -1251,7 +1264,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             cmd.set_iScsiName(volume.get_iScsiName());
 
             try {
-                answer = _agentMgr.send(vm.getHostId(), cmd);
+                answer = _agentMgr.send(hostId, cmd);
             } catch (Exception e) {
                 throw new CloudRuntimeException(errorMsg + " due to: " + e.getMessage());
             }

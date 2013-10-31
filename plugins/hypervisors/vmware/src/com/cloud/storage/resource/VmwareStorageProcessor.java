@@ -23,6 +23,7 @@ import java.io.OutputStreamWriter;
 import java.net.URI;
 import java.rmi.RemoteException;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -79,6 +80,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.google.gson.Gson;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.VirtualDisk;
+import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
 
 public class VmwareStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(VmwareStorageProcessor.class);
@@ -1194,7 +1196,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 Map<String, String> details = disk.getDetails();
 
                 morDs = hostService.getVmfsDatastore(hyperHost, VmwareResource.getDatastoreName(iScsiName), storageHost, storagePort,
-                            VmwareResource.trimIqn(iScsiName),  details.get(DiskTO.CHAP_INITIATOR_USERNAME), details.get(DiskTO.CHAP_INITIATOR_SECRET),
+                            VmwareResource.trimIqn(iScsiName), details.get(DiskTO.CHAP_INITIATOR_USERNAME), details.get(DiskTO.CHAP_INITIATOR_SECRET),
                             details.get(DiskTO.CHAP_TARGET_USERNAME), details.get(DiskTO.CHAP_TARGET_SECRET));
 
                 DatastoreMO dsMo = new DatastoreMO(hostService.getServiceContext(null), morDs);
@@ -1202,7 +1204,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), dsMo.getName());
 
                 if (!dsMo.fileExists(volumeDatastorePath)) {
-                    hostService.createVmdk(cmd, dsMo, VmwareResource.getDatastoreName(iScsiName), volumeTO.getSize());
+                    hostService.createVmdk(cmd, dsMo, volumeDatastorePath, volumeTO.getSize());
                 }
             }
             else {
@@ -1498,12 +1500,23 @@ public class VmwareStorageProcessor implements StorageProcessor {
                             vmMo.safePowerOff(_shutdown_waitMs);
                         }
 
+                        // call this before calling detachAllDisksExcept
+                        // when expunging a VM, we need to see if any of its disks are serviced by managed storage
+                        // if there is one or more disk serviced by managed storage, remove the iSCSI connection(s)
+                        // don't remove the iSCSI connection(s) until the supported disk(s) is/are removed from the VM
+                        // (removeManagedTargetsFromCluster should be called after detachAllDisksExcept and vm.destroy)
+                        List<VirtualDisk> virtualDisks = vmMo.getVirtualDisks();
+                        List<String> managedIqns = getManagedIqnsFromVirtualDisks(virtualDisks);
+
                         List<String> detachedDisks = vmMo.detachAllDisksExcept(vol.getPath(), diskInfo != null ? diskInfo.getDiskDeviceBusName() : null);
                         VmwareStorageLayoutHelper.moveVolumeToRootFolder(new DatacenterMO(context, morDc), detachedDisks);
 
                         // let vmMo.destroy to delete volume for us
                         // vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
                         vmMo.destroy();
+
+                        // this.hostService.handleDatastoreAndVmdkDetach(iScsiName, storageHost, storagePort);
+                        this.hostService.removeManagedTargetsFromCluster(managedIqns);
 
                         for (NetworkDetails netDetails : networks) {
                             if (netDetails.getGCTag() != null && netDetails.getGCTag().equalsIgnoreCase("true")) {
@@ -1553,6 +1566,40 @@ public class VmwareStorageProcessor implements StorageProcessor {
             s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
+    }
+
+    private List<String> getManagedIqnsFromVirtualDisks(List<VirtualDisk> virtualDisks) {
+        List<String> managedIqns = new ArrayList<String>();
+
+        if (virtualDisks != null) {
+            for (VirtualDisk virtualDisk : virtualDisks) {
+                if (virtualDisk.getBacking() instanceof VirtualDiskFlatVer2BackingInfo) {
+                    VirtualDiskFlatVer2BackingInfo backingInfo = (VirtualDiskFlatVer2BackingInfo)virtualDisk.getBacking();
+                    String path = backingInfo.getFileName();
+
+                    path = new DatastoreFile(path).getFileBaseName();
+
+                    String search = "-";
+                    int index = path.indexOf(search);
+
+                    if (index > -1) {
+                        path = path.substring(index + search.length());
+
+                        index = path.lastIndexOf(search);
+
+                        if (index > -1) {
+                            path = path.substring(0, index);
+
+                            if (path.startsWith("iqn.")) {
+                                managedIqns.add(path);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return managedIqns;
     }
 
     private Long restoreVolumeFromSecStorage(VmwareHypervisorHost hyperHost, DatastoreMO primaryDsMo, String newVolumeName,
