@@ -19,7 +19,7 @@
 package org.apache.cloudstack.storage.volume;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 
 public interface TemplateOnPrimaryDataStoreInfo {
     public String getPath();

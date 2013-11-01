@@ -103,7 +103,7 @@
     </display>  
   </class>  
   <interface id="9" corner="BOTTOM_RIGHT" language="java" 
-    name="org.apache.cloudstack.storage.datastore.PrimaryDataStore" project="cloud-engine-storage" 
+    name="org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore" project="cloud-engine-storage"
     file="/cloud-engine-storage/src/org/apache/cloudstack/storage/datastore/PrimaryDataStore.java" binary="false">    
     <position height="-1" width="-1" x="770" y="-4"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      

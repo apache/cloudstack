@@ -19,6 +19,7 @@
 package org.apache.cloudstack.storage.datastore;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 
 public interface PrimaryDataStoreProviderManager {
