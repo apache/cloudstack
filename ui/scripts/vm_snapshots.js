@@ -81,13 +81,13 @@
                                 label: 'label.name'
                             },
                             displayname: {
-                                label: 'label.display.name',
+                                label: 'label.display.name'
                             },
                             type: {
-                                label: 'label.vmsnapshot.type',
+                                label: 'label.vmsnapshot.type'
                             },
                             description: {
-                                label: 'label.description',
+                                label: 'label.description'
                             },
                             state: {
                                 label: 'label.state',
@@ -106,8 +106,7 @@
                             created: {
                                 label: 'label.date',
                                 converter: cloudStack.converters.toLocalDate
-                            },
-
+                            }
                         },
                         dataProvider: function(args) {
                             $.ajax({

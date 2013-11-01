@@ -32,9 +32,9 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -90,6 +90,9 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
@@ -362,8 +365,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     @DB
-    public void checkResourceLimit(Account account, ResourceType type, long... count) throws ResourceAllocationException {
-        long numResources = ((count.length == 0) ? 1 : count[0]);
+    public void checkResourceLimit(final Account account, final ResourceType type, long... count) throws ResourceAllocationException {
+        final long numResources = ((count.length == 0) ? 1 : count[0]);
         Project project = null;
 
         // Don't place any limits on system or root admin accounts
@@ -375,9 +378,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             project = _projectDao.findByProjectAccountId(account.getId());
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        try {
+        final Project projectFinal = project;
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) throws ResourceAllocationException {
             // Lock all rows first so nobody else can read it
             Set<Long> rowIdsToLock = _resourceCountDao.listAllRowsToUpdate(account.getId(), ResourceOwnerType.Account, type);
             SearchCriteria<ResourceCountVO> sc = ResourceCountSearch.create();
@@ -390,8 +394,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             if (accountLimit != Resource.RESOURCE_UNLIMITED && potentialCount > accountLimit) {
                 String message = "Maximum number of resources of type '" + type + "' for account name=" + account.getAccountName()
                         + " in domain id=" + account.getDomainId() + " has been exceeded.";
-                if (project != null) {
-                    message = "Maximum number of resources of type '" + type + "' for project name=" + project.getName()
+                    if (projectFinal != null) {
+                        message = "Maximum number of resources of type '" + type + "' for project name=" + projectFinal.getName()
                             + " in domain id=" + account.getDomainId() + " has been exceeded.";
                 }
                 throw new ResourceAllocationException(message, type);
@@ -399,8 +403,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
             // check all domains in the account's domain hierarchy
             Long domainId = null;
-            if (project != null) {
-                domainId = project.getDomainId();
+                if (projectFinal != null) {
+                    domainId = projectFinal.getDomainId();
             } else {
                 domainId = account.getDomainId();
             }
@@ -419,9 +423,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 }
                 domainId = domain.getParent();
             }
-        } finally {
-            txn.commit();
         }
+        });
     }
 
     @Override
@@ -717,12 +720,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @DB
-    protected boolean updateResourceCountForAccount(long accountId, ResourceType type, boolean increment, long delta) {
-        boolean result = true;
+    protected boolean updateResourceCountForAccount(final long accountId, final ResourceType type, final boolean increment, final long delta) {
         try {
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
-
+            return Transaction.execute(new TransactionCallback<Boolean>() {
+                @Override
+                public Boolean doInTransaction(TransactionStatus status) {
+                    boolean result = true;
             Set<Long> rowsToLock = _resourceCountDao.listAllRowsToUpdate(accountId, ResourceOwnerType.Account, type);
 
             // Lock rows first
@@ -737,22 +740,22 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 }
             }
 
-            txn.commit();
+                    return result;
+                }
+            });
         } catch (Exception ex) {
             s_logger.error("Failed to update resource count for account id=" + accountId);
-            result = false;
+            return false;
         }
-        return result;
     }
 
     @DB
-    protected long recalculateDomainResourceCount(long domainId, ResourceType type) {
+    protected long recalculateDomainResourceCount(final long domainId, final ResourceType type) {
+        return Transaction.execute(new TransactionCallback<Long>() {
+            @Override
+            public Long doInTransaction(TransactionStatus status) {
         long newCount = 0;
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-
-        try {
             // Lock all rows first so nobody else can read it
             Set<Long> rowIdsToLock = _resourceCountDao.listAllRowsToUpdate(domainId, ResourceOwnerType.Domain, type);
             SearchCriteria<ResourceCountVO> sc = ResourceCountSearch.create();
@@ -790,21 +793,18 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 s_logger.info("Discrepency in the resource count " + "(original count=" + oldCount + " correct count = " +
                         newCount + ") for type " + type + " for domain ID " + domainId + " is fixed during resource count recalculation.");
             }
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Failed to update resource count for domain with Id " + domainId);
-        } finally {
-            txn.commit();
-        }
 
         return newCount;
     }
+        });
+    }
 
     @DB
-    protected long recalculateAccountResourceCount(long accountId, ResourceType type) {
+    protected long recalculateAccountResourceCount(final long accountId, final ResourceType type) {
+        Long newCount = Transaction.execute(new TransactionCallback<Long>() {
+            @Override
+            public Long doInTransaction(TransactionStatus status) {
         Long newCount = null;
-
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
 
         // this lock guards against the updates to user_vm, volume, snapshot, public _ip and template table
         // as any resource creation precedes with the resourceLimitExceeded check which needs this lock too
@@ -853,7 +853,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             s_logger.info("Discrepency in the resource count " + "(original count=" + oldCount + " correct count = " +
                     newCount + ") for type " + type + " for account ID " + accountId + " is fixed during resource count recalculation.");
         }
-        txn.commit();
+                
+                return newCount;
+            }
+        });
 
         return (newCount == null) ? 0 : newCount.longValue();
     }
@@ -940,13 +943,13 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         return _resourceCountDao.getResourceCount(account.getId(), ResourceOwnerType.Account, type);
     }
 
-    protected class ResourceCountCheckTask implements Runnable {
+    protected class ResourceCountCheckTask extends ManagedContextRunnable {
         public ResourceCountCheckTask() {
 
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             s_logger.info("Running resource count check periodic task");
             List<DomainVO> domains = _domainDao.findImmediateChildrenForParent(DomainVO.ROOT_DOMAIN);
 

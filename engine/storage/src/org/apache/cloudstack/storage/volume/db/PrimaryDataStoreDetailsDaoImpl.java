@@ -16,59 +16,19 @@
 // under the License.
 package org.apache.cloudstack.storage.volume.db;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDetailVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDetailsDao;
 import org.springframework.stereotype.Component;
 
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 
 @Component
-public class PrimaryDataStoreDetailsDaoImpl extends GenericDaoBase<PrimaryDataStoreDetailVO, Long> implements
+public class PrimaryDataStoreDetailsDaoImpl extends ResourceDetailsDaoBase<PrimaryDataStoreDetailVO> implements
         PrimaryDataStoreDetailsDao {
 
-    protected final SearchBuilder<PrimaryDataStoreDetailVO> PoolSearch = null;
-
-    protected PrimaryDataStoreDetailsDaoImpl() {
-        /*
-         * super(); PoolSearch = createSearchBuilder(); PoolSearch.and("pool",
-         * PoolSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
-         * PoolSearch.done();
-         */
-    }
-
     @Override
-    public void update(long poolId, Map<String, String> details) {
-        Transaction txn = Transaction.currentTxn();
-        SearchCriteria<PrimaryDataStoreDetailVO> sc = PoolSearch.create();
-        sc.setParameters("pool", poolId);
-
-        txn.start();
-        expunge(sc);
-        for (Map.Entry<String, String> entry : details.entrySet()) {
-            PrimaryDataStoreDetailVO detail = new PrimaryDataStoreDetailVO(poolId, entry.getKey(), entry.getValue());
-            persist(detail);
-        }
-        txn.commit();
+    public void addDetail(long resourceId, String key, String value) {
+        super.addDetail(new PrimaryDataStoreDetailVO(resourceId, key, value));
     }
-
-    @Override
-    public Map<String, String> getDetails(long poolId) {
-        SearchCriteria<PrimaryDataStoreDetailVO> sc = PoolSearch.create();
-        sc.setParameters("pool", poolId);
-
-        List<PrimaryDataStoreDetailVO> details = listBy(sc);
-        Map<String, String> detailsMap = new HashMap<String, String>();
-        for (PrimaryDataStoreDetailVO detail : details) {
-            detailsMap.put(detail.getName(), detail.getValue());
-        }
-
-        return detailsMap;
-    }
+    
 }

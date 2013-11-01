@@ -20,6 +20,8 @@ package com.cloud.hypervisor.vmware.mo;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.Pair;
 import com.vmware.vim25.CustomFieldStringValue;
@@ -37,6 +39,7 @@ import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
 import java.util.Arrays;
 
 public class DatacenterMO extends BaseMO {
+    private static final Logger s_logger = Logger.getLogger(DatacenterMO.class);
 
 	public DatacenterMO(VmwareContext context, ManagedObjectReference morDc) {
 		super(context, morDc);
@@ -50,7 +53,9 @@ public class DatacenterMO extends BaseMO {
 		super(context, null);
 
 		_mor = _context.getVimClient().getDecendentMoRef(_context.getRootFolder(), "Datacenter", dcName);
-		assert(_mor != null);
+		if(_mor == null) {
+			s_logger.error("Unable to locate DC " + dcName);
+		}
 	}
 
 	@Override
@@ -60,7 +65,6 @@ public class DatacenterMO extends BaseMO {
 
 	public void registerTemplate(ManagedObjectReference morHost, String datastoreName,
 		String templateName, String templateFileName) throws Exception {
-
 
 		ManagedObjectReference morFolder = (ManagedObjectReference)_context.getVimClient().getDynamicProperty(
 			_mor, "vmFolder");

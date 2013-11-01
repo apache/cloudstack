@@ -18,52 +18,6 @@
  */
 package org.apache.cloudstack.storage.test;
 
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-
-import javax.inject.Inject;
-
-import junit.framework.Assert;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
-import org.apache.cloudstack.framework.async.AsyncCallFuture;
-import org.apache.cloudstack.storage.LocalHostEndpoint;
-import org.apache.cloudstack.storage.MockLocalNfsSecondaryStorageResource;
-import org.apache.cloudstack.storage.RemoteHostEndPoint;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
-import org.springframework.test.context.ContextConfiguration;
-import org.testng.AssertJUnit;
-import org.testng.annotations.Test;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
 import com.cloud.dc.ClusterVO;
@@ -99,6 +53,52 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
+import junit.framework.Assert;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.storage.LocalHostEndpoint;
+import org.apache.cloudstack.storage.MockLocalNfsSecondaryStorageResource;
+import org.apache.cloudstack.storage.RemoteHostEndPoint;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.mockito.Matchers;
+import org.mockito.Mockito;
+import org.springframework.test.context.ContextConfiguration;
+import org.testng.AssertJUnit;
+import org.testng.annotations.Test;
+
+import javax.inject.Inject;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 @ContextConfiguration(locations = { "classpath:/storageContext.xml" })
 public class SnapshotTest extends CloudStackTestNGBase {
@@ -147,6 +147,8 @@ public class SnapshotTest extends CloudStackTestNGBase {
     VolumeDataFactory volFactory;
     @Inject
     SnapshotDataFactory snapshotFactory;
+    @Inject
+    StorageStrategyFactory storageStrategyFactory;
     @Inject
     List<SnapshotStrategy> snapshotStrategies;
     @Inject
@@ -281,7 +283,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
         Mockito.when(epSelector.select(Matchers.any(DataObject.class))).thenReturn(remoteEp);
         Mockito.when(epSelector.select(Matchers.any(DataStore.class))).thenReturn(remoteEp);
         Mockito.when(hyGuruMgr.getGuruProcessedCommandTargetHost(Matchers.anyLong(), Matchers.any(Command.class)))
-                .thenReturn(this.host.getId());
+        .thenReturn(this.host.getId());
 
     }
 
@@ -367,10 +369,10 @@ public class SnapshotTest extends CloudStackTestNGBase {
         result = future.get();
         Assert.assertTrue(result.isSuccess());
         return result.getVolume();
-        
+
     }
 
-   
+
 
     private VMTemplateVO createTemplateInDb() {
         VMTemplateVO image = new VMTemplateVO();
@@ -400,11 +402,12 @@ public class SnapshotTest extends CloudStackTestNGBase {
         SnapshotVO snapshotVO = createSnapshotInDb(vol);
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
         boolean result = false;
-        for (SnapshotStrategy strategy : this.snapshotStrategies) {
-            if (strategy.canHandle(snapshot)) {
-                snapshot = strategy.takeSnapshot(snapshot);
-                result = true;
-            }
+
+
+        SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.TAKE);
+        if (snapshotStrategy != null) {
+            snapshot = snapshotStrategy.takeSnapshot(snapshot);
+            result = true;
         }
 
         AssertJUnit.assertTrue(result);
@@ -422,16 +425,18 @@ public class SnapshotTest extends CloudStackTestNGBase {
         SnapshotVO snapshotVO = createSnapshotInDb(vol);
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
         SnapshotInfo newSnapshot = null;
-        for (SnapshotStrategy strategy : this.snapshotStrategies) {
-            if (strategy.canHandle(snapshot)) {
-                newSnapshot = strategy.takeSnapshot(snapshot);
-            }
+
+
+        SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.TAKE);
+        if (snapshotStrategy != null) {
+            newSnapshot = snapshotStrategy.takeSnapshot(snapshot);
+
         }
         AssertJUnit.assertNotNull(newSnapshot);
 
         // create another snapshot
         for (SnapshotStrategy strategy : this.snapshotStrategies) {
-            if (strategy.canHandle(snapshot)) {
+            if (strategy.canHandle(snapshot, SnapshotOperation.DELETE) != StrategyPriority.CANT_HANDLE) {
                 strategy.deleteSnapshot(newSnapshot.getId());
             }
         }
@@ -444,11 +449,11 @@ public class SnapshotTest extends CloudStackTestNGBase {
         SnapshotVO snapshotVO = createSnapshotInDb(vol);
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
         boolean result = false;
-        for (SnapshotStrategy strategy : this.snapshotStrategies) {
-            if (strategy.canHandle(snapshot)) {
-                snapshot = strategy.takeSnapshot(snapshot);
-                result = true;
-            }
+
+        SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.TAKE);
+        if (snapshotStrategy != null) {
+            snapshot = snapshotStrategy.takeSnapshot(snapshot);
+            result = true;
         }
 
         AssertJUnit.assertTrue(result);
@@ -467,18 +472,20 @@ public class SnapshotTest extends CloudStackTestNGBase {
             Mockito.when(epSelector.select(Matchers.any(DataObject.class), Matchers.any(DataObject.class))).thenReturn(remoteEp);
         }
     }
-    
+
     @Test
     public void createSnapshot() throws InterruptedException, ExecutionException {
         VolumeInfo vol = createCopyBaseImage();
         SnapshotVO snapshotVO = createSnapshotInDb(vol);
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
         SnapshotInfo newSnapshot = null;
-        for (SnapshotStrategy strategy : this.snapshotStrategies) {
-            if (strategy.canHandle(snapshot)) {
-                newSnapshot = strategy.takeSnapshot(snapshot);
-            }
+
+
+        SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.TAKE);
+        if (snapshotStrategy != null) {
+            newSnapshot = snapshotStrategy.takeSnapshot(snapshot);
         }
+
         AssertJUnit.assertNotNull(newSnapshot);
 
         LocalHostEndpoint ep = new MockLocalHostEndPoint();
@@ -487,7 +494,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
 
         try {
             for (SnapshotStrategy strategy : this.snapshotStrategies) {
-                if (strategy.canHandle(snapshot)) {
+                if (strategy.canHandle(snapshot, SnapshotOperation.DELETE) != StrategyPriority.CANT_HANDLE) {
                     boolean res = strategy.deleteSnapshot(newSnapshot.getId());
                     Assert.assertTrue(res);
                 }

@@ -30,7 +30,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
@@ -104,7 +104,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
     @Override
     public void archiveEvents(List<EventVO> events) {
         if (events != null && !events.isEmpty()) {
-            Transaction txn = Transaction.currentTxn();
+            TransactionLegacy txn = TransactionLegacy.currentTxn();
             txn.start();
             for (EventVO event : events) {
                 event = lockRow(event.getId(), true);

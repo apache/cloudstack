@@ -41,30 +41,30 @@ public class UploadCommand extends AbstractUploadCommand implements InternalIden
 		this.template = new TemplateTO(template);
 		this.url = url;
 		this.installPath = installPath;
-		this.checksum = template.getChecksum();
-		this.id = template.getId();
-		this.templateSizeInBytes = sizeInBytes;
+		checksum = template.getChecksum();
+		id = template.getId();
+		templateSizeInBytes = sizeInBytes;
 
 	}
 
 	public UploadCommand(String url, long id, long sizeInBytes, String installPath, Type type){
-		this.template = null;
+		template = null;
 		this.url = url;
 		this.installPath = installPath;
 		this.id = id;
 		this.type = type;
-		this.templateSizeInBytes = sizeInBytes;
+		templateSizeInBytes = sizeInBytes;
 	}
 
 	protected UploadCommand() {
 	}
 
 	public UploadCommand(UploadCommand that) {
-		this.template = that.template;
-		this.url = that.url;
-		this.installPath = that.installPath;
-		this.checksum = that.getChecksum();
-		this.id = that.id;
+		template = that.template;
+		url = that.url;
+		installPath = that.installPath;
+		checksum = that.getChecksum();
+		id = that.id;
 	}
 
 	public String getDescription() {
@@ -114,7 +114,8 @@ public class UploadCommand extends AbstractUploadCommand implements InternalIden
 		this.templateSizeInBytes = templateSizeInBytes;
 	}
 
-	public long getId() {
+	@Override
+    public long getId() {
 		return id;
 	}
 

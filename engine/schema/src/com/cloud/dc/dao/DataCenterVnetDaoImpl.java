@@ -25,14 +25,12 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.exception.InvalidParameterValueException;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.network.dao.AccountGuestVlanMapDao;
 import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -40,7 +38,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -48,7 +46,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  * data center/physical_network and the vnet that appears within the physical network.
  */
 @Component
-@DB(txn=false)
+@DB
 public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long> implements DataCenterVnetDao {
 
     private final SearchBuilder<DataCenterVnetVO> FreeVnetSearch;
@@ -123,7 +121,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     public void add(long dcId, long physicalNetworkId, List<String> vnets) {
         String insertVnet = "INSERT INTO `cloud`.`op_dc_vnet_alloc` (vnet, data_center_id, physical_network_id) VALUES ( ?, ?, ?)";
         
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertVnet);
@@ -141,7 +139,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     }
 
     //In the List<string> argument each string is a vlan. not a vlanRange.
-    public void deleteVnets(Transaction txn, long dcId, long physicalNetworkId, List<String> vnets) {
+    public void deleteVnets(TransactionLegacy txn, long dcId, long physicalNetworkId, List<String> vnets) {
         String deleteVnet = "DELETE FROM `cloud`.`op_dc_vnet_alloc` WHERE data_center_id=? AND physical_network_id=? AND taken IS NULL AND vnet=?";
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(deleteVnet);
@@ -173,7 +171,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         }
         sc.setParameters("physicalNetworkId", physicalNetworkId);
         Date now = new Date();
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         DataCenterVnetVO vo = lockOneRandomRow(sc, true);
         if (vo == null) {

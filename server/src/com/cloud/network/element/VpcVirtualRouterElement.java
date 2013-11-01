@@ -39,9 +39,11 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
-import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
+import com.cloud.network.VirtualRouterProvider.Type;
+import com.cloud.network.VpnUser;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
@@ -63,7 +65,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = {NetworkElement.class, FirewallServiceProvider.class,
@@ -210,7 +212,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return false;
         }
 
-        if (vm.getType() == Type.User) {
+        if (vm.getType() == VirtualMachine.Type.User) {
             Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
             params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
             List<DomainRouterVO> routers = _vpcRouterMgr.deployVirtualRouterInVpc(vpc, dest,
@@ -434,8 +436,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
 
     @Override
-    protected VirtualRouterProviderType getVirtualRouterProvider() {
-        return VirtualRouterProviderType.VPCVirtualRouter;
+    protected Type getVirtualRouterProvider() {
+        return Type.VPCVirtualRouter;
     }
 
     @Override
@@ -531,4 +533,47 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         return _vpcRouterMgr.stopSite2SiteVpn(conn, routers.get(0));
     }
+
+    @Override
+    public String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users) throws ResourceUnavailableException {
+    	if (vpn.getVpcId() == null) {
+    		return null;
+    	}
+
+    	List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(vpn.getVpcId());
+    	if (routers == null || routers.size() != 1) {
+    		s_logger.debug("Cannot apply vpn users on the backend; virtual router doesn't exist in the network " + vpn.getVpcId());
+    		return null;
+    	}
+    	return _vpcRouterMgr.applyVpnUsers(vpn, users, routers.get(0));
+    }
+
+    @Override
+    public boolean startVpn(RemoteAccessVpn vpn) throws ResourceUnavailableException {
+    	if (vpn.getVpcId() == null) {
+    		return false;
+    	}
+
+    	List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(vpn.getVpcId());
+    	if (routers == null || routers.size() != 1) {
+    		s_logger.debug("Cannot apply vpn users on the backend; virtual router doesn't exist in the network " + vpn.getVpcId());
+    		return true;
+    	}
+        return _vpcRouterMgr.startRemoteAccessVpn(vpn, routers.get(0));
+    }
+
+    @Override
+    public boolean stopVpn(RemoteAccessVpn vpn) throws ResourceUnavailableException {
+    	if (vpn.getVpcId() == null) {
+    		return false;
+    	}
+
+    	List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(vpn.getVpcId());
+    	if (routers == null || routers.size() != 1) {
+    		s_logger.debug("Cannot apply vpn users on the backend; virtual router doesn't exist in the network " + vpn.getVpcId());
+    		return true;
+    	}
+    	return _vpcRouterMgr.stopRemoteAccessVpn(vpn, routers.get(0));
+    }
+
 }

@@ -1913,13 +1913,7 @@
                                                  $fields.filter('[rel=usehttps]').hide();
                                                  $fields.filter('[rel=connectiontimeout]').hide();
                                                  $fields.filter('[rel=maxerrorretry]').hide();
-                                                 $fields.filter('[rel=sockettimeout]').hide();
-
-                                                 $fields.filter('[rel=createNfsCache]').find('input').attr('checked', 'checked');
-                                                 $fields.filter('[rel=createNfsCache]').find('input').attr("disabled", "disabled");
-                                                 $fields.filter('[rel=createNfsCache]').css('display', 'inline-block');
-                                                 $fields.filter('[rel=nfsCacheNfsServer]').css('display', 'inline-block');
-                                                 $fields.filter('[rel=nfsCachePath]').css('display', 'inline-block');
+                                                 $fields.filter('[rel=sockettimeout]').hide();   
                                             } else {
                                             	 $fields.filter('[rel=accesskey]').css('display', 'inline-block');
                                                  $fields.filter('[rel=secretkey]').css('display', 'inline-block');
@@ -1929,13 +1923,13 @@
                                                  $fields.filter('[rel=connectiontimeout]').css('display', 'inline-block');
                                                  $fields.filter('[rel=maxerrorretry]').css('display', 'inline-block');
                                                  $fields.filter('[rel=sockettimeout]').css('display', 'inline-block');
-
-                                                 $fields.filter('[rel=createNfsCache]').find('input').attr('checked', 'checked');
-                                                 $fields.filter('[rel=createNfsCache]').css('display', 'inline-block');
-                                                 $fields.filter('[rel=nfsCacheNfsServer]').css('display', 'inline-block');
-                                                 $fields.filter('[rel=nfsCachePath]').css('display', 'inline-block');
                                             }      
-
+                                            $fields.filter('[rel=createNfsCache]').find('input').attr('checked', 'checked');
+                                            $fields.filter('[rel=createNfsCache]').find('input').attr("disabled", "disabled");  //Create NFS staging is required for S3 at this moment. So, disallow user to uncheck "Create NFS Secondary Staging" checkbox
+                                            $fields.filter('[rel=createNfsCache]').css('display', 'inline-block');
+                                            $fields.filter('[rel=nfsCacheNfsServer]').css('display', 'inline-block');
+                                            $fields.filter('[rel=nfsCachePath]').css('display', 'inline-block');
+                                            
                                             //Swift
                                             $fields.filter('[rel=url]').hide();
                                             $fields.filter('[rel=account]').hide();
@@ -2053,7 +2047,7 @@
                     },
                     nfsCacheNfsServer: {
                         dependsOn: 'createNfsCache',
-                        label: 'label.nfs.server',
+                        label: 'label.s3.nfs.server',
                         validation: {
                             required: true
                         },
@@ -2061,7 +2055,7 @@
                     },
                     nfsCachePath: {
                         dependsOn: 'createNfsCache',
-                        label: 'label.path',
+                        label: 'label.s3.nfs.path',
                         validation: {
                             required: true
                         },

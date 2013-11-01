@@ -31,7 +31,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.usage.UsageLoadBalancerPolicyVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={UsageLoadBalancerPolicyDao.class})
@@ -56,7 +56,7 @@ public class UsageLoadBalancerPolicyDaoImpl extends GenericDaoBase<UsageLoadBala
 	public UsageLoadBalancerPolicyDaoImpl() {}
 
 	public void removeBy(long accountId, long lbId) {
-	    Transaction txn = Transaction.open(Transaction.USAGE_DB);
+	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
 		PreparedStatement pstmt = null;
 		try {
 		    txn.start();
@@ -75,7 +75,7 @@ public class UsageLoadBalancerPolicyDaoImpl extends GenericDaoBase<UsageLoadBala
 	}
 
 	public void update(UsageLoadBalancerPolicyVO usage) {
-	    Transaction txn = Transaction.open(Transaction.USAGE_DB);
+	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
 		PreparedStatement pstmt = null;
 		try {
 		    txn.start();
@@ -119,7 +119,7 @@ public class UsageLoadBalancerPolicyDaoImpl extends GenericDaoBase<UsageLoadBala
             sql += " LIMIT " + startIndex + ",500";
         }
 
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
 
         try {

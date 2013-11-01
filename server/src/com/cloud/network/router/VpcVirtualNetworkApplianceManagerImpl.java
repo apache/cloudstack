@@ -27,6 +27,7 @@ import java.util.TreeSet;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -39,10 +40,12 @@ import com.cloud.agent.api.SetupGuestNetworkAnswer;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
+import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.NicTO;
@@ -52,10 +55,12 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.IpAddress;
@@ -70,15 +75,18 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VirtualRouterProvider;
-import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
+import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
+import com.cloud.network.VpnUser;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.RemoteAccessVpnVO;
 import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
 import com.cloud.network.dao.Site2SiteVpnConnectionDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
@@ -162,6 +170,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     EntityManager _entityMgr;
     
     @Override
+    public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
+        _itMgr.registerGuru(VirtualMachine.Type.DomainRouter, this);
+        return super.configure(name, params);
+    }
+    
+    @Override
     public List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc, DeployDestination dest, Account owner,
             Map<Param, Object> params) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
@@ -203,13 +217,13 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
            
             for (PhysicalNetwork pNtwk : pNtwks) {
                 PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(pNtwk.getId(),
-                        VirtualRouterProviderType.VPCVirtualRouter.toString());
+                        Type.VPCVirtualRouter.toString());
                 if (provider == null) {
                     throw new CloudRuntimeException("Cannot find service provider " +
-                            VirtualRouterProviderType.VPCVirtualRouter.toString() + " in physical network " + pNtwk.getId());
+                            Type.VPCVirtualRouter.toString() + " in physical network " + pNtwk.getId());
                 }
                 vpcVrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(),
-                        VirtualRouterProviderType.VPCVirtualRouter);
+                        Type.VPCVirtualRouter);
                 if (vpcVrProvider != null) {
                     break;
                 }
@@ -839,7 +853,13 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             createStaticRouteCommands(staticRouteProfiles, router, cmds);
         }
         
-        //5) REPROGRAM GUEST NETWORK
+        //5) RE-APPLY ALL REMOTE ACCESS VPNs
+        RemoteAccessVpnVO vpn = _vpnDao.findByAccountAndVpc(router.getAccountId(), router.getVpcId());
+        if (vpn != null) {
+        	createApplyVpnCommands(true, vpn, router, cmds);
+        }
+        
+        //6) REPROGRAM GUEST NETWORK
         boolean reprogramGuestNtwks = true;
         if (profile.getParameter(Param.ReProgramGuestNetworks) != null
                 && (Boolean) profile.getParameter(Param.ReProgramGuestNetworks) == false) {
@@ -1342,4 +1362,100 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         return _routerDao.listByVpcId(vpcId);
     }
 
+    @Override
+    public String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users, VirtualRouter router) throws ResourceUnavailableException {
+    	Vpc vpc = _vpcDao.findById(vpn.getVpcId());
+
+        if (router.getState() != State.Running) {
+        	s_logger.warn("Failed to add/remove Remote Access VPN users: router not in running state");
+        	throw new ResourceUnavailableException("Failed to add/remove Remote Access VPN users: router not in running state: " +
+        			router.getState(), DataCenter.class, vpc.getZoneId());
+        }
+
+        Commands cmds = new Commands(Command.OnError.Continue);
+
+        createApplyVpnUsersCommand(users, router, cmds);
+
+        // Currently we receive just one answer from the agent. In the future we have to parse individual answers and set
+        // results accordingly
+        boolean agentResult = sendCommandsToRouter(router, cmds);
+
+        String[] result = new String[users.size()];
+        for (int i = 0; i < result.length; i++) {
+            if (agentResult) {
+                result[i] = null;
+            } else {
+                result[i] = String.valueOf(agentResult);
+            }
+        }
+
+        return result;
+    }
+    
+    protected String getVpnCidr(RemoteAccessVpn vpn)
+    {
+    	if (vpn.getVpcId() == null) {
+    		return super.getVpnCidr(vpn);
+    	}
+    	Vpc vpc = _vpcDao.findById(vpn.getVpcId());
+    	return vpc.getCidr();
+    }
+    
+    @Override
+    public boolean startRemoteAccessVpn(RemoteAccessVpn vpn, VirtualRouter router) throws ResourceUnavailableException {
+        if (router.getState() != State.Running) {
+            s_logger.warn("Unable to apply remote access VPN configuration, virtual router is not in the right state " + router.getState());
+            throw new ResourceUnavailableException("Unable to apply remote access VPN configuration," +
+                    " virtual router is not in the right state", DataCenter.class, router.getDataCenterId());
+        }
+
+        Commands cmds = new Commands(Command.OnError.Stop);
+        createApplyVpnCommands(true, vpn, router, cmds);
+
+        try {
+        	_agentMgr.send(router.getHostId(), cmds);
+        } catch (OperationTimedoutException e) {
+        	s_logger.debug("Failed to start remote access VPN: ", e);
+        	throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId(), e);
+        }
+        Answer answer = cmds.getAnswer("users");
+        if (!answer.getResult()) {
+        	s_logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterId()
+        			+ " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName()
+        			+ " due to " + answer.getDetails());
+        	throw new ResourceUnavailableException("Unable to start vpn: Unable to add users to vpn in zone " +
+        			router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
+        			+ router.getInstanceName() + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterId());
+        }
+        answer = cmds.getAnswer("startVpn");
+        if (!answer.getResult()) {
+        	s_logger.error("Unable to start vpn in zone " + router.getDataCenterId() + " for account " +
+        			vpn.getAccountId() + " on domR: " + router.getInstanceName() + " due to "
+        			+ answer.getDetails());
+        	throw new ResourceUnavailableException("Unable to start vpn in zone " + router.getDataCenterId()
+        			+ " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName()
+        			+ " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterId());
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean stopRemoteAccessVpn(RemoteAccessVpn vpn, VirtualRouter router) throws ResourceUnavailableException {
+    	boolean result = true;
+
+        if (router.getState() == State.Running) {
+        	Commands cmds = new Commands(Command.OnError.Continue);
+        	createApplyVpnCommands(false, vpn, router, cmds);
+        	result = result && sendCommandsToRouter(router, cmds);
+        } else if (router.getState() == State.Stopped) {
+        	s_logger.debug("Router " + router + " is in Stopped state, not sending deleteRemoteAccessVpn command to it");
+        } else {
+        	s_logger.warn("Failed to delete remote access VPN: domR " + router + " is not in right state " + router.getState());
+        	throw new ResourceUnavailableException("Failed to delete remote access VPN: domR is not in right state " +
+        			router.getState(), DataCenter.class, router.getDataCenterId());
+        }
+
+        return true;
+    }
 }

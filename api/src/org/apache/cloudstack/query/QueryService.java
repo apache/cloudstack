@@ -123,7 +123,7 @@ public interface QueryService {
             String affinityGroupType, Long vmId, String accountName, Long domainId, boolean isRecursive,
             boolean listAll, Long startIndex, Long pageSize);
 
-    public List<ResourceDetailResponse> listResource(ListResourceDetailsCmd cmd);
+    public List<ResourceDetailResponse> listResourceDetails(ListResourceDetailsCmd cmd);
 
     ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd);
 

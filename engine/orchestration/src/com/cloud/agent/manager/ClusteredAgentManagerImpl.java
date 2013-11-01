@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -44,14 +43,13 @@ import javax.naming.ConfigurationException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
-import org.apache.log4j.Logger;
-
-import com.google.gson.Gson;
-
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -85,45 +83,42 @@ import com.cloud.host.Status.Event;
 import com.cloud.resource.ServerResource;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.Profiler;
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.db.QueryBuilder;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.Task;
+import com.google.gson.Gson;
 
 @Local(value = { AgentManager.class, ClusteredAgentRebalanceService.class })
 public class ClusteredAgentManagerImpl extends AgentManagerImpl implements ClusterManagerListener, ClusteredAgentRebalanceService {
     final static Logger s_logger = Logger.getLogger(ClusteredAgentManagerImpl.class);
-    private static final ScheduledExecutorService s_transferExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Cluster-AgentTransferExecutor"));
+    private static final ScheduledExecutorService s_transferExecutor = Executors.newScheduledThreadPool(2, new NamedThreadFactory("Cluster-AgentRebalancingExecutor"));
     private final long rebalanceTimeOut = 300000; // 5 mins - after this time remove the agent from the transfer list
 
     public final static long STARTUP_DELAY = 5000;
     public final static long SCAN_INTERVAL = 90000; // 90 seconds, it takes 60 sec for xenserver to fail login
     public final static int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5; // 5 seconds
     protected Set<Long> _agentToTransferIds = new HashSet<Long>();
-
     Gson _gson;
-
-    @Inject
-    protected ClusterManager _clusterMgr = null;
-
     protected HashMap<String, SocketChannel> _peers;
     protected HashMap<String, SSLEngine> _sslEngines;
     private final Timer _timer = new Timer("ClusteredAgentManager Timer");
-
+    private final Timer _agentLbTimer = new Timer("ClusteredAgentManager AgentRebalancing Timer");
+    boolean _agentLbHappened = false;
+    
+    @Inject
+    protected ClusterManager _clusterMgr = null;
     @Inject
     protected ManagementServerHostDao _mshostDao;
     @Inject
     protected HostTransferMapDao _hostTransferDao;
-
-    // @com.cloud.utils.component.Inject(adapter = AgentLoadBalancerPlanner.class)
-    @Inject protected List<AgentLoadBalancerPlanner> _lbPlanners;
-
-    @Inject ConfigurationDao _configDao;
+    @Inject 
+    protected List<AgentLoadBalancerPlanner> _lbPlanners;
+    @Inject 
+    ConfigurationDao _configDao;
     @Inject
     ConfigDepot _configDepot;
 
@@ -168,9 +163,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Scheduled direct agent scan task to run at an interval of " + ScanInterval.value() + " seconds");
         }
-
-        // schedule transfer scan executor - if agent LB is enabled
+        
+        // Schedule tasks for agent rebalancing
         if (isAgentRebalanceEnabled()) {
+            s_transferExecutor.scheduleAtFixedRate(getAgentRebalanceScanTask(), 60000, 60000, TimeUnit.MILLISECONDS);
             s_transferExecutor.scheduleAtFixedRate(getTransferScanTask(), 60000, ClusteredAgentRebalanceService.DEFAULT_TRANSFER_CHECK_INTERVAL,
                     TimeUnit.MILLISECONDS);
         }
@@ -232,9 +228,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         }
     }
 
-    private class DirectAgentScanTimerTask extends TimerTask {
+    private class DirectAgentScanTimerTask extends ManagedContextTimerTask {
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 runDirectAgentScanTimerTask();
             } catch (Throwable e) {
@@ -250,7 +246,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
     protected AgentAttache createAttache(long id) {
         s_logger.debug("create forwarding ClusteredAgentAttache for " + id);
-        final AgentAttache attache = new ClusteredAgentAttache(this, id);
+        HostVO host = _hostDao.findById(id);
+        final AgentAttache attache = new ClusteredAgentAttache(this, id, host.getName());
         AgentAttache old = null;
         synchronized (_agents) {
             old = _agents.get(id);
@@ -265,7 +262,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     @Override
     protected AgentAttache createAttacheForConnect(HostVO host, Link link) {
         s_logger.debug("create ClusteredAgentAttache for " + host.getId());
-        final AgentAttache attache = new ClusteredAgentAttache(this, host.getId(), link, host.isInMaintenanceStates());
+        final AgentAttache attache = new ClusteredAgentAttache(this, host.getId(), host.getName(), link, host.isInMaintenanceStates());
         link.attach(attache);
         AgentAttache old = null;
         synchronized (_agents) {
@@ -284,7 +281,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 //            return new DummyAttache(this, host.getId(), false);
 //        }
         s_logger.debug("create ClusteredDirectAgentAttache for " + host.getId());
-        final DirectAgentAttache attache = new ClusteredDirectAgentAttache(this, host.getId(), _nodeId, resource, host.isInMaintenanceStates(), this);
+        final DirectAgentAttache attache = new ClusteredDirectAgentAttache(this, host.getId(), host.getName(), _nodeId, resource, host.isInMaintenanceStates(), this);
         AgentAttache old = null;
         synchronized (_agents) {
             old = _agents.get(host.getId());
@@ -571,6 +568,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             }
         }
         _timer.cancel();
+        _agentLbTimer.cancel();
 
         //cancel all transfer tasks
         s_transferExecutor.shutdownNow();
@@ -593,7 +591,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
         @Override
         protected void doTask(final Task task) throws Exception {
-            Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+            TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             try {
                 if (task.getType() != Task.Type.DATA) {
                     super.doTask(task);
@@ -747,7 +745,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         _timer.schedule(new AgentLoadBalancerTask(), 30000);
     }
 
-    public class AgentLoadBalancerTask extends TimerTask {
+    public class AgentLoadBalancerTask extends ManagedContextTimerTask {
         protected volatile boolean cancelled = false;
 
         public AgentLoadBalancerTask() {
@@ -765,7 +763,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         }
 
         @Override
-        public synchronized void run() {
+        protected synchronized void runInContext() {
         	try {
 	            if (!cancelled) {
 	                startRebalanceAgents();
@@ -783,9 +781,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     public void startRebalanceAgents() {
         s_logger.debug("Management server " + _nodeId + " is asking other peers to rebalance their agents");
         List<ManagementServerHostVO> allMS = _mshostDao.listBy(ManagementServerHost.State.Up);
-        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getManagementServerId(), Op.NNULL);
-        sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getManagementServerId(), Op.NNULL);
+        sc.and(sc.entity().getType(), Op.EQ, Host.Type.Routing);
         List<HostVO> allManagedAgents = sc.list();
 
         int avLoad = 0;
@@ -926,9 +924,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     private Runnable getTransferScanTask() {
-        return new Runnable() {
+        return new ManagedContextRunnable() {
             @Override
-            public void run() {
+            protected void runInContext() {
                 try {
                     if (s_logger.isTraceEnabled()) {
                         s_logger.trace("Clustered agent transfer scan check, management server id:" + _nodeId);
@@ -1174,7 +1172,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
 
-    protected class RebalanceTask implements Runnable {
+    protected class RebalanceTask extends ManagedContextRunnable {
         Long hostId = null;
         Long currentOwnerId = null;
         Long futureOwnerId = null;
@@ -1187,7 +1185,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Rebalancing host id=" + hostId);
@@ -1354,44 +1352,52 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     public boolean rebalanceAgent(long agentId, Event event, long currentOwnerId, long futureOwnerId) throws AgentUnavailableException, OperationTimedoutException {
-        return _rebalanceService.executeRebalanceRequest(agentId, currentOwnerId, futureOwnerId, event);
+        return executeRebalanceRequest(agentId, currentOwnerId, futureOwnerId, event);
     }
 
     public boolean isAgentRebalanceEnabled() {
         return EnableLB.value();
     }
-
-    private ClusteredAgentRebalanceService _rebalanceService;
-
-    boolean _agentLbHappened = false;
-    public void agentrebalance() {
-        Profiler profilerAgentLB = new Profiler();
-        profilerAgentLB.start();
-        //initiate agent lb task will be scheduled and executed only once, and only when number of agents loaded exceeds _connectedAgentsThreshold
-        if (EnableLB.value() && !_agentLbHappened) {
-            SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-            sc.addAnd(sc.getEntity().getManagementServerId(), Op.NNULL);
-            sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
-            List<HostVO> allManagedRoutingAgents = sc.list();
-
-            sc = SearchCriteria2.create(HostVO.class);
-            sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
-            List<HostVO> allAgents = sc.list();
-            double allHostsCount = allAgents.size();
-            double managedHostsCount = allManagedRoutingAgents.size();
-            if (allHostsCount > 0.0) {
-                double load = managedHostsCount / allHostsCount;
-                if (load >= ConnectedAgentThreshold.value()) {
-                    s_logger.debug("Scheduling agent rebalancing task as the average agent load " + load + " is more than the threshold " + ConnectedAgentThreshold.value());
-                    _rebalanceService.scheduleRebalanceAgents();
-                    _agentLbHappened = true;
-                } else {
-                    s_logger.trace("Not scheduling agent rebalancing task as the averages load " + load + " is less than the threshold " + ConnectedAgentThreshold.value());
+    
+    
+    private Runnable getAgentRebalanceScanTask() {
+        return new ManagedContextRunnable() {
+        @Override
+        protected void runInContext() {
+            try {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("Agent rebalance task check, management server id:" + _nodeId);
                 }
+              //initiate agent lb task will be scheduled and executed only once, and only when number of agents loaded exceeds _connectedAgentsThreshold
+              if (!_agentLbHappened) {
+                  QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+                  sc.and(sc.entity().getManagementServerId(), Op.NNULL);
+                  sc.and(sc.entity().getType(), Op.EQ, Host.Type.Routing);
+                  List<HostVO> allManagedRoutingAgents = sc.list();
+      
+                  sc = QueryBuilder.create(HostVO.class);
+                  sc.and(sc.entity().getType(), Op.EQ, Host.Type.Routing);
+                  List<HostVO> allAgents = sc.list();
+                  double allHostsCount = allAgents.size();
+                  double managedHostsCount = allManagedRoutingAgents.size();
+                  if (allHostsCount > 0.0) {
+                      double load = managedHostsCount / allHostsCount;
+                      if (load >= ConnectedAgentThreshold.value()) {
+                          s_logger.debug("Scheduling agent rebalancing task as the average agent load " + load + " is more than the threshold " + ConnectedAgentThreshold.value());
+                          scheduleRebalanceAgents();
+                          _agentLbHappened = true;
+                      } else {
+                          s_logger.debug("Not scheduling agent rebalancing task as the averages load " + load + " is less than the threshold " + ConnectedAgentThreshold.value());
+                      }
+                  }
+              }
+            } catch (Throwable e) {
+                s_logger.error("Problem with the clustered agent transfer scan check!", e);
             }
         }
-        profilerAgentLB.stop();
-    }
+    };
+}
+
     
     @Override
     public void rescan() {

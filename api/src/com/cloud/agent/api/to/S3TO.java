@@ -39,6 +39,7 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
     private Integer socketTimeout;
     private Date created;
     private boolean enableRRS;
+    private long maxSingleUploadSizeInBytes;
 
     public S3TO() {
 
@@ -50,7 +51,7 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
             final String secretKey, final String endPoint,
             final String bucketName, final Boolean httpsFlag,
             final Integer connectionTimeout, final Integer maxErrorRetry,
-            final Integer socketTimeout, final Date created, final boolean enableRRS) {
+            final Integer socketTimeout, final Date created, final boolean enableRRS, final long maxUploadSize) {
 
         super();
 
@@ -66,6 +67,7 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
         this.socketTimeout = socketTimeout;
         this.created = created;
         this.enableRRS = enableRRS;
+        this.maxSingleUploadSizeInBytes = maxUploadSize;
 
     }
 
@@ -268,7 +270,6 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
     }
 
 
-
     public boolean getEnableRRS() {
         return enableRRS;
     }
@@ -277,5 +278,28 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
         this.enableRRS = enableRRS;
     }
 
+    public long getMaxSingleUploadSizeInBytes() {
+        return maxSingleUploadSizeInBytes;
+    }
 
+    public void setMaxSingleUploadSizeInBytes(long maxSingleUploadSizeInBytes) {
+        this.maxSingleUploadSizeInBytes = maxSingleUploadSizeInBytes;
+    }
+
+    public boolean getSingleUpload(long objSize){
+        if ( maxSingleUploadSizeInBytes < 0 ){
+            // always use single part upload
+            return true;
+        } else if ( maxSingleUploadSizeInBytes == 0 ){
+            // always use multi part upload
+            return false;
+        } else {
+            // check object size to set flag
+            if (objSize < maxSingleUploadSizeInBytes){
+                return true;
+            } else{
+                return false;
+            }
+        }        
+    }
 }

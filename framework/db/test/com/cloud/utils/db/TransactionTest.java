@@ -41,7 +41,7 @@ public class TransactionTest {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-            conn = Transaction.getStandaloneConnection();
+            conn = TransactionLegacy.getStandaloneConnection();
 
             pstmt = conn.prepareStatement("CREATE TABLE `cloud`.`test` ("
                     + "`id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT," + "`fld_int` int unsigned,"
@@ -75,27 +75,27 @@ public class TransactionTest {
      */
     public void testUserManagedConnection() {
         DbTestDao testDao = ComponentContext.inject(DbTestDao.class);
-        Transaction txn = Transaction.open("SingleConnectionThread");
+        TransactionLegacy txn = TransactionLegacy.open("SingleConnectionThread");
         Connection conn = null;
         try {
-            conn = Transaction.getStandaloneConnectionWithException();
+            conn = TransactionLegacy.getStandaloneConnectionWithException();
             txn.transitToUserManagedConnection(conn);
             // try two SQLs to make sure that they are using the same connection
             // acquired above.
             testDao.create(1, 1, "Record 1");
-            Connection checkConn = Transaction.currentTxn().getConnection();
+            Connection checkConn = TransactionLegacy.currentTxn().getConnection();
             if (checkConn != conn) {
                 Assert.fail("A new db connection is acquired instead of using old one after create sql");
             }
             testDao.update(2, 2, "Record 1");
-            Connection checkConn2 = Transaction.currentTxn().getConnection();
+            Connection checkConn2 = TransactionLegacy.currentTxn().getConnection();
             if (checkConn2 != conn) {
                 Assert.fail("A new db connection is acquired instead of using old one after update sql");
             }
         } catch (SQLException e) {
             Assert.fail(e.getMessage());
         } finally {
-            txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);
+            txn.transitToAutoManagedConnection(TransactionLegacy.CLOUD_DB);
             txn.close();
 
             if (conn != null) {
@@ -117,28 +117,28 @@ public class TransactionTest {
         // acquire a db connection and keep it
         Connection conn = null;
         try {
-            conn = Transaction.getStandaloneConnectionWithException();
+            conn = TransactionLegacy.getStandaloneConnectionWithException();
         } catch (SQLException ex) {
             throw new CloudRuntimeException("Problem with getting db connection", ex);
         }
 
         // start heartbeat loop, make sure that each loop still use the same
         // connection
-        Transaction txn = null;
+        TransactionLegacy txn = null;
         for (int i = 0; i < 3; i++) {
-            txn = Transaction.open("HeartbeatSimulator");
+            txn = TransactionLegacy.open("HeartbeatSimulator");
             try {
 
                 txn.transitToUserManagedConnection(conn);
                 testDao.create(i, i, "Record " + i);
-                Connection checkConn = Transaction.currentTxn().getConnection();
+                Connection checkConn = TransactionLegacy.currentTxn().getConnection();
                 if (checkConn != conn) {
                     Assert.fail("A new db connection is acquired instead of using old one in loop " + i);
                 }
             } catch (SQLException e) {
                 Assert.fail(e.getMessage());
             } finally {
-                txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);
+                txn.transitToAutoManagedConnection(TransactionLegacy.CLOUD_DB);
                 txn.close();
             }
         }
@@ -161,7 +161,7 @@ public class TransactionTest {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-            conn = Transaction.getStandaloneConnection();
+            conn = TransactionLegacy.getStandaloneConnection();
 
             pstmt = conn.prepareStatement("truncate table `cloud`.`test`");
             pstmt.execute();
@@ -189,7 +189,7 @@ public class TransactionTest {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-            conn = Transaction.getStandaloneConnection();
+            conn = TransactionLegacy.getStandaloneConnection();
 
             pstmt = conn.prepareStatement("DROP TABLE IF EXISTS `cloud`.`test`");
             pstmt.execute();

@@ -22,15 +22,15 @@ public class LdapUser implements Comparable<LdapUser> {
 	private final String firstname;
 	private final String lastname;
 	private final String username;
+    private final String domain;
 
-	public LdapUser(final String username, final String email,
-			final String firstname, final String lastname,
-			final String principal) {
+	public LdapUser(final String username, final String email, final String firstname, final String lastname, final String principal, String domain) {
 		this.username = username;
 		this.email = email;
 		this.firstname = firstname;
 		this.lastname = lastname;
 		this.principal = principal;
+	this.domain = domain;
 	}
 
 	@Override
@@ -70,7 +70,11 @@ public class LdapUser implements Comparable<LdapUser> {
 		return username;
 	}
 
-	@Override
+    public String getDomain() {
+	return domain;
+    }
+
+    @Override
 	public int hashCode() {
 		return getUsername().hashCode();
 	}

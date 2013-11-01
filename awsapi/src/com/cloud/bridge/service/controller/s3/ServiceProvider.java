@@ -35,6 +35,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.axis2.AxisFault;
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.springframework.stereotype.Component;
@@ -61,6 +62,7 @@ import com.cloud.bridge.util.OrderedPair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class ServiceProvider extends ManagerBase {
@@ -89,7 +91,7 @@ public class ServiceProvider extends ManagerBase {
 
     protected ServiceProvider() throws IOException {
         // register service implementation object
-        Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         txn.close();
     }
 
@@ -182,7 +184,7 @@ public class ServiceProvider extends ManagerBase {
 
     public UserInfo getUserInfo(String accessKey) {
         UserInfo info = new UserInfo();
-        Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         try {
             txn.start();
             UserCredentialsVO cloudKeys = ucDao.getByAccessKey( accessKey ); 
@@ -252,7 +254,7 @@ public class ServiceProvider extends ManagerBase {
 
         multipartDir = properties.getProperty("storage.multipartDir");
 
-        Transaction txn1 = Transaction.open(Transaction.AWSAPI_DB);
+        TransactionLegacy txn1 = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         timer.schedule(getHeartbeatTask(), HEARTBEAT_INTERVAL, HEARTBEAT_INTERVAL);
         txn1.close();
 
@@ -280,10 +282,9 @@ public class ServiceProvider extends ManagerBase {
     }
 
     private TimerTask getHeartbeatTask() {
-        return new TimerTask() {
-
+        return new ManagedContextTimerTask() {
             @Override
-            public void run() {
+            protected void runInContext() {
                 try {
                     mhost.setLastHeartbeatTime(DateHelper.currentGMTTime());
                     mhostDao.updateHeartBeat(mhost);

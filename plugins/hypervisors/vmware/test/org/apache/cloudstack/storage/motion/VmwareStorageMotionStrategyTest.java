@@ -16,13 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.motion;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +25,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
@@ -69,6 +63,14 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 public class VmwareStorageMotionStrategyTest {
@@ -98,8 +100,8 @@ public class VmwareStorageMotionStrategyTest {
         when(srcHost.getHypervisorType()).thenReturn(HypervisorType.VMware);
         when(destHost.getHypervisorType()).thenReturn(HypervisorType.VMware);
         Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
-        boolean canHandle = strategy.canHandle(volumeMap, srcHost, destHost);
-        assertTrue("The strategy is only supposed to handle vmware hosts", canHandle);
+        StrategyPriority canHandle = strategy.canHandle(volumeMap, srcHost, destHost);
+        assertTrue("The strategy is only supposed to handle vmware hosts", canHandle == StrategyPriority.HYPERVISOR);
     }
 
     @Test
@@ -109,8 +111,8 @@ public class VmwareStorageMotionStrategyTest {
         when(srcHost.getHypervisorType()).thenReturn(HypervisorType.XenServer);
         when(destHost.getHypervisorType()).thenReturn(HypervisorType.XenServer);
         Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
-        boolean canHandle = strategy.canHandle(volumeMap, srcHost, destHost);
-        assertFalse("The strategy is only supposed to handle vmware hosts", canHandle);
+        StrategyPriority canHandle = strategy.canHandle(volumeMap, srcHost, destHost);
+        assertFalse("The strategy is only supposed to handle vmware hosts", canHandle == StrategyPriority.HYPERVISOR);
     }
 
     @Test
@@ -231,8 +233,8 @@ public class VmwareStorageMotionStrategyTest {
 
     @Configuration
     @ComponentScan(basePackageClasses = { VmwareStorageMotionStrategy.class },
-            includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
-            useDefaultFilters = false)
+    includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
+    useDefaultFilters = false)
     public static class TestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         @Bean

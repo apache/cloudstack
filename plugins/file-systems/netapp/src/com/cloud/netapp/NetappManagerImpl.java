@@ -50,7 +50,7 @@ import com.cloud.netapp.dao.PoolDao;
 import com.cloud.netapp.dao.VolumeDao;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -225,7 +225,7 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager
  			throw new ResourceInUseException("There are luns on the volume");
  		}
  		
- 		final Transaction txn = Transaction.currentTxn();
+ 		final TransactionLegacy txn = TransactionLegacy.currentTxn();
  		txn.start();
  		PoolVO pool = _poolDao.findById(volume.getPoolId());
  		if (pool == null) {
@@ -388,7 +388,7 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager
 		}
 		Long volumeId = null;
 		
-		final Transaction txn = Transaction.currentTxn();
+		final TransactionLegacy txn = TransactionLegacy.currentTxn();
 		txn.start();
 		NetappVolumeVO volume = null;
 		volume = _volumeDao.findVolume(ipAddress, aggName, volName);
@@ -624,7 +624,7 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager
     	String[] result = new String[3];
 		StringBuilder lunName = new StringBuilder("lun-");
 		LunVO lun = null;
-    	final Transaction txn = Transaction.currentTxn();
+    	final TransactionLegacy txn = TransactionLegacy.currentTxn();
 		txn.start();
     	PoolVO pool = _poolDao.findPool(poolName);
     	
@@ -802,7 +802,7 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager
     @DB
 	public void destroyLunOnFiler(String lunName) throws InvalidParameterValueException, ServerException{
 		
-		final Transaction txn = Transaction.currentTxn();
+		final TransactionLegacy txn = TransactionLegacy.currentTxn();
 		txn.start();
 		
 		LunVO lun = _lunDao.findByName(lunName);

@@ -17,70 +17,49 @@
 
 package org.apache.cloudstack.storage.snapshot;
 
-import com.cloud.dc.dao.ClusterDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.*;
+import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-
 import java.util.concurrent.ExecutionException;
 
 @Component
 public class SnapshotServiceImpl implements SnapshotService {
     private static final Logger s_logger = Logger.getLogger(SnapshotServiceImpl.class);
     @Inject
-    protected VolumeDao _volsDao;
-    @Inject
-    protected UserVmDao _vmDao;
-    @Inject
-    protected PrimaryDataStoreDao _storagePoolDao;
-    @Inject
-    protected ClusterDao _clusterDao;
-    @Inject
-    protected SnapshotDao _snapshotDao;
-    @Inject
     protected SnapshotDataStoreDao _snapshotStoreDao;
-
-    @Inject
-    protected SnapshotManager snapshotMgr;
-    @Inject
-    protected VolumeOrchestrationService volumeMgr;
-    @Inject
-    protected SnapshotStateMachineManager stateMachineManager;
     @Inject
     SnapshotDataFactory snapshotfactory;
     @Inject
     DataStoreManager dataStoreMgr;
     @Inject
     DataMotionService motionSrv;
-    @Inject
-    ObjectInDataStoreManager objInStoreMgr;
-    @Inject
-    VMSnapshotDao _vmSnapshotDao;
 
     static private class CreateSnapshotContext<T> extends AsyncRpcContext<T> {
         final SnapshotInfo snapshot;
@@ -117,6 +96,19 @@ public class SnapshotServiceImpl implements SnapshotService {
             super(callback);
             this.srcSnapshot = srcSnapshot;
             this.destSnapshot = destSnapshot;
+            this.future = future;
+        }
+
+    }
+
+    static private class RevertSnapshotContext<T> extends AsyncRpcContext<T> {
+        final SnapshotInfo snapshot;
+        final AsyncCallFuture<SnapshotResult> future;
+
+        public RevertSnapshotContext(AsyncCompletionCallback<T> callback, SnapshotInfo snapshot,
+                AsyncCallFuture<SnapshotResult> future) {
+            super(callback);
+            this.snapshot = snapshot;
             this.future = future;
         }
 
@@ -354,6 +346,28 @@ public class SnapshotServiceImpl implements SnapshotService {
         return null;
     }
 
+    protected Void revertSnapshotCallback(AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> callback,
+            RevertSnapshotContext<CommandResult> context) {
+
+        CommandResult result = callback.getResult();
+        AsyncCallFuture<SnapshotResult> future = context.future;
+        SnapshotResult res = null;
+        try {
+            if (result.isFailed()) {
+                s_logger.debug("revert snapshot failed" + result.getResult());
+                res = new SnapshotResult(context.snapshot, null);
+                res.setResult(result.getResult());
+            } else {
+                res = new SnapshotResult(context.snapshot, null);
+            }
+        } catch (Exception e) {
+            s_logger.debug("Failed to in revertSnapshotCallback", e);
+            res.setResult(e.toString());
+        }
+        future.complete(res);
+        return null;
+    }
+
     @Override
     public boolean deleteSnapshot(SnapshotInfo snapInfo) {
         snapInfo.processEvent(ObjectInDataStoreStateMachine.Event.DestroyRequested);
@@ -383,7 +397,30 @@ public class SnapshotServiceImpl implements SnapshotService {
     }
 
     @Override
-    public boolean revertSnapshot(SnapshotInfo snapshot) {
+    public boolean revertSnapshot(Long snapshotId) {
+        SnapshotInfo snapshot = snapshotfactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+        PrimaryDataStore store = (PrimaryDataStore)snapshot.getDataStore();
+
+        AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
+        RevertSnapshotContext<CommandResult> context = new RevertSnapshotContext<CommandResult>(null, snapshot, future);
+        AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().revertSnapshotCallback(null, null)).setContext(context);
+
+        ((PrimaryDataStoreDriver)store.getDriver()).revertSnapshot(snapshot, caller);
+
+        SnapshotResult result = null;
+        try {
+            result = future.get();
+            if (result.isFailed()) {
+                throw new CloudRuntimeException(result.getResult());
+            }
+            return true;
+        } catch (InterruptedException e) {
+            s_logger.debug("revert snapshot is failed: " + e.toString());
+        } catch (ExecutionException e) {
+            s_logger.debug("revert snapshot is failed: " + e.toString());
+        }
+
         return false;
     }
 

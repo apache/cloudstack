@@ -147,6 +147,10 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
             }
         }
 
+        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN){
+            volResponse.setPath(volume.getPath());
+        }
+
         // populate owner.
         ApiResponseHelper.populateOwner(volResponse, volume);
 
@@ -183,6 +187,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
             Long poolId = volume.getPoolId();
             String poolName = (poolId == null) ? "none" : volume.getPoolName();
             volResponse.setStoragePoolName(poolName);
+            volResponse.setStoragePoolId(volume.getPoolUuid());
         }
 
         volResponse.setAttached(volume.getAttached());

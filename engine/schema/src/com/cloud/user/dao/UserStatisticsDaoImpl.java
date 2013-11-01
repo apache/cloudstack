@@ -33,7 +33,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={UserStatisticsDao.class})
@@ -100,7 +100,7 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
         List<UserStatisticsVO> userStats = new ArrayList<UserStatisticsVO>();
         if (minRemovedDate == null) return userStats;
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             String sql = ACTIVE_AND_RECENTLY_DELETED_SEARCH + " LIMIT " + startIndex + "," + limit;
             PreparedStatement pstmt = null;
@@ -120,7 +120,7 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
     public List<UserStatisticsVO> listUpdatedStats() {
         List<UserStatisticsVO> userStats = new ArrayList<UserStatisticsVO>();
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement pstmt = null;
             pstmt = txn.prepareAutoCloseStatement(UPDATED_STATS_SEARCH);

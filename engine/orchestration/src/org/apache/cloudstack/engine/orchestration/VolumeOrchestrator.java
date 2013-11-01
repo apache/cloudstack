@@ -31,8 +31,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -97,6 +97,9 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
@@ -681,9 +684,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @DB
-    protected VolumeVO switchVolume(VolumeVO existingVolume, VirtualMachineProfile vm) throws StorageUnavailableException {
-        Transaction txn = Transaction.currentTxn();
-
+    protected VolumeVO switchVolume(final VolumeVO existingVolume, final VirtualMachineProfile vm) throws StorageUnavailableException {
         Long templateIdToUse = null;
         Long volTemplateId = existingVolume.getTemplateId();
         long vmTemplateId = vm.getTemplateId();
@@ -695,22 +696,26 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             templateIdToUse = vmTemplateId;
         }
 
-        txn.start();
-        VolumeVO newVolume = allocateDuplicateVolumeVO(existingVolume, templateIdToUse);
-        // In case of Vmware if vm reference is not removed then during root
-        // disk cleanup
-        // the vm also gets deleted, so remove the reference
-        if (vm.getHypervisorType() == HypervisorType.VMware) {
-            _volsDao.detachVolume(existingVolume.getId());
-        }
-        try {
-            stateTransitTo(existingVolume, Volume.Event.DestroyRequested);
-        } catch (NoTransitionException e) {
-            s_logger.debug("Unable to destroy existing volume: " + e.toString());
-        }
-        txn.commit();
-        return newVolume;
-
+        final Long templateIdToUseFinal = templateIdToUse; 
+        return Transaction.execute(new TransactionCallback<VolumeVO>() {
+            @Override
+            public VolumeVO doInTransaction(TransactionStatus status) {
+                VolumeVO newVolume = allocateDuplicateVolumeVO(existingVolume, templateIdToUseFinal);
+                // In case of Vmware if vm reference is not removed then during root
+                // disk cleanup
+                // the vm also gets deleted, so remove the reference
+                if (vm.getHypervisorType() == HypervisorType.VMware) {
+                    _volsDao.detachVolume(existingVolume.getId());
+                }
+                try {
+                    stateTransitTo(existingVolume, Volume.Event.DestroyRequested);
+                } catch (NoTransitionException e) {
+                    s_logger.debug("Unable to destroy existing volume: " + e.toString());
+                }
+                
+                return newVolume;
+            }
+        });
     }
 
     @Override
@@ -724,28 +729,32 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Cleaning storage for vm: " + vmId);
         }
-        List<VolumeVO> volumesForVm = _volsDao.findByInstance(vmId);
-        List<VolumeVO> toBeExpunged = new ArrayList<VolumeVO>();
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        for (VolumeVO vol : volumesForVm) {
-            if (vol.getVolumeType().equals(Type.ROOT)) {
-                // Destroy volume if not already destroyed
-                boolean volumeAlreadyDestroyed = (vol.getState() == Volume.State.Destroy || vol.getState() == Volume.State.Expunged || vol.getState() == Volume.State.Expunging);
-                if (!volumeAlreadyDestroyed) {
-                    volService.destroyVolume(vol.getId());
-                } else {
-                    s_logger.debug("Skipping destroy for the volume " + vol + " as its in state " + vol.getState().toString());
+        final List<VolumeVO> volumesForVm = _volsDao.findByInstance(vmId);
+        final List<VolumeVO> toBeExpunged = new ArrayList<VolumeVO>();
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                for (VolumeVO vol : volumesForVm) {
+                    if (vol.getVolumeType().equals(Type.ROOT)) {
+                        // Destroy volume if not already destroyed
+                        boolean volumeAlreadyDestroyed = (vol.getState() == Volume.State.Destroy || vol.getState() == Volume.State.Expunged || vol.getState() == Volume.State.Expunging);
+                        if (!volumeAlreadyDestroyed) {
+                            volService.destroyVolume(vol.getId());
+                        } else {
+                            s_logger.debug("Skipping destroy for the volume " + vol + " as its in state " + vol.getState().toString());
+                        }
+                        toBeExpunged.add(vol);
+                    } else {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Detaching " + vol);
+                        }
+                        _volsDao.detachVolume(vol.getId());
+                    }
                 }
-                toBeExpunged.add(vol);
-            } else {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Detaching " + vol);
-                }
-                _volsDao.detachVolume(vol.getId());
             }
-        }
-        txn.commit();
+        });
+
         AsyncCallFuture<VolumeApiResult> future = null;
         for (VolumeVO expunge : toBeExpunged) {
             future = volService.expungeVolumeAsync(volFactory.getVolume(expunge.getId()));
@@ -878,7 +887,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         for (VolumeVO vol : vols) {
             DataTO volTO = volFactory.getVolume(vol.getId()).getTO();
-            DiskTO disk = new DiskTO(volTO, vol.getDeviceId(), null, vol.getVolumeType());
+            DiskTO disk = new DiskTO(volTO, vol.getDeviceId(), vol.getPath(), vol.getVolumeType());
+            VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
+            DataStore dataStore = dataStoreMgr.getDataStore(vol.getPoolId(), DataStoreRole.Primary);
+
+            disk.setDetails(getDetails(volumeInfo, dataStore));
+
             vm.addDisk(disk);
         }
 
@@ -887,6 +901,29 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             DiskTO iso = new DiskTO(dataTO, 3L, null, Volume.Type.ISO);
             vm.addDisk(iso);
         }
+    }
+
+    private Map<String, String> getDetails(VolumeInfo volumeInfo, DataStore dataStore) {
+        Map<String, String> details = new HashMap<String, String>();
+
+        StoragePoolVO storagePool = _storagePoolDao.findById(dataStore.getId());
+
+        details.put(DiskTO.MANAGED, String.valueOf(storagePool.isManaged()));
+        details.put(DiskTO.STORAGE_HOST, storagePool.getHostAddress());
+        details.put(DiskTO.STORAGE_PORT, String.valueOf(storagePool.getPort()));
+        details.put(DiskTO.VOLUME_SIZE, String.valueOf(volumeInfo.getSize()));
+        details.put(DiskTO.IQN, volumeInfo.get_iScsiName());
+
+        ChapInfo chapInfo = volService.getChapInfo(volumeInfo, dataStore);
+
+        if (chapInfo != null) {
+            details.put(DiskTO.CHAP_INITIATOR_USERNAME, chapInfo.getInitiatorUsername());
+            details.put(DiskTO.CHAP_INITIATOR_SECRET, chapInfo.getInitiatorSecret());
+            details.put(DiskTO.CHAP_TARGET_USERNAME, chapInfo.getTargetUsername());
+            details.put(DiskTO.CHAP_TARGET_SECRET, chapInfo.getTargetSecret());
+        }
+
+        return details;
     }
 
     private static enum VolumeTaskType {
@@ -944,11 +981,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                                 }
                                 throw new CloudRuntimeException("Local volume " + vol + " cannot be recreated on storagepool " + assignedPool + " assigned by deploymentPlanner");
                             } else {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Shared volume " + vol + " will be migrated on storage pool " + assignedPool + " assigned by deploymentPlanner");
+                                //Check if storage migration is enabled in config
+                                if (StorageHAMigrationEnabled.value()) {
+                                    if (s_logger.isDebugEnabled()) {
+                                        s_logger.debug("Shared volume " + vol + " will be migrated on storage pool " + assignedPool + " assigned by deploymentPlanner");
+                                    }
+                                    VolumeTask task = new VolumeTask(VolumeTaskType.MIGRATE, vol, assignedPool);
+                                    tasks.add(task);
+                                } else {
+                                    throw new CloudRuntimeException("Cannot migrate volumes. Volume Migration is disabled");
                                 }
-                                VolumeTask task = new VolumeTask(VolumeTaskType.MIGRATE, vol, assignedPool);
-                                tasks.add(task);
                             }
                         } else {
                             StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
@@ -1071,7 +1113,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 vol = result.first();
             }
             DataTO volumeTO = volFactory.getVolume(vol.getId()).getTO();
-            DiskTO disk = new DiskTO(volumeTO, vol.getDeviceId(), null, vol.getVolumeType());
+            DiskTO disk = new DiskTO(volumeTO, vol.getDeviceId(), vol.getPath(), vol.getVolumeType());
+            VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
+            DataStore dataStore = dataStoreMgr.getDataStore(vol.getPoolId(), DataStoreRole.Primary);
+
+            disk.setDetails(getDetails(volumeInfo, dataStore));
+
             vm.addDisk(disk);
         }
     }
@@ -1084,7 +1131,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     public boolean canVmRestartOnAnotherServer(long vmId) {
         List<VolumeVO> vols = _volsDao.findCreatedByInstance(vmId);
         for (VolumeVO vol : vols) {
-            if (!vol.isRecreatable() && !vol.getPoolType().isShared()) {
+            StoragePoolVO storagePoolVO = _storagePoolDao.findById(vol.getPoolId());
+            if (!vol.isRecreatable() && storagePoolVO != null && storagePoolVO.getPoolType() != null && !(storagePoolVO.getPoolType().isShared())) {
                 return false;
             }
         }
@@ -1105,9 +1153,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         "If true, will recreate system vm root disk whenever starting system vm",
         true);
 
+    public static final ConfigKey<Boolean> StorageHAMigrationEnabled = new ConfigKey<Boolean>(Boolean.class,
+            "enable.ha.storage.migration",
+            "Storage",
+            "true",
+            "Enable/disable storage migration across primary storage during HA",
+            true);
+
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {RecreatableSystemVmEnabled, MaxVolumeSize};
+        return new ConfigKey<?>[] {RecreatableSystemVmEnabled, MaxVolumeSize, StorageHAMigrationEnabled};
     }
 
     @Override
@@ -1163,6 +1218,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return dataStoreMgr.getPrimaryDataStore(vol.getPoolId()).getUuid();
     }
     
+    @Override
     public void updateVolumeDiskChain(long volumeId, String path, String chainInfo) {
         VolumeVO vol = _volsDao.findById(volumeId);
         boolean needUpdate = false;
@@ -1173,7 +1229,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         	needUpdate = true;
         
         if(needUpdate) {
-        	s_logger.info("Update volume disk chain info. vol: " + vol.getId() + ", " + vol.getPath() + " -> " + path 
+        	s_logger.info("Update volume disk chain info. vol: " + vol.getId() + ", " + vol.getPath() + " -> " + path
         		+ ", " + vol.getChainInfo() + " -> " + chainInfo);
 	        vol.setPath(path);
 	        vol.setChainInfo(chainInfo);

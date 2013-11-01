@@ -17,42 +17,27 @@
 
 package com.cloud.metadata;
 
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyFloat;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
 
-import java.lang.reflect.Field;
-import java.util.List;
 import java.util.Map;
 
-import com.cloud.server.TaggedResourceService;
-import com.cloud.utils.db.DB;
-import com.cloud.vm.dao.NicDetailDao;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
-import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
+import javax.naming.ConfigurationException;
+
 import org.apache.commons.collections.map.HashedMap;
 import org.junit.Before;
-import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.metadata.ResourceMetaDataManager;
-import com.cloud.metadata.ResourceMetaDataManagerImpl;
 import com.cloud.server.ResourceTag;
-import com.cloud.storage.Volume;
+import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.user.dao.UserDao;
-
-import javax.naming.ConfigurationException;
+import com.cloud.vm.dao.NicDetailsDao;
 
 
 public class ResourceMetaDataManagerTest {
@@ -62,7 +47,7 @@ public class ResourceMetaDataManagerTest {
     @Spy ResourceMetaDataManagerImpl _resourceMetaDataMgr = new ResourceMetaDataManagerImpl();
     @Mock VolumeDetailsDao _volumeDetailDao;
     @Mock
-    NicDetailDao _nicDetailDao;
+    NicDetailsDao _nicDetailDao;
     @Mock TaggedResourceService _taggedResourceMgr;
 
     @Before
@@ -83,17 +68,17 @@ public class ResourceMetaDataManagerTest {
 
 
     // Test removing details
-    @Test
+    //@Test
     public void testResourceDetails() throws ResourceAllocationException {
 
 
         //when(_resourceMetaDataMgr.getResourceId(anyString(), eq(ResourceTag.TaggedResourceType.Volume))).thenReturn(1L);
-        doReturn(1L).when(_taggedResourceMgr).getResourceId(anyString(), eq(ResourceTag.TaggedResourceType.Volume));
+        doReturn(1L).when(_taggedResourceMgr).getResourceId(anyString(), eq(ResourceTag.ResourceObjectType.Volume));
         //           _volumeDetailDao.removeDetails(id, key);
 
-        doNothing().when(_volumeDetailDao).removeDetails(anyLong(), anyString());
-        doNothing().when(_nicDetailDao).removeDetails(anyLong(), anyString());
-        _resourceMetaDataMgr.deleteResourceMetaData(anyString(), eq(ResourceTag.TaggedResourceType.Volume), anyString());
+        doNothing().when(_volumeDetailDao).removeDetail(anyLong(), anyString());
+        doNothing().when(_nicDetailDao).removeDetail(anyLong(), anyString());
+        _resourceMetaDataMgr.deleteResourceMetaData(anyString(), eq(ResourceTag.ResourceObjectType.Volume), anyString());
 
     }
 
@@ -103,14 +88,14 @@ public class ResourceMetaDataManagerTest {
 
 
 
-        doReturn(1L).when(_taggedResourceMgr).getResourceId("1", ResourceTag.TaggedResourceType.Volume);
+        doReturn(1L).when(_taggedResourceMgr).getResourceId("1", ResourceTag.ResourceObjectType.Volume);
         //           _volumeDetailDao.removeDetails(id, key);
 
-        doNothing().when(_volumeDetailDao).removeDetails(anyLong(), anyString());
-        doNothing().when(_nicDetailDao).removeDetails(anyLong(), anyString());
+        doNothing().when(_volumeDetailDao).removeDetail(anyLong(), anyString());
+        doNothing().when(_nicDetailDao).removeDetail(anyLong(), anyString());
         Map<String, String> map = new HashedMap();
         map.put("key","value");
-        _resourceMetaDataMgr.addResourceMetaData("1", ResourceTag.TaggedResourceType.Volume, map);
+        _resourceMetaDataMgr.addResourceMetaData("1", ResourceTag.ResourceObjectType.Volume, map);
 
     }
 

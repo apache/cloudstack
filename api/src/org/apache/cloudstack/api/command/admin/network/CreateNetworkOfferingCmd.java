@@ -96,11 +96,14 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     private Boolean isPersistent;
     
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, since="4.2.0", description="Network offering details in key/value pairs." +
-    		" Supported keys are internallbprovider/publiclbprovider with service provider as a value")
+            " Supported keys are internallbprovider/publiclbprovider with service provider as a value")
     protected Map details;
 
     @Parameter(name=ApiConstants.EGRESS_DEFAULT_POLICY, type=CommandType.BOOLEAN, description="true if default guest network egress policy is allow; false if default egress policy is deny")
     private Boolean egressDefaultPolicy;
+
+    @Parameter(name=ApiConstants.KEEPALIVE_ENABLED, type=CommandType.BOOLEAN, required=false, description="if true keepalive will be turned on in the loadbalancer. At the time of writing this has only an effect on haproxy; the mode http and httpclose options are unset in the haproxy conf file.")
+    private Boolean keepAliveEnabled;
 
     @Parameter(name=ApiConstants.MAX_CONNECTIONS, type=CommandType.INTEGER, description="maximum number of concurrent connections supported by the network offering")
     private Integer maxConnections;
@@ -173,6 +176,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             return true;
         }
         return egressDefaultPolicy;
+    }
+
+    public Boolean getKeepAliveEnabled() {
+        return keepAliveEnabled;
     }
 
     public Integer getMaxconnections() {

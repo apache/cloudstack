@@ -95,7 +95,7 @@
          */
         width: function($container, options) {
             options = options ? options : {};
-            var width = $container.find('div.panel').size() < 1 || options.maximized == true ?
+            var width = $container.find('div.panel').size() < 1 || !options.partial ?
                 $container.width() : $container.width() - $container.width() / 4;
 
             return width;
@@ -105,7 +105,7 @@
          * Get left position
          */
         position: function($container, options) {
-            return $container.find('div.panel').size() <= 1 || options.maximized == true ?
+            return $container.find('div.panel').size() <= 1 || !options.partial ?
                 0 : _panel.width($container, options) - _panel.width($container, options) / 1.5;
         },
 
@@ -160,15 +160,13 @@
             var $panel = $('<div>').addClass('panel').css({
                 position: 'absolute',
                 width: _panel.width($container, {
-                    maximized: options.maximized
+                    partial: options.partial
                 }),
                 zIndex: _panel.topIndex($container)
             }).append(
                 // Shadow
                 $('<div>').addClass('shadow')
             ).append(options.data);
-
-            if (options.maximized) $panel.addClass('always-maximized');
 
             return $panel;
         }
@@ -195,12 +193,10 @@
             var $toRemove = _panel.higher($container, $panel);
             var complete = args.complete;
 
-            if ($panel.hasClass('maximized')) return false;
-
             _breadcrumb.filter($toRemove).remove();
             _breadcrumb.filter($panel.siblings()).removeClass('active');
             _breadcrumb.filter($panel).addClass('active');
-            _breadcrumb.filter($('div.panel')).find('span').animate({
+            _breadcrumb.filter($('div.panel')).find('span').css({
                 opacity: 1
             });
             _breadcrumb.filter(
@@ -209,7 +205,7 @@
                 .addClass('reduced')
             ).removeClass('active maximized');
 
-            $toRemove.animate(
+            $toRemove.css(
                 _panel.initialState($container), {
                     duration: 500,
                     complete: function() {
@@ -220,7 +216,7 @@
                 }
             );
             $toShow.show();
-            $panel.animate({
+            $panel.css({
                 left: _panel.position($container, {
                     maximized: $panel.hasClass('always-maximized')
                 })
@@ -241,25 +237,18 @@
                 _breadcrumb.filter($panel).removeClass('maximized');
                 $panel.removeClass('maximized');
                 $panel.addClass('reduced');
-                _breadcrumb.filter($panel.siblings()).find('span').animate({
+                _breadcrumb.filter($panel.siblings()).find('span').css({
                     opacity: 1
                 });
-                $toHide.animate({
+                $toHide.css({
                     left: _panel.position($container, {})
-                }, {
-                    duration: 500
                 });
                 $shadow.show();
             } else {
                 _breadcrumb.filter($panel).addClass('maximized');
                 $panel.removeClass('reduced');
                 $panel.addClass('maximized');
-                _breadcrumb.filter($panel.siblings()).find('span').animate({
-                    opacity: 0.5
-                });
-                $toHide.animate(_panel.initialState($container), {
-                    duration: 500
-                });
+                $toHide.css(_panel.initialState($container));
                 $shadow.hide();
             }
         },
@@ -275,7 +264,7 @@
 
             // Create panel
             $panel = _panel.create(this.element, {
-                maximized: args.maximizeIfSelected,
+                partial: args.partial,
                 data: args.data
             });
 
@@ -315,7 +304,8 @@
 
             // Panel slide-in
             targetPosition = _panel.position($container, {
-                maximized: args.maximizeIfSelected
+                maximized: args.maximizeIfSelected,
+                partial: args.partial
             });
             if (!$panel.index()) {
                 // Just show immediately if this is the first panel
@@ -325,20 +315,16 @@
                 if (args.complete) args.complete($panel, _breadcrumb.filter($panel));
             } else {
                 // Animate slide-in
-                $panel.animate({
+                $panel.css({
                     left: targetPosition
-                }, {
-                    duration: duration,
-                    easing: 'easeOutCirc',
-                    complete: function() {
-                        // Hide panels
-                        $panel.siblings().filter(function() {
-                            return $(this).width() == $panel.width();
-                        });
-
-                        if ($panel.is(':visible') && args.complete) args.complete($panel);
-                    }
                 });
+
+                // Hide panels
+                $panel.siblings().filter(function() {
+                    return $(this).width() == $panel.width();
+                });
+
+                if ($panel.is(':visible') && args.complete) args.complete($panel);
             };
 
             return $panel;

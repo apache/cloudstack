@@ -44,44 +44,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.PostConstruct;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import org.apache.commons.codec.binary.Base64;
-import org.apache.http.ConnectionClosedException;
-import org.apache.http.HttpException;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpServerConnection;
-import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.entity.BasicHttpEntity;
-import org.apache.http.impl.DefaultHttpResponseFactory;
-import org.apache.http.impl.DefaultHttpServerConnection;
-import org.apache.http.impl.NoConnectionReuseStrategy;
-import org.apache.http.impl.SocketHttpServerConnection;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.CoreConnectionPNames;
-import org.apache.http.params.CoreProtocolPNames;
-import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.BasicHttpProcessor;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.protocol.HttpRequestHandler;
-import org.apache.http.protocol.HttpRequestHandlerRegistry;
-import org.apache.http.protocol.HttpService;
-import org.apache.http.protocol.ResponseConnControl;
-import org.apache.http.protocol.ResponseContent;
-import org.apache.http.protocol.ResponseDate;
-import org.apache.http.protocol.ResponseServer;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
@@ -120,6 +88,37 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.http.ConnectionClosedException;
+import org.apache.http.HttpException;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpServerConnection;
+import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.entity.BasicHttpEntity;
+import org.apache.http.impl.DefaultHttpResponseFactory;
+import org.apache.http.impl.DefaultHttpServerConnection;
+import org.apache.http.impl.NoConnectionReuseStrategy;
+import org.apache.http.impl.SocketHttpServerConnection;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.CoreConnectionPNames;
+import org.apache.http.params.CoreProtocolPNames;
+import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.BasicHttpProcessor;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpRequestHandler;
+import org.apache.http.protocol.HttpRequestHandlerRegistry;
+import org.apache.http.protocol.HttpService;
+import org.apache.http.protocol.ResponseConnControl;
+import org.apache.http.protocol.ResponseContent;
+import org.apache.http.protocol.ResponseDate;
+import org.apache.http.protocol.ResponseServer;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.configuration.Config;
@@ -149,7 +148,7 @@ import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
 
@@ -170,8 +169,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Inject
     private EntityManager _entityMgr;
 
-    @Inject List<PluggableService> _pluggableServices;
-    @Inject List<APIChecker> _apiAccessCheckers;
+    List<PluggableService> _pluggableServices;
+    List<APIChecker> _apiAccessCheckers;
 
     @Inject
     protected ApiAsyncJobDispatcher _asyncDispatcher;
@@ -184,18 +183,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     public ApiServer() {
     }
 
-    @PostConstruct
-    void initComponent() {
-        CallContext.init(_entityMgr);
-    }
-
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        init();
         return true;
     }
 
-    public void init() {
+    @Override
+    public boolean start() {
         Integer apiPort = null; // api port, null by default
         SearchCriteria<ConfigurationVO> sc = _configDao.createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, Config.IntegrationAPIPort.key());
@@ -251,6 +245,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             ListenerThread listenerThread = new ListenerThread(this, apiPort);
             listenerThread.start();
         }
+        
+        return true;
     }
 
     // NOTE: handle() only handles over the wire (OTW) requests from integration.api.port 8096
@@ -714,7 +710,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 }
             }
 
-            Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+            TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             txn.close();
             User user = null;
             // verify there is a user with this api key
@@ -1002,7 +998,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
     }
 
-    static class WorkerTask implements Runnable {
+    static class WorkerTask extends ManagedContextRunnable {
         private final HttpService _httpService;
         private final HttpServerConnection _conn;
 
@@ -1012,7 +1008,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             HttpContext context = new BasicHttpContext(null);
             try {
                 while (!Thread.interrupted() && _conn.isOpen()) {
@@ -1121,5 +1117,23 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             s_logger.error("Exception responding to http request", e);
         }
         return responseText;
+    }
+
+    public List<PluggableService> getPluggableServices() {
+        return _pluggableServices;
+    }
+
+    @Inject
+    public void setPluggableServices(List<PluggableService> _pluggableServices) {
+        this._pluggableServices = _pluggableServices;
+    }
+
+    public List<APIChecker> getApiAccessCheckers() {
+        return _apiAccessCheckers;
+    }
+
+    @Inject
+    public void setApiAccessCheckers(List<APIChecker> _apiAccessCheckers) {
+        this._apiAccessCheckers = _apiAccessCheckers;
     }
 }

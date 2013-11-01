@@ -1,0 +1,1429 @@
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          cloud-early-config
+# Required-Start:    mountkernfs $local_fs
+# Required-Stop:     $local_fs
+# Should-Start:      
+# Should-Stop:       
+# Default-Start:     S
+# Default-Stop:      0 6
+# Short-Description: configure according to cmdline
+### END INIT INFO
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
+#set -x
+#exec 3>&0 4>&1 > /var/log/test.log 2>&1
+
+# Fix haproxy directory issue
+mkdir -p /var/lib/haproxy
+
+# Clear boot up flag, it would be created by rc.local after boot up done
+rm /var/cache/cloud/boot_up_done
+
+[ -x /sbin/ifup ] || exit 0
+
+. /lib/lsb/init-functions
+
+log_it() {
+  echo "$(date) $@" >> /var/log/cloud.log
+  log_action_begin_msg "$@"
+}
+
+init_interfaces_orderby_macs() {
+    macs=( $(echo $1 | sed "s/|/ /g") )
+    total_nics=${#macs[@]}
+    interface_file=${2:-"/etc/network/interfaces"}
+    rule_file=${3:-"/etc/udev/rules.d/70-persistent-net.rules"}
+    
+    echo -n "auto lo" > $interface_file
+    for((i=0; i<total_nics; i++))
+    do
+        if [[ $i < 3 ]] 
+        then
+           echo -n " eth$i" >> $interface_file
+        fi
+    done
+    cat >> $interface_file << EOF
+
+iface lo inet loopback
+
+EOF
+
+    echo "" > $rule_file
+    for((i=0; i < ${#macs[@]}; i++))
+    do
+        echo "SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"${macs[$i]}\", NAME=\"eth$i\"" >> $rule_file 
+    done
+}
+
+init_interfaces() {
+  if [ "$NIC_MACS" == "" ]
+  then
+    cat > /etc/network/interfaces << EOF
+auto lo $1 $2 $3
+iface lo inet loopback
+
+EOF
+  else
+    init_interfaces_orderby_macs "$NIC_MACS"
+  fi
+}
+
+hypervisor() {
+  [ -d /proc/xen ] && mount -t xenfs none /proc/xen
+  [ -d /proc/xen ] && echo "xen-domU" && return 0
+
+  local try=$([ -x /usr/sbin/virt-what ] && virt-what | tail -1)
+  [ "$try" != "" ] && echo $try && return 0
+
+  vmware-checkvm &> /dev/null && echo "vmware" && return 0
+
+  grep -q QEMU /proc/cpuinfo  && echo "kvm" && return 0
+  grep -q QEMU /var/log/messages && echo "kvm" && return 0
+
+  echo "unknown" && return 1
+
+}
+
+get_boot_params() {
+  local EXTRA_MOUNT=/media/extra
+  local hyp=$(hypervisor)
+  [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
+
+  case $hyp in
+     xen-domU|xen-hvm)
+          cat /proc/cmdline > /var/cache/cloud/cmdline
+          sed -i "s/%/ /g" /var/cache/cloud/cmdline
+          ;;
+     kvm)
+          if [ ! -e /dev/vport0p1 ]; then
+            log_it "/dev/vport0p1 not loaded, perhaps guest kernel is too old." && exit 2
+          fi
+          while read line; do
+            if [[ $line == cmdline:* ]]; then
+              cmd=${line//cmdline:/}
+              echo $cmd > /var/cache/cloud/cmdline
+            elif [[ $line == pubkey:* ]]; then
+              pubkey=${line//pubkey:/}
+              echo $pubkey > /var/cache/cloud/authorized_keys
+              echo $pubkey > /root/.ssh/authorized_keys
+            fi
+          done < /dev/vport0p1
+          chmod go-rwx /root/.ssh/authorized_keys
+          ;;
+     vmware)
+          vmtoolsd --cmd 'machine.id.get' > /var/cache/cloud/cmdline 
+          ;;
+     virtualpc)
+          # Hyper-V is recognized as virtualpc hypervisor type. Boot args are passed in the NTFS data-disk
+          mkdir -p $EXTRA_MOUNT
+          mount -t ntfs /dev/sdb1 $EXTRA_MOUNT
+          cp -f $EXTRA_MOUNT/cmdline /var/cache/cloud/cmdline
+          umount $EXTRA_MOUNT
+          ;;
+  esac
+
+}
+
+patch() {
+  local PATCH_MOUNT=/media/cdrom
+  local patchfile=$PATCH_MOUNT/cloud-scripts.tgz
+  local md5file=/var/cache/cloud/cloud-scripts-signature
+  local privkey=$PATCH_MOUNT/authorized_keys
+  local shouldpatch=false
+  local cdrom_dev=
+  mkdir -p $PATCH_MOUNT
+
+
+  if [ -e /dev/xvdd ]; then
+       cdrom_dev=/dev/xvdd
+  elif [ -e /dev/cdrom ]; then
+       cdrom_dev=/dev/cdrom
+  elif [ -e /dev/cdrom1 ]; then
+       cdrom_dev=/dev/cdrom1
+  fi
+  [ -f /var/cache/cloud/authorized_keys ] && privkey=/var/cache/cloud/authorized_keys
+
+  if [ -n "$cdrom_dev" ]; then
+    mount -o ro $cdrom_dev $PATCH_MOUNT
+    [ -f $privkey ] && cp -f $privkey /root/.ssh/ && chmod go-rwx /root/.ssh/authorized_keys
+    local oldmd5=
+    [ -f ${md5file} ] && oldmd5=$(cat ${md5file})
+    local newmd5=
+    [ -f ${patchfile} ] && newmd5=$(md5sum ${patchfile} | awk '{print $1}')
+ 
+   if [ "$oldmd5" != "$newmd5" ] && [ -f ${patchfile} ] && [ "$newmd5" != "" ]
+    then
+      shouldpatch=true
+      log_it "Patching  scripts oldmd5=$oldmd5 newmd5=$newmd5"
+      tar xzf $patchfile -C /
+      echo ${newmd5} > ${md5file}
+    fi
+    log_it "Patching  cloud service"
+    hyperVisor=$(hypervisor)
+    /opt/cloud/bin/patchsystemvm.sh $PATCH_MOUNT $hyperVisor
+    umount $PATCH_MOUNT
+    
+    if [ "$shouldpatch" == "true" ] 
+    then
+      log_it "Rebooting system since we patched init scripts"
+      sync
+      sleep 2
+      reboot
+    fi
+  fi
+  if [ -f /mnt/cmdline ]; then
+    cat /mnt/cmdline > /var/cache/cloud/cmdline
+  fi
+  return 0
+}
+
+patch_log4j() {
+log_it "Updating log4j-cloud.xml"
+mkdir -p /usr/local/cloud/systemvm/conf
+cat << "EOF" > /usr/local/cloud/systemvm/conf/temp.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
+
+   <!-- ================================= -->
+   <!-- Preserve messages in a local file -->
+   <!-- ================================= -->
+
+   <appender name="FILE1" class="org.apache.log4j.RollingFileAppender">
+      <param name="File" value="/var/log/cloud.log"/>
+      <param name="MaxFileSize" value="10000KB"/>
+      <param name="MaxBackupIndex" value="4"/>
+
+     <layout class="org.apache.log4j.EnhancedPatternLayout">
+      <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
+     </layout>
+    </appender>
+
+    <appender name="FILE2" class="org.apache.log4j.RollingFileAppender">
+       <param name="File" value="/var/log/cloud/cloud.out"/>
+       <param name="Append" value="true"/>
+       <param name="MaxFileSize" value="10000KB"/>
+       <param name="MaxBackupIndex" value="4"/>
+
+    <layout class="org.apache.log4j.EnhancedPatternLayout">
+     <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
+    </layout>
+    </appender>
+
+     <appender name="FILE3" class="org.apache.log4j.rolling.RollingFileAppender">
+       <param name="File" value="/usr/local/cloud/systemvm/cloud.log"/>
+       <param name="Append" value="true"/>
+       <param name="MaxFileSize" value="10000KB"/>
+       <param name="MaxBackupIndex" value="4"/>
+
+     <layout class="org.apache.log4j.EnhancedPatternLayout">
+     <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
+     </layout>
+    </appender>
+
+   <appender name="APISERVER" class="org.apache.log4j.rolling.RollingFileAppender">
+      <param name="Append" value="true"/>
+      <param name="Threshold" value="DEBUG"/>
+      <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
+        <param name="FileNamePattern" value="/var/log/cloud/api-server.log.%d{yyyy-MM-dd}{GMT}.gz"/>
+        <param name="ActiveFileName" value="/var/log/cloud/api-server.log"/>
+      </rollingPolicy>
+
+      <layout class="org.apache.log4j.EnhancedPatternLayout">
+         <param name="ConversionPattern" value="%d{ISO8601}{GMT} %m%n"/>
+      </layout>
+   </appender>
+
+   <!-- ============================== -->
+   <!-- Append messages to the console -->
+   <!-- ============================== -->
+
+   <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+      <param name="Target" value="System.out"/>
+      <param name="Threshold" value="INFO"/>
+
+      <layout class="org.apache.log4j.EnhancedPatternLayout">
+         <param name="ConversionPattern" value="%d{ABSOLUTE}{GMT} %5p %c{1}:%L - %m%n"/>
+      </layout>
+   </appender>
+
+   <!-- ================ -->
+   <!-- Limit categories -->
+   <!-- ================ -->
+
+   <category name="com.cloud">
+     <priority value="DEBUG"/>
+   </category>
+
+   <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
+   <category name="org.apache">
+      <priority value="INFO"/>
+   </category>
+
+   <category name="org">
+      <priority value="INFO"/>
+   </category>
+
+   <category name="net">
+     <priority value="INFO"/>
+   </category>
+
+   <category name="apiserver.com.cloud">
+     <priority value="DEBUG"/>
+   </category>
+
+   <logger name="apiserver.com.cloud" additivity="false">
+      <level value="DEBUG"/>
+      <appender-ref ref="APISERVER"/>
+   </logger>
+
+   <!-- ======================= -->
+   <!-- Setup the Root category -->
+   <!-- ======================= -->
+
+   <root>
+      <level value="INFO"/>
+      <appender-ref ref="CONSOLE"/>
+      <appender-ref ref="FILE1"/>
+      <appender-ref ref="FILE2"/>
+      <appender-ref ref="FILE3"/>
+   </root>
+
+</log4j:configuration>
+EOF
+mv /usr/local/cloud/systemvm/conf/temp.xml /usr/local/cloud/systemvm/conf/log4j-cloud.xml
+}
+setup_interface() {
+  local intfnum=$1
+  local ip=$2
+  local mask=$3
+  local gw=$4
+  local force=$5
+  local intf=eth${intfnum} 
+  local bootproto="static"
+
+
+  if [ "$BOOTPROTO" == "dhcp" ]
+  then
+    if [ "$intfnum" != "0" ]
+    then
+       bootproto="dhcp"
+    fi
+  fi
+
+  if [ "$ip" != "0.0.0.0" -a "$ip" != "" -o "$force" == "force" ]
+  then
+     echo "iface  $intf inet $bootproto" >> /etc/network/interfaces
+     if [ "$bootproto" == "static" ]
+     then
+       echo "  address $ip " >> /etc/network/interfaces
+       echo "  netmask $mask" >> /etc/network/interfaces
+     fi
+  fi
+
+  if [ "$ip" == "0.0.0.0" -o "$ip" == "" ]
+  then
+      ifconfig $intf down
+  fi
+
+  if [ "$force" == "force" ]
+  then
+      ifdown $intf
+  else
+      ifdown $intf
+      if [ "$RROUTER" != "1" -o "$1" != "2" ]
+      then
+          ifup $intf
+          timer=0
+          log_it "checking that $intf has IP "
+          while true
+          do
+              ip=$(ifconfig $intf | grep "inet addr:" | awk '{print $2}' | awk -F: '{print $2}')
+              if [ -z $ip ]
+              then
+                  sleep 1;
+                  #waiting for the interface to setup with ip
+                  log_it "waiting for $intf interface setup with ip timer=$timer"
+              else
+                  break
+              fi
+
+              if [ $timer -gt 15 ]
+              then
+                  log_it  "interface $intf is not set up with ip... exiting";
+                  break
+              fi
+
+              timer=`expr $timer + 1`
+          done
+      fi
+  fi
+}
+
+setup_interface_ipv6() {
+  sysctl net.ipv6.conf.all.disable_ipv6=0
+  sysctl net.ipv6.conf.all.accept_ra=1
+  
+  local intfnum=$1
+  local ipv6="$2"
+  local prelen="$3"
+  local intf=eth${intfnum}
+  
+  echo "iface $intf inet6 static" >> /etc/network/interfaces
+  echo "  address $ipv6 " >> /etc/network/interfaces
+  echo "  netmask $prelen" >> /etc/network/interfaces
+  echo "  accept_ra 1" >> /etc/network/interfaces
+  ifdown $intf
+  ifup $intf
+}
+
+enable_fwding() {
+  local enabled=$1
+  log_it "cloud: enable_fwding = $1"
+  log_it "enable_fwding = $1"
+  echo "$1" > /proc/sys/net/ipv4/ip_forward
+  [ -f /etc/iptables/iptables.conf ] && sed  -i "s/ENABLE_ROUTING=.*$/ENABLE_ROUTING=$enabled/" /etc/iptables/iptables.conf && return
+}
+
+disable_rpfilter() {
+  log_it "cloud: disable rp_filter"
+  log_it "disable rpfilter"
+  sed -i "s/net.ipv4.conf.default.rp_filter.*$/net.ipv4.conf.default.rp_filter = 0/" /etc/sysctl.conf 
+}
+
+get_public_vif_list() {
+  local vif_list=""
+  for i in /sys/class/net/eth*; do
+    vif=$(basename $i);
+    if [ "$vif" != "eth0" ] && [ "$vif" != "eth1" ]
+    then
+      vif_list="$vif_list $vif";
+    fi
+  done
+  
+  echo $vif_list
+}
+
+disable_rpfilter_domR() {
+  log_it "cloud: Tuning rp_filter on public interfaces"
+  
+  VIF_LIST=$(get_public_vif_list)
+  log_it "rpfilter public interfaces :  $VIF_LIST"
+  if [ "$DISABLE_RP_FILTER" == "true" ]
+  then
+      log_it "cloud: disable rp_filter on public interfaces"
+      sed -i "s/net.ipv4.conf.default.rp_filter.*$/net.ipv4.conf.default.rp_filter = 0/" /etc/sysctl.conf 
+      echo "0" > /proc/sys/net/ipv4/conf/default/rp_filter
+      for vif in $VIF_LIST; do
+         log_it "cloud: disable rp_filter on public interface: $vif"
+         sed -i "s/net.ipv4.conf.$vif.rp_filter.*$/net.ipv4.conf.$vif.rp_filter = 0/" /etc/sysctl.conf 
+         echo "0" > /proc/sys/net/ipv4/conf/$vif/rp_filter
+      done
+  else
+      log_it "cloud: enable rp_filter on public interfaces"
+      sed -i "s/net.ipv4.conf.default.rp_filter.*$/net.ipv4.conf.default.rp_filter = 1/" /etc/sysctl.conf 
+      echo "1" > /proc/sys/net/ipv4/conf/default/rp_filter
+      for vif in $VIF_LIST; do
+         log_it "cloud: enable rp_filter on public interface: $vif"
+         sed -i "s/net.ipv4.conf.$vif.rp_filter.*$/net.ipv4.conf.$vif.rp_filter = 1/" /etc/sysctl.conf 
+         echo "1" > /proc/sys/net/ipv4/conf/$vif/rp_filter
+      done
+  fi
+  log_it "cloud: Enabling rp_filter on Non-public interfaces(eth0,eth1,lo)"
+  echo "1" > /proc/sys/net/ipv4/conf/eth0/rp_filter
+  echo "1" > /proc/sys/net/ipv4/conf/eth1/rp_filter
+  echo "1" > /proc/sys/net/ipv4/conf/lo/rp_filter
+}
+
+enable_svc() {
+  local svc=$1
+  local enabled=$2
+
+  log_it "Enable service ${svc} = $enabled"
+  local cfg=/etc/default/${svc}
+  [ -f $cfg ] && sed  -i "s/ENABLED=.*$/ENABLED=$enabled/" $cfg && return
+}
+
+
+enable_irqbalance() {
+  local enabled=$1
+  local proc=0
+
+  proc=$(cat /proc/cpuinfo | grep "processor" | wc -l)
+  if [ $proc -le 1 ]  && [ $enabled -eq 1 ]
+  then
+    enabled=0
+  fi
+
+  log_it "Processors = $proc  Enable service ${svc} = $enabled"
+  local cfg=/etc/default/irqbalance
+  [ -f $cfg ] && sed  -i "s/ENABLED=.*$/ENABLED=$enabled/" $cfg && return
+}
+
+disable_hvc() {
+  [ ! -d /proc/xen ] && sed -i 's/^vc/#vc/' /etc/inittab && telinit q
+  [  -d /proc/xen ] && sed -i 's/^#vc/vc/' /etc/inittab && telinit q
+}
+
+enable_vpc_rpsrfs() {
+    local enable=$1
+    if [ $enable -eq 0 ]
+    then
+        echo 0 > /etc/rpsrfsenable
+    else
+        echo 1 > /etc/rpsrfsenable
+    fi
+
+    return 0
+}
+
+enable_rpsrfs() {
+  local enable=$1
+
+  if [ $enable -eq 0 ]
+  then
+      echo 0 > /etc/rpsrfsenable
+      return 0
+  fi
+
+  if [ ! -f /sys/class/net/eth0/queues/rx-0/rps_cpus ]
+  then
+      echo "rps is not enabled in the kernel"
+      echo 0 > /etc/rpsrfsenable
+      return 0
+  fi
+
+  proc=$(cat /proc/cpuinfo | grep "processor" | wc -l)
+  if [ $proc -le 1 ]
+  then
+      echo 0 > /etc/rpsrfsenable
+      return 0;
+  fi
+
+  echo 1 > /etc/rpsrfsenable
+  num=1
+  num=$(($num<<$proc))
+  num=$(($num-1));
+  echo $num;
+  hex=$(printf "%x\n" $num)
+  echo $hex;
+  #enable rps
+  echo $hex > /sys/class/net/eth0/queues/rx-0/rps_cpus
+  echo $hex > /sys/class/net/eth2/queues/rx-0/rps_cpus
+
+  #enble rfs
+  echo 256 > /proc/sys/net/core/rps_sock_flow_entries
+  echo 256 > /sys/class/net/eth0/queues/rx-0/rps_flow_cnt
+  echo 256 > /sys/class/net/eth2/queues/rx-0/rps_flow_cnt
+}
+
+setup_common() {
+  init_interfaces $1 $2 $3
+  if [ -n "$ETH0_IP" ]
+  then
+    setup_interface "0" $ETH0_IP $ETH0_MASK $GW
+  fi
+  if [ -n "$ETH0_IP6" ]
+  then
+	  setup_interface_ipv6 "0" $ETH0_IP6 $ETH0_IP6_PRELEN
+  fi
+  setup_interface "1" $ETH1_IP $ETH1_MASK $GW
+  if [ -n "$ETH2_IP" ]
+  then
+  	setup_interface "2" $ETH2_IP $ETH2_MASK $GW
+  fi
+   
+  echo $NAME > /etc/hostname
+  echo 'AVAHI_DAEMON_DETECT_LOCAL=0' > /etc/default/avahi-daemon
+  hostname $NAME
+  
+  #Nameserver
+  sed -i -e "/^nameserver.*$/d" /etc/resolv.conf # remove previous entries
+  sed -i -e "/^nameserver.*$/d" /etc/dnsmasq-resolv.conf # remove previous entries
+  if [ -n "$internalNS1" ]
+  then
+    echo "nameserver $internalNS1" > /etc/dnsmasq-resolv.conf
+    echo "nameserver $internalNS1" > /etc/resolv.conf
+  fi
+  
+  if [ -n "$internalNS2" ]
+  then
+    echo "nameserver $internalNS2" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $internalNS2" >> /etc/resolv.conf
+  fi
+  if [ -n "$NS1" ]
+  then
+    echo "nameserver $NS1" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $NS1" >> /etc/resolv.conf
+  fi
+  
+  if [ -n "$NS2" ]
+  then
+    echo "nameserver $NS2" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $NS2" >> /etc/resolv.conf
+  fi
+
+  if [ -n "$IP6_NS1" ]
+  then
+    echo "nameserver $IP6_NS1" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $IP6_NS1" >> /etc/resolv.conf
+  fi
+  if [ -n "$IP6_NS2" ]
+  then
+    echo "nameserver $IP6_NS2" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $IP6_NS2" >> /etc/resolv.conf
+  fi
+
+  if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
+  then
+    ip route add $MGMTNET via $LOCAL_GW dev eth1
+  fi
+
+  ip route delete default
+  if [ "$RROUTER" != "1" ]
+  then
+    gwdev=$3
+    if [ -z "$gwdev" ]
+    then
+      gwdev="eth0"
+    fi
+
+    ip route add default via $GW dev $gwdev
+
+  fi
+ 
+  # a hacking way to activate vSwitch under VMware
+  ping -n -c 3 $GW &
+  sleep 3
+  pkill ping
+  if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
+  then
+      ping -n -c 3 $LOCAL_GW &
+      sleep 3
+      pkill ping
+      #This code is added to address ARP issue by pinging MGMT_GW
+      MGMT_GW=$(echo $MGMTNET | awk -F "." '{print $1"."$2"."$3".1"}')
+      ping -n -c 3 $MGMT_GW &
+      sleep 3
+      pkill ping
+  
+  fi
+
+  local hyp=$(hypervisor)
+  if [ "$hyp" == "vmware" ]; then
+      ntpq -p &> /dev/null || vmware-toolbox-cmd timesync enable
+  fi
+}
+
+setup_dnsmasq() {
+  log_it "Setting up dnsmasq"
+
+  touch /etc/dhcpopts.txt
+
+  [ -z $DHCP_RANGE ] && [ $ETH0_IP ] && DHCP_RANGE=$ETH0_IP
+  [ $ETH0_IP6 ] && DHCP_RANGE_IP6=$ETH0_IP6
+  [ -z $DOMAIN ] && DOMAIN="cloudnine.internal"
+  #removing the dnsmasq multiple ranges config file.
+  rm /etc/dnsmasq.d/multiple_ranges.conf
+
+  #get the template
+  cp /etc/dnsmasq.conf.tmpl /etc/dnsmasq.conf
+  
+  if [ -n "$DOMAIN" ]
+  then
+        #send domain name to dhcp clients
+        sed -i s/[#]*dhcp-option=15.*$/dhcp-option=15,\"$DOMAIN\"/ /etc/dnsmasq.conf
+        #DNS server will append $DOMAIN to local queries
+        sed -r -i s/^[#]?domain=.*$/domain=$DOMAIN/ /etc/dnsmasq.conf
+        #answer all local domain queries
+        sed  -i -e "s/^[#]*local=.*$/local=\/$DOMAIN\//" /etc/dnsmasq.conf
+  fi
+  
+  if [ -n  "$DNS_SEARCH_ORDER" ]
+  then
+      sed -i -e "/^[#]*dhcp-option.*=119.*$/d" /etc/dnsmasq.conf
+      echo "dhcp-option-force=119,$DNS_SEARCH_ORDER" >> /etc/dnsmasq.conf
+      # set the domain search order as a space seprated list for option 15
+      DNS_SEARCH_ORDER=$(echo $DNS_SEARCH_ORDER | sed 's/,/ /g')
+      #send domain name to dhcp clients 
+      sed -i s/[#]*dhcp-option=15.*$/dhcp-option=15,\""$DNS_SEARCH_ORDER"\"/ /etc/dnsmasq.conf
+  fi
+  
+  if [ $DHCP_RANGE ]
+  then
+    sed -i -e "s/^dhcp-range_ip4=.*$/dhcp-range=$DHCP_RANGE,static/" /etc/dnsmasq.conf
+  else
+    sed -i -e "s/^dhcp-range_ip4=.*$//" /etc/dnsmasq.conf
+  fi
+  if [ $DHCP_RANGE_IP6 ]
+  then
+    sed -i -e "s/^dhcp-range_ip6=.*$/dhcp-range=$DHCP_RANGE_IP6,static/" /etc/dnsmasq.conf
+    # For nondefault6 tagged host, don't send dns-server information
+    sed -i /nondefault6/d /etc/dnsmasq.conf
+    echo "dhcp-option=nondefault6,option6:dns-server" >> /etc/dnsmasq.conf
+  else
+    sed -i -e "s/^dhcp-range_ip6=.*$//" /etc/dnsmasq.conf
+  fi
+
+  sed -i -e "s/^[#]*listen-address=.*$/listen-address=$LOCAL_ADDRS/" /etc/dnsmasq.conf
+
+  if [ "$RROUTER" == "1" ]
+  then
+    DEFAULT_GW=$GUEST_GW
+    INTERNAL_DNS=$GUEST_GW
+  else
+    if [ "$TYPE" == "dhcpsrvr" ]
+    then
+      DEFAULT_GW=$GW
+    else
+      DEFAULT_GW=$ETH0_IP
+    fi
+    INTERNAL_DNS=$ETH0_IP
+  fi
+  sed -i -e "/^[#]*dhcp-option=option:router.*$/d" /etc/dnsmasq.conf
+  [ $DEFAULT_GW ] && echo "dhcp-option=option:router,$DEFAULT_GW" >> /etc/dnsmasq.conf
+
+  [ $ETH0_IP ] && [ $NS1 ] && NS="$NS1,"
+  [ $ETH0_IP ] && [ $NS2 ] && NS="$NS$NS2,"
+  [ $ETH0_IP6 ] && [ $IP6_NS1 ] && NS6="[$IP6_NS1],"
+  [ $ETH0_IP6 ] && [ $IP6_NS2 ] && NS6="$NS6[$IP6_NS2],"
+  #for now set up ourself as the dns server as well
+  sed -i -e "/^[#]*dhcp-option=6,.*$/d" /etc/dnsmasq.conf
+  sed -i -e "/^[#]*dhcp-option=option6:dns-server,.*$/d" /etc/dnsmasq.conf
+  if [ "$USE_EXTERNAL_DNS" != "true" ]
+  then
+    [ $ETH0_IP ] && NS="$INTERNAL_DNS,$NS"
+    [ $ETH0_IP6 ] && NS6="[::],$NS6"
+  fi
+  NS=${NS%?}
+  NS6=${NS6%?}
+  [ $ETH0_IP ] && echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
+  [ $ETH0_IP6 ] && echo "dhcp-option=option6:dns-server,$NS6" >> /etc/dnsmasq.conf
+#adding the name data-server to the /etc/hosts for allowing the access to user-data service and ssh-key reset in every subnet.
+  //removing the existing entires to avoid duplicates on restarts.
+  sed -i  '/data-server/d' /etc/hosts
+  if [ -n "$ETH0_IP" ]
+          then
+           echo "$ETH0_IP data-server" >> /etc/hosts
+  fi
+  if [ -n "$ETH0_IP6" ]
+      then
+       echo "$ETH0_IP6 data-server" >> /etc/hosts
+  fi
+#add the dhcp-client-update only if dnsmasq version is 2.6 and above
+  dnsmasqVersion=$(dnsmasq -v |  grep version -m 1 | grep -o  "[[:digit:]]\.[[:digit:]]")
+  major=$(echo "$dnsmasqVersion" | cut -d '.' -f 1)
+  minor=$(echo "$dnsmasqVersion" | cut -d '.' -f 2)
+  if [ "$major" -eq '2' -a  "$minor" -ge '6' ] || [ "$major" -gt '2' ]
+  then
+      sed -i -e "/^dhcp-client-update/d" /etc/dnsmasq.conf
+      echo 'dhcp-client-update' >> /etc/dnsmasq.conf
+  fi
+}
+
+setup_sshd(){
+  local ip=$1
+  local eth=$2
+  [ -f /etc/ssh/sshd_config ] && sed -i -e "s/^[#]*ListenAddress.*$/ListenAddress $ip/" /etc/ssh/sshd_config
+  sed -i "/3922/s/eth./$eth/" /etc/iptables/rules.v4
+  sed -i "/3922/s/eth./$eth/" /etc/iptables/rules
+}
+
+
+setup_vpc_apache2() {
+  log_it "Setting up apache web server for VPC"
+  chkconfig apache2 off
+  rm -f /etc/apache2/conf.d/vhost*.conf
+  [ -f /etc/apache2/sites-available/default ] && echo "" >/etc/apache2/sites-available/default
+  [ -f /etc/apache2/sites-available/default-ssl ] && echo "">/etc/apache2/sites-available/default-ssl
+  [ -f /etc/apache2/ports.conf ] && echo "">/etc/apache2/ports.conf
+  [ -f /etc/apache2/ports.conf ] && echo "">/etc/apache2/ports.conf
+  [ -f /etc/apache2/ports.conf ] && echo "">/etc/apache2/ports.conf
+  [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerTokens .*/ServerTokens Prod/g" /etc/apache2/conf.d/security
+  [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerSignature .*/ServerSignature Off/g" /etc/apache2/conf.d/security
+
+  # Disable listing of http://SSVM-IP/icons folder for security issue. see article http://www.i-lateral.com/tutorials/disabling-the-icons-folder-on-an-ubuntu-web-server/
+  [ -f /etc/apache2/mods-available/alias.conf ] && sed -i s/"Options Indexes MultiViews"/"Options -Indexes MultiViews"/ /etc/apache2/mods-available/alias.conf
+
+  echo "Options -Indexes" > /var/www/html/.htaccess
+}
+
+
+clean_ipalias_config() {
+rm -f /etc/apache2/conf.d/ports.*.meta-data.conf
+rm -f /etc/apache2/sites-available/ipAlias*
+rm -f /etc/apache2/sites-enabled/ipAlias*
+rm -rf /etc/failure_config
+}
+
+setup_apache2() {
+  clean_ipalias_config
+  log_it "Setting up apache web server"
+  local ip=$1
+  [ -f /etc/apache2/sites-available/default ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:80>/" /etc/apache2/sites-available/default
+  [ -f /etc/apache2/sites-available/default-ssl ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:443>/" /etc/apache2/sites-available/default-ssl
+  [ -f /etc/apache2/ports.conf ] && sed -i -e "s/Listen .*:80/Listen $ip:80/g" /etc/apache2/ports.conf
+  [ -f /etc/apache2/ports.conf ] && sed -i -e "s/Listen .*:443/Listen $ip:443/g" /etc/apache2/ports.conf
+  [ -f /etc/apache2/ports.conf ] && sed -i -e "s/NameVirtualHost .*:80/NameVirtualHost $ip:80/g" /etc/apache2/ports.conf
+  [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerTokens .*/ServerTokens Prod/g" /etc/apache2/conf.d/security
+  [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerSignature .*/ServerSignature Off/g" /etc/apache2/conf.d/security
+
+  # Disable listing of http://SSVM-IP/icons folder for security issue. see article http://www.i-lateral.com/tutorials/disabling-the-icons-folder-on-an-ubuntu-web-server/
+  [ -f /etc/apache2/mods-available/alias.conf ] && sed -i s/"Options Indexes MultiViews"/"Options -Indexes MultiViews"/ /etc/apache2/mods-available/alias.conf
+
+  echo "Options -Indexes" > /var/www/html/.htaccess
+}
+
+setup_redundant_router() {
+    rrouter_bin_path="/ramdisk/rrouter"
+    rrouter_log="/ramdisk/rrouter/keepalived.log"
+    rrouter_bin_path_str="\/ramdisk\/rrouter"
+    rrouter_log_str="\/ramdisk\/rrouter\/keepalived.log"
+    mkdir -p /ramdisk
+    mount tmpfs /ramdisk -t tmpfs
+    mkdir -p /ramdisk/rrouter
+    ip route delete default
+    cp /root/redundant_router/keepalived.conf.templ /etc/keepalived/keepalived.conf
+    cp /root/redundant_router/conntrackd.conf.templ /etc/conntrackd/conntrackd.conf
+    cp /root/redundant_router/enable_pubip.sh.templ $rrouter_bin_path/enable_pubip.sh
+    cp /root/redundant_router/master.sh.templ $rrouter_bin_path/master.sh
+    cp /root/redundant_router/backup.sh.templ $rrouter_bin_path/backup.sh
+    cp /root/redundant_router/fault.sh.templ $rrouter_bin_path/fault.sh
+    cp /root/redundant_router/primary-backup.sh.templ $rrouter_bin_path/primary-backup.sh
+    cp /root/redundant_router/heartbeat.sh.templ $rrouter_bin_path/heartbeat.sh
+    cp /root/redundant_router/check_heartbeat.sh.templ $rrouter_bin_path/check_heartbeat.sh
+    cp /root/redundant_router/arping_gateways.sh.templ $rrouter_bin_path/arping_gateways.sh
+    cp /root/redundant_router/check_bumpup.sh $rrouter_bin_path/
+    cp /root/redundant_router/disable_pubip.sh $rrouter_bin_path/
+    cp /root/redundant_router/checkrouter.sh.templ /opt/cloud/bin/checkrouter.sh
+    cp /root/redundant_router/services.sh $rrouter_bin_path/
+    sed -i "s/\[ROUTER_ID\]/$NAME/g" /etc/keepalived/keepalived.conf
+    sed -i "s/\[ROUTER_IP\]/$GUEST_GW\/$GUEST_CIDR_SIZE/g" /etc/keepalived/keepalived.conf
+    sed -i "s/\[BOARDCAST\]/$GUEST_BRD/g" /etc/keepalived/keepalived.conf
+    sed -i "s/\[PRIORITY\]/$ROUTER_PR/g" /etc/keepalived/keepalived.conf
+    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" /etc/keepalived/keepalived.conf
+    sed -i "s/\[DELTA\]/2/g" /etc/keepalived/keepalived.conf
+    sed -i "s/\[LINK_IF\]/eth0/g" /etc/conntrackd/conntrackd.conf
+    sed -i "s/\[LINK_IP\]/$ETH0_IP/g" /etc/conntrackd/conntrackd.conf
+    sed -i "s/\[IGNORE_IP1\]/$GUEST_GW/g" /etc/conntrackd/conntrackd.conf
+    sed -i "s/\[IGNORE_IP2\]/$ETH0_IP/g" /etc/conntrackd/conntrackd.conf
+    sed -i "s/\[IGNORE_IP3\]/$ETH1_IP/g" /etc/conntrackd/conntrackd.conf
+    sed -i "s/\[ETH2IP\]/$ETH2_IP/g" $rrouter_bin_path/enable_pubip.sh
+    sed -i "s/\[ETH2MASK\]/$ETH2_MASK/g" $rrouter_bin_path/enable_pubip.sh
+    sed -i "s/\[GATEWAY\]/$GW/g" $rrouter_bin_path/enable_pubip.sh
+    sed -i "s/\[GATEWAY\]/$GW/g" $rrouter_bin_path/master.sh
+    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/master.sh
+    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/backup.sh
+    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/fault.sh
+    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/heartbeat.sh
+    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/check_heartbeat.sh
+    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/master.sh
+    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/backup.sh
+    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/fault.sh
+    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/primary-backup.sh
+    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/check_heartbeat.sh
+    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/arping_gateways.sh
+    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" /opt/cloud/bin/checkrouter.sh
+    chmod a+x $rrouter_bin_path/*.sh
+
+    sed -i "s/--exec\ \$DAEMON;/--exec\ \$DAEMON\ --\ --vrrp;/g" /etc/init.d/keepalived
+    crontab -l|grep "check_heartbeat.sh"
+    if [ $? -ne 0 ]
+    then
+        (crontab -l; echo -e "SHELL=/bin/bash\nPATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n*/1 * * * * $rrouter_bin_path/check_heartbeat.sh 2>&1 > /dev/null") | crontab
+    fi
+}
+
+setup_aesni() {
+  if [ `grep aes /proc/cpuinfo | wc -l` -gt 0 ]
+  then
+    modprobe aesni_intel
+  fi
+}
+
+setup_router() {
+  log_it "Setting up virtual router system vm"
+
+  oldmd5=
+  [ -f "/etc/udev/rules.d/70-persistent-net.rules" ] && oldmd5=$(md5sum "/etc/udev/rules.d/70-persistent-net.rules" | awk '{print $1}')
+  
+  if [ -n "$ETH2_IP" ]
+  then
+      setup_common eth0 eth1 eth2
+      
+      if [ -n "$EXTRA_PUBNICS" ]
+      then
+        for((i = 3; i < 3 + $EXTRA_PUBNICS; i++))
+        do
+            setup_interface "$i" "0.0.0.0" "255.255.255.255" $GW "force"
+        done
+      fi
+  else
+  	setup_common eth0 eth1
+      if [ -n "$EXTRA_PUBNICS" ]
+      then
+        for((i = 2; i < 2 + $EXTRA_PUBNICS; i++))
+        do
+            setup_interface "$i" "0.0.0.0" "255.255.255.255" $GW "force"
+        done
+      fi
+  fi
+  
+  if [ -n "$ETH2_IP" -a "$RROUTER" == "1" ]
+  then
+    setup_redundant_router
+  fi
+  
+  log_it "Checking udev NIC assignment order changes"
+  if [ "$NIC_MACS" != "" ]
+  then
+    init_interfaces_orderby_macs "$NIC_MACS" "/tmp/interfaces" "/tmp/udev-rules"
+    newmd5=$(md5sum "/tmp/udev-rules" | awk '{print $1}')
+    rm /tmp/interfaces
+    rm /tmp/udev-rules
+    
+    if [ "$oldmd5" != "$newmd5" ]
+    then
+      log_it "udev NIC assignment requires reboot to take effect"
+      sync
+      sleep 2
+      reboot
+    fi
+  fi
+  
+  setup_aesni
+  setup_dnsmasq
+  setup_apache2 $ETH0_IP
+
+  sed -i  /gateway/d /etc/hosts
+  echo "$ETH0_IP $NAME" >> /etc/hosts
+
+
+  enable_svc dnsmasq 1
+  enable_svc haproxy 1
+  enable_irqbalance 1
+  enable_svc cloud-passwd-srvr 1
+  enable_svc cloud 0
+  disable_rpfilter_domR
+  enable_fwding 1
+  enable_rpsrfs 1
+  chkconfig nfs-common off
+  cp /etc/iptables/iptables-router /etc/iptables/rules.v4
+#for old templates
+  cp /etc/iptables/iptables-router /etc/iptables/rules
+  setup_sshd $ETH1_IP "eth1"
+}
+
+
+
+setup_vpcrouter() {
+  log_it "Setting up VPC virtual router system vm"
+
+  if [ -f /etc/hosts ]; then
+    grep -q $NAME /etc/hosts || echo "127.0.0.1 $NAME" >> /etc/hosts;
+  fi
+
+    cat > /etc/network/interfaces << EOF
+auto lo eth0
+iface lo inet loopback
+EOF
+  setup_interface "0" $ETH0_IP $ETH0_MASK $GW
+   
+  echo $NAME > /etc/hostname
+  echo 'AVAHI_DAEMON_DETECT_LOCAL=0' > /etc/default/avahi-daemon
+  hostname $NAME
+  
+  #Nameserver
+  sed -i -e "/^nameserver.*$/d" /etc/resolv.conf # remove previous entries
+  sed -i -e "/^nameserver.*$/d" /etc/dnsmasq-resolv.conf # remove previous entries
+  if [ -n "$internalNS1" ]
+  then
+    echo "nameserver $internalNS1" > /etc/dnsmasq-resolv.conf
+    echo "nameserver $internalNS1" > /etc/resolv.conf
+  fi
+  
+  if [ -n "$internalNS2" ]
+  then
+    echo "nameserver $internalNS2" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $internalNS2" >> /etc/resolv.conf
+  fi
+  if [ -n "$NS1" ]
+  then
+    echo "nameserver $NS1" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $NS1" >> /etc/resolv.conf
+  fi
+  
+  if [ -n "$NS2" ]
+  then
+    echo "nameserver $NS2" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $NS2" >> /etc/resolv.conf
+  fi
+  if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
+  then
+     if [ "$hyp" == "vmware" ]
+     then
+         ip route add $MGMTNET via $LOCAL_GW dev eth0
+         
+          # a hacking way to activate vSwitch under VMware
+         ping -n -c 3 $LOCAL_GW &
+         sleep 3
+         pkill ping
+     fi
+  fi
+
+  ip route delete default
+  # create route table for static route
+
+  sudo echo "252 static_route" >> /etc/iproute2/rt_tables 2>/dev/null
+  sudo echo "251 static_route_back" >> /etc/iproute2/rt_tables 2>/dev/null
+  sudo ip rule add from $VPCCIDR table static_route 2>/dev/null
+  sudo ip rule add from $VPCCIDR table static_route_back 2>/dev/null
+
+  setup_vpc_apache2
+
+  enable_svc dnsmasq 1
+  enable_svc haproxy 1
+  enable_irqbalance 1
+  enable_vpc_rpsrfs 1
+  enable_svc cloud 0
+  disable_rpfilter
+  enable_fwding 1
+  cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules.v4
+  cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules
+  setup_sshd $ETH0_IP "eth0"
+  cp /etc/vpcdnsmasq.conf /etc/dnsmasq.conf
+  cp /etc/cloud-nic.rules /etc/udev/rules.d/cloud-nic.rules
+  echo "" > /etc/dnsmasq.d/dhcphosts.txt
+  echo "dhcp-hostsfile=/etc/dhcphosts.txt" > /etc/dnsmasq.d/cloud.conf
+
+  [ -z $DOMAIN ] && DOMAIN="cloudnine.internal"
+  #DNS server will append $DOMAIN to local queries
+  sed -r -i s/^[#]?domain=.*$/domain=$DOMAIN/ /etc/dnsmasq.conf
+  #answer all local domain queries
+  sed  -i -e "s/^[#]*local=.*$/local=\/$DOMAIN\//" /etc/dnsmasq.conf
+}
+
+
+
+setup_dhcpsrvr() {
+  log_it "Setting up dhcp server system vm"
+  setup_common eth0 eth1
+  setup_dnsmasq
+  setup_apache2 $ETH0_IP
+
+  sed -i  /gateway/d /etc/hosts
+  [ $ETH0_IP ] && echo "$ETH0_IP $NAME" >> /etc/hosts
+  [ $ETH0_IP6 ] && echo "$ETH0_IP6 $NAME" >> /etc/hosts
+
+  enable_svc dnsmasq 1
+  enable_svc haproxy 0
+  enable_irqbalance 0
+  enable_svc cloud-passwd-srvr 1
+  enable_svc cloud 0
+  enable_fwding 0
+  chkconfig nfs-common off
+  cp /etc/iptables/iptables-router /etc/iptables/rules.v4
+  cp /etc/iptables/iptables-router /etc/iptables/rules
+  if [ "$SSHONGUEST" == "true" ]
+  then
+    setup_sshd $ETH0_IP "eth0"
+  else
+    setup_sshd $ETH1_IP "eth1"
+  fi
+}
+
+setup_storage_network() {
+	if [ x"$STORAGE_IP" == "x" -o x"$STORAGE_NETMASK" == "x" ]
+	then
+		log_it "Incompleted parameters STORAGE_IP:$STORAGE_IP, STORAGE_NETMASK:$STORAGE_NETMASK, STORAGE_CIDR:$STORAGE_CIDR. Cannot setup storage network"
+		return
+	fi
+	
+	echo "" >> /etc/network/interfaces
+	echo "auto eth3" >> /etc/network/interfaces
+	
+	setup_interface "3" "$STORAGE_IP" "$STORAGE_NETMASK"
+	#ip route add "$STORAGE_CIDR" via "$STORAGE_IP"
+	log_it "Successfully setup storage network with STORAGE_IP:$STORAGE_IP, STORAGE_NETMASK:$STORAGE_NETMASK, STORAGE_CIDR:$STORAGE_CIDR"
+}
+
+setup_secstorage() {
+  log_it "Setting up secondary storage system vm"
+  local hyp=$1
+  setup_common eth0 eth1 eth2
+  setup_storage_network
+  [ -n "$MTU" ] && ifconfig eth1 mtu $MTU
+  sed -i  /gateway/d /etc/hosts
+  public_ip=$ETH2_IP
+  [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
+  echo "$public_ip $NAME" >> /etc/hosts
+
+  cp /etc/iptables/iptables-secstorage /etc/iptables/rules.v4
+  cp /etc/iptables/iptables-secstorage /etc/iptables/rules
+  if [ "$hyp" == "vmware" ]; then
+    setup_sshd $ETH1_IP "eth1"
+  else
+    setup_sshd $ETH0_IP "eth0"
+  fi
+  setup_apache2 $ETH2_IP
+
+  disable_rpfilter
+  enable_fwding 0
+  enable_svc haproxy 0
+  enable_irqbalance 0
+  enable_svc dnsmasq 0
+  enable_svc cloud-passwd-srvr 0
+  enable_svc cloud 1
+}
+
+setup_console_proxy() {
+  log_it "Setting up console proxy system vm"
+  local hyp=$1
+  setup_common eth0 eth1 eth2
+  public_ip=$ETH2_IP
+  [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
+  sed -i  /gateway/d /etc/hosts
+  echo "$public_ip $NAME" >> /etc/hosts
+  cp /etc/iptables/iptables-consoleproxy /etc/iptables/rules.v4
+  cp /etc/iptables/iptables-consoleproxy /etc/iptables/rules
+  if [ "$hyp" == "vmware" ]; then
+    setup_sshd $ETH1_IP "eth1"
+  else
+    setup_sshd $ETH0_IP "eth0"
+  fi
+
+  disable_rpfilter
+  enable_fwding 0
+  enable_svc haproxy 0
+  enable_irqbalance 0
+  enable_svc dnsmasq 0
+  enable_svc cloud-passwd-srvr 0
+  enable_svc cloud 1
+  chkconfig nfs-common off
+}
+
+setup_elbvm() {
+  log_it "Setting up Elastic Load Balancer system vm"
+  local hyp=$1
+  setup_common eth0 eth1
+  sed -i  /gateway/d /etc/hosts
+  public_ip=$ETH2_IP
+  [ "$ETH2_IP" == "0.0.0.0" ] || [ "$ETH2_IP" == "" ] && public_ip=$ETH0_IP
+  echo "$public_ip $NAME" >> /etc/hosts
+
+  cp /etc/iptables/iptables-elbvm /etc/iptables/rules.v4
+  cp /etc/iptables/iptables-elbvm /etc/iptables/rules
+  if [ "$SSHONGUEST" == "true" ]
+  then
+    setup_sshd $ETH0_IP "eth0"
+  else
+    setup_sshd $ETH1_IP "eth1"
+  fi
+  
+  enable_fwding 0
+  enable_svc haproxy 0
+  enable_irqbalance 0
+  enable_svc dnsmasq 0
+  enable_svc cloud-passwd-srvr 0
+  enable_svc cloud 0
+  chkconfig nfs-common off
+  chkconfig portmap off
+}
+
+setup_ilbvm() {
+  log_it "Setting up Internal Load Balancer system vm"
+  local hyp=$1
+  setup_common eth0 eth1
+  #eth0 = guest network, eth1=control network
+
+  sed -i  /$NAME/d /etc/hosts
+  echo "$ETH0_IP $NAME" >> /etc/hosts
+
+  cp /etc/iptables/iptables-ilbvm /etc/iptables/rules.v4
+  cp /etc/iptables/iptables-ilbvm /etc/iptables/rules
+  setup_sshd $ETH1_IP "eth1"
+  
+  enable_fwding 0
+  enable_svc haproxy 1
+  enable_irqbalance 1
+  enable_svc dnsmasq 0
+  enable_svc cloud-passwd-srvr 0
+  enable_svc cloud 0
+  chkconfig nfs-common off
+  chkconfig portmap off
+}
+
+setup_default() {
+  cat > /etc/network/interfaces << EOF
+auto lo
+iface lo inet loopback
+EOF
+  cp -f /etc/iptables/rt_tables_init /etc/iproute2/rt_tables
+}
+
+change_password() {
+	if [ x"$VM_PASSWORD" != x"" ]
+	then
+		echo "root:$VM_PASSWORD" | chpasswd
+	fi
+}
+
+start() {
+  # Clear /tmp for file lock
+  rm -f /tmp/*.lock
+  rm -f /tmp/rrouter_bumped
+  local hyp=$(hypervisor)
+  [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
+  log_it "Detected that we are running inside $hyp guest"
+  get_boot_params
+  patch
+  patch_log4j
+  parse_cmd_line
+  change_password
+  case $TYPE in 
+     router)
+         [ "$NAME" == "" ] && NAME=router
+         setup_router
+	  ;;
+     vpcrouter)
+         [ "$NAME" == "" ] && NAME=vpcrouter
+         setup_vpcrouter
+	  ;;
+     dhcpsrvr)
+         [ "$NAME" == "" ] && NAME=dhcpsrvr
+         setup_dhcpsrvr
+	  ;;
+     secstorage)
+         [ "$NAME" == "" ] && NAME=secstorage
+         setup_secstorage $hyp;
+	  ;;
+     consoleproxy)
+         [ "$NAME" == "" ] && NAME=consoleproxy
+         setup_console_proxy $hyp;
+	  ;;
+     elbvm)
+         [ "$NAME" == "" ] && NAME=elb
+         setup_elbvm
+	  ;;
+     ilbvm)
+         [ "$NAME" == "" ] && NAME=ilb
+         setup_ilbvm
+	  ;;
+     unknown)
+         [ "$NAME" == "" ] && NAME=systemvm
+         setup_default;
+          ;;
+  esac
+  return 0
+}
+
+disable_hvc
+
+parse_cmd_line() {
+CMDLINE=$(cat /var/cache/cloud/cmdline)
+TYPE="unknown"
+BOOTPROTO="static"
+DISABLE_RP_FILTER="false"
+STORAGE_IP=""
+STORAGE_NETMASK=""
+STORAGE_CIDR=""
+VM_PASSWORD=""
+
+for i in $CMDLINE
+  do
+    # search for foo=bar pattern and cut out foo
+    KEY=$(echo $i | cut -d= -f1)
+    VALUE=$(echo $i | cut -d= -f2)
+    case $KEY in 
+      disable_rp_filter)
+          DISABLE_RP_FILTER=$VALUE
+          ;;
+      eth0ip)
+          ETH0_IP=$VALUE
+          ;;
+      eth1ip)
+          ETH1_IP=$VALUE
+          ;;
+      eth2ip)
+          ETH2_IP=$VALUE
+          ;;
+      host)
+          MGMT_HOST=$VALUE
+          ;;
+      gateway)
+          GW=$VALUE
+          ;;
+      ip6gateway)
+          IP6GW=$VALUE
+          ;;
+      eth0mask)
+          ETH0_MASK=$VALUE
+          ;;
+      eth1mask)
+          ETH1_MASK=$VALUE
+          ;;
+      eth2mask)
+          ETH2_MASK=$VALUE
+          ;;
+      eth0ip6)
+          ETH0_IP6=$VALUE
+          ;;
+      eth0ip6prelen)
+          ETH0_IP6_PRELEN=$VALUE
+          ;;
+      internaldns1)
+          internalNS1=$VALUE
+          ;;
+      internaldns2)
+          internalNS2=$VALUE
+          ;;
+      dns1)
+          NS1=$VALUE
+          ;;
+      dns2)
+          NS2=$VALUE
+          ;;
+      ip6dns1)
+          IP6_NS1=$VALUE
+          ;;
+      ip6dns2)
+          IP6_NS2=$VALUE
+          ;;
+      domain)
+          DOMAIN=$VALUE
+          ;;
+      dnssearchorder)
+          DNS_SEARCH_ORDER=$VALUE
+          ;;
+      useextdns)
+        USE_EXTERNAL_DNS=$VALUE
+          ;;
+      mgmtcidr)
+          MGMTNET=$VALUE
+          ;;
+      localgw)
+          LOCAL_GW=$VALUE
+          ;;
+      template)
+        TEMPLATE=$VALUE
+      	;;
+      sshonguest)
+        SSHONGUEST=$VALUE
+        ;;
+      name)
+	    NAME=$VALUE
+	    ;;
+      dhcprange)
+        DHCP_RANGE=$(echo $VALUE | tr ':' ',')
+      	;;
+      bootproto)
+        BOOTPROTO=$VALUE 
+      	;;
+      type)
+        TYPE=$VALUE	
+	    ;;
+      defaultroute)
+        DEFAULTROUTE=$VALUE	
+	;;
+      redundant_router)
+        RROUTER=$VALUE
+        ;;
+      guestgw)
+        GUEST_GW=$VALUE
+        ;;
+      guestbrd)
+        GUEST_BRD=$VALUE
+        ;;
+      guestcidrsize)
+        GUEST_CIDR_SIZE=$VALUE
+        ;;
+      router_pr)
+        ROUTER_PR=$VALUE
+        ;;
+      extra_pubnics)
+        EXTRA_PUBNICS=$VALUE
+        ;;
+      nic_macs)
+        NIC_MACS=$VALUE
+        ;;
+      mtu)
+        MTU=$VALUE
+        ;;
+      storageip)
+        STORAGE_IP=$VALUE
+        ;;
+      storagenetmask)
+        STORAGE_NETMASK=$VALUE
+        ;;
+      storagecidr)
+        STORAGE_CIDR=$VALUE
+        ;;
+      vmpassword)
+        VM_PASSWORD=$VALUE
+        ;;
+      vpccidr)
+        VPCCIDR=$VALUE
+        ;;
+    esac
+done
+
+[ $ETH0_IP ] && LOCAL_ADDRS=$ETH0_IP
+[ $ETH0_IP6 ] && LOCAL_ADDRS=$ETH0_IP6
+[ $ETH0_IP ] && [ $ETH0_IP6 ] && LOCAL_ADDRS="$ETH0_IP,$ETH0_IP6"
+}
+
+case "$1" in
+start)
+
+	log_action_begin_msg "Executing cloud-early-config"
+        log_it "Executing cloud-early-config"
+	if start; then
+	    log_action_end_msg $?
+	else
+	    log_action_end_msg $?
+	fi
+	;;
+
+stop)
+	log_action_begin_msg "Stopping cloud-early-config"
+        #Override old system's interface setting
+        setup_default;
+	log_action_end_msg 0
+	;;
+
+force-reload|restart)
+
+	log_warning_msg "Running $0  is deprecated because it may not enable again some interfaces"
+	log_action_begin_msg "Executing cloud-early-config"
+	if start; then
+	    log_action_end_msg $?
+	else
+	    log_action_end_msg $?
+	fi
+	;;
+
+*)
+	echo "Usage: /etc/init.d/cloud-early-config {start|stop}"
+	exit 1
+	;;
+esac
+
+exit 0

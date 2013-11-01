@@ -34,6 +34,7 @@ public class ApiConstants {
     public static final String BYTES_READ_RATE = "bytesreadrate";
     public static final String BYTES_WRITE_RATE = "byteswriterate";
     public static final String CATEGORY = "category";
+    public static final String CAN_REVERT = "canrevert";
     public static final String CERTIFICATE = "certificate";
     public static final String PRIVATE_KEY = "privatekey";
     public static final String DOMAIN_SUFFIX = "domainsuffix";
@@ -142,6 +143,7 @@ public class ApiConstants {
     public static final String MAX_SNAPS = "maxsnaps";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
+    public static final String KEEPALIVE_ENABLED = "keepaliveenabled";
     public static final String NAME = "name";
     public static final String METHOD_NAME = "methodname";
     public static final String NETWORK_DOMAIN = "networkdomain";
@@ -186,6 +188,7 @@ public class ApiConstants {
     public static final String REQUIRES_HVM = "requireshvm";
     public static final String RESOURCE_TYPE = "resourcetype";
     public static final String RESPONSE = "response";
+    public static final String REVERTABLE = "revertable";
     public static final String QUERY_FILTER = "queryfilter";
     public static final String SCHEDULE = "schedule";
     public static final String SCOPE = "scope";
@@ -529,6 +532,11 @@ public class ApiConstants {
     public static final String ENTITY_TYPE = "entitytype";
     public static final String ENTITY_ID = "entityid";
     public static final String ACCESS_TYPE = "accesstype";
+
+    public static final String RESOURCE_DETAILS = "resourcedetails";
+    public static final String EXPUNGE = "expunge";
+    public static final String FOR_DISPLAY = "fordisplay";
+
 
     public enum HostDetails {
         all, capacity, events, stats, min;

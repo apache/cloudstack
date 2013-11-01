@@ -36,9 +36,8 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.AddBaremetalKickStartPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxePingServerCmd;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -62,9 +61,8 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -220,10 +218,10 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
         }
         PhysicalNetworkVO phy = phys.get(0);
         
-        SearchCriteriaService<BaremetalPxeVO, BaremetalPxeVO> sc = SearchCriteria2.create(BaremetalPxeVO.class);
+        QueryBuilder<BaremetalPxeVO> sc = QueryBuilder.create(BaremetalPxeVO.class);
         //TODO: handle both kickstart and PING
         //sc.addAnd(sc.getEntity().getPodId(), Op.EQ, vm.getPodIdToDeployIn());
-        sc.addAnd(sc.getEntity().getPhysicalNetworkId(), Op.EQ, phy.getId());
+        sc.and(sc.entity().getPhysicalNetworkId(), Op.EQ, phy.getId());
         BaremetalPxeVO pxeVo = sc.find();
         if (pxeVo == null) {
             throw new CloudRuntimeException("No PXE server found in pod: " + vm.getPodIdToDeployIn() + ", you need to add it before starting VM");

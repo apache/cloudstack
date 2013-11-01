@@ -28,6 +28,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.ScopeType;
@@ -35,17 +37,17 @@ import com.cloud.storage.StoragePoolStatus;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+
 @Local(value = { PrimaryDataStoreDao.class })
-@DB(txn = false)
+@DB()
 public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long> implements PrimaryDataStoreDao {
     protected final SearchBuilder<StoragePoolVO> AllFieldSearch;
     protected final SearchBuilder<StoragePoolVO> DcPodSearch;
@@ -53,8 +55,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     protected final SearchBuilder<StoragePoolVO> DeleteLvmSearch;
     protected final GenericSearchBuilder<StoragePoolVO, Long> StatusCountSearch;
 
-    @Inject
-    protected StoragePoolDetailsDao _detailsDao;
+    @Inject protected StoragePoolDetailsDao _detailsDao;
 
     private final String DetailsSqlPrefix = "SELECT storage_pool.* from storage_pool LEFT JOIN storage_pool_details ON storage_pool.id = storage_pool_details.pool_id WHERE storage_pool.removed is null and storage_pool.status = 'Up' and storage_pool.data_center_id = ? and (storage_pool.pod_id = ? or storage_pool.pod_id is null) and storage_pool.scope = ? and (";
     private final String DetailsSqlSuffix = ") GROUP BY storage_pool_details.pool_id HAVING COUNT(storage_pool_details.name) >= ?";
@@ -227,7 +228,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     @Override
     @DB
     public StoragePoolVO persist(StoragePoolVO pool, Map<String, String> details) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         pool = super.persist(pool);
         if (details != null) {
@@ -255,7 +256,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         }
         sql.delete(sql.length() - 4, sql.length());
         sql.append(DetailsSqlSuffix);
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement(sql.toString());
@@ -316,10 +317,10 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     public List<StoragePoolVO> findZoneWideStoragePoolsByTags(long dcId, String[] tags) {
         List<StoragePoolVO> storagePools = null;
         if (tags == null || tags.length == 0) {
-            SearchCriteriaService<StoragePoolVO, StoragePoolVO> sc = SearchCriteria2.create(StoragePoolVO.class);
-            sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
-            sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
-            sc.addAnd(sc.getEntity().getScope(), Op.EQ, ScopeType.ZONE);
+            QueryBuilder<StoragePoolVO> sc = QueryBuilder.create(StoragePoolVO.class);
+            sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
+            sc.and(sc.entity().getStatus(), Op.EQ,Status.Up);
+            sc.and(sc.entity().getScope(), Op.EQ,ScopeType.ZONE);
             return sc.list();
         } else {
             Map<String, String> details = tagsToDetails(tags);
@@ -332,7 +333,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
             }
             sql.delete(sql.length() - 4, sql.length());
             sql.append(ZoneWideDetailsSqlSuffix);
-            Transaction txn = Transaction.currentTxn();
+            TransactionLegacy txn = TransactionLegacy.currentTxn();
             PreparedStatement pstmt = null;
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql.toString());
@@ -358,7 +359,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
         StringBuilder sql = new StringBuilder(FindPoolTagDetails);
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement(sql.toString());
@@ -381,13 +382,17 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     @Override
     public void updateDetails(long poolId, Map<String, String> details) {
         if (details != null) {
-            _detailsDao.update(poolId, details);
+            List<StoragePoolDetailVO> detailsVO = new ArrayList<StoragePoolDetailVO>();
+            for (String key : details.keySet()) {
+                detailsVO.add(new StoragePoolDetailVO(poolId, key, details.get(key)));
+            }
+            _detailsDao.saveDetails(detailsVO);
         }
     }
 
     @Override
     public Map<String, String> getDetails(long poolId) {
-        return _detailsDao.getDetails(poolId);
+        return _detailsDao.listDetailsKeyPairs(poolId);
     }
 
     @Override
@@ -421,11 +426,11 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
     @Override
     public List<StoragePoolVO> findZoneWideStoragePoolsByHypervisor(long dataCenterId, HypervisorType hypervisorType) {
-        SearchCriteriaService<StoragePoolVO, StoragePoolVO> sc =  SearchCriteria2.create(StoragePoolVO.class);
-        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dataCenterId);
-        sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
-        sc.addAnd(sc.getEntity().getScope(), Op.EQ, ScopeType.ZONE);
-        sc.addAnd(sc.getEntity().getHypervisor(), Op.EQ, hypervisorType);
+        QueryBuilder<StoragePoolVO> sc = QueryBuilder.create(StoragePoolVO.class);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ,dataCenterId);
+        sc.and(sc.entity().getStatus(), Op.EQ,Status.Up);
+        sc.and(sc.entity().getScope(), Op.EQ,ScopeType.ZONE);
+        sc.and(sc.entity().getHypervisor(), Op.EQ,hypervisorType);
         return sc.list();
     }
 }

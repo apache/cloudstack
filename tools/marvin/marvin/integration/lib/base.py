@@ -1514,7 +1514,8 @@ class NetworkOffering:
             cmd.specifyVlan = services["specifyVlan"]
         if "specifyIpRanges" in services:
             cmd.specifyIpRanges = services["specifyIpRanges"]
-
+        if "ispersistent" in services:
+            cmd.ispersistent = services["ispersistent"]
         if "egress_policy" in services:
             cmd.egressdefaultpolicy = services["egress_policy"]
 
@@ -1803,7 +1804,7 @@ class Host:
         return
 
     def enableMaintenance(self, apiclient):
-        """enables maintainance mode Host"""
+        """enables maintenance mode Host"""
 
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
         cmd.id = self.id
@@ -1811,14 +1812,14 @@ class Host:
 
     @classmethod
     def enableMaintenance(cls, apiclient, id):
-        """enables maintainance mode Host"""
+        """enables maintenance mode Host"""
 
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
         cmd.id = id
         return apiclient.prepareHostForMaintenance(cmd)
 
     def cancelMaintenance(self, apiclient):
-        """Cancels maintainance mode Host"""
+        """Cancels maintenance mode Host"""
 
         cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
         cmd.id = self.id
@@ -1826,7 +1827,7 @@ class Host:
 
     @classmethod
     def cancelMaintenance(cls, apiclient, id):
-        """Cancels maintainance mode Host"""
+        """Cancels maintenance mode Host"""
 
         cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
         cmd.id = id
@@ -1895,7 +1896,7 @@ class StoragePool:
         return
 
     def enableMaintenance(self, apiclient):
-        """enables maintainance mode Storage pool"""
+        """enables maintenance mode Storage pool"""
 
         cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
         cmd.id = self.id

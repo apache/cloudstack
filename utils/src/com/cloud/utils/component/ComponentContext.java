@@ -49,6 +49,8 @@ public class ComponentContext implements ApplicationContextAware {
     private static final Logger s_logger = Logger.getLogger(ComponentContext.class);
 
     private static ApplicationContext s_appContext;
+    private static Map<Class<?>, ApplicationContext> s_appContextDelegates;
+    private static boolean s_initializeBeans = true;
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
@@ -61,6 +63,9 @@ public class ComponentContext implements ApplicationContextAware {
     }
 
     public static void initComponentsLifeCycle() {
+        if ( ! s_initializeBeans )
+            return;
+
         AutowireCapableBeanFactory beanFactory = s_appContext.getAutowireCapableBeanFactory();
 
         Map<String, ComponentMethodInterceptable> interceptableComponents = getApplicationContext().getBeansOfType(ComponentMethodInterceptable.class);
@@ -230,8 +235,40 @@ public class ComponentContext implements ApplicationContextAware {
 
     public static <T> T inject(Object instance) {
         // autowire dynamically loaded object
-        AutowireCapableBeanFactory beanFactory = s_appContext.getAutowireCapableBeanFactory();
+        AutowireCapableBeanFactory beanFactory = getApplicationContext(instance).getAutowireCapableBeanFactory();
         beanFactory.autowireBean(instance);
         return (T)instance;
+    }
+
+    private static ApplicationContext getApplicationContext(Object instance) {
+        ApplicationContext result = null;
+
+        if (instance != null && s_appContextDelegates != null) {
+            result = s_appContextDelegates.get(instance.getClass());
+        }
+
+        return result == null ? s_appContext : result;
+    }
+
+    public static synchronized void addDelegateContext(Class<?> clazz, ApplicationContext context) {
+        if (s_appContextDelegates == null) {
+            s_appContextDelegates = new HashMap<Class<?>, ApplicationContext>();
+        }
+
+        s_appContextDelegates.put(clazz, context);
+    }
+
+    public static synchronized void removeDelegateContext(Class<?> clazz) {
+        if (s_appContextDelegates != null) {
+            s_appContextDelegates.remove(clazz);
+        }
+    }
+
+    public boolean isInitializeBeans() {
+        return s_initializeBeans;
+    }
+
+    public void setInitializeBeans(boolean initializeBeans) {
+        s_initializeBeans = initializeBeans;
     }
 }

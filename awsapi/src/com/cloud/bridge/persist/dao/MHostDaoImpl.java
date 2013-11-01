@@ -25,6 +25,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={MHostDao.class})
@@ -38,7 +39,7 @@ public class MHostDaoImpl extends GenericDaoBase<MHostVO, Long> implements MHost
 	@Override
 	public MHostVO getByHostKey(String hostKey) {
 	    NameSearch.and("MHostKey", NameSearch.entity().getHostKey(), SearchCriteria.Op.EQ);
-	    Transaction txn = Transaction.open("cloudbridge", Transaction.AWSAPI_DB, true);
+	    TransactionLegacy txn = TransactionLegacy.open("cloudbridge", TransactionLegacy.AWSAPI_DB, true);
 	    try {
 		txn.start();
 		SearchCriteria<MHostVO> sc = NameSearch.create();
@@ -52,7 +53,7 @@ public class MHostDaoImpl extends GenericDaoBase<MHostVO, Long> implements MHost
 
     @Override
     public void updateHeartBeat(MHostVO mhost) {
-        Transaction txn = Transaction.open("cloudbridge", Transaction.AWSAPI_DB, true);
+        TransactionLegacy txn = TransactionLegacy.open("cloudbridge", TransactionLegacy.AWSAPI_DB, true);
         try {
             txn.start();
             update(mhost.getId(), mhost);

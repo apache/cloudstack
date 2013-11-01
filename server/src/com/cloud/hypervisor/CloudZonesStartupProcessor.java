@@ -23,10 +23,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ResourceDetail;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.StartupCommandProcessor;
@@ -38,19 +38,16 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.DcDetailVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.DcDetailsDao;
+import com.cloud.dc.dao.DataCenterDetailsDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
-import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.Storage;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
@@ -69,7 +66,7 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
     @Inject DataCenterDao _zoneDao = null;
     @Inject HostDao _hostDao = null;
     @Inject HostPodDao _podDao = null;
-    @Inject DcDetailsDao _zoneDetailsDao = null;
+    @Inject DataCenterDetailsDao _zoneDetailsDao = null;
     
     @Inject AgentManager _agentManager = null;
     @Inject ConfigurationManager _configurationManager = null;
@@ -175,7 +172,7 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
     	}
         
         long zoneId = zone.getId();
-        DcDetailVO maxHostsInZone = _zoneDetailsDao.findDetail(zoneId, ZoneConfig.MaxHosts.key());
+        ResourceDetail maxHostsInZone = _zoneDetailsDao.findDetail(zoneId, ZoneConfig.MaxHosts.key());
         if(maxHostsInZone != null){
         	long maxHosts = new Long(maxHostsInZone.getValue()).longValue();
         	long currentCountOfHosts = _hostDao.countRoutingHostsByDataCenter(zoneId);

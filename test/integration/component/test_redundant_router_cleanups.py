@@ -653,7 +653,7 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
 
         self.debug("Sleeping for network gc wait + interval time")
         # Sleep to ensure that all resources are deleted
-        time.sleep((delay + exp) * 2)
+        time.sleep((delay + exp) * 3)
 
         routers = Router.list(
                               self.apiclient,

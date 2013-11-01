@@ -105,7 +105,7 @@ public class LdapConfiguration {
 
 	public String[] getReturnAttributes() {
 		return new String[] { getUsernameAttribute(), getEmailAttribute(),
-				getFirstnameAttribute(), getLastnameAttribute() };
+				getFirstnameAttribute(), getLastnameAttribute(), getCommonNameAttribute() };
 	}
 
 	public int getScope() {
@@ -142,4 +142,8 @@ public class LdapConfiguration {
 		final String userObject = _configDao.getValue("ldap.user.object");
 		return userObject == null ? "inetOrgPerson" : userObject;
 	}
+
+    public String getCommonNameAttribute() {
+	return "cn";
+    }
 }

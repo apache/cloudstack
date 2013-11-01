@@ -27,7 +27,9 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import junit.framework.Assert;
@@ -38,7 +40,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -53,7 +54,9 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.Network.Capability;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -65,6 +68,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.net.Ip;
 
 public class ConfigurationManagerTest {
@@ -209,7 +213,7 @@ public class ConfigurationManagerTest {
     }
 
     void runDedicatePublicIpRangePostiveTest() throws Exception {
-        Transaction txn = Transaction.open("runDedicatePublicIpRangePostiveTest");
+        TransactionLegacy txn = TransactionLegacy.open("runDedicatePublicIpRangePostiveTest");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(vlan);
 
@@ -235,7 +239,7 @@ public class ConfigurationManagerTest {
     }
 
     void runDedicatePublicIpRangeInvalidRange() throws Exception {
-        Transaction txn = Transaction.open("runDedicatePublicIpRangeInvalidRange");
+        TransactionLegacy txn = TransactionLegacy.open("runDedicatePublicIpRangeInvalidRange");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(null);
         try {
@@ -248,7 +252,7 @@ public class ConfigurationManagerTest {
     }
 
     void runDedicatePublicIpRangeDedicatedRange() throws Exception {
-        Transaction txn = Transaction.open("runDedicatePublicIpRangeDedicatedRange");
+        TransactionLegacy txn = TransactionLegacy.open("runDedicatePublicIpRangeDedicatedRange");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(vlan);
 
@@ -277,7 +281,7 @@ public class ConfigurationManagerTest {
     }
 
     void runDedicatePublicIpRangeInvalidZone() throws Exception {
-        Transaction txn = Transaction.open("runDedicatePublicIpRangeInvalidZone");
+        TransactionLegacy txn = TransactionLegacy.open("runDedicatePublicIpRangeInvalidZone");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(vlan);
 
@@ -303,7 +307,7 @@ public class ConfigurationManagerTest {
     }
 
     void runDedicatePublicIpRangeIPAdressAllocated() throws Exception {
-        Transaction txn = Transaction.open("runDedicatePublicIpRangeIPAdressAllocated");
+        TransactionLegacy txn = TransactionLegacy.open("runDedicatePublicIpRangeIPAdressAllocated");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(vlan);
 
@@ -330,7 +334,7 @@ public class ConfigurationManagerTest {
     }
 
     void runReleasePublicIpRangePostiveTest1() throws Exception {
-        Transaction txn = Transaction.open("runReleasePublicIpRangePostiveTest1");
+        TransactionLegacy txn = TransactionLegacy.open("runReleasePublicIpRangePostiveTest1");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(vlan);
 
@@ -354,7 +358,7 @@ public class ConfigurationManagerTest {
     }
 
     void runReleasePublicIpRangePostiveTest2() throws Exception {
-        Transaction txn = Transaction.open("runReleasePublicIpRangePostiveTest2");
+        TransactionLegacy txn = TransactionLegacy.open("runReleasePublicIpRangePostiveTest2");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(vlan);
 
@@ -388,7 +392,7 @@ public class ConfigurationManagerTest {
     }
 
     void runReleasePublicIpRangeInvalidIpRange() throws Exception {
-        Transaction txn = Transaction.open("runReleasePublicIpRangeInvalidIpRange");
+        TransactionLegacy txn = TransactionLegacy.open("runReleasePublicIpRangeInvalidIpRange");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(null);
         try {
@@ -401,7 +405,7 @@ public class ConfigurationManagerTest {
     }
 
     void runReleaseNonDedicatedPublicIpRange() throws Exception {
-        Transaction txn = Transaction.open("runReleaseNonDedicatedPublicIpRange");
+        TransactionLegacy txn = TransactionLegacy.open("runReleaseNonDedicatedPublicIpRange");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(vlan);
 
@@ -415,6 +419,70 @@ public class ConfigurationManagerTest {
         }
     }
 
+    @Test
+    public void validateEmptyStaticNatServiceCapablitiesTest() {
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+
+        configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
+    }
+
+    @Test
+    public void validateInvalidStaticNatServiceCapablitiesTest() {
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "Frue and Talse");
+
+        boolean caught = false;
+        try {
+            configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
+        }
+        catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage(),e.getMessage().contains("(frue and talse)"));
+            caught = true;
+        }
+        Assert.assertTrue("should not be accepted",caught);
+    }
+
+    @Test
+    public void validateTTStaticNatServiceCapablitiesTest() {
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "true and Talse");
+        staticNatServiceCapabilityMap.put(Capability.ElasticIp, "True");
+
+        configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
+    }
+    @Test
+    public void validateFTStaticNatServiceCapablitiesTest() {
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "false");
+        staticNatServiceCapabilityMap.put(Capability.ElasticIp, "True");
+
+        configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
+    }
+    @Test
+    public void validateTFStaticNatServiceCapablitiesTest() {
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "true and Talse");
+        staticNatServiceCapabilityMap.put(Capability.ElasticIp, "false");
+
+        boolean caught = false;
+        try {
+            configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
+        }
+        catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage(),e.getMessage().contains("Capability " + Capability.AssociatePublicIP.getName()
+                        + " can only be set when capability " + Capability.ElasticIp.getName() + " is true"));
+            caught = true;
+        }
+        Assert.assertTrue("should not be accepted",caught);
+    }
+    @Test
+    public void validateFFStaticNatServiceCapablitiesTest() {
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "false");
+        staticNatServiceCapabilityMap.put(Capability.ElasticIp, "False");
+
+        configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
+    }
 
     public class DedicatePublicIpRangeCmdExtn extends DedicatePublicIpRangeCmd {
         @Override

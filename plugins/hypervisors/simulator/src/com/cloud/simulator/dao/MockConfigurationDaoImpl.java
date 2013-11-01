@@ -20,7 +20,7 @@ import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
@@ -117,7 +117,7 @@ public class MockConfigurationDaoImpl extends GenericDaoBase<MockConfigurationVO
 
     @Override
     public MockConfigurationVO findByNameBottomUP(Long dcId, Long podId, Long clusterId, Long hostId, String name) {
-	 Transaction txn = Transaction.currentTxn();
+	 TransactionLegacy txn = TransactionLegacy.currentTxn();
 	StringBuilder search = new StringBuilder();
 	Formatter formatter = new Formatter(search);
 	formatter.format("select * from mockconfiguration where (name='%s') and ((data_center_id = %d and pod_id = %d and cluster_id = %d and host_id = %d)", name, dcId, podId, clusterId, hostId);

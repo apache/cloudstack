@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 @Local(value = NetworkDao.class)
-@DB(txn = false)
+@DB()
 public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements NetworkDao{
 
     /* (non-Javadoc)

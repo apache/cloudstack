@@ -26,6 +26,7 @@ import org.testng.annotations.Test;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
     private String hostGateway;
@@ -39,7 +40,7 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
     private String imageInstallPath;
     private String scriptPath;
     private HypervisorType hypervisor;
-    private Transaction txn;
+    private TransactionLegacy txn;
 
     private String s3AccessKey;
     private String s3SecretKey;
@@ -54,7 +55,7 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
 
     @BeforeMethod(alwaysRun = true)
     protected void injectDB(Method testMethod) throws Exception {
-        txn = Transaction.open(testMethod.getName());
+        txn = TransactionLegacy.open(testMethod.getName());
     }
 
     @Test

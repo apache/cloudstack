@@ -57,6 +57,9 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="update state for the network offering")
     private String state;
 
+    @Parameter(name=ApiConstants.KEEPALIVE_ENABLED, type=CommandType.BOOLEAN, required=false, description="if true keepalive will be turned on in the loadbalancer. At the time of writing this has only an effect on haproxy; the mode http and httpclose options are unset in the haproxy conf file.")
+    private Boolean keepAliveEnabled;
+
     @Parameter(name=ApiConstants.MAX_CONNECTIONS, type=CommandType.INTEGER, description="maximum number of concurrent connections supported by the network offering")
     private Integer maxConnections;
 
@@ -90,6 +93,10 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
 
     public Integer getMaxconnections() {
         return maxConnections;
+    }
+
+    public Boolean getKeepAliveEnabled() {
+        return keepAliveEnabled;
     }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

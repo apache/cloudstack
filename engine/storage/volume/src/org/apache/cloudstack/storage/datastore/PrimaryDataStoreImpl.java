@@ -23,19 +23,20 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.utils.db.GlobalLock;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
@@ -44,14 +45,13 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.VMTemplateStoragePoolVO;
@@ -60,6 +60,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.encoding.EncodingType;
 
@@ -111,7 +112,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public List<VolumeInfo> getVolumes() {
-        List<VolumeVO> volumes = volumeDao.findByPoolId(this.getId());
+        List<VolumeVO> volumes = volumeDao.findByPoolId(getId());
         List<VolumeInfo> volumeInfos = new ArrayList<VolumeInfo>();
         for (VolumeVO volume : volumes) {
             volumeInfos.add(VolumeObject.getVolumeObject(this, volume));
@@ -121,7 +122,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public DataStoreDriver getDriver() {
-        return this.driver;
+        return driver;
     }
 
     @Override
@@ -131,28 +132,28 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public long getId() {
-        return this.pdsv.getId();
+        return pdsv.getId();
     }
 
     @Override
     public String getUri() {
-        String path = this.pdsv.getPath();
+        String path = pdsv.getPath();
         path.replaceFirst("/*", "");
         StringBuilder builder = new StringBuilder();
-        builder.append(this.pdsv.getPoolType());
+        builder.append(pdsv.getPoolType());
         builder.append("://");
-        builder.append(this.pdsv.getHostAddress());
+        builder.append(pdsv.getHostAddress());
         builder.append(File.separator);
-        builder.append(this.pdsv.getPath());
+        builder.append(pdsv.getPath());
         builder.append(File.separator);
-        builder.append("?" + EncodingType.ROLE + "=" + this.getRole());
-        builder.append("&" + EncodingType.STOREUUID + "=" + this.pdsv.getUuid());
+        builder.append("?" + EncodingType.ROLE + "=" + getRole());
+        builder.append("&" + EncodingType.STOREUUID + "=" + pdsv.getUuid());
         return builder.toString();
     }
 
     @Override
     public Scope getScope() {
-        StoragePoolVO vo = dataStoreDao.findById(this.pdsv.getId());
+        StoragePoolVO vo = dataStoreDao.findById(pdsv.getId());
         if (vo.getScope() == ScopeType.CLUSTER) {
             return new ClusterScope(vo.getClusterId(), vo.getPodId(), vo.getDataCenterId());
         } else if (vo.getScope() == ScopeType.ZONE) {
@@ -184,7 +185,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public String getUuid() {
-        return this.pdsv.getUuid();
+        return pdsv.getUuid();
     }
 
     @Override
@@ -195,7 +196,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public PrimaryDataStoreLifeCycle getLifeCycle() {
-        return this.lifeCycle;
+        return lifeCycle;
     }
 
     @Override
@@ -205,7 +206,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public TemplateInfo getTemplate(long templateId) {
-        VMTemplateStoragePoolVO template = templatePoolDao.findByPoolTemplate(this.getId(), templateId);
+        VMTemplateStoragePoolVO template = templatePoolDao.findByPoolTemplate(getId(), templateId);
         if (template == null || template.getState() != ObjectInDataStoreStateMachine.State.Ready) {
             return null;
         }
@@ -227,7 +228,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
         // create template on primary storage
         if (obj.getType() == DataObjectType.TEMPLATE) {
             try{
-                String templateIdPoolIdString = "templateId:" + obj.getId() + "poolId:" + this.getId();
+                String templateIdPoolIdString = "templateId:" + obj.getId() + "poolId:" + getId();
                 VMTemplateStoragePoolVO templateStoragePoolRef;
                 GlobalLock lock = GlobalLock.getInternLock(templateIdPoolIdString);
                 if (!lock.lock(5)) {
@@ -235,21 +236,21 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
                     return null;
                 }
                 try {
-                    templateStoragePoolRef = templatePoolDao.findByPoolTemplate(this.getId(),
+                    templateStoragePoolRef = templatePoolDao.findByPoolTemplate(getId(),
                             obj.getId());
                     if (templateStoragePoolRef == null) {
 
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Not found (" + templateIdPoolIdString + ") in template_spool_ref, persisting it");
                         }
-                        templateStoragePoolRef = new VMTemplateStoragePoolVO(this.getId(), obj.getId());
+                        templateStoragePoolRef = new VMTemplateStoragePoolVO(getId(), obj.getId());
                         templateStoragePoolRef = templatePoolDao.persist(templateStoragePoolRef);
                     }
                 } catch (Throwable t) {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Failed to insert (" + templateIdPoolIdString +  ") to template_spool_ref", t);
                         }
-                        templateStoragePoolRef = templatePoolDao.findByPoolTemplate(this.getId(), obj.getId());
+                        templateStoragePoolRef = templatePoolDao.findByPoolTemplate(getId(), obj.getId());
                         if (templateStoragePoolRef == null) {
                             throw new CloudRuntimeException("Failed to create template storage pool entry");
                         } else {
@@ -266,6 +267,12 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
             }
         } else if (obj.getType() == DataObjectType.SNAPSHOT) {
             return objectInStoreMgr.create(obj, this);
+        } else if (obj.getType() == DataObjectType.VOLUME) {
+            VolumeVO vol = volumeDao.findById(obj.getId());
+            if (vol != null) {
+                vol.setPoolId(getId());
+                volumeDao.update(vol.getId(), vol);
+            }
         }
 
         return objectInStoreMgr.get(obj, this);
@@ -280,96 +287,96 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public long getDataCenterId() {
-        return this.pdsv.getDataCenterId();
+        return pdsv.getDataCenterId();
     }
 
     @Override
     public String getPath() {
-        return this.pdsv.getPath();
+        return pdsv.getPath();
     }
 
     @Override
     public StoragePoolType getPoolType() {
-        return this.pdsv.getPoolType();
+        return pdsv.getPoolType();
     }
 
     @Override
     public Date getCreated() {
-        return this.pdsv.getCreated();
+        return pdsv.getCreated();
     }
 
     @Override
     public Date getUpdateTime() {
-        return this.pdsv.getUpdateTime();
+        return pdsv.getUpdateTime();
     }
 
     @Override
     public long getCapacityBytes() {
-        return this.pdsv.getCapacityBytes();
+        return pdsv.getCapacityBytes();
     }
 
     @Override
     public long getUsedBytes() {
-        return this.pdsv.getUsedBytes();
+        return pdsv.getUsedBytes();
     }
 
     @Override
     public Long getCapacityIops() {
-        return this.pdsv.getCapacityIops();
+        return pdsv.getCapacityIops();
     }
 
     @Override
     public Long getClusterId() {
-        return this.pdsv.getClusterId();
+        return pdsv.getClusterId();
     }
 
     @Override
     public String getHostAddress() {
-        return this.pdsv.getHostAddress();
+        return pdsv.getHostAddress();
     }
 
     @Override
     public String getUserInfo() {
-        return this.pdsv.getUserInfo();
+        return pdsv.getUserInfo();
     }
 
     @Override
     public boolean isShared() {
-        return this.pdsv.getScope() == ScopeType.HOST ? false : true;
+        return pdsv.getScope() == ScopeType.HOST ? false : true;
     }
 
     @Override
     public boolean isLocal() {
-        return !this.isShared();
+        return !isShared();
     }
 
     @Override
     public StoragePoolStatus getStatus() {
-        return this.pdsv.getStatus();
+        return pdsv.getStatus();
     }
 
     @Override
     public int getPort() {
-        return this.pdsv.getPort();
+        return pdsv.getPort();
     }
 
     @Override
     public Long getPodId() {
-        return this.pdsv.getPodId();
+        return pdsv.getPodId();
     }
 
     public Date getRemoved() {
-        return this.pdsv.getRemoved();
+        return pdsv.getRemoved();
     }
 
     @Override
     public boolean isInMaintenance() {
-        return this.getStatus() == StoragePoolStatus.PrepareForMaintenance || this.getStatus() == StoragePoolStatus.Maintenance || this.getStatus() == StoragePoolStatus.ErrorInMaintenance || this.getRemoved() != null;
+        return getStatus() == StoragePoolStatus.PrepareForMaintenance || getStatus() == StoragePoolStatus.Maintenance || getStatus() == StoragePoolStatus.ErrorInMaintenance || getRemoved() != null;
     }
 
     @Override
     public String getStorageProviderName() {
-        return this.pdsv.getStorageProviderName();
+        return pdsv.getStorageProviderName();
     }
 
     @Override

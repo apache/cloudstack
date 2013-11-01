@@ -18,35 +18,47 @@
  */
 package org.apache.cloudstack.storage.cache.manager;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.storage.cache.allocator.StorageCacheAllocator;
+import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+
 import com.cloud.configuration.Config;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.exception.CloudRuntimeException;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.*;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
-import org.apache.cloudstack.framework.async.AsyncCallFuture;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.cache.allocator.StorageCacheAllocator;
-import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
     private static final Logger s_logger = Logger.getLogger(StorageCacheManagerImpl.class);
@@ -79,8 +91,8 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
     }
 
     protected List<DataStore> getCacheStores() {
-        SearchCriteriaService<ImageStoreVO, ImageStoreVO> sc = SearchCriteria2.create(ImageStoreVO.class);
-        sc.addAnd(sc.getEntity().getRole(), SearchCriteria.Op.EQ, DataStoreRole.ImageCache);
+        QueryBuilder<ImageStoreVO> sc = QueryBuilder.create(ImageStoreVO.class);
+        sc.and(sc.entity().getRole(), SearchCriteria.Op.EQ,DataStoreRole.ImageCache);
         List<ImageStoreVO> imageStoreVOs = sc.list();
         List<DataStore> stores = new ArrayList<DataStore>();
         for (ImageStoreVO vo : imageStoreVOs) {
@@ -134,10 +146,10 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
         return true;
     }
 
-    protected class CacheReplacementRunner implements Runnable {
+    protected class CacheReplacementRunner extends ManagedContextRunnable {
 
         @Override
-        public void run() {
+        protected void runInContext() {
             GlobalLock replacementLock = null;
             try {
                 replacementLock = GlobalLock.getInternLock("storageCacheMgr.replacement");
@@ -232,7 +244,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
 
     @Override
     public DataObject createCacheObject(DataObject data, Scope scope) {
-        DataStore cacheStore = this.getCacheStorage(scope);
+        DataStore cacheStore = getCacheStorage(scope);
 
         if (cacheStore == null)
         {
@@ -244,7 +256,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
 
     @Override
     public DataObject getCacheObject(DataObject data, Scope scope) {
-        DataStore cacheStore = this.getCacheStorage(scope);
+        DataStore cacheStore = getCacheStorage(scope);
         DataObject objOnCacheStore = cacheStore.create(data);
         objOnCacheStore.incRefCount();
         return objOnCacheStore;

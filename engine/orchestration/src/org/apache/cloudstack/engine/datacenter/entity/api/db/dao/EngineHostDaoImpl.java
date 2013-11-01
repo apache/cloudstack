@@ -54,13 +54,13 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component(value="EngineHostDao")
 @Local(value = { EngineHostDao.class })
-@DB(txn = false)
+@DB
 @TableGenerator(name = "host_req_sq", table = "op_host", pkColumnName = "id", valueColumnName = "sequence", allocationSize = 1)
 public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implements EngineHostDao {
     private static final Logger s_logger = Logger.getLogger(EngineHostDaoImpl.class);
@@ -269,7 +269,7 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
         AvailHypevisorInZone.done();
 
         HostsInStatusSearch = createSearchBuilder(Long.class);
-        HostsInStatusSearch.selectField(HostsInStatusSearch.entity().getId());
+        HostsInStatusSearch.selectFields(HostsInStatusSearch.entity().getId());
         HostsInStatusSearch.and("dc", HostsInStatusSearch.entity().getDataCenterId(), Op.EQ);
         HostsInStatusSearch.and("pod", HostsInStatusSearch.entity().getPodId(), Op.EQ);
         HostsInStatusSearch.and("cluster", HostsInStatusSearch.entity().getClusterId(), Op.EQ);
@@ -336,7 +336,7 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
 
     @Override @DB
     public List<EngineHostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         SearchCriteria<EngineHostVO> sc = UnmanagedDirectConnectSearch.create();
         sc.setParameters("lastPinged", lastPingSecondsAfter);
@@ -356,7 +356,7 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
 
     @Override @DB
     public List<EngineHostVO> findAndUpdateApplianceToLoad(long lastPingSecondsAfter, long managementServerId) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
 
         txn.start();
         SearchCriteria<EngineHostVO> sc = UnmanagedApplianceSearch.create();
@@ -495,7 +495,7 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
     @DB
     @Override
     public List<EngineHostVO> findLostHosts(long timeout) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<EngineHostVO> result = new ArrayList<EngineHostVO>();
         ResultSet rs = null;
@@ -546,7 +546,7 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
     public EngineHostVO persist(EngineHostVO host) {
         final String InsertSequenceSql = "INSERT INTO op_host(id) VALUES(?)";
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
 
         EngineHostVO dbHost = super.persist(host);
@@ -572,7 +572,7 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
     @Override
     @DB
     public boolean update(Long hostId, EngineHostVO host) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
 
         boolean persisted = super.update(hostId, host);
@@ -598,7 +598,7 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
 
         ArrayList<RunningHostCountInfo> l = new ArrayList<RunningHostCountInfo>();
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         ;
         PreparedStatement pstmt = null;
         try {

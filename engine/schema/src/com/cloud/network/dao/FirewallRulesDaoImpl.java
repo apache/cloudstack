@@ -29,9 +29,8 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -40,11 +39,11 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = FirewallRulesDao.class)
-@DB(txn = false)
+@DB
 public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> implements FirewallRulesDao {
 
     protected final SearchBuilder<FirewallRuleVO> AllFieldsSearch;
@@ -221,7 +220,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     @Override
     @DB
     public FirewallRuleVO persist(FirewallRuleVO firewallRule) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
 
         FirewallRuleVO dbfirewallRule = super.persist(firewallRule);
@@ -310,18 +309,18 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     @Override
     @DB
     public boolean remove(Long id) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         FirewallRuleVO entry = findById(id);
         if (entry != null) {
             if (entry.getPurpose() == Purpose.LoadBalancing) {
-                _tagsDao.removeByIdAndType(id, TaggedResourceType.LoadBalancer);
+                _tagsDao.removeByIdAndType(id, ResourceObjectType.LoadBalancer);
             } else if (entry.getPurpose() == Purpose.PortForwarding) {
-                _tagsDao.removeByIdAndType(id, TaggedResourceType.PortForwardingRule);
+                _tagsDao.removeByIdAndType(id, ResourceObjectType.PortForwardingRule);
             } else if (entry.getPurpose() == Purpose.Firewall) {
-                _tagsDao.removeByIdAndType(id, TaggedResourceType.FirewallRule);
+                _tagsDao.removeByIdAndType(id, ResourceObjectType.FirewallRule);
             } else if (entry.getPurpose() == Purpose.NetworkACL) {
-                _tagsDao.removeByIdAndType(id, TaggedResourceType.NetworkACL);
+                _tagsDao.removeByIdAndType(id, ResourceObjectType.NetworkACL);
             }
         }
         boolean result = super.remove(id);

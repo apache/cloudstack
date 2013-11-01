@@ -37,5 +37,8 @@
     <module>cluster</module>
     <module>db</module>
     <module>config</module>
+    <module>managed-context</module>
+    <module>spring/lifecycle</module>
+    <module>spring/module</module>
   </modules>
 </project>

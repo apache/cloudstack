@@ -29,7 +29,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = ImageStoreDetailsDao.class)
@@ -46,7 +46,7 @@ public class ImageStoreDetailsDaoImpl extends GenericDaoBase<ImageStoreDetailVO,
 
     @Override
     public void update(long storeId, Map<String, String> details) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         SearchCriteria<ImageStoreDetailVO> sc = storeSearch.create();
         sc.setParameters("store", storeId);
 

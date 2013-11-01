@@ -44,7 +44,6 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     @Column(name="name", updatable=false, nullable=false, length=255)
     private String name = null;
 
-
     @Column(name="account_id")
     private long accountId;
 
@@ -138,7 +137,6 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     @Column(name="service_offering_name")
     private String serviceOfferingName;
 
-
     @Column(name = "vpc_id")
     private long vpcId;
 
@@ -197,7 +195,6 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     @Enumerated(value=EnumType.STRING)
     private TrafficType trafficType;
 
-
     @Column(name="project_id")
     private long projectId;
 
@@ -215,7 +212,6 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 
     @Column(name="job_status")
     private int jobStatus;
-
 
     @Column(name="uuid")
     private String uuid;
@@ -236,113 +232,51 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     @Column(name="guest_type")
     @Enumerated(value=EnumType.STRING)
     private GuestType guestType;
-    
+
     @Column(name="role")
     @Enumerated(value=EnumType.STRING)
     private VirtualRouter.Role role;
 
-
     public DomainRouterJoinVO() {
     }
-
 
     @Override
     public long getId() {
         return id;
     }
 
-
-    @Override
-    public void setId(long id) {
-        this.id = id;
-
-    }
-
-
-
-
     @Override
     public String getUuid() {
         return uuid;
     }
 
-
-
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
-
-
     public String getName() {
         return name;
     }
-
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-
-
 
     @Override
     public long getAccountId() {
         return accountId;
     }
 
-
-    public void setAccountId(long accountId) {
-        this.accountId = accountId;
-    }
-
-
     @Override
     public String getAccountUuid() {
         return accountUuid;
     }
-
-
-
-
-    public void setAccountUuid(String accountUuid) {
-        this.accountUuid = accountUuid;
-    }
-
-
-
 
     @Override
     public String getAccountName() {
         return accountName;
     }
 
-
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
-    }
-
-
     @Override
     public short getAccountType() {
         return accountType;
     }
 
-
-    public void setAccountType(short accountType) {
-        this.accountType = accountType;
-    }
-
-
     @Override
     public long getDomainId() {
         return domainId;
-    }
-
-
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
     }
 
     @Override
@@ -350,24 +284,9 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
         return domainUuid;
     }
 
-
-
-
-    public void setDomainUuid(String domainUuid) {
-        this.domainUuid = domainUuid;
-    }
-
-
-
-
     @Override
     public String getDomainName() {
         return domainName;
-    }
-
-
-    public void setDomainName(String domainName) {
-        this.domainName = domainName;
     }
 
     @Override
@@ -375,633 +294,213 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
         return domainPath;
     }
 
-
-    public void setDomainPath(String domainPath) {
-        this.domainPath = domainPath;
-    }
-
-
     public State getState() {
         return state;
     }
-
-
-    public void setState(State state) {
-        this.state = state;
-    }
-
 
     public Date getCreated() {
         return created;
     }
 
-
-    public void setCreated(Date created) {
-        this.created = created;
-    }
-
-
     public Date getRemoved() {
         return removed;
     }
-
-
-    public void setRemoved(Date removed) {
-        this.removed = removed;
-    }
-
 
     public String getInstanceName() {
         return instanceName;
     }
 
-
-    public void setInstanceName(String instanceName) {
-        this.instanceName = instanceName;
-    }
-
-
     public String getPodUuid() {
         return podUuid;
     }
 
-
-
-
-    public void setPodUuid(String podUuid) {
-        this.podUuid = podUuid;
-    }
-
-
     public String getDataCenterUuid() {
         return dataCenterUuid;
-    }
-
-    public void setDataCenterUuid(String zoneUuid) {
-        this.dataCenterUuid = zoneUuid;
     }
 
     public String getDataCenterName() {
         return dataCenterName;
     }
 
-
-    public void setDataCenterName(String zoneName) {
-        this.dataCenterName = zoneName;
-    }
-
-
     public Long getHostId() {
         return hostId;
     }
-
-
-    public void setHostId(long hostId) {
-        this.hostId = hostId;
-    }
-
 
     public String getHostUuid() {
         return hostUuid;
     }
 
-
-
-
-    public void setHostUuid(String hostUuid) {
-        this.hostUuid = hostUuid;
-    }
-
-
-
-
     public String getHostName() {
         return hostName;
     }
-
-
-    public void setHostName(String hostName) {
-        this.hostName = hostName;
-    }
-
 
     public long getTemplateId() {
         return templateId;
     }
 
-
-    public void setTemplateId(long templateId) {
-        this.templateId = templateId;
-    }
-
-
-
     public String getTemplateUuid() {
         return templateUuid;
     }
-
-
-
-
-    public void setTemplateUuid(String templateUuid) {
-        this.templateUuid = templateUuid;
-    }
-
-
-
-
 
     public String getServiceOfferingUuid() {
         return serviceOfferingUuid;
     }
 
-
-    public void setServiceOfferingUuid(String serviceOfferingUuid) {
-        this.serviceOfferingUuid = serviceOfferingUuid;
-    }
-
-
-
-
     public String getServiceOfferingName() {
         return serviceOfferingName;
-    }
-
-
-    public void setServiceOfferingName(String serviceOfferingName) {
-        this.serviceOfferingName = serviceOfferingName;
     }
 
     public long getVpcId() {
         return vpcId;
     }
 
-    public void setVpcId(long vpcId) {
-        this.vpcId = vpcId;
-    }
-
-
-
-
     public long getNicId() {
         return nicId;
     }
-
-
-    public void setNicId(long nicId) {
-        this.nicId = nicId;
-    }
-
 
     public boolean isDefaultNic() {
         return isDefaultNic;
     }
 
-
-    public void setDefaultNic(boolean isDefaultNic) {
-        this.isDefaultNic = isDefaultNic;
-    }
-
-
     public String getIpAddress() {
         return ipAddress;
     }
-
-
-    public void setIpAddress(String ipAddress) {
-        this.ipAddress = ipAddress;
-    }
-
 
     public String getGateway() {
         return gateway;
     }
 
-
-    public void setGateway(String gateway) {
-        this.gateway = gateway;
-    }
-
-
     public String getNetmask() {
         return netmask;
     }
-
-
-    public void setNetmask(String netmask) {
-        this.netmask = netmask;
-    }
-
 
     public String getMacAddress() {
         return macAddress;
     }
 
-
-    public void setMacAddress(String macAddress) {
-        this.macAddress = macAddress;
-    }
-
-
     public URI getBroadcastUri() {
         return broadcastUri;
     }
-
-
-    public void setBroadcastUri(URI broadcastUri) {
-        this.broadcastUri = broadcastUri;
-    }
-
 
     public URI getIsolationUri() {
         return isolationUri;
     }
 
-
-    public void setIsolationUri(URI isolationUri) {
-        this.isolationUri = isolationUri;
-    }
-
-
     public long getNetworkId() {
         return networkId;
     }
-
-
-    public void setNetworkId(long networkId) {
-        this.networkId = networkId;
-    }
-
 
     public String getNetworkName() {
         return networkName;
     }
 
-
-
-
-    public void setNetworkName(String networkName) {
-        this.networkName = networkName;
-    }
-
-
-
-
     public String getNetworkDomain() {
         return networkDomain;
     }
-
-
-
-
-    public void setNetworkDomain(String networkDomain) {
-        this.networkDomain = networkDomain;
-    }
-
-
-
 
     public TrafficType getTrafficType() {
         return trafficType;
     }
 
-
-    public void setTrafficType(TrafficType trafficType) {
-        this.trafficType = trafficType;
-    }
-
-
-
     public long getServiceOfferingId() {
         return serviceOfferingId;
     }
 
-
-
-
-    public void setServiceOfferingId(long serviceOfferingId) {
-        this.serviceOfferingId = serviceOfferingId;
-    }
-
-
-
-
     public long getProjectId() {
         return projectId;
     }
-
-
-
-
-    public void setProjectId(long projectId) {
-        this.projectId = projectId;
-    }
-
-
-
 
     @Override
     public String getProjectUuid() {
         return projectUuid;
     }
 
-
-
-
-    public void setProjectUuid(String projectUuid) {
-        this.projectUuid = projectUuid;
-    }
-
-
-
-
     @Override
     public String getProjectName() {
         return projectName;
     }
 
-
-
-
-    public void setProjectName(String projectName) {
-        this.projectName = projectName;
-    }
-
-
-
-
-
-
     public String getVpcUuid() {
         return vpcUuid;
     }
-
-
-
-
-    public void setVpcUuid(String vpcUuid) {
-        this.vpcUuid = vpcUuid;
-    }
-
-
-
 
     public String getNicUuid() {
         return nicUuid;
     }
 
-
-
-
-    public void setNicUuid(String nicUuid) {
-        this.nicUuid = nicUuid;
-    }
-
-
-
-
     public String getNetworkUuid() {
         return networkUuid;
     }
-
-
-
-
-    public void setNetworkUuid(String networkUuid) {
-        this.networkUuid = networkUuid;
-    }
-
 
     public Long getJobId() {
         return jobId;
     }
 
-
-
-
-    public void setJobId(Long jobId) {
-        this.jobId = jobId;
-    }
-
-
-
-
     public String getJobUuid() {
         return jobUuid;
     }
-
-
-
-
-    public void setJobUuid(String jobUuid) {
-        this.jobUuid = jobUuid;
-    }
-
-
-
 
     public int getJobStatus() {
         return jobStatus;
     }
 
-
-
-
-    public void setJobStatus(int jobStatus) {
-        this.jobStatus = jobStatus;
-    }
-
-
-
     public Long getPodId() {
         return podId;
     }
-
-
-
-
-    public void setPodId(Long podId) {
-        this.podId = podId;
-    }
-
-
-
 
     public long getDataCenterId() {
         return dataCenterId;
     }
 
-
-
-
-    public void setDataCenterId(long zoneId) {
-        this.dataCenterId = zoneId;
-    }
-
-
-
-
     public String getDns1() {
         return dns1;
     }
-
-
-
-
-    public void setDns1(String dns1) {
-        this.dns1 = dns1;
-    }
-
-
-
 
     public String getDns2() {
         return dns2;
     }
 
-
-
-
-    public void setDns2(String dns2) {
-        this.dns2 = dns2;
-    }
-
-
-
-
     public String getTemplateVersion() {
         return templateVersion;
     }
-
-
-
-
-    public void setTemplateVersion(String templateVersion) {
-        this.templateVersion = templateVersion;
-    }
-
-
-
 
     public String getScriptsVersion() {
         return scriptsVersion;
     }
 
-
-
-
-    public void setScriptsVersion(String scriptsVersion) {
-        this.scriptsVersion = scriptsVersion;
-    }
-
-
-
-
     public RedundantState getRedundantState() {
         return redundantState;
     }
-
-
-
-
-    public void setRedundantState(RedundantState redundantState) {
-        this.redundantState = redundantState;
-    }
-
-
-
 
     public boolean isRedundantRouter() {
         return isRedundantRouter;
     }
 
-
-
-
-    public void setRedundantRouter(boolean isRedundantRouter) {
-        this.isRedundantRouter = isRedundantRouter;
-    }
-
-
-
-
     public GuestType getGuestType() {
         return guestType;
     }
 
-
-
-
-    public void setGuestType(GuestType guestType) {
-        this.guestType = guestType;
+    public String getIp6Address() {
+        return ip6Address;
     }
 
+    public String getIp6Gateway() {
+        return ip6Gateway;
+    }
 
+    public String getIp6Cidr() {
+        return ip6Cidr;
+    }
 
+    public String getIp6Dns1() {
+        return ip6Dns1;
+    }
 
-	public String getIp6Address() {
-		return ip6Address;
-	}
-
-
-
-
-	public void setIp6Address(String ip6Address) {
-		this.ip6Address = ip6Address;
-	}
-
-
-
-
-	public String getIp6Gateway() {
-		return ip6Gateway;
-	}
-
-
-
-
-	public void setIp6Gateway(String ip6Gateway) {
-		this.ip6Gateway = ip6Gateway;
-	}
-
-
-
-
-	public String getIp6Cidr() {
-		return ip6Cidr;
-	}
-
-
-
-
-	public void setIp6Cidr(String ip6Cidr) {
-		this.ip6Cidr = ip6Cidr;
-	}
-
-
-	public String getIp6Dns1() {
-		return ip6Dns1;
-	}
-
-	public void setIp6Dns1(String ip6Dns1) {
-		this.ip6Dns1 = ip6Dns1;
-	}
-
-	public String getIp6Dns2() {
-		return ip6Dns2;
-	}
-
-	public void setIp6Dns2(String ip6Dns2) {
-		this.ip6Dns2 = ip6Dns2;
-	}
-
+    public String getIp6Dns2() {
+        return ip6Dns2;
+    }
 
     public VirtualRouter.Role getRole() {
         return role;
-    }
-
-
-    public void setRole(VirtualRouter.Role role) {
-        this.role = role;
     }
 }

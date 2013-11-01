@@ -25,13 +25,12 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ImageStore;
-import com.cloud.storage.ScopeType;
-import com.cloud.utils.db.GenericDao;
-
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
+import com.cloud.utils.db.GenericDao;
 
 /**
  * Image Data Store DB view.
@@ -92,116 +91,55 @@ public class ImageStoreJoinVO extends BaseViewVO implements InternalIdentity, Id
     }
 
     @Override
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    @Override
     public String getUuid() {
         return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getName() {
         return name;
     }
 
-
-
     public long getZoneId() {
         return zoneId;
-    }
-
-    public void setZoneId(long zoneId) {
-        this.zoneId = zoneId;
     }
 
     public String getZoneUuid() {
         return zoneUuid;
     }
 
-    public void setZoneUuid(String zoneUuid) {
-        this.zoneUuid = zoneUuid;
-    }
-
     public String getZoneName() {
         return zoneName;
-    }
-
-    public void setZoneName(String zoneName) {
-        this.zoneName = zoneName;
     }
 
     public String getUrl() {
         return url;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
     public String getProtocol() {
         return protocol;
-    }
-
-    public void setProtocol(String protocol) {
-        this.protocol = protocol;
     }
 
     public String getProviderName() {
         return providerName;
     }
 
-    public void setProviderName(String providerName) {
-        this.providerName = providerName;
-    }
-
     public ScopeType getScope() {
         return scope;
-    }
-
-    public void setScope(ScopeType scope) {
-        this.scope = scope;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getDetailName() {
         return detailName;
     }
 
-    public void setDetailName(String detailName) {
-        this.detailName = detailName;
-    }
-
     public String getDetailValue() {
         return detailValue;
-    }
-
-    public void setDetailValue(String detailValue) {
-        this.detailValue = detailValue;
     }
 
     public DataStoreRole getRole() {
         return role;
     }
 
-    public void setRole(DataStoreRole role) {
-        this.role = role;
-    }
-
     public Date getRemoved() {
         return removed;
     }
-
-    public void setRemoved(Date removed) {
-        this.removed = removed;
-    }
-
-
 }

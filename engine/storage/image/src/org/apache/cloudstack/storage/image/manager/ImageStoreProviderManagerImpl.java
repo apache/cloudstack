@@ -26,6 +26,9 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
@@ -37,8 +40,6 @@ import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -87,6 +88,16 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
     @Override
     public List<DataStore> listImageStores() {
         List<ImageStoreVO> stores = dataStoreDao.listImageStores();
+        List<DataStore> imageStores = new ArrayList<DataStore>();
+        for (ImageStoreVO store : stores) {
+            imageStores.add(getImageStore(store.getId()));
+        }
+        return imageStores;
+    }
+
+    @Override
+    public List<DataStore> listImageCacheStores() {
+        List<ImageStoreVO> stores = dataStoreDao.listImageCacheStores();
         List<DataStore> imageStores = new ArrayList<DataStore>();
         for (ImageStoreVO store : stores) {
             imageStores.add(getImageStore(store.getId()));

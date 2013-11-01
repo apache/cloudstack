@@ -30,18 +30,17 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 @Component
-@Local(value={DataCenterLinkLocalIpAddressDaoImpl.class}) @DB(txn=false)
+@Local(value={DataCenterLinkLocalIpAddressDaoImpl.class}) @DB
 public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCenterLinkLocalIpAddressVO, Long> implements DataCenterLinkLocalIpAddressDao {
     private static final Logger s_logger = Logger.getLogger(DataCenterLinkLocalIpAddressDaoImpl.class);
     
@@ -55,7 +54,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
         sc.setParameters("pod", podId);
         sc.setParameters("taken", (Date)null);
         
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         
         DataCenterLinkLocalIpAddressVO  vo = lockOneRandomRow(sc, true);
@@ -85,7 +84,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
         long startIP = NetUtils.ip2Long(start);
         long endIP = NetUtils.ip2Long(end);
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
             stmt = txn.prepareAutoCloseStatement(insertSql);

@@ -57,6 +57,7 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -132,6 +133,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DataCenterDetailsDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
@@ -225,8 +227,9 @@ import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
+import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.StatsCollector;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
@@ -407,11 +410,10 @@ public class ApiDBUtils {
     static AffinityGroupJoinDao _affinityGroupJoinDao;
     static GlobalLoadBalancingRulesService _gslbService;
     static NetworkACLDao _networkACLDao;
-    static ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     static AccountService _accountService;
     static AclRoleJoinDao _aclRoleJoinDao;
     static AclGroupJoinDao _aclGroupJoinDao;
-
+    static ResourceMetaDataService _resourceDetailsService;
 
     @Inject
     private ManagementServer ms;
@@ -525,11 +527,12 @@ public class ApiDBUtils {
     @Inject private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
     @Inject private AccountService accountService;
     @Inject
-    private ConfigurationManager configMgr;
-    @Inject
     private AclRoleJoinDao aclRoleJoinDao;
     @Inject
     private AclGroupJoinDao aclGroupJoinDao;
+    @Inject private ConfigurationManager configMgr;
+    @Inject private DataCenterDetailsDao zoneDetailsDao;
+    @Inject private  ResourceMetaDataService resourceDetailsService;
 
     @PostConstruct
     void init() {
@@ -639,10 +642,10 @@ public class ApiDBUtils {
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
         _networkACLDao = networkACLDao;
-        _serviceOfferingDetailsDao = serviceOfferingDetailsDao;
         _accountService = accountService;
         _aclRoleJoinDao = aclRoleJoinDao;
         _aclGroupJoinDao = aclGroupJoinDao;
+        _resourceDetailsService = resourceDetailsService;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -899,7 +902,7 @@ public class ApiDBUtils {
     public static VMTemplateVO findTemplateById(Long templateId) {
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(templateId);
         if(template != null) {
-            Map details = _templateDetailsDao.findDetails(templateId);
+            Map<String, String> details = _templateDetailsDao.listDetailsKeyPairs(templateId);
             if(details != null && !details.isEmpty()) {
                 template.setDetails(details);
             }
@@ -1166,11 +1169,11 @@ public class ApiDBUtils {
         return vmSnapshot;
     }
 
-    public static String getUuid(String resourceId, TaggedResourceType resourceType) {
+    public static String getUuid(String resourceId, ResourceObjectType resourceType) {
         return _taggedResourceService.getUuid(resourceId, resourceType);
     }
 
-    public static List<? extends ResourceTag> listByResourceTypeAndId(TaggedResourceType type, long resourceId) {
+    public static List<? extends ResourceTag> listByResourceTypeAndId(ResourceObjectType type, long resourceId) {
         return _taggedResourceService.listByResourceTypeAndId(type, resourceId);
     }
     public static List<ConditionVO> getAutoScalePolicyConditions(long policyId)
@@ -1720,12 +1723,21 @@ public class ApiDBUtils {
         return providerDnsName;
     }
 
-    public static Map<String, String> getServiceOfferingDetails(long serviceOfferingId) {
-        Map<String, String> details = _serviceOfferingDetailsDao.findDetails(serviceOfferingId);
+    public static Map<String, String> getResourceDetails(long resourceId, ResourceObjectType resourceType) {
+        Map<String, String> details = null;
+        if (isAdmin(CallContext.current().getCallingAccount())) {
+            details = _resourceDetailsService.getDetailsMap(resourceId, resourceType, null);
+        } else {
+            details = _resourceDetailsService.getDetailsMap(resourceId, resourceType, true);
+        }
         return details.isEmpty() ? null : details;
     }
 
     public static boolean isAdmin(Account account) {
         return _accountService.isAdmin(account.getType());
+    }
+    
+    public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType){
+        return  _tagJoinDao.listBy(resourceUUID, resourceType);
     }
 }

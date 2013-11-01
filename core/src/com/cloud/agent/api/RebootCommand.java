@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.agent.api;
 
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.vm.VirtualMachine;
 
 public class RebootCommand extends Command {

@@ -28,7 +28,7 @@ groupadd -r admin
 usermod -a -G admin devcloud
 echo "root:password" | chpasswd
 sed -i -e '/Defaults\s\+env_reset/a Defaults\texempt_group=admin' /etc/sudoers
-sed -i -e 's/%admin ALL=(ALL) ALL/%admin ALL=NOPASSWD:ALL/g' /etc/sudoers
+sed -i -e 's/%admin ALL=(ALL) ALL/%admin ALL=NOPASSWD:/bin/chmod, /bin/cp, /bin/mkdir, /bin/mount, /bin/umount/g' /etc/sudoers
 
 mkdir /home/devcloud/.ssh
 chmod 700 /home/devcloud/.ssh

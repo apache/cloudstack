@@ -433,7 +433,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO host : hosts) {
             try {
-                this.storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
+                storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
                 poolHosts.add(host);
             } catch (Exception e) {
                 s_logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
@@ -444,20 +444,20 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             primaryDataStoreDao.expunge(dataStore.getId());
             throw new CloudRuntimeException("Failed to create storage pool as it is not accessible to hosts.");
         }
-        this.dataStoreHelper.attachZone(dataStore, hypervisorType);
+        dataStoreHelper.attachZone(dataStore, hypervisorType);
         return true;
     }
 
     @Override
     public boolean maintain(DataStore dataStore) {
         storagePoolAutmation.maintain(dataStore);
-        this.dataStoreHelper.maintain(dataStore);
+        dataStoreHelper.maintain(dataStore);
         return true;
     }
 
     @Override
     public boolean cancelMaintain(DataStore store) {
-        this.dataStoreHelper.cancelMaintain(store);
+        dataStoreHelper.cancelMaintain(store);
         storagePoolAutmation.cancelMaintain(store);
         return true;
     }
@@ -472,6 +472,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         HypervisorType hType = null;
         if(hostPoolRecords.size() > 0 ){
             hType = getHypervisorType(hostPoolRecords.get(0).getHostId());
+        } else {
+            return false;
         }
 
         // Remove the SR associated with the Xenserver
@@ -511,4 +513,13 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         dataStoreHelper.attachHost(store, scope, existingInfo);
         return true;
     }
+
+    /* (non-Javadoc)
+     * @see org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle#migrateToObjectStore(org.apache.cloudstack.engine.subsystem.api.storage.DataStore)
+     */
+    @Override
+    public boolean migrateToObjectStore(DataStore store) {
+        return false;
+    }
+
 }

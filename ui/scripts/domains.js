@@ -99,24 +99,31 @@
                             var domainObj;
 
                             var data = {
-                                id: args.context.domains[0].id,
-                                networkdomain: args.data.networkdomain
+                                id: args.context.domains[0].id                                
                             };
 
-                            if (args.data.name != null) {
+                            if (args.data.name != null) { //args.data.name == undefined means name field is not editable (when log in as normal user or domain admin)
                                 $.extend(data, {
                                     name: args.data.name
                                 });
                             }
-
-                            $.ajax({
-                                url: createURL("updateDomain"),
-                                async: false,
-                                data: data,
-                                success: function(json) {
-                                    domainObj = json.updatedomainresponse.domain;
-                                }
-                            });
+                            
+                            if (args.data.networkdomain != null) { //args.data.networkdomain == undefined means networkdomain field is not editable (when log in as normal user or domain admin)
+                                $.extend(data, {
+                                	networkdomain: args.data.networkdomain
+                                });
+                            }
+                           
+                            if('name' in data || 'networkdomain' in data)  {                            
+	                            $.ajax({
+	                                url: createURL("updateDomain"),
+	                                async: false,
+	                                data: data,
+	                                success: function(json) {
+	                                    domainObj = json.updatedomainresponse.domain;
+	                                }
+	                            });
+                            }
 
                             if (args.data.vmLimit != null) {
                                 $.ajax({
@@ -328,8 +335,8 @@
                         fields: [{
                             name: {
                                 label: 'label.name',
-                                isEditable: function(context) {
-                                    if (context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to change domain name
+                                isEditable: function(args) {
+                                    if (isAdmin() && args.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to change domain name
                                         return true;
                                     else
                                         return false;
@@ -346,96 +353,101 @@
 
                             networkdomain: {
                                 label: 'label.network.domain',
-                                isEditable: true
-                            },
-                            vmLimit: {
-                                label: 'label.instance.limits',
-                                isEditable: function(context) {
-                                    if (context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits
+                                isEditable: function(args) {
+                                    if (isAdmin()) 
                                         return true;
                                     else
                                         return false;
+                                }
+                            },
+                            vmLimit: {
+                                label: 'label.instance.limits',
+                                isEditable: function(args) {
+                                    if (args.domains[0].id == g_domainid) //disallow to update the field on the domain you log in as
+                                        return false;
+                                    else
+                                        return true;
                                 }
                             },
                             ipLimit: {
                                 label: 'label.ip.limits',
-                                isEditable: function(context) {
-                                    if (context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits
-                                        return true;
-                                    else
+                                isEditable: function(args) {
+                                    if (args.domains[0].id == g_domainid) //disallow to update the field on the domain you log in as
                                         return false;
+                                    else
+                                        return true;
                                 }
                             },
                             volumeLimit: {
                                 label: 'label.volume.limits',
-                                isEditable: function(context) {
-                                    if (context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits
-                                        return true;
-                                    else
+                                isEditable: function(args) {
+                                    if (args.domains[0].id == g_domainid) //disallow to update the field on the domain you log in as
                                         return false;
+                                    else
+                                        return true;
                                 }
                             },
                             snapshotLimit: {
                                 label: 'label.snapshot.limits',
-                                isEditable: function(context) {
-                                    if (context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits
-                                        return true;
-                                    else
+                                isEditable: function(args) {
+                                    if (args.domains[0].id == g_domainid) //disallow to update the field on the domain you log in as
                                         return false;
+                                    else
+                                        return true;
                                 }
                             },
                             templateLimit: {
                                 label: 'label.template.limits',
-                                isEditable: function(context) {
-                                    if (context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits
-                                        return true;
-                                    else
+                                isEditable: function(args) {
+                                    if (args.domains[0].id == g_domainid) //disallow to update the field on the domain you log in as
                                         return false;
+                                    else
+                                        return true;
                                 }
                             },
                             vpcLimit: {
                                 label: 'VPC limits',
-                                isEditable: function(context) {
-                                    if (context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits
-                                        return true;
-                                    else
+                                isEditable: function(args) {
+                                    if (args.domains[0].id == g_domainid) //disallow to update the field on the domain you log in as
                                         return false;
+                                    else
+                                        return true;
                                 }
                             },
                             cpuLimit: {
                                 label: 'label.cpu.limits',
-                                isEditable: function(context) {
-                                    if (context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits
-                                        return true;
-                                    else
+                                isEditable: function(args) {
+                                    if (args.domains[0].id == g_domainid) //disallow to update the field on the domain you log in as
                                         return false;
+                                    else
+                                        return true;
                                 }
                             },
                             memoryLimit: {
                                 label: 'label.memory.limits',
-                                isEditable: function(context) {
-                                    if (context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits
-                                        return true;
-                                    else
+                                isEditable: function(args) {
+                                    if (args.domains[0].id == g_domainid) //disallow to update the field on the domain you log in as
                                         return false;
+                                    else
+                                        return true;
                                 }
                             },
                             primaryStorageLimit: {
                                 label: 'label.primary.storage.limits',
-                                isEditable: function(context) {
-                                    if (context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits
-                                        return true;
-                                    else
+                                isEditable: function(args) {
+                                    if (args.domains[0].id == g_domainid) //disallow to update the field on the domain you log in as
                                         return false;
+                                    else
+                                        return true;
                                 }
                             },
                             secondaryStorageLimit: {
                                 label: 'label.secondary.storage.limits',
-                                isEditable: function(context) {
-                                    if (context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits
-                                        return true;
-                                    else
+                                isEditable: function(args) {
+                                    if (args.domains[0].id == g_domainid) //disallow to update the field on the domain you log in as
                                         return false;
+                                    else
+                                        return true;
                                 }
                             },
                             accountTotal: {
@@ -620,6 +632,10 @@
             if (jsonObj.level != 0) { //ROOT domain (whose level is 0) is not allowed to delete
                 allowedActions.push("delete");
             }
+        } else if (isDomainAdmin()) { 
+        	if (args.context.domains[0].id != g_domainid) { 
+        		allowedActions.push("edit"); //merge updateResourceLimit into edit
+        	}
         }
         allowedActions.push("updateResourceCount");
         return allowedActions;

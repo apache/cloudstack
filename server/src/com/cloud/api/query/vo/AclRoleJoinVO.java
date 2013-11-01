@@ -73,10 +73,6 @@ public class AclRoleJoinVO extends BaseViewVO {
         return id;
     }
 
-    @Override
-    public void setId(long id) {
-        this.id = id;
-    }
 
     public String getName() {
         return name;

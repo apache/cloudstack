@@ -67,14 +67,14 @@ class Services:
                                     "publicport": 22,
                                     "protocol": 'TCP',
                         },
-                        "templates": {
+                        "template": {
                                     "displaytext": 'Template from snapshot',
                                     "name": 'Template from snapshot',
                                     "ostype": 'CentOS 5.3 (64-bit)',
                                     "templatefilter": 'self',
-                                    "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
-                                    "hypervisor": 'XenServer',
-                                    "format": 'VHD',
+                                    "url": "",
+                                    "hypervisor": '',
+                                    "format": '',
                                     "isfeatured": True,
                                     "ispublic": True,
                                     "isextractable": True,
@@ -118,7 +118,7 @@ class TestTemplate(cloudstackTestCase):
         cls.zone = get_zone(cls.api_client, cls.services)
         cls.services['mode'] = cls.zone.networktype
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["templates"]["zoneid"] = cls.zone.id
+        cls.services["template"]["zoneid"] = cls.zone.id
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -160,16 +160,26 @@ class TestTemplate(cloudstackTestCase):
         #2. Deploy VM using this template
         #3. Deploy VM should return password set in template.
 
+        builtin_info = get_builtin_template_info(self.apiclient, self.zone.id)
+        self.services["template"]["url"] = builtin_info[0] 
+        self.services["template"]["hypervisor"] = builtin_info[1]     
+        self.services["template"]["format"] = builtin_info[2]
+
         self.debug("Registering a new template")
+
         # Register new template
         template = Template.register(
-                                    self.apiclient,
-                                    self.services["templates"],
-                                    zoneid=self.zone.id,
-                                    account=self.account.name,
-                                    domainid=self.account.domainid
-                                    )
-        self.debug("Registering template with ID: %s" % template.id)
+                                        self.apiclient,
+                                        self.services["template"],
+                                        zoneid=self.zone.id,
+                                        account=self.account.name,
+                                        domainid=self.account.domainid
+                                        )
+        self.debug(
+                "Registered a template of format: %s with ID: %s" % (
+                                                                self.services["template"]["format"],
+                                                                template.id
+                                                                ))
         try:
             # Wait for template to download
             template.download(self.apiclient)
@@ -185,7 +195,7 @@ class TestTemplate(cloudstackTestCase):
         list_template_response = Template.list(
                                             self.apiclient,
                                             templatefilter=\
-                                            self.services["templates"]["templatefilter"],
+                                            self.services["template"]["templatefilter"],
                                             id=template.id,
                                             zoneid=self.zone.id
                                             )
@@ -796,7 +806,7 @@ class TestTemplates(cloudstackTestCase):
         #Create template from volume
         template = Template.create(
                                    self.apiclient,
-                                   self.services["templates"],
+                                   self.services["template"],
                                    self.volume.id,
                                    account=self.account.name,
                                    domainid=self.account.domainid
@@ -856,7 +866,7 @@ class TestTemplates(cloudstackTestCase):
         template = Template.create_from_snapshot(
                                     self.apiclient,
                                     snapshot,
-                                    self.services["templates"]
+                                    self.services["template"]
                                     )
         self.cleanup.append(template)
 
@@ -864,7 +874,7 @@ class TestTemplates(cloudstackTestCase):
         templates = Template.list(
                                 self.apiclient,
                                 templatefilter=\
-                                self.services["templates"]["templatefilter"],
+                                self.services["template"]["templatefilter"],
                                 id=template.id
                                 )
         self.assertEqual(
@@ -938,14 +948,14 @@ class TestTemplates(cloudstackTestCase):
         template = Template.create_from_snapshot(
                                     self.apiclient,
                                     snapshot,
-                                    self.services["templates"],
+                                    self.services["template"],
                                     random_name=False
                                     )
         self.debug("Created template from snapshot: %s" % template.id)
         templates = Template.list(
                                 self.apiclient,
                                 templatefilter=\
-                                self.services["templates"]["templatefilter"],
+                                self.services["template"]["templatefilter"],
                                 id=template.id
                                 )
         self.assertEqual(
@@ -977,14 +987,14 @@ class TestTemplates(cloudstackTestCase):
         template = Template.create_from_snapshot(
                                     self.apiclient,
                                     snapshot,
-                                    self.services["templates"],
+                                    self.services["template"],
                                     random_name=False
                                     )
 
         templates = Template.list(
                                 self.apiclient,
                                 templatefilter=\
-                                self.services["templates"]["templatefilter"],
+                                self.services["template"]["templatefilter"],
                                 id=template.id
                                 )
         self.assertEqual(
@@ -1000,7 +1010,7 @@ class TestTemplates(cloudstackTestCase):
 
         self.assertEqual(
                             templates[0].name,
-                            self.services["templates"]["name"],
+                            self.services["template"]["name"],
                             "Check the name of the template"
                         )
         return

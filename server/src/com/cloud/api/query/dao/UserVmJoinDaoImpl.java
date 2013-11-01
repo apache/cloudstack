@@ -19,8 +19,10 @@ package com.cloud.api.query.dao;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
@@ -48,6 +50,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmStats;
 
 
@@ -262,6 +265,14 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
                 resp.setAccountName(userVm.getAccountName());
                 userVmResponse.addAffinityGroup(resp);
             }
+        }
+
+        // set resource details map
+        // only hypervisortoolsversion can be returned to the end user       }
+        if (userVm.getDetailName() != null && userVm.getDetailName().equalsIgnoreCase(VmDetailConstants.HYPERVISOR_TOOLS_VERSION)){
+            Map<String, String> resourceDetails = new HashMap<String, String>();
+            resourceDetails.put(userVm.getDetailName(), userVm.getDetailValue());
+            userVmResponse.setDetails(resourceDetails);
         }
 
         userVmResponse.setObjectName(objectName);

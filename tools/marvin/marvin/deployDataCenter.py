@@ -32,8 +32,12 @@ class deployDataCenters(object):
         if not path.exists(cfgFile) \
            and not path.exists(path.abspath(cfgFile)):
             raise IOError("config file %s not found. please \
-specify a valid config file" % cfgFile)
+                           specify a valid config file" % cfgFile)
         self.configFile = cfgFile
+        '''
+        parsed configuration information
+        '''
+        self.config = None
 
     def addHosts(self, hosts, zoneId, podId, clusterId, hypervisor):
         if hosts is None:
@@ -88,11 +92,11 @@ specify a valid config file" % cfgFile)
             if cluster.hypervisor.lower() != "vmware":
                 self.addHosts(cluster.hosts, zoneId, podId, clusterId,
                               cluster.hypervisor)
-            self.wait_for_host(zoneId, clusterId)
+            self.waitForHost(zoneId, clusterId)
             self.createPrimaryStorages(cluster.primaryStorages, zoneId, podId,
                                        clusterId)
 
-    def wait_for_host(self, zoneId, clusterId):
+    def waitForHost(self, zoneId, clusterId):
         """
         Wait for the hosts in the zoneid, clusterid to be up
 
@@ -123,7 +127,7 @@ specify a valid config file" % cfgFile)
             primarycmd.clusterid = clusterId
             self.apiClient.createStoragePool(primarycmd)
 
-    def createpods(self, pods, zoneId, networkId=None):
+    def createPods(self, pods, zoneId, networkId=None):
         if pods is None:
             return
         for pod in pods:
@@ -208,7 +212,7 @@ specify a valid config file" % cfgFile)
                                             })
             self.apiClient.createSecondaryStagingStore(cachecmd)
 
-    def createnetworks(self, networks, zoneId):
+    def createNetworks(self, networks, zoneId):
         if networks is None:
             return
         for network in networks:
@@ -417,8 +421,8 @@ specify a valid config file" % cfgFile)
                 guestntwrk.networkofferingid = \
                     listnetworkofferingresponse[0].id
 
-                networkid = self.createnetworks([guestntwrk], zoneId)
-                self.createpods(zone.pods, zoneId, networkid)
+                networkid = self.createNetworks([guestntwrk], zoneId)
+                self.createPods(zone.pods, zoneId, networkid)
                 if self.isEipElbZone(zone):
                     self.createVlanIpRanges(zone.networktype, zone.ipranges,
                                             zoneId, forvirtualnetwork=True)
@@ -426,7 +430,7 @@ specify a valid config file" % cfgFile)
             isPureAdvancedZone = (zone.networktype == "Advanced"
                                   and zone.securitygroupenabled != "true")
             if isPureAdvancedZone:
-                self.createpods(zone.pods, zoneId)
+                self.createPods(zone.pods, zoneId)
                 self.createVlanIpRanges(zone.networktype, zone.ipranges,
                                         zoneId)
             elif (zone.networktype == "Advanced"
@@ -459,7 +463,7 @@ specify a valid config file" % cfgFile)
 
                 networkcmdresponse = self.apiClient.createNetwork(networkcmd)
                 networkId = networkcmdresponse.id
-                self.createpods(zone.pods, zoneId, networkId)
+                self.createPods(zone.pods, zoneId, networkId)
 
             '''Note: Swift needs cache storage first'''
             self.createCacheStorages(zone.cacheStorages, zoneId)
@@ -510,13 +514,15 @@ specify a valid config file" % cfgFile)
 
     def loadCfg(self):
         try:
-            self.config = configGenerator.get_setup_config(self.configFile)
+            self.config = configGenerator.getSetupConfig(self.configFile)
         except:
             raise cloudstackException.InvalidParameterException(
                 "Failed to load config %s" % self.configFile)
 
-        mgt = self.config.mgtSvr[0]
-
+        ''' Retrieving Management Server Connection Details '''
+        mgtDetails = self.config.mgtSvr[0]
+        ''' Retrieving Database Connection Details'''
+        dbSvrDetails = self.config.dbSvr
         loggers = self.config.logger
         testClientLogFile = None
         self.testCaseLogFile = None
@@ -534,36 +540,33 @@ specify a valid config file" % cfgFile)
         if testClientLogFile is not None:
             testClientLogger = logging.getLogger("testclient.testengine.run")
             fh = logging.FileHandler(testClientLogFile)
-            fh.setFormatter(logging.
-                            Formatter("%(asctime)s - %(levelname)s - %(name)s\
- - %(message)s"))
+            fh.setFormatter(logging.Formatter(
+                "%(asctime)s - %(levelname)s - %(name)s\ - %(message)s")
+            )
             testClientLogger.addHandler(fh)
             testClientLogger.setLevel(logging.INFO)
         self.testClientLogger = testClientLogger
 
         self.testClient = \
             cloudstackTestClient.\
-            cloudstackTestClient(mgt.mgtSvrIp, mgt.port, mgt.user, mgt.passwd,
-                                 mgt.apiKey, mgt.securityKey,
+            cloudstackTestClient(mgtDetails,
+                                 dbSvrDetails,
                                  logging=self.testClientLogger)
-        if mgt.apiKey is None:
-            apiKey, securityKey = self.registerApiKey()
-            self.testClient = cloudstackTestClient.cloudstackTestClient(
-                mgt.mgtSvrIp, 8080,
-                mgt.user, mgt.passwd,
-                apiKey, securityKey,
-                logging=self.testClientLogger)
 
-        """config database"""
-        dbSvr = self.config.dbSvr
-        if dbSvr is not None:
-            self.testClient.dbConfigure(dbSvr.dbSvr, dbSvr.port, dbSvr.user,
-                                        dbSvr.passwd, dbSvr.db)
+        if mgtDetails.apiKey is None:
+            mgtDetails.apiKey, mgtDetails.securityKey = self.registerApiKey()
+            mgtDetails.port = 8080
+            self.testClient = \
+                cloudstackTestClient.cloudstackTestClient(
+                    mgtDetails,
+                    dbSvrDetails,
+                    logging=
+                    self.testClientLogger)
 
         self.apiClient = self.testClient.getApiClient()
         """set hypervisor"""
-        if mgt.hypervisor:
-            self.apiClient.hypervisor = mgt.hypervisor
+        if mgtDetails.hypervisor:
+            self.apiClient.hypervisor = mgtDetails.hypervisor
         else:
             self.apiClient.hypervisor = "XenServer"  # Defaults to Xenserver
 
@@ -578,15 +581,13 @@ specify a valid config file" % cfgFile)
             self.apiClient.updateConfiguration(updateCfg)
 
     def copyAttributesToCommand(self, source, command):
-
         map(lambda attr: setattr(command, attr, getattr(source, attr, None)),
-            filter(lambda attr: not attr.startswith("__") and
-            attr not in ["required", "isAsync"], dir(command)))
+            filter(lambda attr: not attr.startswith("__") and attr not in
+                   ["required", "isAsync"], dir(command)))
 
     def configureS3(self, s3):
         if s3 is None:
             return
-
         command = addS3.addS3Cmd()
         self.copyAttributesToCommand(s3, command)
         self.apiClient.addS3(command)
@@ -598,16 +599,13 @@ specify a valid config file" % cfgFile)
         self.configureS3(self.config.s3)
 
 if __name__ == "__main__":
-
     parser = OptionParser()
-
     parser.add_option("-i", "--input", action="store",
                       default="./datacenterCfg", dest="input", help="the path \
                       where the json config file generated, by default is \
                       ./datacenterCfg")
 
     (options, args) = parser.parse_args()
-
     deploy = deployDataCenters(options.input)
     deploy.deploy()
 

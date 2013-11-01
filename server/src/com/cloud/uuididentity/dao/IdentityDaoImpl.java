@@ -28,11 +28,12 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={IdentityDao.class})
@@ -48,7 +49,7 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
 		assert(identityString != null);
 
         PreparedStatement pstmt = null;
-		Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
 		try {
 	        try {
 	            try {
@@ -96,11 +97,11 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
     
     @DB
     @Override
-    public Pair<Long, Long> getAccountDomainInfo(String tableName, Long identityId, TaggedResourceType resourceType) {
+    public Pair<Long, Long> getAccountDomainInfo(String tableName, Long identityId, ResourceObjectType resourceType) {
         assert(tableName != null);
         
         PreparedStatement pstmt = null;
-        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         try {
             Long domainId = null;
             Long accountId = null;
@@ -110,7 +111,9 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
                 pstmt.setLong(1, identityId);
                 ResultSet rs = pstmt.executeQuery();
                 if (rs.next()) {
-                    domainId = rs.getLong(1);
+                    if (rs.getLong(1) != 0) {
+                        domainId = rs.getLong(1);
+                    }
                 }
             } catch (SQLException e) {
             }
@@ -118,14 +121,16 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
             //get accountId
             try {
                 String account = "account_id";
-                if (resourceType == TaggedResourceType.Project) {
+                if (resourceType == ResourceObjectType.Project) {
                     account = "project_account_id";
                 }
                 pstmt = txn.prepareAutoCloseStatement(String.format("SELECT " + account + " FROM `%s` WHERE id=?", tableName));
                 pstmt.setLong(1, identityId);
                 ResultSet rs = pstmt.executeQuery();
                 if (rs.next()) {
-                    accountId = rs.getLong(1);
+                    if (rs.getLong(1) != 0) {
+                        accountId = rs.getLong(1);
+                    }
                 }
             } catch (SQLException e) {
             }
@@ -142,7 +147,7 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
 		assert(identityString != null);
 		
         PreparedStatement pstmt = null;
-		Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
 		try {
 	        try {
 	            pstmt = txn.prepareAutoCloseStatement(
@@ -183,7 +188,7 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
         assert(tableName != null);
         List<Long> l = getNullUuidRecords(tableName);
         
-        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         try {
             try {
                 txn.start();
@@ -205,7 +210,7 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
         List<Long> l = new ArrayList<Long>();
         
         PreparedStatement pstmt = null;
-        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         try {
             try {
                 pstmt = txn.prepareAutoCloseStatement(
@@ -227,7 +232,7 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
     
     @DB
     void setInitialUuid(String tableName, long id) throws SQLException {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         
         PreparedStatement pstmtUpdate = null;
         pstmtUpdate = txn.prepareAutoCloseStatement(

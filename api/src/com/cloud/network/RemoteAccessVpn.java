@@ -31,6 +31,7 @@ public interface RemoteAccessVpn extends ControlledEntity, InternalIdentity, Ide
     String getIpRange();
     String getIpsecPresharedKey();
     String getLocalIp();
-    long getNetworkId();
+    Long getNetworkId();
+    Long getVpcId();
     State getState();
 }

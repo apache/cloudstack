@@ -33,7 +33,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value=NetworkServiceMapDao.class) @DB(txn=false)
+@Local(value=NetworkServiceMapDao.class) @DB()
 public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO, Long> implements NetworkServiceMapDao {
     final SearchBuilder<NetworkServiceMapVO> AllFieldsSearch;
     final SearchBuilder<NetworkServiceMapVO> MultipleServicesSearch;
@@ -57,7 +57,7 @@ public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO
         DistinctProvidersSearch.and("networkId", DistinctProvidersSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         DistinctProvidersSearch.and("provider", DistinctProvidersSearch.entity().getProvider(), SearchCriteria.Op.EQ);
         DistinctProvidersSearch.and("service", DistinctProvidersSearch.entity().getService(), SearchCriteria.Op.EQ);
-        DistinctProvidersSearch.selectField(DistinctProvidersSearch.entity().getProvider());
+        DistinctProvidersSearch.selectFields(DistinctProvidersSearch.entity().getProvider());
         DistinctProvidersSearch.done();
     }
     

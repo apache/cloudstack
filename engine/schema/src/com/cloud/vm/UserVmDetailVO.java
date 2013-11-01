@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.vm;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,16 +23,18 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.ResourceDetail;
+
 @Entity
 @Table(name="user_vm_details")
-public class UserVmDetailVO implements InternalIdentity {
+public class UserVmDetailVO implements ResourceDetail {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private long id;
     
     @Column(name="vm_id")
-    private long vmId;
+    private long resourceId;
     
     @Column(name="name")
     private String name;
@@ -42,44 +42,40 @@ public class UserVmDetailVO implements InternalIdentity {
     @Column(name="value", length=1024)
     private String value;
     
+    @Column(name="display")
+    private boolean display;
+    
     public UserVmDetailVO() {}
     
     public UserVmDetailVO(long vmId, String name, String value) {
-    	this.vmId = vmId;
+    	this.resourceId = vmId;
     	this.name = name;
     	this.value = value;
     }
 
+    @Override
 	public long getId() {
 		return id;
 	}
 
-	public long getVmId() {
-		return vmId;
-	}
-
+	@Override
 	public String getName() {
 		return name;
 	}
 
+	@Override
 	public String getValue() {
 		return value;
 	}
 
-	public void setId(long id) {
-		this.id = id;
-	}
-
-	public void setVmId(long vmId) {
-		this.vmId = vmId;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setValue(String value) {
-		this.value = value;
-	}
+    @Override
+    public long getResourceId() {
+        return resourceId;
+    }
+    
+    @Override
+    public boolean isDisplay() {
+        return display;
+    }
 	
 }

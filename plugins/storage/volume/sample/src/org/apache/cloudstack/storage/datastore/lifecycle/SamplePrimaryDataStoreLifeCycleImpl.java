@@ -18,12 +18,18 @@
  */
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
-import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.StoragePoolStatus;
-import org.apache.cloudstack.engine.subsystem.api.storage.*;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.CreatePrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
@@ -31,9 +37,11 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 
-import javax.inject.Inject;
-import java.util.List;
-import java.util.Map;
+import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.StoragePoolStatus;
 
 public class SamplePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
@@ -116,6 +124,14 @@ public class SamplePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLife
 
     @Override
     public boolean deleteDataStore(DataStore store) {
+        return false;
+    }
+
+    /* (non-Javadoc)
+     * @see org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle#migrateToObjectStore(org.apache.cloudstack.engine.subsystem.api.storage.DataStore)
+     */
+    @Override
+    public boolean migrateToObjectStore(DataStore store) {
         return false;
     }
 

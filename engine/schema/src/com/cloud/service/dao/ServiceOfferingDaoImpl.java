@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.service.dao;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import javax.persistence.EntityExistsException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -34,7 +36,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={ServiceOfferingDao.class}) @DB(txn=false)
+@Local(value={ServiceOfferingDao.class}) @DB()
 public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Long> implements ServiceOfferingDao {
     protected static final Logger s_logger = Logger.getLogger(ServiceOfferingDaoImpl.class);
 
@@ -160,15 +162,22 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
 
     @Override
     public void loadDetails(ServiceOfferingVO serviceOffering) {
-        Map<String, String> details = detailsDao.findDetails(serviceOffering.getId());
+        Map<String, String> details = detailsDao.listDetailsKeyPairs(serviceOffering.getId());
         serviceOffering.setDetails(details);
     }
 
     @Override
     public void saveDetails(ServiceOfferingVO serviceOffering) {
         Map<String, String> details = serviceOffering.getDetails();
-        if (details != null) {
-            detailsDao.persist(serviceOffering.getId(), details);
+        if (details == null) {
+            return;
         }
+        
+        List<ServiceOfferingDetailsVO> resourceDetails = new ArrayList<ServiceOfferingDetailsVO>();
+        for (String key : details.keySet()) {
+            resourceDetails.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), key, details.get(key)));
+        }
+        
+        detailsDao.saveDetails(resourceDetails);
     }
 }

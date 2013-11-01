@@ -26,7 +26,6 @@ import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -57,19 +56,6 @@ public class ReflectUtil {
             }
             return null;
         }
-    }
-    
-    public static Method findMethod(Class<?> clazz, String methodName) {
-        do {
-            Method[] methods = clazz.getDeclaredMethods();
-            for (Method method : methods) {
-                if (methodName.equals(method.getName())) {
-                    return method;
-                }
-            }
-            clazz = clazz.getSuperclass();
-        } while (clazz != null);
-        return null;
     }
 
     // Gets all classes with some annotation from a package
@@ -120,7 +106,12 @@ public class ReflectUtil {
         return fields;
     }
 
-    // Returns all unique fields except excludeClasses for a cmd class
+    /**
+     * Returns all unique fields except excludeClasses for a cmd class
+     * @param cmdClass    the class in which fields should be collected
+     * @param excludeClasses the classes whose fields must be ignored
+     * @return list of fields
+     */
     public static Set<Field> getAllFieldsForClass(Class<?> cmdClass,
                                                   Class<?>[] excludeClasses) {
         Set<Field> fields = new HashSet<Field>();
@@ -130,14 +121,17 @@ public class ReflectUtil {
         while (superClass != null && superClass != Object.class) {
             String superName = superClass.getName();
             boolean isNameEqualToSuperName = false;
-            for (Class<?> baseClass: excludeClasses)
-                if (superName.equals(baseClass.getName()))
+            for (Class<?> baseClass: excludeClasses) {
+                if (superName.equals(baseClass.getName())) {
                     isNameEqualToSuperName = true;
+                }
+            }
 
             if (!isNameEqualToSuperName) {
                 Field[] superClassFields = superClass.getDeclaredFields();
-                if (superClassFields != null)
+                if (superClassFields != null) {
                     Collections.addAll(fields, superClassFields);
+                }
             }
             superClass = superClass.getSuperclass();
         }

@@ -30,8 +30,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.AddUcsManagerCmd;
 import org.apache.cloudstack.api.AssociateUcsProfileToBladeCmd;
+import org.apache.cloudstack.api.DeleteUcsManagerCmd;
 import org.apache.cloudstack.api.ListUcsBladeCmd;
 import org.apache.cloudstack.api.ListUcsManagerCmd;
 import org.apache.cloudstack.api.ListUcsProfileCmd;
@@ -40,8 +42,7 @@ import org.apache.cloudstack.api.response.UcsBladeResponse;
 import org.apache.cloudstack.api.response.UcsManagerResponse;
 import org.apache.cloudstack.api.response.UcsProfileResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
-import org.apache.cloudstack.api.DeleteUcsManagerCmd;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
@@ -60,9 +61,8 @@ import com.cloud.ucs.structure.UcsCookie;
 import com.cloud.ucs.structure.UcsProfile;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.xmlobject.XmlObject;
@@ -98,7 +98,7 @@ public class UcsManagerImpl implements UcsManager {
     private ScheduledExecutorService syncBladesExecutor;
     private int syncBladeInterval;
 
-    private class SyncBladesThread implements Runnable {
+    private class SyncBladesThread extends ManagedContextRunnable {
 
 		private void discoverNewBlades(Map<String, UcsBladeVO> previous,
 				Map<String, ComputeBlade> now, UcsManagerVO mgr) {
@@ -132,8 +132,8 @@ public class UcsManagerImpl implements UcsManager {
 		}
 
     	private void syncBlades(UcsManagerVO mgr) {
-    		SearchCriteriaService<UcsBladeVO, UcsBladeVO> q = SearchCriteria2.create(UcsBladeVO.class);
-    		q.addAnd(q.getEntity().getUcsManagerId(), Op.EQ, mgr.getId());
+            QueryBuilder<UcsBladeVO> q = QueryBuilder.create(UcsBladeVO.class);
+    		q.and(q.entity().getUcsManagerId(), Op.EQ, mgr.getId());
     		List<UcsBladeVO> pblades = q.list();
     		if (pblades.isEmpty()) {
     			return;
@@ -156,7 +156,7 @@ public class UcsManagerImpl implements UcsManager {
     	}
 
 		@Override
-		public void run() {
+		protected void runInContext() {
 			try {
 				List<UcsManagerVO> mgrs = ucsDao.listAll();
 				for (UcsManagerVO mgr : mgrs) {
@@ -210,8 +210,8 @@ public class UcsManagerImpl implements UcsManager {
     @Override
     @DB
     public UcsManagerResponse addUcsManager(AddUcsManagerCmd cmd) {
-        SearchCriteriaService<UcsManagerVO, UcsManagerVO> q = SearchCriteria2.create(UcsManagerVO.class);
-        q.addAnd(q.getEntity().getUrl(), Op.EQ, cmd.getUrl());
+        QueryBuilder<UcsManagerVO> q = QueryBuilder.create(UcsManagerVO.class);
+        q.and(q.entity().getUrl(), Op.EQ, cmd.getUrl());
         UcsManagerVO mgrvo = q.find();
         if (mgrvo != null) {
             throw new IllegalArgumentException(String.format("duplicate UCS manager. url[%s] is used by another UCS manager already", cmd.getUrl()));
@@ -226,10 +226,7 @@ public class UcsManagerImpl implements UcsManager {
             vo.setZoneId(cmd.getZoneId());
             vo.setName(cmd.getName());
 
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
             mgrvo = ucsDao.persist(vo);
-            txn.commit();
             UcsManagerResponse rsp = new UcsManagerResponse();
             rsp.setId(String.valueOf(vo.getId()));
             rsp.setName(vo.getName());
@@ -342,9 +339,9 @@ public class UcsManagerImpl implements UcsManager {
 
     @Override
     public UcsBladeResponse associateProfileToBlade(AssociateUcsProfileToBladeCmd cmd) {
-        SearchCriteriaService<UcsBladeVO, UcsBladeVO> q = SearchCriteria2.create(UcsBladeVO.class);
-        q.addAnd(q.getEntity().getUcsManagerId(), Op.EQ, cmd.getUcsManagerId());
-        q.addAnd(q.getEntity().getId(), Op.EQ, cmd.getBladeId());
+        QueryBuilder<UcsBladeVO> q = QueryBuilder.create(UcsBladeVO.class);
+        q.and(q.entity().getUcsManagerId(), Op.EQ, cmd.getUcsManagerId());
+        q.and(q.entity().getId(), Op.EQ, cmd.getBladeId());
         UcsBladeVO bvo = q.find();
         if (bvo == null) {
             throw new IllegalArgumentException(String.format("cannot find UCS blade[id:%s, ucs manager id:%s]", cmd.getBladeId(), cmd.getUcsManagerId()));
@@ -424,8 +421,8 @@ public class UcsManagerImpl implements UcsManager {
             return response;
     	}
     	
-        SearchCriteriaService<UcsManagerVO, UcsManagerVO> serv = SearchCriteria2.create(UcsManagerVO.class);
-        serv.addAnd(serv.getEntity().getZoneId(), Op.EQ, cmd.getZoneId());
+        QueryBuilder<UcsManagerVO> serv = QueryBuilder.create(UcsManagerVO.class);
+        serv.and(serv.entity().getZoneId(), Op.EQ, cmd.getZoneId());
         List<UcsManagerVO> vos = serv.list();
 
         for (UcsManagerVO vo : vos) {
@@ -454,8 +451,8 @@ public class UcsManagerImpl implements UcsManager {
     
     @Override
     public ListResponse<UcsBladeResponse> listUcsBlades(ListUcsBladeCmd cmd) {
-        SearchCriteriaService<UcsBladeVO, UcsBladeVO> serv = SearchCriteria2.create(UcsBladeVO.class);
-        serv.addAnd(serv.getEntity().getUcsManagerId(), Op.EQ, cmd.getUcsManagerId());
+        QueryBuilder<UcsBladeVO> serv = QueryBuilder.create(UcsBladeVO.class);
+        serv.and(serv.entity().getUcsManagerId(), Op.EQ, cmd.getUcsManagerId());
         List<UcsBladeVO> vos = serv.list();
         
         List<UcsBladeResponse> rsps = new ArrayList<UcsBladeResponse>(vos.size());
@@ -509,8 +506,8 @@ public class UcsManagerImpl implements UcsManager {
 
 	@Override
 	public void deleteUcsManager(Long id) {
-        SearchCriteriaService<UcsBladeVO, UcsBladeVO> serv = SearchCriteria2.create(UcsBladeVO.class);
-        serv.addAnd(serv.getEntity().getUcsManagerId(), Op.EQ, id);
+        QueryBuilder<UcsBladeVO> serv = QueryBuilder.create(UcsBladeVO.class);
+        serv.and(serv.entity().getUcsManagerId(), Op.EQ, id);
         List<UcsBladeVO> vos = serv.list();
         for (UcsBladeVO vo : vos) {
         	bladeDao.remove(vo.getId());

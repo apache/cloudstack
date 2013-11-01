@@ -71,6 +71,7 @@ assignVirtualMachine=7
 migrateVirtualMachine=1
 migrateVirtualMachineWithVolume=1
 recoverVirtualMachine=7
+expungeVirtualMachine=1
 
 #### snapshot commands
 createSnapshot=15
@@ -79,7 +80,7 @@ deleteSnapshot=15
 createSnapshotPolicy=15
 deleteSnapshotPolicies=15
 listSnapshotPolicies=15
-
+revertSnapshot=15
 
 #### template commands
 createTemplate=15
@@ -255,6 +256,7 @@ deleteImageStore=1
 createSecondaryStagingStore=1
 listSecondaryStagingStores=1
 deleteSecondaryStagingStore=1
+prepareSecondaryStorageForMigration=1
 
 #### host commands
 addHost=3
@@ -471,7 +473,7 @@ listTags=15
 #### Meta Data commands
 addResourceDetail=1
 removeResourceDetail=1
-listResourceDetails=1
+listResourceDetails=15
 
 ### Site-to-site VPN commands
 createVpnCustomerGateway=15
@@ -493,7 +495,7 @@ listVirtualRouterElements=7
 
 #### usage commands
 generateUsageRecords=1
-listUsageRecords=1
+listUsageRecords=7
 listUsageTypes=1
 
 #### traffic monitor commands
@@ -678,6 +680,7 @@ addLdapConfiguration=3
 deleteLdapConfiguration=3
 listLdapUsers=3
 ldapCreateAccount=3
+importLdapUsers=3
 
 ### Acl commands
 createAclRole=7
@@ -694,4 +697,6 @@ addAccountToAclGroup=7
 removeAccountFromAclGroup=7
 grantPermissionToAclGroup=7
 revokePermissionFromAclGroup=7
+
+
 

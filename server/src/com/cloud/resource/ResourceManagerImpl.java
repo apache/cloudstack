@@ -140,12 +140,14 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -784,10 +786,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @DB
-    protected boolean doDeleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage) {
+    protected boolean doDeleteHost(final long hostId, boolean isForced, final boolean isForceDeleteStorage) {
         User caller = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
         // Verify that host exists
-        HostVO host = _hostDao.findById(hostId);
+        final HostVO host = _hostDao.findById(hostId);
         if (host == null) {
             throw new InvalidParameterValueException("Host with id " + hostId + " doesn't exist");
         }
@@ -800,7 +802,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // Get storage pool host mappings here because they can be removed as a
         // part of handleDisconnect later
         // TODO: find out the bad boy, what's a buggy logic!
-        List<StoragePoolHostVO> pools = _storagePoolHostDao.listByHostIdIncludingRemoved(hostId);
+        final List<StoragePoolHostVO> pools = _storagePoolHostDao.listByHostIdIncludingRemoved(hostId);
 
         ResourceStateAdapter.DeleteHostAnswer answer = (ResourceStateAdapter.DeleteHostAnswer)dispatchToStateAdapters(ResourceStateAdapter.Event.DELETE_HOST, false, host,
             new Boolean(isForced), new Boolean(isForceDeleteStorage));
@@ -818,8 +820,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             return true;
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
 
         _dcDao.releasePrivateIpAddress(host.getPrivateIpAddress(), host.getDataCenterId(), null);
         _agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.Remove);
@@ -885,7 +888,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (dr != null) {
             _dedicatedDao.remove(dr.getId());
         }
-        txn.commit();
+            }
+        });
+
         return true;
     }
 
@@ -905,16 +910,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     @DB
-    public boolean deleteCluster(DeleteClusterCmd cmd) {
-        Transaction txn = Transaction.currentTxn();
+    public boolean deleteCluster(final DeleteClusterCmd cmd) {
         try {
-            txn.start();
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
             ClusterVO cluster = _clusterDao.lockRow(cmd.getId(), true);
             if (cluster == null) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Cluster: " + cmd.getId() + " does not even exist.  Delete call is ignored.");
                 }
-                txn.rollback();
                 throw new CloudRuntimeException("Cluster: " + cmd.getId() + " does not exist");
             }
 
@@ -925,7 +930,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Cluster: " + cmd.getId() + " still has hosts, can't remove");
                 }
-                txn.rollback();
                 throw new CloudRuntimeException("Cluster: " + cmd.getId() + " cannot be removed. Cluster still has hosts");
             }
 
@@ -936,7 +940,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Cluster: " + cmd.getId() + " still has storage pools, can't remove");
                 }
-                txn.rollback();
                 throw new CloudRuntimeException("Cluster: " + cmd.getId() + " cannot be removed. Cluster still has storage pools");
             }
 
@@ -955,13 +958,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
             }
 
-            txn.commit();
+                }
+            });
             return true;
         } catch (CloudRuntimeException e) {
             throw e;
         } catch (Throwable t) {
             s_logger.error("Unable to delete cluster: " + cmd.getId(), t);
-            txn.rollback();
             return false;
         }
     }
@@ -1035,26 +1038,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         if (doUpdate) {
-            Transaction txn = Transaction.currentTxn();
-            try {
-                txn.start();
                 _clusterDao.update(cluster.getId(), cluster);
-                txn.commit();
-            } catch (Exception e) {
-                s_logger.error("Unable to update cluster due to " + e.getMessage(), e);
-                throw new CloudRuntimeException("Failed to update cluster. Please contact Cloud Support.");
-            }
         }
 
         if (newManagedState != null && !newManagedState.equals(oldManagedState)) {
-            Transaction txn = Transaction.currentTxn();
             if (newManagedState.equals(Managed.ManagedState.Unmanaged)) {
                 boolean success = false;
                 try {
-                    txn.start();
                     cluster.setManagedState(Managed.ManagedState.PrepareUnmanaged);
                     _clusterDao.update(cluster.getId(), cluster);
-                    txn.commit();
                     List<HostVO> hosts = listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
                     for (HostVO host : hosts) {
                         if (host.getType().equals(Host.Type.Routing) && !host.getStatus().equals(Status.Down) && !host.getStatus().equals(Status.Disconnected) &&
@@ -1093,16 +1085,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         throw new CloudRuntimeException("PrepareUnmanaged Failed due to some hosts are still in UP status after 5 Minutes, please try later ");
                     }
                 } finally {
-                    txn.start();
                     cluster.setManagedState(success ? Managed.ManagedState.Unmanaged : Managed.ManagedState.PrepareUnmanagedError);
                     _clusterDao.update(cluster.getId(), cluster);
-                    txn.commit();
                 }
             } else if (newManagedState.equals(Managed.ManagedState.Managed)) {
-                txn.start();
                 cluster.setManagedState(Managed.ManagedState.Managed);
                 _clusterDao.update(cluster.getId(), cluster);
-                txn.commit();
             }
 
         }
@@ -2256,27 +2244,27 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public List<HostVO> findDirectlyConnectedHosts() {
         /* The resource column is not null for direct connected resource */
-        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getResource(), Op.NNULL);
-        sc.addAnd(sc.getEntity().getResourceState(), Op.NIN, ResourceState.Disabled);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getResource(), Op.NNULL);
+        sc.and(sc.entity().getResourceState(), Op.NIN, ResourceState.Disabled);
         return sc.list();
     }
 
     @Override
     public List<HostVO> listAllUpAndEnabledHosts(Type type, Long clusterId, Long podId, long dcId) {
-        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         if (type != null) {
-            sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
+            sc.and(sc.entity().getType(), Op.EQ,type);
         }
         if (clusterId != null) {
-            sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, clusterId);
+            sc.and(sc.entity().getClusterId(), Op.EQ,clusterId);
         }
         if (podId != null) {
-            sc.addAnd(sc.getEntity().getPodId(), Op.EQ, podId);
+            sc.and(sc.entity().getPodId(), Op.EQ,podId);
         }
-        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
-        sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
-        sc.addAnd(sc.getEntity().getResourceState(), Op.EQ, ResourceState.Enabled);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
+        sc.and(sc.entity().getStatus(), Op.EQ,Status.Up);
+        sc.and(sc.entity().getResourceState(), Op.EQ,ResourceState.Enabled);
         return sc.list();
     }
 
@@ -2288,60 +2276,60 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public List<HostVO> findHostByGuid(long dcId, String guid) {
-        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
-        sc.addAnd(sc.getEntity().getGuid(), Op.EQ, guid);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
+        sc.and(sc.entity().getGuid(), Op.EQ,guid);
         return sc.list();
     }
 
     @Override
     public List<HostVO> listAllHostsInCluster(long clusterId) {
-        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, clusterId);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getClusterId(), Op.EQ,clusterId);
         return sc.list();
     }
 
     @Override
     public List<HostVO> listHostsInClusterByStatus(long clusterId, Status status) {
-        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, clusterId);
-        sc.addAnd(sc.getEntity().getStatus(), Op.EQ, status);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getClusterId(), Op.EQ,clusterId);
+        sc.and(sc.entity().getStatus(), Op.EQ,status);
         return sc.list();
     }
 
     @Override
     public List<HostVO> listAllUpAndEnabledHostsInOneZoneByType(Type type, long dcId) {
-        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
-        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
-        sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
-        sc.addAnd(sc.getEntity().getResourceState(), Op.EQ, ResourceState.Enabled);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getType(), Op.EQ,type);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
+        sc.and(sc.entity().getStatus(), Op.EQ,Status.Up);
+        sc.and(sc.entity().getResourceState(), Op.EQ,ResourceState.Enabled);
         return sc.list();
     }
 
     @Override
     public List<HostVO> listAllNotInMaintenanceHostsInOneZone(Type type, Long dcId) {
-        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         if (dcId != null) {
-            sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+            sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
         }
-        sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
-        sc.addAnd(sc.getEntity().getResourceState(), Op.NIN, ResourceState.Maintenance, ResourceState.ErrorInMaintenance, ResourceState.PrepareForMaintenance, ResourceState.Error);
+        sc.and(sc.entity().getType(), Op.EQ,type);
+        sc.and(sc.entity().getResourceState(), Op.NIN, ResourceState.Maintenance, ResourceState.ErrorInMaintenance, ResourceState.PrepareForMaintenance, ResourceState.Error);
         return sc.list();
     }
 
     @Override
     public List<HostVO> listAllHostsInOneZoneByType(Type type, long dcId) {
-        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
-        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getType(), Op.EQ,type);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
         return sc.list();
     }
 
     @Override
     public List<HostVO> listAllHostsInAllZonesByType(Type type) {
-        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getType(), Op.EQ,type);
         return sc.list();
     }
 
@@ -2370,15 +2358,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public HostVO findHostByGuid(String guid) {
-        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getGuid(), Op.EQ, guid);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getGuid(), Op.EQ,guid);
         return sc.find();
     }
 
     @Override
     public HostVO findHostByName(String name) {
-        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getName(), Op.EQ, name);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getName(), Op.EQ,name);
         return sc.find();
     }
 
@@ -2449,21 +2437,22 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public List<HostVO> listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType type, long dcId) {
-        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getHypervisorType(), Op.EQ, type);
-        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
-        sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
-        sc.addAnd(sc.getEntity().getResourceState(), Op.EQ, ResourceState.Enabled);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getHypervisorType(), Op.EQ,type);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
+        sc.and(sc.entity().getStatus(), Op.EQ,Status.Up);
+        sc.and(sc.entity().getResourceState(), Op.EQ,ResourceState.Enabled);
         return sc.list();
     }
 
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_HOST_RESERVATION_RELEASE, eventDescription = "releasing host reservation", async = true)
-    public boolean releaseHostReservation(Long hostId) {
-        Transaction txn = Transaction.currentTxn();
+    public boolean releaseHostReservation(final Long hostId) {
         try {
-            txn.start();
+            return Transaction.execute(new TransactionCallback<Boolean>() {
+                @Override
+                public Boolean doInTransaction(TransactionStatus status) {
             PlannerHostReservationVO reservationEntry = _plannerHostReserveDao.findByHostId(hostId);
             if (reservationEntry != null) {
                 long id = reservationEntry.getId();
@@ -2472,24 +2461,33 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Host reservation for host: " + hostId + " does not even exist.  Release reservartion call is ignored.");
                     }
-                    txn.rollback();
                     return false;
                 }
                 hostReservation.setResourceUsage(null);
                 _plannerHostReserveDao.persist(hostReservation);
-                txn.commit();
                 return true;
             }
+
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Host reservation for host: " + hostId + " does not even exist.  Release reservartion call is ignored.");
             }
+
             return false;
+                }
+            });
         } catch (CloudRuntimeException e) {
             throw e;
         } catch (Throwable t) {
             s_logger.error("Unable to release host reservation for host: " + hostId, t);
-            txn.rollback();
             return false;
         }
     }
+
+    @Override
+    public boolean start() {
+        // TODO Auto-generated method stub
+        return super.start();
+    }
+    
+    
 }

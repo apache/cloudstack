@@ -258,10 +258,6 @@ public interface GenericDao<T, ID extends Serializable> {
 
     public <K> K getRandomlyIncreasingNextInSequence(Class<K> clazz, String name);
 
-    <K> SearchCriteria2 createSearchCriteria2(Class<K> resultType);
-
-    SearchCriteria2 createSearchCriteria2();
-
     public T findOneBy(final SearchCriteria<T> sc);
 
     /**
@@ -269,8 +265,6 @@ public interface GenericDao<T, ID extends Serializable> {
      */
     Class<T> getEntityBeanType();
     
-    public int getRegionId();
-
     /**
      * @param sc
      * @param filter

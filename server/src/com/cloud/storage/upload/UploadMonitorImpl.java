@@ -34,13 +34,13 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
@@ -441,13 +441,13 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 
 	}
 
-    protected class StorageGarbageCollector implements Runnable {
+    protected class StorageGarbageCollector extends ManagedContextRunnable {
 
         public StorageGarbageCollector() {
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 GlobalLock scanLock = GlobalLock.getInternLock("uploadmonitor.storageGC");
                 try {

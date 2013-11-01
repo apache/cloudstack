@@ -1,0 +1,53 @@
+#!/usr/bin/python
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+import sys
+from xml.dom.minidom import parse
+from cloudutils.configFileOps import configFileOps
+from cloudutils.networkConfig import networkConfig
+def isOldStyleBridge(brName):
+    if brName.find("cloudVirBr") == 0:
+       return True
+    else:
+       return False
+def getGuestNetworkDevice():
+    netlib = networkConfig() 
+    cfo = configFileOps("/etc/cloudstack/agent/agent.properties")
+    guestDev = cfo.getEntry("guest.network.device")
+    enslavedDev = netlib.getEnslavedDev(guestDev, 1)
+    return enslavedDev 
+def handleMigrateBegin():
+    try:
+        domain = parse(sys.stdin)
+        for interface in domain.getElementsByTagName("interface"):
+            source = interface.getElementsByTagName("source")[0]
+            bridge = source.getAttribute("bridge")
+            if not isOldStyleBridge(bridge):
+                continue
+            vlanId = bridge.replace("cloudVirBr","")
+            phyDev = getGuestNetworkDevice()
+            newBrName="br" + phyDev + "-" + vlanId
+            source.setAttribute("bridge", newBrName)
+        print(domain.toxml())
+    except:
+        pass
+if __name__ == '__main__':
+    if len(sys.argv) != 5:
+        sys.exit(0)
+
+    if sys.argv[2] == "migrate" and sys.argv[3] == "begin":
+        handleMigrateBegin() 

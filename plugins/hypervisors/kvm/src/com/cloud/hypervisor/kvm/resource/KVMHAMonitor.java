@@ -20,7 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
+
 import com.cloud.utils.script.Script;
 
 import org.libvirt.Connect;
@@ -68,10 +71,10 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         }
     }
 
-    private class Monitor implements Runnable {
+    private class Monitor extends ManagedContextRunnable {
 
         @Override
-        public void run() {
+        protected void runInContext() {
             synchronized (_storagePool) {
                 for (String uuid : _storagePool.keySet()) {
                     NfsStoragePool primaryStoragePool = _storagePool.get(uuid);

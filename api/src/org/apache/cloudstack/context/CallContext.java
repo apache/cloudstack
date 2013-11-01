@@ -18,8 +18,10 @@ package org.apache.cloudstack.context;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Stack;
 import java.util.UUID;
 
+import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
@@ -37,18 +39,27 @@ import com.cloud.utils.exception.CloudRuntimeException;
  */
 public class CallContext {
     private static final Logger s_logger = Logger.getLogger(CallContext.class);
-    private static ThreadLocal<CallContext> s_currentContext = new ThreadLocal<CallContext>();
+    private static ManagedThreadLocal<CallContext> s_currentContext = new ManagedThreadLocal<CallContext>();
+    private static ManagedThreadLocal<Stack<CallContext>> s_currentContextStack = 
+            new ManagedThreadLocal<Stack<CallContext>>() {
+                @Override
+                protected Stack<CallContext> initialValue() {
+                    return new Stack<CallContext>();
+                }
+    };
 
     private String contextId;
     private Account account;
+    private long accountId;
     private long startEventId = 0;
     private String eventDescription;
     private String eventDetails;
     private String eventType;
     private User user;
+    private long userId;
     private final Map<Object, Object> context = new HashMap<Object, Object>();
 
-    private static EntityManager s_entityMgr;
+    static EntityManager s_entityMgr;
 
     public static void init(EntityManager entityMgr) {
         s_entityMgr = entityMgr;
@@ -57,9 +68,17 @@ public class CallContext {
     protected CallContext() {
     }
 
+    protected CallContext(long userId, long accountId, String contextId) {
+        this.userId = userId;
+        this.accountId = accountId;
+        this.contextId = contextId;
+    }
+
     protected CallContext(User user, Account account, String contextId) {
         this.user = user;
+        this.userId = user.getId();
         this.account = account;
+        this.accountId = account.getId();
         this.contextId = contextId;
     }
 
@@ -72,10 +91,13 @@ public class CallContext {
     }
 
     public long getCallingUserId() {
-        return user.getId();
+        return userId;
     }
 
     public User getCallingUser() {
+        if (user == null) {
+            user = s_entityMgr.findById(User.class, userId);
+        }
         return user;
     }
 
@@ -84,6 +106,9 @@ public class CallContext {
     }
 
     public Account getCallingAccount() {
+        if (account == null) {
+            account = s_entityMgr.findById(Account.class, accountId);
+        }
         return account;
     }
 
@@ -101,6 +126,10 @@ public class CallContext {
      * @return CallContext
      */
     public static CallContext register(User callingUser, Account callingAccount, String contextId) {
+        return register(callingUser, callingAccount, null, null, contextId);
+    }
+
+    protected static CallContext register(User callingUser, Account callingAccount, Long userId, Long accountId, String contextId) {
         /*
                 Unit tests will have multiple times of setup/tear-down call to this, remove assertions to all unit test to run
                  
@@ -109,12 +138,20 @@ public class CallContext {
                     throw new CloudRuntimeException("There's a context already so what does this new register context mean? " + s_currentContext.get().toString());
                 }
         */
-        CallContext callingContext = new CallContext(callingUser, callingAccount, contextId);
+        CallContext callingContext = null;
+        if (userId == null || accountId == null) {
+            callingContext = new CallContext(callingUser, callingAccount, contextId);
+        } else {
+            callingContext = new CallContext(userId, accountId, contextId);
+        }
         s_currentContext.set(callingContext);
         NDC.push("ctx-" + UuidUtils.first(contextId));
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Registered: " + callingContext);
         }
+        
+        s_currentContextStack.get().push(callingContext);
+        
         return callingContext;
     }
 
@@ -126,14 +163,13 @@ public class CallContext {
         try {
             CallContext context = s_currentContext.get();
             if (context == null) {
-                return register(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM);
+                return register(null, null, User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, UUID.randomUUID().toString());
             }
             assert context.getCallingUserId() == User.UID_SYSTEM : "You are calling a very specific method that registers a one time system context.  This method is meant for background threads that does processing.";
             return context;
         } catch (Exception e) {
-            s_logger.fatal("Exiting the system because we're unable to register the system call context.", e);
-            System.exit(1);
-            throw new CloudRuntimeException("Should never hit this");
+            s_logger.error("Failed to register the system call context.", e);
+            throw new CloudRuntimeException("Failed to register system call context", e);
         }
     }
 
@@ -162,10 +198,15 @@ public class CallContext {
         return register(user, account);
     }
 
+    public static void unregisterAll() {
+        while ( unregister() != null ) {
+            // NOOP
+        }
+    }
+    
     public static CallContext unregister() {
         CallContext context = s_currentContext.get();
         if (context == null) {
-            s_logger.debug("No context to remove");
             return null;
         }
         s_currentContext.remove();
@@ -183,6 +224,14 @@ public class CallContext {
                 s_logger.trace("Popping from NDC: " + contextId);
             }
         }
+
+        Stack<CallContext> stack = s_currentContextStack.get();
+        stack.pop();
+
+        if ( ! stack.isEmpty() ) {
+            s_currentContext.set(stack.peek());
+        }
+
         return context;
     }
 
@@ -195,15 +244,15 @@ public class CallContext {
     }
 
     public long getCallingAccountId() {
-        return account.getId();
+        return accountId;
     }
 
     public String getCallingAccountUuid() {
-        return account.getUuid();
+        return getCallingAccount().getUuid();
     }
 
     public String getCallingUserUuid() {
-        return user.getUuid();
+        return getCallingUser().getUuid();
     }
 
     public void setEventDetails(String eventDetails) {
@@ -240,8 +289,8 @@ public class CallContext {
 
     @Override
     public String toString() {
-        return new StringBuffer("CCtxt[acct=").append(account.getId())
-                .append("; user=").append(user.getId())
+        return new StringBuilder("CCtxt[acct=").append(getCallingAccountId())
+                .append("; user=").append(getCallingUserId())
                 .append("; id=").append(contextId)
                 .append("]").toString();
     }

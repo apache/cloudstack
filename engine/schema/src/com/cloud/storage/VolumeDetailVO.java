@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.storage;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,61 +23,59 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.ResourceDetail;
+
 @Entity
 @Table(name="volume_details")
-public class VolumeDetailVO implements InternalIdentity {
+public class VolumeDetailVO implements ResourceDetail {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private long id;
 
     @Column(name="volume_id")
-    private long volumeId;
+    private long resourceId;
 
     @Column(name="name")
     private String name;
 
     @Column(name="value", length=1024)
     private String value;
+    
+    @Column(name="display")
+    private boolean display;
 
     public VolumeDetailVO() {}
 
     public VolumeDetailVO(long volumeId, String name, String value) {
-        this.volumeId = volumeId;
+        this.resourceId = volumeId;
         this.name = name;
         this.value = value;
     }
 
+    @Override
     public long getId() {
         return id;
     }
 
-    public long getVolumeId() {
-        return volumeId;
-    }
-
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getValue() {
         return value;
     }
 
-    public void setId(long id) {
-        this.id = id;
+    @Override
+    public long getResourceId() {
+        return resourceId;
     }
-
-    public void setVolumeId(long volumeId) {
-        this.volumeId = volumeId;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
+    
+    @Override
+    public boolean isDisplay() {
+        return display;
     }
 
 }

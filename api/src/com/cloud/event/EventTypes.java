@@ -76,6 +76,7 @@ public class EventTypes {
     public static final String EVENT_VM_MIGRATE = "VM.MIGRATE";
     public static final String EVENT_VM_MOVE = "VM.MOVE";
     public static final String EVENT_VM_RESTORE = "VM.RESTORE";
+    public static final String EVENT_VM_EXPUNGE = "VM.EXPUNGE";
 
     // Domain Router
     public static final String EVENT_ROUTER_CREATE = "ROUTER.CREATE";
@@ -188,6 +189,8 @@ public class EventTypes {
     public static final String EVENT_VOLUME_DETAIL_UPDATE = "VOLUME.DETAIL.UPDATE";
     public static final String EVENT_VOLUME_DETAIL_ADD = "VOLUME.DETAIL.ADD";
     public static final String EVENT_VOLUME_DETAIL_REMOVE = "VOLUME.DETAIL.REMOVE";
+    public static final String EVENT_VOLUME_UPDATE = "VOLUME.UPDATE";
+
 
     // Domains
     public static final String EVENT_DOMAIN_CREATE = "DOMAIN.CREATE";
@@ -197,6 +200,7 @@ public class EventTypes {
     // Snapshots
     public static final String EVENT_SNAPSHOT_CREATE = "SNAPSHOT.CREATE";
     public static final String EVENT_SNAPSHOT_DELETE = "SNAPSHOT.DELETE";
+    public static final String EVENT_SNAPSHOT_REVERT = "SNAPSHOT.REVERT";
     public static final String EVENT_SNAPSHOT_POLICY_CREATE = "SNAPSHOTPOLICY.CREATE";
     public static final String EVENT_SNAPSHOT_POLICY_UPDATE = "SNAPSHOTPOLICY.UPDATE";
     public static final String EVENT_SNAPSHOT_POLICY_DELETE = "SNAPSHOTPOLICY.DELETE";
@@ -455,6 +459,9 @@ public class EventTypes {
     public static final String EVENT_ACL_GROUP_DELETE = "ACLGROUP.DELETE";
     public static final String EVENT_ACL_GROUP_GRANT = "ACLGROUP.GRANT";
     public static final String EVENT_ACL_GROUP_REVOKE = "ACLGROUP.REVOKE";
+
+    // Object store migration
+    public static final String EVENT_MIGRATE_PREPARE_SECONDARY_STORAGE = "MIGRATE.PREPARE.SS";
 
     static {
 

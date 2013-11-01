@@ -33,6 +33,7 @@
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
+      <!-- TODO: Check if we need this version override -->
       <version>4.2.2</version>
       <scope>compile</scope>
     </dependency>

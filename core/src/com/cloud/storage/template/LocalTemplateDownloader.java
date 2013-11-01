@@ -34,7 +34,7 @@ import com.cloud.storage.StorageLayer;
 
 public class LocalTemplateDownloader extends TemplateDownloaderBase implements TemplateDownloader {
     public static final Logger s_logger = Logger.getLogger(LocalTemplateDownloader.class);
-    
+
     public LocalTemplateDownloader(StorageLayer storageLayer, String downloadUrl, String toDir, long maxTemplateSizeInBytes, DownloadCompleteCallback callback) {
         super(storageLayer, downloadUrl, toDir, maxTemplateSizeInBytes, callback);
         String filename = downloadUrl.substring(downloadUrl.lastIndexOf(File.separator));
@@ -44,14 +44,14 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
     @Override
     public long download(boolean resume, DownloadCompleteCallback callback) {
         if (_status == Status.ABORTED ||
-            _status == Status.UNRECOVERABLE_ERROR ||
-            _status == Status.DOWNLOAD_FINISHED) {
+                _status == Status.UNRECOVERABLE_ERROR ||
+                _status == Status.DOWNLOAD_FINISHED) {
             return 0;
         }
 
         _start = System.currentTimeMillis();
         _resume = resume;
-        
+
         File src;
         try {
             src = new File(new URI(_downloadUrl));
@@ -61,18 +61,20 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
             return 0;
         }
         File dst = new File(_toFile);
-        
+
         FileChannel fic = null;
         FileChannel foc = null;
-        
+        FileInputStream fis = null;
+        FileOutputStream fos = null;
+
         try {
-        	if (_storage != null) {
-        		dst.createNewFile();
-            	_storage.setWorldReadableAndWriteable(dst);
-        	}   	
-        	
+            if (_storage != null) {
+                dst.createNewFile();
+                _storage.setWorldReadableAndWriteable(dst);
+            }
+
             ByteBuffer buffer = ByteBuffer.allocate(1024 * 512);
-            FileInputStream fis;
+
             try {
                 fis = new FileInputStream(src);
             } catch (FileNotFoundException e) {
@@ -81,7 +83,6 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
                 return -1;
             }
             fic = fis.getChannel();
-            FileOutputStream fos;
             try {
                 fos = new FileOutputStream(dst);
             } catch (FileNotFoundException e) {
@@ -89,11 +90,11 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
                 return -1;
             }
             foc = fos.getChannel();
-            
+
             _remoteSize = src.length();
-            this._totalBytes = 0;
+            _totalBytes = 0;
             _status = TemplateDownloader.Status.IN_PROGRESS;
-            
+
             try {
                 while (_status != Status.ABORTED && fic.read(buffer) != -1) {
                     buffer.flip();
@@ -104,13 +105,13 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
             } catch (IOException e) {
                 s_logger.warn("Unable to download", e);
             }
-            
+
             String downloaded = "(incomplete download)";
             if (_totalBytes == _remoteSize) {
                 _status = TemplateDownloader.Status.DOWNLOAD_FINISHED;
                 downloaded = "(download complete)";
             }
-            
+
             _errorString = "Downloaded " + _remoteSize + " bytes " + downloaded;
             _downloadTime += System.currentTimeMillis() - _start;
             return _totalBytes;
@@ -125,14 +126,28 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
                 } catch (IOException e) {
                 }
             }
-            
+
             if (foc != null) {
                 try {
                     foc.close();
                 } catch (IOException e) {
                 }
             }
-            
+
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                }
+            }
+
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                }
+            }
+
             if (_status == Status.UNRECOVERABLE_ERROR && dst.exists()) {
                 dst.delete();
             }
@@ -141,7 +156,7 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
             }
         }
     }
-    
+
     public static void main(String[] args) {
         String url ="file:///home/ahuang/Download/E3921_P5N7A-VM_manual.zip";
         TemplateDownloader td = new LocalTemplateDownloader(null, url,"/tmp/mysql", TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES, null);

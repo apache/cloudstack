@@ -18,29 +18,39 @@
  */
 package org.apache.cloudstack.storage.motion;
 
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.host.Host;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
-import java.util.List;
-import java.util.Map;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.host.Host;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class DataMotionServiceImpl implements DataMotionService {
     @Inject
-    List<DataMotionStrategy> strategies;
+    StorageStrategyFactory storageStrategyFactory;
 
     @Override
     public void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
+        if (srcData.getDataStore() == null || destData.getDataStore() == null) {
+            throw new CloudRuntimeException("can't find data store");
+        }
 
         if (srcData.getDataStore().getDriver().canCopy(srcData, destData)) {
             srcData.getDataStore().getDriver().copyAsync(srcData, destData, callback);
@@ -50,28 +60,32 @@ public class DataMotionServiceImpl implements DataMotionService {
             return;
         }
 
-        for (DataMotionStrategy strategy : strategies) {
-            if (strategy.canHandle(srcData, destData)) {
-                strategy.copyAsync(srcData, destData, callback);
-                return;
-            }
+        DataMotionStrategy strategy = storageStrategyFactory.getDataMotionStrategy(srcData, destData);
+        if (strategy == null) {
+            throw new CloudRuntimeException("Can't find strategy to move data. "+
+                    "Source: "+srcData.getType().name()+" '"+srcData.getUuid()+
+                    ", Destination: "+destData.getType().name()+" '"+destData.getUuid()+"'");
         }
-        throw new CloudRuntimeException("can't find strategy to move data");
+
+        strategy.copyAsync(srcData, destData, callback);
     }
 
     @Override
     public void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost,
             AsyncCompletionCallback<CopyCommandResult> callback) {
-        for (DataMotionStrategy strategy : strategies) {
-            if (strategy.canHandle(volumeMap, srcHost, destHost)) {
-                strategy.copyAsync(volumeMap, vmTo, srcHost, destHost, callback);
-                return;
-            }
-        }
-        throw new CloudRuntimeException("can't find strategy to move data");
-    }
 
-    public void setStrategies(List<DataMotionStrategy> strategies) {
-        this.strategies = strategies;
+        DataMotionStrategy strategy = storageStrategyFactory.getDataMotionStrategy(volumeMap, srcHost, destHost);
+        if (strategy == null) {
+            List<String> volumeIds = new LinkedList<String>();
+            for (final VolumeInfo volumeInfo : volumeMap.keySet()) {
+                volumeIds.add(volumeInfo.getUuid());
+            }
+
+            throw new CloudRuntimeException("Can't find strategy to move data. "+
+                    "Source Host: "+srcHost.getName()+", Destination Host: "+destHost.getName()+
+                    ", Volume UUIDs: "+StringUtils.join(volumeIds, ","));
+        }
+
+        strategy.copyAsync(volumeMap, vmTo, srcHost, destHost, callback);
     }
 }

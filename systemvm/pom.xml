@@ -1,0 +1,261 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements. See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership. The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied. See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>cloud-systemvm</artifactId>
+  <name>Apache CloudStack System VM</name>
+  <packaging>pom</packaging>
+  <parent>
+    <groupId>org.apache.cloudstack</groupId>
+    <artifactId>cloudstack</artifactId>
+    <version>4.3.0-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <properties>
+    <mkisofs>mkisofs</mkisofs>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-agent</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-secondary-storage</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-console-proxy</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.3</version>
+        <configuration>
+          <finalName>systemvm</finalName>
+          <appendAssemblyId>false</appendAssemblyId>
+          <descriptors>
+            <descriptor>systemvm-descriptor.xml</descriptor>
+          </descriptors>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-systemvm</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>2.6</version>
+        <executions>
+          <execution>
+            <id>copy-resources</id>
+            <!-- here the phase you need -->
+            <phase>package</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>dist</outputDirectory>
+              <resources>          
+                <resource>
+                  <directory>target</directory>
+                  <includes>
+                    <include>systemvm.zip</include>
+                  </includes>
+                </resource>
+                <resource>
+                  <directory>patches/debian/config/root/.ssh</directory>
+                  <includes>
+                    <include>authorized_keys</include>
+                  </includes>
+                </resource>
+              </resources>              
+            </configuration>            
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.7</version>
+        <executions>
+          <execution>
+            <id>build-cloud-scripts</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <mkdir dir="${basedir}/dist" />
+                <mkdir dir="${basedir}/target/build-patch" />
+                <mkdir dir="${basedir}/target/build-patch/usr/sbin" />
+                <copy overwrite="true" todir="${basedir}/target/build-patch">
+                  <fileset dir="${basedir}/patches/debian/config/">
+                    <include name="**/*" />
+                  </fileset>
+                  <fileset dir="${basedir}/patches/debian/vpn/">
+                    <include name="**/*" />
+                  </fileset>
+                  <fileset dir="${basedir}/patches/debian/xe/">
+                    <include name="**/*" />
+                    <exclude name="**/xe-*" />
+                    <exclude name="**/xen-*" />
+                  </fileset>
+                </copy>
+                <copy overwrite="true" todir="${basedir}/target/build-patch/usr/sbin/">
+                  <fileset dir="${basedir}/patches/debian/xe/">
+                    <include name="**/xe-*" />
+                    <include name="**/xen-*" />
+                  </fileset>
+                </copy>
+                <tar destfile="${basedir}/target/patch.tar">
+                  <tarfileset dir="${basedir}/target/build-patch/"
+                    filemode="755">
+                    <include name="**/*" />
+                    <exclude name="**/.classpath" />
+                    <exclude name="**/log**"/>
+                    <exclude name="**/logrotate.d"/>
+                    <exclude name="**/.project" />
+                    <exclude name="**/wscript_build" />
+                  </tarfileset>
+                  <tarfileset dir="${basedir}/target/build-patch/"
+                   filemode="644">
+                   <include name="**/log**"/>
+                   <include name="**/logrotate.d/**"/>
+                  </tarfileset>
+                </tar>
+                <gzip destfile="${basedir}/dist/cloud-scripts.tgz" src="${basedir}/target/patch.tar" />
+                <delete dir="${basedir}/target/build-patch" />
+                <delete file="${basedir}/target/patch.tar" />
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    <plugin>
+      <groupId>org.codehaus.mojo</groupId>
+       <artifactId>exec-maven-plugin</artifactId>
+       <version>1.2.1</version>
+       <executions>
+         <execution>
+           <phase>package</phase>
+           <goals>
+             <goal>exec</goal>
+           </goals>
+         </execution>
+       </executions>
+       <configuration>
+         <executable>${mkisofs}</executable>
+         <workingDirectory>dist</workingDirectory>
+         <arguments>
+           <argument>-quiet</argument>
+           <argument>-r</argument>
+           <argument>-o</argument>
+           <argument>systemvm.iso</argument>
+           <argument>systemvm.zip</argument>
+           <argument>cloud-scripts.tgz</argument>
+           <argument>authorized_keys</argument>
+         </arguments>
+       </configuration>
+     </plugin>
+    </plugins>
+  </build>
+  <profiles>
+    <!-- Debian will never distribute mkisofs due to licensing issues.
+         Fortunately genisoimage is a work-alike -->
+    <profile>
+      <id>genisoimage</id>
+      <activation>
+        <file>
+          <exists>/usr/bin/genisoimage</exists>
+        </file>
+      </activation>
+      <properties>
+        <mkisofs>genisoimage</mkisofs>
+      </properties>
+    </profile>
+    <profile>
+      <id>vmware</id>
+      <activation>
+        <property>
+          <name>noredist</name>
+        </property>
+      </activation>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.cloudstack</groupId>
+                <artifactId>cloud-plugin-hypervisor-vmware</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.cloudstack</groupId>
+                <artifactId>cloud-vmware-base</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </profile>
+    <profile>
+      <id>quickcloud</id>
+      <build>
+      <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>java</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <mainClass>com.cloud.agent.AgentShell</mainClass>
+          <arguments>
+            <argument>zone=1</argument>
+            <argument>pod=1</argument>
+            <argument>host=192.168.56.1</argument>
+            <argument>guid=ConsoleProxy.1</argument>
+          </arguments>
+          <systemProperties>
+            <systemProperty>
+              <key>javax.net.ssl.trustStore</key>
+              <value>certs/realhostip.keystore</value>
+              <key>log.home</key>
+              <value>${PWD}/</value>
+            </systemProperty>
+          </systemProperties>
+        </configuration>
+      </plugin>
+      </plugins>
+    </build>
+  </profile>
+  </profiles>
+
+</project>

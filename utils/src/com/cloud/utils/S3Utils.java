@@ -48,6 +48,7 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.HttpMethod;
 import com.amazonaws.auth.AWSCredentials;
@@ -61,6 +62,9 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.amazonaws.services.s3.transfer.TransferManager;
+import com.amazonaws.services.s3.transfer.Upload;
+
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public final class S3Utils {
@@ -167,10 +171,66 @@ public final class S3Utils {
         assert clientOptions != null;
         assert req != null;
 
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(format("Sending stream as S3 object using PutObjectRequest"));
+        }
+        
         acquireClient(clientOptions).putObject(req);
 
     }
 
+    // multi-part upload file
+    public static void mputFile(final ClientOptions clientOptions,
+            final File sourceFile, final String bucketName, final String key) throws InterruptedException {
+
+        assert clientOptions != null;
+        assert sourceFile != null;
+        assert !isBlank(bucketName);
+        assert !isBlank(key);
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(format("Multipart sending file %1$s as S3 object %2$s in "
+                    + "bucket %3$s", sourceFile.getName(), key, bucketName));
+        }
+        TransferManager tm = new TransferManager(S3Utils.acquireClient(clientOptions));
+        Upload upload = tm.upload(bucketName, key, sourceFile);
+        upload.waitForCompletion();
+    }
+
+    // multi-part upload object
+    public static void mputObject(final ClientOptions clientOptions,
+            final InputStream sourceStream, final String bucketName, final String key) throws InterruptedException {
+
+        assert clientOptions != null;
+        assert sourceStream != null;
+        assert !isBlank(bucketName);
+        assert !isBlank(key);
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(format("Multipart sending stream as S3 object %1$s in "
+                    + "bucket %2$s", key, bucketName));
+        }
+        TransferManager tm = new TransferManager(S3Utils.acquireClient(clientOptions));
+        Upload upload = tm.upload(bucketName, key, sourceStream, null);
+        upload.waitForCompletion();
+    }
+
+    // multi-part upload object
+    public static void mputObject(final ClientOptions clientOptions,
+            final PutObjectRequest req) throws InterruptedException {
+
+        assert clientOptions != null;
+        assert req != null;
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Multipart sending object to S3 using PutObjectRequest");
+        }       
+        TransferManager tm = new TransferManager(S3Utils.acquireClient(clientOptions));
+        Upload upload = tm.upload(req);
+        upload.waitForCompletion();
+
+    }
+    
     public static void setObjectAcl(final ClientOptions clientOptions, final String bucketName, final String key,
             final CannedAccessControlList acl) {
 

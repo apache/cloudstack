@@ -181,10 +181,13 @@
                                                 return;
 
                                             var apiCmd;
-                                            if (args.zone == -1)
-                                                apiCmd = "listHypervisors&zoneid=-1";
-                                            else
+                                            if (args.zone == -1) { //All Zones
+                                                //apiCmd = "listHypervisors&zoneid=-1"; //"listHypervisors&zoneid=-1" has been changed to return only hypervisors available in all zones (bug 8809)
+                                            	apiCmd = "listHypervisors"; 
+                                            }
+                                            else {
                                                 apiCmd = "listHypervisors&zoneid=" + args.zone;
+                                            }
 
                                             $.ajax({
                                                 url: createURL(apiCmd),
@@ -211,10 +214,21 @@
                                                     $form.find('.form-item[rel=rootDiskControllerType]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=nicAdapterType]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=keyboardType]').css('display', 'inline-block');
+                                                    
+                                                    $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
+                                                } else if ($(this).val() == "XenServer") {
+                                                	$form.find('.form-item[rel=rootDiskControllerType]').hide();
+                                                    $form.find('.form-item[rel=nicAdapterType]').hide();
+                                                    $form.find('.form-item[rel=keyboardType]').hide();	
+                                                    
+                                                    if (isAdmin())
+                                                        $form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');    
                                                 } else {
                                                     $form.find('.form-item[rel=rootDiskControllerType]').hide();
                                                     $form.find('.form-item[rel=nicAdapterType]').hide();
                                                     $form.find('.form-item[rel=keyboardType]').hide();
+                                                    
+                                                    $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
                                                 }
                                             });
 
@@ -222,6 +236,30 @@
                                         }
                                     },
 
+                                    xenserverToolsVersion61plus: {
+                                        label: 'XenServer Tools Version 6.1+',
+                                        isBoolean: true,
+                                        isChecked: function (args) {
+                                            var b = false;
+                                            if (isAdmin()) {
+                                                $.ajax({
+                                                    url: createURL('listConfigurations'),
+                                                    data: {
+                                                        name: 'xen.pvdriver.version'
+                                                    },
+                                                    async: false,
+                                                    success: function (json) {
+                                                        if (json.listconfigurationsresponse.configuration != null && json.listconfigurationsresponse.configuration[0].value == 'xenserver61') {
+                                                            b = true;
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                            return b;
+                                        },
+                                        isHidden: true
+                                    },
+                                    
                                     //fields for hypervisor == "VMware" (starts here)
                                     rootDiskControllerType: {
                                         label: 'label.root.disk.controller',
@@ -341,6 +379,11 @@
                                                     id: 'TAR',
                                                     description: 'TAR'
                                                 });
+                                            } else if (args.hypervisor == "Hyperv") {
+                                            	items.push({
+                                                    id: 'VHD',
+                                                    description: 'VHD'
+                                                });
                                             }
                                             args.response.success({
                                                 data: items
@@ -436,6 +479,16 @@
                                     });
                                 }
 
+                                
+                                //XenServer only (starts here)                  
+                                if (args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css("display") != "none") {
+                                    $.extend(data, {
+                                        'details[0].hypervisortoolsversion': (args.data.xenserverToolsVersion61plus == "on") ? "xenserver61" : "xenserver56"
+                                    });
+                                }
+                                //XenServer only (ends here)
+                                
+                                
                                 //VMware only (starts here)
                                 if (args.$form.find('.form-item[rel=rootDiskControllerType]').css("display") != "none" && args.data.rootDiskControllerType != "") {
                                     $.extend(data, {
@@ -547,7 +600,7 @@
                                     //***** updateTemplate *****
                                     var data = {
                                         id: args.context.templates[0].id,
-                                        zoneid: args.context.templates[0].zoneid,
+                                        //zoneid: args.context.templates[0].zoneid, //can't update template/ISO in only one zone. It always get updated in all zones.
                                         name: args.data.name,
                                         displaytext: args.data.displaytext,
                                         ostypeid: args.data.ostypeid,
@@ -567,7 +620,7 @@
                                     //***** updateTemplatePermissions *****
                                     var data = {
                                         id: args.context.templates[0].id,
-                                        zoneid: args.context.templates[0].zoneid
+                                        //zoneid: args.context.templates[0].zoneid //can't update template/ISO in only one zone. It always get updated in all zones.
                                     };
 
                                     //if args.data.ispublic is undefined, do not pass ispublic to API call.
@@ -609,6 +662,53 @@
                                         }
                                     });
 
+                                    
+                                    //***** addResourceDetail *****
+                                    //XenServer only (starts here)                                       
+  					                if(args.$detailView.find('form').find('div .detail-group').find('.xenserverToolsVersion61plus').length > 0) {	  					                	
+  					                	$.ajax({
+  					                		url: createURL('addResourceDetail'),
+  					                		data: {
+  					                			resourceType: 'template',
+  					                			resourceId: args.context.templates[0].id,
+  					                			'details[0].key': 'hypervisortoolsversion',
+  					                			'details[0].value': (args.data.xenserverToolsVersion61plus == "on") ? 'xenserver61' : 'xenserver56'
+  					                		},
+  					                		success: function(json) {
+  					                			 var jobId = json.addResourceDetailresponse.jobid;
+  		                                         var addResourceDetailIntervalID = setInterval(function() {
+  		                                             $.ajax({
+  		                                                 url: createURL("queryAsyncJobResult&jobid=" + jobId),
+  		                                                 dataType: "json",
+  		                                                 success: function(json) {
+  		                                                     var result = json.queryasyncjobresultresponse;
+  		                                                     
+  		                                                     if (result.jobstatus == 0) {
+  		                                                         return; //Job has not completed
+  		                                                     } else {
+  		                                                         clearInterval(addResourceDetailIntervalID);
+
+  		                                                         if (result.jobstatus == 1) {                                                        	 
+  		                                                        	 //do nothing                                                        	 
+  		                                                         } else if (result.jobstatus == 2) {
+  		                                                        	 cloudStack.dialog.notice({
+  		                                                                 message: "Failed to update XenServer Tools Version 6.1+ field. Error: " + _s(result.jobresult.errortext)
+  		                                                             });                                                             
+  		                                                         }
+  		                                                     }
+  		                                                 },
+  		                                                 error: function(XMLHttpResponse) {                                                    
+  		                                                     cloudStack.dialog.notice({
+  		                                                         message: "Failed to update XenServer Tools Version 6.1+ field. Error: " + parseXMLHttpResponse(XMLHttpResponse)
+  		                                                     });                                                          
+  		                                                 }
+  		                                             });
+  		                                         }, g_queryAsyncJobResultInterval);		 					                			
+  					                		}
+  					                	});  					                					                	               
+  								    }				      
+  							        //XenServer only (ends here)  	
+                                    
 
                                     //***** listTemplates *****
                                     //So, we call listTemplates API to get a complete template object
@@ -797,8 +897,13 @@
                                     if (isAdmin()) {
                                         hiddenFields = [];
                                     } else {
-                                        hiddenFields = ["hypervisor"];
+                                        hiddenFields = ["hypervisor", 'xenserverToolsVersion61plus'];
                                     }
+                                    
+                                    if ('templates' in args.context && args.context.templates[0].hypervisor != 'XenServer') {
+                                        hiddenFields.push('xenserverToolsVersion61plus');
+                                    }
+                                    
                                     return hiddenFields;
                                 },
 
@@ -829,6 +934,17 @@
                                     },
                                     hypervisor: {
                                         label: 'label.hypervisor'
+                                    },
+                                    xenserverToolsVersion61plus: {
+                                        label: 'XenServer Tools Version 6.1+',
+                                        isBoolean: true,
+                                        isEditable: function () {
+                                            if (isAdmin())
+                                                return true;
+                                            else
+                                                return false;
+                                        },
+                                        converter: cloudStack.converters.toBooleanText
                                     },
                                     templatetype: {
                                         label: 'label.type'
@@ -956,13 +1072,21 @@
                                         url: createURL(apiCmd),
                                         dataType: "json",
                                         success: function(json) {
-                                            args.response.success({
-                                                actionFilter: templateActionfilter,
-                                                data: json.listtemplatesresponse.template[0]
-                                            });
+                                        	var jsonObj = json.listtemplatesresponse.template[0];
+
+                                        	if ('details' in jsonObj && 'hypervisortoolsversion' in jsonObj.details) {
+                                        	    if (jsonObj.details.hypervisortoolsversion == 'xenserver61')
+                                        	        jsonObj.xenserverToolsVersion61plus = true;
+                                        	    else
+                                        	        jsonObj.xenserverToolsVersion61plus = false;
+                                        	}
+
+                                        	args.response.success({
+                                        	    actionFilter: templateActionfilter,
+                                        	    data: jsonObj
+                                        	});
                                         }
                                     });
-
                                 }
                             }
                         }
@@ -1295,7 +1419,7 @@
                                     //***** updateIso *****
                                     var data = {
                                         id: args.context.isos[0].id,
-                                        zoneid: args.context.isos[0].zoneid,
+                                        //zoneid: args.context.isos[0].zoneid, //can't update template/ISO in only one zone. It always get updated in all zones.
                                         name: args.data.name,
                                         displaytext: args.data.displaytext,
                                         ostypeid: args.data.ostypeid
@@ -1313,7 +1437,7 @@
                                     //***** updateIsoPermissions *****
                                     var data = {
                                         id: args.context.isos[0].id,
-                                        zoneid: args.context.isos[0].zoneid,
+                                        //zoneid: args.context.isos[0].zoneid //can't update template/ISO in only one zone. It always get updated in all zones.
                                     };
                                     //if args.data.ispublic is undefined, do not pass ispublic to API call.
                                     if (args.data.ispublic == "on") {

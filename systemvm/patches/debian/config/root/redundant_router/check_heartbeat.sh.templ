@@ -1,0 +1,40 @@
+#!/bin/bash
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+
+if [ -e [RROUTER_BIN_PATH]/keepalived.ts2 ]
+then
+    lasttime=$(cat [RROUTER_BIN_PATH]/keepalived.ts2)
+    thistime=$(cat [RROUTER_BIN_PATH]/keepalived.ts)
+    diff=$(($thistime - $lasttime))
+    if [ $diff -lt 30 ]
+    then
+        echo Keepalived process is dead! >> [RROUTER_LOG]
+        [RROUTER_BIN_PATH]/services.sh stop >> [RROUTER_LOG] 2>&1
+        [RROUTER_BIN_PATH]/disable_pubip.sh >> [RROUTER_LOG] 2>&1
+        [RROUTER_BIN_PATH]/primary-backup.sh fault >> [RROUTER_LOG] 2>&1
+        service keepalived stop >> [RROUTER_LOG] 2>&1
+        service conntrackd stop >> [RROUTER_LOG] 2>&1
+	pkill -9 keepalived >> [RROUTER_LOG] 2>&1
+	pkill -9 conntrackd >> [RROUTER_LOG] 2>&1
+        echo Status: FAULT \(keepalived process is dead\) >> [RROUTER_LOG]
+        exit
+    fi
+fi
+
+cp [RROUTER_BIN_PATH]/keepalived.ts [RROUTER_BIN_PATH]/keepalived.ts2

@@ -29,7 +29,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 
 import com.cloud.agent.AgentManager;
@@ -84,6 +83,9 @@ import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -329,11 +331,10 @@ public class BigSwitchVnsElement extends AdapterBase implements
     @DB
     public BigSwitchVnsDeviceVO addBigSwitchVnsDevice(AddBigSwitchVnsDeviceCmd cmd) {
         ServerResource resource = new BigSwitchVnsResource();
-        String deviceName = VnsConstants.BigSwitchVns.getName();
+        final String deviceName = VnsConstants.BigSwitchVns.getName();
         NetworkDevice networkDevice = NetworkDevice
                 .getNetworkDevice(deviceName);
-        Long physicalNetworkId = cmd.getPhysicalNetworkId();
-        BigSwitchVnsDeviceVO bigswitchVnsDevice = null;
+        final Long physicalNetworkId = cmd.getPhysicalNetworkId();
 
         PhysicalNetworkVO physicalNetwork = _physicalNetworkDao
                 .findById(physicalNetworkId);
@@ -344,7 +345,7 @@ public class BigSwitchVnsElement extends AdapterBase implements
         }
         long zoneId = physicalNetwork.getDataCenterId();
 
-        PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao
+        final PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao
                 .findByServiceProvider(physicalNetwork.getId(),
                         networkDevice.getNetworkServiceProvder());
         if (ntwkSvcProvider == null) {
@@ -377,33 +378,33 @@ public class BigSwitchVnsElement extends AdapterBase implements
         Map<String, Object> hostdetails = new HashMap<String, Object>();
         hostdetails.putAll(params);
 
-        Transaction txn = Transaction.currentTxn();
         try {
             resource.configure(cmd.getHost(), hostdetails);
 
-            Host host = _resourceMgr.addHost(zoneId, resource,
+            final Host host = _resourceMgr.addHost(zoneId, resource,
                     Host.Type.L2Networking, params);
             if (host != null) {
-                txn.start();
-
-                bigswitchVnsDevice = new BigSwitchVnsDeviceVO(host.getId(),
-                        physicalNetworkId, ntwkSvcProvider.getProviderName(),
-                        deviceName);
-                _bigswitchVnsDao.persist(bigswitchVnsDevice);
-
-                DetailVO detail = new DetailVO(host.getId(),
-                        "bigswitchvnsdeviceid",
-                        String.valueOf(bigswitchVnsDevice.getId()));
-                _hostDetailsDao.persist(detail);
-
-                txn.commit();
-                return bigswitchVnsDevice;
+                return Transaction.execute(new TransactionCallback<BigSwitchVnsDeviceVO>() {
+                    @Override
+                    public BigSwitchVnsDeviceVO doInTransaction(TransactionStatus status) {
+                        BigSwitchVnsDeviceVO bigswitchVnsDevice = new BigSwitchVnsDeviceVO(host.getId(),
+                                physicalNetworkId, ntwkSvcProvider.getProviderName(),
+                                deviceName);
+                        _bigswitchVnsDao.persist(bigswitchVnsDevice);
+        
+                        DetailVO detail = new DetailVO(host.getId(),
+                                "bigswitchvnsdeviceid",
+                                String.valueOf(bigswitchVnsDevice.getId()));
+                        _hostDetailsDao.persist(detail);
+                        
+                        return bigswitchVnsDevice;
+                    }
+                });
             } else {
                 throw new CloudRuntimeException(
                         "Failed to add BigSwitch Vns Device due to internal error.");
             }
         } catch (ConfigurationException e) {
-            txn.rollback();
             throw new CloudRuntimeException(e.getMessage());
         }
     }

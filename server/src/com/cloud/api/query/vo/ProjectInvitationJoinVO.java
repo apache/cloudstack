@@ -91,30 +91,14 @@ public class ProjectInvitationJoinVO extends BaseViewVO implements ControlledVie
         return id;
     }
 
-
-    @Override
-    public void setId(long id) {
-        this.id = id;
-
-    }
-
     @Override
     public String getUuid() {
         return uuid;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
-
     @Override
     public long getDomainId() {
         return domainId;
-    }
-
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
     }
 
     @Override
@@ -122,27 +106,13 @@ public class ProjectInvitationJoinVO extends BaseViewVO implements ControlledVie
         return domainUuid;
     }
 
-    public void setDomainUuid(String domainUuid) {
-        this.domainUuid = domainUuid;
-    }
-
     @Override
     public String getDomainName() {
         return domainName;
     }
 
-    public void setDomainName(String domainName) {
-        this.domainName = domainName;
-    }
-
-
-
     public State getState() {
         return state;
-    }
-
-    public void setState(State state) {
-        this.state = state;
     }
 
     @Override
@@ -150,16 +120,8 @@ public class ProjectInvitationJoinVO extends BaseViewVO implements ControlledVie
         return accountId;
     }
 
-    public void setAccountId(long accountId) {
-        this.accountId = accountId;
-    }
-
     public String getEmail() {
         return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     @Override
@@ -167,16 +129,8 @@ public class ProjectInvitationJoinVO extends BaseViewVO implements ControlledVie
         return accountName;
     }
 
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
-    }
-
     public long getProjectId() {
         return projectId;
-    }
-
-    public void setProjectId(long projectId) {
-        this.projectId = projectId;
     }
 
     @Override
@@ -184,25 +138,13 @@ public class ProjectInvitationJoinVO extends BaseViewVO implements ControlledVie
         return projectUuid;
     }
 
-    public void setProjectUuid(String projectUuid) {
-        this.projectUuid = projectUuid;
-    }
-
     @Override
     public String getProjectName() {
         return projectName;
     }
 
-    public void setProjectName(String projectName) {
-        this.projectName = projectName;
-    }
-
     public Date getCreated() {
         return created;
-    }
-
-    public void setCreated(Date created) {
-        this.created = created;
     }
 
     @Override
@@ -210,27 +152,13 @@ public class ProjectInvitationJoinVO extends BaseViewVO implements ControlledVie
         return accountUuid;
     }
 
-    public void setAccountUuid(String accountUuid) {
-        this.accountUuid = accountUuid;
-    }
-
     @Override
     public short getAccountType() {
         return accountType;
-    }
-
-    public void setAccountType(short accountType) {
-        this.accountType = accountType;
     }
 
     @Override
     public String getDomainPath() {
         return domainPath;
     }
-
-    public void setDomainPath(String domainPath) {
-        this.domainPath = domainPath;
-    }
-
-
 }

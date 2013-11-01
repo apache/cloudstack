@@ -31,20 +31,26 @@ import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO, Long> implements TemplateDataStoreDao {
@@ -60,6 +66,11 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
 
     @Inject
     private DataStoreManager _storeMgr;
+
+    @Inject
+    private VMTemplateDao _tmpltDao;
+    @Inject
+    private TemplateService _tmplSrv;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -85,6 +96,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         templateRoleSearch.and("template_id", templateRoleSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
         templateRoleSearch.and("store_role", templateRoleSearch.entity().getDataStoreRole(), SearchCriteria.Op.EQ);
         templateRoleSearch.and("destroyed", templateRoleSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        templateRoleSearch.and("state", templateRoleSearch.entity().getState(), SearchCriteria.Op.EQ);
         templateRoleSearch.done();
 
         updateStateSearch = this.createSearchBuilder();
@@ -202,7 +214,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     public void deletePrimaryRecordsForStore(long id) {
         SearchCriteria<TemplateDataStoreVO> sc = storeSearch.create();
         sc.setParameters("store_id", id);
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         remove(sc);
         txn.commit();
@@ -212,7 +224,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     public void deletePrimaryRecordsForTemplate(long templateId) {
         SearchCriteria<TemplateDataStoreVO> sc = templateSearch.create();
         sc.setParameters("template_id", templateId);
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         expunge(sc);
         txn.commit();
@@ -314,6 +326,24 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     }
 
     @Override
+    public TemplateDataStoreVO findReadyOnCache(long templateId) {
+        SearchCriteria<TemplateDataStoreVO> sc = templateRoleSearch.create();
+        sc.setParameters("template_id", templateId);
+        sc.setParameters("store_role", DataStoreRole.ImageCache);
+        sc.setParameters("destroyed", false);
+        sc.setParameters("state", ObjectInDataStoreStateMachine.State.Ready);
+        return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<TemplateDataStoreVO> listOnCache(long templateId) {
+        SearchCriteria<TemplateDataStoreVO> sc = templateRoleSearch.create();
+        sc.setParameters("template_id", templateId);
+        sc.setParameters("store_role", DataStoreRole.ImageCache);
+        return search(sc, null);
+    }
+
+    @Override
     public List<TemplateDataStoreVO> listByTemplate(long templateId) {
         SearchCriteria<TemplateDataStoreVO> sc = templateSearch.create();
         sc.setParameters("template_id", templateId);
@@ -340,5 +370,79 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         }
         return null;
     }
+
+    /**
+     * Duplicate all image cache store entries
+     */
+    @Override
+    public void duplicateCacheRecordsOnRegionStore(long storeId) {
+        // find all records on image cache
+        SearchCriteria<TemplateDataStoreVO> sc = templateRoleSearch.create();
+        sc.setParameters("store_role", DataStoreRole.ImageCache);
+        sc.setParameters("destroyed", false);
+        List<TemplateDataStoreVO> tmpls = listBy(sc);
+        // create an entry for each template record, but with empty install path since the content is not yet on region-wide store yet
+        if (tmpls != null) {
+            s_logger.info("Duplicate " + tmpls.size() + " template cache store records to region store");
+            for (TemplateDataStoreVO tmpl : tmpls) {
+                long templateId = tmpl.getTemplateId();
+                VMTemplateVO template = _tmpltDao.findById(templateId);
+                if (template == null) {
+                    throw new CloudRuntimeException("No template is found for template id: " + templateId);
+                }
+                if (template.getTemplateType() == TemplateType.SYSTEM) {
+                    s_logger.info("No need to duplicate system template since it will be automatically downloaded while adding region store");
+                    continue;
+                }
+                TemplateDataStoreVO tmpStore = findByStoreTemplate(storeId, tmpl.getTemplateId());
+                if (tmpStore != null) {
+                    s_logger.info("There is already entry for template " + tmpl.getTemplateId() + " on region store " + storeId);
+                    continue;
+                }
+                s_logger.info("Persisting an entry for template " + tmpl.getTemplateId() + " on region store " + storeId);
+                TemplateDataStoreVO ts = new TemplateDataStoreVO();
+                ts.setTemplateId(tmpl.getTemplateId());
+                ts.setDataStoreId(storeId);
+                ts.setDataStoreRole(DataStoreRole.Image);
+                ts.setState(tmpl.getState());
+                ts.setDownloadPercent(tmpl.getDownloadPercent());
+                ts.setDownloadState(tmpl.getDownloadState());
+                ts.setSize(tmpl.getSize());
+                ts.setPhysicalSize(tmpl.getPhysicalSize());
+                ts.setErrorString(tmpl.getErrorString());
+                ts.setDownloadUrl(tmpl.getDownloadUrl());
+                ts.setRefCnt(tmpl.getRefCnt());
+                persist(ts);
+                // increase ref_cnt of cache store entry so that this will not be recycled before the content is pushed to region-wide store
+                tmpl.incrRefCnt();
+                this.update(tmpl.getId(), tmpl);
+
+                // mark the template as cross-zones
+                template.setCrossZones(true);
+                _tmpltDao.update(templateId, template);
+                // add template_zone_ref association for these cross-zone templates
+                _tmplSrv.associateTemplateToZone(templateId, null);
+            }
+
+        }
+    }
+
+
+    @Override
+    public void updateStoreRoleToCachce(long storeId) {
+        SearchCriteria<TemplateDataStoreVO> sc = storeSearch.create();
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("destroyed", false);
+        List<TemplateDataStoreVO> tmpls = listBy(sc);
+        if (tmpls != null) {
+            s_logger.info("Update to cache store role for " + tmpls.size() + " entries in template_store_ref");
+            for (TemplateDataStoreVO tmpl : tmpls) {
+                tmpl.setDataStoreRole(DataStoreRole.ImageCache);
+                update(tmpl.getId(), tmpl);
+            }
+        }
+
+    }
+
 
 }

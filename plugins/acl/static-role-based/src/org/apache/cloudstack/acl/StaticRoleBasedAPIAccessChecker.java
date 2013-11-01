@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.PermissionDeniedException;
@@ -43,16 +44,21 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
 
     protected static final Logger s_logger = Logger.getLogger(StaticRoleBasedAPIAccessChecker.class);
 
-    private static Map<RoleType, Set<String>> s_roleBasedApisMap =
+    Set<String> commandsPropertiesOverrides = new HashSet<String>();
+    Map<RoleType, Set<String>> commandsPropertiesRoleBasedApisMap =
+            new HashMap<RoleType, Set<String>>();
+    Map<RoleType, Set<String>> annotationRoleBasedApisMap =
             new HashMap<RoleType, Set<String>>();
 
-    @Inject List<PluggableService> _services;
+    List<PluggableService> _services;
     @Inject AccountService _accountService;
 
     protected StaticRoleBasedAPIAccessChecker() {
         super();
-        for (RoleType roleType: RoleType.values())
-            s_roleBasedApisMap.put(roleType, new HashSet<String>());
+        for (RoleType roleType: RoleType.values()) {
+            commandsPropertiesRoleBasedApisMap.put(roleType, new HashSet<String>());
+            annotationRoleBasedApisMap.put(roleType, new HashSet<String>());
+        }
     }
 
     @Override
@@ -64,7 +70,10 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
         }
 
         RoleType roleType = _accountService.getRoleType(account);
-        boolean isAllowed = s_roleBasedApisMap.get(roleType).contains(commandName);
+        boolean isAllowed = commandsPropertiesOverrides.contains(commandName) ?
+                commandsPropertiesRoleBasedApisMap.get(roleType).contains(commandName) :
+                    annotationRoleBasedApisMap.get(roleType).contains(commandName);
+
         if (!isAllowed) {
             throw new PermissionDeniedException("The API does not exist or is blacklisted. Role type=" + roleType.toString() + " is not allowed to request the api: " + commandName);
         }
@@ -80,19 +89,46 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
         return true;
     }
 
+
+    @Override
+    public boolean start() {
+        for ( PluggableService service : _services ) {
+            for ( Class<?> clz : service.getCommands() ) {
+                APICommand command = clz.getAnnotation(APICommand.class);
+                for ( RoleType role : command.authorized() ) {
+                    Set<String> commands = annotationRoleBasedApisMap.get(role);
+                    if (!commands.contains(command.name()))
+                        commands.add(command.name());
+                }
+            }
+        }
+        return super.start();
+    }
+
     private void processMapping(Map<String, String> configMap) {
         for (Map.Entry<String, String> entry: configMap.entrySet()) {
             String apiName = entry.getKey();
             String roleMask = entry.getValue();
+            commandsPropertiesOverrides.add(apiName);
             try {
                 short cmdPermissions = Short.parseShort(roleMask);
                 for (RoleType roleType: RoleType.values()) {
                     if ((cmdPermissions & roleType.getValue()) != 0)
-                        s_roleBasedApisMap.get(roleType).add(apiName);
+                        commandsPropertiesRoleBasedApisMap.get(roleType).add(apiName);
                 }
             } catch (NumberFormatException nfe) {
                 s_logger.info("Malformed key=value pair for entry: " + entry.toString());
             }
         }
     }
+
+    public List<PluggableService> getServices() {
+        return _services;
+    }
+
+    @Inject
+    public void setServices(List<PluggableService> _services) {
+        this._services = _services;
+    }
+
 }

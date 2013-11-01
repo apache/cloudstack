@@ -28,7 +28,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = { VMNetworkMapDao.class })
@@ -52,7 +52,7 @@ public class VMNetworkMapDaoImpl extends GenericDaoBase<VMNetworkMapVO, Long> im
 
     @Override
     public void persist(long vmId, List<Long> networks) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
 
         txn.start();
         SearchCriteria<VMNetworkMapVO> sc = VmIdSearch.create();

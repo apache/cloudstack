@@ -107,6 +107,11 @@ public class DataStoreManagerImpl implements DataStoreManager {
         return imageDataStoreMgr.listImageStores();
     }
 
+    @Override
+    public List<DataStore> listImageCacheStores() {
+        return imageDataStoreMgr.listImageCacheStores();
+    }
+
     public void setPrimaryStoreMgr(PrimaryDataStoreProviderManager primaryStoreMgr) {
         this.primaryStoreMgr = primaryStoreMgr;
     }

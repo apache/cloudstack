@@ -32,7 +32,7 @@ import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Local(value = { AffinityGroupVMMapDao.class })
 public class AffinityGroupVMMapDaoImpl extends GenericDaoBase<AffinityGroupVMMapVO, Long> implements
@@ -56,7 +56,7 @@ public class AffinityGroupVMMapDaoImpl extends GenericDaoBase<AffinityGroupVMMap
         ListVmIdByAffinityGroup = createSearchBuilder(Long.class);
         ListVmIdByAffinityGroup.and("affinityGroupId", ListVmIdByAffinityGroup.entity().getAffinityGroupId(),
                 SearchCriteria.Op.EQ);
-        ListVmIdByAffinityGroup.selectField(ListVmIdByAffinityGroup.entity().getInstanceId());
+        ListVmIdByAffinityGroup.selectFields(ListVmIdByAffinityGroup.entity().getInstanceId());
         ListVmIdByAffinityGroup.done();
 
         ListByAffinityGroup = createSearchBuilder();
@@ -89,7 +89,7 @@ public class AffinityGroupVMMapDaoImpl extends GenericDaoBase<AffinityGroupVMMap
         ListAffinityGroupIdByVm = createSearchBuilder(Long.class);
         ListAffinityGroupIdByVm.and("instanceId", ListAffinityGroupIdByVm.entity().getInstanceId(),
                 SearchCriteria.Op.EQ);
-        ListAffinityGroupIdByVm.selectField(ListAffinityGroupIdByVm.entity().getAffinityGroupId());
+        ListAffinityGroupIdByVm.selectFields(ListAffinityGroupIdByVm.entity().getAffinityGroupId());
         ListAffinityGroupIdByVm.done();
     }
 
@@ -160,7 +160,7 @@ public class AffinityGroupVMMapDaoImpl extends GenericDaoBase<AffinityGroupVMMap
 
     @Override
     public void updateMap(Long vmId, List<Long> affinityGroupIds) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
 
         SearchCriteria<AffinityGroupVMMapVO> sc = createSearchCriteria();

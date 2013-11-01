@@ -16,6 +16,13 @@
 // under the License.
 package groovy.org.apache.cloudstack.ldap
 
+import org.apache.cloudstack.api.command.LdapAddConfigurationCmd
+import org.apache.cloudstack.api.command.LdapCreateAccountCmd
+import org.apache.cloudstack.api.command.LdapDeleteConfigurationCmd
+import org.apache.cloudstack.api.command.LdapImportUsersCmd
+import org.apache.cloudstack.api.command.LdapListUsersCmd
+import org.apache.cloudstack.api.command.LdapUserSearchCmd
+
 import javax.naming.NamingException
 import javax.naming.ldap.InitialLdapContext
 
@@ -86,13 +93,15 @@ class LdapManagerImplSpec extends spock.lang.Specification {
 		def ldapUserManager = Mock(LdapUserManager)
 		def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManager)
 		when: "A ldap user response is generated"
-		def result = ldapManager.createLdapUserResponse(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org"))
+		def result = ldapManager.createLdapUserResponse(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org",
+		"engineering"))
 		then: "The result of the response should match the given ldap user"
 		result.username == "rmurphy"
 		result.email == "rmurphy@test.com"
 		result.firstname == "Ryan"
 		result.lastname == "Murphy"
-		result.principal == "cn=rmurphy,dc=cloudstack,dc=org"
+		result.principal == "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org"
+	result.domain == "engineering"
     }
 
     def "Test success getUsers"() {
@@ -102,7 +111,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
 		def ldapUserManager = Mock(LdapUserManager)
 		ldapContextFactory.createBindContext() >> null
 		List<LdapUser> users = new ArrayList<>();
-		users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org"))
+		users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null))
 		ldapUserManager.getUsers(_) >> users;
 		def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManager)
 		when: "We search for a group of users"
@@ -117,7 +126,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
 		def ldapContextFactory = Mock(LdapContextFactory)
 		def ldapUserManager = Mock(LdapUserManager)
 		ldapContextFactory.createBindContext() >> null
-		ldapUserManager.getUser(_, _) >> new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org")
+		ldapUserManager.getUser(_, _) >> new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null)
 		def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManager)
 		when: "We search for a user"
 		def result = ldapManager.getUser("rmurphy")
@@ -149,7 +158,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         ldapContextFactory.createUserContext(_, _) >> { throw new NamingException() }
         def ldapUserManager = Mock(LdapUserManager)
         def ldapManager = Spy(LdapManagerImpl, constructorArgs: [ldapConfigurationDao, ldapContextFactory, ldapUserManager])
-        ldapManager.getUser(_) >> { new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org") }
+	ldapManager.getUser(_) >> { new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null) }
 		when: "The user attempts to authenticate with a bad password"
         def result = ldapManager.canAuthenticate("rmurphy", "password")
 		then: "The authentication fails"
@@ -203,7 +212,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
 		ldapContextFactory.createUserContext(_, _) >> null
 		def ldapUserManager = Mock(LdapUserManager)
 		def ldapManager = Spy(LdapManagerImpl, constructorArgs: [ldapConfigurationDao, ldapContextFactory, ldapUserManager])
-		ldapManager.getUser(_) >> { new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org") }
+		ldapManager.getUser(_) >> { new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null) }
 		when: "A user authenticates"
 		def result = ldapManager.canAuthenticate("rmurphy", "password")
 		then: "The result is true"
@@ -237,7 +246,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
 		ldapContextFactory.createBindContext() >> null;
 
 		List<LdapUser> users = new ArrayList<LdapUser>();
-		users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org"))
+		users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering"))
 		ldapUserManager.getUsers(_, _) >> users;
 
 		def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManager)
@@ -288,16 +297,30 @@ class LdapManagerImplSpec extends spock.lang.Specification {
 		thrown InvalidParameterValueException
     }
 
+    def supportedLdapCommands() {
+	List<Class<?>> cmdList = new ArrayList<Class<?>>();
+	cmdList.add(LdapUserSearchCmd.class);
+	cmdList.add(LdapListUsersCmd.class);
+	cmdList.add(LdapAddConfigurationCmd.class);
+	cmdList.add(LdapDeleteConfigurationCmd.class);
+	cmdList.add(LdapListConfigurationCmd.class);
+	cmdList.add(LdapCreateAccountCmd.class);
+	cmdList.add(LdapImportUsersCmd.class);
+	return cmdList
+    }
+
     def "Test that getCommands isn't empty"() {
 		given: "We have an LdapConfigurationDao, LdapContextFactory, LdapUserManager and LdapManager"
 		def ldapConfigurationDao = Mock(LdapConfigurationDaoImpl)
 		def ldapContextFactory = Mock(LdapContextFactory)
 		def ldapUserManager = Mock(LdapUserManager)
+	final List<Class<?>> cmdList = supportedLdapCommands()
 		def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManager)
 		when: "Get commands is called"
 		def result = ldapManager.getCommands()
-		then: "it must have atleast 1 command"
+		then: "it must return all the commands"
 		result.size() > 0
+	result == cmdList
     }
 
     def "Testing of listConfigurations"() {

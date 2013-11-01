@@ -88,8 +88,6 @@ public class VmwareClient {
 	            }
 	        };
 	        HttpsURLConnection.setDefaultHostnameVerifier(hv);
-	        
-        	vimService = new VimService();
 		} catch (Exception e) {
 		}   	
     }
@@ -107,8 +105,7 @@ public class VmwareClient {
     }
 
     private ManagedObjectReference SVC_INST_REF = new ManagedObjectReference();
-    private ManagedObjectReference propCollectorRef;
-    private static VimService vimService;
+    private VimService vimService;
     private VimPortType vimPort;
     private String serviceCookie;
     private final String SVC_INST_NAME = "ServiceInstance";
@@ -128,6 +125,7 @@ public class VmwareClient {
         SVC_INST_REF.setType(SVC_INST_NAME);
         SVC_INST_REF.setValue(SVC_INST_NAME);
 
+    	vimService = new VimService();
         vimPort = vimService.getVimPort();
         Map<String, Object> ctxt = ((BindingProvider) vimPort).getRequestContext();
 
@@ -151,8 +149,6 @@ public class VmwareClient {
 
         vimPort.login(serviceContent.getSessionManager(), userName, password, null);
         isConnected = true;
-
-        propCollectorRef = serviceContent.getPropertyCollector();
     }
 
     /**
@@ -197,7 +193,7 @@ public class VmwareClient {
      * @return Service property collector
      */
     public ManagedObjectReference getPropCol() {
-        return propCollectorRef;
+        return getServiceContent().getPropertyCollector();
     }
 
     /**
@@ -207,6 +203,43 @@ public class VmwareClient {
         return getServiceContent().getRootFolder();
     }
 
+	public boolean validate() {
+		//
+		// There is no official API to validate an open vCenter API session. This is hacking way to tell if
+		// an open vCenter API session is still valid for making calls.
+		//
+		// It will give false result if there really does not exist data-center in the inventory, however, I consider
+		// this really is not possible in production deployment
+		//
+		
+        // Create PropertySpecs
+        PropertySpec pSpec = new PropertySpec();
+        pSpec.setType("Datacenter");
+        pSpec.setAll(false);
+        pSpec.getPathSet().add("name");
+
+        ObjectSpec oSpec = new ObjectSpec();
+        oSpec.setObj(getRootFolder());
+        oSpec.setSkip(false);
+        oSpec.getSelectSet().addAll(constructCompleteTraversalSpec());
+
+        PropertyFilterSpec spec = new PropertyFilterSpec();
+        spec.getPropSet().add(pSpec);
+        spec.getObjectSet().add(oSpec);
+        List<PropertyFilterSpec> specArr = new ArrayList<PropertyFilterSpec>();
+        specArr.add(spec);
+
+        try {
+        	List<ObjectContent> ocary = vimPort.retrieveProperties(getPropCol(), specArr);
+        	if(ocary != null && ocary.size() > 0)
+        		return true;
+        } catch(Exception e) {
+        	return false;
+        }
+        
+        return false;
+	}
+    
     /**
      * Get the property value of a managed object.
      *
@@ -266,7 +299,7 @@ public class VmwareClient {
         List<PropertyFilterSpec> specArr = new ArrayList<PropertyFilterSpec>();
         specArr.add(spec);
 
-        return vimPort.retrieveProperties(propCollectorRef, specArr);
+        return vimPort.retrieveProperties(getPropCol(), specArr);    
     }
 
     /**
@@ -334,7 +367,8 @@ public class VmwareClient {
         pSpec.setType(objmor.getType());
         spec.getPropSet().add(pSpec);
 
-        ManagedObjectReference filterSpecRef = vimPort.createFilter(propCollectorRef, spec, true);
+        ManagedObjectReference propertyCollector = this.getPropCol();
+        ManagedObjectReference filterSpecRef = vimPort.createFilter(propertyCollector, spec, true);
 
         boolean reached = false;
 
@@ -343,7 +377,7 @@ public class VmwareClient {
         List<ObjectUpdate> objupary = null;
         List<PropertyChange> propchgary = null;
         while (!reached) {
-            updateset = vimPort.waitForUpdates(propCollectorRef, version);
+            updateset = vimPort.waitForUpdates(propertyCollector, version);
             if (updateset == null || updateset.getFilterSet() == null) {
                 continue;
             }
@@ -546,7 +580,7 @@ public class VmwareClient {
         List<PropertyFilterSpec> specArr = new ArrayList<PropertyFilterSpec>();
         specArr.add(spec);
 
-        List<ObjectContent> ocary = vimPort.retrieveProperties(propCollectorRef, specArr);
+        List<ObjectContent> ocary = vimPort.retrieveProperties(getPropCol(), specArr);
 
         if (ocary == null || ocary.size() == 0) {
             return null;

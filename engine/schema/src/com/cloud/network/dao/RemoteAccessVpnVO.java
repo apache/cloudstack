@@ -34,7 +34,7 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     private long accountId;
 
     @Column(name="network_id")
-    private long networkId;
+    private Long networkId;
     
     @Column(name="domain_id")
     private long domainId;
@@ -62,11 +62,14 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     @Column(name="uuid")
     private String uuid;
 
+    @Column(name="vpc_id")
+    private Long vpcId;
+    
     public RemoteAccessVpnVO() { 
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public RemoteAccessVpnVO(long accountId, long domainId, long networkId, long publicIpId, String localIp, String ipRange,  String presharedKey) {
+    public RemoteAccessVpnVO(long accountId, long domainId, Long networkId, long publicIpId, Long vpcId, String localIp, String ipRange,  String presharedKey) {
         this.accountId = accountId;
         this.serverAddressId = publicIpId;
         this.ipRange = ipRange;
@@ -76,6 +79,7 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
         this.networkId = networkId;
         this.state = State.Added;
         this.uuid = UUID.randomUUID().toString();
+        this.vpcId = vpcId;
     }
     
     @Override
@@ -126,7 +130,7 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
 	}
 	
 	@Override
-    public long getNetworkId() {
+    public Long getNetworkId() {
 	    return networkId;
 	}
 
@@ -139,4 +143,9 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     public String getUuid() {
         return uuid;
     }
+
+    @Override
+	public Long getVpcId() {
+		return vpcId;
+	}
 }

@@ -40,7 +40,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -94,7 +94,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         ZoneClusterSearch.done();
 
         ClusterIdSearch = createSearchBuilder(Long.class);
-        ClusterIdSearch.selectField(ClusterIdSearch.entity().getId());
+        ClusterIdSearch.selectFields(ClusterIdSearch.entity().getId());
         ClusterIdSearch.and("dataCenterId", ClusterIdSearch.entity().getDataCenterId(), Op.EQ);
         ClusterIdSearch.done();
     }
@@ -156,7 +156,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
 
     @Override
     public Map<Long, List<Long>> getPodClusterIdMap(List<Long> clusterIds){
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         Map<Long, List<Long>> result = new HashMap<Long, List<Long>>();
 
@@ -196,7 +196,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     @Override
     public List<Long> listDisabledClusters(long zoneId, Long podId) {
         GenericSearchBuilder<ClusterVO, Long> clusterIdSearch = createSearchBuilder(Long.class);
-        clusterIdSearch.selectField(clusterIdSearch.entity().getId());
+        clusterIdSearch.selectFields(clusterIdSearch.entity().getId());
         clusterIdSearch.and("dataCenterId", clusterIdSearch.entity().getDataCenterId(), Op.EQ);
         if (podId != null) {
             clusterIdSearch.and("podId", clusterIdSearch.entity().getPodId(), Op.EQ);
@@ -217,12 +217,12 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     public List<Long> listClustersWithDisabledPods(long zoneId) {
 
         GenericSearchBuilder<HostPodVO, Long> disabledPodIdSearch = _hostPodDao.createSearchBuilder(Long.class);
-        disabledPodIdSearch.selectField(disabledPodIdSearch.entity().getId());
+        disabledPodIdSearch.selectFields(disabledPodIdSearch.entity().getId());
         disabledPodIdSearch.and("dataCenterId", disabledPodIdSearch.entity().getDataCenterId(), Op.EQ);
         disabledPodIdSearch.and("allocationState", disabledPodIdSearch.entity().getAllocationState(), Op.EQ);
 
         GenericSearchBuilder<ClusterVO, Long> clusterIdSearch = createSearchBuilder(Long.class);
-        clusterIdSearch.selectField(clusterIdSearch.entity().getId());
+        clusterIdSearch.selectFields(clusterIdSearch.entity().getId());
         clusterIdSearch.join("disabledPodIdSearch", disabledPodIdSearch, clusterIdSearch.entity().getPodId(), disabledPodIdSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         clusterIdSearch.done();
 
@@ -243,7 +243,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
 
     @Override
     public boolean remove(Long id) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         ClusterVO cluster = createForUpdate();
         cluster.setName(null);

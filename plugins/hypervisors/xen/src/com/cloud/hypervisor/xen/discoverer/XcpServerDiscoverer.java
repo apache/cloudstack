@@ -16,6 +16,31 @@
 // under the License.
 package com.cloud.hypervisor.xen.discoverer;
 
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import javax.persistence.EntityExistsException;
+
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Pool;
+import com.xensource.xenapi.Session;
+import com.xensource.xenapi.Types.SessionAuthenticationFailed;
+import com.xensource.xenapi.Types.XenAPIException;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -69,33 +94,10 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.HypervisorVersionChangedException;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.Pool;
-import com.xensource.xenapi.Session;
-import com.xensource.xenapi.Types.SessionAuthenticationFailed;
-import com.xensource.xenapi.Types.XenAPIException;
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import javax.persistence.EntityExistsException;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
 
 @Local(value=Discoverer.class)
 public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
@@ -126,8 +128,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         try {
             _clusterDao.update(cluster.getId(), cluster);
         } catch (EntityExistsException e) {
-            SearchCriteriaService<ClusterVO, ClusterVO> sc = SearchCriteria2.create(ClusterVO.class);
-            sc.addAnd(sc.getEntity().getGuid(), Op.EQ, guid);
+            QueryBuilder<ClusterVO> sc = QueryBuilder.create(ClusterVO.class);
+            sc.and(sc.entity().getGuid(), Op.EQ, guid);
             List<ClusterVO> clusters = sc.list();
             ClusterVO clu = clusters.get(0);
             List<HostVO> clusterHosts = _resourceMgr.listAllHostsInCluster(clu.getId());
@@ -309,6 +311,9 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                     details.put("storage.network.device1", storageNetworkLabel);
                 }
 
+                DataCenterVO zone = _dcDao.findById(dcId);
+                boolean securityGroupEnabled = zone.isSecurityGroupEnabled();
+                params.put("securitygroupenabled", Boolean.toString(securityGroupEnabled));
 
                 params.put("wait", Integer.toString(_wait));
                 details.put("wait", Integer.toString(_wait));

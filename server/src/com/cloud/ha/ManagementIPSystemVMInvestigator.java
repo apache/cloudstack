@@ -17,11 +17,9 @@
 package com.cloud.ha;
 
 import java.util.List;
-import java.util.Map;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
@@ -38,7 +36,6 @@ import com.cloud.vm.VirtualMachine;
 public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
     private static final Logger s_logger = Logger.getLogger(ManagementIPSystemVMInvestigator.class);
 
-    private String _name = null;
     @Inject private final HostDao _hostDao = null;
     @Inject private final NetworkModel _networkMgr = null;
 
@@ -112,18 +109,6 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
     @Override
     public Status isAgentAlive(Host agent) {
     	return null;
-    }
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

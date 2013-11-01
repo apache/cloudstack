@@ -35,10 +35,10 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContext;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.usage.UsageTypes;
-
 import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
@@ -84,7 +84,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={UsageManager.class})
@@ -248,7 +248,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             m_sanity = m_sanityExecutor.scheduleAtFixedRate(new SanityCheck(), 1, m_sanityCheckInterval, TimeUnit.DAYS);
         }
 
-        Transaction usageTxn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy usageTxn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             if(m_heartbeatLock.lock(3)) { // 3 second timeout
                 try {
@@ -279,7 +279,17 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         return true;
     }
 
+    @Override
     public void run() {
+        (new ManagedContextRunnable() {
+            @Override
+            protected void runInContext() {
+                runInContextInternal();
+            }
+        }).run();
+    }
+    
+    protected void runInContextInternal() {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("starting usage job...");
         }
@@ -371,7 +381,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     s_logger.info("not parsing usage records since start time mills (" + startDateMillis + ") is on or after end time millis (" + endDateMillis + ")");
                 }
 
-                Transaction jobUpdateTxn = Transaction.open(Transaction.USAGE_DB);
+                TransactionLegacy jobUpdateTxn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
                 try {
                     jobUpdateTxn.start();
                     // everything seemed to work...set endDate as the last success date
@@ -401,7 +411,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             Map<String, UsageNetworkVO> networkStats = null;
             List<VmDiskStatisticsVO> vmDiskStats = null;
             Map<String, UsageVmDiskVO> vmDiskUsages = null;
-            Transaction userTxn = Transaction.open(Transaction.CLOUD_DB);
+            TransactionLegacy userTxn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             try {
                 Long limit = Long.valueOf(500);
                 Long offset = Long.valueOf(0);
@@ -542,7 +552,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             List<UsageEventVO> events = _usageEventDao.getRecentEvents(new Date(endDateMillis));
 
             
-            Transaction usageTxn = Transaction.open(Transaction.USAGE_DB);
+            TransactionLegacy usageTxn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
             try {
                 usageTxn.start();
 
@@ -769,7 +779,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 usageTxn.close();
 
                 // switch back to CLOUD_DB
-                Transaction swap = Transaction.open(Transaction.CLOUD_DB);
+                TransactionLegacy swap = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
                 if(!success){
                     _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USAGE_SERVER_RESULT, 0, new Long(0), "Usage job failed. Job id: "+job.getId(), "Usage job failed. Job id: "+job.getId());
                 } else {
@@ -1651,9 +1661,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         m_usageVMSnapshotDao.persist(vsVO);
     }
 
-    private class Heartbeat implements Runnable {
-        public void run() {
-            Transaction usageTxn = Transaction.open(Transaction.USAGE_DB);
+    private class Heartbeat extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
+            TransactionLegacy usageTxn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
             try {
                 if(!m_heartbeatLock.lock(3)) { // 3 second timeout
                     if(s_logger.isTraceEnabled())
@@ -1712,7 +1723,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         @DB
         protected boolean updateJob(Long jobId, String hostname, Integer pid, Date heartbeat, int scheduled) {
             boolean changeOwner = false;
-            Transaction txn = Transaction.currentTxn();
+            TransactionLegacy txn = TransactionLegacy.currentTxn();
             try {
                 txn.start();
 
@@ -1757,8 +1768,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
     }
     
-    private class SanityCheck implements Runnable {
-        public void run() {
+    private class SanityCheck extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
             UsageSanityChecker usc = new UsageSanityChecker();
             try {
                 String errors = usc.runSanityCheck();

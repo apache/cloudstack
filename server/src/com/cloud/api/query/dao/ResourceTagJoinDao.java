@@ -22,6 +22,7 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.server.ResourceTag;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.utils.db.GenericDao;
 
 public interface ResourceTagJoinDao extends GenericDao<ResourceTagJoinVO, Long> {
@@ -31,4 +32,6 @@ public interface ResourceTagJoinDao extends GenericDao<ResourceTagJoinVO, Long> 
     ResourceTagJoinVO newResourceTagView(ResourceTag vr);
 
     List<ResourceTagJoinVO> searchByIds(Long... ids);
+    
+    List<ResourceTagJoinVO> listBy(String resourceUUID, ResourceObjectType resourceType);
 }

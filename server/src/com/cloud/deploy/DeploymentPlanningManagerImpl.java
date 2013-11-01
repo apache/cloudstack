@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
-import java.util.TimerTask;
 import java.util.TreeSet;
 
 import javax.ejb.Local;
@@ -43,6 +42,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -99,6 +99,9 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.DiskProfile;
@@ -540,7 +543,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     }
 
     @DB
-    private boolean checkIfHostFitsPlannerUsage(long hostId, PlannerResourceUsage resourceUsageRequired) {
+    private boolean checkIfHostFitsPlannerUsage(final long hostId, final PlannerResourceUsage resourceUsageRequired) {
         // TODO Auto-generated method stub
         // check if this host has been picked up by some other planner
         // exclusively
@@ -550,7 +553,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
         PlannerHostReservationVO reservationEntry = _plannerHostReserveDao.findByHostId(hostId);
         if (reservationEntry != null) {
-            long id = reservationEntry.getId();
+            final long id = reservationEntry.getId();
             PlannerResourceUsage hostResourceType = reservationEntry.getResourceUsage();
 
             if (hostResourceType != null) {
@@ -562,13 +565,12 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                     return false;
                 }
             } else {
+                final PlannerResourceUsage hostResourceTypeFinal = hostResourceType;
                 // reserve the host for required resourceType
                 // let us lock the reservation entry before updating.
-                final Transaction txn = Transaction.currentTxn();
-
-                try {
-                    txn.start();
-
+                return Transaction.execute(new TransactionCallback<Boolean>() {
+                    @Override
+                    public Boolean doInTransaction(TransactionStatus status) {
                     final PlannerHostReservationVO lockedEntry = _plannerHostReserveDao.lockRow(id, true);
                     if (lockedEntry == null) {
                         s_logger.error("Unable to lock the host entry for reservation, host: " + hostId);
@@ -585,13 +587,13 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                             return true;
                         } else {
                             s_logger.debug("Cannot use this host for usage: " + resourceUsageRequired
-                                    + ", since this host has been reserved for planner usage : " + hostResourceType);
+                                        + ", since this host has been reserved for planner usage : " + hostResourceTypeFinal);
                             return false;
                         }
                     }
-                } finally {
-                    txn.commit();
                 }
+                });
+
             }
 
         }
@@ -600,7 +602,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     }
 
     @DB
-    public boolean checkHostReservationRelease(Long hostId) {
+    public boolean checkHostReservationRelease(final Long hostId) {
 
         if (hostId != null) {
             PlannerHostReservationVO reservationEntry = _plannerHostReserveDao.findByHostId(hostId);
@@ -662,12 +664,11 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                     s_logger.debug("Host has no VMs associated, releasing the planner reservation for host " + hostId);
                 }
 
-                long id = reservationEntry.getId();
-                final Transaction txn = Transaction.currentTxn();
+                final long id = reservationEntry.getId();
 
-                try {
-                    txn.start();
-
+                return Transaction.execute(new TransactionCallback<Boolean>() {
+                    @Override
+                    public Boolean doInTransaction(TransactionStatus status) {
                     final PlannerHostReservationVO lockedEntry = _plannerHostReserveDao.lockRow(id, true);
                     if (lockedEntry == null) {
                         s_logger.error("Unable to lock the host entry for reservation, host: " + hostId);
@@ -679,18 +680,19 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                         _plannerHostReserveDao.persist(lockedEntry);
                         return true;
                     }
-                } finally {
-                    txn.commit();
+
+                        return false;
                 }
+                });
             }
 
         }
         return false;
     }
 
-    class HostReservationReleaseChecker extends TimerTask {
+    class HostReservationReleaseChecker extends ManagedContextTimerTask {
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 s_logger.debug("Checking if any host reservation can be released ... ");
                 checkHostReservations();
@@ -932,15 +934,36 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
             if (!allocatorAvoidOutput.shouldAvoid(host)) {
                 // there's some host in the cluster that is not yet in avoid set
                 avoidAllHosts = false;
+                break;
             }
         }
 
+        // Cluster can be put in avoid set in following scenarios:
+        // 1. If storage allocators haven't put any pools in avoid set means either no pools in cluster 
+        // or pools not suitable for the allocators to handle.
+        // 2. If all 'shared' or 'local' pools are in avoid set
+        if  (allocatorAvoidOutput.getPoolsToAvoid() != null && !allocatorAvoidOutput.getPoolsToAvoid().isEmpty()) {
+            // check shared pools
         List<StoragePoolVO> allPoolsInCluster = _storagePoolDao.findPoolsByTags(clusterVO.getDataCenterId(),
                 clusterVO.getPodId(), clusterVO.getId(), null);
         for (StoragePoolVO pool : allPoolsInCluster) {
             if (!allocatorAvoidOutput.shouldAvoid(pool)) {
                 // there's some pool in the cluster that is not yet in avoid set
                 avoidAllPools = false;
+                    break;
+                }
+            }
+            if (avoidAllPools) {
+                // check local pools
+                List<StoragePoolVO> allLocalPoolsInCluster = _storagePoolDao.findLocalStoragePoolsByTags(clusterVO.getDataCenterId(),
+                        clusterVO.getPodId(), clusterVO.getId(), null);
+                for (StoragePoolVO pool : allLocalPoolsInCluster) {
+                    if (!allocatorAvoidOutput.shouldAvoid(pool)) {
+                        // there's some pool in the cluster that is not yet in avoid set
+                        avoidAllPools = false;
+                        break;
+                    }
+                }
             }
         }
 
@@ -1230,17 +1253,18 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
     @DB
     @Override
-    public String finalizeReservation(DeployDestination plannedDestination,
-            VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids)
+    public String finalizeReservation(final DeployDestination plannedDestination,
+            final VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids)
             throws InsufficientServerCapacityException, AffinityConflictException {
 
-        VirtualMachine vm = vmProfile.getVirtualMachine();
-        long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
+        final VirtualMachine vm = vmProfile.getVirtualMachine();
+        final long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
 
+        return Transaction.execute(new TransactionCallback<String>() {
+            @Override
+            public String doInTransaction(TransactionStatus status) {
         boolean saveReservation = true;
-        final Transaction txn = Transaction.currentTxn();
-        try {
-            txn.start();
+
             if (vmGroupCount > 0) {
                 List<Long> groupIds = _affinityGroupVMMapDao.listAffinityGroupIdsByVmId(vm.getId());
                 SearchCriteria<AffinityGroupVO> criteria = _affinityGroupDao.createSearchCriteria();
@@ -1270,10 +1294,10 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                 _reservationDao.persist(vmReservation);
                 return vmReservation.getUuid();
             }
-        } finally {
-            txn.commit();
-        }
+
         return null;
+    }
+        });
     }
 
     @Override

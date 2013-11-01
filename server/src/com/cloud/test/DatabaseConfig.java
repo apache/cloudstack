@@ -57,6 +57,11 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.net.NfsUtils;
 
 public class DatabaseConfig {
@@ -407,34 +412,32 @@ public class DatabaseConfig {
 
     @DB
     protected void doConfig() {
-        Transaction txn = Transaction.currentTxn();
         try {
-
-            File configFile = new File(_configFileName);
+            final File configFile = new File(_configFileName);
 
             SAXParserFactory spfactory = SAXParserFactory.newInstance();
-            SAXParser saxParser = spfactory.newSAXParser();
-            DbConfigXMLHandler handler = new DbConfigXMLHandler();
+            final SAXParser saxParser = spfactory.newSAXParser();
+            final DbConfigXMLHandler handler = new DbConfigXMLHandler();
             handler.setParent(this);
 
-            txn.start();
+            Transaction.execute(new TransactionCallbackWithExceptionNoReturn<Exception>() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) throws Exception {
+                    // Save user configured values for all fields
+                    saxParser.parse(configFile, handler);
+        
+                    // Save default values for configuration fields
+                    saveVMTemplate();
+                    saveRootDomain();
+                    saveDefaultConfiguations();
+                }
+            });
 
-            // Save user configured values for all fields
-            saxParser.parse(configFile, handler);
-
-            // Save default values for configuration fields
-            saveVMTemplate();
-            saveRootDomain();
-            saveDefaultConfiguations();
-
-            txn.commit();
             // Check pod CIDRs against each other, and against the guest ip network/netmask
             pzc.checkAllPodCidrSubnets();
-
         } catch (Exception ex) {
             System.out.print("ERROR IS"+ex);
             s_logger.error("error", ex);
-            txn.rollback();
         }
     }
 
@@ -486,7 +489,7 @@ public class DatabaseConfig {
         String insertSql1 = "INSERT INTO `host` (`id`, `name`, `status` , `type` , `private_ip_address`, `private_netmask` ,`private_mac_address` , `storage_ip_address` ,`storage_netmask`, `storage_mac_address`, `data_center_id`, `version`, `dom0_memory`, `last_ping`, `resource`, `guid`, `hypervisor_type`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         String insertSqlHostDetails = "INSERT INTO `host_details` (`id`, `host_id`, `name`, `value`) VALUES(?,?,?,?)";
         String insertSql2 = "INSERT INTO `op_host` (`id`, `sequence`) VALUES(?, ?)";
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql1);
             stmt.setLong(1, 0);
@@ -563,7 +566,7 @@ public class DatabaseConfig {
         String hypervisor = _currentObjectParams.get("hypervisorType");
         String insertSql1 = "INSERT INTO `cluster` (`id`, `name`, `data_center_id` , `pod_id`, `hypervisor_type` , `cluster_type`, `allocation_state`) VALUES (?,?,?,?,?,?,?)";
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql1);
             stmt.setLong(1, id);
@@ -599,7 +602,7 @@ public class DatabaseConfig {
         String insertSql1 = "INSERT INTO `storage_pool` (`id`, `name`, `uuid` , `pool_type` , `port`, `data_center_id` ,`available_bytes` , `capacity_bytes` ,`host_address`, `path`, `created`, `pod_id`,`status` , `cluster_id`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         // String insertSql2 = "INSERT INTO `netfs_storage_pool` VALUES (?,?,?)";
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql1);
             stmt.setLong(1, id);
@@ -704,7 +707,7 @@ public class DatabaseConfig {
                 "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`," +
                 "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql1);
             stmt.setLong(1, id);
@@ -742,7 +745,7 @@ public class DatabaseConfig {
         String insertSql1 = "INSERT INTO `virtual_router_providers` (`id`, `nsp_id`, `uuid` , `type` , `enabled`) " +
                 "VALUES (?,?,?,?,?)";
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql1);
             stmt.setLong(1, id);
@@ -1030,7 +1033,7 @@ public class DatabaseConfig {
         String insertNWRateSql = "UPDATE `cloud`.`service_offering` SET `nw_rate` = ?";
         String insertMCRateSql = "UPDATE `cloud`.`service_offering` SET `mc_rate` = ?";
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt;
 
@@ -1109,7 +1112,7 @@ public class DatabaseConfig {
     protected void saveUser() {
         // insert system account
         String insertSql = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (1, 'system', '1', '1')";
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
             stmt.executeUpdate();
@@ -1120,7 +1123,7 @@ public class DatabaseConfig {
         // insert system user
         insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created)" +
                 " VALUES (1, 'system', RAND(), 1, 'system', 'cloud', now())";
-        txn = Transaction.currentTxn();
+        txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
             stmt.executeUpdate();
@@ -1159,7 +1162,7 @@ public class DatabaseConfig {
 
         // create an account for the admin user first
         insertSql = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (" + id + ", '" + username + "', '1', '1')";
-        txn = Transaction.currentTxn();
+        txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
             stmt.executeUpdate();
@@ -1171,7 +1174,7 @@ public class DatabaseConfig {
         insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, email, created) " +
                 "VALUES (" + id + ",'" + username + "','" + sb.toString() + "', 2, '" + firstname + "','" + lastname + "','" + email + "',now())";
 
-        txn = Transaction.currentTxn();
+        txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
             stmt.executeUpdate();
@@ -1227,7 +1230,7 @@ public class DatabaseConfig {
 
         String selectSql = "SELECT name FROM cloud.configuration WHERE name = '" + name + "'";
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
             ResultSet result = stmt.executeQuery();
@@ -1270,7 +1273,7 @@ public class DatabaseConfig {
     @DB
     protected void saveRootDomain() {
         String insertSql = "insert into `cloud`.`domain` (id, name, parent, owner, path, level) values (1, 'ROOT', NULL, 2, '/', 0)";
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
             stmt.executeUpdate();
@@ -1377,7 +1380,7 @@ public class DatabaseConfig {
     }
 
     public static String getDatabaseValueString(String selectSql, String name, String errorMsg) {
-        Transaction txn = Transaction.open("getDatabaseValueString");
+        TransactionLegacy txn = TransactionLegacy.open("getDatabaseValueString");
         PreparedStatement stmt = null;
 
         try {
@@ -1399,7 +1402,7 @@ public class DatabaseConfig {
     }
 
     public static long getDatabaseValueLong(String selectSql, String name, String errorMsg) {
-        Transaction txn = Transaction.open("getDatabaseValueLong");
+        TransactionLegacy txn = TransactionLegacy.open("getDatabaseValueLong");
         PreparedStatement stmt = null;
 
         try {
@@ -1420,7 +1423,7 @@ public class DatabaseConfig {
     }
 
     public static void saveSQL(String sql, String errorMsg) {
-        Transaction txn = Transaction.open("saveSQL");
+        TransactionLegacy txn = TransactionLegacy.open("saveSQL");
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(sql);
             stmt.executeUpdate();

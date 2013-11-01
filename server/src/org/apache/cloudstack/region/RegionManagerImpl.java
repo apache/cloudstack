@@ -26,22 +26,30 @@ import com.cloud.user.DomainManager;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.log4j.Logger;
+import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
+import org.jasypt.properties.EncryptableProperties;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 @Component
 @Local(value = { RegionManager.class })
@@ -63,7 +71,28 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
-        _id = _regionDao.getRegionId();
+        File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
+        final Properties dbProps;
+        if (EncryptionSecretKeyChecker.useEncryption()) {
+            StandardPBEStringEncryptor encryptor = EncryptionSecretKeyChecker.getEncryptor();
+            dbProps = new EncryptableProperties(encryptor);
+        } else {
+            dbProps = new Properties();
+        }
+        try {
+            PropertiesUtil.loadFromFile(dbProps, dbPropsFile);
+        } catch (IOException e) {
+            s_logger.fatal("Unable to load db properties file, pl. check the classpath and file path configuration", e);
+            return false;
+        } catch (NullPointerException e) {
+            s_logger.fatal("Unable to locate db properties file within classpath or absolute path: db.properties");
+            return false;
+        }
+        String regionId = dbProps.getProperty("region.id");
+        _id = 1;
+        if(regionId != null){
+            _id = Integer.parseInt(regionId);
+        }
         return true;
     }
 

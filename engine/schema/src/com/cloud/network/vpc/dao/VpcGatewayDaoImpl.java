@@ -31,7 +31,7 @@ import java.util.List;
 
 @Component
 @Local(value = VpcGatewayDao.class)
-@DB(txn = false)
+@DB()
 public class VpcGatewayDaoImpl extends GenericDaoBase<VpcGatewayVO, Long> implements VpcGatewayDao{
     protected final SearchBuilder<VpcGatewayVO> AllFieldsSearch;
     

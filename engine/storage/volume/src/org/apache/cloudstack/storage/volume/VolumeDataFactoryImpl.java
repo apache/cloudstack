@@ -18,7 +18,12 @@
  */
 package org.apache.cloudstack.storage.volume;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.inject.Inject;
+
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -27,7 +32,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
-import org.springframework.stereotype.Component;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VolumeVO;
@@ -58,13 +62,13 @@ public class VolumeDataFactoryImpl implements VolumeDataFactory {
         if (storeRole == DataStoreRole.Image) {
             VolumeDataStoreVO volumeStore = volumeStoreDao.findByVolume(volumeId);
             if (volumeStore != null) {
-                DataStore store = this.storeMgr.getDataStore(volumeStore.getDataStoreId(), DataStoreRole.Image);
+                DataStore store = storeMgr.getDataStore(volumeStore.getDataStoreId(), DataStoreRole.Image);
                 vol = VolumeObject.getVolumeObject(store, volumeVO);
             }
         } else {
             // Primary data store
             if (volumeVO.getPoolId() != null) {
-                DataStore store = this.storeMgr.getDataStore(volumeVO.getPoolId(), DataStoreRole.Primary);
+                DataStore store = storeMgr.getDataStore(volumeVO.getPoolId(), DataStoreRole.Primary);
                 vol = VolumeObject.getVolumeObject(store, volumeVO);
             }
         }
@@ -82,11 +86,11 @@ public class VolumeDataFactoryImpl implements VolumeDataFactory {
             DataStore store = null;
             VolumeDataStoreVO volumeStore = volumeStoreDao.findByVolume(volumeId);
             if (volumeStore != null) {
-                store = this.storeMgr.getDataStore(volumeStore.getDataStoreId(), DataStoreRole.Image);
+                store = storeMgr.getDataStore(volumeStore.getDataStoreId(), DataStoreRole.Image);
             }
             vol = VolumeObject.getVolumeObject(store, volumeVO);
         } else {
-            DataStore store = this.storeMgr.getDataStore(volumeVO.getPoolId(), DataStoreRole.Primary);
+            DataStore store = storeMgr.getDataStore(volumeVO.getPoolId(), DataStoreRole.Primary);
             vol = VolumeObject.getVolumeObject(store, volumeVO);
         }
         return vol;
@@ -97,6 +101,25 @@ public class VolumeDataFactoryImpl implements VolumeDataFactory {
         VolumeInfo vol = getVolume(volume.getId(), store);
         vol.addPayload(((VolumeInfo) volume).getpayload());
         return vol;
+    }
+
+    @Override
+    public List<VolumeInfo> listVolumeOnCache(long volumeId) {
+        List<VolumeInfo> cacheVols = new ArrayList<VolumeInfo>();
+        // find all image cache stores for this zone scope
+        List<DataStore> cacheStores = storeMgr.listImageCacheStores();
+        if (cacheStores == null || cacheStores.size() == 0) {
+            return cacheVols;
+        }
+        for (DataStore store : cacheStores) {
+            // check if the volume is stored there
+            VolumeDataStoreVO volStore = volumeStoreDao.findByStoreVolume(store.getId(), volumeId);
+            if (volStore != null) {
+                VolumeInfo vol = getVolume(volumeId, store);
+                cacheVols.add(vol);
+            }
+        }
+        return cacheVols;
     }
 
 }

@@ -17,7 +17,6 @@
 package com.cloud.cluster;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.rmi.RemoteException;
@@ -126,7 +125,7 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
         File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
         Properties dbProps = new Properties();
         try {
-            dbProps.load(new FileInputStream(dbPropsFile));
+            PropertiesUtil.loadFromFile(dbProps, dbPropsFile);
         } catch (FileNotFoundException e) {
             throw new ConfigurationException("Unable to find db.properties");
         } catch (IOException e) {

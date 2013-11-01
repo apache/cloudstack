@@ -35,12 +35,12 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 @Local(value = VersionDao.class)
-@DB(txn = false)
+@DB()
 public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements VersionDao {
     private static final Logger s_logger = Logger.getLogger(VersionDaoImpl.class);
 
@@ -51,7 +51,7 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
         super();
 
         CurrentVersionSearch = createSearchBuilder(String.class);
-        CurrentVersionSearch.selectField(CurrentVersionSearch.entity().getVersion());
+        CurrentVersionSearch.selectFields(CurrentVersionSearch.entity().getVersion());
         CurrentVersionSearch.and("step", CurrentVersionSearch.entity().getStep(), Op.EQ);
         CurrentVersionSearch.done();
 
@@ -79,7 +79,7 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
         try {
             s_logger.debug("Checking to see if the database is at a version before it was the version table is created");
 
-            conn = Transaction.getStandaloneConnection();
+            conn = TransactionLegacy.getStandaloneConnection();
 
             PreparedStatement pstmt = conn.prepareStatement("SHOW TABLES LIKE 'version'");
             ResultSet rs = pstmt.executeQuery();

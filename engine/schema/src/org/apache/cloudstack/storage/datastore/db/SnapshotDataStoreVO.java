@@ -34,7 +34,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 
 import com.cloud.storage.DataStoreRole;
-import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.fsm.StateObject;
 
@@ -98,6 +97,7 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Column(name = "volume_id")
     Long volumeId;
 
+    @Override
     public String getInstallPath() {
         return installPath;
     }
@@ -108,7 +108,7 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     }
 
     public void setDataStoreId(long storeId) {
-        this.dataStoreId = storeId;
+        dataStoreId = storeId;
     }
 
     public long getSnapshotId() {
@@ -135,15 +135,16 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         lastUpdated = date;
     }
 
+    @Override
     public void setInstallPath(String installPath) {
         this.installPath = installPath;
     }
 
     public SnapshotDataStoreVO(long hostId, long snapshotId) {
         super();
-        this.dataStoreId = hostId;
+        dataStoreId = hostId;
         this.snapshotId = snapshotId;
-        this.state = ObjectInDataStoreStateMachine.State.Allocated;
+        state = ObjectInDataStoreStateMachine.State.Allocated;
     }
 
     public SnapshotDataStoreVO() {
@@ -158,14 +159,16 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         return jobId;
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof SnapshotDataStoreVO) {
             SnapshotDataStoreVO other = (SnapshotDataStoreVO) obj;
-            return (this.snapshotId == other.getSnapshotId() && this.dataStoreId == other.getDataStoreId());
+            return (snapshotId == other.getSnapshotId() && dataStoreId == other.getDataStoreId());
         }
         return false;
     }
 
+    @Override
     public int hashCode() {
         Long tid = new Long(snapshotId);
         Long hid = new Long(dataStoreId);
@@ -192,21 +195,22 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         return -1;
     }
 
+    @Override
     public String toString() {
         return new StringBuilder("SnapshotDataStore[").append(id).append("-").append(snapshotId).append("-")
                 .append(dataStoreId).append(installPath).append("]").toString();
     }
 
     public long getUpdatedCount() {
-        return this.updatedCount;
+        return updatedCount;
     }
 
     public void incrUpdatedCount() {
-        this.updatedCount++;
+        updatedCount++;
     }
 
     public void decrUpdatedCount() {
-        this.updatedCount--;
+        updatedCount--;
     }
 
     public Date getUpdated() {
@@ -216,7 +220,7 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Override
     public ObjectInDataStoreStateMachine.State getState() {
         // TODO Auto-generated method stub
-        return this.state;
+        return state;
     }
 
     public void setState(ObjectInDataStoreStateMachine.State state) {
@@ -225,7 +229,7 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     @Override
     public long getObjectId() {
-        return this.getSnapshotId();
+        return getSnapshotId();
     }
 
     public DataStoreRole getRole() {
@@ -238,7 +242,7 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     @Override
     public State getObjectInStoreState() {
-        return this.state;
+        return state;
     }
 
     public long getParentSnapshotId() {
@@ -253,12 +257,16 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         return refCnt;
     }
 
+    public void setRefCnt(Long refCnt) {
+        this.refCnt = refCnt;
+    }
+
     public void incrRefCnt() {
-        this.refCnt++;
+        refCnt++;
     }
 
     public void decrRefCnt() {
-        this.refCnt--;
+        refCnt--;
     }
 
     public Long getVolumeId() {

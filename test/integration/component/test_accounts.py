@@ -77,13 +77,14 @@ class Services:
                          "template": {
                                 "displaytext": "Public Template",
                                 "name": "Public template",
-                                "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
-                                "hypervisor": 'XenServer',
-                                "format": 'VHD',
+                                "ostype": 'CentOS 5.3 (64-bit)',
+                                "url": "",
+                                "hypervisor": '',
+                                "format": '',
                                 "isfeatured": True,
                                 "ispublic": True,
                                 "isextractable": True,
-                                "ostype": 'CentOS 5.3 (64-bit)',
+                                "templatefilter": "self"
                         },
                         "natrule": {
                                     "publicport": 22,
@@ -731,8 +732,7 @@ class TestTemplateHierarchy(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone settings
         cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = cls.zone.networktype
-        cls.services["template"]["zoneid"] = cls.zone.id
+        cls.services['mode'] = cls.zone.networktype 
 
         # Create domains, accounts and template
         cls.domain_1 = Domain.create(
@@ -761,11 +761,18 @@ class TestTemplateHierarchy(cloudstackTestCase):
                             domainid=cls.domain_2.id
                             )
 
+        builtin_info = get_builtin_template_info(cls.api_client, cls.zone.id)
+        cls.services["template"]["url"] = builtin_info[0] 
+        cls.services["template"]["hypervisor"] = builtin_info[1]     
+        cls.services["template"]["format"] = builtin_info[2] 
+        
+        # Register new template
         cls.template = Template.register(
-                                            cls.api_client,
-                                            cls.services["template"],
-                                            account=cls.account_1.name,
-                                            domainid=cls.domain_1.id
+                                        cls.api_client,
+                                        cls.services["template"],
+                                        zoneid=cls.zone.id,
+                                        account=cls.account_1.name,
+                                        domainid=cls.domain_1.id
                                         )
 
         # Wait for template to download

@@ -18,51 +18,6 @@
  */
 package org.apache.cloudstack.storage.volume;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
-import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
-import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
-import org.apache.cloudstack.framework.async.AsyncCallFuture;
-import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.framework.async.AsyncRpcContext;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.datastore.DataObjectManager;
-import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
-import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
-import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
@@ -94,6 +49,46 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.framework.async.AsyncRpcContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class VolumeServiceImpl implements VolumeService {
@@ -102,10 +97,6 @@ public class VolumeServiceImpl implements VolumeService {
     VolumeDao volDao;
     @Inject
     PrimaryDataStoreProviderManager dataStoreMgr;
-    @Inject
-    ObjectInDataStoreManager objectInDataStoreMgr;
-    @Inject
-    DataObjectManager dataObjectMgr;
     @Inject
     DataMotionService motionSrv;
     @Inject
@@ -400,8 +391,12 @@ public class VolumeServiceImpl implements VolumeService {
 
         VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.findByPoolTemplate(dataStore.getId(), template.getId());
         if (templatePoolRef == null) {
-            throw new CloudRuntimeException("Failed to find template " + template.getUniqueName()
-                    + " in VMTemplateStoragePool");
+            throw new CloudRuntimeException("Failed to find template " + template.getUniqueName() + " in storage pool " + dataStore.getId());
+        } else {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Found template " + template.getUniqueName() + " in storage pool " + dataStore.getId() + " with VMTemplateStoragePool id: "
+                        + templatePoolRef.getId());
+            }
         }
         long templatePoolRefId = templatePoolRef.getId();
         CreateBaseImageContext<CreateCmdResult> context = new CreateBaseImageContext<CreateCmdResult>(null, volume,
@@ -411,9 +406,15 @@ public class VolumeServiceImpl implements VolumeService {
 
         int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(
                 configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Acquire lock on VMTemplateStoragePool " + templatePoolRefId + " with timeout " + storagePoolMaxWaitSeconds + " seconds");
+        }
         templatePoolRef = _tmpltPoolDao.acquireInLockTable(templatePoolRefId, storagePoolMaxWaitSeconds);
 
         if (templatePoolRef == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.info("Unable to acquire lock on VMTemplateStoragePool " + templatePoolRefId);
+            }
             templatePoolRef = _tmpltPoolDao.findByPoolTemplate(dataStore.getId(), template.getId());
             if (templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready ) {
                 s_logger.info("Unable to acquire lock on VMTemplateStoragePool " + templatePoolRefId + ", But Template " + template.getUniqueName() + " is already copied to primary storage, skip copying");
@@ -423,17 +424,15 @@ public class VolumeServiceImpl implements VolumeService {
             throw new CloudRuntimeException("Unable to acquire lock on VMTemplateStoragePool: " + templatePoolRefId);
         }
 
+        if (s_logger.isDebugEnabled()) {
+            s_logger.info("lock is acquired for VMTemplateStoragePool " + templatePoolRefId);
+        }
         try {
-            // lock acquired
             if (templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready ) {
                 s_logger.info("Template " + template.getUniqueName() + " is already copied to primary storage, skip copying");
                 createVolumeFromBaseImageAsync(volume, templateOnPrimaryStoreObj, dataStore, future);
                 return;
             }
-            // remove the leftover hanging entry
-            dataStore.delete(templateOnPrimaryStoreObj);
-            // create a new entry to restart copying process
-            templateOnPrimaryStoreObj = dataStore.create(template);
             templateOnPrimaryStoreObj.processEvent(Event.CreateOnlyRequested);
             motionSrv.copyAsync(template, templateOnPrimaryStoreObj, caller);
         } catch (Throwable e) {
@@ -442,6 +441,10 @@ public class VolumeServiceImpl implements VolumeService {
             VolumeApiResult result = new VolumeApiResult(volume);
             result.setResult(e.toString());
             future.complete(result);
+        } finally {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.info("releasing lock for VMTemplateStoragePool " + templatePoolRefId);
+            }
             _tmpltPoolDao.releaseFromLockTable(templatePoolRefId);
         }
         return;
@@ -518,6 +521,7 @@ public class VolumeServiceImpl implements VolumeService {
         if (result.isSuccess()) {
             vo.processEvent(Event.OperationSuccessed, result.getAnswer());
         } else {
+
             vo.processEvent(Event.OperationFailed);
             volResult.setResult(result.getResult());
             // hack for Vmware: host is down, previously download template to the host needs to be re-downloaded, so we need to reset
@@ -712,7 +716,7 @@ public class VolumeServiceImpl implements VolumeService {
 
             srcVolume.processEvent(Event.OperationSuccessed);
             destVolume.processEvent(Event.OperationSuccessed, result.getAnswer());
-            // srcVolume.getDataStore().delete(srcVolume);
+            srcVolume.getDataStore().delete(srcVolume);
             future.complete(res);
         } catch (Exception e) {
             res.setResult(e.toString());
@@ -1291,20 +1295,11 @@ public class VolumeServiceImpl implements VolumeService {
 
     @Override
     public SnapshotInfo takeSnapshot(VolumeInfo volume) {
-        VolumeObject vol = (VolumeObject) volume;
-        vol.stateTransit(Volume.Event.SnapshotRequested);
-
         SnapshotInfo snapshot = null;
         try {
             snapshot = snapshotMgr.takeSnapshot(volume);
         } catch (Exception e) {
             s_logger.debug("Take snapshot: " + volume.getId() + " failed", e);
-        } finally {
-            if (snapshot != null) {
-                vol.stateTransit(Volume.Event.OperationSucceeded);
-            } else {
-                vol.stateTransit(Volume.Event.OperationFailed);
-            }
         }
 
         return snapshot;

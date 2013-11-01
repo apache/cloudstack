@@ -265,7 +265,7 @@ CREATE TABLE  `vpc_service_map` (
   `created` datetime COMMENT 'date created',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_vpc_service_map__vpc_id` FOREIGN KEY(`vpc_id`) REFERENCES `vpc`(`id`) ON DELETE CASCADE,
-  UNIQUE (`vpc_id`, `service`)
+  UNIQUE (`vpc_id`, `service`, `provider`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`load_balancer_healthcheck_policies` (
@@ -2371,3 +2371,7 @@ CREATE VIEW `cloud`.`data_center_view` AS
         `cloud`.`dedicated_resources` ON data_center.id = dedicated_resources.data_center_id
 			left join
         `cloud`.`affinity_group` ON dedicated_resources.affinity_group_id = affinity_group.id;
+
+
+
+UPDATE `cloud`.`ntwk_offering_service_map` SET Provider='VpcVirtualRouter' WHERE network_offering_id IN (SELECT id from `cloud`.`network_offerings` WHERE name IN ('DefaultIsolatedNetworkOfferingForVpcNetworks', 'DefaultIsolatedNetworkOfferingForVpcNetworksNoLB'));

@@ -30,19 +30,11 @@ public class SSHKeyPairResponse extends BaseResponse {
     @SerializedName("fingerprint") @Param(description="Fingerprint of the public key")
     private String fingerprint;
 
-    @SerializedName("privatekey") @Param(description="Private key")
-    private String privateKey;
-
     public SSHKeyPairResponse() {}
 
     public SSHKeyPairResponse(String name, String fingerprint) {
-        this(name, fingerprint, null);
-    }
-
-    public SSHKeyPairResponse(String name, String fingerprint, String privateKey) {
         this.name = name;
         this.fingerprint = fingerprint;
-        this.privateKey = privateKey;
     }
 
     public String getName() {
@@ -59,14 +51,6 @@ public class SSHKeyPairResponse extends BaseResponse {
 
     public void setFingerprint(String fingerprint) {
         this.fingerprint = fingerprint;
-    }
-
-    public String getPrivateKey() {
-        return privateKey;
-    }
-
-    public void setPrivateKey(String privateKey) {
-        this.privateKey = privateKey;
     }
 
 }

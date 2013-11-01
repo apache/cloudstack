@@ -18,12 +18,14 @@ package com.cloud.agent.api;
 
 import java.util.List;
 
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 public class CreateVMSnapshotCommand extends VMSnapshotBaseCommand {
 
-    public CreateVMSnapshotCommand(String vmName, VMSnapshotTO snapshot, List<VolumeTO> volumeTOs, String guestOSType, VirtualMachine.State vmState) {
+    public CreateVMSnapshotCommand(String vmName, VMSnapshotTO snapshot, List<VolumeObjectTO> volumeTOs, String guestOSType, VirtualMachine.State vmState) {
         super(vmName, snapshot, volumeTOs, guestOSType);
         this.vmState  = vmState;
     }

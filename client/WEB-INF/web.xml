@@ -29,11 +29,11 @@
     </listener>  
     
 	<listener>
-  	  <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+      <listener-class>org.apache.cloudstack.spring.module.web.CloudStackContextLoaderListener</listener-class>
 	</listener>
-    <context-param>    
+    <context-param>
         <param-name>contextConfigLocation</param-name>    
-        <param-value>classpath:applicationContext.xml, classpath:componentContext.xml</param-value>    
+        <param-value>classpath:META-INF/cloudstack/webApplicationContext.xml</param-value>    
     </context-param>
           
     <servlet>

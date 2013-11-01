@@ -31,14 +31,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
-import com.cloud.configuration.Resource;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.Account;
-
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -46,9 +42,10 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -335,22 +332,27 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
 	@Override
 	public void loadDetails(UserVmVO vm) {
-        Map<String, String> details = _detailsDao.findDetails(vm.getId());
+        Map<String, String> details = _detailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
 	}
 
 	@Override
     public void saveDetails(UserVmVO vm) {
-        Map<String, String> details = vm.getDetails();
-        if (details == null) {
+        Map<String, String> detailsStr = vm.getDetails();
+        if (detailsStr == null) {
             return;
         }
-        _detailsDao.persist(vm.getId(), details);
+        List<UserVmDetailVO> details = new ArrayList<UserVmDetailVO>();
+        for (String key : detailsStr.keySet()) {
+            details.add(new UserVmDetailVO(vm.getId(), key, detailsStr.get(key)));
+        }
+        
+        _detailsDao.saveDetails(details);
     }
 
     @Override
     public List<Long> listPodIdsHavingVmsforAccount(long zoneId, long accountId){
-	Transaction txn = Transaction.currentTxn();
+	TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
 
@@ -374,7 +376,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
     @Override
     public Hashtable<Long, UserVmData> listVmDetails(Hashtable<Long, UserVmData> userVmDataHash){
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
 
         try {
@@ -575,9 +577,9 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
     @Override
     public boolean remove(Long id) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
-        _tagsDao.removeByIdAndType(id, TaggedResourceType.UserVm);
+        _tagsDao.removeByIdAndType(id, ResourceObjectType.UserVm);
         boolean result = super.remove(id);
         txn.commit();
         return result;

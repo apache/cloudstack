@@ -31,6 +31,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.Listener;
@@ -100,6 +101,7 @@ public abstract class AgentAttache {
     };
 
     protected final long _id;
+    protected String _name = null;
     protected final ConcurrentHashMap<Long, Listener> _waitForList;
     protected final LinkedList<Request> _requests;
     protected Long _currentSequence;
@@ -120,9 +122,9 @@ public abstract class AgentAttache {
         Arrays.sort(s_commandsNotAllowedInConnectingMode);
     }
 
-
-    protected AgentAttache(AgentManagerImpl agentMgr, final long id, boolean maintenance) {
+    protected AgentAttache(AgentManagerImpl agentMgr, final long id, final String name, boolean maintenance) {
         _id = id;
+        _name = name;
         _waitForList = new ConcurrentHashMap<Long, Listener>();
         _currentSequence = null;
         _maintenance = maintenance;
@@ -163,7 +165,7 @@ public abstract class AgentAttache {
         if (_maintenance) {
             for (final Command cmd : cmds) {
                 if (Arrays.binarySearch(s_commandsAllowedInMaintenanceMode, cmd.getClass().toString()) < 0) {
-                    throw new AgentUnavailableException("Unable to send " + cmd.getClass().toString() + " because agent is in maintenance mode", _id);
+                    throw new AgentUnavailableException("Unable to send " + cmd.getClass().toString() + " because agent " + _name + " is in maintenance mode", _id);
                 }
             }
         }
@@ -171,7 +173,7 @@ public abstract class AgentAttache {
         if (_status == Status.Connecting) {
             for (final Command cmd : cmds) {
                 if (Arrays.binarySearch(s_commandsNotAllowedInConnectingMode, cmd.getClass().toString()) >= 0) {
-                    throw new AgentUnavailableException("Unable to send " + cmd.getClass().toString() + " because agent is in connecting mode", _id);
+                    throw new AgentUnavailableException("Unable to send " + cmd.getClass().toString() + " because agent " + _name + " is in connecting mode", _id);
                 }
             }
         }
@@ -239,6 +241,10 @@ public abstract class AgentAttache {
 
     public long getId() {
         return _id;
+    }
+
+    public String getName() {
+            return _name;
     }
 
     public int getQueueSize() {
@@ -349,7 +355,7 @@ public abstract class AgentAttache {
         synchronized(this) {
             try {
                 if (isClosed()) {
-                    throw new AgentUnavailableException("The link to the agent has been closed", _id);
+                    throw new AgentUnavailableException("The link to the agent " + _name + " has been closed", _id);
                 }
 
                 if (req.executeInSequence() && _currentSequence != null) {
@@ -497,14 +503,14 @@ public abstract class AgentAttache {
      */
     protected abstract boolean isClosed();
 
-    protected class Alarm implements Runnable {
+    protected class Alarm extends ManagedContextRunnable {
         long _seq;
         public Alarm(long seq) {
             _seq = seq;
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 Listener listener = unregisterListener(_seq);
                 if (listener != null) {

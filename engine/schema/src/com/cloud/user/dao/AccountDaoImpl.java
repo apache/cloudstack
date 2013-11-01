@@ -39,7 +39,7 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={AccountDao.class})
@@ -96,7 +96,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         NonProjectAccountSearch.done();
 
         AccountIdsSearch = createSearchBuilder(Long.class);
-        AccountIdsSearch.selectField(AccountIdsSearch.entity().getId());
+        AccountIdsSearch.selectFields(AccountIdsSearch.entity().getId());
         AccountIdsSearch.and("ids", AccountIdsSearch.entity().getDomainId(), Op.IN);
         AccountIdsSearch.done();
     }
@@ -124,7 +124,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     
     @Override
     public Pair<User, Account> findUserAccountByApiKey(String apiKey) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         Pair<User, Account> userAcctPair = null;
         try {

@@ -33,6 +33,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={SObjectDao.class})
@@ -47,7 +48,7 @@ public class SObjectDaoImpl extends GenericDaoBase<SObjectVO, Long> implements S
         SearchBuilder<SObjectVO> SearchByName = createSearchBuilder();
         SearchByName.and("SBucketID", SearchByName.entity().getBucketID() , SearchCriteria.Op.EQ);
         SearchByName.and("NameKey", SearchByName.entity().getNameKey() , SearchCriteria.Op.EQ);
-        Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         try {
             txn.start();
             SearchCriteria<SObjectVO> sc = SearchByName.create();
@@ -76,7 +77,7 @@ public class SObjectDaoImpl extends GenericDaoBase<SObjectVO, Long> implements S
 
         SearchByBucket.and("SBucketID", SearchByBucket.entity().getBucketID(), SearchCriteria.Op.EQ);
         SearchByBucket.and("DeletionMark", SearchByBucket.entity().getDeletionMark(), SearchCriteria.Op.NULL);		
-        Transaction txn = Transaction.currentTxn();  // Transaction.open("cloudbridge", Transaction.AWSAPI_DB, true);
+        TransactionLegacy txn = TransactionLegacy.currentTxn();  // Transaction.open("cloudbridge", Transaction.AWSAPI_DB, true);
         try {
             txn.start();
             SearchCriteria<SObjectVO> sc = SearchByBucket.create();
@@ -100,7 +101,7 @@ public class SObjectDaoImpl extends GenericDaoBase<SObjectVO, Long> implements S
         List<SObjectVO> objects = new ArrayList<SObjectVO>();
         getAllBuckets.and("SBucketID", getAllBuckets.entity().getBucketID(), SearchCriteria.Op.EQ);
 
-        Transaction txn = Transaction.currentTxn();  // Transaction.open("cloudbridge", Transaction.AWSAPI_DB, true);
+        TransactionLegacy txn = TransactionLegacy.currentTxn();  // Transaction.open("cloudbridge", Transaction.AWSAPI_DB, true);
         try {
             txn.start();
             SearchCriteria<SObjectVO> sc = getAllBuckets.create();

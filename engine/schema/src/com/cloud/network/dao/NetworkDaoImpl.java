@@ -40,10 +40,8 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.db.*;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchCriteria.Func;
@@ -52,7 +50,7 @@ import com.cloud.utils.net.NetUtils;
 
 @Component
 @Local(value = NetworkDao.class)
-@DB(txn = false)
+@DB()
 public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements NetworkDao {
     SearchBuilder<NetworkVO> AllFieldsSearch;
     SearchBuilder<NetworkVO> AccountSearch;
@@ -226,7 +224,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         OfferingAccountNetworkSearch.done();
 
         GarbageCollectedSearch = createSearchBuilder(Long.class);
-        GarbageCollectedSearch.selectField(GarbageCollectedSearch.entity().getId());
+        GarbageCollectedSearch.selectFields(GarbageCollectedSearch.entity().getId());
         SearchBuilder<NetworkOpVO> join7 = _ntwkOpDao.createSearchBuilder();
         join7.and("activenics", join7.entity().getActiveNicsCount(), Op.EQ);
         join7.and("gc", join7.entity().isGarbageCollected(), Op.EQ);
@@ -291,7 +289,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     @Override
     @DB
     public NetworkVO persist(NetworkVO network, boolean gc, Map<String, String> serviceProviderMap) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
 
         // 1) create network
@@ -311,7 +309,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     @Override
     @DB
     public boolean update(Long networkId, NetworkVO network, Map<String, String> serviceProviderMap) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
 
         super.update(networkId, network);
@@ -327,7 +325,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     @Override
     @DB
     public void persistNetworkServiceProviders(long networkId, Map<String, String> serviceProviderMap) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         for (String service : serviceProviderMap.keySet()) {
             NetworkServiceMapVO serviceMap = new NetworkServiceMapVO(networkId, Service.getService(service), Provider.getProvider(serviceProviderMap.get(service)));
@@ -578,11 +576,11 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     @Override
     @DB
     public boolean remove(Long id) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         NetworkVO entry = findById(id);
         if (entry != null) {
-            _tagsDao.removeByIdAndType(id, TaggedResourceType.Network);
+            _tagsDao.removeByIdAndType(id, ResourceObjectType.Network);
         }
         boolean result = super.remove(id);
         txn.commit();
@@ -601,7 +599,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     @Override
     public boolean updateState(State currentState, Event event, State nextState, Network vo, Object data) {
        // TODO: ensure this update is correct
-       Transaction txn = Transaction.currentTxn();
+       TransactionLegacy txn = TransactionLegacy.currentTxn();
        txn.start();
 
        NetworkVO networkVo = (NetworkVO) vo;

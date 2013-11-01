@@ -29,7 +29,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.command.user.firewall.ListEgressFirewallRulesCmd;
 import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -75,7 +74,7 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
@@ -89,6 +88,9 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -133,13 +135,13 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     NetworkDao _networkDao;
     @Inject
     VpcManager _vpcMgr;
-    @Inject List<FirewallServiceProvider> _firewallElements;
+    List<FirewallServiceProvider> _firewallElements;
 
-    @Inject List<PortForwardingServiceProvider> _pfElements;
+    List<PortForwardingServiceProvider> _pfElements;
 
-    @Inject List<StaticNatServiceProvider> _staticNatElements;
+    List<StaticNatServiceProvider> _staticNatElements;
 
-    @Inject List<NetworkACLServiceProvider> _networkAclElements;
+    List<NetworkACLServiceProvider> _networkAclElements;
     @Inject
     IpAddressManager _ipAddrMgr;
 
@@ -150,8 +152,13 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         _name = name;
         String elbEnabledString = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
         _elbEnabled = Boolean.parseBoolean(elbEnabledString);
-        s_logger.info("Firewall provider list is " + _firewallElements.iterator().next());
         return true;
+    }
+
+    @Override
+    public boolean start() {
+        s_logger.info("Firewall provider list is " + _firewallElements.iterator().next());
+        return super.start();
     }
 
     @Override
@@ -181,9 +188,9 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     @DB
-    protected FirewallRule createFirewallRule(Long ipAddrId, Account caller, String xId, Integer portStart,
-            Integer portEnd, String protocol, List<String> sourceCidrList, Integer icmpCode, Integer icmpType,
-            Long relatedRuleId, FirewallRule.FirewallRuleType type, Long networkId, FirewallRule.TrafficType trafficType) throws NetworkRuleConflictException {
+    protected FirewallRule createFirewallRule(final Long ipAddrId, Account caller, final String xId, final Integer portStart,
+            final Integer portEnd, final String protocol, final List<String> sourceCidrList, final Integer icmpCode, final Integer icmpType,
+            final Long relatedRuleId, final FirewallRule.FirewallRuleType type, final Long networkId, final FirewallRule.TrafficType trafficType) throws NetworkRuleConflictException {
 
         IPAddressVO ipAddress = null;
         if (ipAddrId != null){
@@ -222,11 +229,13 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 domainId = network.getDomainId();
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-
+        final Long accountIdFinal = accountId;
+        final Long domainIdFinal = domainId;
+        return Transaction.execute(new TransactionCallbackWithException<FirewallRuleVO,NetworkRuleConflictException>() {
+            @Override
+            public FirewallRuleVO doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
         FirewallRuleVO newRule = new FirewallRuleVO(xId, ipAddrId, portStart, portEnd, protocol.toLowerCase(), networkId,
-                accountId, domainId, Purpose.Firewall, sourceCidrList, icmpCode, icmpType, relatedRuleId, trafficType);
+                        accountIdFinal, domainIdFinal, Purpose.Firewall, sourceCidrList, icmpCode, icmpType, relatedRuleId, trafficType);
         newRule.setType(type);
         newRule = _firewallDao.persist(newRule);
 
@@ -238,9 +247,9 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         }
         CallContext.current().setEventDetails("Rule Id: " + newRule.getId());
 
-        txn.commit();
-
         return newRule;
+    }
+        });
     }
 
     @Override
@@ -304,7 +313,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
         if (tags != null && !tags.isEmpty()) {
             int count = 0;
-            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.FirewallRule.toString());
+            sc.setJoinParameters("tagSearch", "resourceType", ResourceObjectType.FirewallRule.toString());
             for (String key : tags.keySet()) {
                 sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
                 sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
@@ -553,6 +562,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             throws ResourceUnavailableException {
         boolean handled = false;
         switch (purpose){
+        /* StaticNatRule would be applied by Firewall provider, since the incompatible of two object */
+        case StaticNat:
         case Firewall:
             for (FirewallServiceProvider fwElement: _firewallElements) {
                 Network.Provider provider = fwElement.getProvider();
@@ -573,18 +584,6 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                     continue;
                 }
                 handled = element.applyPFRules(network, (List<PortForwardingRule>) rules);
-                if (handled)
-                    break;
-            }
-            break;
-        case StaticNat:
-            for (StaticNatServiceProvider element: _staticNatElements) {
-                Network.Provider provider = element.getProvider();
-                boolean  isSnatProvider = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.StaticNat, provider);
-                if (!isSnatProvider) {
-                    continue;
-                }
-                handled = element.applyStaticNats(network, (List<? extends StaticNat>) rules);
                 if (handled)
                     break;
             }
@@ -734,15 +733,16 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
     @Override
     @DB
-    public void revokeRule(FirewallRuleVO rule, Account caller, long userId, boolean needUsageEvent) {
+    public void revokeRule(final FirewallRuleVO rule, Account caller, long userId, final boolean needUsageEvent) {
         if (caller != null) {
             _accountMgr.checkAccess(caller, null, true, rule);
         }
 
-        Transaction txn = Transaction.currentTxn();
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
         boolean generateUsageEvent = false;
 
-        txn.start();
         if (rule.getState() == State.Staged) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Found a rule that is still in stage state so just removing it: " + rule);
@@ -759,8 +759,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_RULE_DELETE, rule.getAccountId(), 0, rule.getId(),
                     null, rule.getClass().getName(), rule.getUuid());
         }
-
-        txn.commit();
+            }
+        });
     }
 
     @Override
@@ -934,6 +934,42 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             }
         }
         return true;
+    }
+
+    public List<FirewallServiceProvider> getFirewallElements() {
+        return _firewallElements;
+    }
+
+    @Inject
+    public void setFirewallElements(List<FirewallServiceProvider> firewallElements) {
+        this._firewallElements = firewallElements;
+    }
+
+    public List<PortForwardingServiceProvider> getPfElements() {
+        return _pfElements;
+    }
+
+    @Inject
+    public void setPfElements(List<PortForwardingServiceProvider> pfElements) {
+        this._pfElements = pfElements;
+    }
+
+    public List<StaticNatServiceProvider> getStaticNatElements() {
+        return _staticNatElements;
+    }
+
+    @Inject
+    public void setStaticNatElements(List<StaticNatServiceProvider> staticNatElements) {
+        this._staticNatElements = staticNatElements;
+    }
+
+    public List<NetworkACLServiceProvider> getNetworkAclElements() {
+        return _networkAclElements;
+    }
+
+    @Inject
+    public void setNetworkAclElements(List<NetworkACLServiceProvider> networkAclElements) {
+        this._networkAclElements = networkAclElements;
     }
 
 }

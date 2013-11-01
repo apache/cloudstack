@@ -16,24 +16,31 @@
 // under the License.
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.to.VirtualMachineTO;
+
 public class MigrateCommand extends Command {
     String vmName;
     String destIp;
     String hostGuid;
     boolean isWindows;
-
+    VirtualMachineTO vmTO;
 
     protected MigrateCommand() {
     }
 
-    public MigrateCommand(String vmName, String destIp, boolean isWindows) {
+    public MigrateCommand(String vmName, String destIp, boolean isWindows, VirtualMachineTO vmTO) {
         this.vmName = vmName;
         this.destIp = destIp;
         this.isWindows = isWindows;
+        this.vmTO = vmTO;
     }
 
     public boolean isWindows() {
         return isWindows;
+    }
+
+    public VirtualMachineTO getVirtualMachine() {
+        return vmTO;
     }
 
     public String getDestinationIp() {

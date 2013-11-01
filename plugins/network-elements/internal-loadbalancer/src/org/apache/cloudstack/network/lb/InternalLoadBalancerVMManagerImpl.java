@@ -69,7 +69,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.VirtualRouterProvider;
-import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
+import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
@@ -310,7 +310,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
 
         VirtualRouterProvider lbProvider = _vrProviderDao.findById(internalLbVm.getElementId());
         if (lbProvider == null) {
-            throw new CloudRuntimeException("Cannot find related element " + VirtualRouterProviderType.InternalLbVm + " of vm: " + internalLbVm.getHostName());
+            throw new CloudRuntimeException("Cannot find related element " + Type.InternalLbVm + " of vm: " + internalLbVm.getHostName());
         }
         
         Provider provider = Network.Provider.getProvider(lbProvider.getType().toString());
@@ -461,7 +461,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         }
         LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs, guestNic.getIp4Address(),
                 guestNic.getIp4Address(), internalLbVm.getPrivateIpAddress(),
-                _itMgr.toNicTO(guestNicProfile, internalLbVm.getHypervisorType()), internalLbVm.getVpcId(), maxconn);
+                _itMgr.toNicTO(guestNicProfile, internalLbVm.getHypervisorType()), internalLbVm.getVpcId(), maxconn, offering.isKeepAliveEnabled());
 
         cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
         cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
@@ -629,7 +629,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     }
 
     protected long getInternalLbProviderId(Network guestNetwork) {
-        VirtualRouterProviderType type = VirtualRouterProviderType.InternalLbVm;
+        Type type = Type.InternalLbVm;
         long physicalNetworkId = _ntwkModel.getPhysicalNetworkId(guestNetwork);
         
         PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(physicalNetworkId, type.toString());

@@ -46,6 +46,7 @@ import com.googlecode.ipv6.IPv6Network;
 
 import com.cloud.utils.IteratorUtil;
 import com.cloud.utils.Pair;
+import org.apache.commons.net.util.SubnetUtils;
 import com.cloud.utils.script.Script;
 
 public class NetUtils {
@@ -199,7 +200,7 @@ public class NetUtils {
 
     public static String getDefaultEthDevice() {
         if (SystemUtils.IS_OS_MAC) {
-            String defDev = Script.runSimpleBashScript("/sbin/route -n get default | grep interface | awk '{print $2}'");
+            String defDev = Script.runSimpleBashScript("/sbin/route -n get default 2> /dev/null | grep interface | awk '{print $2}'");
             return defDev;
         }
         String defaultRoute = Script.runSimpleBashScript("/sbin/route | grep default");
@@ -1419,5 +1420,16 @@ public class NetUtils {
         mac = mac + (l << 24);
         mac = mac & 0x06FFFFFFFFFFl;
         return long2Mac(mac);
+    }
+
+    public static boolean isIpWithtInCidrRange(String ipAddress, String cidr) {
+        if (!isValidIp(ipAddress)) {
+            return false;
+        }
+        if (!isValidCIDR(cidr)) {
+            return false;
+        }
+        SubnetUtils subnetUtils = new SubnetUtils(cidr);
+        return subnetUtils.getInfo().isInRange(ipAddress);
     }
 }

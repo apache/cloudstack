@@ -23,8 +23,10 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
+import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
+import com.cloud.network.VpnUser;
 import com.cloud.network.vpc.*;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
@@ -106,4 +108,31 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
      * @return
      */
     List<DomainRouterVO> getVpcRouters(long vpcId);
+
+    /**
+     * @param vpn 
+     * @param router
+     * @return
+     * @throws ResourceUnavailableException
+     */
+	boolean startRemoteAccessVpn(RemoteAccessVpn vpn, VirtualRouter router)
+			throws ResourceUnavailableException;
+
+    /**
+     * @param vpn 
+     * @param router
+     * @return
+     * @throws ResourceUnavailableException
+     */
+	boolean stopRemoteAccessVpn(RemoteAccessVpn vpn, VirtualRouter router)
+			throws ResourceUnavailableException;
+
+    /**
+     * @param vpn 
+     * @param users 
+     * @param routers
+     * @return
+     * @throws ResourceUnavailableException
+     */
+	String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users, VirtualRouter router) throws ResourceUnavailableException;
 }

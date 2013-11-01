@@ -27,7 +27,6 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
@@ -38,6 +37,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -63,7 +63,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class UploadListener implements Listener {
 
-    private static final class StatusTask extends TimerTask {
+    private static final class StatusTask extends ManagedContextTimerTask {
         private final UploadListener ul;
         private final RequestType reqType;
 
@@ -73,13 +73,13 @@ public class UploadListener implements Listener {
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             ul.sendCommand(reqType);
 
         }
     }
 
-    private static final class TimeoutTask extends TimerTask {
+    private static final class TimeoutTask extends ManagedContextTimerTask {
         private final UploadListener ul;
 
         public TimeoutTask(UploadListener ul) {
@@ -87,7 +87,7 @@ public class UploadListener implements Listener {
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             ul.checkProgress();
         }
     }

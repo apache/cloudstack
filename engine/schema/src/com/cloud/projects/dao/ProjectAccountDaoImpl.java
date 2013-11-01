@@ -50,13 +50,13 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
         AllFieldsSearch.done();
 
         AdminSearch = createSearchBuilder(Long.class);
-        AdminSearch.selectField(AdminSearch.entity().getProjectId());
+        AdminSearch.selectFields(AdminSearch.entity().getProjectId());
         AdminSearch.and("role", AdminSearch.entity().getAccountRole(), Op.EQ);
         AdminSearch.and("accountId", AdminSearch.entity().getAccountId(), Op.EQ);
         AdminSearch.done();
 
         ProjectAccountSearch = createSearchBuilder(Long.class);
-        ProjectAccountSearch.selectField(ProjectAccountSearch.entity().getProjectAccountId());
+        ProjectAccountSearch.selectFields(ProjectAccountSearch.entity().getProjectAccountId());
         ProjectAccountSearch.and("accountId", ProjectAccountSearch.entity().getAccountId(), Op.EQ);
         ProjectAccountSearch.done();
 

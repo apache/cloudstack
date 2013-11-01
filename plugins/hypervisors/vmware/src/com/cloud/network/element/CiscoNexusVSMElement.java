@@ -61,6 +61,8 @@ import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -260,7 +262,7 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     }
 
     @DB
-    public Pair<Boolean, Long> validateAndAddVsm(String vsmIp, String vsmUser, String vsmPassword, long clusterId, String clusterName) throws ResourceInUseException {
+    public Pair<Boolean, Long> validateAndAddVsm(final String vsmIp, final String vsmUser, final String vsmPassword, final long clusterId, String clusterName) throws ResourceInUseException {
         CiscoNexusVSMDeviceVO vsm = null;
         boolean vsmAdded = false;
         Long vsmId = 0L;
@@ -293,36 +295,24 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
                 }
             }
             // persist credentials to database if the VSM entry is not already in the db.
-            if (_vsmDao.getVSMbyIpaddress(vsmIp) == null) {
-                vsm = new CiscoNexusVSMDeviceVO(vsmIp, vsmUser, vsmPassword);
-                txn = Transaction.currentTxn();
-                try {
-                    txn.start();
-                    vsm = _vsmDao.persist(vsm);
-                    txn.commit();
-                } catch (Exception e) {
-                    txn.rollback();
-                    s_logger.error("Failed to persist Cisco Nexus 1000v VSM details to database. Exception: " + e.getMessage());
-                    throw new CloudRuntimeException(e.getMessage());
+            vsm = Transaction.execute(new TransactionCallback<CiscoNexusVSMDeviceVO>() {
+                @Override
+                public CiscoNexusVSMDeviceVO doInTransaction(TransactionStatus status) {
+                    CiscoNexusVSMDeviceVO vsm = null;
+                    if (_vsmDao.getVSMbyIpaddress(vsmIp) == null) {
+                        vsm = new CiscoNexusVSMDeviceVO(vsmIp, vsmUser, vsmPassword);
+                        vsm = _vsmDao.persist(vsm);
+                    }
+                    // Create a mapping between the cluster and the vsm.
+                    vsm = _vsmDao.getVSMbyIpaddress(vsmIp);
+                    if (vsm != null) {
+                        ClusterVSMMapVO connectorObj = new ClusterVSMMapVO(clusterId, vsm.getId());
+                        _clusterVSMDao.persist(connectorObj);
+                    }
+                    return vsm;
                 }
-            }
-            // Create a mapping between the cluster and the vsm.
-            vsm = _vsmDao.getVSMbyIpaddress(vsmIp);
-            if (vsm != null) {
-                ClusterVSMMapVO connectorObj = new ClusterVSMMapVO(clusterId, vsm.getId());
-                txn = Transaction.currentTxn();
-                try {
-                    txn.start();
-                    _clusterVSMDao.persist(connectorObj);
-                    txn.commit();
-                } catch (Exception e) {
-                    txn.rollback();
-                    s_logger.error("Failed to associate Cisco Nexus 1000v VSM with cluster: " + clusterName + ". Exception: " + e.getMessage());
-                    _vsmDao.remove(vsm.getId()); // Removing VSM from virtual_supervisor_module table because association with cluster failed.
-                    // Cluster would be deleted from cluster table by callee.
-                    throw new CloudRuntimeException(e.getMessage());
-                }
-            }
+            });
+
         } else {
             String msg;
             msg = "The global parameter " + Config.VmwareUseNexusVSwitch.toString() +

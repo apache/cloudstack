@@ -16,21 +16,21 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.zone;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.dc.DataCenter;
+import com.cloud.exception.InvalidParameterValueException;
 
 @APICommand(name = "listZones", description="Lists zones", responseObject=ZoneResponse.class)
 public class ListZonesByCmd extends BaseListCmd {
@@ -62,6 +62,9 @@ public class ListZonesByCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.SHOW_CAPACITIES, type=CommandType.BOOLEAN, description="flag to display the capacity of the zones")
     private Boolean showCapacities;
+    
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, description = "List zones by resource tags (key/value pairs)", since="4.3")
+    private Map tags;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -89,6 +92,25 @@ public class ListZonesByCmd extends BaseListCmd {
     
     public Boolean getShowCapacities() {
         return showCapacities;
+    }
+    
+    public Map<String, String> getTags() {
+        Map<String, String> tagsMap = null;
+        if (tags != null && !tags.isEmpty()) {
+            tagsMap = new HashMap<String, String>();
+            Collection<?> servicesCollection = tags.values();
+            Iterator<?> iter = servicesCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> services = (HashMap<String, String>) iter.next();
+                String key = services.get("key");
+                String value = services.get("value");
+                if (value == null) {
+                    throw new InvalidParameterValueException("No value is passed in for key " + key);
+                }
+                tagsMap.put(key, value);
+            }
+        }
+        return tagsMap;
     }
 
     /////////////////////////////////////////////////////

@@ -18,15 +18,20 @@ package com.cloud.exception;
 
 public class UsageServerException extends CloudException {
 
-	public UsageServerException() {
-		
-	}
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -8398313106067116466L;
 
-	public UsageServerException(String message) {
-		super(message);
-	}
+    public UsageServerException() {
+
+    }
+
+    public UsageServerException(String message) {
+        super(message);
+    }
 
 
-	
+
 
 }

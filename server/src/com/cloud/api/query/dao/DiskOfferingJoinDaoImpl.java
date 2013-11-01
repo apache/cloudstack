@@ -21,20 +21,17 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 
 import com.cloud.api.query.vo.DiskOfferingJoinVO;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.DiskOfferingVO.Type;
 import com.cloud.utils.db.Attribute;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria.Op;
-import org.springframework.stereotype.Component;
 
 @Component
 @Local(value={DiskOfferingJoinDao.class})
@@ -42,7 +39,7 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
     public static final Logger s_logger = Logger.getLogger(DiskOfferingJoinDaoImpl.class);
 
 
-    private SearchBuilder<DiskOfferingJoinVO> dofIdSearch;
+    private final SearchBuilder<DiskOfferingJoinVO> dofIdSearch;
     private final Attribute _typeAttr;
 
      protected DiskOfferingJoinDaoImpl() {
@@ -53,7 +50,7 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
 
         _typeAttr = _allAttributes.get("type");
 
-        this._count = "select count(distinct id) from disk_offering_view WHERE ";
+        _count = "select count(distinct id) from disk_offering_view WHERE ";
     }
 
 
@@ -95,17 +92,5 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         List<DiskOfferingJoinVO> offerings = searchIncludingRemoved(sc, null, null, false);
         assert offerings != null && offerings.size() == 1 : "No disk offering found for offering id " + offering.getId();
         return offerings.get(0);
-    }
-
-    @Override
-    public List<DiskOfferingJoinVO> searchIncludingRemoved(SearchCriteria<DiskOfferingJoinVO> sc, final Filter filter, final Boolean lock, final boolean cache) {
-        sc.addAnd(_typeAttr, Op.EQ, Type.Disk);
-        return super.searchIncludingRemoved(sc, filter, lock, cache);
-    }
-
-    @Override
-    public <K> List<K> customSearchIncludingRemoved(SearchCriteria<K> sc, final Filter filter) {
-        sc.addAnd(_typeAttr, Op.EQ, Type.Disk);
-        return super.customSearchIncludingRemoved(sc, filter);
     }
 }

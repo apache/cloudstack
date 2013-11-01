@@ -32,11 +32,11 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = PrivateIpDao.class)
-@DB(txn = false)
+@DB()
 public class PrivateIpDaoImpl extends GenericDaoBase<PrivateIpVO, Long> implements PrivateIpDao {
     private static final Logger s_logger = Logger.getLogger(PrivateIpDaoImpl.class);
 
@@ -78,7 +78,7 @@ public class PrivateIpDaoImpl extends GenericDaoBase<PrivateIpVO, Long> implemen
             sc.setParameters("ipAddress", requestedIp);
         }
         
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         PrivateIpVO  vo = lockOneRandomRow(sc, true);
         if (vo == null) {

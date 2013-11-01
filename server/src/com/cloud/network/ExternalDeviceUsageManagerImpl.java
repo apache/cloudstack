@@ -31,8 +31,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.ExternalNetworkResourceUsageAnswer;
@@ -81,8 +81,9 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -288,12 +289,19 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                 newCurrentBytesReceived += bytesSentAndReceived[1];
             }
 
-            UserStatisticsVO userStats;
-            final Transaction txn = Transaction.currentTxn();
-            try {
-                txn.start();
-                userStats = _userStatsDao.lock(accountId, zone.getId(), networkId, publicIp, externalLoadBalancer.getId(), externalLoadBalancer.getType().toString());
+            commitStats(networkId, externalLoadBalancer, accountId, publicIp, zone, statsEntryIdentifier,
+                    newCurrentBytesSent, newCurrentBytesReceived);
+        }
+    }
 
+    private void commitStats(final long networkId, final HostVO externalLoadBalancer, final long accountId, final String publicIp,
+            final DataCenterVO zone, final String statsEntryIdentifier, final long newCurrentBytesSent, final long newCurrentBytesReceived) {
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                UserStatisticsVO userStats;
+                userStats = _userStatsDao.lock(accountId, zone.getId(), networkId, publicIp, externalLoadBalancer.getId(), externalLoadBalancer.getType().toString());
+        
                 if (userStats != null) {
                     long oldNetBytesSent = userStats.getNetBytesSent();
                     long oldNetBytesReceived = userStats.getNetBytesReceived();
@@ -301,19 +309,19 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                     long oldCurrentBytesReceived = userStats.getCurrentBytesReceived();
                     String warning = "Received an external network stats byte count that was less than the stored value. Zone ID: " + userStats.getDataCenterId()
                             + ", account ID: " + userStats.getAccountId() + ".";
-
+        
                     userStats.setCurrentBytesSent(newCurrentBytesSent);
                     if (oldCurrentBytesSent > newCurrentBytesSent) {
                         s_logger.warn(warning + "Stored bytes sent: " + oldCurrentBytesSent + ", new bytes sent: " + newCurrentBytesSent + ".");
                         userStats.setNetBytesSent(oldNetBytesSent + oldCurrentBytesSent);
                     }
-
+        
                     userStats.setCurrentBytesReceived(newCurrentBytesReceived);
                     if (oldCurrentBytesReceived > newCurrentBytesReceived) {
                         s_logger.warn(warning + "Stored bytes received: " + oldCurrentBytesReceived + ", new bytes received: " + newCurrentBytesReceived + ".");
                         userStats.setNetBytesReceived(oldNetBytesReceived + oldCurrentBytesReceived);
                     }
-
+        
                     if (_userStatsDao.update(userStats.getId(), userStats)) {
                         s_logger.debug("Successfully updated stats for " + statsEntryIdentifier);
                     } else {
@@ -322,23 +330,18 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                 } else {
                     s_logger.warn("Unable to find user stats entry for " + statsEntryIdentifier);
                 }
-
-                txn.commit();
-            } catch (final Exception e) {
-                txn.rollback();
-                throw new CloudRuntimeException("Problem getting stats after reboot/stop ", e);
             }
-        }
+        });
     }
 
-    protected class ExternalDeviceNetworkUsageTask implements Runnable {
+    protected class ExternalDeviceNetworkUsageTask extends ManagedContextRunnable {
 
         public ExternalDeviceNetworkUsageTask() {
 
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             GlobalLock scanLock = GlobalLock.getInternLock("ExternalDeviceNetworkUsageManagerImpl");
             try {
                 if (scanLock.lock(20)) {
@@ -601,78 +604,78 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
          * Stats entries are created for source NAT IP addresses, static NAT rules, port forwarding rules, and load
          * balancing rules
          */
-        private boolean manageStatsEntries(boolean create, long accountId, long zoneId, Network network,
-                HostVO externalFirewall, ExternalNetworkResourceUsageAnswer firewallAnswer,
-                HostVO externalLoadBalancer, ExternalNetworkResourceUsageAnswer lbAnswer) {
-            String accountErrorMsg = "Failed to update external network stats entry. Details: account ID = " + accountId;
-            Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        private boolean manageStatsEntries(final boolean create, final long accountId, final long zoneId, final Network network,
+                final HostVO externalFirewall, final ExternalNetworkResourceUsageAnswer firewallAnswer,
+                final HostVO externalLoadBalancer, final ExternalNetworkResourceUsageAnswer lbAnswer) {
+            final String accountErrorMsg = "Failed to update external network stats entry. Details: account ID = " + accountId;
             try {
-                txn.start();
-                String networkErrorMsg = accountErrorMsg + ", network ID = " + network.getId();
-
-                boolean sharedSourceNat = false;
-                Map<Network.Capability, String> sourceNatCapabilities = _networkModel.getNetworkServiceCapabilities(network.getId(), Network.Service.SourceNat);
-                if (sourceNatCapabilities != null) {
-                    String supportedSourceNatTypes = sourceNatCapabilities.get(Network.Capability.SupportedSourceNatTypes).toLowerCase();
-                    if (supportedSourceNatTypes.contains("zone")) {
-                        sharedSourceNat = true;
-                    }
-                }
-
-                if (externalFirewall != null && firewallAnswer != null) {
-                    if (!sharedSourceNat) {
-                        // Manage the entry for this network's source NAT IP address
-                        List<IPAddressVO> sourceNatIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
-                        if (sourceNatIps.size() == 1) {
-                            String publicIp = sourceNatIps.get(0).getAddress().addr();
-                            if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalFirewall.getId(), firewallAnswer, false)) {
-                                throw new ExecutionException(networkErrorMsg + ", source NAT IP = " + publicIp);
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        String networkErrorMsg = accountErrorMsg + ", network ID = " + network.getId();
+        
+                        boolean sharedSourceNat = false;
+                        Map<Network.Capability, String> sourceNatCapabilities = _networkModel.getNetworkServiceCapabilities(network.getId(), Network.Service.SourceNat);
+                        if (sourceNatCapabilities != null) {
+                            String supportedSourceNatTypes = sourceNatCapabilities.get(Network.Capability.SupportedSourceNatTypes).toLowerCase();
+                            if (supportedSourceNatTypes.contains("zone")) {
+                                sharedSourceNat = true;
                             }
                         }
-
-                        // Manage one entry for each static NAT rule in this network
-                        List<IPAddressVO> staticNatIps = _ipAddressDao.listStaticNatPublicIps(network.getId());
-                        for (IPAddressVO staticNatIp : staticNatIps) {
-                            String publicIp = staticNatIp.getAddress().addr();
-                            if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalFirewall.getId(), firewallAnswer, false)) {
-                                throw new ExecutionException(networkErrorMsg + ", static NAT rule public IP = " + publicIp);
+        
+                        if (externalFirewall != null && firewallAnswer != null) {
+                            if (!sharedSourceNat) {
+                                // Manage the entry for this network's source NAT IP address
+                                List<IPAddressVO> sourceNatIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
+                                if (sourceNatIps.size() == 1) {
+                                    String publicIp = sourceNatIps.get(0).getAddress().addr();
+                                    if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalFirewall.getId(), firewallAnswer, false)) {
+                                        throw new CloudRuntimeException(networkErrorMsg + ", source NAT IP = " + publicIp);
+                                    }
+                                }
+        
+                                // Manage one entry for each static NAT rule in this network
+                                List<IPAddressVO> staticNatIps = _ipAddressDao.listStaticNatPublicIps(network.getId());
+                                for (IPAddressVO staticNatIp : staticNatIps) {
+                                    String publicIp = staticNatIp.getAddress().addr();
+                                    if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalFirewall.getId(), firewallAnswer, false)) {
+                                        throw new CloudRuntimeException(networkErrorMsg + ", static NAT rule public IP = " + publicIp);
+                                    }
+                                }
+        
+                                // Manage one entry for each port forwarding rule in this network
+                                List<PortForwardingRuleVO> portForwardingRules = _portForwardingRulesDao.listByNetwork(network.getId());
+                                for (PortForwardingRuleVO portForwardingRule : portForwardingRules) {
+                                    String publicIp = _networkModel.getIp(portForwardingRule.getSourceIpAddressId()).getAddress().addr();
+                                    if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalFirewall.getId(), firewallAnswer, false)) {
+                                        throw new CloudRuntimeException(networkErrorMsg + ", port forwarding rule public IP = " + publicIp);
+                                    }
+                                }
+                            } else {
+                                // Manage the account-wide entry for the external firewall
+                                if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), null, externalFirewall.getId(), firewallAnswer, false)) {
+                                    throw new CloudRuntimeException(networkErrorMsg);
+                                }
                             }
                         }
-
-                        // Manage one entry for each port forwarding rule in this network
-                        List<PortForwardingRuleVO> portForwardingRules = _portForwardingRulesDao.listByNetwork(network.getId());
-                        for (PortForwardingRuleVO portForwardingRule : portForwardingRules) {
-                            String publicIp = _networkModel.getIp(portForwardingRule.getSourceIpAddressId()).getAddress().addr();
-                            if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalFirewall.getId(), firewallAnswer, false)) {
-                                throw new ExecutionException(networkErrorMsg + ", port forwarding rule public IP = " + publicIp);
+        
+                        // If an external load balancer is added, manage one entry for each load balancing rule in this network
+                        if (externalLoadBalancer != null && lbAnswer != null) {
+                            boolean inline = _networkModel.isNetworkInlineMode(network);
+                            List<LoadBalancerVO> loadBalancers = _loadBalancerDao.listByNetworkIdAndScheme(network.getId(), Scheme.Public);
+                            for (LoadBalancerVO loadBalancer : loadBalancers) {
+                                String publicIp = _networkModel.getIp(loadBalancer.getSourceIpAddressId()).getAddress().addr();
+                                if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalLoadBalancer.getId(), lbAnswer, inline)) {
+                                    throw new CloudRuntimeException(networkErrorMsg + ", load balancing rule public IP = " + publicIp);
+                                }
                             }
                         }
-                    } else {
-                        // Manage the account-wide entry for the external firewall
-                        if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), null, externalFirewall.getId(), firewallAnswer, false)) {
-                            throw new ExecutionException(networkErrorMsg);
-                        }
                     }
-                }
-
-                // If an external load balancer is added, manage one entry for each load balancing rule in this network
-                if (externalLoadBalancer != null && lbAnswer != null) {
-                    boolean inline = _networkModel.isNetworkInlineMode(network);
-                    List<LoadBalancerVO> loadBalancers = _loadBalancerDao.listByNetworkIdAndScheme(network.getId(), Scheme.Public);
-                    for (LoadBalancerVO loadBalancer : loadBalancers) {
-                        String publicIp = _networkModel.getIp(loadBalancer.getSourceIpAddressId()).getAddress().addr();
-                        if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalLoadBalancer.getId(), lbAnswer, inline)) {
-                            throw new ExecutionException(networkErrorMsg + ", load balancing rule public IP = " + publicIp);
-                        }
-                    }
-                }
-                return txn.commit();
+                });
+                return true;
             } catch (Exception e) {
                 s_logger.warn("Exception: ", e);
-                txn.rollback();
                 return false;
-            } finally {
-                txn.close();
             }
         }
     }

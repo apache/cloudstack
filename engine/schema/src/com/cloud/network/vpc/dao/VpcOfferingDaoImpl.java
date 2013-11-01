@@ -26,11 +26,11 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = VpcOfferingDao.class)
-@DB(txn = false)
+@DB()
 public class VpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> implements VpcOfferingDao{
     final SearchBuilder<VpcOfferingVO> AllFieldsSearch;
 
@@ -51,7 +51,7 @@ public class VpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> impl
     @Override
     @DB
     public boolean remove(Long vpcOffId) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         VpcOfferingVO offering = findById(vpcOffId);
         offering.setUniqueName(null);

@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-""" Component tests for VPC network functionality
+""" Component tests for VPC network functionality - with and without Netscaler (Netscaler tests will be skipped if Netscaler configuration fails)
 """
 #Import Local Modules
 import marvin
@@ -27,7 +27,8 @@ from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 from marvin.remoteSSHClient import remoteSSHClient
 import datetime
-
+# For more info on ddt refer to http://ddt.readthedocs.org/en/latest/api.html#module-ddt
+from ddt import ddt, data
 
 class Services:
     """Test VPC network services
@@ -74,6 +75,7 @@ class Services:
                     "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
                 },
             },
+            # Offering that uses Netscaler as provider for LB inside VPC, dedicated = false            
             "network_off_netscaler": {
                 "name": 'Network offering-netscaler',
                 "displaytext": 'Network offering-netscaler',
@@ -96,6 +98,37 @@ class Services:
                     "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
                 },
             },
+            # Offering that uses Netscaler as provider for LB in VPC, dedicated = True 
+            # This offering is required for the tests that use Netscaler as external LB provider in VPC
+            "network_offering_vpcns": {
+                                    "name": 'VPC Network offering',
+                                    "displaytext": 'VPC Network off',
+                                    "guestiptype": 'Isolated',
+                                    "supportedservices": 'Vpn,Dhcp,Dns,SourceNat,PortForwarding,Lb,UserData,StaticNat,NetworkACL',
+                                    "traffictype": 'GUEST',
+                                    "availability": 'Optional',
+                                    "useVpc": 'on',
+                                    "serviceProviderList": {
+                                            "Vpn": 'VpcVirtualRouter',
+                                            "Dhcp": 'VpcVirtualRouter',
+                                            "Dns": 'VpcVirtualRouter',
+                                            "SourceNat": 'VpcVirtualRouter',
+                                            "PortForwarding": 'VpcVirtualRouter',
+                                            "Lb": 'Netscaler',
+                                            "UserData": 'VpcVirtualRouter',
+                                            "StaticNat": 'VpcVirtualRouter',
+                                            "NetworkACL": 'VpcVirtualRouter'
+                                        },
+                                   "serviceCapabilityList": {
+                                        "SourceNat": {
+                                            "SupportedSourceNatTypes": "peraccount"
+                                        },
+                                        "lb": {
+                                               "SupportedLbIsolation": "dedicated"
+                                        },
+                                    },
+                                },
+
             "network_off_shared": {
                 "name": 'Shared Network offering',
                 "displaytext": 'Shared Network offering',
@@ -115,6 +148,19 @@ class Services:
                 "name": "TestVPC",
                 "displaytext": "TestVPC",
                 "cidr": '10.0.0.1/24'
+            },
+            # Netscaler should be added as a dedicated device for it to work as external LB provider in VPC
+            "netscaler": {
+                        "ipaddress": '10.102.192.50',
+                        "username": 'nsroot',
+                        "password": 'nsroot',
+                        "networkdevicetype": 'NetscalerVPXLoadBalancer',
+                        "publicinterface": '1/3',
+                        "privateinterface": '1/4',
+                        "numretries": 2,
+                        "lbdevicededicated": True,
+                        "lbdevicecapacity": 50,
+                        "port": 22,
             },
             "network": {
                 "name": "Test Network",
@@ -172,7 +218,7 @@ class Services:
             "timeout": 10,
         }
 
-
+@ddt
 class TestVPCNetwork(cloudstackTestCase):
 
     @classmethod
@@ -182,6 +228,9 @@ class TestVPCNetwork(cloudstackTestCase):
                                cls
                                ).getClsTestClient().getApiClient()
         cls.services = Services().services
+        # Added an attribute to track if Netscaler addition was successful. 
+        # Value is checked in tests and if not configured, Netscaler tests will be skipped 
+        cls.ns_configured = False
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
@@ -199,12 +248,15 @@ class TestVPCNetwork(cloudstackTestCase):
                                             cls.services["service_offering"]
                                             )
         cls._cleanup.append(cls.service_offering)
-        cls.vpc_off = VpcOffering.create(
-                                     cls.api_client,
-                                     cls.services["vpc_offering"]
-                                     )
-        cls._cleanup.append(cls.vpc_off)
-        cls.vpc_off.update(cls.api_client, state='Enabled')
+        # Configure Netscaler device
+        # If configuration succeeds, set ns_configured to True so that Netscaler tests are executed                
+        try:
+           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
+           cls._cleanup.append(cls.netscaler)
+           cls.debug("Netscaler configured")
+           cls.ns_configured = True
+        except Exception as e:
+           cls.debug("Warning: Couldn't configure Netscaler: %s" % e)
         return
 
     @classmethod
@@ -287,38 +339,42 @@ class TestVPCNetwork(cloudstackTestCase):
                 )
         self.debug("VPC network validated - %s" % network.name)
         return
-
+    
+    @data("network_offering", "network_offering_vpcns")
     @attr(tags=["advanced", "intervlan"])
-    def test_01_create_network(self):
+    def test_01_create_network(self, value):
         """ Test create network in VPC
         """
 
         # Validate the following
-        # 1. Create VPC Offering by specifying all supported Services
-        #    (Vpn,dhcpdns,UserData, SourceNat,Static NAT and PF,LB,NetworkAcl)
-        # 2. Create a VPC using the above VPC offering.
-        # 3. Create a network offering with guest type=Isolated" that has
+        # 1. Create a VPC using Default Offering
+        # 2. Create a network offering with guest type=Isolated" that has
         #    all of supported Services(Vpn,dhcpdns,UserData, SourceNat,Static
-        #    NAT,LB and PF,LB,NetworkAcl ) provided by VPCVR and conserver
+        #    NAT,LB and PF,LB,NetworkAcl ) provided by VPCVR and conserve
         #    mode is ON
-        # 4. Create a VPC using the above VPC offering.
-        # 5. Create a network using the network offering created in step2 as
+        # 3. Create a network tier using the network offering created in step2 as
         #    part of this VPC.
+        # 4. Validate Network is created
+        # 5. Repeat test for offering which has Netscaler as external LB provider
 
-        self.debug("Creating a VPC offering..")
-        vpc_off = VpcOffering.create(
-                                     self.apiclient,
-                                     self.services["vpc_offering"]
-                                     )
+        if (value == "network_offering_vpcns" and self.ns_configured == False):
+           self.skipTest('Netscaler not configured: skipping test')
 
-        self.cleanup.append(vpc_off)
-        self.validate_vpc_offering(vpc_off)
+        if (value == "network_offering"):
+           vpc_off_list=VpcOffering.list(
+                                  self.apiclient,
+                                  name='Default VPC offering',
+                                  listall=True
+                                  )
+        else:
+           vpc_off_list=VpcOffering.list(
+                                  self.apiclient,
+                                  name='Default VPC  offering with Netscaler',
+                                  listall=True
+                                  )
+        vpc_off=vpc_off_list[0]
+        self.debug("Creating a VPC with offering: %s" % vpc_off.id)
 
-        self.debug("Enabling the VPC offering created")
-        vpc_off.update(self.apiclient, state='Enabled')
-
-        self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.name)
         self.services["vpc"]["cidr"] = '10.1.1.1/16'
         vpc = VPC.create(
                          self.apiclient,
@@ -332,7 +388,7 @@ class TestVPCNetwork(cloudstackTestCase):
 
         self.network_offering = NetworkOffering.create(
                                             self.apiclient,
-                                            self.services["network_offering"],
+                                            self.services[value],
                                             conservemode=False
                                             )
         # Enable Network offering
@@ -380,38 +436,42 @@ class TestVPCNetwork(cloudstackTestCase):
                          )
         return
 
+    @data("network_offering", "network_offering_vpcns")
     @attr(tags=["advanced", "intervlan"])
-    def test_02_create_network_fail(self):
+    def test_02_create_network_fail(self, value):
         """ Test create network in VPC mismatched services (Should fail)
         """
-
+        
         # Validate the following
-        # 1. Create VPC Offering by specifying all supported Services
-        #    (Vpn,dhcpdns,UserData, SourceNat,Static NAT and PF,LB,NetworkAcl)
-        # 2. Create a VPC using the above VPC offering.
-        # 3. Create a network offering with guest type=Isolated" that has
-        #    one of supported Services(Vpn,dhcpdns,UserData, SourceNat,Static
-        #    NAT,LB and PF,LB,NetworkAcl ) provided by VPCVR and conserver
-        #    mode is ON
-        # 4. Create a VPC using the above VPC offering.
-        # 5. Create a network using the network offering created in step2 as
+        # 1. Create a VPC using Default VPC Offering 
+        # 2. Create a network offering with guest type=Isolated" that has
+        #    one of supported Services(Vpn,dhcpdns,UserData, Static
+        #    NAT,LB and PF,LB,NetworkAcl ) provided by VPCVR, SourceNat by VR 
+        #    and conserve mode is ON
+        # 3. Create a network using the network offering created in step2 as
         #    part of this VPC.
-        # 6. Network creation should fail
+        # 4. Network creation should fail since SourceNat offered by VR instead of VPCVR
+        # 5. Repeat test for offering which has Netscaler as external LB provider 
 
-        self.debug("Creating a VPC offering..")
-        vpc_off = VpcOffering.create(
-                                     self.apiclient,
-                                     self.services["vpc_offering"]
-                                     )
+        if (value == "network_offering_vpcns" and self.ns_configured == False):
+           self.skipTest('Netscaler not configured: skipping test')
 
-        self.cleanup.append(vpc_off)
-        self.validate_vpc_offering(vpc_off)
 
-        self.debug("Enabling the VPC offering created")
-        vpc_off.update(self.apiclient, state='Enabled')
-
-        self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.name)
+        if (value == "network_offering"):
+           vpc_off_list=VpcOffering.list(
+                                  self.apiclient,
+                                  name='Default VPC offering',
+                                  listall=True
+                                  )
+        else:
+           vpc_off_list=VpcOffering.list(
+                                  self.apiclient,
+                                  name='Default VPC  offering with Netscaler',
+                                  listall=True
+                                  )
+        vpc_off=vpc_off_list[0]
+        self.debug("Creating a VPC with offering: %s" % vpc_off.id)
+        
         self.services["vpc"]["cidr"] = '10.1.1.1/16'
         vpc = VPC.create(
                          self.apiclient,
@@ -423,13 +483,12 @@ class TestVPCNetwork(cloudstackTestCase):
                          )
         self.validate_vpc_network(vpc)
 
-        self.services["network_offering"]["supportedservices"] = 'SourceNat'
-        self.services["network_offering"]["serviceProviderList"] = {
+        self.services[value]["serviceProviderList"] = {
                                         "SourceNat": 'VirtualRouter', }
 
         self.network_offering = NetworkOffering.create(
                                             self.apiclient,
-                                            self.services["network_offering"],
+                                            self.services[value],
                                             conservemode=False
                                             )
         # Enable Network offering
@@ -452,127 +511,41 @@ class TestVPCNetwork(cloudstackTestCase):
                                 )
         return
 
-    @attr(tags=["netscaler", "intervlan"])
-    def test_03_create_network_netscaler(self):
-        """ Test create network using netscaler for LB
-        """
-
-        # Validate the following
-        # 1. Create VPC Offering by specifying all supported Services
-        #    (Vpn,dhcpdns,UserData, SourceNat,Static NAT and PF,LB,NetworkAcl)
-        # 2. Create a VPC using the above VPC offering
-        # 3. Create a network offering with guest type="Isolated that has
-        #    LB services provided by Netscaler and all other services
-        #    provided by VPCVR and conserver mode is "ON"
-        # 4. Create a VPC using the above VPC offering.
-        # 5. Create a network using the network offering created in step2 as
-        #    part of this VPC
-
-        self.debug("Creating a VPC offering..")
-        vpc_off = VpcOffering.create(
-                                     self.apiclient,
-                                     self.services["vpc_offering"]
-                                     )
-
-        self.cleanup.append(vpc_off)
-        self.validate_vpc_offering(vpc_off)
-
-        self.debug("Enabling the VPC offering created")
-        vpc_off.update(self.apiclient, state='Enabled')
-
-        self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.name)
-        self.services["vpc"]["cidr"] = '10.1.1.1/16'
-        vpc = VPC.create(
-                         self.apiclient,
-                         self.services["vpc"],
-                         vpcofferingid=vpc_off.id,
-                         zoneid=self.zone.id,
-                         account=self.account.name,
-                         domainid=self.account.domainid
-                         )
-        self.validate_vpc_network(vpc)
-
-        self.network_offering = NetworkOffering.create(
-                                        self.apiclient,
-                                        self.services["network_off_netscaler"],
-                                        conservemode=False
-                                        )
-        # Enable Network offering
-        self.network_offering.update(self.apiclient, state='Enabled')
-        self.cleanup.append(self.network_offering)
-
-        # Creating network using the network offering created
-        self.debug("Creating network with network offering: %s" %
-                                                    self.network_offering.id)
-        network = Network.create(
-                                self.apiclient,
-                                self.services["network"],
-                                accountid=self.account.name,
-                                domainid=self.account.domainid,
-                                networkofferingid=self.network_offering.id,
-                                zoneid=self.zone.id,
-                                gateway='10.1.1.1',
-                                vpcid=vpc.id
-                                )
-        self.debug("Created network with ID: %s" % network.id)
-        self.debug(
-            "Verifying list network response to check if network created?")
-        networks = Network.list(
-                                self.apiclient,
-                                id=network.id,
-                                listall=True
-                                )
-        self.assertEqual(
-                         isinstance(networks, list),
-                         True,
-                         "List networks should return a valid response"
-                         )
-        nw = networks[0]
-
-        self.assertEqual(
-            nw.networkofferingid,
-            self.network_offering.id,
-            "Network should be created from network offering - %s" %
-                                                    self.network_offering.id
-             )
-        self.assertEqual(
-                         nw.vpcid,
-                         vpc.id,
-                         "Network should be created in VPC: %s" % vpc.name
-                         )
-        return
-
+    @data("network_offering", "network_offering_vpcns") 
     @attr(tags=["advanced", "intervlan"])
-    def test_04_create_multiple_networks_with_lb(self):
+    def test_04_create_multiple_networks_with_lb(self, value):
         """ Test create multiple networks with LB service (Should fail)
         """
 
         # Validate the following
-        # 1. Create VPC Offering by specifying all supported Services
-        #    (Vpn,dhcpdns,UserData, SourceNat,Static NAT and PF,LB,NetworkAcl)
-        # 2. Create a VPC using the above VPC offering
-        # 3. Create a network offering with guest type=Isolated that has LB
-        #    services Enabled and conserver mode is "ON".
-        # 4. Create a network using the network offering created in step3 as
+        # 1. Create a VPC using Default Offering
+        # 2. Create a network offering with guest type=Isolated that has LB
+        #    services Enabled and conserve mode is "ON".
+        # 3. Create a network using the network offering created in step2 as
         #    part of this VPC.
-        # 5. Create another network using the network offering created in
+        # 4. Create another network using the network offering created in
         #    step3 as part of this VPC
+        # 5. Create Network should fail 
+        # 6. Repeat test for offering which has Netscaler as external LB provider
+        if (value == "network_offering_vpcns" and self.ns_configured == False):
+           self.skipTest('Netscaler not configured: skipping test')
 
-        self.debug("Creating a VPC offering..")
-        vpc_off = VpcOffering.create(
-                                     self.apiclient,
-                                     self.services["vpc_offering"]
-                                     )
 
-        self.cleanup.append(vpc_off)
-        self.validate_vpc_offering(vpc_off)
+        if (value == "network_offering"):
+           vpc_off_list=VpcOffering.list(
+                                  self.apiclient,
+                                  name='Default VPC offering',
+                                  listall=True
+                                  )
+        else:
+           vpc_off_list=VpcOffering.list(
+                                  self.apiclient,
+                                  name='Default VPC  offering with Netscaler',
+                                  listall=True
+                                  )
+        vpc_off=vpc_off_list[0]
+        self.debug("Creating a VPC with offering: %s" % vpc_off.id)
 
-        self.debug("Enabling the VPC offering created")
-        vpc_off.update(self.apiclient, state='Enabled')
-
-        self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.name)
         self.services["vpc"]["cidr"] = '10.1.1.1/16'
         vpc = VPC.create(
                          self.apiclient,
@@ -586,7 +559,7 @@ class TestVPCNetwork(cloudstackTestCase):
 
         self.network_offering = NetworkOffering.create(
                                             self.apiclient,
-                                            self.services["network_offering"],
+                                            self.services[value],
                                             conservemode=False
                                             )
         # Enable Network offering
@@ -654,30 +627,20 @@ class TestVPCNetwork(cloudstackTestCase):
         """
 
         # Validate the following
-        # 1. Create VPC Offering by specifying all supported Services
-        #    (Vpn,dhcpdns,UserData, SourceNat,Static NAT and PF,LB,NetworkAcl)
-        # 2. Create a VPC using the above VPC offering
-        # 3. Create a network offering with guest type=Isolated that has LB
-        #    services Enabled and conserver mode is "ON".
-        # 4. Create a network using the network offering created in step3 as
-        #    part of this VPC.
-        # 5. Create another network using the network offering created in
-        #    step3 as part of this VPC
+        # 1.Create a VPC using Default Offering (Without Netscaler)
+        # 2. Create a network offering with guest type=Isolated that has LB
+        #    service provided by netscaler and conserve mode is "ON".
+        # 3. Create a network using this network offering as part of this VPC.
+        # 4. Create Network should fail since it doesn't match the VPC offering
 
-        self.debug("Creating a VPC offering..")
-        vpc_off = VpcOffering.create(
-                                     self.apiclient,
-                                     self.services["vpc_offering"]
-                                     )
+        vpc_off_list=VpcOffering.list(
+                                  self.apiclient,
+                                  name='Default VPC offering',
+                                  listall=True
+                                  )
+        vpc_off=vpc_off_list[0]
+        self.debug("Creating a VPC with offering: %s" % vpc_off.id)
 
-        self.cleanup.append(vpc_off)
-        self.validate_vpc_offering(vpc_off)
-
-        self.debug("Enabling the VPC offering created")
-        vpc_off.update(self.apiclient, state='Enabled')
-
-        self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.name)
         self.services["vpc"]["cidr"] = '10.1.1.1/16'
         vpc = VPC.create(
                          self.apiclient,
@@ -689,12 +652,29 @@ class TestVPCNetwork(cloudstackTestCase):
                          )
         self.validate_vpc_network(vpc)
 
+        self.network_offering = NetworkOffering.create(
+                                                     self.apiclient,
+                                                     self.services["network_offering_vpcns"],
+                                                     conservemode=False
+                                                     )
+        # Enable Network offering
+        self.network_offering.update(self.apiclient, state='Enabled')
+        self.cleanup.append(self.network_offering)
+
+        # Creating network using the network offering created
+        self.debug("Creating network with network offering: %s" %
+                                                    self.network_offering.id)
         with self.assertRaises(Exception):
-            NetworkOffering.create(
-                                    self.apiclient,
-                                    self.services["network_off_netscaler"],
-                                    conservemode=False
-                                )
+           Network.create(
+                      self.apiclient,
+                      self.services["network"],
+                      accountid=self.account.name,
+                      domainid=self.account.domainid,
+                      networkofferingid=self.network_offering.id,
+                      zoneid=self.zone.id,
+                      gateway='10.1.1.1',
+                      vpcid=vpc.id
+                     )
         self.debug("Network creation failed")
         return
 
@@ -779,16 +759,13 @@ class TestVPCNetwork(cloudstackTestCase):
         """
 
         # Validate the following
-        # 1. Create VPC Offering by specifying supported Services -
-        #    Vpn,dhcpdns,UserData, SourceNat,Static NAT and PF,LB,NetworkAcl)
-        #    with out including LB services.
+        # 1. Create VPC Offering without LB service
         # 2. Create a VPC using the above VPC offering
         # 3. Create a network offering with guest type=Isolated that has all
         #    supported Services(Vpn,dhcpdns,UserData, SourceNat,Static NAT,LB
-        #    and PF,LB,NetworkAcl ) provided by VPCVR and conserver mode is OFF
-        # 4. Create a VPC using the above VPC offering
-        # 5. Create a network using the network offering created in step2 as
-        #    part of this VPC.
+        #    and PF,LB,NetworkAcl ) provided by VPCVR and conserve mode is OFF
+        # 4. Create Network with the above offering
+        # 5. Create network fails since VPC offering doesn't support LB
 
         self.debug("Creating a VPC offering without LB service")
         self.services["vpc_offering"]["supportedservices"] = 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,UserData,StaticNat'
@@ -907,36 +884,39 @@ class TestVPCNetwork(cloudstackTestCase):
                                    )
         self.debug("Network creation failed as VPC doesn't have LB service")
         return
-
+    
+    @data("network_off_shared", "network_offering_vpcns")
     @attr(tags=["advanced", "intervlan"])
-    def test_09_create_network_shared_nwoff(self):
+    def test_09_create_network_shared_nwoff(self, value):
         """ Test create network with shared network offering
         """
 
         # Validate the following
-        # 1. Create VPC Offering by specifying supported Services -
-        #    Vpn,dhcpdns,UserData, SourceNat,Static NAT and PF,LB,NetworkAcl)
-        #    with out including LB services
+        # 1. Create VPC Offering using Default Offering
         # 2. Create a VPC using the above VPC offering
         # 3. Create a network offering with guest type=shared
-        # 4. Create a VPC using the above VPC offering
-        # 5. Create a network using the network offering created in step2
-        #    as part of this VPC
+        # 4. Create a network using the network offering created in step3 as part of this VPC
+        # 5. Create network fails since it using shared offering
+        # 6. Repeat test for offering which has Netscaler as external LB provider
 
-        self.debug("Creating a VPC offering")
-        vpc_off = VpcOffering.create(
-                                     self.apiclient,
-                                     self.services["vpc_offering"]
-                                     )
+        if (value == "network_offering_vpcns" and self.ns_configured == False):
+           self.skipTest('Netscaler not configured: skipping test')
 
-        self.cleanup.append(vpc_off)
-        self.validate_vpc_offering(vpc_off)
+        if (value == "network_off_shared"):
+           vpc_off_list=VpcOffering.list(
+                                  self.apiclient,
+                                  name='Default VPC offering',
+                                  listall=True
+                                  )
+        else:
+           vpc_off_list=VpcOffering.list(
+                                  self.apiclient,
+                                  name='Default VPC  offering with Netscaler',
+                                  listall=True
+                                  )
+        vpc_off=vpc_off_list[0]
+        self.debug("Creating a VPC with offering: %s" % vpc_off.id)
 
-        self.debug("Enabling the VPC offering created")
-        vpc_off.update(self.apiclient, state='Enabled')
-
-        self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.name)
         self.services["vpc"]["cidr"] = '10.1.1.1/16'
         vpc = VPC.create(
                          self.apiclient,
@@ -977,59 +957,32 @@ class TestVPCNetwork(cloudstackTestCase):
         self.debug("Network creation failed")
         return
 
+    @data("network_offering", "network_offering_vpcns")
     @attr(tags=["advanced", "intervlan"])
-    def test_10_create_network_with_conserve_mode(self):
+    def test_10_create_network_with_conserve_mode(self, value):
         """ Test create network with conserve mode ON
         """
 
         # Validate the following
-        # 1. Create VPC Offering by specifying all supported Services
-        #    (Vpn,dhcpdns,UserData, SourceNat,Static NAT and PF,LB,NetworkAcl)
-        # 2. Create a VPC using the above VPC offering
-        # 3. Create a network offering with guest type=Isolated that has all
+        # 1. Create a network offering with guest type=Isolated that has all
         #    supported Services(Vpn,dhcpdns,UserData, SourceNat,Static NAT,LB
-        #    and PF,LB,NetworkAcl ) provided by VPCVR and conserver mode is ON
-        # 4. Create a VPC using the above VPC offering
-        # 5. Create a network using the network offering created in step2 as
-        #    part of this VPC
-
-        self.debug("Creating a VPC offering")
-        vpc_off = VpcOffering.create(
-                                     self.apiclient,
-                                     self.services["vpc_offering"]
-                                     )
-
-        self.cleanup.append(vpc_off)
-        self.validate_vpc_offering(vpc_off)
-
-        self.debug("Enabling the VPC offering created")
-        vpc_off.update(self.apiclient, state='Enabled')
-
-        self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.name)
-        self.services["vpc"]["cidr"] = '10.1.1.1/16'
-        vpc = VPC.create(
-                         self.apiclient,
-                         self.services["vpc"],
-                         vpcofferingid=vpc_off.id,
-                         zoneid=self.zone.id,
-                         account=self.account.name,
-                         domainid=self.account.domainid
-                         )
-        self.validate_vpc_network(vpc)
+        #    and PF,LB,NetworkAcl ) provided by VPCVR and conserve mode is ON
+        # 2. Create offering fails since Conserve mode ON isn't allowed within VPC
+        # 3. Repeat test for offering which has Netscaler as external LB provider
 
         self.debug("Creating network offering with conserve mode = ON")
 
         with self.assertRaises(Exception):
             NetworkOffering.create(
                                     self.apiclient,
-                                    self.services["network_offering"],
+                                    self.services[value],
                                     conservemode=True
                                  )
         self.debug(
         "Network creation failed as VPC support nw with conserve mode OFF")
         return
 
+@ddt
 class TestVPCNetworkRanges(cloudstackTestCase):
 
     @classmethod
@@ -1039,6 +992,9 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                                cls
                                ).getClsTestClient().getApiClient()
         cls.services = Services().services
+        # Added an attribute to track if Netscaler addition was successful. 
+        # Value is checked in tests and if not configured, Netscaler tests will be skipped 
+        cls.ns_configured = False
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
@@ -1056,12 +1012,14 @@ class TestVPCNetworkRanges(cloudstackTestCase):
                                             cls.services["service_offering"]
                                             )
         cls._cleanup.append(cls.service_offering)
-        cls.vpc_off = VpcOffering.create(
-                                     cls.api_client,
-                                     cls.services["vpc_offering"]
-                                     )
-        cls.vpc_off.update(cls.api_client, state='Enabled')
-        cls._cleanup.append(cls.vpc_off)
+        # Configure Netscaler device
+        # If configuration succeeds, set ns_configured to True so that Netscaler tests are executed              
+        try:
+           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
+           cls._cleanup.append(cls.netscaler)
+           cls.ns_configured = True
+        except Exception as e:
+           cls.debug("Warning: Couldn't configure Netscaler: %s" % e)
         return
 
     @classmethod
@@ -1091,7 +1049,6 @@ class TestVPCNetworkRanges(cloudstackTestCase):
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             self.debug("Warning: Exception during cleanup : %s" % e)
-            #raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def validate_vpc_offering(self, vpc_offering):
@@ -1144,8 +1101,9 @@ class TestVPCNetworkRanges(cloudstackTestCase):
         self.debug("VPC network validated - %s" % network.name)
         return
 
+    @data("network_offering", "network_offering_vpcns")
     @attr(tags=["advanced", "intervlan"])
-    def test_01_create_network_outside_range(self):
+    def test_01_create_network_outside_range(self, value):
         """ Test create network outside cidr range of VPC
         """
 
@@ -1153,20 +1111,26 @@ class TestVPCNetworkRanges(cloudstackTestCase):
         # 1. Create a VPC with cidr - 10.1.1.1/16
         # 2. Add network1 with cidr - 10.2.1.1/24  to this VPC
         # 3. Network creation should fail.
+        # 4. Repeat test for offering which has Netscaler as external LB provider
 
-        self.debug("Creating a VPC offering")
-        vpc_off = VpcOffering.create(
-                                     self.apiclient,
-                                     self.services["vpc_offering"]
-                                     )
+        if (value == "network_offering_vpcns" and self.ns_configured == False):
+           self.skipTest('Netscaler not configured: skipping test')
 
-        self.cleanup.append(vpc_off)
-        self.validate_vpc_offering(vpc_off)
+        if (value == "network_offering"):
+           vpc_off_list=VpcOffering.list(
+                                  self.apiclient,
+                                  name='Default VPC offering',
+                                  listall=True
+                                  )
+        else:
+           vpc_off_list=VpcOffering.list(
+                                  self.apiclient,
+                                  name='Default VPC  offering with Netscaler',
+                                  listall=True
+                                  )
+        vpc_off=vpc_off_list[0]
+        self.debug("Creating a VPC with offering: %s" % vpc_off.id)
 
-        self.debug("Enabling the VPC offering created")
-        vpc_off.update(self.apiclient, state='Enabled')
-
-        self.debug("creating a VPC network with cidr: 10.1.1.1/16")
         self.services["vpc"]["cidr"] = '10.1.1.1/16'
         vpc = VPC.create(
                          self.apiclient,
@@ -1182,7 +1146,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
 
         self.network_offering = NetworkOffering.create(
                                         self.apiclient,
-                                        self.services["network_offering"],
+                                        self.services[value],
                                         conservemode=False
                                         )
         # Enable Network offering
@@ -1215,6 +1179,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
         # 1. Create a VPC with cidr - 10.1.1.1/16
         # 2. Add network1 with cidr - 10.2.1.1/24  to this VPC
         # 3. Network creation should fail.
+        # 4. Repeat test for offering which has Netscaler as external LB provider
 
         self.debug("Creating a VPC offering")
         vpc_off = VpcOffering.create(
@@ -1268,8 +1233,9 @@ class TestVPCNetworkRanges(cloudstackTestCase):
             "Network creation failed as network cidr range is outside of vpc")
         return
 
+    @data("network_offering", "network_offering_vpcns")
     @attr(tags=["advanced", "intervlan"])
-    def test_03_create_network_inside_range(self):
+    def test_03_create_network_inside_range(self, value):
         """ Test create network inside cidr range of VPC
         """
 
@@ -1277,18 +1243,25 @@ class TestVPCNetworkRanges(cloudstackTestCase):
         # 1. Create a VPC with cidr - 10.1.1.1/16
         # 2. Add network1 with cidr - 10.1.1.1/8  to this VPC
         # 3. Network creation should fail.
+        # 4. Repeat test for offering which has Netscaler as external LB provider
 
-        self.debug("Creating a VPC offering")
-        vpc_off = VpcOffering.create(
-                                     self.apiclient,
-                                     self.services["vpc_offering"]
-                                     )
+        if (value == "network_offering_vpcns" and self.ns_configured == False):
+           self.skipTest('Netscaler not configured: skipping test')
 
-        self.cleanup.append(vpc_off)
-        self.validate_vpc_offering(vpc_off)
-
-        self.debug("Enabling the VPC offering created")
-        vpc_off.update(self.apiclient, state='Enabled')
+        if (value == "network_offering"):
+           vpc_off_list=VpcOffering.list(
+                                  self.apiclient,
+                                  name='Default VPC offering',
+                                  listall=True
+                                  )
+        else:
+           vpc_off_list=VpcOffering.list(
+                                  self.apiclient,
+                                  name='Default VPC  offering with Netscaler',
+                                  listall=True
+                                  )
+        vpc_off=vpc_off_list[0]
+        self.debug("Creating a VPC with offering: %s" % vpc_off.id)
 
         self.debug("creating a VPC network with cidr: 10.1.1.1/16")
         self.services["vpc"]["cidr"] = '10.1.1.1/16'
@@ -1306,7 +1279,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
 
         self.network_offering = NetworkOffering.create(
                                         self.apiclient,
-                                        self.services["network_offering"],
+                                        self.services[value],
                                         conservemode=False
                                         )
         # Enable Network offering
@@ -1333,8 +1306,9 @@ class TestVPCNetworkRanges(cloudstackTestCase):
             "Network creation failed as network cidr range is inside of vpc")
         return
 
+    @data("network_offering", "network_offering_vpcns")
     @attr(tags=["advanced", "intervlan"])
-    def test_04_create_network_overlapping_range(self):
+    def test_04_create_network_overlapping_range(self, value):
         """ Test create network overlapping cidr range of VPC
         """
 
@@ -1344,20 +1318,26 @@ class TestVPCNetworkRanges(cloudstackTestCase):
         # 3. Add network2 with cidr - 10.1.1.1/24  to this VPC
         # 4. Add network3 with cidr - 10.1.1.1/26  to this VPC
         # 5. Network creation in step 3 & 4 should fail.
+        # 6. Repeat test for offering which has Netscaler as external LB provider
+
         self.services = Services().services
+        if (value == "network_offering_vpcns" and self.ns_configured == False):
+           self.skipTest('Netscaler not configured: skipping test')
 
-        self.debug("Creating a VPC offering")
-        vpc_off = VpcOffering.create(
-                                     self.apiclient,
-                                     self.services["vpc_offering"]
-                                     )
-
-        self.cleanup.append(vpc_off)
-        self.validate_vpc_offering(vpc_off)
-
-        self.debug("Enabling the VPC offering created")
-        vpc_off.update(self.apiclient, state='Enabled')
-
+        if (value == "network_offering"):
+           vpc_off_list=VpcOffering.list(
+                                  self.apiclient,
+                                  name='Default VPC offering',
+                                  listall=True
+                                  )
+        else:
+           vpc_off_list=VpcOffering.list(
+                                  self.apiclient,
+                                  name='Default VPC  offering with Netscaler',
+                                  listall=True
+                                  )
+        vpc_off=vpc_off_list[0]
+        self.debug("Creating a VPC with offering: %s" % vpc_off.id)
         self.debug("creating a VPC network with cidr: 10.1.1.1/16")
         self.services["vpc"]["cidr"] = '10.1.1.1/16'
         vpc = VPC.create(
@@ -1374,7 +1354,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
 
         self.network_offering = NetworkOffering.create(
                                         self.apiclient,
-                                        self.services["network_offering"],
+                                        self.services[value],
                                         conservemode=False
                                         )
         # Enable Network offering
@@ -1457,27 +1437,36 @@ class TestVPCNetworkRanges(cloudstackTestCase):
             "Network creation failed as network range overlaps each other")
         return
 
+    @data("network_offering", "network_offering_vpcns")
     @attr(tags=["advanced", "intervlan"])
-    def test_05_create_network_diff_account(self):
+    def test_05_create_network_diff_account(self, value):
         """ Test create network from different account in VPC
         """
 
         # Validate the following
         # 1. Create a VPC with cidr - 10.1.1.1/16
         # 2. Add network1 with cidr - 10.1.1.1/24  to this VPC
-        # 3. Network creation should fail.
+        # 3. Create another account
+        # 4. Create network using this account - Network creation should fail
+        # 5. Repeat test for offering which has Netscaler as external LB provider
 
-        self.debug("Creating a VPC offering")
-        vpc_off = VpcOffering.create(
-                                     self.apiclient,
-                                     self.services["vpc_offering"]
-                                     )
+        if (value == "network_offering_vpcns" and self.ns_configured == False):
+           self.skipTest('Netscaler not configured: skipping test')
 
-        self.cleanup.append(vpc_off)
-        self.validate_vpc_offering(vpc_off)
-
-        self.debug("Enabling the VPC offering created")
-        vpc_off.update(self.apiclient, state='Enabled')
+        if (value == "network_offering"):
+           vpc_off_list=VpcOffering.list(
+                                  self.apiclient,
+                                  name='Default VPC offering',
+                                  listall=True
+                                  )
+        else:
+           vpc_off_list=VpcOffering.list(
+                                  self.apiclient,
+                                  name='Default VPC  offering with Netscaler',
+                                  listall=True
+                                  )
+        vpc_off=vpc_off_list[0]
+        self.debug("Creating a VPC with offering: %s" % vpc_off.id)
 
         self.debug("creating a VPC network with cidr: 10.1.1.1/16")
         self.services["vpc"]["cidr"] = '10.1.1.1/16'
@@ -1495,7 +1484,7 @@ class TestVPCNetworkRanges(cloudstackTestCase):
 
         self.network_offering = NetworkOffering.create(
                                         self.apiclient,
-                                        self.services["network_offering"],
+                                        self.services[value],
                                         conservemode=False
                                         )
         # Enable Network offering
@@ -1532,7 +1521,6 @@ class TestVPCNetworkRanges(cloudstackTestCase):
             "Network creation failed as VPC belongs to different account")
         return
 
-
 class TestVPCNetworkUpgrade(cloudstackTestCase):
 
     @classmethod
@@ -1559,12 +1547,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                                             cls.services["service_offering"]
                                             )
         cls._cleanup.append(cls.service_offering)
-        cls.vpc_off = VpcOffering.create(
-                                     cls.api_client,
-                                     cls.services["vpc_offering"]
-                                     )
-        cls.vpc_off.update(cls.api_client, state='Enabled')
-        cls._cleanup.append(cls.vpc_off)
+
         return
 
     @classmethod
@@ -1594,7 +1577,6 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             self.debug("Warning: Exception during cleanup : %s" % e)
-            #raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def validate_vpc_offering(self, vpc_offering):
@@ -1646,7 +1628,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                 )
         self.debug("VPC network validated - %s" % network.name)
         return
-
+    
     @attr(tags=["advanced", "intervlan"])
     def test_01_network_services_upgrade(self):
         """ Test update Network that is part of a VPC to a network offering that has more services
@@ -1666,19 +1648,15 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
         # 8. Update network1 to NO2.
 
         self.debug("Creating a VPC offering..")
-        vpc_off = VpcOffering.create(
-                                     self.apiclient,
-                                     self.services["vpc_offering"]
-                                     )
 
-        self.cleanup.append(vpc_off)
-        self.validate_vpc_offering(vpc_off)
+        vpc_off_list=VpcOffering.list(
+                                  self.apiclient,
+                                  name='Default VPC offering',
+                                  listall=True
+                                  )
+        vpc_off=vpc_off_list[0]
+        self.debug("Creating a VPC with offering: %s" % vpc_off.id)
 
-        self.debug("Enabling the VPC offering created")
-        vpc_off.update(self.apiclient, state='Enabled')
-
-        self.debug("creating a VPC network in the account: %s" %
-                                                    self.account.name)
         self.services["vpc"]["cidr"] = '10.1.1.1/16'
         vpc = VPC.create(
                          self.apiclient,
@@ -2112,7 +2090,6 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
                             )
         return
 
-
 class TestVPCNetworkGc(cloudstackTestCase):
 
     @classmethod
@@ -2354,26 +2331,16 @@ class TestVPCNetworkGc(cloudstackTestCase):
         self.debug("Waiting for network garbage collection thread to run")
         # Wait for the network garbage collection thread to run
         wait_for_cleanup(self.apiclient,
-                         ["network.gc.interval", "network.gc.wait"]*2)
-        self.debug("Check if the VPC router is in stopped state?")
-        routers = Router.list(
-                              self.apiclient,
-                              account=self.account.name,
-                              domainid=self.account.domainid,
-                              listall=True
-                              )
-        self.assertEqual(
-                         isinstance(routers, list),
-                         True,
-                         "List routers shall return a valid response"
-                         )
-        router = routers[0]
-        # TODO: Add some more assertions
-        self.assertEqual(
-                    router.state,
-                    "Stopped",
-                    "Router state should be stopped after network gc"
-                 )
+                         ["network.gc.interval", "network.gc.wait"])
+
+        #Bug???: Network Acls are not cleared
+        netacls = NetworkACL.list(self.apiclient, networkid=self.network_1.id)
+        self.debug("List of NetACLS %s" % netacls)
+        self.assertEqual(netacls, None, "Netacls were not cleared after network GC thread is run")
+
+        lbrules = LoadBalancerRule.list(self.apiclient, networkid=self.network_1.id)
+        self.debug("List of LB Rules %s" % lbrules)
+        self.assertEqual(lbrules, None, "LBrules were not cleared after network GC thread is run")
         return
 
     @attr(tags=["advanced", "intervlan"])

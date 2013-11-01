@@ -23,7 +23,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.configuration.ConfigurationManager;
@@ -48,6 +47,8 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 
@@ -67,7 +68,6 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     NetworkACLDao _networkACLDao;
     @Inject
     NetworkACLItemDao _networkACLItemDao;
-    @Inject
     List<NetworkACLServiceProvider> _networkAclElements;
     @Inject
     NetworkModel _networkModel;
@@ -214,30 +214,35 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_ACL_ITEM_CREATE, eventDescription = "creating network ACL Item", create = true)
-    public NetworkACLItem createNetworkACLItem(Integer portStart, Integer portEnd, String protocol, List<String> sourceCidrList,
-                                                  Integer icmpCode, Integer icmpType, NetworkACLItem.TrafficType trafficType, Long aclId,
-                                                  String action, Integer number) {
-        NetworkACLItem.Action ruleAction = NetworkACLItem.Action.Allow;
-        if("deny".equalsIgnoreCase(action)){
-            ruleAction = NetworkACLItem.Action.Deny;
-        }
+    public NetworkACLItem createNetworkACLItem(final Integer portStart, final Integer portEnd, final String protocol, final List<String> sourceCidrList,
+                                                  final Integer icmpCode, final Integer icmpType, final NetworkACLItem.TrafficType trafficType, final Long aclId,
+                                                  final String action, Integer number) {
         // If number is null, set it to currentMax + 1 (for backward compatibility)
         if(number == null){
             number = _networkACLItemDao.getMaxNumberByACL(aclId) + 1;
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        final Integer numberFinal = number;
+        NetworkACLItemVO newRule = Transaction.execute(new TransactionCallback<NetworkACLItemVO>() {
+            @Override
+            public NetworkACLItemVO doInTransaction(TransactionStatus status) {
+                NetworkACLItem.Action ruleAction = NetworkACLItem.Action.Allow;
+                if("deny".equalsIgnoreCase(action)){
+                    ruleAction = NetworkACLItem.Action.Deny;
+                }
 
-        NetworkACLItemVO newRule = new NetworkACLItemVO(portStart, portEnd, protocol.toLowerCase(), aclId, sourceCidrList, icmpCode, icmpType, trafficType, ruleAction, number);
-        newRule = _networkACLItemDao.persist(newRule);
+                NetworkACLItemVO newRule = new NetworkACLItemVO(portStart, portEnd, protocol.toLowerCase(), aclId, sourceCidrList, icmpCode, icmpType, trafficType, ruleAction, numberFinal);
+                newRule = _networkACLItemDao.persist(newRule);
 
-        if (!_networkACLItemDao.setStateToAdd(newRule)) {
-            throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
-        }
-        CallContext.current().setEventDetails("ACL Item Id: " + newRule.getId());
+                if (!_networkACLItemDao.setStateToAdd(newRule)) {
+                    throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
+                }
+                CallContext.current().setEventDetails("ACL Item Id: " + newRule.getId());
 
-        txn.commit();
+                return newRule;
+            }
+        });
+
 
         return getNetworkACLItem(newRule.getId());
     }
@@ -466,6 +471,15 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
             s_logger.debug("Unable to find NetworkACL service provider for network: "+network.getId());
         }
         return handled;
+    }
+
+    public List<NetworkACLServiceProvider> getNetworkAclElements() {
+        return _networkAclElements;
+    }
+
+    @Inject
+    public void setNetworkAclElements(List<NetworkACLServiceProvider> networkAclElements) {
+        this._networkAclElements = networkAclElements;
     }
 
 }

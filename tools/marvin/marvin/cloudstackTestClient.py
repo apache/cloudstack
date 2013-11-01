@@ -19,24 +19,36 @@ import cloudstackConnection
 import asyncJobMgr
 import dbConnection
 from cloudstackAPI import *
-import random
-import string
-import hashlib
+
+'''
+@Desc  : CloudStackTestClient is encapsulated class for getting various \
+         clients viz., apiclient,dbconnection etc
+@Input : mgmtDetails : Management Server Details
+         dbSvrDetails: Database Server details of Management \
+                       Server. Retrieved from configuration file.
+         asyncTimeout :
+         defaultWorkerThreads :
+         logging :
+'''
 
 
 class cloudstackTestClient(object):
-    def __init__(self, mgtSvr=None, port=8096, user=None, passwd=None,
-                 apiKey=None, securityKey=None, asyncTimeout=3600,
-                 defaultWorkerThreads=10, logging=None):
+    def __init__(self, mgmtDetails,
+                 dbSvrDetails, asyncTimeout=3600,
+                 defaultWorkerThreads=10,
+                 logging=None):
         self.connection = \
-            cloudstackConnection.cloudConnection(mgtSvr, port, user, passwd,
-                                                 apiKey, securityKey,
-                                                 asyncTimeout, logging)
+            cloudstackConnection.cloudConnection(mgmtDetails,
+                                                 asyncTimeout,
+                                                 logging)
         self.apiClient =\
             cloudstackAPIClient.CloudStackAPIClient(self.connection)
         self.dbConnection = None
+        if dbSvrDetails is not None:
+                self.createDbConnection(dbSvrDetails.dbSvr, dbSvrDetails.port,
+                                        dbSvrDetails.user,
+                                        dbSvrDetails.passwd, dbSvrDetails.db)
         self.asyncJobMgr = None
-        self.ssh = None
         self.id = None
         self.defaultWorkerThreads = defaultWorkerThreads
 
@@ -48,10 +60,10 @@ class cloudstackTestClient(object):
     def identifier(self, id):
         self.id = id
 
-    def dbConfigure(self, host="localhost", port=3306, user='cloud',
-                    passwd='cloud', db='cloud'):
-        self.dbConnection = dbConnection.dbConnection(host, port, user, passwd,
-                                                      db)
+    def createDbConnection(self, host="localhost", port=3306, user='cloud',
+                           passwd='cloud', db='cloud'):
+        self.dbConnection = dbConnection.dbConnection(host, port, user,
+                                                      passwd, db)
 
     def isAdminContext(self):
         """
@@ -70,13 +82,6 @@ class cloudstackTestClient(object):
                 return 2  # domain-admin
         except:
             return 0  # user
-
-    def random_gen(self, size=6, chars=string.ascii_uppercase + string.digits):
-        """Generate Random Strings of variable length"""
-        randomstr = ''.join(random.choice(chars) for x in range(size))
-        if self.identifier:
-            return ''.join([self.identifier, '-', randomstr])
-        return randomstr
 
     def createUserApiClient(self, UserName, DomainName, acctType=0):
         if not self.isAdminContext():
@@ -148,17 +153,6 @@ class cloudstackTestClient(object):
 
     def getDbConnection(self):
         return self.dbConnection
-
-    def executeSql(self, sql=None):
-        if sql is None or self.dbConnection is None:
-            return None
-
-        return self.dbConnection.execute()
-
-    def executeSqlFromFile(self, sqlFile=None):
-        if sqlFile is None or self.dbConnection is None:
-            return None
-        return self.dbConnection.executeSqlFromFile(sqlFile)
 
     def getApiClient(self):
         self.apiClient.id = self.identifier

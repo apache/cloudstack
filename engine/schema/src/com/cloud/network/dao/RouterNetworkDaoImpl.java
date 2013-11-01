@@ -36,7 +36,7 @@ public class RouterNetworkDaoImpl extends GenericDaoBase<RouterNetworkVO, Long> 
         super();
 
         RouterNetworksSearch = createSearchBuilder(Long.class);
-        RouterNetworksSearch.selectField(RouterNetworksSearch.entity().getNetworkId());
+        RouterNetworksSearch.selectFields(RouterNetworksSearch.entity().getNetworkId());
         RouterNetworksSearch.and("routerId", RouterNetworksSearch.entity().getRouterId(), Op.EQ);
         RouterNetworksSearch.done();
         

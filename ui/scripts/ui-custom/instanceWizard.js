@@ -267,6 +267,8 @@
                     },
 
                     'select-iso': function($step, formData) {
+                        $step.find('.section.custom-size').hide();
+                        
                         var originalValues = function(formData) {
                             var $inputs = $step.find('.wizard-step-conditional:visible')
                                 .find('input[type=radio]');
@@ -288,7 +290,7 @@
 
                         return {
                             response: {
-                                success: function(args) {
+                                success: function(args) {                                    
                                     if (formData['select-template']) {
                                         $step.find('.wizard-step-conditional').filter(function() {
                                             return $(this).hasClass(formData['select-template']);
@@ -380,6 +382,21 @@
                                     });
 
                                     originalValues(formData);
+
+                                    var custom = args.customHidden({
+                                        context: context,
+                                        data: args.data
+                                    });
+
+                                    $step.find('.custom-size-label').remove();
+
+                                    if (!custom) {
+                                        $step.find('.section.custom-size').show();
+                                        $step.addClass('custom-disk-size');
+                                    } else {
+                                        $step.find('.section.custom-size').hide();
+                                        $step.removeClass('custom-disk-size');
+                                    }
                                 }
                             }
                         };
@@ -407,7 +424,27 @@
                                         }, {
                                             'wizard-field': 'service-offering'
                                         })
-                                    );
+                                    );                                    
+
+                                    $step.find('input[type=radio]').bind('change', function() {
+                                        var $target = $(this);
+                                        var val = $target.val();
+                                        var item = $.grep(args.data.serviceOfferings, function(elem) {
+                                            return elem.id == val;
+                                        })[0];
+
+                                        if (!item) return true;
+
+                                        var custom = item[args.customFlag];
+
+                                        if (custom) {
+                                            $step.addClass('custom-size');
+                                        } else {
+                                            $step.removeClass('custom-size');
+                                        }
+
+                                        return true;
+                                    });
 
                                     originalValues(formData);
                                 }
@@ -736,16 +773,23 @@
                                     filterNetworkList(-1);
 
                                     // Security groups (alt. page)
-                                    $step.find('.security-groups .select-container').append(
-                                        makeSelects('security-groups', args.data.securityGroups, {
-                                            name: 'name',
-                                            desc: 'description',
-                                            id: 'id'
-                                        }, {
-                                            type: 'checkbox',
-                                            'wizard-field': 'security-groups'
-                                        })
-                                    );
+                                    var $sgSelects = makeSelects('security-groups', args.data.securityGroups, {
+                                        name: 'name',
+                                        desc: 'description',
+                                        id: 'id'
+                                    }, {
+                                        type: 'checkbox',
+                                        'wizard-field': 'security-groups'
+                                    });
+                                    $step.find('.security-groups .select-container').append($sgSelects);
+
+                                    //If there is only one security group and the only one is 'default', make it selected by default
+                                    if ($sgSelects.length == 1) {
+                                        var $firstCheckbox = $sgSelects.eq(0);
+                                      if ($firstCheckbox.find('div .name').text() == 'default') {
+                                        $firstCheckbox.find('input:checkbox').click();
+                                      }
+                                  }
 
                                     originalValues(formData);
                                     checkShowAddNetwork($newNetwork);
@@ -1007,20 +1051,24 @@
                 // Setup tabs and slider
                 $wizard.find('.section.custom-size .size.max span').html(maxCustomDiskSize);
                 $wizard.find('.tab-view').tabs();
-                $wizard.find('.slider').slider({
-                    min: 1,
-                    max: maxCustomDiskSize,
-                    start: function(event) {
-                        $wizard.find('div.data-disk-offering div.custom-size input[type=radio]').click();
-                    },
-                    slide: function(event, ui) {
-                        $wizard.find('div.data-disk-offering div.custom-size input[type=text]').val(
-                            ui.value
-                        );
-                        $wizard.find('div.data-disk-offering span.custom-disk-size').html(
-                            ui.value
-                        );
-                    }
+                $wizard.find('.slider').each(function() {
+                   var $slider = $(this);
+
+                    $slider.slider({
+                        min: 1,
+                        max: maxCustomDiskSize,
+                        start: function(event) {
+                            $slider.closest('.section.custom-size').find('input[type=radio]').click();
+                        },
+                        slide: function(event, ui) {
+                            $slider.closest('.section.custom-size').find('input[type=text]').val(
+                                ui.value
+                            );
+                            $slider.closest('.step').find('span.custom-disk-size').html(
+                                ui.value
+                            );
+                        }
+                    });
                 });
 
                 $wizard.find('div.data-disk-offering div.custom-size input[type=text]').bind('change', function() {

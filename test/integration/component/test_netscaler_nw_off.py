@@ -408,13 +408,12 @@ class TestAddMultipleNSDiffZone(cloudstackTestCase):
         for zone in zones:
             if zone.networktype == 'Advanced':
                 zone_list.append(zone)
-
         self.assertGreater(
                            len(zone_list),
                            1,
                            "Atleast 2 advanced mode zones should be present for this test"
                            )
-
+        zoneid=zone_list[0].id
         physical_networks = PhysicalNetwork.list(
                                                  self.apiclient,
                                                  zoneid=zone_list[0].id
@@ -424,43 +423,12 @@ class TestAddMultipleNSDiffZone(cloudstackTestCase):
                 True,
                 "There should be atleast one physical network for advanced zone"
                 )
-        physical_network = physical_networks[0]
         self.debug("Adding netscaler device: %s" %
                                     self.services["netscaler_1"]["ipaddress"])
-        netscaler_1 = NetScaler.add(
-                                  self.apiclient,
-                                  self.services["netscaler_1"],
-                                  physicalnetworkid=physical_network.id
-                                  )
+        netscaler_1 = add_netscaler(self.apiclient, zoneid, self.services["netscaler_1"])
         self.cleanup.append(netscaler_1)
-        self.debug("Checking if Netscaler network service provider is enabled?")
 
-        nw_service_providers = NetworkServiceProvider.list(
-                                        self.apiclient,
-                                        name='Netscaler',
-                                        physicalnetworkid=physical_network.id
-                                        )
-        self.assertEqual(
-                         isinstance(nw_service_providers, list),
-                         True,
-                         "Network service providers list should not be empty"
-                         )
-        netscaler_provider = nw_service_providers[0]
-        if netscaler_provider.state != 'Enabled':
-            self.debug("Netscaler provider is not enabled. Enabling it..")
-            response = NetworkServiceProvider.update(
-                                          self.apiclient,
-                                          id=netscaler_provider.id,
-                                          state='Enabled'
-                                          )
-            self.assertEqual(
-                        response.state,
-                        "Enabled",
-                        "Network service provider should be in enabled state"
-                         )
-        else:
-            self.debug("Netscaler service provider is already enabled.")
-
+        physical_network = physical_networks[0]
         ns_list = NetScaler.list(
                                  self.apiclient,
                                  lbdeviceid=netscaler_1.lbdeviceid
@@ -492,6 +460,7 @@ class TestAddMultipleNSDiffZone(cloudstackTestCase):
                                                  self.apiclient,
                                                  zoneid=zone_list[1].id
                                                  )
+        zoneid=zone_list[1].id
         self.assertEqual(
                 isinstance(physical_networks, list),
                 True,
@@ -501,11 +470,7 @@ class TestAddMultipleNSDiffZone(cloudstackTestCase):
 
         self.debug("Adding netscaler device: %s" %
                                     self.services["netscaler_2"]["ipaddress"])
-        netscaler_2 = NetScaler.add(
-                                  self.apiclient,
-                                  self.services["netscaler_2"],
-                                  physicalnetworkid=physical_network.id
-                                  )
+        netscaler_2 = add_netscaler(self.apiclient, zoneid, self.services["netscaler_2"])
         self.cleanup.append(netscaler_2)
         ns_list = NetScaler.list(
                                  self.apiclient,
@@ -2394,11 +2359,10 @@ class TestNOWithNetscaler(cloudstackTestCase):
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
+        cls._cleanup = []
         try:
            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler_1"])
-           cls._cleanup = [
-                    cls.netscaler
-                    ]
+           cls._cleanup.append(cls.netscaler)
            cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
@@ -2438,7 +2402,7 @@ class TestNOWithNetscaler(cloudstackTestCase):
         return
 
     @attr(tags = ["advancedns"])
-    def test_01_network_off_without_conserve_mode(self):
+    def test_01_netoff_without_conserve_mode(self):
         """Test Nw off with Conserve mode off, VR-All services, LB-netscaler
         """
 
@@ -2707,7 +2671,7 @@ class TestNOWithNetscaler(cloudstackTestCase):
         return
 
     @attr(tags = ["advancedns"])
-    def test_02_network_off_with_conserve_mode_netscaler(self):
+    def test_02_net_off_conserve_mode_ns(self):
         """Test NW off with Conserve mode ON, LB-Netscaler and VR-All services
         """
 

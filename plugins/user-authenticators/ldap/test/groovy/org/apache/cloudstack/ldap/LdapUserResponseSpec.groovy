@@ -64,4 +64,22 @@ class LdapUserResponseSpec extends spock.lang.Specification {
 		then: "Get username returns the set value."
 		response.getUsername() == "rmurphy"
     }
+
+    def "Testing successful setting of LdapUserResponse domain"() {
+	given: "We have an LdapUserResponse"
+	LdapUserResponse response = new LdapUserResponse()
+	when: "A domain is set"
+	response.setDomain("engineering")
+	then: "Get domain returns the set value."
+	response.getDomain() == "engineering"
+    }
+
+    def "Testing setting of LdapUserResponse domain to null"() {
+	given: "We have an LdapUserResponse"
+	LdapUserResponse response = new LdapUserResponse()
+	when: "A domain is set"
+	response.setDomain(null)
+	then: "Get domain returns the set value."
+	response.getDomain() == null
+    }
 }

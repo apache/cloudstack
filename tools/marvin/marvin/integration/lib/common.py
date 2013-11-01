@@ -94,6 +94,22 @@ def add_netscaler(apiclient, zoneid, NSservice):
 
     return netscaler
 
+def get_region(apiclient, services=None):
+    "Returns a default region"
+
+    cmd = listRegions.listRegionsCmd()
+    if services:
+        if "regionid" in services:
+            cmd.id = services["regionid"]
+
+    regions = apiclient.listRegions(cmd)
+
+    if isinstance(regions, list):
+        assert len(regions) > 0
+        return regions[0]
+    else:
+        raise Exception("Failed to find specified region.")
+
 def get_domain(apiclient, services=None):
     "Returns a default domain"
 

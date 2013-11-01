@@ -29,12 +29,12 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value=PortProfileDao.class) @DB(txn=false)
+@Local(value=PortProfileDao.class) @DB()
 public class PortProfileDaoImpl extends GenericDaoBase<PortProfileVO, Long> implements PortProfileDao {
 	protected static final Logger s_logger     = Logger.getLogger(PortProfileDaoImpl.class);
 	
@@ -66,7 +66,7 @@ public class PortProfileDaoImpl extends GenericDaoBase<PortProfileVO, Long> impl
     	String condition = "(trunk_low_vlan_id BETWEEN " + lowVlanId + " AND " + highVlanId + ")" + " OR (trunk_high_vlan_id BETWEEN " + lowVlanId + " AND " + highVlanId + ")";
     	String selectSql = "SELECT * FROM `" + dbName + "`.`" + tableName + "` WHERE " + condition;
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
             ResultSet rs = stmt.executeQuery();

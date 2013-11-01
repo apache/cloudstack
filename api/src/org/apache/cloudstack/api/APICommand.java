@@ -22,6 +22,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 
 @Retention(RetentionPolicy.RUNTIME)
@@ -40,4 +41,6 @@ public @interface APICommand {
     String since() default "";
     
     ResponseView responseView() default ResponseView.Admin;
+
+    RoleType[] authorized() default {};
 }

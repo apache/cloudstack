@@ -6,7 +6,7 @@ apt-get -y update
 apt-get -y install curl unzip
 apt-get clean
 
-echo 'cloud ALL=NOPASSWD:ALL' > /etc/sudoers.d/cloud
+echo 'cloud ALL=NOPASSWD:/bin/chmod, /bin/cp, /bin/mkdir, /bin/mount, /bin/umount' > /etc/sudoers.d/cloud
 
 # Tweak sshd to prevent DNS resolution (speed up logins)
 echo 'UseDNS no' >> /etc/ssh/sshd_config

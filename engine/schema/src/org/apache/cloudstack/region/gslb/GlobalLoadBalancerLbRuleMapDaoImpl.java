@@ -28,7 +28,7 @@ import java.util.List;
 
 @Component
 @Local(value={GlobalLoadBalancerLbRuleMapDao.class})
-@DB(txn = false)
+@DB()
 public class GlobalLoadBalancerLbRuleMapDaoImpl extends GenericDaoBase<GlobalLoadBalancerLbRuleMapVO, Long> implements GlobalLoadBalancerLbRuleMapDao {
 
     private final SearchBuilder<GlobalLoadBalancerLbRuleMapVO> listByGslbRuleId;

@@ -30,7 +30,7 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 @Local(value={AccountGuestVlanMapDao.class})
-@DB(txn=false)
+@DB
 public class AccountGuestVlanMapDaoImpl extends GenericDaoBase<AccountGuestVlanMapVO, Long> implements AccountGuestVlanMapDao {
 
     protected SearchBuilder<AccountGuestVlanMapVO> AccountSearch;

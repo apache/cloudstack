@@ -192,13 +192,6 @@ public class VMSnapshotManagerTest {
         when(vmMock.getState()).thenReturn(State.Running);
         _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID,"","",true);
 
-        when(_vmSnapshotDao.findCurrentSnapshotByVmId(anyLong())).thenReturn(null);
-        doReturn(new ArrayList<VolumeTO>()).when(_vmSnapshotMgr).getVolumeTOList(anyLong());
-        doReturn(new CreateVMSnapshotAnswer(null,true,"")).when(_vmSnapshotMgr).sendToPool(anyLong(), any(CreateVMSnapshotCommand.class));
-        doNothing().when(_vmSnapshotMgr).processAnswer(any(VMSnapshotVO.class),
-                any(UserVmVO.class), any(Answer.class), anyLong());
-        doReturn(true).when(_vmSnapshotMgr).vmSnapshotStateTransitTo(any(VMSnapshotVO.class),any(VMSnapshot.Event.class));
-        _vmSnapshotMgr.createVmSnapshotInternal(vmMock, mock(VMSnapshotVO.class), 5L);
     }
 
 }

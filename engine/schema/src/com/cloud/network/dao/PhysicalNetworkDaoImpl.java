@@ -32,7 +32,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value=PhysicalNetworkDao.class) @DB(txn=false)
+@Local(value=PhysicalNetworkDao.class) @DB()
 public class PhysicalNetworkDaoImpl extends GenericDaoBase<PhysicalNetworkVO, Long> implements PhysicalNetworkDao {
     final SearchBuilder<PhysicalNetworkVO> ZoneSearch;
 

@@ -20,14 +20,45 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.utils.component.ComponentMethodInterceptor;
 
-public class ActionEventInterceptor implements ComponentMethodInterceptor {
+public class ActionEventInterceptor implements ComponentMethodInterceptor, MethodInterceptor {
 
 	public ActionEventInterceptor() {
 	}
+	
+	@Override
+    public Object invoke(MethodInvocation invocation) throws Throwable {
+        Method m = invocation.getMethod();
+        Object target = invocation.getThis();
+        
+        if ( getActionEvents(m).size() == 0 ) {
+            /* Look for annotation on impl class */
+            m = target.getClass().getMethod(m.getName(), m.getParameterTypes());
+        }
+        
+        Object interceptorData = null;
+        
+        boolean success = true;
+        try {
+            interceptorData = interceptStart(m, target);
+            
+            Object result = invocation.proceed();
+            success = true;
+            
+            return result;
+        } finally {
+            if ( success ) {
+                interceptComplete(m, target, interceptorData);
+            } else {
+                interceptException(m, target, interceptorData);
+            }
+        }
+    }
 
 	@Override
     public Object interceptStart(Method method, Object target) {

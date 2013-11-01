@@ -46,6 +46,8 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -206,16 +208,15 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
             s_logger.debug("public network deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIp4Address());
         }
 
-        IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
+        final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
         if (ip != null && nic.getReservationStrategy() != Nic.ReservationStrategy.Managed) {
-
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
-
-            _ipAddrMgr.markIpAsUnavailable(ip.getId());
-            _ipAddressDao.unassignIpAddress(ip.getId());
-
-            txn.commit();
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                _ipAddrMgr.markIpAsUnavailable(ip.getId());
+                _ipAddressDao.unassignIpAddress(ip.getId());
+                }
+            });
         }
         nic.deallocate();
 

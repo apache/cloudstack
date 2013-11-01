@@ -235,9 +235,9 @@ var addGuestNetworkDialog = {
                     label: 'label.physical.network',
                     dependsOn: 'zoneId',
                     select: function(args) {
-                        if ('physicalNetworks' in args.context) {
+                        if ('physicalNetworks' in args.context) { //Infrastructure menu > zone detail > guest traffic type > network tab (only shown in advanced zone) > add guest network dialog
                             addGuestNetworkDialog.physicalNetworkObjs = args.context.physicalNetworks;
-                        } else {
+                        } else { //Network menu > guest network section > add guest network dialog
                             var selectedZoneId = args.$form.find('.form-item[rel=zoneId]').find('select').val();
                             $.ajax({
                                 url: createURL('listPhysicalNetworks'),
@@ -245,8 +245,33 @@ var addGuestNetworkDialog = {
                                     zoneid: selectedZoneId
                                 },
                                 async: false,
-                                success: function(json) {
-                                    addGuestNetworkDialog.physicalNetworkObjs = json.listphysicalnetworksresponse.physicalnetwork;
+                                success: function(json) {                                    
+                                	var items = [];
+                                	var physicalnetworks = json.listphysicalnetworksresponse.physicalnetwork;
+                                	if (physicalnetworks != null) {
+                                	    for (var i = 0; i < physicalnetworks.length; i++) {
+                                	    	$.ajax({
+                                	    		url: createURL('listTrafficTypes'),
+                                	    		data: {
+                                	    			physicalnetworkid: physicalnetworks[i].id
+                                	    		},
+                                	    		async: false,
+                                	    		success: function(json) {                                	    			
+                                	    			var traffictypes = json.listtraffictypesresponse.traffictype;
+                                	    			if (traffictypes != null) {
+                                	    				for (var k = 0; k < traffictypes.length; k++) {
+                                	    					if (traffictypes[k].traffictype == 'Guest') {
+                                	    						items.push(physicalnetworks[i]);
+                                	    						break;
+                                	    					}
+                                	    				}
+                                	    			} 
+                                	    		}
+                                	    	});
+                                	    }	
+                                	}  
+                                	
+                                	addGuestNetworkDialog.physicalNetworkObjs = items;                                	
                                 }
                             });
                         }
@@ -413,7 +438,7 @@ var addGuestNetworkDialog = {
                 subdomainaccess: {
                     label: 'label.subdomain.access',
                     isBoolean: true,
-                    isHidden: true,
+                    isHidden: true
                 },
                 account: {
                     label: 'label.account'
@@ -830,6 +855,7 @@ cloudStack.preFilter = {
                 args.$form.find('.form-item[rel=isPublic]').hide();
             }
             args.$form.find('.form-item[rel=isFeatured]').hide();
+            args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
         }
     },
     addLoadBalancerDevice: function(args) { //add netscaler device OR add F5 device
@@ -1143,8 +1169,11 @@ var addExtraPropertiesToGuestNetworkObject = function(jsonObj) {
             jsonObj.scope = "Account (" + jsonObj.domain + ", " + jsonObj.account + ")";
     }
 
-    if (jsonObj.vlan == null && jsonObj.broadcasturi != null) {
+    if (jsonObj.vlan == null && jsonObj.broadcasturi != null && jsonObj.broadcasturi.substring(0,7) == "vlan://") {
         jsonObj.vlan = jsonObj.broadcasturi.replace("vlan://", "");
+    }
+    if(jsonObj.vxlan == null && jsonObj.broadcasturi != null && jsonObj.broadcasturi.substring(0,8) == "vxlan://") {
+        jsonObj.vxlan = jsonObj.broadcasturi.replace("vxlan://", "");   	
     }
 }
 

@@ -39,13 +39,11 @@ public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     @Column(name="name")
     String name;
 
-
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
 
     @Column(name=GenericDao.CREATED_COLUMN)
     private Date created;
-
 
     @Column(name="account_id")
     private long accountId;
@@ -80,8 +78,6 @@ public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     @Column(name="project_name")
     private String projectName;
 
-
-
     public InstanceGroupJoinVO() {
     }
 
@@ -90,30 +86,14 @@ public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         return id;
     }
 
-
-    @Override
-    public void setId(long id) {
-        this.id = id;
-
-    }
-
     @Override
     public String getUuid() {
         return uuid;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
-
     @Override
     public long getAccountId() {
         return accountId;
-    }
-
-    public void setAccountId(long accountId) {
-        this.accountId = accountId;
     }
 
     @Override
@@ -121,17 +101,9 @@ public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         return accountUuid;
     }
 
-    public void setAccountUuid(String accountUuid) {
-        this.accountUuid = accountUuid;
-    }
-
     @Override
     public String getAccountName() {
         return accountName;
-    }
-
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
     }
 
     @Override
@@ -139,17 +111,9 @@ public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         return accountType;
     }
 
-    public void setAccountType(short accountType) {
-        this.accountType = accountType;
-    }
-
     @Override
     public long getDomainId() {
         return domainId;
-    }
-
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
     }
 
     @Override
@@ -157,17 +121,9 @@ public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         return domainUuid;
     }
 
-    public void setDomainUuid(String domainUuid) {
-        this.domainUuid = domainUuid;
-    }
-
     @Override
     public String getDomainName() {
         return domainName;
-    }
-
-    public void setDomainName(String domainName) {
-        this.domainName = domainName;
     }
 
     @Override
@@ -175,16 +131,8 @@ public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         return domainPath;
     }
 
-    public void setDomainPath(String domainPath) {
-        this.domainPath = domainPath;
-    }
-
     public long getProjectId() {
         return projectId;
-    }
-
-    public void setProjectId(long projectId) {
-        this.projectId = projectId;
     }
 
     @Override
@@ -192,42 +140,20 @@ public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         return projectUuid;
     }
 
-    public void setProjectUuid(String projectUuid) {
-        this.projectUuid = projectUuid;
-    }
-
     @Override
     public String getProjectName() {
         return projectName;
-    }
-
-    public void setProjectName(String projectName) {
-        this.projectName = projectName;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public Date getRemoved() {
         return removed;
-    }
-
-    public void setRemoved(Date removed) {
-        this.removed = removed;
     }
 
     public Date getCreated() {
         return created;
     }
-
-    public void setCreated(Date created) {
-        this.created = created;
-    }
-
-
 }

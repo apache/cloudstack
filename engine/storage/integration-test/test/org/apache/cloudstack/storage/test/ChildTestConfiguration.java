@@ -16,28 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.test;
 
-import java.io.IOException;
-
-import org.apache.cloudstack.acl.APIChecker;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.engine.service.api.OrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
-import org.apache.cloudstack.framework.rpc.RpcProvider;
-import org.apache.cloudstack.storage.cache.manager.StorageCacheManagerImpl;
-import org.apache.cloudstack.storage.test.ChildTestConfiguration.Library;
-import org.apache.cloudstack.test.utils.SpringUtils;
-
-import org.mockito.Mockito;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.ComponentScan.Filter;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
-import org.springframework.core.type.classreading.MetadataReader;
-import org.springframework.core.type.classreading.MetadataReaderFactory;
-import org.springframework.core.type.filter.TypeFilter;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.capacity.dao.CapacityDaoImpl;
@@ -49,10 +27,12 @@ import com.cloud.dc.dao.DataCenterDaoImpl;
 import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl;
 import com.cloud.dc.dao.DataCenterVnetDaoImpl;
-import com.cloud.dc.dao.DcDetailsDaoImpl;
+import com.cloud.dc.dao.DataCenterDetailsDaoImpl;
 import com.cloud.dc.dao.HostPodDaoImpl;
 import com.cloud.dc.dao.PodVlanDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.dao.EventDaoImpl;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.host.dao.HostDetailsDaoImpl;
@@ -78,7 +58,6 @@ import com.cloud.storage.dao.VolumeDaoImpl;
 import com.cloud.storage.dao.VolumeHostDaoImpl;
 import com.cloud.storage.download.DownloadMonitorImpl;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
-import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.AccountManager;
@@ -94,6 +73,26 @@ import com.cloud.vm.dao.UserVmDaoImpl;
 import com.cloud.vm.dao.UserVmDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
+import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.service.api.OrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
+import org.apache.cloudstack.framework.rpc.RpcProvider;
+import org.apache.cloudstack.storage.cache.manager.StorageCacheManagerImpl;
+import org.apache.cloudstack.storage.test.ChildTestConfiguration.Library;
+import org.apache.cloudstack.test.utils.SpringUtils;
+import org.mockito.Mockito;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.core.type.classreading.MetadataReader;
+import org.springframework.core.type.classreading.MetadataReaderFactory;
+import org.springframework.core.type.filter.TypeFilter;
+
+import java.io.IOException;
 
 @Configuration
 @ComponentScan(basePackageClasses = { NicDaoImpl.class, VMInstanceDaoImpl.class, VMTemplateHostDaoImpl.class,
@@ -102,12 +101,12 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
         HostPodDaoImpl.class, VMTemplateZoneDaoImpl.class, VMTemplateDetailsDaoImpl.class, HostDetailsDaoImpl.class,
         HostTagsDaoImpl.class, HostTransferMapDaoImpl.class, DataCenterIpAddressDaoImpl.class,
         DataCenterLinkLocalIpAddressDaoImpl.class, DataCenterVnetDaoImpl.class, PodVlanDaoImpl.class,
-        DcDetailsDaoImpl.class, DiskOfferingDaoImpl.class, StoragePoolHostDaoImpl.class, UserVmDaoImpl.class,
+        DataCenterDetailsDaoImpl.class, DiskOfferingDaoImpl.class, StoragePoolHostDaoImpl.class, UserVmDaoImpl.class,
         UserVmDetailsDaoImpl.class, ServiceOfferingDaoImpl.class, CapacityDaoImpl.class, SnapshotDaoImpl.class,
         VMSnapshotDaoImpl.class, OCFS2ManagerImpl.class, ClusterDetailsDaoImpl.class, SecondaryStorageVmDaoImpl.class,
         ConsoleProxyDaoImpl.class, StoragePoolWorkDaoImpl.class, StorageCacheManagerImpl.class, UserDaoImpl.class,
         DataCenterDaoImpl.class, StoragePoolDetailsDaoImpl.class, DomainDaoImpl.class, DownloadMonitorImpl.class,
-        AccountDaoImpl.class }, includeFilters = { @Filter(value = Library.class, type = FilterType.CUSTOM) },
+        AccountDaoImpl.class, ActionEventUtils.class, EventDaoImpl.class}, includeFilters = { @Filter(value = Library.class, type = FilterType.CUSTOM) },
         useDefaultFilters = false)
 public class ChildTestConfiguration extends TestConfiguration {
 
@@ -184,12 +183,6 @@ public class ChildTestConfiguration extends TestConfiguration {
     @Bean
     public VirtualMachineManager vmMgr() {
         return Mockito.mock(VirtualMachineManager.class);
-    }
-
-
-    @Bean
-    public SnapshotManager snapshotMgr() {
-        return Mockito.mock(SnapshotManager.class);
     }
 
     @Bean

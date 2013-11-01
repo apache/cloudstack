@@ -17,7 +17,6 @@
 package com.cloud.storage;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +40,7 @@ public class JavaStorageLayer implements StorageLayer {
     
     public JavaStorageLayer(boolean makeWorldWriteable) {
         this();
-        this._makeWorldWriteable = makeWorldWriteable;
+        _makeWorldWriteable = makeWorldWriteable;
     }
 
     @Override
@@ -171,7 +170,7 @@ public class JavaStorageLayer implements StorageLayer {
             File dir = new File(dirName);
             if (dir.exists()) {
                 String uniqDirName = dir.getAbsolutePath() + File.separator + UUID.randomUUID().toString();
-                if (this.mkdir(uniqDirName)) {
+                if (mkdir(uniqDirName)) {
                     return new File(uniqDirName);
                 }
             }
@@ -219,6 +218,7 @@ public class JavaStorageLayer implements StorageLayer {
     	return dirPaths;
     }
     
+    @Override
     public boolean setWorldReadableAndWriteable(File file) {
     	return (file.setReadable(true, false) && file.setWritable(true, false));
     }

@@ -27,7 +27,6 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -36,6 +35,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
@@ -68,7 +68,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class DownloadListener implements Listener {
 
 
-	private static final class StatusTask extends TimerTask {
+	private static final class StatusTask extends ManagedContextTimerTask {
 		private final DownloadListener dl;
 		private final RequestType reqType;
 
@@ -78,13 +78,13 @@ public class DownloadListener implements Listener {
 		}
 
 		@Override
-		public void run() {
+		protected void runInContext() {
 		  dl.sendCommand(reqType);
 
 		}
 	}
 
-	private static final class TimeoutTask extends TimerTask {
+	private static final class TimeoutTask extends ManagedContextTimerTask {
 		private final DownloadListener dl;
 
 		public TimeoutTask( DownloadListener dl) {
@@ -92,7 +92,7 @@ public class DownloadListener implements Listener {
 		}
 
 		@Override
-		public void run() {
+		protected void runInContext() {
 		  dl.checkProgress();
 		}
 	}

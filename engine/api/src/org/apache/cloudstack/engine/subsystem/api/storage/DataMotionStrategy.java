@@ -26,9 +26,9 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
 
 public interface DataMotionStrategy {
-    boolean canHandle(DataObject srcData, DataObject destData);
+    StrategyPriority canHandle(DataObject srcData, DataObject destData);
 
-    boolean canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost);
+    StrategyPriority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost);
 
     Void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback);
 

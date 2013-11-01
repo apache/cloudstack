@@ -17,14 +17,15 @@
 package org.apache.cloudstack.framework.config.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
@@ -32,9 +33,10 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.commons.lang.ObjectUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -64,14 +66,13 @@ import com.cloud.utils.exception.CloudRuntimeException;
  *     when constructing a ConfigKey then configuration server should use the
  *     validation class to validate the value the admin input for the key.
  */
-public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, SystemIntegrityChecker {
+public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     private final static Logger s_logger = Logger.getLogger(ConfigDepotImpl.class);
     @Inject
     ConfigurationDao   _configDao;
-    @Inject
     List<Configurable> _configurables;
-    @Inject
     List<ScopedConfigStorage> _scopedStorages;
+    Set<Configurable> _configured = Collections.synchronizedSet(new HashSet<Configurable>());
 
     HashMap<String, Pair<String, ConfigKey<?>>> _allKeys = new HashMap<String, Pair<String, ConfigKey<?>>>(1007);
 
@@ -85,52 +86,58 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, SystemInt
         return value != null ? value.second() : null;
     }
 
+    @PostConstruct
     @Override
     public void populateConfigurations() {
         Date date = new Date();
         for (Configurable configurable : _configurables) {
-            for (ConfigKey<?> key : configurable.getConfigKeys()) {
-                ConfigurationVO vo = _configDao.findById(key.key());
-                if (vo == null) {
-                    vo = new ConfigurationVO(configurable.getConfigComponentName(), key);
-                    vo.setUpdated(date);
-                    _configDao.persist(vo);
-                } else {
-                    if (vo.isDynamic() != key.isDynamic() ||
-                        !vo.getDescription().equals(key.description()) ||
-                        ((vo.getDefaultValue() != null && key.defaultValue() == null) ||
-                         (vo.getDefaultValue() == null && key.defaultValue() != null) ||
-                        !vo.getDefaultValue().equals(key.defaultValue()))) {
-                        vo.setDynamic(key.isDynamic());
-                        vo.setDescription(key.description());
-                        vo.setDefaultValue(key.defaultValue());
-                        vo.setUpdated(date);
-                        _configDao.persist(vo);
-                    }
-                }
-            }
+            populateConfiguration(date, configurable);
         }
     }
 
+    protected void populateConfiguration(Date date, Configurable configurable) {
+        if ( _configured.contains(configurable) )
+            return;
+        
+        s_logger.debug("Retrieving keys from " + configurable.getClass().getSimpleName());
+
+        for (ConfigKey<?> key : configurable.getConfigKeys()) {
+            Pair<String, ConfigKey<?>> previous = _allKeys.get(key.key());
+            if (previous != null && !previous.first().equals(configurable.getConfigComponentName())) {
+                throw new CloudRuntimeException("Configurable " + configurable.getConfigComponentName() + " is adding a key that has been added before by " + previous.first() +
+                                                ": " + key.toString());
+            }
+            _allKeys.put(key.key(), new Pair<String, ConfigKey<?>>(configurable.getConfigComponentName(), key));
+            
+            ConfigurationVO vo = _configDao.findById(key.key());
+            if (vo == null) {
+                vo = new ConfigurationVO(configurable.getConfigComponentName(), key);
+                vo.setUpdated(date);
+                _configDao.persist(vo);
+            } else {
+                if (vo.isDynamic() != key.isDynamic() ||
+                    !ObjectUtils.equals(vo.getDescription(), key.description()) ||
+                    !ObjectUtils.equals(vo.getDefaultValue(), key.defaultValue())) {
+                    vo.setDynamic(key.isDynamic());
+                    vo.setDescription(key.description());
+                    vo.setDefaultValue(key.defaultValue());
+                    vo.setUpdated(date);
+                    _configDao.persist(vo);
+                }
+            }
+        }
+        
+        _configured.add(configurable);
+    }
+
+    @Override
+    public void populateConfiguration(Configurable configurable) {
+        populateConfiguration(new Date(), configurable);
+    }
+    
     @Override
     public List<String> getComponentsInDepot() {
         return new ArrayList<String>();
-    }
-
-    @Override
-    @PostConstruct
-    public void check() {
-        for (Configurable configurable : _configurables) {
-            s_logger.debug("Retrieving keys from " + configurable.getClass().getSimpleName());
-            for (ConfigKey<?> key : configurable.getConfigKeys()) {
-                Pair<String, ConfigKey<?>> previous = _allKeys.get(key.key());
-                if (previous != null && !previous.first().equals(configurable.getConfigComponentName())) {
-                    throw new CloudRuntimeException("Configurable " + configurable.getConfigComponentName() + " is adding a key that has been added before by " + previous.first() +
-                                                    ": " + key.toString());
-                }
-                _allKeys.put(key.key(), new Pair<String, ConfigKey<?>>(configurable.getConfigComponentName(), key));
-            }
-        }
     }
 
     public ConfigurationDao global() {
@@ -146,4 +153,23 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, SystemInt
 
         throw new CloudRuntimeException("Unable to find config storage for this scope: " + config.scope() + " for " + config.key());
     }
+
+    public List<ScopedConfigStorage> getScopedStorages() {
+        return _scopedStorages;
+    }
+
+    @Inject
+    public void setScopedStorages(List<ScopedConfigStorage> scopedStorages) {
+        this._scopedStorages = scopedStorages;
+    }
+
+    public List<Configurable> getConfigurables() {
+        return _configurables;
+    }
+
+    @Inject
+    public void setConfigurables(List<Configurable> configurables) {
+        this._configurables = configurables;
+    }
+
 }

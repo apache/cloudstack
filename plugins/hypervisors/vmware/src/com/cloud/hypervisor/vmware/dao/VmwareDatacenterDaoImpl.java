@@ -32,7 +32,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value=VmwareDatacenterDao.class) @DB(txn=false)
+@Local(value=VmwareDatacenterDao.class) @DB
 public class VmwareDatacenterDaoImpl extends GenericDaoBase<VmwareDatacenterVO, Long> implements VmwareDatacenterDao {
     protected static final Logger s_logger = Logger.getLogger(VmwareDatacenterDaoImpl.class);
 

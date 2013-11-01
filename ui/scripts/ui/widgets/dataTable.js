@@ -83,12 +83,12 @@
                 .addClass('data-table')
                 .appendTo($table.parent())
                 .append(
-                    $table.remove()
+                    $table.detach()
             );
             $table = $mainContainer;
             var $theadContainer = $('<div>').addClass('fixed-header').prependTo($table);
             var $theadTable = $('<table>').appendTo($theadContainer).attr('nowrap', 'nowrap');
-            var $thead = $table.find('thead').remove().appendTo($theadTable);
+            var $thead = $table.find('thead').detach().appendTo($theadTable);
 
             return $thead;
         };
@@ -238,9 +238,9 @@
                 $table.find('tbody').closest('table').addClass('body');
             }
 
-            $table.find('th').bind('mousemove mouseout', hoverResizableEvent);
-            $table.find('th').bind('mousedown mousemove mouseup mouseout', resizeDragEvent);
-            $table.find('th').bind('click', function(event) {
+            $table.find('th:not(:has(input))').bind('mousemove mouseout', hoverResizableEvent);
+            $table.find('th:not(:has(input))').bind('mousedown mousemove mouseup mouseout', resizeDragEvent);
+            $table.find('th:not(:has(input))').bind('click', function(event) {
                 if ($(this).hasClass('resizable')) {
                     return false;
                 }

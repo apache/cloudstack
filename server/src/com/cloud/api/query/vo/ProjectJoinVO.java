@@ -25,12 +25,12 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.projects.Project.State;
-import com.cloud.server.ResourceTag.TaggedResourceType;
-import com.cloud.utils.db.GenericDao;
-
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.projects.Project.State;
+import com.cloud.server.ResourceTag.ResourceObjectType;
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="project_view")
@@ -103,14 +103,13 @@ public class ProjectJoinVO extends BaseViewVO implements InternalIdentity, Ident
 
     @Column(name="tag_resource_type")
     @Enumerated(value=EnumType.STRING)
-    private TaggedResourceType tagResourceType;
+    private ResourceObjectType tagResourceType;
 
     @Column(name="tag_customer")
     private String tagCustomer;
-    
+
     @Column(name="project_account_id")
     private long projectAccountId;
-    
 
     public ProjectJoinVO() {
     }
@@ -120,188 +119,93 @@ public class ProjectJoinVO extends BaseViewVO implements InternalIdentity, Ident
         return id;
     }
 
-
-    @Override
-    public void setId(long id) {
-        this.id = id;
-
-    }
-
     @Override
     public String getUuid() {
         return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public long getDomainId() {
         return domainId;
-    }
-
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
     }
 
     public String getDomainUuid() {
         return domainUuid;
     }
 
-    public void setDomainUuid(String domainUuid) {
-        this.domainUuid = domainUuid;
-    }
-
     public String getDomainName() {
         return domainName;
-    }
-
-    public void setDomainName(String domainName) {
-        this.domainName = domainName;
     }
 
     public String getDomainPath() {
         return domainPath;
     }
 
-    public void setDomainPath(String domainPath) {
-        this.domainPath = domainPath;
-    }
-
     public State getState() {
         return state;
-    }
-
-    public void setState(State state) {
-        this.state = state;
     }
 
     public Date getCreated() {
         return created;
     }
 
-    public void setCreated(Date created) {
-        this.created = created;
-    }
-
     public Date getRemoved() {
         return removed;
-    }
-
-    public void setRemoved(Date removed) {
-        this.removed = removed;
     }
 
     public String getDisplayText() {
         return displayText;
     }
 
-    public void setDisplayText(String displayText) {
-        this.displayText = displayText;
-    }
-
     public String getOwner() {
         return owner;
-    }
-
-    public void setOwner(String owner) {
-        this.owner = owner;
     }
 
     public long getTagId() {
         return tagId;
     }
 
-    public void setTagId(long tagId) {
-        this.tagId = tagId;
-    }
-
     public String getTagUuid() {
         return tagUuid;
-    }
-
-    public void setTagUuid(String tagUuid) {
-        this.tagUuid = tagUuid;
     }
 
     public String getTagKey() {
         return tagKey;
     }
 
-    public void setTagKey(String tagKey) {
-        this.tagKey = tagKey;
-    }
-
     public String getTagValue() {
         return tagValue;
-    }
-
-    public void setTagValue(String tagValue) {
-        this.tagValue = tagValue;
     }
 
     public long getTagDomainId() {
         return tagDomainId;
     }
 
-    public void setTagDomainId(long tagDomainId) {
-        this.tagDomainId = tagDomainId;
-    }
-
     public long getTagAccountId() {
         return tagAccountId;
-    }
-
-    public void setTagAccountId(long tagAccountId) {
-        this.tagAccountId = tagAccountId;
     }
 
     public long getTagResourceId() {
         return tagResourceId;
     }
 
-    public void setTagResourceId(long tagResourceId) {
-        this.tagResourceId = tagResourceId;
-    }
-
     public String getTagResourceUuid() {
         return tagResourceUuid;
     }
 
-    public void setTagResourceUuid(String tagResourceUuid) {
-        this.tagResourceUuid = tagResourceUuid;
-    }
-
-    public TaggedResourceType getTagResourceType() {
+    public ResourceObjectType getTagResourceType() {
         return tagResourceType;
-    }
-
-    public void setTagResourceType(TaggedResourceType tagResourceType) {
-        this.tagResourceType = tagResourceType;
     }
 
     public String getTagCustomer() {
         return tagCustomer;
     }
 
-    public void setTagCustomer(String tagCustomer) {
-        this.tagCustomer = tagCustomer;
-    }
-
     public long getAccountId() {
         return accountId;
-    }
-
-    public void setAccountId(long accountId) {
-        this.accountId = accountId;
     }
 
     public long getProjectAccountId() {

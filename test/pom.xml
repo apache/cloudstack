@@ -34,8 +34,7 @@
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
-            <version>${cs.log4j.version}</version>
-        </dependency>
+            </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -44,12 +43,10 @@
         <dependency>
             <groupId>com.trilead</groupId>
             <artifactId>trilead-ssh2</artifactId>
-            <version>${cs.trilead.version}</version>
-        </dependency>
+            </dependency>
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>apache-log4j-extras</artifactId>
-            <version>${cs.log4j.extras.version}</version>
             <exclusions>
                 <exclusion>
                     <artifactId>log4j</artifactId>

@@ -61,6 +61,9 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 
 @Local(value = {AclService.class})
 public class AclServiceImpl extends ManagerBase implements AclService, Manager {
@@ -111,7 +114,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACL_ROLE_CREATE, eventDescription = "Creating Acl Role", create = true)
-    public AclRole createAclRole(Long domainId, String aclRoleName, String description, Long parentRoleId) {
+    public AclRole createAclRole(Long domainId, final String aclRoleName, final String description, final Long parentRoleId) {
         Account caller = CallContext.current().getCallingAccount();
         if (domainId == null) {
             domainId = caller.getDomainId();
@@ -130,22 +133,27 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
                             + " already exisits for domain " + domainId);
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        AclRoleVO rvo = new AclRoleVO(aclRoleName, description);
-        rvo.setDomainId(domainId);
-        AclRole role = _aclRoleDao.persist(rvo);
-        if (parentRoleId != null) {
-            // copy parent role permissions
-            List<AclRolePermissionVO> perms = _rolePermissionDao.listByRole(parentRoleId);
-            if (perms != null) {
-                for (AclRolePermissionVO perm : perms) {
-                    perm.setAclRoleId(role.getId());
-                    _rolePermissionDao.persist(perm);
+        final long domain_id = domainId;
+        AclRole role = Transaction.execute(new TransactionCallback<AclRole>() {
+            @Override
+            public AclRole doInTransaction(TransactionStatus status) {
+                AclRoleVO rvo = new AclRoleVO(aclRoleName, description);
+                rvo.setDomainId(domain_id);
+                AclRole role = _aclRoleDao.persist(rvo);
+                if (parentRoleId != null) {
+                    // copy parent role permissions
+                    List<AclRolePermissionVO> perms = _rolePermissionDao.listByRole(parentRoleId);
+                    if (perms != null) {
+                        for (AclRolePermissionVO perm : perms) {
+                            perm.setAclRoleId(role.getId());
+                            _rolePermissionDao.persist(perm);
+                        }
+                    }
                 }
+                return role;
             }
-        }
-        txn.commit();
+        });
+                
 
         return role;
     }
@@ -153,10 +161,10 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACL_ROLE_DELETE, eventDescription = "Deleting Acl Role")
-    public boolean deleteAclRole(long aclRoleId) {
+    public boolean deleteAclRole(final long aclRoleId) {
         Account caller = CallContext.current().getCallingAccount();
         // get the Acl Role entity
-        AclRole role = _aclRoleDao.findById(aclRoleId);
+        final AclRole role = _aclRoleDao.findById(aclRoleId);
         if (role == null) {
             throw new InvalidParameterValueException("Unable to find acl role: " + aclRoleId
                     + "; failed to delete acl role.");
@@ -164,27 +172,29 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         // check permissions
         _accountMgr.checkAccess(caller, null, true, role);
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        // remove this role related entry in acl_group_role_map
-        List<AclGroupRoleMapVO> groupRoleMap = _aclGroupRoleMapDao.listByRoleId(role.getId());
-        if (groupRoleMap != null) {
-            for (AclGroupRoleMapVO gr : groupRoleMap) {
-                _aclGroupRoleMapDao.remove(gr.getId());
-            }
-        }
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                // remove this role related entry in acl_group_role_map
+                List<AclGroupRoleMapVO> groupRoleMap = _aclGroupRoleMapDao.listByRoleId(role.getId());
+                if (groupRoleMap != null) {
+                    for (AclGroupRoleMapVO gr : groupRoleMap) {
+                        _aclGroupRoleMapDao.remove(gr.getId());
+                    }
+                }
 
-        // remove this role related entry in acl_api_permission table
-        List<AclApiPermissionVO> roleApiMap = _apiPermissionDao.listByRoleId(role.getId());
-        if (roleApiMap != null) {
-            for (AclApiPermissionVO roleApi : roleApiMap) {
-                _apiPermissionDao.remove(roleApi.getId());
-            }
-        }
+                // remove this role related entry in acl_api_permission table
+                List<AclApiPermissionVO> roleApiMap = _apiPermissionDao.listByRoleId(role.getId());
+                if (roleApiMap != null) {
+                    for (AclApiPermissionVO roleApi : roleApiMap) {
+                        _apiPermissionDao.remove(roleApi.getId());
+                    }
+                }
 
-        // remove this role from acl_role table
-        _aclRoleDao.remove(aclRoleId);
-        txn.commit();
+                // remove this role from acl_role table
+                _aclRoleDao.remove(aclRoleId);
+            }
+        });
 
         return true;
     }
@@ -193,7 +203,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACL_ROLE_GRANT, eventDescription = "Granting permission to Acl Role")
-    public AclRole grantApiPermissionToAclRole(long aclRoleId, List<String> apiNames) {
+    public AclRole grantApiPermissionToAclRole(final long aclRoleId, final List<String> apiNames) {
         Account caller = CallContext.current().getCallingAccount();
         // get the Acl Role entity
         AclRole role = _aclRoleDao.findById(aclRoleId);
@@ -204,18 +214,21 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         // check permissions
         _accountMgr.checkAccess(caller, null, true, role);
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        // add entries in acl_api_permission table
-        for (String api : apiNames) {
-            AclApiPermissionVO perm = _apiPermissionDao.findByRoleAndApi(aclRoleId, api);
-            if (perm == null) {
-                // not there already
-                perm = new AclApiPermissionVO(aclRoleId, api);
-                _apiPermissionDao.persist(perm);
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                // add entries in acl_api_permission table
+                for (String api : apiNames) {
+                    AclApiPermissionVO perm = _apiPermissionDao.findByRoleAndApi(aclRoleId, api);
+                    if (perm == null) {
+                        // not there already
+                        perm = new AclApiPermissionVO(aclRoleId, api);
+                        _apiPermissionDao.persist(perm);
+                    }
+                }
             }
-        }
-        txn.commit();
+        });
+            
         return role;
 
     }
@@ -223,7 +236,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACL_ROLE_REVOKE, eventDescription = "Revoking permission from Acl Role")
-    public AclRole revokeApiPermissionFromAclRole(long aclRoleId, List<String> apiNames) {
+    public AclRole revokeApiPermissionFromAclRole(final long aclRoleId, final List<String> apiNames) {
         Account caller = CallContext.current().getCallingAccount();
         // get the Acl Role entity
         AclRole role = _aclRoleDao.findById(aclRoleId);
@@ -234,17 +247,19 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         // check permissions
         _accountMgr.checkAccess(caller, null, true, role);
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        // remove entries from acl_api_permission table
-        for (String api : apiNames) {
-            AclApiPermissionVO perm = _apiPermissionDao.findByRoleAndApi(aclRoleId, api);
-            if (perm != null) {
-                // not removed yet
-                _apiPermissionDao.remove(perm.getId());
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                // remove entries from acl_api_permission table
+                for (String api : apiNames) {
+                    AclApiPermissionVO perm = _apiPermissionDao.findByRoleAndApi(aclRoleId, api);
+                    if (perm != null) {
+                        // not removed yet
+                        _apiPermissionDao.remove(perm.getId());
+                    }
+                }
             }
-        }
-        txn.commit();
+        });
         return role;
     }
 
@@ -325,8 +340,8 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_UPDATE, eventDescription = "Adding roles to acl group")
-    public AclGroup addAclRolesToGroup(List<Long> roleIds, Long groupId) {
-        Account caller = CallContext.current().getCallingAccount();
+    public AclGroup addAclRolesToGroup(final List<Long> roleIds, final Long groupId) {
+        final Account caller = CallContext.current().getCallingAccount();
         // get the Acl Group entity
         AclGroup group = _aclGroupDao.findById(groupId);
         if (group == null) {
@@ -336,34 +351,37 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         // check group permissions
         _accountMgr.checkAccess(caller, null, true, group);
  
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        // add entries in acl_group_role_map table
-        for (Long roleId : roleIds) {
-            // check role permissions
-            AclRole role = _aclRoleDao.findById(roleId);
-            if ( role == null ){
-                throw new InvalidParameterValueException("Unable to find acl role: " + roleId
-                        + "; failed to add roles to acl group.");
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                // add entries in acl_group_role_map table
+                for (Long roleId : roleIds) {
+                    // check role permissions
+                    AclRole role = _aclRoleDao.findById(roleId);
+                    if (role == null) {
+                        throw new InvalidParameterValueException("Unable to find acl role: " + roleId
+                                + "; failed to add roles to acl group.");
+                    }
+                    _accountMgr.checkAccess(caller, null, true, role);
+
+                    AclGroupRoleMapVO grMap = _aclGroupRoleMapDao.findByGroupAndRole(groupId, roleId);
+                    if (grMap == null) {
+                        // not there already
+                        grMap = new AclGroupRoleMapVO(groupId, roleId);
+                        _aclGroupRoleMapDao.persist(grMap);
+                    }
+                }
             }
-            _accountMgr.checkAccess(caller,null, true, role);
-            
-            AclGroupRoleMapVO grMap = _aclGroupRoleMapDao.findByGroupAndRole(groupId, roleId);
-            if (grMap == null) {
-                // not there already
-                grMap = new AclGroupRoleMapVO(groupId, roleId);
-                _aclGroupRoleMapDao.persist(grMap);
-            }
-        }
-        txn.commit();
+        });
+
         return group;
     }
 
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_UPDATE, eventDescription = "Removing roles from acl group")
-    public AclGroup removeAclRolesFromGroup(List<Long> roleIds, Long groupId) {
-        Account caller = CallContext.current().getCallingAccount();
+    public AclGroup removeAclRolesFromGroup(final List<Long> roleIds, final Long groupId) {
+        final Account caller = CallContext.current().getCallingAccount();
         // get the Acl Group entity
         AclGroup group = _aclGroupDao.findById(groupId);
         if (group == null) {
@@ -373,33 +391,35 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         // check group permissions
         _accountMgr.checkAccess(caller, null, true, group);
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        // add entries in acl_group_role_map table
-        for (Long roleId : roleIds) {
-            // check role permissions
-            AclRole role = _aclRoleDao.findById(roleId);
-            if (role == null) {
-                throw new InvalidParameterValueException("Unable to find acl role: " + roleId
-                        + "; failed to add roles to acl group.");
-            }
-            _accountMgr.checkAccess(caller, null, true, role);
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                // add entries in acl_group_role_map table
+                for (Long roleId : roleIds) {
+                    // check role permissions
+                    AclRole role = _aclRoleDao.findById(roleId);
+                    if (role == null) {
+                        throw new InvalidParameterValueException("Unable to find acl role: " + roleId
+                                + "; failed to add roles to acl group.");
+                    }
+                    _accountMgr.checkAccess(caller, null, true, role);
 
-            AclGroupRoleMapVO grMap = _aclGroupRoleMapDao.findByGroupAndRole(groupId, roleId);
-            if (grMap != null) {
-                // not removed yet
-                _aclGroupRoleMapDao.remove(grMap.getId());
+                    AclGroupRoleMapVO grMap = _aclGroupRoleMapDao.findByGroupAndRole(groupId, roleId);
+                    if (grMap != null) {
+                        // not removed yet
+                        _aclGroupRoleMapDao.remove(grMap.getId());
+                    }
+                }
             }
-        }
-        txn.commit();
+        });
         return group;
     }
 
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_UPDATE, eventDescription = "Adding accounts to acl group")
-    public AclGroup addAccountsToGroup(List<Long> acctIds, Long groupId) {
-        Account caller = CallContext.current().getCallingAccount();
+    public AclGroup addAccountsToGroup(final List<Long> acctIds, final Long groupId) {
+        final Account caller = CallContext.current().getCallingAccount();
         // get the Acl Group entity
         AclGroup group = _aclGroupDao.findById(groupId);
         if (group == null) {
@@ -409,34 +429,36 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         // check group permissions
         _accountMgr.checkAccess(caller, null, true, group);
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        // add entries in acl_group_account_map table
-        for (Long acctId : acctIds) {
-            // check account permissions
-            Account account = _accountDao.findById(acctId);
-            if (account == null) {
-                throw new InvalidParameterValueException("Unable to find account: " + acctId
-                        + "; failed to add account to acl group.");
-            }
-            _accountMgr.checkAccess(caller, null, true, account);
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                // add entries in acl_group_account_map table
+                for (Long acctId : acctIds) {
+                    // check account permissions
+                    Account account = _accountDao.findById(acctId);
+                    if (account == null) {
+                        throw new InvalidParameterValueException("Unable to find account: " + acctId
+                                + "; failed to add account to acl group.");
+                    }
+                    _accountMgr.checkAccess(caller, null, true, account);
 
-            AclGroupAccountMapVO grMap = _aclGroupAccountMapDao.findByGroupAndAccount(groupId, acctId);
-            if (grMap == null) {
-                // not there already
-                grMap = new AclGroupAccountMapVO(groupId, acctId);
-                _aclGroupAccountMapDao.persist(grMap);
+                    AclGroupAccountMapVO grMap = _aclGroupAccountMapDao.findByGroupAndAccount(groupId, acctId);
+                    if (grMap == null) {
+                        // not there already
+                        grMap = new AclGroupAccountMapVO(groupId, acctId);
+                        _aclGroupAccountMapDao.persist(grMap);
+                    }
+                }
             }
-        }
-        txn.commit();
+        });
         return group;
     }
 
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_UPDATE, eventDescription = "Removing accounts from acl group")
-    public AclGroup removeAccountsFromGroup(List<Long> acctIds, Long groupId) {
-        Account caller = CallContext.current().getCallingAccount();
+    public AclGroup removeAccountsFromGroup(final List<Long> acctIds, final Long groupId) {
+        final Account caller = CallContext.current().getCallingAccount();
         // get the Acl Group entity
         AclGroup group = _aclGroupDao.findById(groupId);
         if (group == null) {
@@ -446,25 +468,27 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         // check group permissions
         _accountMgr.checkAccess(caller, null, true, group);
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        // remove entries from acl_group_account_map table
-        for (Long acctId : acctIds) {
-            // check account permissions
-            Account account = _accountDao.findById(acctId);
-            if (account == null) {
-                throw new InvalidParameterValueException("Unable to find account: " + acctId
-                        + "; failed to add account to acl group.");
-            }
-            _accountMgr.checkAccess(caller, null, true, account);
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                // remove entries from acl_group_account_map table
+                for (Long acctId : acctIds) {
+                    // check account permissions
+                    Account account = _accountDao.findById(acctId);
+                    if (account == null) {
+                        throw new InvalidParameterValueException("Unable to find account: " + acctId
+                                + "; failed to add account to acl group.");
+                    }
+                    _accountMgr.checkAccess(caller, null, true, account);
 
-            AclGroupAccountMapVO grMap = _aclGroupAccountMapDao.findByGroupAndAccount(groupId, acctId);
-            if (grMap != null) {
-                // not removed yet
-                _aclGroupAccountMapDao.remove(grMap.getId());
+                    AclGroupAccountMapVO grMap = _aclGroupAccountMapDao.findByGroupAndAccount(groupId, acctId);
+                    if (grMap != null) {
+                        // not removed yet
+                        _aclGroupAccountMapDao.remove(grMap.getId());
+                    }
+                }
             }
-        }
-        txn.commit();
+        });
         return group;
     }
 
@@ -498,10 +522,10 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_DELETE, eventDescription = "Deleting Acl Group")
-    public boolean deleteAclGroup(Long aclGroupId) {
+    public boolean deleteAclGroup(final Long aclGroupId) {
         Account caller = CallContext.current().getCallingAccount();
         // get the Acl Role entity
-        AclGroup grp = _aclGroupDao.findById(aclGroupId);
+        final AclGroup grp = _aclGroupDao.findById(aclGroupId);
         if (grp == null) {
             throw new InvalidParameterValueException("Unable to find acl group: " + aclGroupId
                     + "; failed to delete acl group.");
@@ -509,27 +533,29 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         // check permissions
         _accountMgr.checkAccess(caller, null, true, grp);
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        // remove this group related entry in acl_group_role_map
-        List<AclGroupRoleMapVO> groupRoleMap = _aclGroupRoleMapDao.listByGroupId(grp.getId());
-        if (groupRoleMap != null) {
-            for (AclGroupRoleMapVO gr : groupRoleMap) {
-                _aclGroupRoleMapDao.remove(gr.getId());
-            }
-        }
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                // remove this group related entry in acl_group_role_map
+                List<AclGroupRoleMapVO> groupRoleMap = _aclGroupRoleMapDao.listByGroupId(grp.getId());
+                if (groupRoleMap != null) {
+                    for (AclGroupRoleMapVO gr : groupRoleMap) {
+                        _aclGroupRoleMapDao.remove(gr.getId());
+                    }
+                }
 
-        // remove this group related entry in acl_group_account table
-        List<AclGroupAccountMapVO> groupAcctMap = _aclGroupAccountMapDao.listByGroupId(grp.getId());
-        if (groupAcctMap != null) {
-            for (AclGroupAccountMapVO grpAcct : groupAcctMap) {
-                _aclGroupAccountMapDao.remove(grpAcct.getId());
-            }
-        }
+                // remove this group related entry in acl_group_account table
+                List<AclGroupAccountMapVO> groupAcctMap = _aclGroupAccountMapDao.listByGroupId(grp.getId());
+                if (groupAcctMap != null) {
+                    for (AclGroupAccountMapVO grpAcct : groupAcctMap) {
+                        _aclGroupAccountMapDao.remove(grpAcct.getId());
+                    }
+                }
 
-        // remove this group from acl_group table
-        _aclGroupDao.remove(aclGroupId);
-        txn.commit();
+                // remove this group from acl_group table
+                _aclGroupDao.remove(aclGroupId);
+            }
+        });
 
         return true;
     }
@@ -542,7 +568,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         groupSB.and("account", groupSB.entity().getAccountId(), Op.EQ);
 
         GenericSearchBuilder<AclGroupRoleMapVO, Long> roleSB = _aclGroupRoleMapDao.createSearchBuilder(Long.class);
-        roleSB.selectField(roleSB.entity().getAclRoleId());
+        roleSB.selectFields(roleSB.entity().getAclRoleId());
         roleSB.join("accountgroupjoin", groupSB, groupSB.entity().getAclGroupId(), roleSB.entity().getAclGroupId(),
                 JoinType.INNER);
         roleSB.done();
@@ -583,7 +609,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     public List<AclGroup> getAclGroups(long accountId) {
 
         GenericSearchBuilder<AclGroupAccountMapVO, Long> groupSB = _aclGroupAccountMapDao.createSearchBuilder(Long.class);
-        groupSB.selectField(groupSB.entity().getAclGroupId());
+        groupSB.selectFields(groupSB.entity().getAclGroupId());
         groupSB.and("account", groupSB.entity().getAccountId(), Op.EQ);
         SearchCriteria<Long> groupSc = groupSB.create();
 

@@ -231,7 +231,7 @@
                                         }
                                         if (additional && additional.complete) additional.complete($.extend(true, args, {
                                             $detailView: $detailView
-                                        }));
+                                        }), args2);
 
                                         replaceListViewItem($detailView, args.data ? args.data : args2.data);
 
@@ -369,6 +369,53 @@
             });
         },
 
+        prepareObjectStoreMigration: function($detailView, args) {        	
+            var tab = args.tabs[args.activeTab];
+            var isMultiple = tab.multiple;
+            uiActions.remove($detailView, args);
+        },            
+               
+        destroy: function($detailView, args) {
+            var tab = args.tabs[args.activeTab];
+            var isMultiple = tab.multiple;
+
+            uiActions.standard($detailView, args, {
+                noRefresh: true,
+                complete: function(args, args2) {                   	
+                	if ((!('id' in args2.data)) && ('toRemove' in args2.data) && (args2.data.toRemove == true)) {   
+	                    if (isMultiple && $detailView.is(':visible')) {
+	                        $detailView.find('.refresh').click(); // Reload tab
+	                    } else {
+	                        var $browser = $('#browser .container');
+	                        var $panel = $detailView.closest('.panel');
+	
+	                        if ($detailView.is(':visible')) {
+	                            $browser.cloudBrowser('selectPanel', {
+	                                panel: $panel.prev()
+	                            });
+	                        }
+	
+	                        if ($detailView.data("list-view-row") != null) {
+	                            var $row = $detailView.data('list-view-row');
+	                            var $tbody = $row.closest('tbody');
+	
+	                            $row.remove();
+	                            if (!$tbody.find('tr').size()) {
+	                                $("<tr>").addClass('empty').append(
+	                                    $("<td>").html(_l('label.no.data'))
+	                                ).appendTo($tbody);
+	                            }
+	                            $tbody.closest('table').dataTable('refresh');
+	                        }
+	                    }
+                	}  else {
+                		$detailView.find('.refresh').click(); // Reload tab
+                	}
+                }
+            });
+        },
+       
+        
         /**
          * Convert editable fields to text boxes; clicking again saves data
          *
@@ -490,6 +537,7 @@
                     action.action({
                         data: data,
                         _custom: $detailView.data('_custom'),
+                        $detailView: $detailView,
                         context: $detailView.data('view-args').context,
                         response: {
                             success: function(args) {

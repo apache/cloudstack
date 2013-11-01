@@ -34,7 +34,7 @@ import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.VirtualMachine.State;
@@ -162,7 +162,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
     
     @Override
     public boolean remove(Long id) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         ConsoleProxyVO proxy = createForUpdate();
         proxy.setPublicIpAddress(null);
@@ -227,7 +227,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
     public List<Pair<Long, Integer>> getProxyLoadMatrix() {
     	ArrayList<Pair<Long, Integer>> l = new ArrayList<Pair<Long, Integer>>();
     	
-        Transaction txn = Transaction.currentTxn();;
+        TransactionLegacy txn = TransactionLegacy.currentTxn();;
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement(PROXY_ASSIGNMENT_MATRIX);
@@ -245,7 +245,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
     public List<Pair<Long, Integer>> getDatacenterStoragePoolHostInfo(long dcId, boolean countAllPoolTypes) {
     	ArrayList<Pair<Long, Integer>> l = new ArrayList<Pair<Long, Integer>>();
     	
-        Transaction txn = Transaction.currentTxn();;
+        TransactionLegacy txn = TransactionLegacy.currentTxn();;
         PreparedStatement pstmt = null;
         try {
         	if(countAllPoolTypes) {
@@ -267,7 +267,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
     
     @Override
     public int getProxyStaticLoad(long proxyVmId) {
-        Transaction txn = Transaction.currentTxn();;
+        TransactionLegacy txn = TransactionLegacy.currentTxn();;
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement(GET_PROXY_LOAD);
@@ -285,7 +285,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
     
     @Override
     public int getProxyActiveLoad(long proxyVmId) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement(GET_PROXY_ACTIVE_LOAD);
@@ -304,7 +304,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
     private List<ConsoleProxyLoadInfo> getDatacenterLoadMatrix(String sql) {
     	ArrayList<ConsoleProxyLoadInfo> l = new ArrayList<ConsoleProxyLoadInfo>();
     	
-        Transaction txn = Transaction.currentTxn();;
+        TransactionLegacy txn = TransactionLegacy.currentTxn();;
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement(sql);
@@ -325,7 +325,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
     @Override
     public List<Long> getRunningProxyListByMsid(long msid) {
     	List<Long> l = new ArrayList<Long>();
-        Transaction txn = Transaction.currentTxn();;
+        TransactionLegacy txn = TransactionLegacy.currentTxn();;
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement(

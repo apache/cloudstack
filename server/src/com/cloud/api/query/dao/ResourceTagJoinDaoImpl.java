@@ -24,16 +24,17 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.server.ResourceTag;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
 @Local(value={ResourceTagJoinDao.class})
@@ -46,6 +47,9 @@ public class ResourceTagJoinDaoImpl extends GenericDaoBase<ResourceTagJoinVO, Lo
     private final SearchBuilder<ResourceTagJoinVO> tagSearch;
 
     private final SearchBuilder<ResourceTagJoinVO> tagIdSearch;
+    
+    private final SearchBuilder<ResourceTagJoinVO> AllFieldsSearch;
+
 
     protected ResourceTagJoinDaoImpl() {
 
@@ -58,11 +62,13 @@ public class ResourceTagJoinDaoImpl extends GenericDaoBase<ResourceTagJoinVO, Lo
         tagIdSearch.done();
 
         this._count = "select count(distinct id) from resource_tag_view WHERE ";
+        
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("resourceId", AllFieldsSearch.entity().getResourceId(), Op.EQ);
+        AllFieldsSearch.and("uuid", AllFieldsSearch.entity().getResourceUuid(), Op.EQ);
+        AllFieldsSearch.and("resourceType", AllFieldsSearch.entity().getResourceType(), Op.EQ);
+        AllFieldsSearch.done();
     }
-
-
-
-
 
     @Override
     public ResourceTagResponse newResourceTagResponse(ResourceTagJoinVO resourceTag, boolean keyValueOnly) {
@@ -85,6 +91,15 @@ public class ResourceTagJoinDaoImpl extends GenericDaoBase<ResourceTagJoinVO, Lo
         response.setObjectName("tag");
 
         return response;
+    }
+    
+    
+    @Override
+    public List<ResourceTagJoinVO> listBy(String resourceUUID, ResourceObjectType resourceType) {
+        SearchCriteria<ResourceTagJoinVO> sc = AllFieldsSearch.create();
+        sc.setParameters("uuid", resourceUUID);
+        sc.setParameters("resourceType", resourceType);
+        return listBy(sc);
     }
 
 

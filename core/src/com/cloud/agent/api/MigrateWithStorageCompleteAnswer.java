@@ -20,8 +20,6 @@ import java.util.List;
 
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
-import com.cloud.agent.api.to.VolumeTO;
-
 public class MigrateWithStorageCompleteAnswer extends Answer {
     List<VolumeObjectTO> volumeTos;
 

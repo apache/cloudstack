@@ -23,19 +23,19 @@ import javax.ejb.Local;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DedicatedResourceVO;
-import com.cloud.dc.HostPodVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
 @Component
-@Local(value={DedicatedResourceDao.class}) @DB(txn = false)
+@Local(value={DedicatedResourceDao.class}) @DB
 public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO, Long> implements DedicatedResourceDao {
     protected final SearchBuilder<DedicatedResourceVO> ZoneSearch;
     protected final SearchBuilder<DedicatedResourceVO> PodSearch;
@@ -339,7 +339,7 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
 
     @Override
     public boolean remove(Long id) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         DedicatedResourceVO resource = createForUpdate();
         update(id, resource);

@@ -27,6 +27,7 @@
     <module>api/rate-limit</module>
     <module>api/discovery</module>
     <module>acl/static-role-based</module>
+    <module>acl/role-based-access-checkers</module>
     <module>affinity-group-processors/host-anti-affinity</module>
     <module>affinity-group-processors/explicit-dedication</module>
     <module>deployment-planners/user-concentrated-pod</module>
@@ -62,7 +63,7 @@
     <module>alert-handlers/snmp-alerts</module>
     <module>alert-handlers/syslog-alerts</module>
     <module>network-elements/internal-loadbalancer</module>
-	<module>acl/role-based-access-checkers</module>
+    <module>network-elements/vxlan</module>
   </modules>
 
   <dependencies>
@@ -100,7 +101,7 @@
       <id>netapp</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>noredist</name>
         </property>
       </activation>
       <modules>
@@ -111,7 +112,7 @@
       <id>kvm</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>noredist</name>
         </property>
       </activation>
       <modules>
@@ -122,7 +123,7 @@
       <id>f5</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>noredist</name>
         </property>
       </activation>
       <modules>
@@ -133,7 +134,7 @@
       <id>netscaler</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>noredist</name>
         </property>
       </activation>
       <modules>
@@ -144,7 +145,7 @@
       <id>srx</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>noredist</name>
         </property>
       </activation>
       <modules>
@@ -155,7 +156,7 @@
       <id>vmware</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>noredist</name>
         </property>
       </activation>
       <modules>

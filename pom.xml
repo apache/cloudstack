@@ -73,7 +73,7 @@
     <cs.jstl.version>1.2</cs.jstl.version>
     <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
     <cs.vmware.api.version>5.1</cs.vmware.api.version>
-    <org.springframework.version>3.1.2.RELEASE</org.springframework.version>
+    <org.springframework.version>3.2.4.RELEASE</org.springframework.version>
     <cs.mockito.version>1.9.5</cs.mockito.version>
     <cs.aws.sdk.version>1.3.22</cs.aws.sdk.version>
     <cs.lang.version>2.6</cs.lang.version>
@@ -81,7 +81,7 @@
     <cs.reflections.version>0.9.8</cs.reflections.version>
     <cs.java-ipv6.version>0.10</cs.java-ipv6.version>
     <cs.replace.properties>build/replace.properties</cs.replace.properties>
-    <cs.libvirt-java.version>0.5.0</cs.libvirt-java.version>
+    <cs.libvirt-java.version>0.5.1</cs.libvirt-java.version>
     <cs.rados-java.version>0.1.3</cs.rados-java.version>
     <cs.target.dir>target</cs.target.dir>
     <cs.daemon.version>1.0.10</cs.daemon.version>
@@ -168,11 +168,12 @@
     <module>deps/XenServerJava</module>
     <module>engine</module>
     <module>plugins</module>
-    <module>patches</module>
     <module>framework</module>
     <module>test</module>
     <module>client</module>
     <module>services</module>
+    <module>maven-standard</module>
+    <module>quickcloud</module>
   </modules>
 
   <dependencyManagement>
@@ -359,7 +360,12 @@
       <dependency>
         <groupId>org.aspectj</groupId>
         <artifactId>aspectjtools</artifactId>
-        <version>1.6.2</version>
+        <version>1.7.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.aspectj</groupId>
+        <artifactId>aspectjweaver</artifactId>
+        <version>1.7.0</version>
       </dependency>
       <dependency>
         <groupId>org.apache.axis</groupId>
@@ -380,6 +386,16 @@
         <groupId>wsdl4j</groupId>
         <artifactId>wsdl4j</artifactId>
         <version>1.4</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>1.7.5</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-log4j12</artifactId>
+        <version>1.7.5</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -414,6 +430,11 @@
     <defaultGoal>install</defaultGoal>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>test</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>${basedir}/resources</directory>
+      </resource>
+    </resources>
     <testResources>
       <testResource>
         <directory>test/resources</directory>
@@ -432,6 +453,19 @@
                 <directory>${cs.target.dir}</directory>
                 <includes>
                   <include>**/*</include>
+                </includes>
+              </fileset>
+              <fileset>
+                <directory>dist</directory>
+                <includes>
+                  <include>**/*</include>
+                </includes>
+              </fileset>
+              <fileset>
+                <directory>${basedir}</directory>
+                <includes>
+                  <include>${cs.target.dir}</include>
+                  <include>dist</include>
                 </includes>
               </fileset>
             </filesets>
@@ -540,7 +574,7 @@
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
               <exclude>tools/appliance/definitions/devcloud/*</exclude>
               <exclude>tools/appliance/definitions/systemvmtemplate/*</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate64/*</exclude>
+              <exclude>tools/appliance/definitions/systemvm64template/*</exclude>
               <exclude>tools/appliance/definitions/builtin/*</exclude>
               <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/definition.rb</exclude>
@@ -571,34 +605,37 @@
               <exclude>ui/lib/reset.css</exclude>
               <exclude>ui/lib/require.js</exclude>
               <exclude>waf</exclude>
-              <exclude>patches/systemvm/debian/systemvm.vmx</exclude>
-              <exclude>patches/systemvm/debian/config/root/.ssh/authorized_keys</exclude>
-              <exclude>patches/systemvm/debian/config/etc/apache2/httpd.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/apache2/ports.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/apache2/sites-available/default</exclude>
-              <exclude>patches/systemvm/debian/config/etc/apache2/sites-available/default-ssl</exclude>
-              <exclude>patches/systemvm/debian/config/etc/apache2/vhostexample.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/dnsmasq.conf.tmpl</exclude>
-              <exclude>patches/systemvm/debian/config/etc/vpcdnsmasq.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/ssh/sshd_config</exclude>
-              <exclude>patches/systemvm/debian/config/etc/rsyslog.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/logrotate.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/logrotate.d/*</exclude>
-              <exclude>patches/systemvm/debian/config/etc/sysctl.conf</exclude>
-              <exclude>patches/systemvm/debian/config/root/redundant_router/keepalived.conf.templ</exclude>
-              <exclude>patches/systemvm/debian/config/root/redundant_router/arping_gateways.sh.templ</exclude>
-              <exclude>patches/systemvm/debian/config/root/redundant_router/conntrackd.conf.templ</exclude>
-              <exclude>patches/systemvm/debian/vpn/etc/ipsec.conf</exclude>
-              <exclude>patches/systemvm/debian/vpn/etc/ppp/options.xl2tpd</exclude>
-              <exclude>patches/systemvm/debian/vpn/etc/xl2tpd/xl2tpd.conf</exclude>
-              <exclude>patches/systemvm/debian/vpn/etc/ipsec.secrets</exclude>
-              <exclude>patches/systemvm/debian/config/etc/haproxy/haproxy.cfg</exclude>
-              <exclude>patches/systemvm/debian/config/etc/cloud-nic.rules</exclude>
-              <exclude>patches/systemvm/debian/config/etc/modprobe.d/aesni_intel</exclude>
-              <exclude>patches/systemvm/debian/config/etc/rc.local</exclude>
-              <exclude>patches/systemvm/debian/config/var/www/html/userdata/.htaccess</exclude>
-              <exclude>patches/systemvm/debian/config/var/www/html/latest/.htaccess</exclude>
-              <exclude>patches/systemvm/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
+              <exclude>systemvm/conf/agent.properties</exclude>
+              <exclude>systemvm/conf/environment.properties</exclude>
+              <exclude>systemvm/js/jquery.js</exclude>
+              <exclude>systemvm/patches/debian/systemvm.vmx</exclude>
+              <exclude>systemvm/patches/debian/config/root/.ssh/authorized_keys</exclude>
+              <exclude>systemvm/patches/debian/config/etc/apache2/httpd.conf</exclude>
+              <exclude>systemvm/patches/debian/config/etc/apache2/ports.conf</exclude>
+              <exclude>systemvm/patches/debian/config/etc/apache2/sites-available/default</exclude>
+              <exclude>systemvm/patches/debian/config/etc/apache2/sites-available/default-ssl</exclude>
+              <exclude>systemvm/patches/debian/config/etc/apache2/vhostexample.conf</exclude>
+              <exclude>systemvm/patches/debian/config/etc/dnsmasq.conf.tmpl</exclude>
+              <exclude>systemvm/patches/debian/config/etc/vpcdnsmasq.conf</exclude>
+              <exclude>systemvm/patches/debian/config/etc/ssh/sshd_config</exclude>
+              <exclude>systemvm/patches/debian/config/etc/rsyslog.conf</exclude>
+              <exclude>systemvm/patches/debian/config/etc/logrotate.conf</exclude>
+              <exclude>systemvm/patches/debian/config/etc/logrotate.d/*</exclude>
+              <exclude>systemvm/patches/debian/config/etc/sysctl.conf</exclude>
+              <exclude>systemvm/patches/debian/config/root/redundant_router/keepalived.conf.templ</exclude>
+              <exclude>systemvm/patches/debian/config/root/redundant_router/arping_gateways.sh.templ</exclude>
+              <exclude>systemvm/patches/debian/config/root/redundant_router/conntrackd.conf.templ</exclude>
+              <exclude>systemvm/patches/debian/vpn/etc/ipsec.conf</exclude>
+              <exclude>systemvm/patches/debian/vpn/etc/ppp/options.xl2tpd</exclude>
+              <exclude>systemvm/patches/debian/vpn/etc/xl2tpd/xl2tpd.conf</exclude>
+              <exclude>systemvm/patches/debian/vpn/etc/ipsec.secrets</exclude>
+              <exclude>systemvm/patches/debian/config/etc/haproxy/haproxy.cfg</exclude>
+              <exclude>systemvm/patches/debian/config/etc/cloud-nic.rules</exclude>
+              <exclude>systemvm/patches/debian/config/etc/modprobe.d/aesni_intel</exclude>
+              <exclude>systemvm/patches/debian/config/etc/rc.local</exclude>
+              <exclude>systemvm/patches/debian/config/var/www/html/userdata/.htaccess</exclude>
+              <exclude>systemvm/patches/debian/config/var/www/html/latest/.htaccess</exclude>
+              <exclude>systemvm/patches/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
               <exclude>tools/transifex/.tx/config</exclude>
               <exclude>tools/marvin/marvin/sandbox/advanced/sandbox.cfg</exclude>
               <exclude>tools/ngui/static/bootstrap/*</exclude>
@@ -675,6 +712,17 @@
       </modules>
     </profile>
     <profile>
+      <id>systemvm</id>
+      <activation>
+        <property>
+          <name>systemvm</name>
+        </property>
+      </activation>
+      <modules>
+        <module>systemvm</module>
+      </modules>
+    </profile>
+    <profile>
       <id>eclipse</id>
       <properties>
         <cs.target.dir>target-eclipse</cs.target.dir>
@@ -704,7 +752,7 @@
       <id>vmware</id>
       <activation>
         <property>
-          <name>nonoss</name>
+          <name>noredist</name>
         </property>
       </activation>
       <modules>

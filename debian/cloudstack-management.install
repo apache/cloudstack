@@ -21,8 +21,6 @@
 /etc/cloudstack/management/logging.properties
 /etc/cloudstack/management/commands.properties
 /etc/cloudstack/management/ehcache.xml
-/etc/cloudstack/management/componentContext.xml
-/etc/cloudstack/management/applicationContext.xml
 /etc/cloudstack/management/server-ssl.xml
 /etc/cloudstack/management/server-nonssl.xml
 /etc/cloudstack/management/server.xml
@@ -33,7 +31,6 @@
 /etc/cloudstack/management/tomcat6.conf
 /etc/cloudstack/management/web.xml
 /etc/cloudstack/management/environment.properties
-/etc/cloudstack/management/nonossComponentContext.xml
 /etc/cloudstack/management/log4j-cloud.xml
 /etc/cloudstack/management/tomcat-users.xml
 /etc/cloudstack/management/context.xml

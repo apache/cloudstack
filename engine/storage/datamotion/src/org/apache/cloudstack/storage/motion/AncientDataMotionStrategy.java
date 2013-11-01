@@ -22,6 +22,9 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -36,6 +39,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
@@ -48,9 +52,6 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
 import com.cloud.agent.api.storage.MigrateVolumeCommand;
@@ -62,7 +63,6 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.Config;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StorageManager;
@@ -81,56 +81,29 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class
-        AncientDataMotionStrategy implements DataMotionStrategy {
+AncientDataMotionStrategy implements DataMotionStrategy {
     private static final Logger s_logger = Logger.getLogger(AncientDataMotionStrategy.class);
     @Inject
     EndPointSelector selector;
     @Inject
-    TemplateManager templateMgr;
-    @Inject
-    VolumeDataStoreDao volumeStoreDao;
-    @Inject
-    HostDao hostDao;
-    @Inject
     ConfigurationDao configDao;
-    @Inject
-    StorageManager storageMgr;
     @Inject
     VolumeDao volDao;
     @Inject
-    VMTemplateDao templateDao;
-    @Inject
-    SnapshotManager snapshotMgr;
-    @Inject
-    SnapshotDao snapshotDao;
-    @Inject
-    SnapshotDataStoreDao _snapshotStoreDao;
-    @Inject
-    PrimaryDataStoreDao primaryDataStoreDao;
-    @Inject
     DataStoreManager dataStoreMgr;
-    @Inject
-    TemplateDataStoreDao templateStoreDao;
-    @Inject
-    DiskOfferingDao diskOfferingDao;
-    @Inject
-    VMTemplatePoolDao templatePoolDao;
-    @Inject
-    VolumeOrchestrationService volumeMgr;
     @Inject
     StorageCacheManager cacheMgr;
     @Inject
     ManagementService _mgmtServer;
 
     @Override
-    public boolean canHandle(DataObject srcData, DataObject destData) {
-        // TODO Auto-generated method stub
-        return true;
+    public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
+        return StrategyPriority.DEFAULT;
     }
 
     @Override
-    public boolean canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
-        return false;
+    public StrategyPriority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
+        return StrategyPriority.CANT_HANDLE;
     }
 
     protected boolean needCacheStorage(DataObject srcData, DataObject destData) {
@@ -139,6 +112,8 @@ public class
         DataStoreTO srcStoreTO = srcTO.getDataStore();
         DataStoreTO destStoreTO = destTO.getDataStore();
         if (srcStoreTO instanceof NfsTO || srcStoreTO.getRole() == DataStoreRole.ImageCache) {
+            //||
+            //    (srcStoreTO instanceof PrimaryDataStoreTO && ((PrimaryDataStoreTO)srcStoreTO).getPoolType() == StoragePoolType.NetworkFilesystem)) {
             return false;
         }
 
@@ -210,7 +185,8 @@ public class
                     cacheMgr.deleteCacheObject(srcForCopy);
                 } else {
                     // for template, we want to leave it on cache for performance reason
-                    if (answer == null || !answer.getResult()) {
+                    if ((answer == null || !answer.getResult()) && srcForCopy.getRefCount() < 2) {
+                        // cache object created by this copy, not already there
                         cacheMgr.deleteCacheObject(srcForCopy);
                     } else {
                         cacheMgr.releaseCacheObject(srcForCopy);
@@ -247,6 +223,13 @@ public class
         }
     }
 
+    protected void releaseSnapshotCacheChain(SnapshotInfo snapshot) {
+        while (snapshot != null) {
+            cacheMgr.releaseCacheObject(snapshot);
+            snapshot = snapshot.getParent();
+        }
+    }
+
     protected Answer copyVolumeFromSnapshot(DataObject snapObj, DataObject volObj) {
         SnapshotInfo snapshot = (SnapshotInfo) snapObj;
         StoragePool pool = (StoragePool) volObj.getDataStore();
@@ -264,8 +247,14 @@ public class
             int _createVolumeFromSnapshotWait = NumbersUtil.parseInt(value,
                     Integer.parseInt(Config.CreateVolumeFromSnapshotWait.getDefaultValue()));
 
+            EndPoint ep = null;
+            if (srcData.getDataStore().getRole() == DataStoreRole.Primary) {
+                ep = selector.select(volObj);
+            } else {
+                ep = selector.select(snapObj, volObj);
+            }
+
             CopyCommand cmd = new CopyCommand(srcData.getTO(), volObj.getTO(), _createVolumeFromSnapshotWait, _mgmtServer.getExecuteInSequence());
-            EndPoint ep = selector.select(snapObj, volObj);
             Answer answer = ep.sendMessage(cmd);
 
             return answer;
@@ -274,7 +263,8 @@ public class
             throw new CloudRuntimeException(basicErrMsg);
         } finally {
             if (!(storTO instanceof NfsTO)) {
-                deleteSnapshotCacheChain((SnapshotInfo) srcData);
+                // still keep snapshot on cache which may be migrated from previous secondary storage
+                releaseSnapshotCacheChain((SnapshotInfo)srcData);
             }
         }
     }
@@ -300,7 +290,7 @@ public class
         if (cacheStore == null) {
             // need to find a nfs or cifs image store, assuming that can't copy volume
             // directly to s3
-            ImageStoreEntity imageStore = (ImageStoreEntity) this.dataStoreMgr.getImageStore(destScope.getScopeId());
+            ImageStoreEntity imageStore = (ImageStoreEntity) dataStoreMgr.getImageStore(destScope.getScopeId());
             if (!imageStore.getProtocol().equalsIgnoreCase("nfs") && !imageStore.getProtocol().equalsIgnoreCase("cifs")) {
                 s_logger.debug("can't find a nfs (or cifs) image store to satisfy the need for a staging store");
                 return null;
@@ -309,7 +299,7 @@ public class
             DataObject objOnImageStore = imageStore.create(srcData);
             objOnImageStore.processEvent(Event.CreateOnlyRequested);
 
-            Answer answer = this.copyObject(srcData, objOnImageStore);
+            Answer answer = copyObject(srcData, objOnImageStore);
             if (answer == null || !answer.getResult()) {
                 if (answer != null) {
                     s_logger.debug("copy to image store failed: " + answer.getDetails());
@@ -355,7 +345,7 @@ public class
 
     protected Answer migrateVolumeToPool(DataObject srcData, DataObject destData) {
         VolumeInfo volume = (VolumeInfo)srcData;
-        StoragePool destPool = (StoragePool)this.dataStoreMgr.getDataStore(destData.getDataStore().getId(), DataStoreRole.Primary);
+        StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(destData.getDataStore().getId(), DataStoreRole.Primary);
         MigrateVolumeCommand command = new MigrateVolumeCommand(volume.getId(), volume.getPath(), destPool);
         EndPoint ep = selector.select(volume.getDataStore());
         MigrateVolumeAnswer answer = (MigrateVolumeAnswer) ep.sendMessage(command);
@@ -364,14 +354,14 @@ public class
             throw new CloudRuntimeException("Failed to migrate volume " + volume + " to storage pool " + destPool);
         } else {
             // Update the volume details after migration.
-            VolumeVO volumeVo = this.volDao.findById(volume.getId());
+            VolumeVO volumeVo = volDao.findById(volume.getId());
             Long oldPoolId = volume.getPoolId();
             volumeVo.setPath(answer.getVolumePath());
             volumeVo.setFolder(destPool.getPath());
             volumeVo.setPodId(destPool.getPodId());
             volumeVo.setPoolId(destPool.getId());
             volumeVo.setLastPoolId(oldPoolId);
-            this.volDao.update(volume.getId(), volumeVo);
+            volDao.update(volume.getId(), volumeVo);
         }
 
         return answer;
@@ -433,13 +423,19 @@ public class
             srcData = cacheSnapshotChain(snapshot);
         }
 
+        EndPoint ep = null;
+        if (srcData.getDataStore().getRole() == DataStoreRole.Primary) {
+            ep = selector.select(destData);
+        } else {
+            ep = selector.select(srcData, destData);
+        }
+
         CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _createprivatetemplatefromsnapshotwait, _mgmtServer.getExecuteInSequence());
-        EndPoint ep = selector.select(srcData, destData);
         Answer answer = ep.sendMessage(cmd);
-        
-        // clean up snapshot copied to staging 
+
+        // clean up snapshot copied to staging
         if (needCache && srcData != null) {
-            cacheMgr.deleteCacheObject(srcData);
+            cacheMgr.releaseCacheObject(srcData);  // reduce ref count, but keep it there on cache which is converted from previous secondary storage
         }
         return answer;
     }

@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.vm;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,61 +23,58 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.ResourceDetail;
+
 @Entity
 @Table(name="nic_details")
-public class NicDetailVO implements InternalIdentity {
+public class NicDetailVO implements ResourceDetail {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private long id;
 
     @Column(name="nic_id")
-    private long nicId;
+    private long resourceId;
 
     @Column(name="name")
     private String name;
 
     @Column(name="value", length=1024)
     private String value;
+    
+    @Column(name="display")
+    private boolean display;
 
     public NicDetailVO() {}
 
     public NicDetailVO(long nicId, String name, String value) {
-        this.nicId = nicId;
+        this.resourceId = nicId;
         this.name = name;
         this.value = value;
     }
 
+    @Override
     public long getId() {
         return id;
     }
 
-    public long getNicId() {
-        return nicId;
-    }
-
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getValue() {
         return value;
     }
 
-    public void setId(long id) {
-        this.id = id;
+    @Override
+    public long getResourceId() {
+        return resourceId;
     }
 
-    public void setNicId(long nicId) {
-        this.nicId = nicId;
+    @Override
+    public boolean isDisplay() {
+        return display;
     }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
-    }
-
 }

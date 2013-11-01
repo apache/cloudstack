@@ -133,239 +133,116 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     }
 
     @Override
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    @Override
     public String getUuid() {
         return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getDisplayText() {
         return displayText;
     }
 
-    public void setDisplayText(String displayText) {
-        this.displayText = displayText;
-    }
-
-
     public String getTags() {
         return tags;
-    }
-
-    public void setTags(String tags) {
-        this.tags = tags;
     }
 
     public boolean isUseLocalStorage() {
         return useLocalStorage;
     }
 
-    public void setUseLocalStorage(boolean useLocalStorage) {
-        this.useLocalStorage = useLocalStorage;
-    }
-
     public boolean isSystemUse() {
         return systemUse;
     }
 
-    public void setSystemUse(boolean systemUse) {
-        this.systemUse = systemUse;
-    }
-
-
     public Date getCreated() {
         return created;
-    }
-
-    public void setCreated(Date created) {
-        this.created = created;
     }
 
     public Date getRemoved() {
         return removed;
     }
 
-    public void setRemoved(Date removed) {
-        this.removed = removed;
-    }
-
     public long getDomainId() {
         return domainId;
-    }
-
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
     }
 
     public String getDomainUuid() {
         return domainUuid;
     }
 
-    public void setDomainUuid(String domainUuid) {
-        this.domainUuid = domainUuid;
-    }
-
     public String getDomainName() {
         return domainName;
-    }
-
-    public void setDomainName(String domainName) {
-        this.domainName = domainName;
     }
 
     public String getDomainPath() {
         return domainPath;
     }
 
-    public void setDomainPath(String domainPath) {
-        this.domainPath = domainPath;
-    }
-
     public int getSortKey() {
         return sortKey;
-    }
-
-    public void setSortKey(int sortKey) {
-        this.sortKey = sortKey;
     }
 
     public int getCpu() {
         return cpu;
     }
 
-    public void setCpu(int cpu) {
-        this.cpu = cpu;
-    }
-
     public int getSpeed() {
         return speed;
-    }
-
-    public void setSpeed(int speed) {
-        this.speed = speed;
     }
 
     public int getRamSize() {
         return ramSize;
     }
 
-    public void setRamSize(int ramSize) {
-        this.ramSize = ramSize;
-    }
-
     public Integer getRateMbps() {
         return rateMbps;
-    }
-
-    public void setRateMbps(Integer rateMbps) {
-        this.rateMbps = rateMbps;
     }
 
     public Integer getMulticastRateMbps() {
         return multicastRateMbps;
     }
 
-    public void setMulticastRateMbps(Integer multicastRateMbps) {
-        this.multicastRateMbps = multicastRateMbps;
-    }
-
     public boolean isOfferHA() {
         return offerHA;
-    }
-
-    public void setOfferHA(boolean offerHA) {
-        this.offerHA = offerHA;
     }
 
     public boolean isLimitCpuUse() {
         return limitCpuUse;
     }
 
-    public void setLimitCpuUse(boolean limitCpuUse) {
-        this.limitCpuUse = limitCpuUse;
-    }
-
     public String getHostTag() {
         return hostTag;
-    }
-
-    public void setHostTag(String hostTag) {
-        this.hostTag = hostTag;
     }
 
     public boolean isDefaultUse() {
         return default_use;
     }
 
-    public void setDefaultUse(boolean default_use) {
-        this.default_use = default_use;
-    }
-
     public String getSystemVmType() {
         return vm_type;
-    }
-
-    public void setSystemVmType(String vm_type) {
-        this.vm_type = vm_type;
     }
 
     public String getDeploymentPlanner() {
         return deploymentPlanner;
     }
 
-    public void setDeploymentPlanner(String deploymentPlanner) {
-        this.deploymentPlanner = deploymentPlanner;
-    }
-
     public boolean getVolatileVm() {
         return volatileVm;
-    }
-
-    public void setVolatileVm(boolean volatileVm) {
-        this.volatileVm = volatileVm;
-    }
-
-    public void setBytesReadRate(Long bytesReadRate) {
-        this.bytesReadRate = bytesReadRate;
     }
 
     public Long getBytesReadRate() {
         return bytesReadRate;
     }
 
-    public void setBytesWriteRate(Long bytesWriteRate) {
-        this.bytesWriteRate = bytesWriteRate;
-    }
-
     public Long getBytesWriteRate() {
         return bytesWriteRate;
     }
 
-    public void setIopsReadRate(Long iopsReadRate) {
-        this.iopsReadRate = iopsReadRate;
-    }
-
     public Long getIopsReadRate() {
         return iopsReadRate;
-    }
-
-    public void setIopsWriteRate(Long iopsWriteRate) {
-        this.iopsWriteRate = iopsWriteRate;
     }
 
     public Long getIopsWriteRate() {

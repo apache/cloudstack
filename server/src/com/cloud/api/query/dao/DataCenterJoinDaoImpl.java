@@ -21,23 +21,23 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.DataCenterJoinVO;
+import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.dc.DataCenter;
-
-import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.context.CallContext;
-
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-
-import org.springframework.stereotype.Component;
 
 @Component
 @Local(value={DataCenterJoinDao.class})
@@ -101,6 +101,16 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         zoneResponse.setAllocationState(dataCenter.getAllocationState().toString());
         zoneResponse.setZoneToken(dataCenter.getZoneToken());
         zoneResponse.setDhcpProvider(dataCenter.getDhcpProvider());
+        
+        // update tag information
+        List<ResourceTagJoinVO> resourceTags = ApiDBUtils.listResourceTagViewByResourceUUID(dataCenter.getUuid(), ResourceObjectType.Zone);
+        for (ResourceTagJoinVO resourceTag : resourceTags) {            
+            ResourceTagResponse tagResponse = ApiDBUtils.newResourceTagResponse(resourceTag, false);
+            zoneResponse.addTag(tagResponse);
+        }
+        
+        zoneResponse.setResourceDetails(ApiDBUtils.getResourceDetails(dataCenter.getId(), ResourceObjectType.Zone));
+        
         zoneResponse.setObjectName("zone");
         return zoneResponse;
     }

@@ -237,6 +237,13 @@
                     data: {
                         templates: templatesObj,
                         hypervisors: hypervisorObjs
+                    },
+                    customHidden: function(args) {                        
+                        if (selectedTemplate == 'select-template') {
+                            return false; //show Root Disk Size field
+                        } else { //selectedTemplate == 'select-iso'
+                        	return true;  //hide Root Disk Size field
+                        }                       
                     }
                 });
             },
@@ -287,6 +294,7 @@
                     success: function(json) {
                         serviceOfferingObjs = json.listserviceofferingsresponse.serviceoffering;
                         args.response.success({
+                            customFlag: 'iscustomized',
                             data: {
                                 serviceOfferings: serviceOfferingObjs
                             }

@@ -25,10 +25,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -47,9 +48,8 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -141,11 +141,11 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
             throw new CloudRuntimeException("Cannot find cluster for ID " + clusterId);
         }
 
-        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-        sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, clusterId);
-        sc.addAnd(sc.getEntity().getPodId(), Op.EQ, cluster.getPodId());
-        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, cluster.getDataCenterId());
-        sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getClusterId(), Op.EQ, clusterId);
+        sc.and(sc.entity().getPodId(), Op.EQ, cluster.getPodId());
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, cluster.getDataCenterId());
+        sc.and(sc.entity().getType(), Op.EQ, Host.Type.Routing);
         List<HostVO> hosts = sc.list();
         if (hosts.isEmpty()) {
             s_logger.debug("There is no host in cluster " + clusterId + ", no need to prepare OCFS2 nodes");

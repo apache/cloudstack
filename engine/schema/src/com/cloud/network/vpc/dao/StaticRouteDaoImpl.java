@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteVO;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 
@@ -36,11 +36,11 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = StaticRouteDao.class)
-@DB(txn = false)
+@DB()
 public class StaticRouteDaoImpl extends GenericDaoBase<StaticRouteVO, Long> implements StaticRouteDao{
     protected final SearchBuilder<StaticRouteVO> AllFieldsSearch;
     protected final SearchBuilder<StaticRouteVO> NotRevokedSearch;
@@ -106,11 +106,11 @@ public class StaticRouteDaoImpl extends GenericDaoBase<StaticRouteVO, Long> impl
     @Override
     @DB
     public boolean remove(Long id) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         StaticRouteVO entry = findById(id);
         if (entry != null) {
-            _tagsDao.removeByIdAndType(id, TaggedResourceType.StaticRoute);
+            _tagsDao.removeByIdAndType(id, ResourceObjectType.StaticRoute);
         }
         boolean result = super.remove(id);
         txn.commit();

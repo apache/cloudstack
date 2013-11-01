@@ -42,7 +42,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -82,8 +82,11 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
@@ -176,7 +179,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_CREATE, eventDescription = "creating project", create=true)
     @DB
-    public Project createProject(String name, String displayText, String accountName, Long domainId) throws ResourceAllocationException{
+    public Project createProject(final String name, final String displayText, String accountName, final Long domainId) throws ResourceAllocationException{
         Account caller = CallContext.current().getCallingAccount();
         Account owner = caller;
 
@@ -202,30 +205,32 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         //do resource limit check
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.project);
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        final Account ownerFinal = owner;
+        return Transaction.execute(new TransactionCallback<Project>() {
+            @Override
+            public Project doInTransaction(TransactionStatus status) {
 
         //Create an account associated with the project
         StringBuilder acctNm = new StringBuilder("PrjAcct-");
-        acctNm.append(name).append("-").append(owner.getDomainId());
+                acctNm.append(name).append("-").append(ownerFinal.getDomainId());
 
         Account projectAccount = _accountMgr.createAccount(acctNm.toString(), Account.ACCOUNT_TYPE_PROJECT, domainId, null, null, UUID.randomUUID().toString());
 
-        Project project = _projectDao.persist(new ProjectVO(name, displayText, owner.getDomainId(), projectAccount.getId()));
+                Project project = _projectDao.persist(new ProjectVO(name, displayText, ownerFinal.getDomainId(), projectAccount.getId()));
 
         //assign owner to the project
-        assignAccountToProject(project, owner.getId(), ProjectAccount.Role.Admin);
+                assignAccountToProject(project, ownerFinal.getId(), ProjectAccount.Role.Admin);
 
         if (project != null) {
             CallContext.current().setEventDetails("Project id=" + project.getId());
         }
 
         //Increment resource count
-        _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.project);
-
-        txn.commit();
+                _resourceLimitMgr.incrementResourceCount(ownerFinal.getId(), ResourceType.project);
 
         return project;
+    }
+        });
     }
 
 
@@ -269,10 +274,11 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
     @DB
     @Override
-    public boolean deleteProject(Account caller, long callerUserId, ProjectVO project) {
+    public boolean deleteProject(Account caller, long callerUserId, final ProjectVO project) {
         //mark project as inactive first, so you can't add resources to it
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        boolean updateResult = Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
         s_logger.debug("Marking project id=" + project.getId() + " with state " + State.Disabled + " as a part of project delete...");
         project.setState(State.Disabled);
         boolean updateResult = _projectDao.update(project.getId(), project);
@@ -282,7 +288,10 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             _resourceLimitMgr.decrementResourceCount(projectOwner.getId(), ResourceType.project);
         } 
 
-        txn.commit();
+                return updateResult;
+            }
+        });
+
 
         if (updateResult) {
             //pass system caller when clenaup projects account
@@ -299,7 +308,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     }
 
     @DB
-    private boolean cleanupProject(Project project, AccountVO caller, Long callerUserId) {
+    private boolean cleanupProject(final Project project, AccountVO caller, Long callerUserId) {
         boolean result=true; 
         //Delete project's account
         AccountVO account = _accountDao.findById(project.getProjectAccountId());
@@ -309,10 +318,10 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
         if (result) {
             //Unassign all users from the project
-
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
-
+            result = Transaction.execute(new TransactionCallback<Boolean>() {
+                @Override
+                public Boolean doInTransaction(TransactionStatus status) {
+                    boolean result = true;
             s_logger.debug("Unassigning all accounts from project " + project + " as a part of project cleanup...");
             List<? extends ProjectAccount> projectAccounts = _projectAccountDao.listByProjectId(project.getId());
             for (ProjectAccount projectAccount : projectAccounts) {
@@ -322,7 +331,9 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             s_logger.debug("Removing all invitations for the project " + project + " as a part of project cleanup...");
             _projectInvitationDao.cleanupInvitations(project.getId());
 
-            txn.commit();
+                    return result;
+                }
+            });
             if (result) {
                 s_logger.debug("Accounts are unassign successfully from project " + project + " as a part of project cleanup...");
             }
@@ -367,10 +378,11 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     }
 
     @Override @DB
-    public boolean deleteAccountFromProject(long projectId, long accountId) {
+    public boolean deleteAccountFromProject(final long projectId, final long accountId) {
+        return Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
         boolean success = true;
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
 
         //remove account
         ProjectAccountVO projectAccount = _projectAccountDao.findByProjectIdAccountId(projectId, accountId);
@@ -385,8 +397,9 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             }
         }
 
-        txn.commit();
         return success;
+    }
+        });
     }
 
     @Override
@@ -443,11 +456,11 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
     @Override @DB
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_UPDATE, eventDescription = "updating project", async=true)
-    public Project updateProject(long projectId, String displayText, String newOwnerName) throws ResourceAllocationException{
+    public Project updateProject(final long projectId, final String displayText, final String newOwnerName) throws ResourceAllocationException{
         Account caller = CallContext.current().getCallingAccount();
 
         //check that the project exists
-        ProjectVO project = getProject(projectId);
+        final ProjectVO project = getProject(projectId);
 
         if (project == null) {
             throw new InvalidParameterValueException("Unable to find the project id=" + projectId);
@@ -456,8 +469,9 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         //verify permissions
         _accountMgr.checkAccess(caller,AccessType.ModifyProject, true, _accountMgr.getAccount(project.getProjectAccountId()));
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) throws ResourceAllocationException {
         if (displayText != null) {
             project.setDisplayText(displayText);
             _projectDao.update(projectId, project);
@@ -495,8 +509,9 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
                 s_logger.trace("Future owner " + newOwnerName + "is already the owner of the project id=" + projectId);
             }
         }
+            }
+        });
 
-        txn.commit();
 
         return _projectDao.findById(projectId);
 
@@ -650,9 +665,10 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     }
 
     @DB
-    public boolean activeInviteExists(Project project, Long accountId, String email) {
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+    public boolean activeInviteExists(final Project project, final Long accountId, final String email) {
+        return Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
         //verify if the invitation was already generated
         ProjectInvitationVO invite = null;
         if (accountId != null) {
@@ -679,8 +695,10 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
                 _projectInvitationDao.expunge(invite.getId());
             }
         }
-        txn.commit();
+
         return false;
+    }
+        });
     }
 
     public ProjectInvitation generateTokenBasedInvitation(Project project, String email, String token) {
@@ -711,7 +729,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
     @Override @DB
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_INVITATION_UPDATE, eventDescription = "updating project invitation", async=true)
-    public boolean updateInvitation(long projectId, String accountName, String token, boolean accept) {
+    public boolean updateInvitation(final long projectId, String accountName, String token, final boolean accept) {
         Account caller = CallContext.current().getCallingAccount();
         Long accountId = null;
         boolean result = true;
@@ -722,7 +740,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         }
 
         //check that the project exists
-        Project project = getProject(projectId);
+        final Project project = getProject(projectId);
 
         if (project == null) {
             throw new InvalidParameterValueException("Unable to find the project id=" + projectId);
@@ -756,29 +774,37 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
                 expireInvitation(invite);
                 throw new InvalidParameterValueException("Invitation is expired for account id=" + accountName + " to the project id=" + projectId);
             } else {
-                Transaction txn = Transaction.currentTxn();
-                txn.start();
+                
+                final ProjectInvitationVO inviteFinal = invite;
+                final Long accountIdFinal = accountId;
+                final String accountNameFinal = accountName;
+                result = Transaction.execute(new TransactionCallback<Boolean>() {
+                    @Override
+                    public Boolean doInTransaction(TransactionStatus status) {
+                        boolean result = true;
 
                 ProjectInvitation.State newState = accept ? ProjectInvitation.State.Completed : ProjectInvitation.State.Declined;
 
                 //update invitation
-                s_logger.debug("Marking invitation " + invite + " with state " + newState);
-                invite.setState(newState);
-                result = _projectInvitationDao.update(invite.getId(), invite);
+                        s_logger.debug("Marking invitation " + inviteFinal + " with state " + newState);
+                        inviteFinal.setState(newState);
+                        result = _projectInvitationDao.update(inviteFinal.getId(), inviteFinal);
 
                 if (result && accept) {
                     //check if account already exists for the project (was added before invitation got accepted)
-                    ProjectAccount projectAccount =  _projectAccountDao.findByProjectIdAccountId(projectId, accountId);
+                            ProjectAccount projectAccount =  _projectAccountDao.findByProjectIdAccountId(projectId, accountIdFinal);
                     if (projectAccount != null) {
-                        s_logger.debug("Account " + accountName + " already added to the project id=" + projectId);
+                                s_logger.debug("Account " + accountNameFinal + " already added to the project id=" + projectId);
                     } else {
-                        assignAccountToProject(project, accountId, ProjectAccount.Role.Regular); 
+                                assignAccountToProject(project, accountIdFinal, ProjectAccount.Role.Regular); 
                     }
                 } else {
-                    s_logger.warn("Failed to update project invitation " + invite + " with state " + newState);
+                            s_logger.warn("Failed to update project invitation " + inviteFinal + " with state " + newState);
                 }
 
-                txn.commit();
+                        return result;
+                    }
+                });
             }
         } else {
             throw new InvalidParameterValueException("Unable to find invitation for account name=" + accountName + " to the project id=" + projectId);
@@ -795,11 +821,11 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ACTIVATE, eventDescription = "activating project")
     @DB
-    public Project activateProject(long projectId) {
+    public Project activateProject(final long projectId) {
         Account caller = CallContext.current().getCallingAccount();
 
         //check that the project exists
-        ProjectVO project = getProject(projectId);
+        final ProjectVO project = getProject(projectId);
 
         if (project == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
@@ -822,15 +848,15 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             throw new InvalidParameterValueException("Can't activate the project in " + currentState + " state");
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
         project.setState(Project.State.Active);
         _projectDao.update(projectId, project);
 
         _accountMgr.enableAccount(project.getProjectAccountId());
-
-        txn.commit();
+            }
+        });
 
         return _projectDao.findById(projectId);
     }
@@ -1003,9 +1029,9 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         }
     }
 
-    public class ExpiredInvitationsCleanup implements Runnable {
+    public class ExpiredInvitationsCleanup extends ManagedContextRunnable {
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 TimeZone.getDefault();
                 List<ProjectInvitationVO> invitationsToExpire = _projectInvitationDao.listInvitationsToExpire(_invitationTimeOut);

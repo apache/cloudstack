@@ -405,7 +405,7 @@ public class ImplicitPlannerTest {
 
         Map<String, String> details = new HashMap<String, String>();
         details.put("ImplicitDedicationMode", plannerMode);
-        when(serviceOfferingDetailsDao.findDetails(offeringId)).thenReturn(details);
+        when(serviceOfferingDetailsDao.listDetailsKeyPairs(offeringId)).thenReturn(details);
 
         // Initialize hosts in clusters
         HostVO host1 = mock(HostVO.class);

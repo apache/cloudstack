@@ -25,8 +25,10 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.managed.context.ManagedContext;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
@@ -54,6 +56,9 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
     SecurityGroupWorkTracker _workTracker;
     SecurityManagerMBeanImpl _mBean;
     
+    @Inject
+    ManagedContext _managedContext;
+    
     WorkerThread[] _workers;
     private Set<Long> _disabledVms = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
     private boolean _schedulerDisabled = false;
@@ -68,7 +73,12 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
         public void run() {
             while (true) {
                 try{
-                    work(); 
+                    _managedContext.runWithContext(new Runnable() {
+                        @Override
+                        public void run() {
+                            work(); 
+                        }
+                    });
                 } catch (final Throwable th) {
                     s_logger.error("SG Work: Caught this throwable, ", th);
                 } 

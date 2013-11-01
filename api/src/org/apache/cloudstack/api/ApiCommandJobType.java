@@ -28,6 +28,7 @@ public enum ApiCommandJobType {
     SystemVm,
     Host,
     StoragePool,
+    ImageStore,
     IpAddress,
     PortableIpAddress,
     SecurityGroup,

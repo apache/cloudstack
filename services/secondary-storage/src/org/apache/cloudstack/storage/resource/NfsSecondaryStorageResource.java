@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.storage.resource;
 
+
+import static com.cloud.utils.S3Utils.mputFile;
 import static com.cloud.utils.S3Utils.putFile;
 import static com.cloud.utils.StringUtils.join;
 import static com.cloud.utils.db.GlobalLock.executeWithNoWaitLock;
@@ -23,7 +25,15 @@ import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static org.apache.commons.lang.StringUtils.substringAfterLast;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.URI;
@@ -39,10 +49,19 @@ import java.util.concurrent.Callable;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.storage.*;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.template.*;
-import com.cloud.utils.SwiftUtil;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.log4j.Logger;
+
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
@@ -56,18 +75,7 @@ import org.apache.cloudstack.storage.template.UploadManagerImpl;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.log4j.Logger;
 
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
@@ -88,6 +96,14 @@ import com.cloud.agent.api.SecStorageSetupCommand.Certificates;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
+import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
+import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
+import com.cloud.agent.api.storage.DownloadAnswer;
+import com.cloud.agent.api.storage.ListTemplateAnswer;
+import com.cloud.agent.api.storage.ListTemplateCommand;
+import com.cloud.agent.api.storage.ListVolumeAnswer;
+import com.cloud.agent.api.storage.ListVolumeCommand;
+import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
@@ -102,10 +118,19 @@ import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
+import com.cloud.storage.template.QCOW2Processor;
+import com.cloud.storage.template.RawImageProcessor;
+import com.cloud.storage.template.TemplateLocation;
+import com.cloud.storage.template.TemplateProp;
+import com.cloud.storage.template.VhdProcessor;
+import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.S3Utils;
 import com.cloud.utils.S3Utils.FileNamingStrategy;
+import com.cloud.utils.SwiftUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
@@ -172,7 +197,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     public void setInSystemVM(boolean inSystemVM) {
-        this._inSystemVM = inSystemVM;
+        _inSystemVM = inSystemVM;
     }
 
     @Override
@@ -272,7 +297,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         String finalFileName = templateFilename;
         String finalDownloadPath = destPath + File.separator + templateFilename;
         // compute the size of
-        long size = this._storage.getSize(downloadPath + File.separator + templateFilename);
+        long size = _storage.getSize(downloadPath + File.separator + templateFilename);
 
         DataTO newDestTO = null;
 
@@ -349,7 +374,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     protected Answer copySnapshotToTemplateFromNfsToNfsXenserver(CopyCommand cmd, SnapshotObjectTO srcData,
             NfsTO srcDataStore, TemplateObjectTO destData, NfsTO destDataStore) {
-        String srcMountPoint = this.getRootDir(srcDataStore.getUrl());
+        String srcMountPoint = getRootDir(srcDataStore.getUrl());
         String snapshotPath = srcData.getPath();
         int index = snapshotPath.lastIndexOf("/");
         String snapshotName = snapshotPath.substring(index + 1);
@@ -357,17 +382,18 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             snapshotName = snapshotName + ".vhd";
         }
         snapshotPath = snapshotPath.substring(0, index);
+
         snapshotPath = srcMountPoint + File.separator + snapshotPath;
-        String destMountPoint = this.getRootDir(destDataStore.getUrl());
+        String destMountPoint = getRootDir(destDataStore.getUrl());
         String destPath = destMountPoint + File.separator + destData.getPath();
 
         String errMsg = null;
         try {
-            this._storage.mkdir(destPath);
+            _storage.mkdir(destPath);
 
             String templateUuid = UUID.randomUUID().toString();
             String templateName = templateUuid + ".vhd";
-            Script command = new Script(this.createTemplateFromSnapshotXenScript, cmd.getWait() * 1000, s_logger);
+            Script command = new Script(createTemplateFromSnapshotXenScript, cmd.getWait() * 1000, s_logger);
             command.add("-p", snapshotPath);
             command.add("-s", snapshotName);
             command.add("-n", templateName);
@@ -424,7 +450,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
             // get snapshot file name
             String templateName = srcFile.getName();
-            // add kvm file extension for copied template name    
+            // add kvm file extension for copied template name
             String fileName = templateName + "." + srcFormat.getFileExtension();
             String destFileFullPath = destFile.getAbsolutePath() + File.separator + fileName;
             s_logger.debug("copy snapshot " + srcFile.getAbsolutePath() + " to template " + destFileFullPath);
@@ -442,7 +468,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 bufferWriter.write("\n");
                 bufferWriter.write("filename=" + fileName);
                 bufferWriter.write("\n");
-                long size = this._storage.getSize(destFileFullPath);
+                long size = _storage.getSize(destFileFullPath);
                 bufferWriter.write("size=" + size);
                 bufferWriter.close();
                 writer.close();
@@ -509,15 +535,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         DataTO destData = cmd.getDestTO();
         DataStoreTO srcDataStore = srcData.getDataStore();
         DataStoreTO destDataStore = destData.getDataStore();
-        if (srcDataStore.getRole() == DataStoreRole.Image || srcDataStore.getRole() == DataStoreRole.ImageCache) {
+        if (srcDataStore.getRole() == DataStoreRole.Image || srcDataStore.getRole() == DataStoreRole.ImageCache ||
+                srcDataStore.getRole() == DataStoreRole.Primary) {
             if (!(srcDataStore instanceof NfsTO)) {
                 s_logger.debug("only support nfs storage as src, when create template from snapshot");
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
 
             if (destDataStore instanceof NfsTO) {
-                return copySnapshotToTemplateFromNfsToNfs(cmd, (SnapshotObjectTO) srcData, (NfsTO) srcDataStore,
-                        (TemplateObjectTO) destData, (NfsTO) destDataStore);
+                return copySnapshotToTemplateFromNfsToNfs(cmd, (SnapshotObjectTO) srcData, (NfsTO)srcDataStore,
+                        (TemplateObjectTO) destData, (NfsTO)destDataStore);
             } else if (destDataStore instanceof SwiftTO) {
                 //create template on the same data store
                 CopyCmdAnswer answer = (CopyCmdAnswer)copySnapshotToTemplateFromNfsToNfs(cmd, (SnapshotObjectTO) srcData, (NfsTO) srcDataStore,
@@ -543,8 +570,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     execute(deleteCommand);
                 } catch (Exception e) {
                     s_logger.debug("Failed to clean up staging area:", e);
-                }  
-                
+                }
+
                 TemplateObjectTO template = new TemplateObjectTO();
                 template.setPath(swiftPath);
                 template.setSize(templateFile.length());
@@ -569,7 +596,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     execute(deleteCommand);
                 } catch (Exception e) {
                     s_logger.debug("Failed to clean up staging area:", e);
-                }  
+                }
                 return result;
             }
         }
@@ -603,7 +630,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             NfsTO destImageStore = (NfsTO) destDataStore;
             if (srcDataStore instanceof S3TO) {
                 S3TO s3 = (S3TO) srcDataStore;
-                return this.copyFromS3ToNfs(cmd, srcData, s3, destData, destImageStore);
+                return copyFromS3ToNfs(cmd, srcData, s3, destData, destImageStore);
             } else if (srcDataStore instanceof SwiftTO) {
                 return copyFromSwiftToNfs(cmd, srcData, (SwiftTO)srcDataStore, destData, destImageStore);
             }
@@ -792,7 +819,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             processor.configure("template processor", new HashMap<String, Object>());
             return processor.getVirtualSize(file);
         } catch (Exception e) {
-           s_logger.debug("Failed to get virtual size:" ,e);
+            s_logger.debug("Failed to get virtual size:" ,e);
         }
         return file.length();
     }
@@ -830,9 +857,15 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     }
                 }
             }
-            ImageFormat format = this.getTemplateFormat(srcFile.getName());
+
+            long srcSize = srcFile.length();
+            ImageFormat format = getTemplateFormat(srcFile.getName());
             String key = destData.getPath() + S3Utils.SEPARATOR + srcFile.getName();
-            putFile(s3, srcFile, bucket, key);
+            if (!s3.getSingleUpload(srcSize)){
+                mputFile(s3, srcFile, bucket, key); 
+            } else{
+                putFile(s3, srcFile, bucket, key);
+            }
 
             DataTO retObj = null;
             if (destData.getObjectType() == DataObjectType.TEMPLATE) {
@@ -1244,9 +1277,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         int index = name.lastIndexOf(File.separator);
         String snapshotPath = name.substring(0, index);
         if (deleteAllFlag) {
-            lPath = this.getRootDir(secondaryStorageUrl) + File.separator + snapshotPath + File.separator + "*";
+            lPath = getRootDir(secondaryStorageUrl) + File.separator + snapshotPath + File.separator + "*";
         } else {
-            lPath = this.getRootDir(secondaryStorageUrl) + File.separator + name + "*";
+            lPath = getRootDir(secondaryStorageUrl) + File.separator + name + "*";
         }
 
         final String result = deleteLocalFile(lPath);
@@ -1434,7 +1467,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     Map<String, TemplateProp> s3ListTemplate(S3TO s3) {
         String bucket = s3.getBucketName();
         // List the objects in the source directory on S3
-        final List<S3ObjectSummary> objectSummaries = S3Utils.getDirectory(s3, bucket, this.TEMPLATE_ROOT_DIR);
+        final List<S3ObjectSummary> objectSummaries = S3Utils.getDirectory(s3, bucket, TEMPLATE_ROOT_DIR);
         if (objectSummaries == null) {
             return null;
         }
@@ -1443,7 +1476,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String key = objectSummary.getKey();
             // String installPath = StringUtils.substringBeforeLast(key,
             // S3Utils.SEPARATOR);
-            String uniqueName = this.determineS3TemplateNameFromKey(key);
+            String uniqueName = determineS3TemplateNameFromKey(key);
             // TODO: isPublic value, where to get?
             TemplateProp tInfo = new TemplateProp(uniqueName, key, objectSummary.getSize(), objectSummary.getSize(),
                     true, false);
@@ -1456,7 +1489,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     Map<Long, TemplateProp> s3ListVolume(S3TO s3) {
         String bucket = s3.getBucketName();
         // List the objects in the source directory on S3
-        final List<S3ObjectSummary> objectSummaries = S3Utils.getDirectory(s3, bucket, this.VOLUME_ROOT_DIR);
+        final List<S3ObjectSummary> objectSummaries = S3Utils.getDirectory(s3, bucket, VOLUME_ROOT_DIR);
         if (objectSummaries == null) {
             return null;
         }
@@ -1465,7 +1498,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String key = objectSummary.getKey();
             // String installPath = StringUtils.substringBeforeLast(key,
             // S3Utils.SEPARATOR);
-            Long id = this.determineS3VolumeIdFromKey(key);
+            Long id = determineS3VolumeIdFromKey(key);
             // TODO: how to get volume template name
             TemplateProp tInfo = new TemplateProp(id.toString(), key, objectSummary.getSize(), objectSummary.getSize(),
                     true, false);
@@ -2226,8 +2259,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
      * 
      * CIFS parameters are documented with mount.cifs at
      * http://linux.die.net/man/8/mount.cifs
-	 * For simplicity, when a URI is used to specify a CIFS share,
-	 * options such as domain,user,password are passed as query parameters.
+     * For simplicity, when a URI is used to specify a CIFS share,
+     * options such as domain,user,password are passed as query parameters.
      * 
      * @param uri
      *            crresponding to the remote device. Will throw for unsupported
@@ -2262,7 +2295,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return dir;
     }
 
-    
+
     protected void umount(String localRootPath, URI uri) {
         ensureLocalRootPathExists(localRootPath, uri);
 
@@ -2286,7 +2319,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
         s_logger.debug("Successfully umounted " + localRootPath);
     }
-    
+
     protected void mount(String localRootPath, String remoteDevice, URI uri) {
         s_logger.debug("mount " + uri.toString() + " on " + localRootPath);
         ensureLocalRootPathExists(localRootPath, uri);

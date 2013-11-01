@@ -58,9 +58,9 @@ import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.context.ServerContexts;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 
 import com.cloud.api.ApiDBUtils;
@@ -145,6 +145,9 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.InstanceGroupVO;
@@ -513,10 +516,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @DB
-    public void updateLoginAttempts(Long id, int attempts, boolean toDisable) {
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+    public void updateLoginAttempts(final Long id, final int attempts, final boolean toDisable) {
         try {
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
             UserAccountVO user = null;
             user = _userAccountDao.lockRow(id, true);
             user.setLoginAttempts(attempts);
@@ -524,11 +528,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 user.setState(State.disabled.toString());
             }
             _userAccountDao.update(id, user);
-             txn.commit();
+                }
+            });
         } catch (Exception e) {
             s_logger.error("Failed to update login attempts for user with id " + id );
         }
-        txn.close();
     }
 
     private boolean doSetUserStatus(long userId, State state) {
@@ -733,7 +737,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
             }
 
-            if (vpcsDeleted) {
+            if (networksDeleted && vpcsDeleted) {
                 // release ip addresses belonging to the account
                 List<? extends IpAddress> ipsToRelease = _ipAddressDao.listByAccount(accountId);
                 for (IpAddress ip : ipsToRelease) {
@@ -893,10 +897,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @DB
     @ActionEvents({
         @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account"),
-        @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User"),
+        @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")
     })
-    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType,
-                                         Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID) {
+    public UserAccount createUserAccount(final String userName, final String password, final String firstName, final String lastName, final String email, final String timezone, String accountName, final short accountType,
+                                         Long domainId, final String networkDomain, final Map<String, String> details, String accountUUID, final String userUUID) {
 
         if (accountName == null) {
             accountName = userName;
@@ -938,38 +942,47 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        final String accountNameFinal = accountName;
+        final Long domainIdFinal = domainId;
+        final String accountUUIDFinal = accountUUID;
+        Pair<Long, Account> pair = Transaction.execute(new TransactionCallback<Pair<Long, Account>>() {
+            @Override
+            public Pair<Long, Account> doInTransaction(TransactionStatus status) {
+                // create account
+                String accountUUID = accountUUIDFinal;
+                if (accountUUID == null) {
+                    accountUUID = UUID.randomUUID().toString();
+                }
+                AccountVO account = createAccount(accountNameFinal, accountType, domainIdFinal, networkDomain, details, accountUUID);
+                long accountId = account.getId();
 
-        // create account
-        if(accountUUID == null){
-            accountUUID = UUID.randomUUID().toString();
-        }
-        AccountVO account = createAccount(accountName, accountType, domainId, networkDomain, details, accountUUID);
-        long accountId = account.getId();
+                // create the first user for the account
+                UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone, userUUID);
 
-        // create the first user for the account
-        UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone, userUUID);
+                if (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+                    // set registration token
+                    byte[] bytes = (domainIdFinal + accountNameFinal + userName + System.currentTimeMillis()).getBytes();
+                    String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
+                    user.setRegistrationToken(registrationToken);
+                }
 
-        if (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            // set registration token
-            byte[] bytes = (domainId + accountName + userName + System.currentTimeMillis()).getBytes();
-            String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
-            user.setRegistrationToken(registrationToken);
-        }
+                // create correct account and group association based on accountType
+                if (accountType != Account.ACCOUNT_TYPE_PROJECT) {
+                    AclGroupAccountMapVO grpAcct = new AclGroupAccountMapVO(accountType + 1, accountId);
+                    _aclGroupAccountDao.persist(grpAcct);
+                }
 
-        // create correct account and group association based on accountType
-        if (accountType != Account.ACCOUNT_TYPE_PROJECT) {
-            AclGroupAccountMapVO grpAcct = new AclGroupAccountMapVO(accountType + 1, accountId);
-            _aclGroupAccountDao.persist(grpAcct);
-        }
+                return new Pair<Long, Account>(user.getId(), account);
+            }
+        });
 
-        txn.commit();
+        long userId = pair.first();
+        Account account = pair.second();
 
         CallContext.current().putContextParameter(Account.class, account.getUuid());
 
         //check success
-        return _userAccountDao.findById(user.getId());
+        return _userAccountDao.findById(userId);
     }
 
     @Override
@@ -1175,12 +1188,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_USER_ENABLE, eventDescription = "enabling User")
-    public UserAccount enableUser(long userId) {
+    public UserAccount enableUser(final long userId) {
 
         Account caller = CallContext.current().getCallingAccount();
 
         // Check if user exists in the system
-        User user = _userDao.findById(userId);
+        final User user = _userDao.findById(userId);
         if (user == null || user.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find active user by id " + userId);
         }
@@ -1198,15 +1211,18 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         checkAccess(caller, null, true, account);
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-
+        boolean success = Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
         boolean success = doSetUserStatus(userId, State.enabled);
 
         // make sure the account is enabled too
         success = success && enableAccount(user.getAccountId());
 
-        txn.commit();
+                return success;
+            }
+        });
+
 
         if (success) {
             // whenever the user is successfully enabled, reset the login attempts to zero
@@ -1433,7 +1449,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         String accountName = cmd.getAccountName();
         String newAccountName = cmd.getNewName();
         String networkDomain = cmd.getNetworkDomain();
-        Map<String, String> details = cmd.getDetails();
+        final Map<String, String> details = cmd.getDetails();
 
         boolean success = false;
         Account account = null;
@@ -1477,7 +1493,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
         }
 
-        AccountVO acctForUpdate = _accountDao.findById(account.getId());
+        final AccountVO acctForUpdate = _accountDao.findById(account.getId());
         acctForUpdate.setAccountName(newAccountName);
 
         if (networkDomain != null) {
@@ -1488,16 +1504,19 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-
-        success = _accountDao.update(account.getId(), acctForUpdate);
+        final Account accountFinal = account;
+        success = Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
+                boolean success = _accountDao.update(accountFinal.getId(), acctForUpdate);
 
         if (details != null && success) {
-            _accountDetailsDao.update(account.getId(), details);
+                    _accountDetailsDao.update(accountFinal.getId(), details);
         }
 
-        txn.commit();
+                return success;
+            }
+        });
 
         if (success) {
             CallContext.current().putContextParameter(Account.class, account.getUuid());
@@ -1535,18 +1554,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return _userDao.remove(id);
     }
 
-    public class ResourceCountCalculateTask implements Runnable {
+    protected class AccountCleanupTask extends ManagedContextRunnable {
         @Override
-        public void run() {
-
-        }
-    }
-
-    protected class AccountCleanupTask implements Runnable {
-        @Override
-        public void run() {
+        protected void runInContext() {
             try {
-                ServerContexts.registerSystemContext();
                 GlobalLock lock = GlobalLock.getInternLock("AccountCleanup");
                 if (lock == null) {
                     s_logger.debug("Couldn't get the global lock");
@@ -1628,7 +1639,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     s_logger.error("Exception ", e);
                 } finally {
                     lock.unlock();
-                    ServerContexts.unregisterSystemContext();
                 }
             } catch (Exception e) {
                 s_logger.error("Exception ", e);
@@ -1758,7 +1768,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     @DB
-    public AccountVO createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map<String, String> details, String uuid) {
+    public AccountVO createAccount(final String accountName, final short accountType, final Long domainId, final String networkDomain, final Map<String, String> details, final String uuid) {
         // Validate domain
         Domain domain = _domainMgr.getDomain(domainId);
         if (domain == null) {
@@ -1799,9 +1809,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         // Create the account
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-
+        return Transaction.execute(new TransactionCallback<AccountVO>() {
+            @Override
+            public AccountVO doInTransaction(TransactionStatus status) {
         AccountVO account = _accountDao.persist(new AccountVO(accountName, domainId, networkDomain, accountType, uuid));
 
         if (account == null) {
@@ -1819,9 +1829,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // Create default security group
         _networkGroupMgr.createDefaultSecurityGroup(accountId);
-        txn.commit();
 
         return account;
+    }
+        });
     }
 
     protected UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone, String userUUID) {
@@ -2058,7 +2069,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override @DB
     @ActionEvent(eventType = EventTypes.EVENT_REGISTER_FOR_SECRET_API_KEY, eventDescription = "register for the developer API keys")
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
-        Long userId = cmd.getId();
+        final Long userId = cmd.getId();
 
         User user = getUserIncludingRemoved(userId);
         if (user == null) {
@@ -2071,12 +2082,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         // generate both an api key and a secret key, update the user table with the keys, return the keys to the user
-        String[] keys = new String[2];
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        final String[] keys = new String[2];
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
         keys[0] = createUserApiKey(userId);
         keys[1] = createUserSecretKey(userId);
-        txn.commit();
+            }
+        });
 
         return keys;
     }

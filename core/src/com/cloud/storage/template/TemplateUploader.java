@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.storage.template;
 
-import com.cloud.storage.template.TemplateUploader.UploadCompleteCallback;
-import com.cloud.storage.template.TemplateUploader.Status;
-
 public interface TemplateUploader extends Runnable{
 
 	/**

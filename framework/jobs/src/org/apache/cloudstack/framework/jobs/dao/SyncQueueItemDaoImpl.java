@@ -37,7 +37,7 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @DB
 public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> implements SyncQueueItemDao {
@@ -49,7 +49,7 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
         queueIdSearch = createSearchBuilder(Long.class);
         queueIdSearch.and("contentId", queueIdSearch.entity().getContentId(), Op.EQ);
         queueIdSearch.and("contentType", queueIdSearch.entity().getContentType(), Op.EQ);
-        queueIdSearch.selectField(queueIdSearch.entity().getId());
+        queueIdSearch.selectFields(queueIdSearch.entity().getId());
         queueIdSearch.done();
     }
 
@@ -83,7 +83,7 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
 					 " ORDER BY i.id " +
 					 " LIMIT 0, ?";
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement(sql);

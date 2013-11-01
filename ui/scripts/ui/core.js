@@ -247,7 +247,7 @@
                     $('<div>').attr({
                         id: 'breadcrumbs'
                     })
-                    .append($('<div>').addClass('home'))
+                    .append($('<div>').addClass('home').html(_l('label.home')))
                     .append($('<div>').addClass('end'))
             )
 
@@ -291,7 +291,7 @@
         var $options = $('<div>').attr({
             id: 'user-options'
         })
-            .appendTo($('#header'));
+            .appendTo($('#user'));
 
         $(['label.logout', 'label.help', 'label.about']).each(function() {
             var $link = $('<a>')
@@ -302,8 +302,8 @@
                 .appendTo($options);
 
             if (this == 'label.help') {
-                $link.click(function() {
-                    var helpURL = 'http://docs.cloud.com/CloudStack_Documentation';
+                $link.addClass('help').click(function() {
+                    var helpURL = 'http://cloudstack.apache.org/';
 
                     window.open(helpURL, '_blank');
 
@@ -311,7 +311,7 @@
                 });
             }
             if (this == 'label.about') {
-                $link.click(function() {
+                $link.addClass('about').click(function() {
                     var $logo = $('<div>').addClass('logo').html(_l('label.app.name')),
                         $version = $('<div>').addClass('version').html(g_cloudstackversion),
                         $about = $('<div>').addClass('about').append($logo).append($version);

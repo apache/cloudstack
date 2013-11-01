@@ -17,7 +17,6 @@
 package com.cloud.api.response;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -271,47 +270,6 @@ public class ApiResponseSerializer {
                 }
             }
         }
-    }
-
-    private static Method getGetMethod(Object o, String propName) {
-        Method method = null;
-        String methodName = getGetMethodName("get", propName);
-        try {
-            method = o.getClass().getMethod(methodName);
-        } catch (SecurityException e1) {
-            s_logger.error("Security exception in getting ResponseObject " + o.getClass().getName() + " get method for property: " + propName);
-        } catch (NoSuchMethodException e1) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("ResponseObject " + o.getClass().getName() + " does not have " + methodName + "() method for property: " + propName
-                        + ", will check is-prefixed method to see if it is boolean property");
-            }
-        }
-
-        if (method != null)
-            return method;
-
-        methodName = getGetMethodName("is", propName);
-        try {
-            method = o.getClass().getMethod(methodName);
-        } catch (SecurityException e1) {
-            s_logger.error("Security exception in getting ResponseObject " + o.getClass().getName() + " get method for property: " + propName);
-        } catch (NoSuchMethodException e1) {
-            s_logger.warn("ResponseObject " + o.getClass().getName() + " does not have " + methodName + "() method for property: " + propName);
-        }
-        return method;
-    }
-
-    private static String getGetMethodName(String prefix, String fieldName) {
-        StringBuffer sb = new StringBuffer(prefix);
-
-        if (fieldName.length() >= prefix.length() && fieldName.substring(0, prefix.length()).equals(prefix)) {
-            return fieldName;
-        } else {
-            sb.append(fieldName.substring(0, 1).toUpperCase());
-            sb.append(fieldName.substring(1));
-        }
-
-        return sb.toString();
     }
 
     private static String escapeSpecialXmlChars(String originalString) {

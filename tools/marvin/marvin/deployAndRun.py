@@ -17,6 +17,7 @@
 
 import deployDataCenter
 import TestCaseExecuteEngine
+import sys
 from argparse import ArgumentParser
 if __name__ == "__main__":
 
@@ -37,6 +38,8 @@ if __name__ == "__main__":
     parser.add_argument("-l", "--load", dest="load", action="store_true",
                         help="only load config, do not deploy,\
  it will only run testcase")
+    parser.add_argument("-n", "--num", dest="number",
+                        help="how many times you want run the test case")
 
     options = parser.parse_args()
 
@@ -52,23 +55,42 @@ if __name__ == "__main__":
         deploy.loadCfg()
     else:
         deploy.deploy()
+    iterates = 1
+    if options.number is not None:
+        if options.number == "loop":
+            iterates = sys.maxint
+        else:
+            try:
+                iterates = int(options.number)
+            except:
+                iterates = 1
 
     if options.testCaseFolder is None:
         if options.module is None:
             parser.print_usage()
             exit(1)
         else:
-            engine = \
-                TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient,
-                                                            deploy.getCfg(),
-                                                            testCaseLogFile,
-                                                            testResultLogFile)
-            engine.loadTestsFromFile(options.module)
-            engine.run()
+            n = 0
+            while(n < iterates):
+                engine = \
+                    TestCaseExecuteEngine.TestCaseExecuteEngine(
+                        deploy.testClient,
+                        deploy.getCfg(
+                        ),
+                        testCaseLogFile,
+                        testResultLogFile)
+                engine.loadTestsFromFile(options.module)
+                engine.run()
+                n = n + 1
     else:
-        engine = TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient,
-                                                             deploy.getCfg(),
-                                                             testCaseLogFile,
-                                                             testResultLogFile)
-        engine.loadTestsFromDir(options.testCaseFolder)
-        engine.run()
+        n = 0
+        while(n < iterates):
+            engine = TestCaseExecuteEngine.TestCaseExecuteEngine(
+                deploy.testClient,
+                deploy.getCfg(
+                ),
+                testCaseLogFile,
+                testResultLogFile)
+            engine.loadTestsFromDir(options.testCaseFolder)
+            engine.run()
+            n = n + 1

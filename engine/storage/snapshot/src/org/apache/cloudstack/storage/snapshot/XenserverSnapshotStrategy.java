@@ -11,32 +11,44 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.storage.snapshot;
 
+
+import java.util.List;
+
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.*;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -44,8 +56,6 @@ import com.cloud.utils.fsm.NoTransitionException;
 public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     private static final Logger s_logger = Logger.getLogger(XenserverSnapshotStrategy.class);
 
-    @Inject
-    SnapshotManager snapshotMgr;
     @Inject
     SnapshotService snapshotSvr;
     @Inject
@@ -66,7 +76,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
         if (parentSnapshot != null && snapshot.getPath().equalsIgnoreCase(parentSnapshot.getPath())) {
             s_logger.debug("backup an empty snapshot");
             // don't need to backup this snapshot
-            SnapshotDataStoreVO parentSnapshotOnBackupStore = this.snapshotStoreDao.findBySnapshot(
+            SnapshotDataStoreVO parentSnapshotOnBackupStore = snapshotStoreDao.findBySnapshot(
                     parentSnapshot.getId(), DataStoreRole.Image);
             if (parentSnapshotOnBackupStore != null && parentSnapshotOnBackupStore.getState() == State.Ready) {
                 DataStore store = dataStoreMgr.getDataStore(parentSnapshotOnBackupStore.getDataStoreId(),
@@ -88,7 +98,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                     s_logger.debug("Failed to change state: " + snapshot.getId() + ": " + e.toString());
                     throw new CloudRuntimeException(e.toString());
                 }
-                return this.snapshotDataFactory.getSnapshot(snapObj.getId(), store);
+                return snapshotDataFactory.getSnapshot(snapObj.getId(), store);
             } else {
                 s_logger.debug("parent snapshot hasn't been backed up yet");
             }
@@ -106,7 +116,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
             int i;
             SnapshotDataStoreVO parentSnapshotOnBackupStore = null;
             for (i = 1; i < deltaSnap; i++) {
-                parentSnapshotOnBackupStore = this.snapshotStoreDao.findBySnapshot(parentSnapshot.getId(),
+                parentSnapshotOnBackupStore = snapshotStoreDao.findBySnapshot(parentSnapshot.getId(),
                         DataStoreRole.Image);
                 if (parentSnapshotOnBackupStore == null) {
                     break;
@@ -117,7 +127,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                     break;
                 }
 
-                parentSnapshotOnBackupStore = this.snapshotStoreDao.findBySnapshot(prevBackupId, DataStoreRole.Image);
+                parentSnapshotOnBackupStore = snapshotStoreDao.findBySnapshot(prevBackupId, DataStoreRole.Image);
             }
             if (i >= deltaSnap) {
                 fullBackup = true;
@@ -125,7 +135,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
         }
 
         snapshot.addPayload(fullBackup);
-        return this.snapshotSvr.backupSnapshot(snapshot);
+        return snapshotSvr.backupSnapshot(snapshot);
     }
 
     protected boolean deleteSnapshotChain(SnapshotInfo snapshot) {
@@ -159,7 +169,15 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                     }
                 }
                 if (!deleted) {
-                    boolean r = this.snapshotSvr.deleteSnapshot(snapshot);
+                    boolean r = snapshotSvr.deleteSnapshot(snapshot);
+                    if (r) {
+                        // delete snapshot in cache if there is
+                        List<SnapshotInfo> cacheSnaps = snapshotDataFactory.listSnapshotOnCache(snapshot.getId());
+                        for (SnapshotInfo cacheSnap : cacheSnaps) {
+                            s_logger.debug("Delete snapshot " + snapshot.getId() + " from image cache store: " + cacheSnap.getDataStore().getName());
+                            cacheSnap.delete();
+                        }
+                    }
                     if (!resultIsSet) {
                         result = r;
                         resultIsSet = true;
@@ -189,13 +207,13 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 
         if (!Snapshot.State.BackedUp.equals(snapshotVO.getState())) {
             throw new InvalidParameterValueException("Can't delete snapshotshot " + snapshotId
-                    + " due to it is not in BackedUp Status");
+                    + " due to it is in " + snapshotVO.getState() + " Status");
         }
 
         // first mark the snapshot as destroyed, so that ui can't see it, but we
         // may not destroy the snapshot on the storage, as other snapshots may
         // depend on it.
-        SnapshotInfo snapshotOnImage = this.snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Image);
+        SnapshotInfo snapshotOnImage = snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Image);
         if (snapshotOnImage == null) {
             s_logger.debug("Can't find snapshot on backup storage, delete it in db");
             snapshotDao.remove(snapshotId);
@@ -235,44 +253,78 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     @Override
-    public SnapshotInfo takeSnapshot(SnapshotInfo snapshot) {
-        SnapshotResult result =  snapshotSvr.takeSnapshot(snapshot);
-        if (result.isFailed()) {
-            s_logger.debug("Failed to take snapshot: " + result.getResult());
-            throw new CloudRuntimeException(result.getResult());
-        }
-        snapshot = result.getSnashot();
-        DataStore primaryStore = snapshot.getDataStore();
-
-        SnapshotInfo backupedSnapshot = this.backupSnapshot(snapshot);
-        try {
-            SnapshotInfo parent = snapshot.getParent();
-            if (backupedSnapshot != null && parent != null) {
-                Long parentSnapshotId = parent.getId();
-                while (parentSnapshotId != null && parentSnapshotId != 0L) {
-                    SnapshotDataStoreVO snapshotDataStoreVO = snapshotStoreDao.findByStoreSnapshot(primaryStore.getRole(),primaryStore.getId(), parentSnapshotId);
-                    if (snapshotDataStoreVO != null) {
-                        parentSnapshotId = snapshotDataStoreVO.getParentSnapshotId();
-                        snapshotStoreDao.remove(snapshotDataStoreVO.getId());
-                    } else {
-                        parentSnapshotId = null;
-                    }
-                }
-                SnapshotDataStoreVO snapshotDataStoreVO = snapshotStoreDao.findByStoreSnapshot(primaryStore.getRole(), primaryStore.getId(),
-                        snapshot.getId());
-                if (snapshotDataStoreVO != null) {
-                    snapshotDataStoreVO.setParentSnapshotId(0L);
-                    snapshotStoreDao.update(snapshotDataStoreVO.getId(), snapshotDataStoreVO);
-                }
-            }
-        } catch (Exception e) {
-            s_logger.debug("Failed to clean up snapshots on primary storage", e);
-        }
-        return backupedSnapshot;
+    public boolean revertSnapshot(Long snapshotId) {
+        throw new CloudRuntimeException("revert Snapshot is not supported");
     }
 
     @Override
-    public boolean canHandle(Snapshot snapshot) {
-        return true;
+    @DB
+    public SnapshotInfo takeSnapshot(SnapshotInfo snapshot) {
+        SnapshotVO snapshotVO = snapshotDao.acquireInLockTable(snapshot.getId());
+        if (snapshotVO == null) {
+            throw new CloudRuntimeException("Failed to get lock on snapshot:" + snapshot.getId());
+        }
+
+        try {
+            VolumeInfo volumeInfo = snapshot.getBaseVolume();
+            volumeInfo.stateTransit(Volume.Event.SnapshotRequested);
+            SnapshotResult result = null;
+            try {
+                result =  snapshotSvr.takeSnapshot(snapshot);
+                if (result.isFailed()) {
+                    s_logger.debug("Failed to take snapshot: " + result.getResult());
+                    throw new CloudRuntimeException(result.getResult());
+                }
+            } finally {
+                if (result != null && result.isSuccess()) {
+                    volumeInfo.stateTransit(Volume.Event.OperationSucceeded);
+                } else {
+                    volumeInfo.stateTransit(Volume.Event.OperationFailed);
+                }
+            }
+
+            snapshot = result.getSnashot();
+            DataStore primaryStore = snapshot.getDataStore();
+
+            SnapshotInfo backupedSnapshot = backupSnapshot(snapshot);
+
+            try {
+                SnapshotInfo parent = snapshot.getParent();
+                if (backupedSnapshot != null && parent != null) {
+                    Long parentSnapshotId = parent.getId();
+                    while (parentSnapshotId != null && parentSnapshotId != 0L) {
+                        SnapshotDataStoreVO snapshotDataStoreVO = snapshotStoreDao.findByStoreSnapshot(primaryStore.getRole(),primaryStore.getId(), parentSnapshotId);
+                        if (snapshotDataStoreVO != null) {
+                            parentSnapshotId = snapshotDataStoreVO.getParentSnapshotId();
+                            snapshotStoreDao.remove(snapshotDataStoreVO.getId());
+                        } else {
+                            parentSnapshotId = null;
+                        }
+                    }
+                    SnapshotDataStoreVO snapshotDataStoreVO = snapshotStoreDao.findByStoreSnapshot(primaryStore.getRole(), primaryStore.getId(),
+                            snapshot.getId());
+                    if (snapshotDataStoreVO != null) {
+                        snapshotDataStoreVO.setParentSnapshotId(0L);
+                        snapshotStoreDao.update(snapshotDataStoreVO.getId(), snapshotDataStoreVO);
+                    }
+                }
+            } catch (Exception e) {
+                s_logger.debug("Failed to clean up snapshots on primary storage", e);
+            }
+            return backupedSnapshot;
+        } finally {
+            if (snapshotVO != null) {
+                snapshotDao.releaseFromLockTable(snapshot.getId());
+            }
+        }
+    }
+
+    @Override
+    public StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op) {
+        if (op == SnapshotOperation.REVERT) {
+            return StrategyPriority.CANT_HANDLE;
+        }
+
+        return StrategyPriority.DEFAULT;
     }
 }

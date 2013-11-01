@@ -40,6 +40,7 @@ public class RemoteAccessVpnDaoImpl extends GenericDaoBase<RemoteAccessVpnVO, Lo
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("vpcId", AllFieldsSearch.entity().getVpcId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("ipAddress", AllFieldsSearch.entity().getServerAddressId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
@@ -57,6 +58,14 @@ public class RemoteAccessVpnDaoImpl extends GenericDaoBase<RemoteAccessVpnVO, Lo
         SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("networkId", networkId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public RemoteAccessVpnVO findByAccountAndVpc(Long accountId, Long vpcId) {
+        SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("vpcId", vpcId);
         return findOneBy(sc);
     }
 

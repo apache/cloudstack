@@ -19,6 +19,7 @@ package com.cloud.hypervisor;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.Local;
@@ -26,6 +27,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.utils.Pair;
+
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -43,8 +45,8 @@ public class HypervisorGuruManagerImpl extends ManagerBase implements Hypervisor
 
     @Inject HostDao _hostDao;
 
-    @Inject List<HypervisorGuru> _hvGuruList;
-    Map<HypervisorType, HypervisorGuru> _hvGurus = new HashMap<HypervisorType, HypervisorGuru>();
+    List<HypervisorGuru> _hvGuruList;
+    Map<HypervisorType, HypervisorGuru> _hvGurus = new ConcurrentHashMap<HypervisorType, HypervisorGuru>();
 
     @PostConstruct
     public void init() {
@@ -55,7 +57,23 @@ public class HypervisorGuruManagerImpl extends ManagerBase implements Hypervisor
 
     @Override
     public HypervisorGuru getGuru(HypervisorType hypervisorType) {
-        return _hvGurus.get(hypervisorType);
+        if (hypervisorType == null) {
+            return null;
+        }
+
+        HypervisorGuru result = _hvGurus.get(hypervisorType);
+
+        if ( result == null ) {
+            for ( HypervisorGuru guru : _hvGuruList ) {
+                if ( guru.getHypervisorType() == hypervisorType ) {
+                    _hvGurus.put(hypervisorType, guru);
+                    result = guru;
+                    break;
+                }
+            }
+        }
+
+        return result;
     }
 
     @Override
@@ -68,4 +86,14 @@ public class HypervisorGuruManagerImpl extends ManagerBase implements Hypervisor
         }
         return hostId;
     }
+
+    public List<HypervisorGuru> getHvGuruList() {
+        return _hvGuruList;
+    }
+
+    @Inject
+    public void setHvGuruList(List<HypervisorGuru> hvGuruList) {
+        this._hvGuruList = hvGuruList;
+    }
+
 }

@@ -17,19 +17,23 @@
 package com.cloud.hypervisor.kvm.storage;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 
 public interface KVMStoragePool {
-    public KVMPhysicalDisk createPhysicalDisk(String name,
-            PhysicalDiskFormat format, long size);
+    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, PhysicalDiskFormat format, long size);
 
-    public KVMPhysicalDisk createPhysicalDisk(String name, long size);
+    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, long size);
+
+    public boolean connectPhysicalDisk(String volumeUuid, Map<String, String> details);
 
     public KVMPhysicalDisk getPhysicalDisk(String volumeUuid);
 
-    public boolean deletePhysicalDisk(String uuid);
+    public boolean disconnectPhysicalDisk(String volumeUuid);
+
+    public boolean deletePhysicalDisk(String volumeUuid);
 
     public List<KVMPhysicalDisk> listPhysicalDisks();
 

@@ -79,7 +79,7 @@ public class PasswordGenerator {
 	    }
 	    
 	    public static String rot13(final String password) {
-	        final StringBuffer newPassword = new StringBuffer("");
+	        final StringBuilder newPassword = new StringBuilder(password.length());
 
 	        for (int i = 0; i < password.length(); i++) {
 	            char c = password.charAt(i);
@@ -94,14 +94,5 @@ public class PasswordGenerator {
 	        }
 
 	        return newPassword.toString();
-	    }
-	    
-	    public static void main(String [] args) {
-	    	for (int i=0; i < 100; i++) {
-	    		System.out.println("PSK: " + generatePresharedKey(24));
-	    	}
-	    	for (int i=0; i < 100; i++) {
-	    		System.out.println("Password: " + generateRandomPassword(6));
-	    	}
 	    }
 }

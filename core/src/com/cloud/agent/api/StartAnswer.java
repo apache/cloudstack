@@ -16,11 +16,14 @@
 // under the License.
 package com.cloud.agent.api;
 
+import java.util.Map;
+
 import com.cloud.agent.api.to.VirtualMachineTO;
 
 public class StartAnswer extends Answer {
     VirtualMachineTO vm;
     String host_guid;
+    Map<String, String> _iqnToPath;
 
     protected StartAnswer() {
     }
@@ -53,5 +56,13 @@ public class StartAnswer extends Answer {
 
     public String getHost_guid() {
         return host_guid;
+    }
+
+    public void setIqnToPath(Map<String, String> iqnToPath) {
+        _iqnToPath = iqnToPath;
+    }
+
+    public Map<String, String> getIqnToPath() {
+        return _iqnToPath;
     }
 }

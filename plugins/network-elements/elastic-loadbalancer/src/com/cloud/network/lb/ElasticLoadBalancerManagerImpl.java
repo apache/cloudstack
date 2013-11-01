@@ -36,11 +36,11 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -85,7 +85,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.VirtualRouterProvider;
-import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
+import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -123,6 +123,10 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
@@ -311,7 +315,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             maxconn = offering.getConcurrentConnections().toString();
         }
         LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs,elbVm.getPublicIpAddress(),
-                _nicDao.getIpAddress(guestNetworkId, elbVm.getId()),elbVm.getPrivateIpAddress(), null, null, maxconn);
+                _nicDao.getIpAddress(guestNetworkId, elbVm.getId()),elbVm.getPrivateIpAddress(), null, null, maxconn, offering.isKeepAliveEnabled());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP,
                 elbVm.getPrivateIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME,
@@ -506,7 +510,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
                 if (provider == null) {
                     throw new CloudRuntimeException("Cannot find service provider " + typeString + " in physical network " + physicalNetworkId);
                 }
-                VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), VirtualRouterProviderType.ElasticLoadBalancerVm);
+                VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), Type.ElasticLoadBalancerVm);
                 if (vrProvider == null) {
                     throw new CloudRuntimeException("Cannot find virtual router provider " + typeString + " as service provider " + provider.getId());
                 }
@@ -582,19 +586,21 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     }
     
     @DB
-    public PublicIp allocDirectIp(Account account, long guestNetworkId) throws InsufficientAddressCapacityException {
-        Network frontEndNetwork = _networkModel.getNetwork(guestNetworkId);
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        
-        PublicIp ip = _ipAddrMgr.assignPublicIpAddress(frontEndNetwork.getDataCenterId(), null, account, VlanType.DirectAttached, frontEndNetwork.getId(), null, true);
-        IPAddressVO ipvo = _ipAddressDao.findById(ip.getId());
-        ipvo.setAssociatedWithNetworkId(frontEndNetwork.getId());
-        _ipAddressDao.update(ipvo.getId(), ipvo);
-        txn.commit();
-        s_logger.info("Acquired frontend IP for ELB " + ip);
+    public PublicIp allocDirectIp(final Account account, final long guestNetworkId) throws InsufficientAddressCapacityException {
+        return Transaction.execute(new TransactionCallbackWithException<PublicIp,InsufficientAddressCapacityException>() {
+            @Override
+            public PublicIp doInTransaction(TransactionStatus status) throws InsufficientAddressCapacityException {
+                Network frontEndNetwork = _networkModel.getNetwork(guestNetworkId);
 
-        return ip;
+                PublicIp ip = _ipAddrMgr.assignPublicIpAddress(frontEndNetwork.getDataCenterId(), null, account, VlanType.DirectAttached, frontEndNetwork.getId(), null, true);
+                IPAddressVO ipvo = _ipAddressDao.findById(ip.getId());
+                ipvo.setAssociatedWithNetworkId(frontEndNetwork.getId());
+                _ipAddressDao.update(ipvo.getId(), ipvo);
+                s_logger.info("Acquired frontend IP for ELB " + ip);
+
+                return ip;
+            }
+        });
     }
     
     public void releaseIp(long ipId, long userId, Account caller) {
@@ -749,9 +755,9 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         _gcCandidateElbVmIds = currentGcCandidates;
     }
     
-    public class CleanupThread implements Runnable {
+    public class CleanupThread extends ManagedContextRunnable {
         @Override
-        public void run() {
+        protected void runInContext() {
             garbageCollectUnusedElbVms();
             
         }

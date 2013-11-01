@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcVO;
-import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
 
 import com.cloud.utils.db.DB;
@@ -38,11 +38,11 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = VpcDao.class)
-@DB(txn = false)
+@DB()
 public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
     final GenericSearchBuilder<VpcVO, Integer> CountByOfferingId;
     final SearchBuilder<VpcVO> AllFieldsSearch;
@@ -107,11 +107,11 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
     @Override
     @DB
     public boolean remove(Long id) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         VpcVO entry = findById(id);
         if (entry != null) {
-            _tagsDao.removeByIdAndType(id, TaggedResourceType.Vpc);
+            _tagsDao.removeByIdAndType(id, ResourceObjectType.Vpc);
         }
         boolean result = super.remove(id);
         txn.commit();
@@ -128,8 +128,8 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
 
     @Override
     @DB
-    public VpcVO persist(VpcVO vpc, Map<String, String> serviceProviderMap) {
-        Transaction txn = Transaction.currentTxn();
+    public VpcVO persist(VpcVO vpc, Map<String, List<String>> serviceProviderMap) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         VpcVO newVpc = super.persist(vpc);
         persistVpcServiceProviders(vpc.getId(), serviceProviderMap);
@@ -139,12 +139,14 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
 
     @Override
     @DB
-    public void persistVpcServiceProviders(long vpcId, Map<String, String> serviceProviderMap) {
-        Transaction txn = Transaction.currentTxn();
+    public void persistVpcServiceProviders(long vpcId, Map<String, List<String>> serviceProviderMap) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         for (String service : serviceProviderMap.keySet()) {
-            VpcServiceMapVO serviceMap = new VpcServiceMapVO(vpcId, Network.Service.getService(service), Network.Provider.getProvider(serviceProviderMap.get(service)));
-            _vpcSvcMap.persist(serviceMap);
+            for (String provider : serviceProviderMap.get(service)) {
+                VpcServiceMapVO serviceMap = new VpcServiceMapVO(vpcId, Network.Service.getService(service), Network.Provider.getProvider(provider));
+                _vpcSvcMap.persist(serviceMap);
+            }
         }
         txn.commit();
     }

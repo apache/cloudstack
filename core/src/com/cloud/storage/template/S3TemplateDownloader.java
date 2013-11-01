@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 
-import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.commons.httpclient.ChunkedInputStream;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.Header;
@@ -43,15 +42,15 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.amazonaws.AmazonClientException;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.ProgressEvent;
 import com.amazonaws.services.s3.model.ProgressListener;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.StorageClass;
-import com.amazonaws.services.s3.transfer.TransferManager;
-import com.amazonaws.services.s3.transfer.Upload;
+
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
+
 import com.cloud.agent.api.storage.Proxy;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.utils.Pair;
@@ -62,7 +61,7 @@ import com.cloud.utils.UriUtils;
  * Download a template file using HTTP
  *
  */
-public class S3TemplateDownloader implements TemplateDownloader {
+public class S3TemplateDownloader extends ManagedContextRunnable implements TemplateDownloader {
     public static final Logger s_logger = Logger.getLogger(S3TemplateDownloader.class.getName());
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
@@ -89,15 +88,15 @@ public class S3TemplateDownloader implements TemplateDownloader {
     public S3TemplateDownloader(S3TO storageLayer, String downloadUrl, String installPath,
             DownloadCompleteCallback callback, long maxTemplateSizeInBytes, String user, String password, Proxy proxy,
             ResourceType resourceType) {
-        this.s3 = storageLayer;
+        s3 = storageLayer;
         this.downloadUrl = downloadUrl;
         this.installPath = installPath;
-        this.status = TemplateDownloader.Status.NOT_STARTED;
+        status = TemplateDownloader.Status.NOT_STARTED;
         this.resourceType = resourceType;
-        this.maxTemplateSizeInByte = maxTemplateSizeInBytes;
+        maxTemplateSizeInByte = maxTemplateSizeInBytes;
 
-        this.totalBytes = 0;
-        this.client = new HttpClient(s_httpClientManager);
+        totalBytes = 0;
+        client = new HttpClient(s_httpClientManager);
 
         myretryhandler = new HttpMethodRetryHandler() {
             @Override
@@ -121,12 +120,12 @@ public class S3TemplateDownloader implements TemplateDownloader {
         };
 
         try {
-            this.request = new GetMethod(downloadUrl);
-            this.request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
-            this.completionCallback = callback;
+            request = new GetMethod(downloadUrl);
+            request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
+            completionCallback = callback;
 
             Pair<String, Integer> hostAndPort = UriUtils.validateUrl(downloadUrl);
-            this.fileName = StringUtils.substringAfterLast(downloadUrl, "/");
+            fileName = StringUtils.substringAfterLast(downloadUrl, "/");
 
             if (proxy != null) {
                 client.getHostConfiguration().setProxy(proxy.getHost(), proxy.getPort());
@@ -226,9 +225,6 @@ public class S3TemplateDownloader implements TemplateDownloader {
             // compute s3 key
             s3Key = join(asList(installPath, fileName), S3Utils.SEPARATOR);
 
-            // multi-part upload using S3 api to handle > 5G input stream
-            TransferManager tm = new TransferManager(S3Utils.acquireClient(s3));
-
             // download using S3 API
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(remoteSize);
@@ -261,11 +257,20 @@ public class S3TemplateDownloader implements TemplateDownloader {
                 }
 
             });
-            // TransferManager processes all transfers asynchronously,
-            // so this call will return immediately.
-            Upload upload = tm.upload(putObjectRequest);
+            
 
-            upload.waitForCompletion();
+            if ( !s3.getSingleUpload(remoteSize) ){
+                // use TransferManager to do multipart upload
+                S3Utils.mputObject(s3, putObjectRequest);
+            } else{
+                // single part upload, with 5GB limit in Amazon
+                S3Utils.putObject(s3, putObjectRequest);
+                while (status != TemplateDownloader.Status.DOWNLOAD_FINISHED &&
+                        status != TemplateDownloader.Status.UNRECOVERABLE_ERROR &&
+                        status != TemplateDownloader.Status.ABORTED) {
+                    // wait for completion
+                }
+            }
 
             // finished or aborted
             Date finish = new Date();
@@ -361,7 +366,7 @@ public class S3TemplateDownloader implements TemplateDownloader {
     }
 
     @Override
-    public void run() {
+    protected void runInContext() {
         try {
             download(resume, completionCallback);
         } catch (Throwable t) {
@@ -388,7 +393,7 @@ public class S3TemplateDownloader implements TemplateDownloader {
 
     @Override
     public String getDownloadLocalPath() {
-        return this.s3Key;
+        return s3Key;
     }
 
     @Override
@@ -398,7 +403,7 @@ public class S3TemplateDownloader implements TemplateDownloader {
 
     @Override
     public long getMaxTemplateSizeInBytes() {
-        return this.maxTemplateSizeInByte;
+        return maxTemplateSizeInByte;
     }
 
     @Override

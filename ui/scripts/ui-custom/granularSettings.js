@@ -29,6 +29,9 @@
                     name: {
                         label: 'label.name'
                     },
+                    description: {
+                        label: 'label.description'
+                    },
                     value: {
                         label: 'label.value',
                         editable: true

@@ -59,7 +59,6 @@ class Services:
                         "cpunumber": 1,
                         "cpuspeed": 100,
                         "memory": 128,
-                        "storagetype": "local"
                 },
                 "egress": {
                     "name": 'web',
@@ -82,6 +81,23 @@ class Services:
             "timeout": 10,
             "mode": 'advanced',
         }
+
+def wait_vm_start(apiclient, account, timeout, sleep):
+    while timeout:
+        vms = VirtualMachine.list(
+                              apiclient,
+                              account=account.name,
+                              domainid=account.domainid,
+                              listall=True
+                              )
+        if vms and vms[0].state == "Running":
+            return timeout
+
+        time.sleep(sleep)
+        timeout = timeout - 1
+
+    return timeout
+
 
 class TestResetSSHKeypair(cloudstackTestCase):
 
@@ -340,7 +356,6 @@ class TestResetSSHKeypair(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to reset SSH key: %s, %s" %
                                                 (virtual_machine.name, e))
-        return
         self.debug("Starting the virtual machine after resetting the keypair")
         try:
             virtual_machine.start(self.apiclient)
@@ -348,17 +363,13 @@ class TestResetSSHKeypair(cloudstackTestCase):
             self.fail("Failed to start virtual machine: %s, %s" %
                                                     (virtual_machine.name, e))
 
-        while True:
-            vms = VirtualMachine.list(
-                                  self.apiclient,
-                                  account=self.account.name,
-                                  domainid=self.account.domainid,
-                                  listall=True
-                                  )
-            if vms[0].state == "Running":
-                break
-            self.debug("Vm not in Running state sleep 60s")
-            time.sleep(60)
+        timeout = wait_vm_start(self.apiclient, self.account, self.services["timeout"],
+                            self.services["sleep"])
+
+        if timeout == 0:
+            self.fail("The virtual machine %s failed to start even after %s minutes"
+                   % (virtual_machine.name, self.services["timeout"]))
+
         self.debug("SSH key path: %s" % str(keyPairFilePath))
         try:
             virtual_machine.get_ssh_client(keyPairFileLocation=str(keyPairFilePath))
@@ -462,17 +473,12 @@ class TestResetSSHKeypair(cloudstackTestCase):
             self.fail("Failed to start virtual machine: %s, %s" %
                                                     (virtual_machine.name, e))
 
-        while True:
-            vms = VirtualMachine.list(
-                                  self.apiclient,
-                                  account=self.account.name,
-                                  domainid=self.account.domainid,
-                                  listall=True
-                                  )
-            if vms[0].state == "Running":
-                break
-            self.debug("Vm not in Running state sleep 60s")
-            time.sleep(60)
+        timeout = wait_vm_start(self.apiclient, self.account, self.services["timeout"],
+                            self.services["sleep"])
+
+        if timeout == 0:
+            self.fail("The virtual machine %s failed to start even after %s minutes"
+                   % (virtual_machine.name, self.services["timeout"]))
 
         self.debug("SSHing with new keypair")
         try:
@@ -576,17 +582,13 @@ class TestResetSSHKeypair(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to start virtual machine: %s, %s" %
                                                     (virtual_machine.name, e))
-        while True:
-            vms = VirtualMachine.list(
-                                  self.apiclient,
-                                  account=self.account.name,
-                                  domainid=self.account.domainid,
-                                  listall=True
-                                  )
-            if vms[0].state == "Running":
-                break
-            self.debug("Vm not in Running state sleep 60s")
-            time.sleep(60)
+
+        timeout = wait_vm_start(self.apiclient, self.account, self.services["timeout"],
+                            self.services["sleep"])
+
+        if timeout == 0:
+            self.fail("The virtual machine %s failed to start even after %s minutes"
+                   % (virtual_machine.name, self.services["timeout"]))
 
         self.debug("SSHing with new keypair")
         try:
@@ -691,17 +693,13 @@ class TestResetSSHKeypair(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to start virtual machine: %s, %s" %
                                                     (virtual_machine.name, e))
-        while True:
-            vms = VirtualMachine.list(
-                                  self.apiclient,
-                                  account=self.account.name,
-                                  domainid=self.account.domainid,
-                                  listall=True
-                                  )
-            if vms[0].state == "Running":
-                break
-            self.debug("Vm not in Running state sleep 60s")
-            time.sleep(60)
+
+        timeout = wait_vm_start(self.apiclient, self.account, self.services["timeout"],
+                            self.services["sleep"])
+
+        if timeout == 0:
+            self.fail("The virtual machine %s failed to start even after %s minutes"
+                   % (virtual_machine.name, self.services["timeout"]))
 
         self.debug("SSHing with new keypair")
         try:
@@ -1207,18 +1205,14 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
             virtual_machine.start(self.apiclient)
         except Exception as e:
             self.fail("Failed to start virtual machine: %s, %s" %
-                                                    (virtual_machine.name, e))
-        while True:
-            vms = VirtualMachine.list(
-                                  self.apiclient,
-                                  account=self.user_account.name,
-                                  domainid=self.user_account.domainid,
-                                  listall=True
-                                  )
-            if vms[0].state == "Running":
-                break
-            self.debug("Vm not in Running state sleep 60s")
-            time.sleep(60)
+                                           (virtual_machine.name, e))
+
+        timeout = wait_vm_start(self.apiclient, self.account, self.services["timeout"],
+                            self.services["sleep"])
+
+        if timeout == 0:
+            self.fail("The virtual machine %s failed to start even after %s minutes"
+                   % (vms[0].name, self.services["timeout"]))
 
         self.debug("SSHing with new keypair")
         try:
@@ -1351,17 +1345,13 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to start virtual machine: %s, %s" %
                                                     (virtual_machine.name, e))
-        while True:
-            vms = VirtualMachine.list(
-                                  self.apiclient,
-                                  account=self.account.name,
-                                  domainid=self.account.domainid,
-                                  listall=True
-                                  )
-            if vms[0].state == "Running":
-                break
-            self.debug("Vm not in Running state sleep 60s")
-            time.sleep(60)
+
+        timeout = wait_vm_start(self.apiclient, self.account, self.services["timeout"],
+                            self.services["sleep"])
+
+        if timeout == 0:
+            self.fail("The virtual machine %s failed to start even after %s minutes"
+                   % (virtual_machine.name, self.services["timeout"]))
 
         self.debug("SSHing with new keypair")
         try:
@@ -1495,17 +1485,13 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to start virtual machine: %s, %s" %
                                                     (virtual_machine.name, e))
-        while True:
-            vms = VirtualMachine.list(
-                                  self.apiclient,
-                                  account=self.account.name,
-                                  domainid=self.account.domainid,
-                                  listall=True
-                                  )
-            if vms[0].state == "Running":
-                break
-            self.debug("Vm not in Running state sleep 60s")
-            time.sleep(60)
+
+        timeout = wait_vm_start(self.apiclient, self.account, self.services["timeout"],
+                            self.services["sleep"])
+
+        if timeout == 0:
+            self.fail("The virtual machine %s failed to start even after %s minutes"
+                   % (virtual_machine.name, self.services["timeout"]))
 
         self.debug("SSHing with new keypair")
         try:

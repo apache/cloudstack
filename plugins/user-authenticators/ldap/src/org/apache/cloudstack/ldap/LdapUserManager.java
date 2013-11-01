@@ -30,111 +30,100 @@ import javax.naming.directory.SearchResult;
 
 public class LdapUserManager {
 
-	@Inject
-	private LdapConfiguration _ldapConfiguration;
+    @Inject
+    private LdapConfiguration _ldapConfiguration;
 
-	public LdapUserManager() {
+    public LdapUserManager() {
+    }
+
+    public LdapUserManager(final LdapConfiguration ldapConfiguration) {
+	_ldapConfiguration = ldapConfiguration;
+    }
+
+    private LdapUser createUser(final SearchResult result) throws NamingException {
+	final Attributes attributes = result.getAttributes();
+
+	final String username = LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getUsernameAttribute());
+	final String email = LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getEmailAttribute());
+	final String firstname = LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getFirstnameAttribute());
+	final String lastname = LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getLastnameAttribute());
+	final String principal = result.getNameInNamespace();
+
+	String domain = principal.replace("cn="+LdapUtils.getAttributeValue(attributes,_ldapConfiguration.getCommonNameAttribute())+",", "");
+	domain = domain.replace(","+_ldapConfiguration.getBaseDn(), "");
+	domain = domain.replace("ou=","");
+
+	return new LdapUser(username, email, firstname, lastname, principal, domain);
+    }
+
+    private String generateSearchFilter(final String username) {
+	final StringBuilder userObjectFilter = new StringBuilder();
+	userObjectFilter.append("(objectClass=");
+	userObjectFilter.append(_ldapConfiguration.getUserObject());
+	userObjectFilter.append(")");
+
+	final StringBuilder usernameFilter = new StringBuilder();
+	usernameFilter.append("(");
+	usernameFilter.append(_ldapConfiguration.getUsernameAttribute());
+	usernameFilter.append("=");
+	usernameFilter.append((username == null ? "*" : username));
+	usernameFilter.append(")");
+
+	final StringBuilder memberOfFilter = new StringBuilder();
+	if (_ldapConfiguration.getSearchGroupPrinciple() != null) {
+	    memberOfFilter.append("(memberof=");
+	    memberOfFilter.append(_ldapConfiguration.getSearchGroupPrinciple());
+	    memberOfFilter.append(")");
 	}
 
-	public LdapUserManager(final LdapConfiguration ldapConfiguration) {
-		_ldapConfiguration = ldapConfiguration;
+	final StringBuilder result = new StringBuilder();
+	result.append("(&");
+	result.append(userObjectFilter);
+	result.append(usernameFilter);
+	result.append(memberOfFilter);
+	result.append(")");
+
+	return result.toString();
+    }
+
+    public LdapUser getUser(final String username, final DirContext context) throws NamingException {
+	final NamingEnumeration<SearchResult> result = searchUsers(username, context);
+	if (result.hasMoreElements()) {
+	    return createUser(result.nextElement());
+	} else {
+	    throw new NamingException("No user found for username " + username);
+	}
+    }
+
+    public List<LdapUser> getUsers(final DirContext context) throws NamingException {
+	return getUsers(null, context);
+    }
+
+    public List<LdapUser> getUsers(final String username, final DirContext context) throws NamingException {
+	final NamingEnumeration<SearchResult> results = searchUsers(username, context);
+
+	final List<LdapUser> users = new ArrayList<LdapUser>();
+
+	while (results.hasMoreElements()) {
+	    final SearchResult result = results.nextElement();
+	    users.add(createUser(result));
 	}
 
-	private LdapUser createUser(final SearchResult result)
-			throws NamingException {
-		final Attributes attributes = result.getAttributes();
+	Collections.sort(users);
 
-		final String username = LdapUtils.getAttributeValue(attributes,
-				_ldapConfiguration.getUsernameAttribute());
-		final String email = LdapUtils.getAttributeValue(attributes,
-				_ldapConfiguration.getEmailAttribute());
-		final String firstname = LdapUtils.getAttributeValue(attributes,
-				_ldapConfiguration.getFirstnameAttribute());
-		final String lastname = LdapUtils.getAttributeValue(attributes,
-				_ldapConfiguration.getLastnameAttribute());
-		final String principal = result.getName() + ","
-				+ _ldapConfiguration.getBaseDn();
+	return users;
+    }
 
-		return new LdapUser(username, email, firstname, lastname, principal);
-	}
+    public NamingEnumeration<SearchResult> searchUsers(final DirContext context) throws NamingException {
+	return searchUsers(null, context);
+    }
 
-	private String generateSearchFilter(final String username) {
-		final StringBuilder userObjectFilter = new StringBuilder();
-		userObjectFilter.append("(objectClass=");
-		userObjectFilter.append(_ldapConfiguration.getUserObject());
-		userObjectFilter.append(")");
+    public NamingEnumeration<SearchResult> searchUsers(final String username, final DirContext context) throws NamingException {
+	final SearchControls controls = new SearchControls();
 
-		final StringBuilder usernameFilter = new StringBuilder();
-		usernameFilter.append("(");
-		usernameFilter.append(_ldapConfiguration.getUsernameAttribute());
-		usernameFilter.append("=");
-		usernameFilter.append((username == null ? "*" : username));
-		usernameFilter.append(")");
+	controls.setSearchScope(_ldapConfiguration.getScope());
+	controls.setReturningAttributes(_ldapConfiguration.getReturnAttributes());
 
-		final StringBuilder memberOfFilter = new StringBuilder();
-		if (_ldapConfiguration.getSearchGroupPrinciple() != null) {
-			memberOfFilter.append("(memberof=");
-			memberOfFilter.append(_ldapConfiguration.getSearchGroupPrinciple());
-			memberOfFilter.append(")");
-		}
-
-		final StringBuilder result = new StringBuilder();
-		result.append("(&");
-		result.append(userObjectFilter);
-		result.append(usernameFilter);
-		result.append(memberOfFilter);
-		result.append(")");
-
-		return result.toString();
-	}
-
-	public LdapUser getUser(final String username, final DirContext context)
-			throws NamingException {
-		final NamingEnumeration<SearchResult> result = searchUsers(username,
-				context);
-		if (result.hasMoreElements()) {
-			return createUser(result.nextElement());
-		} else {
-			throw new NamingException("No user found for username " + username);
-		}
-	}
-
-	public List<LdapUser> getUsers(final DirContext context)
-			throws NamingException {
-		return getUsers(null, context);
-	}
-
-	public List<LdapUser> getUsers(final String username,
-			final DirContext context) throws NamingException {
-		final NamingEnumeration<SearchResult> results = searchUsers(username,
-				context);
-
-		final List<LdapUser> users = new ArrayList<LdapUser>();
-
-		while (results.hasMoreElements()) {
-			final SearchResult result = results.nextElement();
-			users.add(createUser(result));
-		}
-
-		Collections.sort(users);
-
-		return users;
-	}
-
-	public NamingEnumeration<SearchResult> searchUsers(final DirContext context)
-			throws NamingException {
-		return searchUsers(null, context);
-	}
-
-	public NamingEnumeration<SearchResult> searchUsers(final String username,
-			final DirContext context) throws NamingException {
-		final SearchControls controls = new SearchControls();
-
-		controls.setSearchScope(_ldapConfiguration.getScope());
-		controls.setReturningAttributes(_ldapConfiguration
-				.getReturnAttributes());
-
-		return context.search(_ldapConfiguration.getBaseDn(),
-				generateSearchFilter(username), controls);
-	}
+	return context.search(_ldapConfiguration.getBaseDn(), generateSearchFilter(username), controls);
+    }
 }

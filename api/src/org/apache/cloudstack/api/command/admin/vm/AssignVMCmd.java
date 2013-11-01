@@ -39,7 +39,7 @@ import com.cloud.uservm.UserVm;
 public class AssignVMCmd extends BaseCmd  {
     public static final Logger s_logger = Logger.getLogger(AssignVMCmd.class.getName());
 
-    private static final String s_name = "moveuservmresponse";
+    private static final String s_name = "assignvirtualmachineresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

@@ -104,7 +104,7 @@ setup_accounts() {
   echo "root:$ROOTPW" | chpasswd
   echo "cloud:`openssl rand -base64 32`" | chpasswd
   sed -i -e '/Defaults\s\+env_reset/a Defaults\texempt_group=admin' /etc/sudoers
-  sed -i -e 's/%admin ALL=(ALL) ALL/%admin ALL=NOPASSWD:ALL/g' /etc/sudoers
+  sed -i -e 's/%admin ALL=(ALL) ALL/%admin ALL=NOPASSWD:/bin/chmod, /bin/cp, /bin/mkdir, /bin/mount, /bin/umount/g' /etc/sudoers
   # Disable password based authentication via ssh, this will take effect on next reboot
   sed -i -e 's/^.*PasswordAuthentication .*$/PasswordAuthentication no/g' /etc/ssh/sshd_config
   # Secure ~/.ssh
@@ -203,12 +203,12 @@ configure_services() {
   cd /opt
   wget --no-check-certificate $snapshot_url -O cloudstack.tar.gz
   tar -zxvf cloudstack.tar.gz
-  cp -rv $snapshot_dir/patches/systemvm/debian/config/* /
-  cp -rv $snapshot_dir/patches/systemvm/debian/vpn/* /
+  cp -rv $snapshot_dir/systemvm/patches/debian/config/* /
+  cp -rv $snapshot_dir/systemvm/patches/debian/vpn/* /
   mkdir -p /usr/share/cloud/
-  cd $snapshot_dir/patches/systemvm/debian/config
+  cd $snapshot_dir/systemvm/patches/debian/config
   tar -cvf /usr/share/cloud/cloud-scripts.tar *
-  cd $snapshot_dir/patches/systemvm/debian/vpn
+  cd $snapshot_dir/systemvm/patches/debian/vpn
   tar -rvf /usr/share/cloud/cloud-scripts.tar *
   cd /opt
   rm -fr $snapshot_dir cloudstack.tar.gz

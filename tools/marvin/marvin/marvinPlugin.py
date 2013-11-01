@@ -22,6 +22,7 @@ import nose.core
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin import deployDataCenter
 from nose.plugins.base import Plugin
+import time
 
 
 class MarvinPlugin(Plugin):
@@ -32,6 +33,11 @@ class MarvinPlugin(Plugin):
     name = "marvin"
 
     def configure(self, options, config):
+        """enable the marvin plugin when the --with-marvin directive is given
+        to nose. The enableOpt value is set from the command line directive and
+        self.enabled (True|False) determines whether marvin's tests will run.
+        By default non-default plugins like marvin will be disabled
+        """
         if hasattr(options, self.enableOpt):
             if not getattr(options, self.enableOpt):
                 self.enabled = False
@@ -58,7 +64,7 @@ class MarvinPlugin(Plugin):
         else:
             self.result_stream = sys.stdout
 
-        deploy = deployDataCenter.deployDataCenters(options.config)
+        deploy = deployDataCenter.deployDataCenters(options.config_file)
         deploy.loadCfg() if options.load else deploy.deploy()
         self.setClient(deploy.testClient)
         self.setConfig(deploy.getCfg())
@@ -73,7 +79,7 @@ class MarvinPlugin(Plugin):
         """
         parser.add_option("--marvin-config", action="store",
                           default=env.get('MARVIN_CONFIG', './datacenter.cfg'),
-                          dest="config",
+                          dest="config_file",
                           help="Marvin's configuration file where the " +
                                "datacenter information is specified " +
                                "[MARVIN_CONFIG]")
@@ -121,15 +127,30 @@ class MarvinPlugin(Plugin):
             self.config = config
 
     def beforeTest(self, test):
-        testname = test.__str__().split()[0]
-        self.testclient.identifier = '-'.join([self.identifier, testname])
+        self.testName = test.__str__().split()[0]
+        self.testclient.identifier = '-'.join([self.identifier, self.testName])
         self.logger.name = test.__str__()
 
+    def startTest(self, test):
+        """
+        Currently used to record start time for tests
+        """
+        self.startTime = time.time()
+
+    def stopTest(self, test):
+        """
+        Currently used to record end time for tests
+        """
+        endTime = time.time()
+        if self.startTime is not None:
+            totTime = int(endTime - self.startTime)
+            self.logger.debug(
+                "TestCaseName: %s; Time Taken: %s Seconds; \
+                StartTime: %s; EndTime: %s"
+                % (self.testName, str(totTime),
+                   str(time.ctime(self.startTime)), str(time.ctime(endTime))))
+
     def _injectClients(self, test):
-        self.debug_stream. \
-            setFormatter(logging.
-                         Formatter("%(asctime)s - %(levelname)s - %(name)s" +
-                                   " - %(message)s"))
         setattr(test, "debug", self.logger.debug)
         setattr(test, "info", self.logger.info)
         setattr(test, "warn", self.logger.warning)

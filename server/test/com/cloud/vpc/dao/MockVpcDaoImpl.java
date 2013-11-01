@@ -32,7 +32,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 
 @Local(value = VpcDao.class)
-@DB(txn = false)
+@DB()
 public class MockVpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
     private static final Logger s_logger = Logger.getLogger(MockNetworkOfferingDaoImpl.class);
 
@@ -86,12 +86,12 @@ public class MockVpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDa
     }
 
     @Override
-    public VpcVO persist(VpcVO vpc, Map<String, String> serviceProviderMap) {
+    public VpcVO persist(VpcVO vpc, Map<String, List<String>> serviceProviderMap) {
         return null;
     }
 
     @Override
-    public void persistVpcServiceProviders(long vpcId, Map<String, String> serviceProviderMap) {
+    public void persistVpcServiceProviders(long vpcId, Map<String, List<String>> serviceProviderMap) {
         return;
     }
 

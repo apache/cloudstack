@@ -46,7 +46,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -80,7 +80,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     private static final String ORDER_CLUSTERS_BY_AGGREGATE_OVERCOMMIT_CAPACITY_PART2= " AND capacity_type = ?  AND cluster_details.name =? GROUP BY capacity.cluster_id ORDER BY SUM(used_capacity+reserved_capacity)/SUM(total_capacity * cluster_details.value) ASC";
 
     private static final String LIST_PODSINZONE_BY_HOST_CAPACITY_TYPE = "SELECT DISTINCT capacity.pod_id FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`host_pod_ref` pod " +
-                                                          " ON (pod.id = capacity.pod_id AND pod.removed is NULL) INNER JOIN `cloud`.`cluster_details` cluster ON (capacity.cluster_id = cluster.cluster_id ) WHERE capacity.data_center_id = ? AND capacity_type = ? AND cluster_details.name= ? ((total_capacity * cluster.value ) - used_capacity + reserved_capacity) >= ? ";
+                                                          " ON (pod.id = capacity.pod_id AND pod.removed is NULL) INNER JOIN `cloud`.`cluster_details` cluster_details ON (capacity.cluster_id = cluster_details.cluster_id ) WHERE capacity.data_center_id = ? AND capacity_type = ? AND cluster_details.name= ? AND ((total_capacity * cluster_details.value ) - used_capacity + reserved_capacity) >= ? ";
 
     private static final String ORDER_PODS_BY_AGGREGATE_CAPACITY = " SELECT capacity.pod_id, SUM(used_capacity+reserved_capacity)/SUM(total_capacity) FROM `cloud`.`op_host_capacity` capacity WHERE data_center_id= ? AND capacity_type = ? GROUP BY capacity.pod_id ORDER BY SUM(used_capacity+reserved_capacity)/SUM(total_capacity) ASC ";
 
@@ -186,7 +186,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     @Override
     public  List<Long> listClustersCrossingThreshold(short capacityType, Long zoneId, String configName, long compute_requested){
 
-         Transaction txn = Transaction.currentTxn();
+         TransactionLegacy txn = TransactionLegacy.currentTxn();
          PreparedStatement pstmt = null;
          List<Long> result = new ArrayList<Long>();         
          StringBuilder sql = new StringBuilder(LIST_CLUSTERS_CROSSING_THRESHOLD);
@@ -241,7 +241,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     @Override
     public  List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId, String resource_state){
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<SummedCapacity> result = new ArrayList<SummedCapacity>();
 
@@ -291,7 +291,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     public  List<SummedCapacity> listCapacitiesGroupedByLevelAndType(Integer capacityType, Long zoneId, Long podId, Long clusterId, int level, Long limit){
 
         StringBuilder finalQuery = new StringBuilder(); 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<SummedCapacity> result = new ArrayList<SummedCapacity>();
 
@@ -360,7 +360,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
                 if(level == 3 && rs.getLong(7) != 0)
                     capacityClusterId = rs.getLong(7);                   
 
-                SummedCapacity summedCapacity = new SummedCapacity( rs.getLong(1), rs.getLong(3), rs.getFloat(4),
+                SummedCapacity summedCapacity = new SummedCapacity( rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getFloat(4),
                         (short)rs.getLong(5), rs.getLong(6),
                         capacityPodId, capacityClusterId);
 
@@ -378,7 +378,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     @Override
     public  List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId){
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<SummedCapacity> result = new ArrayList<SummedCapacity>();
 
@@ -425,7 +425,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     public void updateAllocated(Long hostId, long allocatedAmount, short capacityType, boolean add) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             txn.start();
@@ -458,7 +458,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     @Override
     public List<Long> listClustersInZoneOrPodByHostCapacities(long id, int requiredCpu, long requiredRam, short capacityTypeForOrdering, boolean isZone){
-    Transaction txn = Transaction.currentTxn();
+    TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
 
@@ -503,7 +503,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     @Override
     public List<Long> listHostsWithEnoughCapacity(int requiredCpu, long requiredRam, Long clusterId, String hostType){
-    Transaction txn = Transaction.currentTxn();
+    TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
 
@@ -565,6 +565,11 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             this.dcId = zoneId;
         }
 
+        public SummedCapacity(long sumUsed, long sumReserved, long sumTotal, float percentUsed, short capacityType, Long zoneId, Long podId, Long clusterId) {
+            this(sumUsed, sumTotal, percentUsed, capacityType, zoneId, podId, clusterId);
+            this.sumReserved = sumReserved;
+        }
+
         public Short getCapacityType() {				
             return capacityType;
         }
@@ -594,7 +599,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     @Override
     public List<SummedCapacity> findByClusterPodZone(Long zoneId, Long podId, Long clusterId){
 
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<SummedCapacity> result = new ArrayList<SummedCapacity>();
 
@@ -706,7 +711,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     @Override
     public Pair<List<Long>, Map<Long, Double>> orderClustersByAggregateCapacity(long id, short capacityTypeForOrdering, boolean isZone){
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
         Map<Long, Double> clusterCapacityMap = new HashMap<Long, Double>();
@@ -759,7 +764,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     @Override
     public List<Long> listPodsByHostCapacities(long zoneId, int requiredCpu, long requiredRam, short capacityType) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
 
@@ -793,7 +798,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     @Override
     public Pair<List<Long>, Map<Long, Double>> orderPodsByAggregateCapacity(long zoneId, short capacityTypeForOrdering) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
         Map<Long, Double> podCapacityMap = new HashMap<Long, Double>();
@@ -835,7 +840,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     @Override
     public void updateCapacityState(Long dcId, Long podId, Long clusterId, Long hostId, String capacityState) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         StringBuilder sql = new StringBuilder(UPDATE_CAPACITY_STATE);
         List<Long> resourceIdList = new ArrayList<Long>();
 

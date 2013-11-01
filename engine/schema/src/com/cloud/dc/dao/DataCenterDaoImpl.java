@@ -26,9 +26,11 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.TableGenerator;
 
+import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.dc.DataCenterDetailVO;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
 import com.cloud.dc.DataCenterVO;
@@ -44,7 +46,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SequenceFetcher;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.net.NetUtils;
 
 /**
@@ -70,7 +72,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     @Inject protected DataCenterLinkLocalIpAddressDao _LinkLocalIpAllocDao = null;
     @Inject protected DataCenterVnetDao _vnetAllocDao = null;
     @Inject protected PodVlanDao _podVlanAllocDao = null;
-    @Inject protected DcDetailsDao _detailsDao = null;
+    @Inject protected DataCenterDetailsDao _detailsDao = null;
     @Inject protected AccountGuestVlanMapDao _accountGuestVlanMapDao = null;
 
     protected long _prefix;
@@ -343,7 +345,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
     @Override @DB
     public boolean update(Long zoneId, DataCenterVO zone) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         boolean persisted = super.update(zoneId, zone);
         if (!persisted) {
@@ -356,7 +358,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
     @Override
     public void loadDetails(DataCenterVO zone) {
-        Map<String, String> details =_detailsDao.findDetails(zone.getId());
+        Map<String, String> details =_detailsDao.listDetailsKeyPairs(zone.getId());
         zone.setDetails(details);
     }
 
@@ -366,7 +368,13 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         if (details == null) {
             return;
         }
-        _detailsDao.persist(zone.getId(), details);
+        
+        List<DataCenterDetailVO> resourceDetails = new ArrayList<DataCenterDetailVO>();
+        for (String key : details.keySet()) {
+            resourceDetails.add(new DataCenterDetailVO(zone.getId(), key, details.get(key)));
+        }
+        
+        _detailsDao.saveDetails(resourceDetails);
     }
 
     @Override
@@ -408,7 +416,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
     @Override
     public boolean remove(Long id) {
-        Transaction txn = Transaction.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         DataCenterVO zone = createForUpdate();
         zone.setName(null);

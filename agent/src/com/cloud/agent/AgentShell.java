@@ -19,14 +19,12 @@ package com.cloud.agent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -39,9 +37,8 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
-import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 
@@ -56,12 +53,10 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 public class AgentShell implements IAgentShell, Daemon {
     private static final Logger s_logger = Logger.getLogger(AgentShell.class
             .getName());
-    private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
     private final Properties _properties = new Properties();
     private final Map<String, Object> _cmdLineProperties = new HashMap<String, Object>();
@@ -172,7 +167,7 @@ public class AgentShell implements IAgentShell, Daemon {
             _storage.persist(name, value);
     }
 
-    private void loadProperties() throws ConfigurationException {
+    void loadProperties() throws ConfigurationException {
         final File file = PropertiesUtil.findConfigFile("agent.properties");
         if (file == null) {
             throw new ConfigurationException("Unable to find agent.properties.");
@@ -180,14 +175,18 @@ public class AgentShell implements IAgentShell, Daemon {
 
         s_logger.info("agent.properties found at " + file.getAbsolutePath());
 
+        InputStream propertiesStream = null;
         try {
-            _properties.load(new FileInputStream(file));
+            propertiesStream = new FileInputStream(file);
+            _properties.load(propertiesStream);
         } catch (final FileNotFoundException ex) {
             throw new CloudRuntimeException("Cannot find the file: "
                     + file.getAbsolutePath(), ex);
         } catch (final IOException ex) {
             throw new CloudRuntimeException("IOException in reading "
                     + file.getAbsolutePath(), ex);
+        } finally {
+            IOUtils.closeQuietly(propertiesStream);
         }
     }
 
@@ -199,30 +198,32 @@ public class AgentShell implements IAgentShell, Daemon {
         String zone = null;
         String pod = null;
         String guid = null;
-        for (int i = 0; i < args.length; i++) {
-            final String[] tokens = args[i].split("=");
+        for (String param : args) {
+            final String[] tokens = param.split("=");
             if (tokens.length != 2) {
-                System.out.println("Invalid Parameter: " + args[i]);
+                System.out.println("Invalid Parameter: " + param);
                 continue;
             }
+            final String paramName = tokens[0];
+            final String paramValue = tokens[1];
 
             // save command line properties
-            _cmdLineProperties.put(tokens[0], tokens[1]);
+            _cmdLineProperties.put(paramName, paramValue);
 
-            if (tokens[0].equalsIgnoreCase("port")) {
-                port = tokens[1];
-            } else if (tokens[0].equalsIgnoreCase("threads") || tokens[0].equalsIgnoreCase("workers")) {
-                workers = tokens[1];
-            } else if (tokens[0].equalsIgnoreCase("host")) {
-                host = tokens[1];
-            } else if (tokens[0].equalsIgnoreCase("zone")) {
-                zone = tokens[1];
-            } else if (tokens[0].equalsIgnoreCase("pod")) {
-                pod = tokens[1];
-            } else if (tokens[0].equalsIgnoreCase("guid")) {
-                guid = tokens[1];
-            } else if (tokens[0].equalsIgnoreCase("eth1ip")) {
-                _privateIp = tokens[1];
+            if (paramName.equalsIgnoreCase("port")) {
+                port = paramValue;
+            } else if (paramName.equalsIgnoreCase("threads") || paramName.equalsIgnoreCase("workers")) {
+                workers = paramValue;
+            } else if (paramName.equalsIgnoreCase("host")) {
+                host = paramValue;
+            } else if (paramName.equalsIgnoreCase("zone")) {
+                zone = paramValue;
+            } else if (paramName.equalsIgnoreCase("pod")) {
+                pod = paramValue;
+            } else if (paramName.equalsIgnoreCase("guid")) {
+                guid = paramValue;
+            } else if (paramName.equalsIgnoreCase("eth1ip")) {
+                _privateIp = paramValue;
             }
         }
 
@@ -230,16 +231,16 @@ public class AgentShell implements IAgentShell, Daemon {
             port = getProperty(null, "port");
         }
 
-        _port = NumbersUtil.parseInt(port, 8250);
+        _port = NumberUtils.toInt(port, 8250);
 
-        _proxyPort = NumbersUtil.parseInt(
+        _proxyPort = NumberUtils.toInt(
                 getProperty(null, "consoleproxy.httpListenPort"), 443);
 
         if (workers == null) {
             workers = getProperty(null, "workers");
         }
 
-        _workers = NumbersUtil.parseInt(workers, 5);
+        _workers = NumberUtils.toInt(workers, 5);
 
         if (host == null) {
             host = getProperty(null, "host");
@@ -309,7 +310,7 @@ public class AgentShell implements IAgentShell, Daemon {
     	// For KVM agent, do it specially here
     	
     	File file = new File("/etc/cloudstack/agent/log4j-cloud.xml");
-    	if(file == null || !file.exists()) {
+    	if(!file.exists()) {
     		file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
     	}
     	DOMConfigurator.configureAndWatch(file.getAbsolutePath());

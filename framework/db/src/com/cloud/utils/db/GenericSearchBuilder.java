@@ -16,516 +16,216 @@
 // under the License.
 package com.cloud.utils.db;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
-import javax.persistence.Column;
-import javax.persistence.Transient;
-
-import net.sf.cglib.proxy.Factory;
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
-
-import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SearchCriteria.SelectType;
 
 /**
- * GenericSearchBuilder is used to build a search based on a VO object
- * a convenience class provided called SearchBuilder that provides
- * exactly that functionality.
+ * GenericSearchBuilder is used to build a search based on a VO object.  It
+ * can select the result into a native type, the entity object, or a composite
+ * object depending on what's needed.
+ * 
+ * The way to use GenericSearchBuilder is to use it to build a search at load
+ * time so it should be declared at class constructions.  It allows queries to
+ * be constructed completely in Java and parameters have String tokens that
+ * can be replaced during runtime with SearchCriteria.  Because
+ * GenericSearchBuilder is created at load time and SearchCriteria is used
+ * at runtime, the search query creation and the parameter value setting are
+ * separated in the code.  While that's tougher on the coder to maintain, what
+ * you gain is that all string constructions are done at load time rather than
+ * runtime and, more importantly, the proper construction can be checked when
+ * components are being loaded.  However, if you prefer to just construct
+ * the entire search at runtime, you can use GenericQueryBuilder.
+ * 
+ * <code>
+ * // To specify the GenericSearchBuilder, you should do this at load time.
+ * // Note that in the following search, it selects a func COUNT to be the
+ * // return result so for the second parameterized type is long.  It also
+ * // presets the type in the search and declares created to be set during
+ * // runtime.  Note the entity object itself must have came from search and
+ * // it uses the getters of the object to retrieve the field used in the search.
+ * 
+ * GenericSearchBuilder<HostVO, Long> CountSearch = _hostDao.createSearchBuilder(Long.class);
+ * HostVO entity = CountSearch.entity();
+ * CountSearch.select(null, FUNC.COUNT, null, null).where(entity.getType(), Op.EQ).value(Host.Type.Routing);
+ * CountSearch.and(entity.getCreated(), Op.LT, "create_date").done();
+ * 
+ * // Later in the code during runtime
+ * SearchCriteria<Long> sc = CountSearch.create();
+ * sc.setParameter("create_date", new Date());
+ * Long count = _hostDao.customizedSearch(sc, null);
+ * </code>
+ * 
+ * @see GenericQueryBuilder for runtime construction of search query
+ * @see SearchBuilder for returning VO objects itself
  *
  * @param <T> VO object this Search is build for.
  * @param <K> Result object that should contain the results.
  */
-public class GenericSearchBuilder<T, K> implements MethodInterceptor {
-    final protected Map<String, Attribute> _attrs;
-    
-    protected ArrayList<Condition> _conditions;
-    protected HashMap<String, JoinBuilder<GenericSearchBuilder<?, ?>>> _joins;
-    protected ArrayList<Select> _selects;
-    protected GroupBy<T, K> _groupBy = null;
-    protected Class<T> _entityBeanType;
-    protected Class<K> _resultType;
-    protected SelectType _selectType;
-    
-    protected T _entity;
-    protected ArrayList<Attribute> _specifiedAttrs;
-    
-    @SuppressWarnings("unchecked")
-    protected GenericSearchBuilder(T entity, Class<K> clazz, Map<String, Attribute> attrs) {
-        _entityBeanType = (Class<T>)entity.getClass();
-        _resultType = clazz;
-        
-        _attrs = attrs;
-        _entity = entity;
-        _conditions = new ArrayList<Condition>();
-        _joins = null;
-        _specifiedAttrs = new ArrayList<Attribute>();
+public class GenericSearchBuilder<T, K> extends SearchBase<GenericSearchBuilder<T, K>, T, K> {
+    protected GenericSearchBuilder(Class<T> entityType, Class<K> resultType) {
+        super(entityType, resultType);
     }
     
-    public T entity() {
-        return _entity;
-    }
-    
-    protected Attribute getSpecifiedAttribute() {
-        if (_entity == null || _specifiedAttrs == null || _specifiedAttrs.size() != 1) {
-            throw new RuntimeException("Now now, better specify an attribute or else we can't help you");
-        }
-        return _specifiedAttrs.get(0);
-    }
-
-    public GenericSearchBuilder<T, K> selectField(Object... useless) {
-        if (_entity == null) {
-            throw new RuntimeException("SearchBuilder cannot be modified once it has been setup");
-        }
-        if (_specifiedAttrs.size() <= 0) {
-            throw new RuntimeException("You didn't specify any attributes");
-        }
-   
-        if (_selects == null) {
-            _selects = new ArrayList<Select>();
-        }
-        
-        for (Attribute attr : _specifiedAttrs) {
-            Field field = null;
-            try {
-                field = _resultType.getDeclaredField(attr.field.getName());
-                field.setAccessible(true);
-            } catch (SecurityException e) {
-            } catch (NoSuchFieldException e) {
-            }
-            _selects.add(new Select(Func.NATIVE, attr, field, null));
-        }
-        
-        _specifiedAttrs.clear();
-        
-        return this;
-    }
-    
-//    public GenericSearchBuilder<T, K> selectField(String joinName, Object... entityFields) {
-//        JoinBuilder<GenericSearchBuilder<?, ?>> jb = _joins.get(joinName);
-//
-//    }
-    
-    /**
-     * Specifies the field to select.
-     * 
-     * @param fieldName The field name of the result object to put the value of the field selected.  This can be null if you're selecting only one field and the result is not a complex object.
-     * @param func function to place.
-     * @param useless column to select.  Call this with this.entity() method.
-     * @param params parameters to the function.
-     * @return a SearchBuilder to build more search parts.
-     */
-    public GenericSearchBuilder<T, K> select(String fieldName, Func func, Object useless, Object... params) {
-        if (_entity == null) {
-            throw new RuntimeException("SearchBuilder cannot be modified once it has been setup");
-        }
-        if (_specifiedAttrs.size() > 1) {
-            throw new RuntimeException("You can't specify more than one field to search on");
-        }
-        if (func.getCount() != -1 && (func.getCount() != (params.length + 1))) {
-            throw new RuntimeException("The number of parameters does not match the function param count for " + func);
-        }
-        
-        if (_selects == null) {
-            _selects = new ArrayList<Select>();
-        }
-        
-        Field field = null;
-        if (fieldName != null) {
-            try {
-                field = _resultType.getDeclaredField(fieldName);
-                field.setAccessible(true);
-            } catch (SecurityException e) {
-                throw new RuntimeException("Unable to find " + fieldName, e);
-            } catch (NoSuchFieldException e) {
-                throw new RuntimeException("Unable to find " + fieldName, e);
-            }
-        } else {
-            if (_selects.size() != 0) {
-                throw new RuntimeException(
-                        "You're selecting more than one item and yet is not providing a container class to put these items in.  So what do you expect me to do.  Spin magic?");
-            }
-        }
-        
-        Select select = new Select(func, _specifiedAttrs.size() == 0 ? null : _specifiedAttrs.get(0), field, params);
-        _selects.add(select);
-        
-        _specifiedAttrs.clear();
-        
-        return this;
-    }
-    
-    @Override
-    public Object intercept(Object object, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
-        String name = method.getName();
-		if (method.getAnnotation(Transient.class) == null) {
-			if (name.startsWith("get")) {
-				String fieldName = Character.toLowerCase(name.charAt(3)) + name.substring(4);
-				set(fieldName);
-				return null;
-			} else if (name.startsWith("is")) {
-				String fieldName = Character.toLowerCase(name.charAt(2)) + name.substring(3);
-				set(fieldName);
-				return null;
-			} else {
-			    Column ann = method.getAnnotation(Column.class);
-			    if (ann != null) {
-			        String colName = ann.name();
-			        for (Map.Entry<String, Attribute> attr : _attrs.entrySet()) {
-			            if (colName.equals(attr.getValue().columnName)) {
-			                set(attr.getKey());
-			                return null;
-			            }
-			        }
-			    }
-                throw new RuntimeException("Perhaps you need to make the method start with get or is: " + method);
-			}
-		}
-        return methodProxy.invokeSuper(object, args);
-    }
-    
-    protected void set(String name) {
-        Attribute attr = _attrs.get(name);
-        assert (attr != null) : "Searching for a field that's not there: " + name;
-        _specifiedAttrs.add(attr);
-    }
-   
     /**
      * Adds an AND condition to the SearchBuilder.
      * 
      * @param name param name you will use later to set the values in this search condition.
-     * @param useless SearchBuilder.entity().get*() which refers to the field that you're searching on.
+     * @param field SearchBuilder.entity().get*() which refers to the field that you're searching on.
      * @param op operation to apply to the field.
      * @return this
      */
-    public GenericSearchBuilder<T, K> and(String name, Object useless, Op op) {
+    public GenericSearchBuilder<T, K> and(String name, Object field, Op op) {
         constructCondition(name, " AND ", _specifiedAttrs.get(0), op);
         return this;
     }
     
-    public GenericSearchBuilder<T, K> and(Object useless, Op op, String name) {
+    /**
+     * Adds an AND condition.  Some prefer this method because it looks like
+     * the actual SQL query.
+     * 
+     * @param field field of entity object
+     * @param op operator of the search condition
+     * @param name param name used to later to set parameter value
+     * @return this
+     */
+    public GenericSearchBuilder<T, K> and(Object field, Op op, String name) {
         constructCondition(name, " AND ", _specifiedAttrs.get(0), op);
         return this;
     }
 
-    public Preset and(Object useless, Op op) {
+    /**
+     * Adds an AND condition but allows for a preset value to be set for this conditio.
+     * 
+     * @param field field of the entity object
+     * @param op operator of the search condition
+     * @return Preset which allows you to set the values
+     */
+    public Preset and(Object field, Op op) {
         Condition condition = constructCondition(UUID.randomUUID().toString(), " AND ", _specifiedAttrs.get(0), op);
         return new Preset(this, condition);
     }
 
-    public GenericSearchBuilder<T, K> and() {
-        constructCondition(null, " AND ", null, null);
-        return this;
-    }
-    
-    public GenericSearchBuilder<T, K> where() {
-        return and();
-    }
-    
-    public GenericSearchBuilder<T, K> or() {
-        constructCondition(null, " OR ", null, null);
-        return this;
-    }
-    
-    public GenericSearchBuilder<T, K> where(String name, Object useless, Op op) {
-        return and(name, useless, op);
-    }
-    
-    public GenericSearchBuilder<T, K> where(Object useless, Op op, String name) {
-        return and(name, useless, op);
+    /**
+     * Starts the search
+     * 
+     * @param field field of the entity object
+     * @param op operator
+     * @param name param name to refer to the value later.
+     * @return this
+     */
+    public GenericSearchBuilder<T, K> where(Object field, Op op, String name) {
+        return and(name, field, op);
     }
 
-    public Preset where(Object useless, Op op) {
-        return and(useless, op);
+    /**
+     * Starts the search but the value is already set during construction.
+     * 
+     * @param field field of the entity object
+     * @param op operator of the search condition
+     * @return Preset which allows you to set the values
+     */
+    public Preset where(Object field, Op op) {
+        return and(field, op);
     }
 
-    public GenericSearchBuilder<T, K> left(String name, Object useless, Op op) {
-        constructCondition(name, " ( ", _specifiedAttrs.get(0), op);
-        return this;
-    }
-    
-    public GenericSearchBuilder<T, K> left(Object useless, Op op, String name) {
+    protected GenericSearchBuilder<T, K> left(Object field, Op op, String name) {
         constructCondition(name, " ( ", _specifiedAttrs.get(0), op);
         return this;
     }
 
-    public Preset left(Object useless, Op op) {
+    protected Preset left(Object field, Op op) {
         Condition condition = constructCondition(UUID.randomUUID().toString(), " ( ", _specifiedAttrs.get(0), op);
         return new Preset(this, condition);
     }
 
-    public GenericSearchBuilder<T, K> op(Object useless, Op op, String name) {
-        return left(useless, op, name);
+    /**
+     * Adds an condition that starts with open parenthesis.  Use cp() to close
+     * the parenthesis.
+     * 
+     * @param field field of the entity object
+     * @param op operator
+     * @param name parameter name used to set the value later
+     * @return this
+     */
+    public GenericSearchBuilder<T, K> op(Object field, Op op, String name) {
+        return left(field, op, name);
     }
 
-    public Preset op(Object useless, Op op) {
-        return left(useless, op);
+    public Preset op(Object field, Op op) {
+        return left(field, op);
     }
 
-    public GenericSearchBuilder<T, K> op(String name, Object useless, Op op) {
-        return left(name, useless, op);
-    }
-    
-    public GenericSearchBuilder<T, K> openParen(Object useless, Op op, String name) {
-        return left(name, useless, op);
-    }
-
-    public GenericSearchBuilder<T, K> openParen(String name, Object useless, Op op) {
-        return left(name, useless, op);
-    }
-    
-    public Preset openParen(Object useless, Op op) {
-        return left(useless, op);
-    }
-
-    public GroupBy<T, K> groupBy(Object... useless) {
-        assert _groupBy == null : "Can't do more than one group bys";
-        _groupBy = new GroupBy<T, K>(this);
-        
-        return _groupBy;
-    }
-    
-    protected List<Attribute> getSpecifiedAttributes() {
-        return _specifiedAttrs;
+    /**
+     * Adds an condition that starts with open parenthesis.  Use cp() to close
+     * the parenthesis.
+     * 
+     * @param name parameter name used to set the parameter value later.
+     * @param field field of the entity object
+     * @param op operator
+     * @return this
+     */
+    public GenericSearchBuilder<T, K> op(String name, Object field, Op op) {
+        return left(field, op, name);
     }
     
     /**
      * Adds an OR condition to the SearchBuilder.
      * 
      * @param name param name you will use later to set the values in this search condition.
-     * @param useless SearchBuilder.entity().get*() which refers to the field that you're searching on.
+     * @param field SearchBuilder.entity().get*() which refers to the field that you're searching on.
      * @param op operation to apply to the field.
      * @return this
      */
-    public GenericSearchBuilder<T, K> or(String name, Object useless, Op op) {
+    public GenericSearchBuilder<T, K> or(String name, Object field, Op op) {
         constructCondition(name, " OR ", _specifiedAttrs.get(0), op);
         return this;
     }
     
-    public GenericSearchBuilder<T, K> or(Object useless, Op op, String name) {
+    /**
+     * Adds an OR condition
+     * 
+     * @param field field of the entity object
+     * @param op operator
+     * @param name parameter name
+     * @return this
+     */
+    public GenericSearchBuilder<T, K> or(Object field, Op op, String name) {
         constructCondition(name, " OR ", _specifiedAttrs.get(0), op);
         return this;
     }
 
-    public Preset or(Object useless, Op op) {
+    /**
+     * Adds an OR condition but the values can be preset
+     * 
+     * @param field field of the entity object
+     * @param op operator
+     * @return Preset
+     */
+    public Preset or(Object field, Op op) {
         Condition condition = constructCondition(UUID.randomUUID().toString(), " OR ", _specifiedAttrs.get(0), op);
         return new Preset(this, condition);
     }
 
-    public GenericSearchBuilder<T, K> join(String name, GenericSearchBuilder<?, ?> builder, Object useless, Object useless2, JoinBuilder.JoinType joinType) {
-        assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
-        assert _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
-        assert builder._entity != null : "SearchBuilder cannot be modified once it has been setup";
-        assert builder._specifiedAttrs.size() == 1 : "You didn't select the attribute.";
-        assert builder != this : "You can't add yourself, can you?  Really think about it!";
-        
-        JoinBuilder<GenericSearchBuilder<?, ?>> t = new JoinBuilder<GenericSearchBuilder<?, ?>>(builder, _specifiedAttrs.get(0), builder._specifiedAttrs.get(0), joinType);
-        if (_joins == null) {
-        	_joins = new HashMap<String, JoinBuilder<GenericSearchBuilder<?, ?>>>();
-        }
-        _joins.put(name, t);
-        
-        builder._specifiedAttrs.clear();
-        _specifiedAttrs.clear();
-        return this;
-    }
-    
-    protected Condition constructCondition(String conditionName, String cond, Attribute attr, Op op) {
-        assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
-        assert op == null || _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
-        assert op != Op.SC : "Call join";
-        
-        Condition condition = new Condition(conditionName, cond, attr, op);
-        _conditions.add(condition);
-        _specifiedAttrs.clear();
-        return condition;
-    }
-
     /**
-     * creates the SearchCriteria so the actual values can be filled in.
+     * Convenience method to create the search criteria and set a
+     * parameter in the search.
      * 
+     * @param name parameter name set during construction
+     * @param values values to be inserted for that parameter
      * @return SearchCriteria
      */
-    public SearchCriteria<K> create() {
-        if (_entity != null) {
-            done();
-        }
-        return new SearchCriteria<K>(this);
-    }
-    
     public SearchCriteria<K> create(String name, Object... values) {
         SearchCriteria<K> sc = create();
         sc.setParameters(name, values);
         return sc;
     }
     
-    public GenericSearchBuilder<T, K> right() {
-        Condition condition = new Condition("rp", " ) ", null, Op.RP);
-        _conditions.add(condition);
-        return this;
-    }
-    
-    public GenericSearchBuilder<T, K> cp() {
-        return right();
-    }
-    
-    public GenericSearchBuilder<T, K> closeParen() {
-        return right();
-    }
-    
-    public SelectType getSelectType() {
-        return _selectType;
-    }
-    
     /**
      * Marks the SearchBuilder as completed in building the search conditions.
      */
     public synchronized void done() {
-        if (_entity != null) {
-            Factory factory = (Factory)_entity;
-            factory.setCallback(0, null);
-            _entity = null;
-        }
-        
-        if (_joins != null) {
-        	for (JoinBuilder<GenericSearchBuilder<?, ?>> join : _joins.values()) {
-        		join.getT().done();
-            }
-        }
-        
-        if (_selects == null || _selects.size() == 0) {
-            _selectType = SelectType.Entity;
-            assert _entityBeanType.equals(_resultType) : "Expecting " + _entityBeanType + " because you didn't specify any selects but instead got " + _resultType;
-            return;
-        }
-        
-        for (Select select : _selects) {
-            if (select.field == null) {
-                assert (_selects.size() == 1) : "You didn't specify any fields to put the result in but you're specifying more than one select so where should I put the selects?";
-                _selectType = SelectType.Single;
-                return;
-            }
-            if (select.func != null) {
-                _selectType = SelectType.Result;
-                return;
-            }
-        }
-        
-        _selectType = SelectType.Fields;
-    }
-    
-    protected static class Condition {
-        protected final String name;
-        protected final String cond;
-        protected final Op op;
-        protected final Attribute attr;
-        protected Object[] presets;
-        
-        protected Condition(String name) {
-            this(name, null, null, null);
-        }
-        
-        public Condition(String name, String cond, Attribute attr, Op op) {
-            this.name = name;
-            this.attr = attr;
-            this.cond = cond;
-            this.op = op;
-            this.presets = null;
-        }
-        
-        public boolean isPreset() {
-            return presets != null;
-        }
-
-        public void setPresets(Object... presets) {
-            this.presets = presets;
-        }
-
-        public Object[] getPresets() {
-            return presets;
-        }
-
-        public void toSql(StringBuilder sql, Object[] params, int count) {
-            if (count > 0) {
-                sql.append(cond);
-            }
-            
-            if (op == null) {
-                return;
-            }
-            
-            if (op == Op.SC) {
-                sql.append(" (").append(((SearchCriteria<?>)params[0]).getWhereClause()).append(") ");
-                return;
-            }
-            
-            if (attr == null) {
-                return;
-            }
-            
-            sql.append(attr.table).append(".").append(attr.columnName).append(op.toString());
-            if (op == Op.IN && params.length == 1) {
-                sql.delete(sql.length() - op.toString().length(), sql.length());
-                sql.append("=?");
-            } else if (op == Op.NIN && params.length == 1) {
-                sql.delete(sql.length() - op.toString().length(), sql.length());
-                sql.append("!=?");
-            } else if (op.getParams() == -1) {
-                for (int i = 0; i < params.length; i++) {
-                    sql.insert(sql.length() - 2, "?,");
-                }
-                sql.delete(sql.length() - 3, sql.length() - 2); // remove the last ,
-            } else if (op  == Op.EQ && (params == null || params.length == 0 || params[0] == null)) {
-                sql.delete(sql.length() - 4, sql.length());
-                sql.append(" IS NULL ");
-            } else if (op == Op.NEQ && (params == null || params.length == 0 || params[0] == null)) {
-                sql.delete(sql.length() - 5, sql.length());
-                sql.append(" IS NOT NULL ");
-            } else {
-                if ((op.getParams() != 0 || params != null) && (params.length != op.getParams())) {
-                    throw new RuntimeException("Problem with condition: " + name);
-                }
-            }
-        }
-        
-        @Override
-        public int hashCode() {
-            return name.hashCode();
-        }
-        
-        @Override
-        public boolean equals(Object obj) {
-            if (!(obj instanceof Condition)) {
-                return false;
-            }
-            
-            Condition condition = (Condition)obj;
-            return name.equals(condition.name);
-        }
-    }
-    
-    protected static class Select {
-        public Func func;
-        public Attribute attr;
-        public Object[] params;
-        public Field field;
-        
-        protected Select() {
-        }
-        
-        public Select(Func func, Attribute attr, Field field, Object[] params) {
-            this.func = func;
-            this.attr = attr;
-            this.params = params;
-            this.field = field;
-        }
+        super.finalize();
     }
     
     public class Preset {

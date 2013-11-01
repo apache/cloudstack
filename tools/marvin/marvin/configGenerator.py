@@ -27,6 +27,9 @@ class managementServer(object):
         self.port = 8096
         self.apiKey = None
         self.securityKey = None
+        self.useHttps = None
+        self.certCAPath = None
+        self.certPath = None
 
 
 class dbServer(object):
@@ -827,10 +830,10 @@ def generate_setup_config(config, file=None):
         fp.close()
 
 
-def get_setup_config(file):
+def getSetupConfig(file):
     if not os.path.exists(file):
         raise IOError("config file %s not found. \
-please specify a valid config file" % file)
+                      please specify a valid config file" % file)
     config = cloudstackConfiguration()
     configLines = []
     with open(file, 'r') as fp:
@@ -859,7 +862,7 @@ by default is ./datacenterCfg")
     (options, args) = parser.parse_args()
 
     if options.inputfile:
-        config = get_setup_config(options.inputfile)
+        config = getSetupConfig(options.inputfile)
     if options.advanced:
         config = describe_setup_in_advanced_mode()
     elif options.advancedsg:

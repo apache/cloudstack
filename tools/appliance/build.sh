@@ -33,9 +33,9 @@ rootdir=$PWD
 bundle
 
 # Clean and start building the appliance
-veewee vbox destroy $appliance
-veewee vbox build $appliance --nogui --auto
-veewee vbox halt $appliance
+bundle exec veewee vbox destroy $appliance
+bundle exec veewee vbox build $appliance --nogui --auto
+bundle exec veewee vbox halt $appliance
 
 while [[ `vboxmanage list runningvms | grep $appliance | wc -l` -ne 0 ]];
 do

@@ -33,7 +33,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value={UsageStorageDao.class})
@@ -93,7 +93,7 @@ public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> im
     }
 	
 	public void removeBy(long accountId, long volId, int storage_type) {
-	    Transaction txn = Transaction.open(Transaction.USAGE_DB);
+	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
 		PreparedStatement pstmt = null;
 		try {
 		    txn.start();
@@ -113,7 +113,7 @@ public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> im
 	}
 
 	public void update(UsageStorageVO usage) {
-	    Transaction txn = Transaction.open(Transaction.USAGE_DB);
+	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
 		PreparedStatement pstmt = null;
 		try {
 		    txn.start();
@@ -158,7 +158,7 @@ public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> im
             sql += " LIMIT " + startIndex + ",500";
         }
 
-        Transaction txn = Transaction.open(Transaction.USAGE_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
 
         try {
