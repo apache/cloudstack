@@ -484,7 +484,7 @@ import org.apache.cloudstack.network.contrail.management.ServerEventHandlerImpl;
         VpcOfferingServiceMapDaoImpl.class,
         VpcServiceMapDaoImpl.class,
         VpcVirtualNetworkApplianceManagerImpl.class,
-        VpnUserDaoImpl.class,
+        VpnUserDaoImpl.class
 },
 includeFilters={@Filter(value=IntegrationTestConfiguration.ComponentFilter.class, type=FilterType.CUSTOM)},
 useDefaultFilters=false)
