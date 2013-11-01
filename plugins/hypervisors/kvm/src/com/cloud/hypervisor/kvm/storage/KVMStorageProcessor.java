@@ -1159,7 +1159,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             DataTO destData = cmd.getDestTO();
             PrimaryDataStoreTO pool = (PrimaryDataStoreTO) destData.getDataStore();
             DataStoreTO imageStore = srcData.getDataStore();
-            VolumeObjectTO volume = snapshot.getVolume();
+            VolumeObjectTO volume = (VolumeObjectTO)destData;
 
             if (!(imageStore instanceof NfsTO)) {
                 return new CopyCmdAnswer("unsupported protocol");
