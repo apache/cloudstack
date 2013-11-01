@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -24,6 +25,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -66,6 +68,10 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
             description="the ID of the availability zone")
     private Long zoneId;
+    
+    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.UUID, entityType=StoragePoolResponse.class,
+            description="the ID of the storage pool, available to ROOT admin only", since="4.3", authorized = { RoleType.Admin })
+    private Long storageId;
 
     
     /////////////////////////////////////////////////////
@@ -101,6 +107,9 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
         return zoneId;
     }
 
+    public Long getStorageId() {
+        return storageId;
+    }
     
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
