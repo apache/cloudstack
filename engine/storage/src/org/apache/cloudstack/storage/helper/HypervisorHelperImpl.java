@@ -30,7 +30,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectAnswer;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
-import org.apache.cloudstack.storage.snapshot.VMSnapshotHelper;
+import org.apache.cloudstack.storage.vmsnapshot.VMSnapshotHelper;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 

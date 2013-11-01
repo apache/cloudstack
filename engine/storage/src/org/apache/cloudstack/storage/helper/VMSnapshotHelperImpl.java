@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.vmsnapshot;
+package org.apache.cloudstack.storage.helper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,8 +29,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.snapshot.VMSnapshotHelper;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.storage.vmsnapshot.VMSnapshotHelper;
 
 import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.exception.InvalidParameterValueException;

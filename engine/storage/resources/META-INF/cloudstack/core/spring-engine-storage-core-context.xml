@@ -37,7 +37,9 @@
     <bean id="BAREMETAL" class="org.apache.cloudstack.storage.image.format.BAREMETAL" />
     
     <bean id="hypervisorHelperImpl" class="org.apache.cloudstack.storage.helper.HypervisorHelperImpl" />
-    <bean id="vmSnapshotHelper" class="org.apache.cloudstack.storage.vmsnapshot.VMSnapshotHelperImpl" />
+
+    <bean id="VMSnapshotHelperImpl"
+          class="org.apache.cloudstack.storage.helper.VMSnapshotHelperImpl" />
 
     <bean id="objectInDataStoreManagerImpl"
         class="org.apache.cloudstack.storage.datastore.ObjectInDataStoreManagerImpl" />

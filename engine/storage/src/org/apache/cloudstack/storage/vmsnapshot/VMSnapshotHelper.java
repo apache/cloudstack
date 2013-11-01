@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.snapshot;
+package org.apache.cloudstack.storage.vmsnapshot;
 
 import java.util.List;
 
