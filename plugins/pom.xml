@@ -42,6 +42,7 @@
     <module>hypervisors/ucs</module>
     <module>network-elements/elastic-loadbalancer</module>
     <module>network-elements/ovs</module>
+    <module>network-elements/juniper-contrail</module>
     <module>network-elements/nicira-nvp</module>
     <module>network-elements/bigswitch-vns</module>
     <module>network-elements/midonet</module>

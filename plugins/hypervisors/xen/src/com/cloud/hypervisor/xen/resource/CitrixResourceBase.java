@@ -1072,7 +1072,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         throw new CloudRuntimeException("Unable to support this type of network broadcast domain: " + nic.getBroadcastUri());
     }
 
-    protected VIF createVif(Connection conn, String vmName, VM vm, NicTO nic) throws XmlRpcException, XenAPIException {
+    protected VIF createVif(Connection conn, String vmName, VM vm, VirtualMachineTO vmSpec, NicTO nic) throws XmlRpcException, XenAPIException {
         assert(nic.getUuid() != null) : "Nic should have a uuid value";
 
         if (s_logger.isDebugEnabled()) {
@@ -1087,6 +1087,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         vifr.otherConfig = new HashMap<String, String>();
         vifr.otherConfig.put("nicira-iface-id", nic.getUuid());
         vifr.otherConfig.put("nicira-vm-id", vm.getUuid(conn));
+        // Provide XAPI with the cloudstack vm and nic uids.
+        vifr.otherConfig.put("cloudstack-nic-id", nic.getUuid());
+	if (vmSpec != null) {
+	    vifr.otherConfig.put("cloudstack-vm-id", vmSpec.getUuid()); 
+	}
 
         vifr.network = getNetwork(conn, nic);
 
@@ -1716,7 +1721,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
             for (NicTO nic : vmSpec.getNics()) {
-                createVif(conn, vmName, vm, nic);
+                createVif(conn, vmName, vm, vmSpec, nic);
             }
 
             startVM(conn, host, vm, vmName);
@@ -2422,7 +2427,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                 nic.setDeviceId(Integer.parseInt(vifDeviceNum));
 
-                correctVif = createVif(conn, vmName, router, nic);
+                correctVif = createVif(conn, vmName, router, null, nic);
                 correctVif.plug(conn);
                 // Add iptables rule for network usage
                 networkUsage(conn, privateIpAddress, "addVif", "eth" + correctVif.getDevice(conn));
@@ -8391,7 +8396,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             String deviceId = getLowestAvailableVIFDeviceNum(conn, vm);
             nic.setDeviceId(Integer.parseInt(deviceId));
-            vif = createVif(conn, vmName, vm, nic);
+            vif = createVif(conn, vmName, vm, null, nic);
             vif.plug(conn);
             return new PlugNicAnswer(cmd, true, "success");
         } catch (Exception e) {
