@@ -460,10 +460,7 @@ CREATE VIEW `cloud`.`storage_pool_view` AS
         `cloud`.`async_job` ON async_job.instance_id = storage_pool.id
             and async_job.instance_type = 'StoragePool'
             and async_job.job_status = 0;
-            
-            
-            DROP TABLE IF EXISTS `cloud`.`vm_snapshot_details`;
-            
+
 CREATE TABLE `cloud`.`firewall_rule_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `firewall_rule_id` bigint unsigned NOT NULL COMMENT 'Firewall rule id',
