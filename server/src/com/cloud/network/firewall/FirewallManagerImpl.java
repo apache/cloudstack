@@ -738,7 +738,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         }
 
         if (generateUsageEvent && needUsageEvent) {
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_RULE_DELETE, rule.getAccountId(), 0, rule.getId(),
+            Network network = _networkModel.getNetwork(rule.getNetworkId());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_RULE_DELETE, rule.getAccountId(), network.getDataCenterId(), rule.getId(),
                     null, rule.getClass().getName(), rule.getUuid());
         }
 
