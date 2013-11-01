@@ -426,6 +426,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     disk.setFormat(PhysicalDiskFormat.DIR);
                 } else if (volumeUuid.endsWith("tar") || volumeUuid.endsWith(("TAR"))) {
                     disk.setFormat(PhysicalDiskFormat.TAR);
+                } else if (volumeUuid.endsWith("raw") || volumeUuid.endsWith(("RAW"))) {
+                    disk.setFormat(PhysicalDiskFormat.RAW);
                 } else {
                     disk.setFormat(pool.getDefaultFormat());
                 }
