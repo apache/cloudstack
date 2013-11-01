@@ -353,3 +353,43 @@ def validateList(inp):
             ret[2] = EMPTY_LIST
             return ret
         return [PASS, inp[0], None]
+
+def verifyElementInList(inp, toverify, pos = 0):
+       '''
+       @name: verifyElementInList
+       @Description: 
+              1. A utility function to validate
+                 whether the input passed is a list.
+                 The list is empty or not.
+                 If it is list and not empty, verify
+                 whether a given element is there in that list or not
+                 at a given pos  
+       @Input: 
+              I  : Input to be verified whether its a list or not
+             II  : Element to verify whether it exists in the list 
+             III : Position in the list at which the input element to verify
+                    default to 0
+       @output: List, containing [ Result,Reason ]
+                Ist Argument('Result') : FAIL : If it is not a list
+                                          If it is list but empty
+                                          PASS : If it is list and not empty
+                                              and matching element was found
+                IIrd Argument( 'Reason' ): Reason for failure ( FAIL ),
+                                            default to None.
+                                            INVALID_INPUT
+                                            EMPTY_LIST
+                                            MATCH_NOT_FOUND
+       '''
+       if toverify is None or toverify == '' \
+           or pos is None or pos < -1 or pos == '':
+           return [FAIL, INVALID_INPUT]
+       out = validateList(inp)
+       if out[0] == FAIL:
+           return [FAIL, out[2]]
+       if out[0] == PASS:
+           if len(inp) > pos and inp[pos] == toverify:
+               return [PASS, None]
+           else:
+               return [FAIL, MATCH_NOT_FOUND]
+
+
