@@ -272,6 +272,34 @@ class TestVMDeployVPC(cloudstackTestCase):
         self.debug("VPC network validated - %s" % network.name)
         return
 
+    def getFreeVlan(self, apiclient, zoneid):
+        """
+        Find an unallocated VLAN outside the range allocated to the physical network.
+
+        @note: This does not guarantee that the VLAN is available for use in
+        the deployment's network gear
+        @return: physical_network, shared_vlan_tag
+        """
+        list_physical_networks_response = PhysicalNetwork.list(
+            apiclient,
+            zoneid=zoneid
+        )
+        assert isinstance(list_physical_networks_response, list)
+        assert len(list_physical_networks_response) > 0, "No physical networks found in zone %s" % zoneid
+
+        physical_network = list_physical_networks_response[0]
+        vlans = xsplit(physical_network.vlan, ['-', ','])
+
+        assert len(vlans) > 0
+        assert int(vlans[0]) < int(vlans[-1]), "VLAN range  %s was improperly split" % physical_network.vlan
+        shared_ntwk_vlan = int(vlans[-1]) + random.randrange(1, 20)
+        if shared_ntwk_vlan > 4095:
+            shared_ntwk_vlan = int(vlans[0]) - random.randrange(1, 20)
+            assert shared_ntwk_vlan > 0, "VLAN chosen %s is invalid < 0" % shared_ntwk_vlan
+        self.debug("Attempting free VLAN %s for shared network creation" % shared_ntwk_vlan)
+        return shared_ntwk_vlan
+
+
     @attr(tags=["advanced", "intervlan"])
     def test_01_deploy_vms_in_network(self):
         """ Test deploy VMs in VPC networks
@@ -1995,6 +2023,8 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 services=self.services["http_rule"],
                                 traffictype='Egress'
                                 )
+        
+        vlan = self.getFreeVlan(self.api_client, self.zone.id)
 
         self.debug("Creating private gateway in VPC: %s" % vpc.name)
         private_gateway = PrivateGateway.create(
@@ -2002,7 +2032,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                                                 gateway='10.2.3.1',
                                                 ipaddress='10.2.3.2',
                                                 netmask='255.255.255.0',
-                                                vlan=678,
+                                                vlan=vlan,
                                                 vpcid=vpc.id
                                                 )
         self.debug("Check if the private gateway created successfully?")
@@ -2110,7 +2140,8 @@ class TestVMDeployVPC(cloudstackTestCase):
         self.assertEqual(
                          public_ips[0].ipaddress,
                          public_ip_6.ipaddress.ipaddress,
-                         "List public Ip for network should list the Ip addr"
+                         "List public Ips %s for network should list the Ip addr %s"
+                         % (public_ips[0].ipaddress, public_ip_6.ipaddress.ipaddress )
                          )
 
         self.debug("Associating public IP for network: %s" % vpc.name)
@@ -2150,13 +2181,14 @@ class TestVMDeployVPC(cloudstackTestCase):
                                 traffictype='Egress'
                                 )
 
+        vlan = self.getFreeVlan(self.api_client, self.zone.id)
         self.debug("Creating private gateway in VPC: %s" % vpc.name)
         private_gateway = PrivateGateway.create(
                                                 self.apiclient,
                                                 gateway='10.2.4.1',
                                                 ipaddress='10.2.4.2',
                                                 netmask='255.255.255.0',
-                                                vlan=678,
+                                                vlan=vlan,
                                                 vpcid=vpc.id
                                                 )
         self.debug("Check if the private gateway created successfully?")
@@ -2219,6 +2251,8 @@ class TestVMDeployVPC(cloudstackTestCase):
                                         (public_ip_1.ipaddress.ipaddress, e))
 
         result = str(res)
+        self.debug("result = %s, result.count = %s" % (result, result.count("1 received")))
+        self.debug("Public IP = %s" % public_ip_1.ipaddress.ipaddress)
         self.assertEqual(
                          result.count("1 received"),
                          1,
