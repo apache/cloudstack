@@ -181,6 +181,11 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
         return this.uuid;
     }
 
+    @Override
+    public String getUrl() {
+        return null;
+    }
+
     public void setUuid(final String uuid) {
         this.uuid = uuid;
     }
