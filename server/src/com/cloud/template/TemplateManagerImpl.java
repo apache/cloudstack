@@ -583,7 +583,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     public String getChecksum(DataStore store, String templatePath) {
         EndPoint ep = _epSelector.select(store);
         ComputeChecksumCommand cmd = new ComputeChecksumCommand(store.getTO(), templatePath);
-        Answer answer = ep.sendMessage(cmd);
+        Answer answer = null;
+        if (ep == null) {
+            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            answer = new Answer(cmd, false, errMsg);
+        } else {
+            answer = ep.sendMessage(cmd);
+        }
         if (answer != null && answer.getResult()) {
             return answer.getDetails();
         }

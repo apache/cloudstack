@@ -22,6 +22,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -45,7 +47,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
@@ -214,7 +215,14 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
                 CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _primaryStorageDownloadWait, true);
                 EndPoint ep = epSelector.select(srcData, destData);
-                Answer answer = ep.sendMessage(cmd);
+                Answer answer = null;
+                if (ep == null) {
+                    String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+                    s_logger.error(errMsg);
+                    answer = new Answer(cmd, false, errMsg);
+                } else {
+                    answer = ep.sendMessage(cmd);
+                }
                 CopyCommandResult result = new CopyCommandResult("", answer);
                 callback.complete(result);
             }
@@ -245,7 +253,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
 
             CreateObjectCommand cmd = new CreateObjectCommand(snapshotTO);
-            EndPoint ep = this.epSelector.select(snapshot);
+            EndPoint ep = epSelector.select(snapshot);
             Answer answer = null;
             if ( ep == null ){
                 String errMsg = "No remote endpoint to send DeleteCommand, check if host or ssvm is down?";
@@ -284,7 +292,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 resizeParameter.newSize, resizeParameter.shrinkOk, resizeParameter.instanceName);
         CreateCmdResult result = new CreateCmdResult(null, null);
         try {
-            ResizeVolumeAnswer answer = (ResizeVolumeAnswer) this.storageMgr.sendToPool(pool, resizeParameter.hosts,
+            ResizeVolumeAnswer answer = (ResizeVolumeAnswer) storageMgr.sendToPool(pool, resizeParameter.hosts,
                     resizeCmd);
             if (answer != null && answer.getResult()) {
                 long finalSize = answer.getNewSize();

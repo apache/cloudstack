@@ -20,14 +20,12 @@
 package org.apache.cloudstack.storage.datastore.driver;
 
 
-import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.NfsTO;
-import com.cloud.storage.Storage;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VolumeDao;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -39,10 +37,15 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.image.BaseImageStoreDriverImpl;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
-import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-import java.util.UUID;
+import com.cloud.agent.api.storage.DownloadAnswer;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.NfsTO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
 
 public class SimulatorImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     private static final Logger s_logger = Logger.getLogger(SimulatorImageStoreDriverImpl.class);
@@ -71,9 +74,9 @@ public class SimulatorImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     @Override
     public void createAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
         if (data.getType() == DataObjectType.TEMPLATE) {
-            this.createTemplate(data, callback);
+            createTemplate(data, callback);
         } else if (data.getType() == DataObjectType.VOLUME) {
-            this.createVolume(data, callback);
+            createVolume(data, callback);
         }
     }
 
@@ -108,6 +111,11 @@ public class SimulatorImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     @Override
     public String createEntityExtractUrl(DataStore store, String installPath, Storage.ImageFormat format, DataObject dataObject) {
         EndPoint ep = _epSelector.select(store);
+        if (ep == null) {
+            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            return null;
+        }
         // Create Symlink at ssvm
         String path = installPath;
         String uuid = UUID.randomUUID().toString() + "." + format.getFileExtension();

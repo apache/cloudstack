@@ -18,37 +18,16 @@
  */
 package org.apache.cloudstack.storage.volume;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.storage.ListVolumeAnswer;
-import com.cloud.agent.api.storage.ListVolumeCommand;
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Config;
-import com.cloud.configuration.Resource.ResourceType;
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.host.Host;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ScopeType;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.Volume;
-import com.cloud.storage.Volume.State;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.storage.template.TemplateProp;
-import com.cloud.user.AccountManager;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -81,14 +60,38 @@ import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.ListVolumeAnswer;
+import com.cloud.agent.api.storage.ListVolumeCommand;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.host.Host;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.Volume;
+import com.cloud.storage.Volume.State;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.storage.template.TemplateProp;
+import com.cloud.user.AccountManager;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class VolumeServiceImpl implements VolumeService {
@@ -1255,7 +1258,14 @@ public class VolumeServiceImpl implements VolumeService {
                         tmplTO.setId(tInfo.getId());
                         DeleteCommand dtCommand = new DeleteCommand(tmplTO);
                         EndPoint ep = _epSelector.select(store);
-                        Answer answer = ep.sendMessage(dtCommand);
+                        Answer answer = null;
+                        if (ep == null) {
+                            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+                            s_logger.error(errMsg);
+                            answer = new Answer(dtCommand, false, errMsg);
+                        } else {
+                            answer = ep.sendMessage(dtCommand);
+                        }
                         if (answer == null || !answer.getResult()) {
                             s_logger.info("Failed to deleted volume at store: " + store.getName());
 
@@ -1280,7 +1290,14 @@ public class VolumeServiceImpl implements VolumeService {
     private Map<Long, TemplateProp> listVolume(DataStore store) {
         ListVolumeCommand cmd = new ListVolumeCommand(store.getTO(), store.getUri());
         EndPoint ep = _epSelector.select(store);
-        Answer answer = ep.sendMessage(cmd);
+        Answer answer = null;
+        if (ep == null) {
+            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            answer = new Answer(cmd, false, errMsg);
+        } else {
+            answer = ep.sendMessage(cmd);
+        }
         if (answer != null && answer.getResult()) {
             ListVolumeAnswer tanswer = (ListVolumeAnswer) answer;
             return tanswer.getTemplateInfo();

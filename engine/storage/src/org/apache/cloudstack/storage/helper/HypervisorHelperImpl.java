@@ -23,6 +23,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
@@ -32,7 +34,6 @@ import org.apache.cloudstack.storage.command.IntroduceObjectAnswer;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 import org.apache.cloudstack.storage.vmsnapshot.VMSnapshotHelper;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -66,7 +67,14 @@ public class HypervisorHelperImpl implements HypervisorHelper {
     public DataTO introduceObject(DataTO object, Scope scope, Long storeId) {
         EndPoint ep = selector.select(scope, storeId);
         IntroduceObjectCmd cmd = new IntroduceObjectCmd(object);
-        Answer answer = ep.sendMessage(cmd);
+        Answer answer = null;
+        if (ep == null) {
+            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            answer = new Answer(cmd, false, errMsg);
+        } else {
+            answer = ep.sendMessage(cmd);
+        }
         if (answer == null || !answer.getResult()) {
             String errMsg = answer == null ? null : answer.getDetails();
             throw new CloudRuntimeException("Failed to introduce object, due to " + errMsg);
@@ -79,7 +87,14 @@ public class HypervisorHelperImpl implements HypervisorHelper {
     public boolean forgetObject(DataTO object, Scope scope, Long storeId) {
         EndPoint ep = selector.select(scope, storeId);
         ForgetObjectCmd cmd = new ForgetObjectCmd(object);
-        Answer answer = ep.sendMessage(cmd);
+        Answer answer = null;
+        if (ep == null) {
+            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            answer = new Answer(cmd, false, errMsg);
+        } else {
+            answer = ep.sendMessage(cmd);
+        }
         if (answer == null || !answer.getResult()) {
             String errMsg = answer == null ? null : answer.getDetails();
             if (errMsg != null) {

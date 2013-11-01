@@ -27,15 +27,17 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -43,10 +45,10 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -209,9 +211,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         // we can arbitrarily pick one ssvm to do that task
         List<HostVO> ssAHosts = listUpAndConnectingSecondaryStorageVmHost(dcId);
         if (ssAHosts == null || ssAHosts.isEmpty()) {
-            s_logger.info("No running ssvm is found, so command will be sent to LocalHostEndPoint");
-            return LocalHostEndpoint.getEndpoint(); // use local host as endpoint in
-            // case of no ssvm existing
+            return null;
         }
         Collections.shuffle(ssAHosts);
         HostVO host = ssAHosts.get(0);
@@ -232,7 +232,16 @@ public class DefaultEndPointSelector implements EndPointSelector {
     @Override
     public EndPoint select(DataObject object) {
         DataStore store = object.getDataStore();
-        return select(store);
+        EndPoint ep = select(store);
+        if (ep != null)
+            return ep;
+        if (object instanceof TemplateInfo) {
+            TemplateInfo tmplInfo = (TemplateInfo)object;
+            if (store.getScope().getScopeType() == ScopeType.ZONE && store.getScope().getScopeId() == null && tmplInfo.getTemplateType() == TemplateType.SYSTEM) {
+                return LocalHostEndpoint.getEndpoint(); // for bootstrap system vm template downloading to region image store
+            }
+        }
+        return null;
     }
 
     @Override

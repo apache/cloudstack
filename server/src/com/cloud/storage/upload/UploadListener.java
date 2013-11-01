@@ -21,12 +21,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
-import java.util.TimerTask;
 
 import javax.inject.Inject;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
@@ -437,6 +437,11 @@ public class UploadListener implements Listener {
             }
             try {
                 EndPoint ep = _epSelector.select(sserver);
+                if (ep == null) {
+                    String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+                    s_logger.error(errMsg);
+                    return;
+                }
                 ep.sendMessageAsync(new UploadProgressCommand(getCommand(), getJobId(), reqType), new Callback(ep.getId(), this));
             } catch (Exception e) {
                 s_logger.debug("Send command failed", e);

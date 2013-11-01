@@ -441,7 +441,14 @@ public class TemplateServiceImpl implements TemplateService {
                             tmplTO.setId(tInfo.getId());
                             DeleteCommand dtCommand = new DeleteCommand(tmplTO);
                             EndPoint ep = _epSelector.select(store);
-                            Answer answer = ep.sendMessage(dtCommand);
+                            Answer answer = null;
+                            if (ep == null) {
+                                String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+                                s_logger.error(errMsg);
+                                answer = new Answer(dtCommand, false, errMsg);
+                            } else {
+                                answer = ep.sendMessage(dtCommand);
+                            }
                             if (answer == null || !answer.getResult()) {
                                 s_logger.info("Failed to deleted template at store: " + store.getName());
 
@@ -513,7 +520,14 @@ public class TemplateServiceImpl implements TemplateService {
     private Map<String, TemplateProp> listTemplate(DataStore ssStore) {
         ListTemplateCommand cmd = new ListTemplateCommand(ssStore.getTO());
         EndPoint ep = _epSelector.select(ssStore);
-        Answer answer = ep.sendMessage(cmd);
+        Answer answer = null;
+        if (ep == null) {
+            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            answer = new Answer(cmd, false, errMsg);
+        } else {
+            answer = ep.sendMessage(cmd);
+        }
         if (answer != null && answer.getResult()) {
             ListTemplateAnswer tanswer = (ListTemplateAnswer) answer;
             return tanswer.getTemplateInfo();
