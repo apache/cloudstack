@@ -485,3 +485,5 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 'Sets the object type of groups within LDAP','groupOfUniqueNames',NULL,NULL,0);
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.group.user.uniquemember', 'uniquemember',
 'Sets the attribute for uniquemembers within a group','uniquemember',NULL,NULL,0);
+
+UPDATE `cloud`.`volumes` SET display_volume=1 where id>0;
