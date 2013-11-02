@@ -187,6 +187,16 @@ public class DefaultEndPointSelector implements EndPointSelector {
                 selectedStore = destStore;
             }
             EndPoint ep = findEndpointForImageStorage(selectedStore);
+            if (ep != null) {
+                return ep;
+            }
+            // handle special case where it is used in deploying ssvm for S3
+            if (srcData instanceof TemplateInfo) {
+                TemplateInfo tmpl = (TemplateInfo)srcData;
+                if (tmpl.getTemplateType() == TemplateType.SYSTEM) {
+                    ep = LocalHostEndpoint.getEndpoint();
+                }
+            }
             return ep;
         } else if (moveBetweenImages(srcStore, destStore)) {
             EndPoint ep = findEndpointForImageStorage(destStore);
