@@ -48,6 +48,7 @@ public class TestVmwareContextFactory {
 			s_logger.debug("initialize VmwareContext. url: " + serviceUrl + ", username: " + vCenterUserName + ", password: " + StringUtils.getMaskedPasswordForDisplay(vCenterPassword));
 
 		VmwareClient vimClient = new VmwareClient(vCenterAddress + "-" + s_seq++);
+        vimClient.setVcenterSessionTimeout(600000); // Timeout in milliseconds
 		vimClient.connect(serviceUrl, vCenterUserName, vCenterPassword);
 
 		VmwareContext context = new VmwareContext(vimClient, vCenterAddress);

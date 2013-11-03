@@ -109,6 +109,7 @@ public class VmwareClient {
     private VimPortType vimPort;
     private String serviceCookie;
     private final String SVC_INST_NAME = "ServiceInstance";
+    private int vCenterSessionTimeout = 600000; // Timeout in milliseconds
 
     private boolean isConnected = false;
 
@@ -132,8 +133,8 @@ public class VmwareClient {
         ctxt.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
         ctxt.put(BindingProvider.SESSION_MAINTAIN_PROPERTY, true);
 
-        ctxt.put("com.sun.xml.internal.ws.request.timeout", 600000);
-        ctxt.put("com.sun.xml.internal.ws.connect.timeout", 600000);
+        ctxt.put("com.sun.xml.internal.ws.request.timeout", vCenterSessionTimeout);
+        ctxt.put("com.sun.xml.internal.ws.connect.timeout", vCenterSessionTimeout);
 
         ServiceContent serviceContent = vimPort.retrieveServiceContent(SVC_INST_REF);
 
@@ -616,4 +617,9 @@ public class VmwareClient {
        }
        return propmor;
     }
+
+    public void setVcenterSessionTimeout(int vCenterSessionTimeout) {
+        this.vCenterSessionTimeout = vCenterSessionTimeout;
+    }
+
 }
