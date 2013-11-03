@@ -18,6 +18,8 @@
  */
 package com.cloud.storage.resource;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -26,7 +28,6 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -67,7 +68,9 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
         DataStoreTO srcDataStore = srcData.getDataStore();
         DataStoreTO destDataStore = destData.getDataStore();
 
-        if (srcData.getObjectType() == DataObjectType.TEMPLATE && srcData.getDataStore().getRole() == DataStoreRole.Image && destData.getDataStore().getRole() == DataStoreRole.Primary) {
+        if (srcData.getObjectType() == DataObjectType.TEMPLATE
+                && (srcData.getDataStore().getRole() == DataStoreRole.Image || srcData.getDataStore().getRole() == DataStoreRole.ImageCache)
+                && destData.getDataStore().getRole() == DataStoreRole.Primary) {
             //copy template to primary storage
             return processor.copyTemplateToPrimaryStorage(cmd);
         } else if (srcData.getObjectType() == DataObjectType.TEMPLATE && srcDataStore.getRole() == DataStoreRole.Primary && destDataStore.getRole() == DataStoreRole.Primary) {
