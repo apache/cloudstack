@@ -113,7 +113,6 @@ import org.apache.cloudstack.engine.orchestration.VolumeOrchestrator;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
@@ -2513,7 +2512,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         for (DiskTO vol : disks) {
             if (vol.getType() != Volume.Type.ISO) {
                 VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
-                PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
+                DataStoreTO primaryStore = volumeTO.getDataStore();
                 if (primaryStore.getUuid() != null && !primaryStore.getUuid().isEmpty()) {
                     validatedDisks.add(vol);
                 }
@@ -2673,7 +2672,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
                     for (DiskTO vol : disks) {
                         if (vol.getType() == Volume.Type.ROOT) {
-                            PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)vol.getData().getDataStore();
+                            DataStoreTO primaryStore = vol.getData().getDataStore();
                             rootDiskDataStoreDetails = dataStoresDetails.get(primaryStore.getUuid());
                         }
                     }
@@ -2832,7 +2831,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
                     
 	                VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
-	                PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
+	                DataStoreTO primaryStore = volumeTO.getDataStore();
 	                Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(primaryStore.getUuid());
 	                assert (volumeDsDetails != null);
 	                
@@ -2984,7 +2983,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     	) throws Exception {
     	
         VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
-        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
+        DataStoreTO primaryStore = volumeTO.getDataStore();
         Map<String, String> details = vol.getDetails();
         boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
 
@@ -3431,7 +3430,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         for (DiskTO vol : disks) {
             if (vol.getType() != Volume.Type.ISO) {
                 VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
-                PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
+                DataStoreTO primaryStore = volumeTO.getDataStore();
                 String poolUuid = primaryStore.getUuid();
                 if(poolMors.get(poolUuid) == null) {
                     boolean isManaged = false;
@@ -3462,7 +3461,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     	Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
         for (DiskTO vol : disks) {
             if (vol.getType() == Volume.Type.ROOT) {
-                PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)vol.getData().getDataStore();
+                DataStoreTO primaryStore = vol.getData().getDataStore();
                 rootDiskDataStoreDetails = dataStoresDetails.get(primaryStore.getUuid());
             }
         }
@@ -5456,11 +5455,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareContext context = getServiceContext();
             VmwareHypervisorHost hyperHost = getHyperHost(context);
             VolumeObjectTO vol = (VolumeObjectTO)cmd.getData();
-            PrimaryDataStoreTO store = (PrimaryDataStoreTO)vol.getDataStore();
+            DataStoreTO store = vol.getDataStore();
 
             ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, store.getUuid());
             if (morDs == null) {
-                String msg = "Unable to find datastore based on volume mount point " + store.getPath();
+                String msg = "Unable to find datastore based on volume mount point " + store.getUrl();
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
