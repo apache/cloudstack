@@ -316,23 +316,19 @@ table th div.ui-resizable-handle {
 
 /*Login screen*/
 body.login {
-  background: transparent url(../images/bg-login.png) repeat 50% -82px;
+  background: url(../images/overlay-pattern.png) repeat center, #106CA9 url(../images/bg-login.jpg) no-repeat center;
+  background-size: auto, cover;
 }
 
 .login {
   display: block;
   width: 100%;
-  height: 245px;
-  /*+placement:shift 0 100px;*/
+  height: 350px;
+  /*+placement:shift 0 80px;*/
   position: relative;
   left: 0;
-  top: 100px;
-  background: #FFFFFF;
-  /*+box-shadow:0px 3px 5px #D5D5D5;*/
-  -moz-box-shadow: 0px 3px 5px #D5D5D5;
-  -webkit-box-shadow: 0px 3px 5px #D5D5D5;
-  -o-box-shadow: 0px 3px 5px #D5D5D5;
-  box-shadow: 0px 3px 5px #D5D5D5;
+  top: 80px;
+  background: #053663;
 }
 
 .login .select-language {
@@ -341,8 +337,9 @@ body.login {
 }
 
 .login .select-language select {
-  width: 125px;
+  width: 260px;
   border: 1px solid #808080;
+  margin-top: 30px;
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
@@ -368,33 +365,34 @@ body.login {
 }
 
 .login .fields .field label {
-  font-size: 11px;
+  font-size: 12px;
   color: #4E4F53;
-  /*+placement:displace 10px 12px;*/
+  /*+placement:displace 9px 14px;*/
   position: absolute;
-  margin-left: 10px;
-  margin-top: 12px;
+  margin-left: 9px;
+  margin-top: 14px;
 }
 
 .login .fields .field label.error {
   color: #FF0000;
   float: right;
-  left: 204px;
+  left: 264px;
   top: 0;
 }
 
 .login .fields input {
-  width: 204px;
+  width: 248px;
   height: 20px;
   margin: 5px 0 0;
-  text-indent: 7px;
+  text-indent: 1px;
+  font-size: 13px;
   border: none;
-  /*+border-radius:4px;*/
-  -moz-border-radius: 4px;
-  -webkit-border-radius: 4px;
-  -khtml-border-radius: 4px;
-  border-radius: 4px;
-  border-radius: 4px 4px 4px 4px;
+  padding: 5px;
+  /*+border-radius:3px;*/
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  -khtml-border-radius: 3px;
+  border-radius: 3px;
   /*+box-shadow:inset 0px 1px 1px #4E4E4E;*/
   -moz-box-shadow: inset 0px 1px 1px #4E4E4E;
   -webkit-box-shadow: inset 0px 1px 1px #4E4E4E;
@@ -449,7 +447,7 @@ body.login {
   width: 1000px;
   height: 100%;
   margin: auto;
-  background: #FFFFFF;
+  background: #053663;
 }
 
 /*About dialog*/
