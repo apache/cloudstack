@@ -136,7 +136,7 @@ public class VolumeVO implements Volume {
     @Enumerated(value = EnumType.STRING)
     private State state;
 
-    @Column(name = "chain_info")
+    @Column(name = "chain_info",length=65535)
     String chainInfo;
 
     @Column(name = "uuid")
