@@ -38,6 +38,5 @@
     <bean id="ovsTunnelManagerImpl" class="com.cloud.network.ovs.OvsTunnelManagerImpl" />
     <bean id="ovsTunnelInterfaceDaoImpl" class="com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl" />
     <bean id="ovsTunnelNetworkDaoImpl" class="com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl" />
-    <bean id="ovsProviderDaoImpl" class="com.cloud.network.dao.OvsProviderDaoImpl" />
     
 </beans>

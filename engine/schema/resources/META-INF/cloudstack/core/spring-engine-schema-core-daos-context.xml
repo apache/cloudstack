@@ -209,8 +209,7 @@
   <bean id="nicSecondaryIpDaoImpl" class="com.cloud.vm.dao.NicSecondaryIpDaoImpl" />
   <bean id="nicIpAliasDaoImpl" class="com.cloud.vm.dao.NicIpAliasDaoImpl" />
   <bean id="objectInDataStoreDaoImpl" class="org.apache.cloudstack.storage.db.ObjectInDataStoreDaoImpl" />
-  <bean id="ovsTunnelInterfaceDaoImpl" class="com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl" />
-  <bean id="ovsTunnelNetworkDaoImpl" class="com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl" />
+  <bean id="ovsProviderDaoImpl" class="com.cloud.network.dao.OvsProviderDaoImpl" />
   <bean id="physicalNetworkDaoImpl" class="com.cloud.network.dao.PhysicalNetworkDaoImpl" />
   <bean id="physicalNetworkIsolationMethodDaoImpl" class="com.cloud.network.dao.PhysicalNetworkIsolationMethodDaoImpl" />
   <bean id="physicalNetworkServiceProviderDaoImpl" class="com.cloud.network.dao.PhysicalNetworkServiceProviderDaoImpl" />
