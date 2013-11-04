@@ -453,6 +453,7 @@ public class VolumeServiceImpl implements VolumeService {
         } catch (Throwable e) {
             s_logger.debug("failed to create template on storage", e);
             templateOnPrimaryStoreObj.processEvent(Event.OperationFailed);
+            dataStore.create(template);  // make sure that template_spool_ref entry is still present so that the second thread can acquire the lock
             VolumeApiResult result = new VolumeApiResult(volume);
             result.setResult(e.toString());
             future.complete(result);
