@@ -2,10 +2,9 @@
   <modelVersion>4.0.0</modelVersion>
   <name>Apache CloudStack Checkstyle Configuration</name>
   <artifactId>checkstyle</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
-    <artifactId>cloudstack</artifactId>
+    <artifactId>cloud-maven-standard</artifactId>
     <version>4.3.0-SNAPSHOT</version>
   </parent>
 </project>
