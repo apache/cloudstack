@@ -16,6 +16,8 @@
 # under the License.
 
 import unittest
+from marvin.integration.lib.utils import verifyElementInList
+from marvin.codes import PASS
 
 
 def user(Name, DomainName, AcctType):
@@ -34,6 +36,18 @@ def user(Name, DomainName, AcctType):
 
 class cloudstackTestCase(unittest.case.TestCase):
     clstestclient = None
+
+    def assertElementInList(inp, toverify, responsevar=None,  pos=0,
+                            assertmsg="TC Failed for reason"):
+        '''
+        @Name: assertElementInList
+        @desc:Uses the utility function verifyElementInList and
+        asserts based upon PASS\FAIL value of the output.
+        Takes one additional argument of what message to assert with
+        when failed
+        '''
+        out = verifyElementInList(inp, toverify, responsevar,  pos)
+        unittest.TestCase.assertEquals(out[0], PASS, "msg:%s" % out[1])
 
     @classmethod
     def getClsTestClient(cls):
