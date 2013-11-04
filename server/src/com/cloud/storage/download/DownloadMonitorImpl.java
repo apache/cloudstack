@@ -67,6 +67,7 @@ import com.cloud.storage.upload.UploadListener;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 @Local(value = { DownloadMonitor.class })
@@ -169,8 +170,9 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
             }
             EndPoint ep = _epSelector.select(template);
             if (ep == null) {
-                s_logger.warn("There is no secondary storage VM for downloading template to image store " + store.getName());
-                return;
+                String errMsg = "There is no secondary storage VM for downloading template to image store " + store.getName();
+                s_logger.warn(errMsg);
+                throw new CloudRuntimeException(errMsg);
             }
             DownloadListener dl = new DownloadListener(ep, store, template, _timer, this, dcmd,
                     callback);

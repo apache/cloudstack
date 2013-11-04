@@ -651,6 +651,7 @@
               <exclude>tools/marvin/marvin/sandbox/advanced/sandbox.cfg</exclude>
               <exclude>tools/ngui/static/bootstrap/*</exclude>
               <exclude>tools/ngui/static/js/lib/*</exclude>
+              <exclude>**/.checkstyle</exclude>
             </excludes>
           </configuration>
         </plugin>

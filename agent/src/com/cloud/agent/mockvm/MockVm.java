@@ -71,11 +71,4 @@ public class MockVm {
         return vncPort;
     }
 
-    public static void main(String[] args) {
-        long i = 10;
-        Long l = null;
-        if (i == l) {
-            System.out.print("fdfd");
-        }
-    }
 }
