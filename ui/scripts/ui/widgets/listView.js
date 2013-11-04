@@ -757,7 +757,7 @@
             hiddenFields = preFilter();
 
         if (multiSelect) {
-            var $th = $('<th>').appendTo($thead.find('tr'));
+            var $th = $('<th>').addClass('multiselect').appendTo($thead.find('tr'));
             var content = $('<input>')
                 .attr('type', 'checkbox')
                 .addClass('multiSelectMasterCheckbox')
@@ -1049,7 +1049,8 @@
 
             if (multiSelect) {
                 var $td = $('<td>')
-                    .appendTo($tr);
+                        .addClass('multiselect')
+                        .appendTo($tr);
                 var content = $('<input>')
                     .attr('type', 'checkbox')
                     .addClass('multiSelectCheckbox')
@@ -2210,6 +2211,7 @@
                 false,
                 null,
                 listViewArgs.actions, {
+                    multiSelect: listViewArgs.multiSelect,
                     context: this.data('view-args').context,
                     detailView: listViewArgs.detailView
                 }

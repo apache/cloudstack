@@ -16,25 +16,30 @@
 // under the License.
 package org.apache.cloudstack.storage.image.db;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 
 @Component
@@ -45,6 +50,9 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     private SearchBuilder<VolumeDataStoreVO> storeSearch;
     private SearchBuilder<VolumeDataStoreVO> cacheSearch;
     private SearchBuilder<VolumeDataStoreVO> storeVolumeSearch;
+    
+    @Inject
+    DataStoreManager storeMgr;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -185,5 +193,46 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         sc.setParameters("store_id", id);
         sc.setParameters("destroyed", true);
         return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public void duplicateCacheRecordsOnRegionStore(long storeId) {
+        // find all records on image cache
+        List<DataStore> cacheStores = storeMgr.listImageCacheStores();
+        if (cacheStores == null || cacheStores.size() == 0) {
+            return;
+        }
+        List<VolumeDataStoreVO> vols = new ArrayList<VolumeDataStoreVO>();
+        for (DataStore store : cacheStores) {
+            // check if the volume is stored there
+            vols.addAll(listByStoreId(store.getId()));
+        }
+        // create an entry for each record, but with empty install path since the content is not yet on region-wide store yet
+        if (vols != null) {
+            s_logger.info("Duplicate " + vols.size() + " volume cache store records to region store");
+            for (VolumeDataStoreVO vol : vols) {
+                VolumeDataStoreVO volStore = findByStoreVolume(storeId, vol.getVolumeId());
+                if (volStore != null) {
+                    s_logger.info("There is already entry for volume " + vol.getVolumeId() + " on region store " + storeId);
+                    continue;
+                }
+                s_logger.info("Persisting an entry for volume " + vol.getVolumeId() + " on region store " + storeId);
+                VolumeDataStoreVO vs = new VolumeDataStoreVO();
+                vs.setVolumeId(vol.getVolumeId());
+                vs.setDataStoreId(storeId);
+                vs.setState(vol.getState());
+                vs.setDownloadPercent(vol.getDownloadPercent());
+                vs.setDownloadState(vol.getDownloadState());
+                vs.setSize(vol.getSize());
+                vs.setPhysicalSize(vol.getPhysicalSize());
+                vs.setErrorString(vol.getErrorString());
+                vs.setRefCnt(vol.getRefCnt());
+                persist(vs);
+                // increase ref_cnt so that this will not be recycled before the content is pushed to region-wide store
+                vol.incrRefCnt();
+                this.update(vol.getId(), vol);
+            }
+        }
+
     }
 }

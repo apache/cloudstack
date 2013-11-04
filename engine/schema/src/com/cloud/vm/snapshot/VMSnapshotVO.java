@@ -31,6 +31,9 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
 
 import com.cloud.utils.db.GenericDao;
 
@@ -41,7 +44,7 @@ public class VMSnapshotVO implements VMSnapshot {
     @TableGenerator(name = "vm_snapshots_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "vm_snapshots_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.TABLE)
     @Column(name = "id")
-    long id;
+    Long id;
 
     @Column(name = "uuid")
     String uuid = UUID.randomUUID().toString();
@@ -90,7 +93,18 @@ public class VMSnapshotVO implements VMSnapshot {
     
     @Column(name="update_count", updatable = true, nullable=false)
     protected long updatedCount;
-    
+
+    @Transient
+    VMSnapshotOptions options;
+
+    public VMSnapshotOptions getOptions() {
+        return options;
+    }
+
+    public void setOptions(VMSnapshotOptions options) {
+        this.options = options;
+    }
+
     public Long getParent() {
 		return parent;
 	}

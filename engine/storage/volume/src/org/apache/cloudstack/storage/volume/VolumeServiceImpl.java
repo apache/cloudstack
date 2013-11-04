@@ -55,9 +55,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.datastore.DataObjectManager;
-import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
@@ -102,10 +100,6 @@ public class VolumeServiceImpl implements VolumeService {
     VolumeDao volDao;
     @Inject
     PrimaryDataStoreProviderManager dataStoreMgr;
-    @Inject
-    ObjectInDataStoreManager objectInDataStoreMgr;
-    @Inject
-    DataObjectManager dataObjectMgr;
     @Inject
     DataMotionService motionSrv;
     @Inject
@@ -1264,7 +1258,14 @@ public class VolumeServiceImpl implements VolumeService {
                         tmplTO.setId(tInfo.getId());
                         DeleteCommand dtCommand = new DeleteCommand(tmplTO);
                         EndPoint ep = _epSelector.select(store);
-                        Answer answer = ep.sendMessage(dtCommand);
+                        Answer answer = null;
+                        if (ep == null) {
+                            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+                            s_logger.error(errMsg);
+                            answer = new Answer(dtCommand, false, errMsg);
+                        } else {
+                            answer = ep.sendMessage(dtCommand);
+                        }
                         if (answer == null || !answer.getResult()) {
                             s_logger.info("Failed to deleted volume at store: " + store.getName());
 
@@ -1289,7 +1290,14 @@ public class VolumeServiceImpl implements VolumeService {
     private Map<Long, TemplateProp> listVolume(DataStore store) {
         ListVolumeCommand cmd = new ListVolumeCommand(store.getTO(), store.getUri());
         EndPoint ep = _epSelector.select(store);
-        Answer answer = ep.sendMessage(cmd);
+        Answer answer = null;
+        if (ep == null) {
+            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            answer = new Answer(cmd, false, errMsg);
+        } else {
+            answer = ep.sendMessage(cmd);
+        }
         if (answer != null && answer.getResult()) {
             ListVolumeAnswer tanswer = (ListVolumeAnswer) answer;
             return tanswer.getTemplateInfo();

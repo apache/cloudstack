@@ -31,15 +31,18 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 import com.cloud.host.Host;
 import com.cloud.storage.Snapshot;
+import com.cloud.vm.snapshot.VMSnapshot;
 
 public class StorageStrategyFactoryImpl implements StorageStrategyFactory {
 
     List<SnapshotStrategy> snapshotStrategies;
     List<DataMotionStrategy> dataMotionStrategies;
+    List<VMSnapshotStrategy> vmSnapshotStrategies;
 
     @Override
     public DataMotionStrategy getDataMotionStrategy(final DataObject srcData, final DataObject destData) {
@@ -69,6 +72,16 @@ public class StorageStrategyFactoryImpl implements StorageStrategyFactory {
                 return strategy.canHandle(snapshot, op);
             }
         });
+    }
+
+    @Override
+    public VMSnapshotStrategy getVmSnapshotStrategy(final VMSnapshot vmSnapshot) {
+       return bestMatch(vmSnapshotStrategies, new CanHandle<VMSnapshotStrategy>() {
+           @Override
+           public StrategyPriority canHandle(VMSnapshotStrategy strategy) {
+                return strategy.canHandle(vmSnapshot);
+           }
+       });
     }
 
     private static <T> T bestMatch(Collection<T> collection, final CanHandle<T> canHandle) {
@@ -109,6 +122,15 @@ public class StorageStrategyFactoryImpl implements StorageStrategyFactory {
     @Inject
     public void setDataMotionStrategies(List<DataMotionStrategy> dataMotionStrategies) {
         this.dataMotionStrategies = dataMotionStrategies;
+    }
+
+    @Inject
+    public void setVmSnapshotStrategies(List<VMSnapshotStrategy> vmSnapshotStrategies) {
+        this.vmSnapshotStrategies = vmSnapshotStrategies;
+    }
+
+    public List<VMSnapshotStrategy> getVmSnapshotStrategies() {
+        return vmSnapshotStrategies;
     }
 
 }

@@ -16,14 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
@@ -47,6 +41,11 @@ public class ResourceDetailResponse extends BaseResponse{
     @Param(description = "value of the resource detail")
     private String value;
 
+    
+    @SerializedName(ApiConstants.FOR_DISPLAY)
+    @Param(description = "if detail is returned to the regular user", since="4.3")
+    private boolean forDisplay;
+    
     public String getResourceId() {
         return resourceId;
     }
@@ -77,5 +76,9 @@ public class ResourceDetailResponse extends BaseResponse{
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    public void setForDisplay(boolean forDisplay) {
+        this.forDisplay = forDisplay;
     }
 }

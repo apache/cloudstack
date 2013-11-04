@@ -105,7 +105,7 @@ public class LdapConfiguration {
 
 	public String[] getReturnAttributes() {
 		return new String[] { getUsernameAttribute(), getEmailAttribute(),
-				getFirstnameAttribute(), getLastnameAttribute() };
+				getFirstnameAttribute(), getLastnameAttribute(), getCommonNameAttribute() };
 	}
 
 	public int getScope() {
@@ -142,4 +142,18 @@ public class LdapConfiguration {
 		final String userObject = _configDao.getValue("ldap.user.object");
 		return userObject == null ? "inetOrgPerson" : userObject;
 	}
+
+    public String getGroupObject() {
+	final String groupObject = _configDao.getValue("ldap.group.object");
+	return groupObject == null ? "groupOfUniqueNames" : groupObject;
+    }
+
+    public String getGroupUniqueMemeberAttribute() {
+	final String uniqueMemberAttribute = _configDao.getValue("ldap.group.user.uniquemember");
+	return uniqueMemberAttribute == null ? "uniquemember" : uniqueMemberAttribute;
+    }
+
+    public String getCommonNameAttribute() {
+	return "cn";
+    }
 }

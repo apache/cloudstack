@@ -495,12 +495,8 @@ def allow_egress_traffic(session):
     devs = []
     for pif in session.xenapi.PIF.get_all():
         pif_rec = session.xenapi.PIF.get_record(pif)
-        vlan = pif_rec.get('VLAN')
         dev = pif_rec.get('device')
-        if vlan == '-1':
-            devs.append(dev)
-        else:
-            devs.append(dev + "." + vlan)
+        devs.append(dev + "+")
     for d in devs:
         try:
             util.pread2(['/bin/bash', '-c', "iptables -n -L FORWARD | grep '%s '" % d])
@@ -804,8 +800,6 @@ def default_network_rules_systemvm(session, args):
     except:
         util.pread2(['iptables', '-F', vmchain])
     
-    allow_egress_traffic(session)
-  
     for vif in vifs:
         try:
             util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', vif, '-j', vmchain])

@@ -317,114 +317,110 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         }
 
         try {
-            Transaction.execute(new TransactionCallbackWithExceptionNoReturn<Exception>() {
-                @Override
-                public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientAddressCapacityException, ResourceUnavailableException {
+            // ensure that there is an ASA 1000v assigned to this network
+            CiscoAsa1000vDevice assignedAsa = assignAsa1000vToNetwork(network);
+            if (assignedAsa == null) {
+                s_logger.error("Unable to assign ASA 1000v device to network " + network.getName());
+                throw new CloudRuntimeException("Unable to assign ASA 1000v device to network " + network.getName());
+            }
 
-                    // ensure that there is an ASA 1000v assigned to this network
-                    CiscoAsa1000vDevice assignedAsa = assignAsa1000vToNetwork(network);
-                    if (assignedAsa == null) {
-                        s_logger.error("Unable to assign ASA 1000v device to network " + network.getName());
-                        throw new CloudRuntimeException("Unable to assign ASA 1000v device to network " + network.getName());
-                    }
-        
-                    ClusterVO asaCluster = _clusterDao.findById(assignedAsa.getClusterId());
-                    ClusterVSMMapVO clusterVsmMap = _clusterVsmMapDao.findByClusterId(assignedAsa.getClusterId());
-                    if (clusterVsmMap == null) {
-                        s_logger.error("Vmware cluster " + asaCluster.getName() + " has no Cisco Nexus VSM device associated with it");
-                        throw new CloudRuntimeException("Vmware cluster " + asaCluster.getName() + " has no Cisco Nexus VSM device associated with it");
-                    }
-        
-                    CiscoNexusVSMDeviceVO vsmDevice = _vsmDeviceDao.findById(clusterVsmMap.getVsmId());
-                    if (vsmDevice == null) {
-                        s_logger.error("Unable to load details of Cisco Nexus VSM device associated with cluster " + asaCluster.getName());
-                        throw new CloudRuntimeException("Unable to load details of Cisco Nexus VSM device associated with cluster " + asaCluster.getName());
-                    }
-        
-                    CiscoVnmcControllerVO ciscoVnmcDevice = devices.get(0);
-                    HostVO ciscoVnmcHost = _hostDao.findById(ciscoVnmcDevice.getHostId());
-                    _hostDao.loadDetails(ciscoVnmcHost);
-                    Account owner = context.getAccount();
-                    PublicIp sourceNatIp = _ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, network);
-                    long vlanId = Long.parseLong(BroadcastDomainType.getValue(network.getBroadcastUri()));
-        
-                    List<VlanVO> vlanVOList = _vlanDao.listVlansByPhysicalNetworkId(network.getPhysicalNetworkId());
-                    List<String> publicGateways = new ArrayList<String>();
-                    for (VlanVO vlanVO : vlanVOList) {
-                        publicGateways.add(vlanVO.getVlanGateway());
-                    }
-        
-                    // due to VNMC limitation of not allowing source NAT ip as the outside ip of firewall,
-                    // an additional public ip needs to acquired for assigning as firewall outside ip.
-                    // In case there are already additional ip addresses available (network restart) use one
-                    // of them such that it is not the source NAT ip
-                    IpAddress outsideIp = null;
-                    List<IPAddressVO> publicIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
-                    for (IPAddressVO ip : publicIps) {
-                        if (!ip.isSourceNat()) {
-                            outsideIp = ip;
-                            break;
-                        }
-                    }
-                    if (outsideIp == null) { // none available, acquire one
-                        try {
-                            Account caller = CallContext.current().getCallingAccount();
-                            long callerUserId = CallContext.current().getCallingUserId();
-                            outsideIp = _ipAddrMgr.allocateIp(owner, false, caller, callerUserId, zone);
-                        } catch (ResourceAllocationException e) {
-                            s_logger.error("Unable to allocate additional public Ip address. Exception details " + e);
-                            throw new CloudRuntimeException("Unable to allocate additional public Ip address. Exception details " + e);
-                        }
-        
-                        try {
-                            outsideIp = _ipAddrMgr.associateIPToGuestNetwork(outsideIp.getId(), network.getId(), true);
-                        } catch (ResourceAllocationException e) {
-                            s_logger.error("Unable to assign allocated additional public Ip " + outsideIp.getAddress().addr() + " to network with vlan " + vlanId + ". Exception details "
-                                    + e);
-                            throw new CloudRuntimeException("Unable to assign allocated additional public Ip " + outsideIp.getAddress().addr() + " to network with vlan " + vlanId + ". Exception details "
-                                    + e);
-                        }
-                    }
-        
-                    // create logical edge firewall in VNMC
-                    String gatewayNetmask = NetUtils.getCidrNetmask(network.getCidr());
-                    // due to ASA limitation of allowing single subnet to be assigned to firewall interfaces,
-                    // all public ip addresses must be from same subnet, this essentially means single public subnet in zone
-                    if (!createLogicalEdgeFirewall(vlanId, network.getGateway(), gatewayNetmask,
-                            outsideIp.getAddress().addr(), sourceNatIp.getNetmask(), publicGateways, ciscoVnmcHost.getId())) {
-                        s_logger.error("Failed to create logical edge firewall in Cisco VNMC device for network " + network.getName());
-                        throw new CloudRuntimeException("Failed to create logical edge firewall in Cisco VNMC device for network " + network.getName());
-                    }
-        
-                    // create stuff in VSM for ASA device
-                    if (!configureNexusVsmForAsa(vlanId, network.getGateway(),
-                            vsmDevice.getUserName(), vsmDevice.getPassword(), vsmDevice.getipaddr(),
-                            assignedAsa.getInPortProfile(), ciscoVnmcHost.getId())) {
-                        s_logger.error("Failed to configure Cisco Nexus VSM " + vsmDevice.getipaddr() +
-                                " for ASA device for network " + network.getName());
-                        throw new CloudRuntimeException("Failed to configure Cisco Nexus VSM " + vsmDevice.getipaddr() +
-                                " for ASA device for network " + network.getName());
-                    }
-        
-                    // configure source NAT
-                    if (!configureSourceNat(vlanId, network.getCidr(), sourceNatIp, ciscoVnmcHost.getId())) {
-                        s_logger.error("Failed to configure source NAT in Cisco VNMC device for network " + network.getName());
-                        throw new CloudRuntimeException("Failed to configure source NAT in Cisco VNMC device for network " + network.getName());
-                    }
-        
-                    // associate Asa 1000v instance with logical edge firewall
-                    if (!associateAsaWithLogicalEdgeFirewall(vlanId, assignedAsa.getManagementIp(), ciscoVnmcHost.getId())) {
-                        s_logger.error("Failed to associate Cisco ASA 1000v (" + assignedAsa.getManagementIp() +
-                                ") with logical edge firewall in VNMC for network " + network.getName());
-                        throw new CloudRuntimeException("Failed to associate Cisco ASA 1000v (" + assignedAsa.getManagementIp() +
-                                ") with logical edge firewall in VNMC for network " + network.getName());
-                    }
+            ClusterVO asaCluster = _clusterDao.findById(assignedAsa.getClusterId());
+            ClusterVSMMapVO clusterVsmMap = _clusterVsmMapDao.findByClusterId(assignedAsa.getClusterId());
+            if (clusterVsmMap == null) {
+                s_logger.error("Vmware cluster " + asaCluster.getName() + " has no Cisco Nexus VSM device associated with it");
+                throw new CloudRuntimeException("Vmware cluster " + asaCluster.getName() + " has no Cisco Nexus VSM device associated with it");
+            }
+
+            CiscoNexusVSMDeviceVO vsmDevice = _vsmDeviceDao.findById(clusterVsmMap.getVsmId());
+            if (vsmDevice == null) {
+                s_logger.error("Unable to load details of Cisco Nexus VSM device associated with cluster " + asaCluster.getName());
+                throw new CloudRuntimeException("Unable to load details of Cisco Nexus VSM device associated with cluster " + asaCluster.getName());
+            }
+
+            CiscoVnmcControllerVO ciscoVnmcDevice = devices.get(0);
+            HostVO ciscoVnmcHost = _hostDao.findById(ciscoVnmcDevice.getHostId());
+            _hostDao.loadDetails(ciscoVnmcHost);
+            Account owner = context.getAccount();
+            PublicIp sourceNatIp = _ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, network);
+            long vlanId = Long.parseLong(BroadcastDomainType.getValue(network.getBroadcastUri()));
+
+            List<VlanVO> vlanVOList = _vlanDao.listVlansByPhysicalNetworkId(network.getPhysicalNetworkId());
+            List<String> publicGateways = new ArrayList<String>();
+            for (VlanVO vlanVO : vlanVOList) {
+                publicGateways.add(vlanVO.getVlanGateway());
+            }
+
+            // due to VNMC limitation of not allowing source NAT ip as the outside ip of firewall,
+            // an additional public ip needs to acquired for assigning as firewall outside ip.
+            // In case there are already additional ip addresses available (network restart) use one
+            // of them such that it is not the source NAT ip
+            IpAddress outsideIp = null;
+            List<IPAddressVO> publicIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
+            for (IPAddressVO ip : publicIps) {
+                if (!ip.isSourceNat()) {
+                    outsideIp = ip;
+                    break;
                 }
-            });
+            }
+            if (outsideIp == null) { // none available, acquire one
+                try {
+                    Account caller = CallContext.current().getCallingAccount();
+                    long callerUserId = CallContext.current().getCallingUserId();
+                    outsideIp = _ipAddrMgr.allocateIp(owner, false, caller, callerUserId, zone);
+                } catch (ResourceAllocationException e) {
+                    s_logger.error("Unable to allocate additional public Ip address. Exception details " + e);
+                    throw new CloudRuntimeException("Unable to allocate additional public Ip address. Exception details " + e);
+                }
+
+                try {
+                    outsideIp = _ipAddrMgr.associateIPToGuestNetwork(outsideIp.getId(), network.getId(), true);
+                } catch (ResourceAllocationException e) {
+                    s_logger.error("Unable to assign allocated additional public Ip " + outsideIp.getAddress().addr() + " to network with vlan " + vlanId + ". Exception details "
+                            + e);
+                    throw new CloudRuntimeException("Unable to assign allocated additional public Ip " + outsideIp.getAddress().addr() + " to network with vlan " + vlanId + ". Exception details "
+                            + e);
+                }
+            }
+
+            // create logical edge firewall in VNMC
+            String gatewayNetmask = NetUtils.getCidrNetmask(network.getCidr());
+            // due to ASA limitation of allowing single subnet to be assigned to firewall interfaces,
+            // all public ip addresses must be from same subnet, this essentially means single public subnet in zone
+            if (!createLogicalEdgeFirewall(vlanId, network.getGateway(), gatewayNetmask,
+                    outsideIp.getAddress().addr(), sourceNatIp.getNetmask(), publicGateways, ciscoVnmcHost.getId())) {
+                s_logger.error("Failed to create logical edge firewall in Cisco VNMC device for network " + network.getName());
+                throw new CloudRuntimeException("Failed to create logical edge firewall in Cisco VNMC device for network " + network.getName());
+            }
+
+            // create stuff in VSM for ASA device
+            if (!configureNexusVsmForAsa(vlanId, network.getGateway(),
+                    vsmDevice.getUserName(), vsmDevice.getPassword(), vsmDevice.getipaddr(),
+                    assignedAsa.getInPortProfile(), ciscoVnmcHost.getId())) {
+                s_logger.error("Failed to configure Cisco Nexus VSM " + vsmDevice.getipaddr() +
+                        " for ASA device for network " + network.getName());
+                throw new CloudRuntimeException("Failed to configure Cisco Nexus VSM " + vsmDevice.getipaddr() +
+                        " for ASA device for network " + network.getName());
+            }
+
+            // configure source NAT
+            if (!configureSourceNat(vlanId, network.getCidr(), sourceNatIp, ciscoVnmcHost.getId())) {
+                s_logger.error("Failed to configure source NAT in Cisco VNMC device for network " + network.getName());
+                throw new CloudRuntimeException("Failed to configure source NAT in Cisco VNMC device for network " + network.getName());
+            }
+
+            // associate Asa 1000v instance with logical edge firewall
+            if (!associateAsaWithLogicalEdgeFirewall(vlanId, assignedAsa.getManagementIp(), ciscoVnmcHost.getId())) {
+                s_logger.error("Failed to associate Cisco ASA 1000v (" + assignedAsa.getManagementIp() +
+                        ") with logical edge firewall in VNMC for network " + network.getName());
+                throw new CloudRuntimeException("Failed to associate Cisco ASA 1000v (" + assignedAsa.getManagementIp() +
+                        ") with logical edge firewall in VNMC for network " + network.getName());
+            }
         } catch (CloudRuntimeException e) {
+            unassignAsa1000vFromNetwork(network);
             s_logger.error("CiscoVnmcElement failed", e);
             return false;
         } catch (Exception e) {
+            unassignAsa1000vFromNetwork(network);
             ExceptionUtil.rethrowRuntime(e);
             ExceptionUtil.rethrow(e, InsufficientAddressCapacityException.class);
             ExceptionUtil.rethrow(e, ResourceUnavailableException.class);
@@ -579,10 +575,10 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
                     public CiscoVnmcController doInTransaction(TransactionStatus status) {
                         CiscoVnmcController ciscoVnmcResource = new CiscoVnmcControllerVO(host.getId(), physicalNetworkId, ntwkSvcProvider.getProviderName(), deviceName);
                         _ciscoVnmcDao.persist((CiscoVnmcControllerVO)ciscoVnmcResource);
-        
+
                         DetailVO detail = new DetailVO(host.getId(), "deviceid", String.valueOf(ciscoVnmcResource.getId()));
                         _hostDetailsDao.persist(detail);
-                        
+
                         return ciscoVnmcResource;
                     }
                 });

@@ -146,7 +146,7 @@ public class VolumeVO implements Volume {
     private Storage.ImageFormat format;
 
     @Column(name = "display_volume", updatable = true, nullable = false)
-    protected boolean displayVolume;
+    protected boolean displayVolume = true;
 
     @Column(name = "iscsi_name")
     private String _iScsiName;

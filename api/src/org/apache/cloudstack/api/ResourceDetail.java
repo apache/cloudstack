@@ -16,12 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-public interface ResourceDetail {
+public interface ResourceDetail extends InternalIdentity{
     
-    public long getResourceDetail();
+    public long getResourceId();
     
     public String getName();
     
     public String getValue();
-
+    
+    public boolean isDisplay();
+        
 }

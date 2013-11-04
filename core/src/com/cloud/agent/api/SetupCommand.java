@@ -23,6 +23,8 @@ public class SetupCommand extends Command {
     HostEnvironment env;
     boolean multipath;
     boolean needSetup;
+    String secondaryStorage;
+    String systemVmIso;
 
     public boolean needSetup() {
         return needSetup;
@@ -36,6 +38,8 @@ public class SetupCommand extends Command {
         this.env = env;
         this.multipath = false;
         this.needSetup = false;
+        secondaryStorage = null;
+        systemVmIso = null;
     }
 
     public HostEnvironment getEnvironment() {
@@ -51,6 +55,22 @@ public class SetupCommand extends Command {
 
     public boolean useMultipath() {
         return multipath;
+    }
+
+    public void setSecondaryStorage(String secondaryStorage) {
+        this.secondaryStorage = secondaryStorage;
+    }
+
+    public String getSecondaryStorage() {
+        return this.secondaryStorage;
+    }
+
+    public void setSystemVmIso(String systemVmIso) {
+        this.systemVmIso = systemVmIso;
+    }
+
+    public String getSystemVmIso() {
+        return this.systemVmIso;
     }
 
     @Override

@@ -213,6 +213,8 @@ public class VirtualRoutingResource implements Manager {
             args += " -s ";
             args += cmd.getVpnServerIp();
         }
+        args += " -C " + cmd.getLocalCidr();
+        args += " -i " + cmd.getPublicInterface();
         String result = routerProxy("vpn_l2tp.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
         if (result != null) {
             return new Answer(cmd, false, "Configure VPN failed");
@@ -758,6 +760,9 @@ public class VirtualRoutingResource implements Manager {
                 args += "1";
             } else {
                 args += "0";
+            }
+            if (cmd.isPassive()) {
+            	args += " -p ";
             }
         } else {
             args = "-D";

@@ -1249,25 +1249,39 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                         "Check for list hosts response return valid data"
                         )
         host = hosts[0]
+        host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
+
         # For DNS and DHCP check 'dnsmasq' process status
-        try:
-            host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
-            result = get_process_status(
-                host.ipaddress,
-                22,
-                host.user,
-                host.passwd,
-                router.linklocalip,
-                'iptables -t nat -L'
+        if self.apiclient.hypervisor.lower() == 'vmware':
+               result = get_process_status(
+                               self.apiclient.connection.mgtSvr,
+                               22,
+                               self.apiclient.connection.user,
+                               self.apiclient.connection.passwd,
+                               router.linklocalip,
+                               'iptables -t nat -L',
+                                hypervisor=self.apiclient.hypervisor
+                               )
+        else:
+            try:
+                result = get_process_status(
+                    host.ipaddress,
+                    22,
+                    host.user,
+                    host.passwd,
+                    router.linklocalip,
+                    'iptables -t nat -L'
+                )
+            except KeyError:
+                self.skipTest("Provide a marvin config file with host credentials to run %s" % self._testMethodName)
+
+        self.debug("iptables -t nat -L: %s" % result)
+        self.debug("Public IP: %s" % public_ip.ipaddress)
+        res = str(result)
+        self.assertEqual(
+            res.count(str(public_ip.ipaddress)),
+            1,
+            "Check public IP address"
             )
-            self.debug("iptables -t nat -L: %s" % result)
-            self.debug("Public IP: %s" % public_ip.ipaddress)
-            res = str(result)
-            self.assertEqual(
-                res.count(str(public_ip.ipaddress)),
-                1,
-                "Check public IP address"
-            )
-        except KeyError:
-            self.skipTest("Provide a marvin config file with host credentials to run %s" % self._testMethodName)
+
         return

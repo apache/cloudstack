@@ -135,13 +135,13 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     NetworkDao _networkDao;
     @Inject
     VpcManager _vpcMgr;
-    @Inject List<FirewallServiceProvider> _firewallElements;
+    List<FirewallServiceProvider> _firewallElements;
 
-    @Inject List<PortForwardingServiceProvider> _pfElements;
+    List<PortForwardingServiceProvider> _pfElements;
 
-    @Inject List<StaticNatServiceProvider> _staticNatElements;
+    List<StaticNatServiceProvider> _staticNatElements;
 
-    @Inject List<NetworkACLServiceProvider> _networkAclElements;
+    List<NetworkACLServiceProvider> _networkAclElements;
     @Inject
     IpAddressManager _ipAddrMgr;
 
@@ -152,8 +152,13 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         _name = name;
         String elbEnabledString = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
         _elbEnabled = Boolean.parseBoolean(elbEnabledString);
-        s_logger.info("Firewall provider list is " + _firewallElements.iterator().next());
         return true;
+    }
+
+    @Override
+    public boolean start() {
+        s_logger.info("Firewall provider list is " + _firewallElements.iterator().next());
+        return super.start();
     }
 
     @Override
@@ -929,6 +934,42 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             }
         }
         return true;
+    }
+
+    public List<FirewallServiceProvider> getFirewallElements() {
+        return _firewallElements;
+    }
+
+    @Inject
+    public void setFirewallElements(List<FirewallServiceProvider> firewallElements) {
+        this._firewallElements = firewallElements;
+    }
+
+    public List<PortForwardingServiceProvider> getPfElements() {
+        return _pfElements;
+    }
+
+    @Inject
+    public void setPfElements(List<PortForwardingServiceProvider> pfElements) {
+        this._pfElements = pfElements;
+    }
+
+    public List<StaticNatServiceProvider> getStaticNatElements() {
+        return _staticNatElements;
+    }
+
+    @Inject
+    public void setStaticNatElements(List<StaticNatServiceProvider> staticNatElements) {
+        this._staticNatElements = staticNatElements;
+    }
+
+    public List<NetworkACLServiceProvider> getNetworkAclElements() {
+        return _networkAclElements;
+    }
+
+    @Inject
+    public void setNetworkAclElements(List<NetworkACLServiceProvider> networkAclElements) {
+        this._networkAclElements = networkAclElements;
     }
 
 }

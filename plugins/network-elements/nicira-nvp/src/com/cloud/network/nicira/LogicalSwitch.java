@@ -29,51 +29,51 @@ public class LogicalSwitch {
     //private RequestQueryParameters _query;
     //private LogicalSwitchRelations _relations;
     private String _schema;
-    
+
     public String getDisplay_name() {
         return display_name;
     }
-    
+
     public void setDisplay_name(String display_name) {
         this.display_name = display_name;
     }
-    
+
     public boolean isPort_isolation_enabled() {
         return port_isolation_enabled;
     }
-    
+
     public void setPort_isolation_enabled(boolean port_isolation_enabled) {
         this.port_isolation_enabled = port_isolation_enabled;
     }
-    
+
     public String getType() {
         return type;
     }
-    
+
     public void setType(String type) {
         this.type = type;
     }
-    
+
     public String getUuid() {
         return uuid;
     }
-    
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
-    
+
     public String get_href() {
         return _href;
     }
-    
+
     public void set_href(String _href) {
         this._href = _href;
     }
-    
+
     public String get_schema() {
         return _schema;
     }
-    
+
     public void set_schema(String _schema) {
         this._schema = _schema;
     }
@@ -93,6 +93,6 @@ public class LogicalSwitch {
     public void setTransport_zones(List<TransportZoneBinding> transport_zones) {
         this.transport_zones = transport_zones;
     }
-    
-    
+
+
 }

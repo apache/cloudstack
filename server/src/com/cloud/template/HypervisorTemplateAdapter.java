@@ -25,6 +25,8 @@ import java.util.concurrent.ExecutionException;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
@@ -44,7 +46,6 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
@@ -56,11 +57,11 @@ import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.org.Grouping;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.ScopeType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateZoneDao;
@@ -182,7 +183,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         }
 
         // find all eligible image stores for this zone scope
-        List<DataStore> imageStores = this.storeMgr.getImageStoresByScope(new ZoneScope(profile.getZoneId()));
+        List<DataStore> imageStores = storeMgr.getImageStoresByScope(new ZoneScope(profile.getZoneId()));
         if ( imageStores == null || imageStores.size() == 0 ){
             throw new CloudRuntimeException("Unable to find image store to download template "+ profile.getTemplate());
         }
@@ -205,12 +206,12 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 }
             }
 
-            TemplateInfo tmpl = this.imageFactory.getTemplate(template.getId(), imageStore);
+            TemplateInfo tmpl = imageFactory.getTemplate(template.getId(), imageStore);
             CreateTemplateContext<TemplateApiResult> context = new CreateTemplateContext<TemplateApiResult>(null, tmpl);
             AsyncCallbackDispatcher<HypervisorTemplateAdapter, TemplateApiResult> caller = AsyncCallbackDispatcher.create(this);
             caller.setCallback(caller.getTarget().createTemplateAsyncCallBack(null, null));
             caller.setContext(context);
-            this.imageService.createTemplateAsync(tmpl, imageStore, caller);
+            imageService.createTemplateAsync(tmpl, imageStore, caller);
             if( !(profile.getIsPublic() || profile.getFeatured()) ){  // If private template then break
                 break;
             }
@@ -237,7 +238,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             // populated template entry
             _tmpltDao.remove(template.getId());
         } else {
-            VMTemplateVO tmplt = this._tmpltDao.findById(template.getId());
+            VMTemplateVO tmplt = _tmpltDao.findById(template.getId());
             long accountId = tmplt.getAccountId();
             if (template.getSize() != null) {
                 // publish usage event
@@ -283,7 +284,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         VMTemplateVO template = profile.getTemplate();
 
         // find all eligible image stores for this template
-        List<DataStore> imageStores = this.templateMgr.getImageStoreByTemplate(template.getId(), profile.getZoneId());
+        List<DataStore> imageStores = templateMgr.getImageStoreByTemplate(template.getId(), profile.getZoneId());
         if (imageStores == null || imageStores.size() == 0) {
             // already destroyed on image stores
             s_logger.info("Unable to find image store still having template: " + template.getName()
@@ -321,7 +322,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 }
 
                 s_logger.info("Delete template from image store: " + imageStore.getName());
-                AsyncCallFuture<TemplateApiResult> future = this.imageService.deleteTemplateAsync(this.imageFactory
+                AsyncCallFuture<TemplateApiResult> future = imageService.deleteTemplateAsync(imageFactory
                         .getTemplate(template.getId(), imageStore));
                 try {
                     TemplateApiResult result = future.get();
@@ -350,9 +351,15 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             }
         }
         if (success) {
+            // delete all cache entries for this template
+            List<TemplateInfo> cacheTmpls = imageFactory.listTemplateOnCache(template.getId());
+            for (TemplateInfo tmplOnCache : cacheTmpls) {
+                s_logger.info("Delete template from image cache store: " + tmplOnCache.getDataStore().getName());
+                tmplOnCache.delete();
+            }
 
             // find all eligible image stores for this template
-            List<DataStore> iStores = this.templateMgr.getImageStoreByTemplate(template.getId(), null);
+            List<DataStore> iStores = templateMgr.getImageStoreByTemplate(template.getId(), null);
             if (iStores == null || iStores.size() == 0) {
                 // remove template from vm_templates table
                 if (_tmpltDao.remove(template.getId())) {
@@ -380,7 +387,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             throw new InvalidParameterValueException("The DomR template cannot be deleted.");
         }
 
-        if (zoneId != null && (this.storeMgr.getImageStore(zoneId) == null)) {
+        if (zoneId != null && (storeMgr.getImageStore(zoneId) == null)) {
             throw new InvalidParameterValueException("Failed to find a secondary storage in the specified zone.");
         }
 
@@ -392,7 +399,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateProfile profile = super.prepareDelete(cmd);
         Long zoneId = profile.getZoneId();
 
-        if (zoneId != null && (this.storeMgr.getImageStore(zoneId) == null)) {
+        if (zoneId != null && (storeMgr.getImageStore(zoneId) == null)) {
             throw new InvalidParameterValueException("Failed to find a secondary storage in the specified zone.");
         }
 

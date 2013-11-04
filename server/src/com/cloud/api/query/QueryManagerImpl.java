@@ -129,7 +129,7 @@ import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.dc.DedicatedResourceVO;
-import com.cloud.dc.dao.DcDetailsDao;
+import com.cloud.dc.dao.DataCenterDetailsDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
@@ -138,7 +138,6 @@ import com.cloud.event.dao.EventJoinDao;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.dao.NetworkDetailsDao;
@@ -190,7 +189,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.NicDetailDao;
+import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
@@ -296,7 +295,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     private VolumeDetailsDao _volumeDetailDao;
 
     @Inject
-    private NicDetailDao _nicDetailDao;
+    private NicDetailsDao _nicDetailDao;
 
     @Inject
     UserVmDetailsDao _userVmDetailDao;
@@ -328,7 +327,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     private DedicatedResourceDao _dedicatedDao;
 
     @Inject
-    DcDetailsDao _dcDetailsDao;
+    DataCenterDetailsDao _dcDetailsDao;
 
     @Inject
     DomainManager _domainMgr;
@@ -353,8 +352,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
         Pair<List<UserAccountJoinVO>, Integer> result = searchForUsersInternal(cmd);
         ListResponse<UserResponse> response = new ListResponse<UserResponse>();
-        List<UserResponse> userResponses = ViewResponseHelper.createUserResponse(result.first().toArray(
-                new UserAccountJoinVO[result.first().size()]));
+        List<UserResponse> userResponses = ViewResponseHelper.createUserResponse(CallContext.current().getCallingAccount().getDomainId(), 
+                result.first().toArray(new UserAccountJoinVO[result.first().size()]));
         response.setResponses(userResponses, result.second());
         return response;
     }
@@ -1641,6 +1640,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         String type = cmd.getType();
         Map<String, String> tags = cmd.getTags();
         boolean isRootAdmin = _accountMgr.isRootAdmin(caller.getType());
+        Long storageId = cmd.getStorageId();
 
         Long zoneId = cmd.getZoneId();
         Long podId = null;
@@ -1676,6 +1676,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("instanceId", sb.entity().getVmId(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("storageId", sb.entity().getPoolId(), SearchCriteria.Op.EQ);
         // Only return volumes that are not destroyed
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
         sb.and("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.NEQ);
@@ -1733,6 +1734,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
         if (podId != null) {
             sc.setParameters("podId", podId);
+        }
+        
+        if (storageId != null) {
+            sc.setParameters("storageId", storageId);
         }
 
         if(!isRootAdmin){
@@ -2884,7 +2889,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                     }
 
                     // get all child domain ID's
-                    if (_accountMgr.isAdmin(account.getType())) {
+                    if (_accountMgr.isAdmin(account.getType()) 
+                            || (templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community)) {
                         List<DomainVO> allChildDomains = _domainDao.findAllChildren(accountDomain.getPath(),
                                 accountDomain.getId());
                         for (DomainVO childDomain : allChildDomains) {
@@ -3261,58 +3267,31 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     @Override
-    public List<ResourceDetailResponse> listResource(ListResourceDetailsCmd cmd) {
+    public List<ResourceDetailResponse> listResourceDetails(ListResourceDetailsCmd cmd) {
         String key = cmd.getKey();
+        Boolean forDisplay = cmd.forDisplay();
         ResourceTag.ResourceObjectType resourceType = cmd.getResourceType();
-        String resourceId = cmd.getResourceId();
-        long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
-        List<ResourceDetailResponse> responseList = new ArrayList<ResourceDetailResponse>();
-        List<? extends ResourceDetail> detailList = new ArrayList<ResourceDetail>();
+        String resourceIdStr = cmd.getResourceId();
+        long resourceId = _taggedResourceMgr.getResourceId(resourceIdStr, resourceType);
+        List<? extends ResourceDetail> detailList = new ArrayList<ResourceDetail>();        
         ResourceDetail requestedDetail = null;
 
-        
-        if (resourceType == ResourceTag.ResourceObjectType.Volume) {
-            if (key == null) {
-                detailList = _volumeDetailDao.findDetails(id);
-            } else {
-                requestedDetail = _volumeDetailDao.findDetail(id, key);
+        if (key == null) {
+            detailList = _resourceMetaDataMgr.getDetailsList(resourceId, resourceType, forDisplay);
+        } else {
+            requestedDetail = _resourceMetaDataMgr.getDetail(resourceId, resourceType, key);
+            if (forDisplay != null && requestedDetail.isDisplay() != forDisplay) {
+                requestedDetail = null;
             }
-        } else if (resourceType == ResourceTag.ResourceObjectType.Nic){
-            if (key == null) {
-                detailList = _nicDetailDao.findDetails(id);
-            } else {
-                requestedDetail = _nicDetailDao.findDetail(id, key);
-            }
-        } else if (resourceType == ResourceTag.ResourceObjectType.UserVm){
-            if (key == null) {
-                detailList = _userVmDetailDao.findDetailsList(id);
-            } else {
-                requestedDetail = _userVmDetailDao.findDetail(id, key);
-            }
-        } else if (resourceType == ResourceTag.ResourceObjectType.Zone){
-            if (key == null) {
-                detailList = _dcDetailsDao.findDetailsList(id);
-            } else {
-                requestedDetail = _dcDetailsDao.findDetail(id, key);
-            }
-        } else if (resourceType == ResourceObjectType.Network){
-            if (key == null) {
-                detailList = _networkDetailsDao.findDetails(id);
-            } else {
-                requestedDetail = _networkDetailsDao.findDetail(id, key);
-            }
-        }else {
-            throw new UnsupportedServiceException("Resource type " + resourceType + " is not supported by the cloudStack");
         }
         
+        List<ResourceDetailResponse> responseList = new ArrayList<ResourceDetailResponse>();
         if (requestedDetail != null) {
-            ResourceDetailResponse detailResponse = createResourceDetailsResponse(id, requestedDetail.getName(), requestedDetail.getValue(),
-                    resourceType);
+            ResourceDetailResponse detailResponse = createResourceDetailsResponse(requestedDetail, resourceType);
             responseList.add(detailResponse);
         } else {
             for (ResourceDetail detail : detailList) {
-                ResourceDetailResponse detailResponse = createResourceDetailsResponse(id, detail.getName(), detail.getValue(),
-                        resourceType);
+                ResourceDetailResponse detailResponse = createResourceDetailsResponse(detail, resourceType);
                 responseList.add(detailResponse);
             }
         }
@@ -3321,12 +3300,13 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     
-    protected ResourceDetailResponse createResourceDetailsResponse(long resourceId, String key, String value, ResourceTag.ResourceObjectType type) {
+    protected ResourceDetailResponse createResourceDetailsResponse(ResourceDetail requestedDetail, ResourceTag.ResourceObjectType resourceType) {
         ResourceDetailResponse resourceDetailResponse = new ResourceDetailResponse();
-        resourceDetailResponse.setResourceId(String.valueOf(resourceId));
-        resourceDetailResponse.setName(key);
-        resourceDetailResponse.setValue(value);
-        resourceDetailResponse.setResourceType(type.toString());
+        resourceDetailResponse.setResourceId(String.valueOf(requestedDetail.getResourceId()));
+        resourceDetailResponse.setName(requestedDetail.getName());
+        resourceDetailResponse.setValue(requestedDetail.getValue());
+        resourceDetailResponse.setForDisplay(requestedDetail.isDisplay());
+        resourceDetailResponse.setResourceType(resourceType.toString().toString());
         resourceDetailResponse.setObjectName("resourcedetail");
         return resourceDetailResponse;
     }

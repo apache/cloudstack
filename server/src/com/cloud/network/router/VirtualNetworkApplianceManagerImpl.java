@@ -694,7 +694,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         s_logger.info("Router configurations: " + "ramsize=" + _routerRamSize);
 
         _agentMgr.registerForHostEvents(new SshKeysDistriMonitor(_agentMgr, _hostDao, _configDao), true, false, false);
-        _itMgr.registerGuru(VirtualMachine.Type.DomainRouter, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
         _offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, _routerCpuMHz, null,
@@ -2009,7 +2008,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
         //1) Set router details
         DomainRouterVO router = _routerDao.findById(profile.getVirtualMachine().getId());
-        Map<String, String> details = _vmDetailsDao.findDetails(router.getId());
+        Map<String, String> details = _vmDetailsDao.listDetailsKeyPairs(router.getId());
         router.setDetails(details);
 
         //2) Prepare boot loader elements related with Control network
@@ -3342,6 +3341,12 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     }
 
+    protected String getVpnCidr(RemoteAccessVpn vpn)
+    {
+    	Network network = _networkDao.findById(vpn.getNetworkId());
+    	return network.getCidr();
+    }
+    
     protected void createApplyVpnCommands(boolean isCreate, RemoteAccessVpn vpn, VirtualRouter router, Commands cmds) {
         List<VpnUserVO> vpnUsers = _vpnUsersDao.listByAccount(vpn.getAccountId());
 
@@ -3349,8 +3354,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
         IpAddress ip = _networkModel.getIp(vpn.getServerAddressId());
 
+        String cidr = getVpnCidr(vpn);
         RemoteAccessVpnCfgCommand startVpnCmd = new RemoteAccessVpnCfgCommand(isCreate, ip.getAddress().addr(),
-                vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey());
+                vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey(), (vpn.getVpcId() != null));
+        startVpnCmd.setLocalCidr(cidr);
         startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());

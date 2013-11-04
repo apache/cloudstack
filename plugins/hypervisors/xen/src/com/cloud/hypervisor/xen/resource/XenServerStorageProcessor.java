@@ -18,6 +18,11 @@
  */
 package com.cloud.hypervisor.xen.resource;
 
+
+import static com.cloud.utils.ReflectUtil.flattenProperties;
+import static com.google.common.collect.Lists.newArrayList;
+
+
 import java.io.File;
 import java.net.URI;
 import java.util.Arrays;
@@ -81,9 +86,6 @@ import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.VMGuestMetrics;
-
-import static com.cloud.utils.ReflectUtil.flattenProperties;
-import static com.google.common.collect.Lists.newArrayList;
 
 public class XenServerStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
@@ -162,6 +164,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
     @Override
     public AttachAnswer attachVolume(AttachCommand cmd) {
         String vmName = cmd.getVmName();
+        String vdiNameLabel = vmName + "-DATA";
         DiskTO disk = cmd.getDisk();
         DataTO data = disk.getData();
 
@@ -170,16 +173,23 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
             VDI vdi = null;
 
-            if (cmd.isManaged()) {
-                SR sr = this.hypervisorResource.getIscsiSR(conn, cmd.get_iScsiName(), cmd.getStorageHost(), cmd.get_iScsiName(),
-                            cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword());
+            Map<String, String> details = cmd.getDisk().getDetails();
+            boolean isManaged = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+
+            if (isManaged) {
+                String iScsiName = details.get(DiskTO.IQN);
+                String storageHost = details.get(DiskTO.STORAGE_HOST);
+                String chapInitiatorUsername = disk.getDetails().get(DiskTO.CHAP_INITIATOR_USERNAME);
+                String chapInitiatorSecret = disk.getDetails().get(DiskTO.CHAP_INITIATOR_SECRET);
+                Long volumeSize = Long.parseLong(details.get(DiskTO.VOLUME_SIZE));
+
+                SR sr = this.hypervisorResource.getIscsiSR(conn, iScsiName, storageHost, iScsiName,
+                            chapInitiatorUsername, chapInitiatorSecret, true);
 
                 vdi = this.hypervisorResource.getVDIbyUuid(conn, data.getPath(), false);
 
                 if (vdi == null) {
-                    VolumeObjectTO volume = (VolumeObjectTO)data;
-
-                    vdi = this.hypervisorResource.createVdi(sr, cmd.get_iScsiName(), volume.getSize());
+                    vdi = this.hypervisorResource.createVdi(sr, vdiNameLabel, volumeSize);
                 }
             }
             else {
@@ -236,7 +246,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             vbd.plug(conn);
 
             // Update the VDI's label to include the VM name
-            vdi.setNameLabel(conn, vmName + "-DATA");
+            vdi.setNameLabel(conn, vdiNameLabel);
             DiskTO newDisk = new DiskTO(disk.getData(), Long.parseLong(diskNumber), vdi.getUuid(conn), disk.getType());
             return new AttachAnswer(newDisk);
 
@@ -1083,11 +1093,12 @@ public class XenServerStorageProcessor implements StorageProcessor {
                     S3Utils.ClientOptions.class));
             // https workaround for Introspector bug that does not
             // recognize Boolean accessor methods ...
+
             parameters.addAll(Arrays.asList("operation", "put", "filename",
                     dir + "/" + filename, "iSCSIFlag",
                     iSCSIFlag.toString(), "bucket", s3.getBucketName(),
                     "key", key, "https", s3.isHttps() != null ? s3.isHttps().toString()
-                            : "null"));
+                            : "null", "maxSingleUploadSizeInBytes", String.valueOf(s3.getMaxSingleUploadSizeInBytes())));
             final String result = hypervisorResource.callHostPluginAsync(connection, "s3xen",
                     "s3", wait,
                     parameters.toArray(new String[parameters.size()]));

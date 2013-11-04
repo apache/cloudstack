@@ -21,18 +21,18 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.api.response.NiciraNvpDeviceResponse;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+
+import com.cloud.api.response.NiciraNvpDeviceResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -85,7 +85,7 @@ public class ListNiciraNvpDeviceNetworksCmd extends BaseListCmd {
 
             response.setResponses(networkResponses);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         }  catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {

@@ -23,11 +23,12 @@
         cornerAlert: function(args, options) {
             if (!options) options = {};
 
-            var $container = $('#container'); // Put in main container box
+            var $container = $('#main-area'); // Put in main container box
             var $cornerAlert = $('<div>').addClass('notification corner-alert')
                 .hide()
-                .appendTo($container)
+                .appendTo('html body')
                 .append(
+                    $('<div>').addClass('top-arrow'),
                     $('<div>').addClass('title').append(
                         $('<span>').html(
                             options.error ? options.error : _l('label.task.completed')
@@ -49,19 +50,18 @@
                 .css({
                     opacity: 0,
                     position: 'absolute',
-                    top: $($container).height(),
-                    left: $($container).width() - $cornerAlert.width()
+                    top: $('#header .notifications').offset().top,
+                    left: $('#header .notifications').offset().left
                 })
                 .animate({
-                    opacity: 1,
-                    top: $container.height() - $cornerAlert.height()
+                    opacity: 1
                 }, {
                     complete: function() {
                         setTimeout(function() {
                             $cornerAlert.fadeOut('fast', function() {
                                 $cornerAlert.remove();
                             });
-                        }, 5000);
+                        }, 3000);
                     }
                 })
                 .show();
@@ -124,7 +124,11 @@
                         }, {
                             error: _l('label.error')
                         });
-                        $item.removeClass('pending').addClass('error');
+                        $item.removeClass('pending').addClass('error').append(
+                            $('<div>').addClass('subtitle').html(args && args.message ?
+                                                                 args.message : _l('label.error'))
+                        );
+                        $item.attr('title', args && args.message ? args.message : _l('label.error'));
 
                         if (additionalComplete) additionalComplete();
                     }

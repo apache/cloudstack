@@ -1985,7 +1985,21 @@ public class VirtualMachineMO extends BaseMO {
 		}
 		throw new Exception("Unable to find device controller");
 	}
-	
+
+    public List<VirtualDisk> getVirtualDisks() throws Exception {
+        List<VirtualDisk> virtualDisks = new ArrayList<VirtualDisk>();
+
+        List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
+
+        for (VirtualDevice device : devices) {
+            if (device instanceof VirtualDisk) {
+                virtualDisks.add((VirtualDisk)device);
+            }
+        }
+
+        return virtualDisks;
+    }
+
 	public List<String> detachAllDisksExcept(String vmdkBaseName, String deviceBusName) throws Exception {
 		List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
 

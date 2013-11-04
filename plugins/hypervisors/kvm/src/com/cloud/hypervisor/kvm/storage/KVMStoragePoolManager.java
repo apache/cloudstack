@@ -18,6 +18,8 @@ package com.cloud.hypervisor.kvm.storage;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashMap;
@@ -25,13 +27,20 @@ import java.util.UUID;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.api.to.DiskTO;
+
 import com.cloud.hypervisor.kvm.resource.KVMHABase;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.PoolType;
 import com.cloud.hypervisor.kvm.resource.KVMHAMonitor;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
+import com.cloud.storage.Volume;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 public class KVMStoragePoolManager {
     private static final Logger s_logger = Logger
@@ -62,7 +71,6 @@ public class KVMStoragePoolManager {
             this.poolType = poolType;
         }
     }
-    private StorageAdaptor _storageAdaptor;
     private KVMHAMonitor _haMonitor;
     private final Map<String, StoragePoolInformation> _storagePools = new ConcurrentHashMap<String, StoragePoolInformation>();
     private final Map<String, StorageAdaptor> _storageMapper = new HashMap<String, StorageAdaptor>();
@@ -89,11 +97,102 @@ public class KVMStoragePoolManager {
     }
 
     public KVMStoragePoolManager(StorageLayer storagelayer, KVMHAMonitor monitor) {
-        this._storageAdaptor = new LibvirtStorageAdaptor(storagelayer);
         this._haMonitor = monitor;
         this._storageMapper.put("libvirt", new LibvirtStorageAdaptor(storagelayer));
         // add other storage adaptors here
-	// this._storageMapper.put("newadaptor", new NewStorageAdaptor(storagelayer));
+        // this._storageMapper.put("newadaptor", new NewStorageAdaptor(storagelayer));
+        this._storageMapper.put(StoragePoolType.Iscsi.toString(), new iScsiAdmStorageAdaptor());
+    }
+
+    public boolean connectPhysicalDisk(StoragePoolType type, String poolUuid, String volPath, Map<String, String> details) {
+        StorageAdaptor adaptor = getStorageAdaptor(type);
+        KVMStoragePool pool = adaptor.getStoragePool(poolUuid);
+
+        return adaptor.connectPhysicalDisk(volPath, pool, details);
+    }
+
+    public boolean connectPhysicalDisksViaVmSpec(VirtualMachineTO vmSpec) {
+        boolean result = false;
+
+        final String vmName = vmSpec.getName();
+
+        List<DiskTO> disks = Arrays.asList(vmSpec.getDisks());
+
+        for (DiskTO disk : disks) {
+            if (disk.getType() != Volume.Type.ISO) {
+                VolumeObjectTO vol = (VolumeObjectTO) disk.getData();
+                PrimaryDataStoreTO store = (PrimaryDataStoreTO) vol.getDataStore();
+                KVMStoragePool pool = getStoragePool(store.getPoolType(), store.getUuid());
+
+                StorageAdaptor adaptor = getStorageAdaptor(pool.getType());
+
+                result = adaptor.connectPhysicalDisk(vol.getPath(), pool, disk.getDetails());
+
+                if (!result) {
+                    s_logger.error("Failed to connect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
+
+                    return result;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    public boolean disconnectPhysicalDiskByPath(String path) {
+        for (Map.Entry<String, StorageAdaptor> set : _storageMapper.entrySet()) {
+            StorageAdaptor adaptor = set.getValue();
+
+            if (adaptor.disconnectPhysicalDiskByPath(path)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public boolean disconnectPhysicalDisksViaVmSpec(VirtualMachineTO vmSpec) {
+        if (vmSpec == null) {
+            /* CloudStack often tries to stop VMs that shouldn't be running, to ensure a known state,
+               for example if we lose communication with the agent and the VM is brought up elsewhere.
+               We may not know about these yet. This might mean that we can't use the vmspec map, because
+               when we restart the agent we lose all of the info about running VMs. */
+
+            s_logger.debug("disconnectPhysicalDiskViaVmSpec: Attempted to stop a VM that is not yet in our hash map");
+
+            return true;
+        }
+
+        boolean result = true;
+
+        final String vmName = vmSpec.getName();
+
+        List<DiskTO> disks = Arrays.asList(vmSpec.getDisks());
+
+        for (DiskTO disk : disks) {
+            if (disk.getType() != Volume.Type.ISO) {
+                s_logger.debug("Disconnecting disk " + disk.getPath());
+
+                VolumeObjectTO vol = (VolumeObjectTO) disk.getData();
+                PrimaryDataStoreTO store = (PrimaryDataStoreTO) vol.getDataStore();
+
+                KVMStoragePool pool = getStoragePool(store.getPoolType(), store.getUuid());
+
+                StorageAdaptor adaptor = getStorageAdaptor(pool.getType());
+
+                // if a disk fails to disconnect, still try to disconnect remaining
+
+                boolean subResult = adaptor.disconnectPhysicalDisk(vol.getPath(), pool);
+
+                if (!subResult) {
+                    s_logger.error("Failed to disconnect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
+
+                    result = false;
+                }
+            }
+        }
+
+        return result;
     }
 
     public KVMStoragePool getStoragePool(StoragePoolType type, String uuid) {
@@ -195,6 +294,13 @@ public class KVMStoragePoolManager {
         StoragePoolInformation info = new StoragePoolInformation(name, host, port, path, userInfo, type, primaryStorage);
         addStoragePool(pool.getUuid(), info);
         return pool;
+    }
+
+    public boolean disconnectPhysicalDisk(StoragePoolType type, String poolUuid, String volPath) {
+        StorageAdaptor adaptor = getStorageAdaptor(type);
+        KVMStoragePool pool = adaptor.getStoragePool(poolUuid);
+
+        return adaptor.disconnectPhysicalDisk(volPath, pool);
     }
 
     public boolean deleteStoragePool(StoragePoolType type, String uuid) {

@@ -18,7 +18,12 @@
  */
 package org.apache.cloudstack.storage.snapshot;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.inject.Inject;
+
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -28,7 +33,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-import org.springframework.stereotype.Component;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
@@ -70,8 +74,22 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
         if (snapshotStore == null) {
             return null;
         }
-        DataStore store = this.storeMgr.getDataStore(snapshotStore.getDataStoreId(), role);
+        DataStore store = storeMgr.getDataStore(snapshotStore.getDataStoreId(), role);
         SnapshotObject so = SnapshotObject.getSnapshotObject(snapshot, store);
         return so;
     }
+
+    @Override
+    public List<SnapshotInfo> listSnapshotOnCache(long snapshotId) {
+        List<SnapshotDataStoreVO> cacheSnapshots = snapshotStoreDao.listOnCache(snapshotId);
+        List<SnapshotInfo> snapObjs = new ArrayList<SnapshotInfo>();
+        for (SnapshotDataStoreVO cacheSnap : cacheSnapshots) {
+            long storeId = cacheSnap.getDataStoreId();
+            DataStore store = storeMgr.getDataStore(storeId, DataStoreRole.ImageCache);
+            SnapshotInfo tmplObj = getSnapshot(snapshotId, store);
+            snapObjs.add(tmplObj);
+        }
+        return snapObjs;
+    }
+
 }

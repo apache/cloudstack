@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
@@ -107,7 +108,8 @@ public abstract class AgentAttache {
     protected Long _currentSequence;
     protected Status _status = Status.Connecting;
     protected boolean _maintenance;
-    protected long                                    _nextSequence;
+    protected long _nextSequence;
+    protected AtomicInteger _outstandingTaskCount;
 
     protected AgentManagerImpl _agentMgr;
 
@@ -131,6 +133,7 @@ public abstract class AgentAttache {
         _requests = new LinkedList<Request>();
         _agentMgr = agentMgr;
         _nextSequence = s_rand.nextInt(Short.MAX_VALUE) << 48;
+        _outstandingTaskCount = new AtomicInteger(0);
     }
 
     public synchronized long getNextSequence() {

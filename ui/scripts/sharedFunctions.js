@@ -766,7 +766,7 @@ var addGuestNetworkDialog = {
     function isSelfOrChildDomainUser(username, useraccounttype, userdomainid, iscallerchilddomain) {
         if (username == g_username) { //is self
             return true;
-        } else if (isDomainAdmin() && iscallerchilddomain && (useraccounttype == 0)) { //domain admin to user
+        } else if (isDomainAdmin() && !iscallerchilddomain && (useraccounttype == 0)) { //domain admin to user
             return true;
         } else if (isDomainAdmin() && iscallerchilddomain && (userdomainid != g_domainid)) { //domain admin to subdomain admin and user
             return true;

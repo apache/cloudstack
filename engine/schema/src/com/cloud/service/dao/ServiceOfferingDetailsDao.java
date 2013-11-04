@@ -16,14 +16,10 @@
 // under the License.
 package com.cloud.service.dao;
 
-import java.util.Map;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface ServiceOfferingDetailsDao extends GenericDao<ServiceOfferingDetailsVO, Long> {
-    Map<String, String> findDetails(long serviceOfferingId);
-    void persist(long serviceOfferingId, Map<String, String> details);
-    ServiceOfferingDetailsVO findDetail(long serviceOfferingId, String name);
-    void deleteDetails(long serviceOfferingId);
+public interface ServiceOfferingDetailsDao extends GenericDao<ServiceOfferingDetailsVO, Long>, ResourceDetailsDao<ServiceOfferingDetailsVO> {
 }

@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# modifyvnet.sh -- adds and deletes VXLANs from a Routing Server
+# modifyvxlan.sh -- adds and deletes VXLANs from a Routing Server
 # set -x
 
 ## TODO(VXLAN): MTU, IPv6 underlying
@@ -30,7 +30,7 @@ addVxlan() {
 	local pif=$2
 	local vxlanDev=vxlan$vxlanId
 	local vxlanBr=$3
-	local mcastGrp="239.$(( $vxlanId >> 16 % 256 )).$(( $vxlanId >> 8 % 256 )).$(( $vxlanId % 256 ))"
+	local mcastGrp="239.$(( ($vxlanId >> 16) % 256 )).$(( ($vxlanId >> 8) % 256 )).$(( $vxlanId % 256 ))"
 	
 	## TODO(VXLAN): $brif (trafficlabel) should be passed from caller because we cannot assume 1:1 mapping between pif and brif.
 	# lookup bridge interface 
@@ -39,18 +39,24 @@ addVxlan() {
 	
 	if [ "$brif " == " " ]
 	then
-	printf "Failed to lookup bridge interface which includes pif: $pif."
-		return 1
+		if [ -d "/sys/class/net/${pif}" ]
+		then
+			# if bridge is not found, but matches a pif, use it
+			brif=$pif
+		else
+			printf "Failed to lookup bridge interface which includes pif: $pif."
+			return 1
+		fi
+	else
+		# confirm ip address of $brif
+		ip addr show $brif | grep -w inet
+		if [ $? -gt 0 ]
+		then
+			printf "Failed to find vxlan multicast source ip address on brif: $brif."
+			return 1
+		fi
 	fi
-	
-	# confirm ip address of $brif
-	ip addr show $brif | grep -w inet
-	if [ $? -gt 0 ]
-	then
-		printf "Failed to find vxlan multicast source ip address on brif: $brif."
-		return 1
-	fi
-	
+
 	# mcast route
 	## TODO(VXLAN): Can we assume there're only one IP address which can be multicast src IP on the IF?
 	ip route get $mcastGrp | grep -w "dev $brif"
@@ -133,7 +139,10 @@ deleteVxlan() {
 	local pif=$2
 	local vxlanDev=vxlan$vxlanId
 	local vxlanBr=$3
-	local mcastGrp="239.$(( $vxlanId >> 16 % 256 )).$(( $vxlanId >> 8 % 256 )).$(( $vxlanId % 256 ))"
+	local mcastGrp="239.$(( ($vxlanId >> 16) % 256 )).$(( ($vxlanId >> 8) % 256 )).$(( $vxlanId % 256 ))"
+	
+	local sysfs_dir=/sys/devices/virtual/net/
+	local brif=`find ${sysfs_dir}*/brif/ -name $pif | sed -e "s,$sysfs_dir,," | sed -e 's,/brif/.*$,,'`
 	
 	ip route del $mcastGrp/32 dev $brif
 	

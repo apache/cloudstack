@@ -18,12 +18,15 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.api.response.NiciraNvpDeviceResponse;
@@ -42,7 +45,7 @@ public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
     private static final Logger s_logger = Logger.getLogger(AddNiciraNvpDeviceCmd.class.getName());
     private static final String s_name = "addniciranvpdeviceresponse";
     @Inject NiciraNvpElementService _niciraNvpElementService;
-    
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -56,16 +59,16 @@ public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="Credentials to access the Nicira Controller API")
     private String username;
-    
+
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Credentials to access the Nicira Controller API")
     private String password;
-    
+
     @Parameter(name=ApiConstants.NICIRA_NVP_TRANSPORT_ZONE_UUID, type=CommandType.STRING, required = true, description="The Transportzone UUID configured on the Nicira Controller")
     private String transportzoneuuid;
-    
+
     @Parameter(name=ApiConstants.NICIRA_NVP_GATEWAYSERVICE_UUID, type=CommandType.STRING, required = false, description="The L3 Gateway Service UUID configured on the Nicira Controller")
     private String l3gatewayserviceuuid;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -85,13 +88,13 @@ public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
     public String getPassword() {
         return password;
     }
-    
+
     public String getTransportzoneUuid() {
         return transportzoneuuid;
     }
-    
+
     public String getL3GatewayServiceUuid() {
-    	return l3gatewayserviceuuid;
+        return l3gatewayserviceuuid;
     }
 
     /////////////////////////////////////////////////////
@@ -106,7 +109,7 @@ public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
                 NiciraNvpDeviceResponse response = _niciraNvpElementService.createNiciraNvpDeviceResponse(niciraNvpDeviceVO);
                 response.setObjectName("niciranvpdevice");
                 response.setResponseName(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Nicira NVP device due to internal error.");
             }
@@ -116,7 +119,7 @@ public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
     }
- 
+
     @Override
     public String getCommandName() {
         return s_name;
@@ -127,13 +130,13 @@ public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
         return CallContext.current().getCallingAccount().getId();
     }
 
-	@Override
-	public String getEventType() {
-		return EventTypes.EVENT_EXTERNAL_NVP_CONTROLLER_ADD;
-	}
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_EXTERNAL_NVP_CONTROLLER_ADD;
+    }
 
-	@Override
-	public String getEventDescription() {
-		return "Adding a Nicira Nvp Controller";
-	}
+    @Override
+    public String getEventDescription() {
+        return "Adding a Nicira Nvp Controller";
+    }
 }

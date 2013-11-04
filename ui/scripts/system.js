@@ -364,7 +364,7 @@
                                         return total;
                                     };
 
-                                    complete($.extend(data, {
+                                    dataFns.socketInfo($.extend(data, {
                                         cpuCapacityTotal: capacityTotal(1, cloudStack.converters.convertHz),
                                         memCapacityTotal: capacityTotal(0, cloudStack.converters.convertBytes),
                                         storageCapacityTotal: capacityTotal(2, cloudStack.converters.convertBytes)
@@ -372,12 +372,18 @@
                                 }
                             });
                         } else {
-                            complete($.extend(data, {
+                            dataFns.socketInfo($.extend(data, {
                                 cpuCapacityTotal: cloudStack.converters.convertHz(0),
                                 memCapacityTotal: cloudStack.converters.convertBytes(0),
                                 storageCapacityTotal: cloudStack.converters.convertBytes(0)
                             }));
                         }
+                    },
+
+                    socketInfo: function(data) {
+                        complete($.extend(data, {
+                            socketCount: 0
+                        }));
                     }
                 };
 
@@ -7111,6 +7117,35 @@
                                     }
                                 }
                             });
+
+                            return listView;
+                        },
+
+                        sockets: function() {
+                            var listView = {
+                                id: 'sockets',
+                                fields: {
+                                    hypervisor: { label: 'label.hypervisor' },
+                                    sockets: { label: 'label.sockets' },
+                                    hosts: { label: 'label.hosts' }
+                                },
+                                dataProvider: function(args) {
+                                    $.ajax({
+                                        url: createURL('listHypervisors'),
+                                        success: function(json) {
+                                            args.response.success({
+                                                data: $(json.listhypervisorsresponse.hypervisor).map(function(index, hypervisor) {
+                                                    return {
+                                                        hypervisor: hypervisor.name,
+                                                        sockets: 0,
+                                                        hosts: 0
+                                                    };
+                                                })
+                                            });
+                                        }
+                                    });
+                                }
+                            };
 
                             return listView;
                         }
@@ -14288,6 +14323,7 @@
                                                                     $form.find('.form-item[rel=sockettimeout]').css('display', 'inline-block');
 
                                                                     $form.find('.form-item[rel=createNfsCache]').find('input').attr('checked', 'checked');
+                                                                    $form.find('.form-item[rel=createNfsCache]').find('input').attr('disabled', 'disabled');  //Create NFS staging is required for S3 at this moment. So, disallow user to uncheck "Create NFS Secondary Staging" checkbox
                                                                     $form.find('.form-item[rel=createNfsCache]').css('display', 'inline-block');
                                                                     $form.find('.form-item[rel=nfsCacheZoneid]').css('display', 'inline-block');
                                                                     $form.find('.form-item[rel=nfsCacheNfsServer]').css('display', 'inline-block');

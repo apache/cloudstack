@@ -434,17 +434,20 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
 
         IPAddressVO sourceNatIp = null;
         if (!sharedSourceNat) {
-            // Get the source NAT IP address for this account
+            // Get the source NAT IP address for this network
             List<? extends IpAddress> sourceNatIps = _networkModel.listPublicIpsAssignedToAccount(network.getAccountId(),
                     zoneId, true);
 
-            if (sourceNatIps.size() != 1) {
-                String errorMsg = "External firewall was unable to find the source NAT IP address for account "
-                        + account.getAccountName();
+            for (IpAddress ipAddress : sourceNatIps) {
+                if (ipAddress.getAssociatedWithNetworkId().longValue() == network.getId()) {
+                    sourceNatIp = _ipAddressDao.findById(ipAddress.getId());
+                    break;
+                }
+            }
+            if (sourceNatIp == null) {
+                String errorMsg = "External firewall was unable to find the source NAT IP address for network " + network.getName();
                 s_logger.error(errorMsg);
                 return true;
-            } else {
-                sourceNatIp = _ipAddressDao.findById(sourceNatIps.get(0).getId());
             }
         }
 
@@ -669,7 +672,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
 
         String maskedIpRange = ipRange[0] + "-" + ipRange[1];
 
-        RemoteAccessVpnCfgCommand createVpnCmd = new RemoteAccessVpnCfgCommand(create, ip.getAddress().addr(), vpn.getLocalIp(), maskedIpRange, vpn.getIpsecPresharedKey());
+        RemoteAccessVpnCfgCommand createVpnCmd = new RemoteAccessVpnCfgCommand(create, ip.getAddress().addr(), vpn.getLocalIp(), maskedIpRange, vpn.getIpsecPresharedKey(), false);
         createVpnCmd.setAccessDetail(NetworkElementCommand.ACCOUNT_ID, String.valueOf(network.getAccountId()));
         createVpnCmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, network.getCidr());
         Answer answer = _agentMgr.easySend(externalFirewall.getId(), createVpnCmd);

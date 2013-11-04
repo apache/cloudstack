@@ -22,17 +22,16 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.image.BaseImageStoreDriverImpl;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
-
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.storage.image.BaseImageStoreDriverImpl;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
@@ -68,7 +67,14 @@ public class CloudStackImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         String path = installPath;
         String uuid = UUID.randomUUID().toString() + "." + format.getFileExtension();
         CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity) store).getMountPoint(), path, uuid, dataObject.getTO());
-        Answer ans = ep.sendMessage(cmd);
+        Answer ans = null;
+        if (ep == null) {
+            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            ans = new Answer(cmd, false, errMsg);
+        } else {
+            ans = ep.sendMessage(cmd);
+        }
         if (ans == null || !ans.getResult()) {
             String errorString = "Unable to create a link for entity at " + installPath + " on ssvm," + ans.getDetails();
             s_logger.error(errorString);

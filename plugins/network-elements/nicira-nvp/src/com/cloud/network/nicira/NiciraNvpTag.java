@@ -22,9 +22,9 @@ public class NiciraNvpTag {
     private static final Logger s_logger = Logger.getLogger(NiciraNvpTag.class);
     private String scope;
     private String tag;
-    
+
     public NiciraNvpTag() {}
-    
+
     public NiciraNvpTag(String scope, String tag) {
         this.scope = scope;
         if (tag.length() > 40) {
@@ -34,19 +34,19 @@ public class NiciraNvpTag {
             this.tag = tag;
         }
     }
-    
+
     public String getScope() {
         return scope;
     }
-    
+
     public void setScope(String scope) {
         this.scope = scope;
     }
-    
+
     public String getTag() {
         return tag;
     }
-    
+
     public void setTag(String tag) {
         if (tag.length() > 40) {
             s_logger.warn("tag \"" + tag + "\" too long, truncating to 40 characters");
@@ -55,5 +55,5 @@ public class NiciraNvpTag {
             this.tag = tag;
         }
     }
-    
+
 }

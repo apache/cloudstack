@@ -18,7 +18,6 @@ package com.cloud.hypervisor.kvm.resource;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.BufferedOutputStream;
@@ -436,7 +435,7 @@ ServerResource {
         s_logger.info("developer.properties found at " + file.getAbsolutePath());
         Properties properties = new Properties();
         try {
-            properties.load(new FileInputStream(file));
+            PropertiesUtil.loadFromFile(properties, file);
 
             String startMac = (String) properties.get("private.macaddr.start");
             if (startMac == null) {
@@ -987,6 +986,18 @@ ServerResource {
             }
             _pifs.put(bridge, pif);
         }
+
+        // guest(private) creates bridges on a pif, if private bridge not found try pif direct
+        // This addresses the unnecessary requirement of someone to create an unused bridge just for traffic label
+        if (_pifs.get("private") == null) {
+            s_logger.debug("guest(private) traffic label '" + _guestBridgeName+ "' not found as bridge, looking for physical interface");
+            File dev = new File("/sys/class/net/" + _guestBridgeName);
+            if (dev.exists()) {
+                s_logger.debug("guest(private) traffic label '" + _guestBridgeName + "' found as a physical device");
+                _pifs.put("private", _guestBridgeName);
+            }
+        }
+
         s_logger.debug("done looking for pifs, no more bridges");
     }
 
@@ -1024,22 +1035,27 @@ ServerResource {
     }
 
     private String matchPifFileInDirectory(String bridgeName){
-        File f = new File("/sys/devices/virtual/net/" + bridgeName + "/brif");
+        File brif = new File("/sys/devices/virtual/net/" + bridgeName + "/brif");
 
-        if (! f.isDirectory()){
+        if (! brif.isDirectory()){
+            File pif = new File("/sys/class/net/" + bridgeName);
+            if (pif.isDirectory()) {
+                // if bridgeName already refers to a pif, return it as-is
+                return bridgeName;
+            }
             s_logger.debug("failing to get physical interface from bridge "
-                           + bridgeName + ", does " + f.getAbsolutePath()
+                           + bridgeName + ", does " + brif.getAbsolutePath()
                            + "exist?");
             return "";
         }
 
-        File[] interfaces = f.listFiles();
+        File[] interfaces = brif.listFiles();
 
         for (int i = 0; i < interfaces.length; i++) {
             String fname = interfaces[i].getName();
             s_logger.debug("matchPifFileInDirectory: file name '"+fname+"'");
             if (fname.startsWith("eth") || fname.startsWith("bond")
-                || fname.startsWith("vlan") || fname.startsWith("em")
+                || fname.startsWith("vlan") || fname.startsWith("vxlan") || fname.startsWith("em")
                 || fname.matches("^p\\d+p\\d+.*")) {
                 return fname;
             }
@@ -1047,7 +1063,7 @@ ServerResource {
 
         s_logger.debug("failing to get physical interface from bridge "
                         + bridgeName + ", did not find an eth*, bond*, vlan*, em*, or p*p* in "
-                        + f.getAbsolutePath());
+                        + brif.getAbsolutePath());
         return "";
     }
 
@@ -1204,8 +1220,6 @@ ServerResource {
                 return execute((AttachIsoCommand) cmd);
             } else if (cmd instanceof AttachVolumeCommand) {
                 return execute((AttachVolumeCommand) cmd);
-            } else if (cmd instanceof StopCommand) {
-                return execute((StopCommand) cmd);
             } else if (cmd instanceof CheckConsoleProxyLoadCommand) {
                 return execute((CheckConsoleProxyLoadCommand) cmd);
             } else if (cmd instanceof WatchConsoleProxyLoadCommand) {
@@ -2906,6 +2920,8 @@ ServerResource {
              */
             destDomain = dm.migrate(dconn, (1 << 0) | (1 << 3), xmlDesc, vmName, "tcp:"
                     + cmd.getDestinationIp(), _migrateSpeed);
+
+            _storagePoolMgr.disconnectPhysicalDisksViaVmSpec(cmd.getVirtualMachine());
         } catch (LibvirtException e) {
             s_logger.debug("Can't migrate domain: " + e.getMessage());
             result = e.getMessage();
@@ -2954,6 +2970,9 @@ ServerResource {
         }
 
         NicTO[] nics = vm.getNics();
+
+        boolean success = false;
+
         try {
             Connect conn = LibvirtConnection.getConnectionByVmName(vm.getName());
             for (NicTO nic : nics) {
@@ -2968,9 +2987,13 @@ ServerResource {
                 }
             }
 
+            _storagePoolMgr.connectPhysicalDisksViaVmSpec(vm);
+
             synchronized (_vms) {
                 _vms.put(vm.getName(), State.Migrating);
             }
+
+            success = true;
 
             return new PrepareForMigrationAnswer(cmd);
         } catch (LibvirtException e) {
@@ -2979,6 +3002,10 @@ ServerResource {
             return new PrepareForMigrationAnswer(cmd, e.toString());
         } catch (URISyntaxException e) {
             return new PrepareForMigrationAnswer(cmd, e.toString());
+        } finally {
+            if (!success) {
+                _storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vm);
+            }
         }
     }
 
@@ -3242,10 +3269,7 @@ ServerResource {
             String result = stopVM(conn, vmName);
             if (result == null) {
                 for (DiskDef disk : disks) {
-                    if (disk.getDeviceType() == DiskDef.deviceType.CDROM
-                            && disk.getDiskPath() != null) {
-                        cleanupDisk(conn, disk);
-                    }
+                    cleanupDisk(disk);
                 }
                 for (InterfaceDef iface: ifaces) {
                     // We don't know which "traffic type" is associated with
@@ -3518,6 +3542,8 @@ ServerResource {
 
             createVbd(conn, vmSpec, vmName, vm);
 
+            _storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec);
+
             createVifs(vmSpec, vm);
 
             s_logger.debug("starting " + vmName + ": " + vm.toString());
@@ -3597,6 +3623,9 @@ ServerResource {
                 } else {
                     _vms.remove(vmName);
                 }
+            }
+            if (state != State.Running) {
+                _storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vmSpec);
             }
         }
     }
@@ -3679,7 +3708,7 @@ ServerResource {
                     disk.defNetworkBasedDisk(physicalDisk.getPath().replace("rbd:", ""), pool.getSourceHost(), pool.getSourcePort(),
                             pool.getAuthUserName(), pool.getUuid(),
                             devId, diskBusType, diskProtocol.RBD);
-                } else if (pool.getType() == StoragePoolType.CLVM) {
+                } else if (pool.getType() == StoragePoolType.CLVM || physicalDisk.getFormat() == PhysicalDiskFormat.RAW) {
                     disk.defBlockBasedDisk(physicalDisk.getPath(), devId,
                             diskBusType);
                 } else {
@@ -3763,38 +3792,20 @@ ServerResource {
         return new CheckSshAnswer(cmd);
     }
 
-    public boolean cleanupDisk(Connect conn, DiskDef disk) {
-        // need to umount secondary storage
+    public boolean cleanupDisk(DiskDef disk) {
         String path = disk.getDiskPath();
-        String poolUuid = null;
-        if (path.endsWith("systemvm.iso")) {
-            //Don't need to clean up system vm iso, as it's stored in local
-            return true;
-        }
-        if (path != null) {
-            String[] token = path.split("/");
-            if (token.length > 3) {
-                poolUuid = token[2];
-            }
-        }
 
-        if (poolUuid == null) {
-            return true;
-        }
-
-        try {
-            // we use libvirt as storage adaptor since we passed a libvirt
-            // connection to cleanupDisk. We pass a storage type that maps
-            // to libvirt adaptor.
-            KVMStoragePool pool = _storagePoolMgr.getStoragePool(
-                                      StoragePoolType.Filesystem, poolUuid);
-            if (pool != null) {
-                _storagePoolMgr.deleteStoragePool(pool.getType(),pool.getUuid());
-            }
-            return true;
-        } catch (CloudRuntimeException e) {
+        if (path == null) {
+            s_logger.debug("Unable to clean up disk with null path (perhaps empty cdrom drive):" + disk);
             return false;
         }
+
+        if (path.endsWith("systemvm.iso")) {
+            // don't need to clean up system vm ISO as it's stored in local
+            return true;
+        }
+
+        return _storagePoolMgr.disconnectPhysicalDiskByPath(path);
     }
 
     protected synchronized String attachOrDetachISO(Connect conn,
@@ -3824,7 +3835,7 @@ ServerResource {
         if (result == null && !isAttach) {
             for (DiskDef disk : disks) {
                 if (disk.getDeviceType() == DiskDef.deviceType.CDROM) {
-                    cleanupDisk(conn, disk);
+                    cleanupDisk(disk);
                 }
             }
 

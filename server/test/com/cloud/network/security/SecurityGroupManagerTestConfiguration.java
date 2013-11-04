@@ -41,7 +41,7 @@ import com.cloud.dc.dao.DataCenterDaoImpl;
 import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl;
 import com.cloud.dc.dao.DataCenterVnetDaoImpl;
-import com.cloud.dc.dao.DcDetailsDaoImpl;
+import com.cloud.dc.dao.DataCenterDetailsDaoImpl;
 import com.cloud.dc.dao.HostPodDaoImpl;
 import com.cloud.dc.dao.PodVlanDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
@@ -97,7 +97,7 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
         DataCenterLinkLocalIpAddressDaoImpl.class,
         DataCenterVnetDaoImpl.class,
         PodVlanDaoImpl.class,
-        DcDetailsDaoImpl.class,
+        DataCenterDetailsDaoImpl.class,
         SecurityGroupRuleDaoImpl.class,
         NicDaoImpl.class,
         SecurityGroupJoinDaoImpl.class},

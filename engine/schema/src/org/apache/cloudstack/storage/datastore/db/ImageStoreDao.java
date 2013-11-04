@@ -36,4 +36,6 @@ public interface ImageStoreDao extends GenericDao<ImageStoreVO, Long> {
     List<ImageStoreVO> findImageCacheByScope(ZoneScope scope);
 
     List<ImageStoreVO> listImageStores();
+
+    List<ImageStoreVO> listImageCacheStores();
 }

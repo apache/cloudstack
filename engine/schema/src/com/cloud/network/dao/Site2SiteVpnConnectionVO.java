@@ -66,15 +66,19 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, Interna
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
     
+    @Column(name="passive")
+    private boolean passive;
+
     public Site2SiteVpnConnectionVO() { }
 
-    public Site2SiteVpnConnectionVO(long accountId, long domainId, long vpnGatewayId, long customerGatewayId) {
+    public Site2SiteVpnConnectionVO(long accountId, long domainId, long vpnGatewayId, long customerGatewayId, boolean passive) {
         this.uuid = UUID.randomUUID().toString();
         this.setVpnGatewayId(vpnGatewayId);
         this.setCustomerGatewayId(customerGatewayId);
         this.setState(State.Pending);
         this.accountId = accountId;
         this.domainId = domainId;
+        this.passive = passive;
     }
     
     @Override
@@ -140,4 +144,12 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, Interna
     public long getAccountId() {
         return accountId;
     }
+
+	public boolean isPassive() {
+		return passive;
+	}
+
+	public void setPassive(boolean passive) {
+		this.passive = passive;
+	}
 }

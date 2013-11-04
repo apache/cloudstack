@@ -2198,8 +2198,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             String broadcastUri = network.getBroadcastUri().toString();
             response.setBroadcastUri(broadcastUri);
             String vlan = "N/A";
-            if (BroadcastDomainType.Vlan.scheme().equals(BroadcastDomainType.getSchemeValue(network.getBroadcastUri()))) {
-                vlan = BroadcastDomainType.getValue(network.getBroadcastUri());
+            switch (BroadcastDomainType.getSchemeValue(network.getBroadcastUri())){
+                case Vlan:
+                case Vxlan:
+                    vlan = BroadcastDomainType.getValue(network.getBroadcastUri());
+                    break;
             }
             // return vlan information only to Root admin
             response.setVlan(vlan);
@@ -3192,6 +3195,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public Site2SiteVpnConnectionResponse createSite2SiteVpnConnectionResponse(Site2SiteVpnConnection result) {
         Site2SiteVpnConnectionResponse response = new Site2SiteVpnConnectionResponse();
         response.setId(result.getUuid());
+        response.setPassive(result.isPassive());
 
         Long vpnGatewayId = result.getVpnGatewayId();
         if (vpnGatewayId != null) {

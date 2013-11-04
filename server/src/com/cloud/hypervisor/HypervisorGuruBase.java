@@ -115,7 +115,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
             to.setArch("x86_64");
         }
 
-        Map<String, String> detailsInVm = _userVmDetailsDao.findDetails(vm.getId());
+        Map<String, String> detailsInVm = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
         if(detailsInVm != null) {
             to.setDetails(detailsInVm);
         }

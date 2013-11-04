@@ -394,6 +394,9 @@ public enum Config {
     LdapSearchGroupPrinciple("Advanced", ManagementServer.class, String.class, "ldap.search.group.principle", null, "Sets the principle of the group that users must be a member of", null),
     LdapTrustStore("Advanced", ManagementServer.class, String.class, "ldap.truststore", null, "Sets the path to the truststore to use for SSL", null),
     LdapTrustStorePassword("Advanced", ManagementServer.class, String.class, "ldap.truststore.password", null, "Sets the password for the truststore", null),
+    LdapGroupObject("Advanced", ManagementServer.class, String.class, "ldap.group.object", "groupOfUniqueNames", "Sets the object type of groups within LDAP", null),
+    LdapGroupUniqueMemberAttribute("Advanced", ManagementServer.class, String.class, "ldap.group.user.uniquemember", "uniquemember",
+				   "Sets the attribute for uniquemembers within a group", null),
 
 	// VMSnapshots
     VMSnapshotMax("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", null),

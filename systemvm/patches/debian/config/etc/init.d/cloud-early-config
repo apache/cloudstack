@@ -130,12 +130,11 @@ get_boot_params() {
      vmware)
           vmtoolsd --cmd 'machine.id.get' > /var/cache/cloud/cmdline 
           ;;
-     virtualpc)
-          # Hyper-V is recognized as virtualpc hypervisor type. Boot args are passed in the NTFS data-disk
-          mkdir -p $EXTRA_MOUNT
-          mount -t ntfs /dev/sdb1 $EXTRA_MOUNT
-          cp -f $EXTRA_MOUNT/cmdline /var/cache/cloud/cmdline
-          umount $EXTRA_MOUNT
+     virtualpc|hyperv)
+          # Hyper-V is recognized as virtualpc hypervisor type. Boot args are passed using KVP Daemon
+          #waiting for the hv_kvp_daemon to start up
+          #sleep 30 need to fix the race condition of hv_kvp_daemon and cloud-early-config
+          cp -f /var/opt/hyperv/.kvp_pool_0 /var/cache/cloud/cmdline
           ;;
   esac
 
@@ -157,6 +156,10 @@ patch() {
        cdrom_dev=/dev/cdrom
   elif [ -e /dev/cdrom1 ]; then
        cdrom_dev=/dev/cdrom1
+  elif [ -e /dev/cdrom2 ]; then
+       cdrom_dev=/dev/cdrom2
+  elif [ -e /dev/cdrom3 ]; then
+       cdrom_dev=/dev/cdrom3
   fi
   [ -f /var/cache/cloud/authorized_keys ] && privkey=/var/cache/cloud/authorized_keys
 
@@ -718,7 +721,7 @@ setup_dnsmasq() {
   [ $ETH0_IP ] && echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
   [ $ETH0_IP6 ] && echo "dhcp-option=option6:dns-server,$NS6" >> /etc/dnsmasq.conf
 #adding the name data-server to the /etc/hosts for allowing the access to user-data service and ssh-key reset in every subnet.
-  //removing the existing entires to avoid duplicates on restarts.
+#removing the existing entires to avoid duplicates on restarts.
   sed -i  '/data-server/d' /etc/hosts
   if [ -n "$ETH0_IP" ]
           then

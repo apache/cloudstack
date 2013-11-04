@@ -1,0 +1,130 @@
+﻿<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements. See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership. The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied. See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+
+<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="CloudStack.Plugin.AgentShell" GeneratedClassName="AgentSettings">
+  <Profiles />
+  <Settings>
+    <Setting Name="cpus" Type="System.Int32" Scope="Application">
+      <Value Profile="(Default)">8</Value>
+    </Setting>
+    <Setting Name="private_ip_address" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">10.70.176.29</Value>
+    </Setting>
+    <Setting Name="type" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Routing</Value>
+    </Setting>
+    <Setting Name="local_storage_uuid" Type="System.Guid" Scope="Application">
+      <Value Profile="(Default)">5fe2bad3-d785-394e-9949-89786b8a63d2</Value>
+    </Setting>
+    <Setting Name="capabilities" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">hvm</Value>
+    </Setting>
+    <Setting Name="Settingcpuspeed" Type="System.Int32" Scope="Application">
+      <Value Profile="(Default)">2130</Value>
+    </Setting>
+    <Setting Name="port" Type="System.Int32" Scope="Application">
+      <Value Profile="(Default)">8250</Value>
+    </Setting>
+    <Setting Name="memory" Type="System.Int64" Scope="Application">
+      <Value Profile="(Default)">34359738368</Value>
+    </Setting>
+    <Setting Name="host" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">camldonall01.citrite.net</Value>
+    </Setting>
+    <Setting Name="pod" Type="System.Int32" Scope="Application">
+      <Value Profile="(Default)">1</Value>
+    </Setting>
+    <Setting Name="gateway_ip_address" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">10.70.176.1</Value>
+    </Setting>
+    <Setting Name="guid" Type="System.Guid" Scope="Application">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="cluster" Type="System.Int32" Scope="Application">
+      <Value Profile="(Default)">2</Value>
+    </Setting>
+    <Setting Name="zone" Type="System.Int32" Scope="Application">
+      <Value Profile="(Default)">1</Value>
+    </Setting>
+    <Setting Name="local_secondary_storage_path" Type="System.String" Scope="User">
+      <Value Profile="(Default)">c:\Secondary</Value>
+    </Setting>
+    <Setting Name="local_storage_path" Type="System.String" Scope="User">
+      <Value Profile="(Default)">E:\Disks\Disks</Value>
+    </Setting>
+    <Setting Name="workers" Type="System.Int32" Scope="Application">
+      <Value Profile="(Default)">5</Value>
+    </Setting>
+    <Setting Name="private_ip_netmask" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">255.255.240.0</Value>
+    </Setting>
+    <Setting Name="RootDeviceReservedSpaceBytes" Type="System.Int64" Scope="Application">
+      <Value Profile="(Default)">4294967296</Value>
+    </Setting>
+    <Setting Name="hyperv_plugin_root" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">../../../../../</Value>
+    </Setting>
+    <Setting Name="RootDeviceName" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">e:\</Value>
+    </Setting>
+    <Setting Name="private_mac_address" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">101F742C6B88</Value>
+    </Setting>
+    <Setting Name="testLocalStorePath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">.\var\test\storagepool</Value>
+    </Setting>
+    <Setting Name="testS3Bucket" Type="System.String" Scope="User">
+      <Value Profile="(Default)">testS3Bucket</Value>
+    </Setting>
+    <Setting Name="testS3Endpoint" Type="System.String" Scope="User">
+      <Value Profile="(Default)">testS3Endpoint</Value>
+    </Setting>
+    <Setting Name="testS3AccessKey" Type="System.String" Scope="User">
+      <Value Profile="(Default)">testS3AccessKey</Value>
+    </Setting>
+    <Setting Name="testS3SecretKey" Type="System.String" Scope="User">
+      <Value Profile="(Default)">testS3SecretKey</Value>
+    </Setting>
+    <Setting Name="testS3TemplateName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">206-2-73592258-559a-3b38-8f66-b667aab143eb</Value>
+    </Setting>
+    <Setting Name="testLocalStoreUUID" Type="System.String" Scope="User">
+      <Value Profile="(Default)">5fe2bad3-d785-394e-9949-89786b8a63d2</Value>
+    </Setting>
+    <Setting Name="testSystemVMTemplateName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">acton-systemvm-02062012.vhd.bz2</Value>
+    </Setting>
+    <Setting Name="testSystemVMTemplateNameNoExt" Type="System.String" Scope="User">
+      <Value Profile="(Default)">acton-systemvm-02062012</Value>
+    </Setting>
+    <Setting Name="dom0MinMemory" Type="System.UInt64" Scope="Application">
+      <Value Profile="(Default)">2048</Value>
+    </Setting>
+    <Setting Name="testCifsUrl" Type="System.String" Scope="User">
+      <Value Profile="(Default)">cifs://10.1.1.1/secondary?user\u003dadministrator\u0026password\u003d1pass%40word1</Value>
+    </Setting>
+    <Setting Name="testCifsPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">template/tmpl/2/201/61d5316a-3cc4-30cf-a557-78691ff5c143.vhd</Value>
+    </Setting>
+    <Setting Name="testKvpVmName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">CentOS64</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

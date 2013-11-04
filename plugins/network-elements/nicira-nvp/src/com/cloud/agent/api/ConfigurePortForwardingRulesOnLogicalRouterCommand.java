@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -21,40 +21,41 @@ import java.util.List;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 
 /**
- * 
+ *
  */
 public class ConfigurePortForwardingRulesOnLogicalRouterCommand extends Command {
-	
-	private String logicalRouterUuid;
-	private List<PortForwardingRuleTO> rules;
 
-	public ConfigurePortForwardingRulesOnLogicalRouterCommand(String logicalRouterUuid, List<PortForwardingRuleTO> rules) {
-		this.logicalRouterUuid = logicalRouterUuid;
-		this.rules = rules;
-	}
-	
-	public String getLogicalRouterUuid() {
-		return logicalRouterUuid;
-	}
+    private String logicalRouterUuid;
+    private List<PortForwardingRuleTO> rules;
 
-	public void setLogicalRouterUuid(String logicalRouterUuid) {
-		this.logicalRouterUuid = logicalRouterUuid;
-	}
+    public ConfigurePortForwardingRulesOnLogicalRouterCommand(String logicalRouterUuid, List<PortForwardingRuleTO> rules) {
+        this.logicalRouterUuid = logicalRouterUuid;
+        this.rules = rules;
+    }
 
-	public List<PortForwardingRuleTO> getRules() {
-		return rules;
-	}
+    public String getLogicalRouterUuid() {
+        return logicalRouterUuid;
+    }
 
-	public void setRules(List<PortForwardingRuleTO> rules) {
-		this.rules = rules;
-	}
+    public void setLogicalRouterUuid(String logicalRouterUuid) {
+        this.logicalRouterUuid = logicalRouterUuid;
+    }
 
-	/* (non-Javadoc)
-	 * @see com.cloud.agent.api.Command#executeInSequence()
-	 */
-	@Override
-	public boolean executeInSequence() {
-		return false;
-	}
+    public List<PortForwardingRuleTO> getRules() {
+        return rules;
+    }
+
+    public void setRules(List<PortForwardingRuleTO> rules) {
+        this.rules = rules;
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see com.cloud.agent.api.Command#executeInSequence()
+     */
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 
 }

@@ -449,6 +449,9 @@ public class EventTypes {
 
     public static final String EVENT_UCS_ASSOCIATED_PROFILE = "UCS.ASSOCIATEPROFILE";
 
+    // Object store migration
+    public static final String EVENT_MIGRATE_PREPARE_SECONDARY_STORAGE = "MIGRATE.PREPARE.SS";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking

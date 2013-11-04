@@ -73,6 +73,10 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -437,6 +441,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     PlannerHostReservationDao _plannerHostReservationDao;
     @Inject
     private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+    @Inject
+    VolumeService _volService;
+    @Inject
+    VolumeDataFactory volFactory;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -916,6 +924,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         NetworkVO network = _networkDao.findById(networkId);
         if(network == null) {
             throw new InvalidParameterValueException("unable to find a network with id " + networkId);
+        }
+        if (!(network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain)
+                && !(network.getAclType() == ACLType.Account && network.getAccountId() == vmInstance.getAccountId())) {
+            throw new InvalidParameterValueException("only shared network or isolated network with the same account_id can be added to vmId: " + vmId);
         }
         List<NicVO> allNics = _nicDao.listByVmId(vmInstance.getId());
         for(NicVO nic : allNics){
@@ -2653,7 +2665,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         + network.getId() + " doesn't belong to zone "
                         + zone.getId());
             }
-
+            if (!(network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain)
+                    && !(network.getAclType() == ACLType.Account && network.getAccountId() == accountId)) {
+                throw new InvalidParameterValueException("only shared network or isolated network with the same account_id can be added to vm");
+            }
             IpAddresses requestedIpPair = null;
             if (requestedIps != null && !requestedIps.isEmpty()) {
                 requestedIpPair = requestedIps.get(network.getId());
@@ -2994,7 +3009,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
         UserVmVO vm = _vmDao.findById(profile.getId());
-        Map<String, String> details = _vmDetailsDao.findDetails(vm.getId());
+        Map<String, String> details = _vmDetailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
 
         if (vm.getIsoId() != null) {
@@ -4194,7 +4209,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
     private boolean isServiceOfferingUsingPlannerInPreferredMode(long serviceOfferingId) {
         boolean preferred = false;
-        Map<String, String> details = serviceOfferingDetailsDao.findDetails(serviceOfferingId);
+        Map<String, String> details = serviceOfferingDetailsDao.listDetailsKeyPairs(serviceOfferingId);
         if (details != null && !details.isEmpty()) {
             String preferredAttribute = details.get("ImplicitDedicationMode");
             if (preferredAttribute != null && preferredAttribute.equals("Preferred")) {
@@ -4913,6 +4928,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _volsDao.detachVolume(root.getId());
         volumeMgr.destroyVolume(root);
+
+        // For VMware hypervisor since the old root volume is replaced by the new root volume in storage, force expunge old root volume
+        if (vm.getHypervisorType() == HypervisorType.VMware) {
+            s_logger.info("Expunging volume " + root.getId() + " from primary data store");
+            AsyncCallFuture<VolumeApiResult> future = _volService.expungeVolumeAsync(volFactory.getVolume(root.getId()));
+            try {
+                future.get();
+            } catch (Exception e) {
+                s_logger.debug("Failed to expunge volume:" + root.getId(), e);
+            }
+        }
 
         if (template.getEnablePassword()) {
             String password = generateRandomPassword();

@@ -31,6 +31,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
@@ -51,7 +52,6 @@ import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -135,6 +135,7 @@ import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.Upload;
+import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -176,7 +177,6 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -481,9 +481,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("The " + desc + " has not been downloaded ");
         }
 
-        DataObject templateObject = _tmplFactory.getTemplate(templateId, tmpltStore);
+        // Handle NFS to S3 object store migration case, we trigger template sync from NFS to S3 during extract template or copy template
+        _tmpltSvr.syncTemplateToRegionStore(templateId, tmpltStore);
 
-        return tmpltStore.createEntityExtractUrl(tmpltStoreRef.getInstallPath(), template.getFormat(), templateObject);
+        TemplateInfo templateObject = _tmplFactory.getTemplate(templateId, tmpltStore);
+
+        return tmpltStore.createEntityExtractUrl(templateObject.getInstallPath(), template.getFormat(), templateObject);
     }
 
     public void prepareTemplateInAllStoragePools(final VMTemplateVO template, long zoneId) {
@@ -580,7 +583,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     public String getChecksum(DataStore store, String templatePath) {
         EndPoint ep = _epSelector.select(store);
         ComputeChecksumCommand cmd = new ComputeChecksumCommand(store.getTO(), templatePath);
-        Answer answer = ep.sendMessage(cmd);
+        Answer answer = null;
+        if (ep == null) {
+            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            answer = new Answer(cmd, false, errMsg);
+        } else {
+            answer = ep.sendMessage(cmd);
+        }
         if (answer != null && answer.getResult()) {
             return answer.getDetails();
         }
@@ -700,7 +710,15 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Unable to find template with id");
         }
 
+        DataStore srcSecStore = getImageStore(sourceZoneId, templateId);
+        if (srcSecStore == null) {
+            throw new InvalidParameterValueException("There is no template " + templateId + " in zone " + sourceZoneId);
+        }
+
         if (template.isCrossZones()){
+            //TODO: we may need UI still enable CopyTemplate in case of cross zone template to trigger sync to region store.
+            // sync template from cache store to region store if it is not there, for cases where we are going to migrate existing NFS to S3.
+            _tmpltSvr.syncTemplateToRegionStore(templateId, srcSecStore);
             s_logger.debug("Template " + templateId + " is cross-zone, don't need to copy");
             return template;
         }
@@ -710,11 +728,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             s_logger.debug("There is template " + templateId + " in secondary storage " + dstSecStore.getName() + " in zone " + destZoneId
                     + " , don't need to copy");
             return template;
-        }
-
-        DataStore srcSecStore = getImageStore(sourceZoneId, templateId);
-        if (srcSecStore == null) {
-            throw new InvalidParameterValueException("There is no template " + templateId + " in zone " + sourceZoneId);
         }
 
         _accountMgr.checkAccess(caller, AccessType.ModifyEntry, true, template);
@@ -783,7 +796,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         try {
-            StoragePool pool = (StoragePool) this._dataStoreMgr.getPrimaryDataStore(templatePoolVO.getPoolId());
+            StoragePool pool = (StoragePool) _dataStoreMgr.getPrimaryDataStore(templatePoolVO.getPoolId());
             VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templatePoolVO.getTemplateId());
 
             if (s_logger.isDebugEnabled()) {
@@ -1286,27 +1299,27 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Account owner = _accountMgr.getAccount(ownerId);
         final Domain domain = _domainDao.findById(owner.getDomainId());
         if ("add".equalsIgnoreCase(operation)) {
-            final List<String> accountNamesFinal = accountNames; 
+            final List<String> accountNamesFinal = accountNames;
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
                     for (String accountName : accountNamesFinal) {
-                        Account permittedAccount = _accountDao.findActiveAccount(accountName, domain.getId());
-                        if (permittedAccount != null) {
-                            if (permittedAccount.getId() == caller.getId()) {
-                                continue; // don't grant permission to the template
-                                // owner, they implicitly have permission
-                            }
-                            LaunchPermissionVO existingPermission = _launchPermissionDao.findByTemplateAndAccount(id, permittedAccount.getId());
-                            if (existingPermission == null) {
-                                LaunchPermissionVO launchPermission = new LaunchPermissionVO(id, permittedAccount.getId());
-                                _launchPermissionDao.persist(launchPermission);
-                            }
-                        } else {
-                            throw new InvalidParameterValueException("Unable to grant a launch permission to account " + accountName + " in domain id=" + domain.getUuid()
-                                    + ", account not found.  " + "No permissions updated, please verify the account names and retry.");
-                        }
+                Account permittedAccount = _accountDao.findActiveAccount(accountName, domain.getId());
+                if (permittedAccount != null) {
+                    if (permittedAccount.getId() == caller.getId()) {
+                        continue; // don't grant permission to the template
+                        // owner, they implicitly have permission
                     }
+                    LaunchPermissionVO existingPermission = _launchPermissionDao.findByTemplateAndAccount(id, permittedAccount.getId());
+                    if (existingPermission == null) {
+                        LaunchPermissionVO launchPermission = new LaunchPermissionVO(id, permittedAccount.getId());
+                        _launchPermissionDao.persist(launchPermission);
+                    }
+                } else {
+                    throw new InvalidParameterValueException("Unable to grant a launch permission to account " + accountName + " in domain id=" + domain.getUuid()
+                            + ", account not found.  " + "No permissions updated, please verify the account names and retry.");
+                }
+            }
                 }
             });
         } else if ("remove".equalsIgnoreCase(operation)) {
@@ -1436,23 +1449,23 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
                     public void doInTransactionWithoutResult(TransactionStatus status) {
-                        // template_store_ref entries should have been removed using our
-                        // DataObject.processEvent command in case of failure, but clean
-                        // it up here to avoid
-                        // some leftovers which will cause removing template from
-                        // vm_template table fail.
-                        _tmplStoreDao.deletePrimaryRecordsForTemplate(templateId);
-                        // Remove the template_zone_ref record
-                        _tmpltZoneDao.deletePrimaryRecordsForTemplate(templateId);
-                        // Remove the template record
-                        _tmpltDao.expunge(templateId);
-        
-                        // decrement resource count
-                        if (accountId != null) {
-                            _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.template);
+                // template_store_ref entries should have been removed using our
+                // DataObject.processEvent command in case of failure, but clean
+                // it up here to avoid
+                // some leftovers which will cause removing template from
+                // vm_template table fail.
+                _tmplStoreDao.deletePrimaryRecordsForTemplate(templateId);
+                // Remove the template_zone_ref record
+                _tmpltZoneDao.deletePrimaryRecordsForTemplate(templateId);
+                // Remove the template record
+                _tmpltDao.expunge(templateId);
+
+                // decrement resource count
+                if (accountId != null) {
+                    _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.template);
                             _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.secondary_storage, new Long(volumeFinal != null ? volumeFinal.getSize()
                                     : snapshotFinal.getSize()));
-                        }
+                }
                     }
                 });
 
@@ -1627,8 +1640,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateVO template = _tmpltDao.persist(privateTemplate);
         // Increment the number of templates
         if (template != null) {
-            if (cmd.getDetails() != null) {
-                _templateDetailsDao.persist(template.getId(), cmd.getDetails());
+            Map<String, String> detailsStr = cmd.getDetails();
+            if (detailsStr != null) {
+                List<VMTemplateDetailVO> details = new ArrayList<VMTemplateDetailVO>();
+                for (String key : detailsStr.keySet()) {
+                    details.add(new VMTemplateDetailVO(template.getId(), key, detailsStr.get(key)));
+                }
+                _templateDetailsDao.saveDetails(details);
             }
 
             _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.template);
@@ -1708,6 +1726,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         return stores;
     }
+
 
     @Override
     public VMTemplateVO updateTemplate(UpdateIsoCmd cmd) {
@@ -1838,6 +1857,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Inject
     public void setTemplateAdapters(List<TemplateAdapter> adapters) {
-        this._adapters = adapters;
+        _adapters = adapters;
     }
 }

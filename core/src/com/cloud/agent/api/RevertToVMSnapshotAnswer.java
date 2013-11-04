@@ -17,14 +17,14 @@
 
 package com.cloud.agent.api;
 
-import java.util.List;
-
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+
+import java.util.List;
 
 public class RevertToVMSnapshotAnswer extends Answer {
 
-    private List<VolumeTO> volumeTOs;
+    private List<VolumeObjectTO> volumeTOs;
     private VirtualMachine.State vmState;
 
     public RevertToVMSnapshotAnswer(RevertToVMSnapshotCommand cmd, boolean result,
@@ -37,7 +37,7 @@ public class RevertToVMSnapshotAnswer extends Answer {
     }
 
     public RevertToVMSnapshotAnswer(RevertToVMSnapshotCommand cmd,
-            List<VolumeTO> volumeTOs,
+            List<VolumeObjectTO> volumeTOs,
             VirtualMachine.State vmState) {
         super(cmd, true, "");
         this.volumeTOs = volumeTOs;
@@ -48,11 +48,11 @@ public class RevertToVMSnapshotAnswer extends Answer {
         return vmState;
     }
 
-    public List<VolumeTO> getVolumeTOs() {
+    public List<VolumeObjectTO> getVolumeTOs() {
         return volumeTOs;
     }
 
-    public void setVolumeTOs(List<VolumeTO> volumeTOs) {
+    public void setVolumeTOs(List<VolumeObjectTO> volumeTOs) {
         this.volumeTOs = volumeTOs;
     }
 

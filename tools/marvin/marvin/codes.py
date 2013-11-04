@@ -24,12 +24,19 @@
             a code viz., ENABLED  with value "Enabled",then using \
             this code in a sample feature say test_a.py as below. \
 
-            from marvinCodes import *
+            from codes import *
             if obj.getvalue() == ENABLED
 
 @DateAdded: 20th October 2013
 """
 
+RUNNING = "Running"
+RECURRING = "RECURRING"
 ENABLED = "Enabled"
 NETWORK_OFFERING = "network_offering"
 ROOT = "ROOT"
+INVALID_INPUT = "INVALID INPUT"
+EMPTY_LIST = "EMPTY_LIST"
+FAIL = 0
+PASS = 1
+MATCH_NOT_FOUND = "ELEMENT NOT FOUND IN THE INPUT"

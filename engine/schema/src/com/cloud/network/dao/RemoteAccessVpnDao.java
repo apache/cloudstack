@@ -24,7 +24,8 @@ import com.cloud.utils.db.GenericDao;
 public interface RemoteAccessVpnDao extends GenericDao<RemoteAccessVpnVO, Long> {
     RemoteAccessVpnVO findByPublicIpAddress(long ipAddressId);
     RemoteAccessVpnVO findByPublicIpAddressAndState(long ipAddressId, RemoteAccessVpn.State state);
-    RemoteAccessVpnVO findByAccountAndNetwork(Long accountId, Long zoneId);
+    RemoteAccessVpnVO findByAccountAndNetwork(Long accountId, Long networkId);
+    RemoteAccessVpnVO findByAccountAndVpc(Long accountId, Long vpcId);
     List<RemoteAccessVpnVO> findByAccount(Long accountId);
     List<RemoteAccessVpnVO> listByNetworkId(Long networkId);
 }

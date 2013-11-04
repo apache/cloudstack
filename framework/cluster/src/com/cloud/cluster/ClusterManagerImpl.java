@@ -17,7 +17,6 @@
 package com.cloud.cluster;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.ConnectException;
@@ -60,6 +59,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.DbProperties;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
@@ -1030,15 +1030,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
             s_logger.info("Start configuring cluster manager : " + name);
         }
 
-        File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
-        Properties dbProps = new Properties();
-        try {
-            dbProps.load(new FileInputStream(dbPropsFile));
-        } catch (FileNotFoundException e) {
-            throw new ConfigurationException("Unable to find db.properties");
-        } catch (IOException e) {
-            throw new ConfigurationException("Unable to load db.properties content");
-        }
+        Properties dbProps = DbProperties.getDbProperties();
         _clusterNodeIP = dbProps.getProperty("cluster.node.IP");
         if (_clusterNodeIP == null) {
             _clusterNodeIP = "127.0.0.1";

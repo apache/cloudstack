@@ -30,7 +30,7 @@ vpnoutmark="0x525"
 vpninmark="0x524"
 
 usage() {
-    printf "Usage: %s: (-A|-D) -l <left-side vpn peer> -n <left-side guest cidr> -g <left-side gateway> -r <right-side vpn peer> -N <right-side private subnets> -e <esp policy> -i <ike policy> -t <ike lifetime> -T <esp lifetime> -s <pre-shared secret> -d <dpd 0 or 1> \n" $(basename $0) >&2
+    printf "Usage: %s: (-A|-D) -l <left-side vpn peer> -n <left-side guest cidr> -g <left-side gateway> -r <right-side vpn peer> -N <right-side private subnets> -e <esp policy> -i <ike policy> -t <ike lifetime> -T <esp lifetime> -s <pre-shared secret> -d <dpd 0 or 1> [ -p <passive or not> ]\n" $(basename $0) >&2
 }
 
 #set -x
@@ -173,29 +173,35 @@ ipsec_tunnel_add() {
 
     sudo ipsec auto --rereadall
     sudo ipsec auto --add vpn-$rightpeer
-    sudo ipsec auto --up vpn-$rightpeer
 
   logger -t cloud "$(basename $0): done ipsec tunnel entry for right peer=$rightpeer right networks=$rightnets"
 
-  #5 seconds for checking if it's ready
-  for i in {1..5}
-  do
-    logger -t cloud "$(basename $0): checking connection status..."
-    /opt/cloud/bin/checks2svpn.sh $rightpeer
-    result=$?
+  result=0
+
+  if [ $passive -eq 0 ]
+  then
+      sudo ipsec auto --up vpn-$rightpeer
+
+    #5 seconds for checking if it's ready
+    for i in {1..5}
+    do
+      logger -t cloud "$(basename $0): checking connection status..."
+      /opt/cloud/bin/checks2svpn.sh $rightpeer
+      result=$?
+      if [ $result -eq 0 ]
+      then
+          break
+      fi
+      sleep 1
+    done
     if [ $result -eq 0 ]
     then
-        break
+      logger -t cloud "$(basename $0): connect to remote successful"
+    else
+      logger -t cloud "$(basename $0): fail to connect to remote, status code: $result"
+      logger -t cloud "$(basename $0): would stop site-to-site VPN connection"
+      ipsec_tunnel_del
     fi
-    sleep 1
-  done
-  if [ $result -eq 0 ]
-  then
-    logger -t cloud "$(basename $0): connect to remote successful"
-  else
-    logger -t cloud "$(basename $0): fail to connect to remote, status code: $result"
-    logger -t cloud "$(basename $0): would stop site-to-site VPN connection"
-    ipsec_tunnel_del
   fi
   return $result
 }
@@ -208,9 +214,10 @@ lflag=
 iflag=
 Iflag=
 sflag=
+passive=0
 op=""
 
-while getopts 'ADl:n:g:r:N:e:i:t:T:s:d:' OPTION
+while getopts 'ADpl:n:g:r:N:e:i:t:T:s:d:' OPTION
 do
   case $OPTION in
   A)    opflag=1
@@ -251,6 +258,8 @@ do
         ;;
   d)    dflag=1
         dpd="$OPTARG"
+        ;;
+  p)    passive=1
         ;;
   ?)    usage
         unlock_exit 2 $lock $locked

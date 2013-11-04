@@ -16,6 +16,16 @@
 // under the License.
 package com.cloud.network.element;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -31,7 +41,6 @@ import org.mockito.ArgumentMatcher;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ConfigurePublicIpsOnLogicalRouterAnswer;
 import com.cloud.agent.api.ConfigurePublicIpsOnLogicalRouterCommand;
 import com.cloud.deploy.DeployDestination;
@@ -41,11 +50,11 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.IpAddress;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
@@ -55,17 +64,11 @@ import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NiciraNvpDao;
 import com.cloud.network.dao.NiciraNvpRouterMappingDao;
-import com.cloud.network.nicira.NatRule;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.user.Account;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.ReservationContext;
-
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
 
 public class NiciraNvpElementTest {
 
@@ -136,7 +139,7 @@ public class NiciraNvpElementTest {
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
 
-        DeployDestination dest = mock(DeployDestination.class);
+        mock(DeployDestination.class);
 
         Domain dom = mock(Domain.class);
         when(dom.getName()).thenReturn("domain");

@@ -490,6 +490,7 @@ public class ApiConstants {
     public static final String VM_SNAPSHOT_ID = "vmsnapshotid";
     public static final String VM_SNAPSHOT_DISK_IDS = "vmsnapshotdiskids";
     public static final String VM_SNAPSHOT_MEMORY = "snapshotmemory";
+    public static final String VM_SNAPSHOT_QUIESCEVM = "quiescevm";
     public static final String IMAGE_STORE_UUID = "imagestoreuuid";
     public static final String GUEST_VM_CIDR = "guestvmcidr";
     public static final String NETWORK_CIDR = "networkcidr";
@@ -521,8 +522,10 @@ public class ApiConstants {
     public static final String ROUTING = "isrouting";
     public static final String MAX_CONNECTIONS = "maxconnections";
     public static final String SERVICE_STATE = "servicestate";
-    public static final String RESOURCE_DETAIL = "resourcedetail";
+    public static final String RESOURCE_DETAILS = "resourcedetails";
     public static final String EXPUNGE = "expunge";
+    public static final String FOR_DISPLAY = "fordisplay";
+    public static final String PASSIVE = "passive";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

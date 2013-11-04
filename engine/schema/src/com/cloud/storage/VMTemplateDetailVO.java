@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.storage;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,61 +23,59 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.ResourceDetail;
+
 @Entity
 @Table(name = "vm_template_details")
-public class VMTemplateDetailVO implements InternalIdentity {
+public class VMTemplateDetailVO implements ResourceDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
 
     @Column(name = "template_id")
-    private long templateId;
+    private long resourceId;
 
     @Column(name = "name")
     private String name;
 
     @Column(name = "value", length = 1024)
     private String value;
+    
+    @Column(name="display")
+    private boolean display;
 
     public VMTemplateDetailVO() {
     }
 
     public VMTemplateDetailVO(long templateId, String name, String value) {
-        this.templateId = templateId;
+        this.resourceId = templateId;
         this.name = name;
         this.value = value;
     }
 
+    @Override
     public long getId() {
         return id;
     }
 
-    public long getTemplateId() {
-        return templateId;
+    @Override
+    public long getResourceId() {
+        return resourceId;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getValue() {
         return value;
     }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public void setTemplateId(long templateId) {
-        this.templateId = templateId;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
+    
+    @Override
+    public boolean isDisplay() {
+        return display;
     }
 }

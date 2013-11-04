@@ -26,6 +26,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -131,6 +132,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     DataCenterDao _dataCenterDao;
     @Inject
     ServiceOfferingDao _serviceOffDao;
+    @Inject
+    PrimaryDataStoreDao _storagePoolDao;
 
 
     @Override
@@ -155,6 +158,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         _daoMap.put(ResourceObjectType.RemoteAccessVpn, _vpnDao);
         _daoMap.put(ResourceObjectType.Zone, _dataCenterDao);
         _daoMap.put(ResourceObjectType.ServiceOffering, _serviceOffDao);
+        _daoMap.put(ResourceObjectType.Storage, _storagePoolDao);
+
 
         return true;
     }

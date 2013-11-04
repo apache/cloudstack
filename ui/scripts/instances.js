@@ -16,10 +16,96 @@
 // under the License.
 (function($, cloudStack) {
     var vmMigrationHostObjs;
+
+    var vmSnapshotAction = function(args) {
+        var action = {
+            messages: {
+                notification: function(args) {
+                    return 'label.action.vmsnapshot.create';
+                }
+            },
+            label: 'label.action.vmsnapshot.create',
+            addRow: 'false',
+            createForm: {
+                title: 'label.action.vmsnapshot.create',
+                fields: {
+                    name: {
+                        label: 'label.name',
+                        isInput: true
+                    },
+                    description: {
+                        label: 'label.description',
+                        isTextarea: true
+                    },
+                    snapshotMemory: {
+                        label: 'label.vmsnapshot.memory',
+                        isBoolean: true,
+                        isChecked: false
+                    },
+                    quiescevm: {
+                        label: 'Quiesce VM',
+                        isBoolean: true,
+                        isChecked: false
+                    }
+                }
+            },
+            action: function(args) {
+                var instances = args.context.instances;
+                
+                $(instances).map(function(index, instance) {
+                    var array1 = [];
+                    array1.push("&snapshotmemory=" + (args.data.snapshotMemory == "on"));
+                    array1.push("&quiescevm=" + (args.data.quiescevm == "on"));
+                    var displayname = args.data.name;
+                    if (displayname != null && displayname.length > 0) {
+                        array1.push("&name=" + todb(displayname));
+                    }
+                    var description = args.data.description;
+                    if (description != null && description.length > 0) {
+                        array1.push("&description=" + todb(description));
+                    }
+                    $.ajax({
+                        url: createURL("createVMSnapshot&virtualmachineid=" + instance.id + array1.join("")),
+                        dataType: "json",
+                        async: true,
+                        success: function(json) {
+                            var jid = json.createvmsnapshotresponse.jobid;
+                            args.response.success({
+                                _custom: {
+                                    jobId: jid,
+                                    getUpdatedItem: function(json) {
+                                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                    },
+                                    getActionFilter: function() {
+                                        return vmActionfilter;
+                                    }
+                                }
+                            });
+                        }
+                    });       
+                });
+
+            },
+            notification: {
+                poll: pollAsyncJobResult
+            }
+        };
+
+        if (args && args.listView) {
+            $.extend(action, {
+                isHeader: true,
+                isMultiSelectAction: true
+            });
+        }
+        
+        return action;
+    };    
+    
     cloudStack.sections.instances = {
         title: 'label.instances',
         id: 'instances',
         listView: {
+            multiSelect: true,
             section: 'instances',
             filters: {
                 all: {
@@ -181,7 +267,8 @@
                     notification: {
                         poll: pollAsyncJobResult
                     }
-                }
+                },
+                snapshot: vmSnapshotAction({ listView: true })
             },
 
             dataProvider: function(args) {
@@ -246,7 +333,6 @@
                     success: function(json) {
                         var items = json.listvirtualmachinesresponse.virtualmachine;
                         args.response.success({
-                            actionFilter: vmActionfilter,
                             data: items
                         });
                     }
@@ -470,91 +556,55 @@
                             poll: pollAsyncJobResult
                         }
                     },
-                    snapshot: {
-                        messages: {
-                            notification: function(args) {
-                                return 'label.action.vmsnapshot.create';
-                            }
-                        },
-                        label: 'label.action.vmsnapshot.create',
-                        addRow: 'false',
+                    snapshot: vmSnapshotAction(),
+                    destroy: {
+                        label: 'label.action.destroy.instance',
+                        compactLabel: 'label.destroy',
                         createForm: {
-                            title: 'label.action.vmsnapshot.create',
+                            title: 'label.action.destroy.instance', 
+                            desc: 'Please confirm that you want to destroy this instance',
+                            preFilter: function(args) {
+                            	if (isAdmin() || isDomainAdmin()) {
+                            		args.$form.find('.form-item[rel=expunge]').css('display', 'inline-block');
+                            	} else {
+                            		args.$form.find('.form-item[rel=expunge]').hide();
+                            	}
+                            },
                             fields: {
-                                name: {
-                                    label: 'label.name',
-                                    isInput: true
-                                },
-                                description: {
-                                    label: 'label.description',
-                                    isTextarea: true
-                                },
-                                snapshotMemory: {
-                                    label: 'label.vmsnapshot.memory',
+                            	expunge: {
+                                    label: 'Expunge',
                                     isBoolean: true,
                                     isChecked: false
                                 }
                             }
-                        },
-                        action: function(args) {
-                            var array1 = [];
-                            array1.push("&snapshotmemory=" + (args.data.snapshotMemory == "on"));
-                            var displayname = args.data.name;
-                            if (displayname != null && displayname.length > 0) {
-                                array1.push("&name=" + todb(displayname));
-                            }
-                            var description = args.data.description;
-                            if (description != null && description.length > 0) {
-                                array1.push("&description=" + todb(description));
-                            }
-                            $.ajax({
-                                url: createURL("createVMSnapshot&virtualmachineid=" + args.context.instances[0].id + array1.join("")),
-                                dataType: "json",
-                                async: true,
-                                success: function(json) {
-                                    var jid = json.createvmsnapshotresponse.jobid;
-                                    args.response.success({
-                                        _custom: {
-                                            jobId: jid,
-                                            getUpdatedItem: function(json) {
-                                                return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                                            },
-                                            getActionFilter: function() {
-                                                return vmActionfilter;
-                                            }
-                                        }
-                                    });
-                                }
-                            });
-
-                        },
-                        notification: {
-                            poll: pollAsyncJobResult
-                        }
-                    },
-                    destroy: {
-                        label: 'label.action.destroy.instance',
-                        compactLabel: 'label.destroy',
-                        messages: {
-                            confirm: function(args) {
-                                return 'message.action.destroy.instance';
-                            },
+                        },                        
+                        messages: {                            
                             notification: function(args) {
                                 return 'label.action.destroy.instance';
                             }
                         },
-                        action: function(args) {
+                        action: function(args) {                        	
+                        	var data = {
+                        		id: args.context.instances[0].id		
+                        	};                        	
+                        	if (args.data.expunge == 'on') {
+                        		$.extend(data, {
+                        			expunge: true
+                        		});
+                        	}                        	
                             $.ajax({
-                                url: createURL("destroyVirtualMachine&id=" + args.context.instances[0].id),
-                                dataType: "json",
-                                async: true,
+                                url: createURL('destroyVirtualMachine'),
+                                data: data,                                
                                 success: function(json) {
                                     var jid = json.destroyvirtualmachineresponse.jobid;
                                     args.response.success({
                                         _custom: {
                                             jobId: jid,
-                                            getUpdatedItem: function(json) {
-                                                return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                            getUpdatedItem: function(json) {                                            	
+                                            	if ('virtualmachine' in json.queryasyncjobresultresponse.jobresult) //destroy without expunge                                            	
+                                                    return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                            	else //destroy with expunge
+                                            		return { 'toRemove': true };
                                             },
                                             getActionFilter: function() {
                                                 return vmActionfilter;
@@ -1764,8 +1814,9 @@
                                                 $.ajax({
                                                     url: createURL('listNetworks'),
                                                     data: {
-                                                        listAll: true,
-                                                        zoneid: args.context.instances[0].zoneid
+                                                        zoneid: args.context.instances[0].zoneid,
+                                                        account: args.context.instances[0].account,
+                                                        domainid: args.context.instances[0].domainid
                                                     },
                                                     success: function(json) {
                                                         args.response.success({

@@ -206,8 +206,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             return;
         }
 
-        if(host.getHypervisorType() == HypervisorType.VMware) {
-            s_logger.info("Don't restart for VMs on host " + host.getId() + " as the host is VMware host");
+        if(host.getHypervisorType() == HypervisorType.VMware || host.getHypervisorType() == HypervisorType.Hyperv) {
+            s_logger.info("Don't restart for VMs on host " + host.getId() + " as the host is VMware host or on Hyperv Host");
             return;
         }
 
@@ -299,6 +299,11 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                 assert false : "How do we hit this when force is true?";
             throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
             }
+            return;
+        }
+
+        if(vm.getHypervisorType() == HypervisorType.VMware || vm.getHypervisorType() == HypervisorType.Hyperv) {
+            s_logger.info("Skip HA for VMware VM or Hyperv VM" + vm.getInstanceName());
             return;
         }
 

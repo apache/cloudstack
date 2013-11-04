@@ -1006,7 +1006,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
 
         SecondaryStorageVmVO vm = _secStorageVmDao.findById(profile.getId());
-        Map<String, String> details = _vmDetailsDao.findDetails(vm.getId());
+        Map<String, String> details = _vmDetailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
 
         DataStore secStore = _dataStoreMgr.getImageStore(dest.getDataCenter().getId());

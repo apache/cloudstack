@@ -18,20 +18,18 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
-import com.cloud.api.response.NiciraNvpDeviceResponse;
-
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.api.response.NiciraNvpDeviceResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -74,7 +72,7 @@ public class DeleteNiciraNvpDeviceCmd extends BaseAsyncCmd {
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Nicira device.");
             }
@@ -95,14 +93,14 @@ public class DeleteNiciraNvpDeviceCmd extends BaseAsyncCmd {
         return CallContext.current().getCallingAccount().getId();
     }
 
-	@Override
-	public String getEventType() {
-		return EventTypes.EVENT_EXTERNAL_NVP_CONTROLLER_DELETE;
-	}
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_EXTERNAL_NVP_CONTROLLER_DELETE;
+    }
 
-	@Override
-	public String getEventDescription() {
-		return "Deleting Nicira Nvp Controller";
-	}
+    @Override
+    public String getEventDescription() {
+        return "Deleting Nicira Nvp Controller";
+    }
 
 }

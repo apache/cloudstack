@@ -17,8 +17,6 @@
 package groovy.org.apache.cloudstack.ldap
 
 import org.apache.cloudstack.api.command.LdapListUsersCmd
-import org.apache.cloudstack.api.ServerApiException
-import org.apache.cloudstack.api.command.admin.user.ListUsersCmd
 import org.apache.cloudstack.api.response.LdapUserResponse
 import org.apache.cloudstack.api.response.ListResponse
 import org.apache.cloudstack.api.response.UserResponse
@@ -55,9 +53,9 @@ class LdapListUsersCmdSpec extends spock.lang.Specification {
 		given: "We have an LdapManager, one user, QueryService and a LdapListUsersCmd"
 		def ldapManager = Mock(LdapManager)
 		List<LdapUser> users = new ArrayList()
-		users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org"))
+		users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null))
 		ldapManager.getUsers() >> users
-		LdapUserResponse response = new LdapUserResponse("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org")
+		LdapUserResponse response = new LdapUserResponse("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null)
 		ldapManager.createLdapUserResponse(_) >> response
 		def queryService = Mock(QueryService)
 		def ldapListUsersCmd = new LdapListUsersCmd(ldapManager, queryService)
@@ -94,7 +92,7 @@ class LdapListUsersCmdSpec extends spock.lang.Specification {
 
 		queryService.searchForUsers(_) >> queryServiceResponse
 
-		def ldapUser = new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org")
+		def ldapUser = new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null)
 		def ldapListUsersCmd = new LdapListUsersCmd(ldapManager,queryService)
 
 		when: "isACloudstackUser is executed"
@@ -111,7 +109,7 @@ class LdapListUsersCmdSpec extends spock.lang.Specification {
 
 		queryService.searchForUsers(_) >> new ListResponse<UserResponse>()
 
-		def ldapUser = new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org")
+		def ldapUser = new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null)
 		def ldapListUsersCmd = new LdapListUsersCmd(ldapManager,queryService)
 
 		when: "isACloudstackUser is executed"

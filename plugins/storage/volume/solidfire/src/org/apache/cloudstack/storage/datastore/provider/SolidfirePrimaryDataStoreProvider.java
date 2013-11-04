@@ -66,15 +66,7 @@ public class SolidfirePrimaryDataStoreProvider implements PrimaryDataStoreProvid
     public boolean configure(Map<String, Object> params) {
         lifecycle = ComponentContext.inject(SolidFirePrimaryDataStoreLifeCycle.class);
         driver = ComponentContext.inject(SolidfirePrimaryDataStoreDriver.class);
-        listener = ComponentContext.inject(new HypervisorHostListener() {
-            public boolean hostConnect(long hostId, long poolId) {
-                return true;
-            }
-
-            public boolean hostDisconnected(long hostId, long poolId) {
-                return true;
-            }
-        });
+        listener = ComponentContext.inject(SolidFireHostListener.class);
 
         return true;
     }

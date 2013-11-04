@@ -19,12 +19,12 @@ package com.cloud.network.nicira;
 public class VifAttachment extends Attachment {
     private final String type = "VifAttachment";
     private String vif_uuid;
-    
+
     public VifAttachment() {
     }
-    
+
     public VifAttachment(String vifUuid) {
-        this.vif_uuid = vifUuid;
+        vif_uuid = vifUuid;
     }
 
     public String getVif_uuid() {
@@ -38,5 +38,5 @@ public class VifAttachment extends Attachment {
     public String getType() {
         return type;
     }
-    
+
 }

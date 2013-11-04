@@ -25,12 +25,7 @@ import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 
 import org.apache.cloudstack.api.LdapValidator;
-import org.apache.cloudstack.api.command.LdapAddConfigurationCmd;
-import org.apache.cloudstack.api.command.LdapCreateAccountCmd;
-import org.apache.cloudstack.api.command.LdapDeleteConfigurationCmd;
-import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
-import org.apache.cloudstack.api.command.LdapListUsersCmd;
-import org.apache.cloudstack.api.command.LdapUserSearchCmd;
+import org.apache.cloudstack.api.command.*;
 import org.apache.cloudstack.api.response.LdapConfigurationResponse;
 import org.apache.cloudstack.api.response.LdapUserResponse;
 import org.apache.cloudstack.ldap.dao.LdapConfigurationDao;
@@ -136,6 +131,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
 		response.setLastname(user.getLastname());
 		response.setEmail(user.getEmail());
 		response.setPrincipal(user.getPrincipal());
+	response.setDomain(user.getDomain());
 		return response;
 	}
 
@@ -164,6 +160,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
 		cmdList.add(LdapDeleteConfigurationCmd.class);
 		cmdList.add(LdapListConfigurationCmd.class);
 		cmdList.add(LdapCreateAccountCmd.class);
+	cmdList.add(LdapImportUsersCmd.class);
 		return cmdList;
 	}
 
@@ -197,7 +194,20 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
 		}
 	}
 
-	@Override
+    @Override
+    public List<LdapUser> getUsersInGroup(String groupName) throws NoLdapUserMatchingQueryException {
+	DirContext context = null;
+	try {
+	    context = _ldapContextFactory.createBindContext();
+	    return _ldapUserManager.getUsersInGroup(groupName, context);
+	} catch (final NamingException e) {
+	    throw new NoLdapUserMatchingQueryException("groupName=" + groupName);
+	} finally {
+	    closeContext(context);
+	}
+    }
+
+    @Override
 	public boolean isLdapEnabled() {
 		return listConfigurations(new LdapListConfigurationCmd(this)).second() > 0;
 	}

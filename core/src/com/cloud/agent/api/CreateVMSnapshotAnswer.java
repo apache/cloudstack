@@ -17,21 +17,21 @@
 
 package com.cloud.agent.api;
 
-import java.util.List;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
-import com.cloud.agent.api.to.VolumeTO;
+import java.util.List;
 
 public class CreateVMSnapshotAnswer extends Answer {
 
-    private List<VolumeTO> volumeTOs;
+    private List<VolumeObjectTO> volumeTOs;
     private VMSnapshotTO vmSnapshotTo;
     
  
-	public List<VolumeTO> getVolumeTOs() {
+	public List<VolumeObjectTO> getVolumeTOs() {
         return volumeTOs;
     }
 
-    public void setVolumeTOs(List<VolumeTO> volumeTOs) {
+    public void setVolumeTOs(List<VolumeObjectTO> volumeTOs) {
         this.volumeTOs = volumeTOs;
     }
 
@@ -53,7 +53,7 @@ public class CreateVMSnapshotAnswer extends Answer {
     }
 
     public CreateVMSnapshotAnswer(CreateVMSnapshotCommand cmd,
-    		VMSnapshotTO vmSnapshotTo, List<VolumeTO> volumeTOs) {
+    		VMSnapshotTO vmSnapshotTo, List<VolumeObjectTO> volumeTOs) {
         super(cmd, true, "");
         this.vmSnapshotTo = vmSnapshotTo;
         this.volumeTOs = volumeTOs;

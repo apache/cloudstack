@@ -38,6 +38,30 @@
                             var $elem = $dashboard.find('[data-item=' + key + ']');
                             $elem.hide().html(value).fadeIn();
                         });
+
+                        // Socket info
+                        var $socketInfo = $dashboard.find('.socket-info ul');
+                        $socketInfo.find('li').remove(); // Clean up
+                        $(args.data.socketInfo).each(function() {
+                            var item = this;
+                            var name = item.name;
+                            var hosts = item.hosts;
+                            var sockets = item.sockets;
+
+                            var $li = $('<li>').append(
+                                $('<div>').addClass('name').html(name),
+                                $('<div>').addClass('hosts').append(
+                                    $('<div>').addClass('title').html(_l('label.hosts')),
+                                    $('<div>').addClass('value').html(hosts)
+                                ),
+                                $('<div>').addClass('sockets').append(
+                                    $('<div>').addClass('title').html(_l('label.sockets')),
+                                    $('<div>').addClass('value').html(sockets)
+                                )
+                            );
+
+                            $li.appendTo($socketInfo);
+                        });                        
                     }
                 }
             });

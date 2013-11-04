@@ -18,9 +18,9 @@ package org.apache.cloudstack.storage.datastore.db;
 
 import java.util.List;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -62,4 +62,12 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
     TemplateDataStoreVO findByTemplateZone(long templateId, Long zoneId, DataStoreRole role);
 
     List<TemplateDataStoreVO> listByTemplate(long templateId);
+
+    void duplicateCacheRecordsOnRegionStore(long storeId);
+
+    TemplateDataStoreVO findReadyOnCache(long templateId);
+
+    List<TemplateDataStoreVO> listOnCache(long templateId);
+
+    void updateStoreRoleToCachce(long storeId);
 }

@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.vmware.manager;
 
+import java.util.List;
+
 import com.cloud.agent.api.Command;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
@@ -33,4 +35,5 @@ public interface VmwareHostService {
             String iqn, String initiatorChapName, String initiatorChapSecret, String mutualChapName, String mutualChapSecret) throws Exception;
     void createVmdk(Command cmd, DatastoreMO dsMo, String volumeDatastorePath, Long volumeSize) throws Exception;
     void handleDatastoreAndVmdkDetach(String iqn, String storageHost, int storagePort) throws Exception;
+    void removeManagedTargetsFromCluster(List<String> managedIqns) throws Exception;
 }

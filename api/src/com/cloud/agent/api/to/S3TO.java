@@ -39,7 +39,6 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
     private Integer socketTimeout;
     private Date created;
     private boolean enableRRS;
-    private boolean multipartEnabled;
     private long maxSingleUploadSizeInBytes;
 
     public S3TO() {
@@ -180,6 +179,11 @@ public final class S3TO implements S3Utils.ClientOptions, DataStoreTO {
 
     public String getUuid() {
         return this.uuid;
+    }
+
+    @Override
+    public String getUrl() {
+        return null;
     }
 
     public void setUuid(final String uuid) {
