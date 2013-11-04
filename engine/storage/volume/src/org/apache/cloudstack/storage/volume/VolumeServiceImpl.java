@@ -40,6 +40,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -55,7 +56,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
@@ -165,12 +165,24 @@ public class VolumeServiceImpl implements VolumeService {
         DataObject volumeOnStore = dataStore.create(volume);
         volumeOnStore.processEvent(Event.CreateOnlyRequested);
 
-        CreateVolumeContext<VolumeApiResult> context = new CreateVolumeContext<VolumeApiResult>(null, volumeOnStore,
-                future);
-        AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
-        caller.setCallback(caller.getTarget().createVolumeCallback(null, null)).setContext(context);
+        try {
+            CreateVolumeContext<VolumeApiResult> context = new CreateVolumeContext<VolumeApiResult>(null, volumeOnStore,
+                    future);
+            AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().createVolumeCallback(null, null)).setContext(context);
 
-        dataStore.getDriver().createAsync(dataStore, volumeOnStore, caller);
+            dataStore.getDriver().createAsync(dataStore, volumeOnStore, caller);
+        } catch (CloudRuntimeException ex) {
+            // clean up already persisted volume_store_ref entry in case of createVolumeCallback is never called
+            VolumeDataStoreVO volStoreVO = _volumeStoreDao.findByStoreVolume(dataStore.getId(), volume.getId());
+            if (volStoreVO != null) {
+                VolumeInfo volObj = volFactory.getVolume(volume, dataStore);
+                volObj.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+            }
+            VolumeApiResult volResult = new VolumeApiResult((VolumeObject)volumeOnStore);
+            volResult.setResult(ex.getMessage());
+            future.complete(volResult);
+        }
         return future;
     }
 
@@ -1022,13 +1034,25 @@ public class VolumeServiceImpl implements VolumeService {
 
         volumeOnStore.processEvent(Event.CreateOnlyRequested);
 
-        CreateVolumeContext<VolumeApiResult> context = new CreateVolumeContext<VolumeApiResult>(null, volumeOnStore,
-                future);
-        AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
-        caller.setCallback(caller.getTarget().registerVolumeCallback(null, null));
-        caller.setContext(context);
+        try {
+            CreateVolumeContext<VolumeApiResult> context = new CreateVolumeContext<VolumeApiResult>(null, volumeOnStore,
+                    future);
+            AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().registerVolumeCallback(null, null));
+            caller.setContext(context);
 
-        store.getDriver().createAsync(store, volumeOnStore, caller);
+            store.getDriver().createAsync(store, volumeOnStore, caller);
+        } catch (CloudRuntimeException ex) {
+            // clean up already persisted volume_store_ref entry in case of createVolumeCallback is never called
+            VolumeDataStoreVO volStoreVO = _volumeStoreDao.findByStoreVolume(store.getId(), volume.getId());
+            if (volStoreVO != null) {
+                VolumeInfo volObj = volFactory.getVolume(volume, store);
+                volObj.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+            }
+            VolumeApiResult res = new VolumeApiResult((VolumeObject)volumeOnStore);
+            res.setResult(ex.getMessage());
+            future.complete(res);
+        }
         return future;
     }
 
