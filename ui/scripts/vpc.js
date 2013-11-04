@@ -2858,13 +2858,13 @@
                                         id: {
                                             label: 'label.id'
                                         },
-
-                                        //s2svpngatewayid: { label: 'VPN gateway ID' },
+                                        passive: {
+                                            label: 'Passive',
+                                            converter: cloudStack.converters.toBooleanText
+                                        },                                                                                
                                         publicip: {
                                             label: 'label.ip.address'
-                                        },
-
-                                        //s2scustomergatewayid: { label: 'Customer gateway ID' },
+                                        },                                        
                                         gateway: {
                                             label: 'label.gateway'
                                         },
