@@ -99,12 +99,6 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
 
-		// if
-		// (Boolean.parseBoolean(_configDao.getValue(Config.OvsTunnelNetwork.key())))
-		// {
-		// return null;
-		// }
-
         NetworkVO config = (NetworkVO)super.design(offering, plan, userSpecified, owner);
         if (config == null) {
             return null;
@@ -120,12 +114,6 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     public Network implement(Network config, NetworkOffering offering, DeployDestination dest, ReservationContext context)
         throws InsufficientVirtualNetworkCapcityException {
         assert (config.getState() == State.Implementing) : "Why are we implementing " + config;
-
-		// if
-		// (Boolean.parseBoolean(_configDao.getValue(Config.OvsTunnelNetwork.key())))
-		// {
-		// return null;
-		// }
 
         if (!_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             return super.implement(config, offering, dest, context);
@@ -229,12 +217,6 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
 
         NicProfile profile = super.allocate(config, nic, vm);
 
-		// boolean _isEnabled =
-		// Boolean.parseBoolean(_configDao.getValue(Config.OvsTunnelNetwork.key()));
-		// if (_isEnabled) {
-		// return null;
-		// }
-
         if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             profile.setStrategy(ReservationStrategy.Start);
             /* We won't clear IP address, because router may set gateway as it IP, and it would be updated properly later */
@@ -251,12 +233,6 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     public void deallocate(Network config, NicProfile nic, VirtualMachineProfile vm) {
         super.deallocate(config, nic, vm);
 
-		// if
-		// (Boolean.parseBoolean(_configDao.getValue(Config.OvsTunnelNetwork.key())))
-		// {
-		// return;
-		// }
-
         if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             nic.setIp4Address(null);
             nic.setGateway(null);
@@ -270,11 +246,6 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     public void reserve(NicProfile nic, Network config, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
         throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         assert (nic.getReservationStrategy() == ReservationStrategy.Start) : "What can I do for nics that are not allocated at start? ";
-		// boolean _isEnabled =
-		// Boolean.parseBoolean(_configDao.getValue(Config.OvsTunnelNetwork.key()));
-		// if (_isEnabled) {
-		// return;
-		// }
 
         DataCenter dc = _dcDao.findById(config.getDataCenterId());
 
@@ -306,12 +277,6 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
-
-		// if
-		// (Boolean.parseBoolean(_configDao.getValue(Config.OvsTunnelNetwork.key())))
-		// {
-		// return true;
-		// }
 
         NetworkVO network = _networkDao.findById(nic.getNetworkId());
 

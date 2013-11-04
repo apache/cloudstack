@@ -596,12 +596,6 @@ addBigSwitchVnsDevice=1
 deleteBigSwitchVnsDevice=1
 listBigSwitchVnsDevices=1
 
-#### ovs commands
-
-addOvsDevice=1
-deleteOvsDevice=1
-listOvsDevices=1
-
 #### host simulator commands
 
 configureSimulator=1

@@ -1303,7 +1303,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-	// Tuna added
     private OvsFetchInterfaceAnswer execute(OvsFetchInterfaceCommand cmd) {
     	String label = cmd.getLabel();
     	s_logger.debug("Will look for network with name-label:" + label);
@@ -1472,7 +1471,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			return new Answer(cmd, false, e.getMessage());
 		}
 	}
-	// end Tuna added
 
     private CheckNetworkAnswer execute(CheckNetworkCommand cmd) {
         List<PhysicalNetworkSetupInfo> phyNics = cmd.getPhysicalNetworkInfoList();
@@ -3618,12 +3616,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
 
             // pass cmdline info to system vms
-			// if (vmSpec.getType() != VirtualMachine.Type.User) {
-			// passCmdLine(vmName, vmSpec.getBootArgs() );
-			// }
-			// merge with master branch
-			// pass cmdline info to system vms
-            if (vmSpec.getType() != VirtualMachine.Type.User) {
+			if (vmSpec.getType() != VirtualMachine.Type.User) {
                 if ((conn.getVersion() < 1001000)) { // CLOUDSTACK-2823: try passCmdLine some times if kernel < 2.6.34 and qemu < 1.1.0 on hypervisor (for instance, CentOS 6.4)
                     //wait for 5 minutes at most
                     String controlIp = null;

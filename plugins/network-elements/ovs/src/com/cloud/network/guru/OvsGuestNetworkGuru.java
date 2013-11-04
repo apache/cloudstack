@@ -92,9 +92,6 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 	public Network design(NetworkOffering offering, DeploymentPlan plan,
 			Network userSpecified, Account owner) {
 
-		// if (!_ovsTunnelMgr.isOvsTunnelEnabled()) {
-		// return null;
-		// }
 		PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan
 				.getPhysicalNetworkId());
 		DataCenter dc = _dcDao.findById(plan.getDataCenterId());
@@ -119,9 +116,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 			throws InsufficientVirtualNetworkCapcityException {
 		assert (network.getState() == State.Implementing) : "Why are we implementing "
 				+ network;
-		// if (!_ovsTunnelMgr.isOvsTunnelEnabled()) {
-		// return null;
-		// }
+
 		long dcId = dest.getDataCenter().getId();
 		NetworkType nwType = dest.getDataCenter().getNetworkType();
 		// get physical network id

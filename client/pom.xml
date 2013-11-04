@@ -85,13 +85,6 @@
       <artifactId>cloud-plugin-network-nvp</artifactId>
       <version>${project.version}</version>
     </dependency>
-<!--     
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-plugin-network-odl</artifactId>
-      <version>${project.version}</version>
-    </dependency>
- -->    
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-contrail</artifactId>
