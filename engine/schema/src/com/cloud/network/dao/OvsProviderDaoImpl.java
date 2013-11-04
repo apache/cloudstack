@@ -14,7 +14,7 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 @Local(value = OvsProviderDao.class)
-@DB(txn = false)
+@DB()
 public class OvsProviderDaoImpl extends GenericDaoBase<OvsProviderVO, Long>
 		implements OvsProviderDao {
 	final SearchBuilder<OvsProviderVO> AllFieldsSearch;

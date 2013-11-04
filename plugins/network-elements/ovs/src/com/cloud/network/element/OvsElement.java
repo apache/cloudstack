@@ -407,8 +407,8 @@ public class OvsElement extends AdapterBase implements NetworkElement,
 			throws ResourceUnavailableException {
 		boolean canHandle = true;
 		for (Service service : services) {
-			// check if Ovs can handle services except SourceNat
-			if (!canHandle(network, service) && service != Service.SourceNat) {
+			// check if Ovs can handle services except SourceNat & Firewall
+			if (!canHandle(network, service) && service != Service.SourceNat && service != Service.Firewall) {
 				canHandle = false;
 				break;
 			}
