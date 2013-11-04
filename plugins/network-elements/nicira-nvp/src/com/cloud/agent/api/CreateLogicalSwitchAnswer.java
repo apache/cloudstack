@@ -22,9 +22,9 @@ public class CreateLogicalSwitchAnswer extends Answer {
     public CreateLogicalSwitchAnswer(Command command, boolean success,
             String details, String logicalSwitchUuid) {
         super(command, success, details);
-        this._logicalSwitchUuid = logicalSwitchUuid;
+        _logicalSwitchUuid = logicalSwitchUuid;
     }
-    
+
     public CreateLogicalSwitchAnswer(Command command, Exception e) {
         super(command, e);
     }

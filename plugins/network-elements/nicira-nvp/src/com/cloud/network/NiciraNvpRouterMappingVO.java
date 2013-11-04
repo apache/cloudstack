@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.network;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,57 +23,59 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 @Entity
 @Table(name="nicira_nvp_router_map")
 public class NiciraNvpRouterMappingVO implements InternalIdentity {
-	//FIXME the ddl for this table should be in one of the upgrade scripts
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name="id")
-	private long id;
-	
-	@Column(name="logicalrouter_uuid")
-	private String logicalRouterUuid;
-	
-	@Column(name="network_id")
-	private long networkId;
-	
-	public NiciraNvpRouterMappingVO() {
-	}
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="id")
+    private long id;
 
-	public NiciraNvpRouterMappingVO(String logicalRouterUuid, long networkId) {
-		this.logicalRouterUuid = logicalRouterUuid;
-		this.networkId = networkId;
-	}
-	
-	public NiciraNvpRouterMappingVO(long id, String logicalRouterUuid, long networkId) {
-		this.id = id;
-		this.logicalRouterUuid = logicalRouterUuid;
-		this.networkId = networkId;
-	}
+    @Column(name="logicalrouter_uuid")
+    private String logicalRouterUuid;
 
-	public long getId() {
-		return id;
-	}
+    @Column(name="network_id")
+    private long networkId;
 
-	public void setId(long id) {
-		this.id = id;
-	}
+    public NiciraNvpRouterMappingVO() {
+    }
 
-	public String getLogicalRouterUuid() {
-		return logicalRouterUuid;
-	}
+    public NiciraNvpRouterMappingVO(String logicalRouterUuid, long networkId) {
+        this.logicalRouterUuid = logicalRouterUuid;
+        this.networkId = networkId;
+    }
 
-	public void setLogicalRouterUuid(String logicalRouterUuid) {
-		this.logicalRouterUuid = logicalRouterUuid;
-	}
+    public NiciraNvpRouterMappingVO(long id, String logicalRouterUuid, long networkId) {
+        this.id = id;
+        this.logicalRouterUuid = logicalRouterUuid;
+        this.networkId = networkId;
+    }
 
-	public long getNetworkId() {
-		return networkId;
-	}
+    @Override
+    public long getId() {
+        return id;
+    }
 
-	public void setNetworkId(long networkId) {
-		this.networkId = networkId;
-	}
-	
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public String getLogicalRouterUuid() {
+        return logicalRouterUuid;
+    }
+
+    public void setLogicalRouterUuid(String logicalRouterUuid) {
+        this.logicalRouterUuid = logicalRouterUuid;
+    }
+
+    public long getNetworkId() {
+        return networkId;
+    }
+
+    public void setNetworkId(long networkId) {
+        this.networkId = networkId;
+    }
+
 }

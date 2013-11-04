@@ -29,7 +29,7 @@ public class LogicalSwitchPort {
     private List<String> mirror_targets;
     private String type;
     private String uuid;
-    
+
     public LogicalSwitchPort() {
         super();
     }
@@ -113,5 +113,5 @@ public class LogicalSwitchPort {
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
-    
+
 }

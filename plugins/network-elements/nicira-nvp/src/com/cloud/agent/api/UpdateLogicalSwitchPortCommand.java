@@ -22,16 +22,16 @@ public class UpdateLogicalSwitchPortCommand extends Command {
     private String _attachmentUuid;
     private String _ownerName;
     private String _nicName;
-    
+
     public UpdateLogicalSwitchPortCommand(String logicalSwitchPortUuid, String logicalSwitchUuid, String attachmentUuid, String ownerName, String nicName) {
-        this._logicalSwitchUuid = logicalSwitchUuid;
-        this._logicalSwitchPortUuid = logicalSwitchPortUuid;
-        this._attachmentUuid = attachmentUuid;
-        this._ownerName = ownerName;
-        this._nicName = nicName;
+        _logicalSwitchUuid = logicalSwitchUuid;
+        _logicalSwitchPortUuid = logicalSwitchPortUuid;
+        _attachmentUuid = attachmentUuid;
+        _ownerName = ownerName;
+        _nicName = nicName;
     }
-    
-    
+
+
     public String getLogicalSwitchUuid() {
         return _logicalSwitchUuid;
     }

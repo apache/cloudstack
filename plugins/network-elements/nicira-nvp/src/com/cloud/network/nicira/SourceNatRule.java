@@ -20,7 +20,7 @@ public class SourceNatRule extends NatRule {
     private String toSourceIpAddressMax;
     private String toSourceIpAddressMin;
     private Integer toSourcePort;
-    
+
     public SourceNatRule() {
         setType("SourceNatRule");
     }
@@ -119,5 +119,5 @@ public class SourceNatRule extends NatRule {
             return false;
         return true;
     }
-    
+
 }

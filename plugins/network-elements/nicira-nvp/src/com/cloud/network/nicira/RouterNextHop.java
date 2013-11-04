@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -17,22 +17,22 @@
 package com.cloud.network.nicira;
 
 /**
- * 
+ *
  */
 public class RouterNextHop {
-	private String gateway_ip_address;
-	private String type = "RouterNextHop";
-	
-	public RouterNextHop(String gatewayIpAddress) {
-		this.gateway_ip_address = gatewayIpAddress;
-	}
-		
-	public String getGatewayIpAddress() {
-		return gateway_ip_address;
-	}
-	
-	public void setGatewayIpAddress(String gateway_ip_address) {
-		this.gateway_ip_address = gateway_ip_address;
-	}
-		
+    private String gateway_ip_address;
+    private String type = "RouterNextHop";
+
+    public RouterNextHop(String gatewayIpAddress) {
+        gateway_ip_address = gatewayIpAddress;
+    }
+
+    public String getGatewayIpAddress() {
+        return gateway_ip_address;
+    }
+
+    public void setGatewayIpAddress(String gateway_ip_address) {
+        this.gateway_ip_address = gateway_ip_address;
+    }
+
 }

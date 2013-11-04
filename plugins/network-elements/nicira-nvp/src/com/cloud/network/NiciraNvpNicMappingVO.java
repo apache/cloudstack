@@ -16,14 +16,14 @@
 // under the License.
 package com.cloud.network;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="nicira_nvp_nic_map")
@@ -36,16 +36,16 @@ public class NiciraNvpNicMappingVO implements InternalIdentity {
 
     @Column(name="logicalswitch")
     private String logicalSwitchUuid;
-    
+
     @Column(name="logicalswitchport")
     private String logicalSwitchPortUuid;
-    
+
     @Column(name="nic")
     private String nicUuid;
-    
-    public NiciraNvpNicMappingVO () {    
+
+    public NiciraNvpNicMappingVO () {
     }
-    
+
     public NiciraNvpNicMappingVO (String logicalSwitchUuid, String logicalSwitchPortUuid, String nicUuid) {
         this.logicalSwitchUuid = logicalSwitchUuid;
         this.logicalSwitchPortUuid = logicalSwitchPortUuid;
@@ -76,8 +76,9 @@ public class NiciraNvpNicMappingVO implements InternalIdentity {
         this.nicUuid = nicUuid;
     }
 
+    @Override
     public long getId() {
         return id;
     }
-    
+
 }

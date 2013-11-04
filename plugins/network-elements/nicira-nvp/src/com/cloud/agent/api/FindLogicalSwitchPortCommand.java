@@ -17,25 +17,25 @@
 package com.cloud.agent.api;
 
 public class FindLogicalSwitchPortCommand extends Command {
-	private String _logicalSwitchUuid;
+    private String _logicalSwitchUuid;
     private String _logicalSwitchPortUuid;
-    
+
     public FindLogicalSwitchPortCommand(String logicalSwitchUuid, String logicalSwitchPortUuid) {
-    	this._logicalSwitchUuid = logicalSwitchUuid;
-        this._logicalSwitchPortUuid = logicalSwitchPortUuid;
+        _logicalSwitchUuid = logicalSwitchUuid;
+        _logicalSwitchPortUuid = logicalSwitchPortUuid;
     }
-    
-    
+
+
     public String getLogicalSwitchUuid() {
         return _logicalSwitchUuid;
     }
 
-    
+
     public String getLogicalSwitchPortUuid() {
         return _logicalSwitchPortUuid;
     }
 
-    
+
     @Override
     public boolean executeInSequence() {
         return false;

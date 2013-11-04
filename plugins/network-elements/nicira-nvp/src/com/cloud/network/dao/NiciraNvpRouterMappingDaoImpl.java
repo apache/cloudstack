@@ -30,20 +30,19 @@ import com.cloud.utils.db.SearchCriteria.Op;
 @Local(value=NiciraNvpRouterMappingDao.class)
 public class NiciraNvpRouterMappingDaoImpl extends GenericDaoBase<NiciraNvpRouterMappingVO, Long> implements NiciraNvpRouterMappingDao {
 
-	protected final SearchBuilder<NiciraNvpRouterMappingVO> networkSearch;
-	
-	public NiciraNvpRouterMappingDaoImpl() {
-		networkSearch = createSearchBuilder();
-		networkSearch.and("network_id", networkSearch.entity().getNetworkId(), Op.EQ);
-		networkSearch.done();
-	}
-	
-	@Override
-	public NiciraNvpRouterMappingVO findByNetworkId(long id) {
-		SearchCriteria<NiciraNvpRouterMappingVO> sc = networkSearch.create();
-		sc.setParameters("network_id", id);
-		return findOneBy(sc);
-	}
-	
+    protected final SearchBuilder<NiciraNvpRouterMappingVO> networkSearch;
+
+    public NiciraNvpRouterMappingDaoImpl() {
+        networkSearch = createSearchBuilder();
+        networkSearch.and("network_id", networkSearch.entity().getNetworkId(), Op.EQ);
+        networkSearch.done();
+    }
+
+    @Override
+    public NiciraNvpRouterMappingVO findByNetworkId(long id) {
+        SearchCriteria<NiciraNvpRouterMappingVO> sc = networkSearch.create();
+        sc.setParameters("network_id", id);
+        return findOneBy(sc);
+    }
 
 }

@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -19,7 +19,7 @@ package com.cloud.network.nicira;
 import java.util.UUID;
 
 /**
- * 
+ *
  */
 public abstract class NatRule {
     protected Match match;
@@ -53,15 +53,15 @@ public abstract class NatRule {
     public void setType(String type) {
         this.type = type;
     }
-    
+
     public int getOrder() {
         return order;
     }
-    
+
     public void setOrder(int order) {
         this.order = order;
     }
-    
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -101,7 +101,7 @@ public abstract class NatRule {
             return false;
         return true;
     }
-    
+
     public boolean equalsIgnoreUuid(Object obj) {
         if (this == obj)
             return true;
@@ -124,6 +124,6 @@ public abstract class NatRule {
             return false;
         return true;
     }
-    
+
 
 }

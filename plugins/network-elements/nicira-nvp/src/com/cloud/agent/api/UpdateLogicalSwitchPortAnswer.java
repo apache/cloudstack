@@ -22,9 +22,9 @@ public class UpdateLogicalSwitchPortAnswer extends Answer {
     public UpdateLogicalSwitchPortAnswer(Command command, boolean success,
             String details, String localSwitchPortUuid) {
         super(command, success, details);
-        this._logicalSwitchPortUuid = localSwitchPortUuid;
+        _logicalSwitchPortUuid = localSwitchPortUuid;
     }
-    
+
     public String getLogicalSwitchPortUuid() {
         return _logicalSwitchPortUuid;
     }
@@ -32,5 +32,5 @@ public class UpdateLogicalSwitchPortAnswer extends Answer {
     public UpdateLogicalSwitchPortAnswer(Command command, Exception e) {
         super(command, e);
     }
-    
+
 }

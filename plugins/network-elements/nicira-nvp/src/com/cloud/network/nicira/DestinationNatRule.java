@@ -19,7 +19,7 @@ package com.cloud.network.nicira;
 public class DestinationNatRule extends NatRule {
     private String toDestinationIpAddress;
     private Integer toDestinationPort;
-    
+
     public DestinationNatRule() {
         setType("DestinationNatRule");
     }
@@ -28,16 +28,13 @@ public class DestinationNatRule extends NatRule {
         return toDestinationIpAddress;
     }
 
-
     public void setToDestinationIpAddress(String toDestinationIpAddress) {
         this.toDestinationIpAddress = toDestinationIpAddress;
     }
 
-
     public Integer getToDestinationPort() {
         return toDestinationPort;
     }
-
 
     public void setToDestinationPort(Integer toDestinationPort) {
         this.toDestinationPort = toDestinationPort;
