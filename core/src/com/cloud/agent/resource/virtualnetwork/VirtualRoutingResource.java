@@ -761,6 +761,9 @@ public class VirtualRoutingResource implements Manager {
             } else {
                 args += "0";
             }
+            if (cmd.isPassive()) {
+            	args += " -p ";
+            }
         } else {
             args = "-D";
             args += " -r ";

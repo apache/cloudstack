@@ -381,8 +381,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
         Pair<List<UserAccountJoinVO>, Integer> result = searchForUsersInternal(cmd);
         ListResponse<UserResponse> response = new ListResponse<UserResponse>();
-        List<UserResponse> userResponses = ViewResponseHelper.createUserResponse(result.first().toArray(
-                new UserAccountJoinVO[result.first().size()]));
+        List<UserResponse> userResponses = ViewResponseHelper.createUserResponse(CallContext.current().getCallingAccount().getDomainId(), 
+                result.first().toArray(new UserAccountJoinVO[result.first().size()]));
         response.setResponses(userResponses, result.second());
         return response;
     }
@@ -1641,6 +1641,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         String type = cmd.getType();
         Map<String, String> tags = cmd.getTags();
         boolean isRootAdmin = _accountMgr.isRootAdmin(caller.getType());
+        Long storageId = cmd.getStorageId();
 
         Long zoneId = cmd.getZoneId();
         Long podId = null;
@@ -1676,6 +1677,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("instanceId", sb.entity().getVmId(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("storageId", sb.entity().getPoolId(), SearchCriteria.Op.EQ);
         // Only return volumes that are not destroyed
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
         sb.and("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.NEQ);
@@ -1733,6 +1735,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
         if (podId != null) {
             sc.setParameters("podId", podId);
+        }
+
+        if (storageId != null) {
+            sc.setParameters("storageId", storageId);
         }
 
         if(!isRootAdmin){

@@ -1559,6 +1559,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             } else {
                 args += "0";
             }
+            if (cmd.isPassive()) {
+            	args += " -p ";
+            }
         } else {
             args += " -D";
             args += " -r ";
@@ -2982,7 +2985,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     	
         VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
         PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
-        
+        Map<String, String> details = vol.getDetails();
+        boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+
         Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(primaryStore.getUuid());
         if(volumeDsDetails == null)
         	throw new Exception("Primary datastore " + primaryStore.getUuid() + " is not mounted on host.");
@@ -2994,17 +2999,25 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     		String disks[] = diskInfo.getDiskChain();
     		for(int i = 0; i < disks.length; i++) {
     			DatastoreFile file = new DatastoreFile(disks[i]);
-    			if(file.getDir() != null && file.getDir().isEmpty()) {
+    			if (!isManaged && file.getDir() != null && file.getDir().isEmpty()) {
     				s_logger.info("Perform run-time datastore folder upgrade. sync " + disks[i] + " to VM folder");
     				disks[i] = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(
     		            dcMo, vmMo.getName(), dsMo, file.getFileBaseName());
     			}
     		}
     		return disks;
-    	} 
-        
-        String datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(
-            	dcMo, vmMo.getName(), dsMo, volumeTO.getPath());
+    	}
+
+        final String datastoreDiskPath;
+
+        if (isManaged) {
+            datastoreDiskPath = dsMo.getDatastorePath(dsMo.getName() + ".vmdk");
+        }
+        else {
+            datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(
+                dcMo, vmMo.getName(), dsMo, volumeTO.getPath());
+        }
+
         if(!dsMo.fileExists(datastoreDiskPath)) {
     		s_logger.warn("Volume " + volumeTO.getId() + " does not seem to exist on datastore, out of sync? path: " + datastoreDiskPath);
     	}
@@ -3220,7 +3233,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     	if(diskInfoBuilder != null) {
     		VolumeObjectTO volume = (VolumeObjectTO)vol.getData();
 
-    		VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(volume.getPath());
+            Map<String, String> details = vol.getDetails();
+            boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+
+    		VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(isManaged ? new DatastoreFile(volume.getPath()).getFileBaseName() : volume.getPath());
     		if(diskInfo != null) {
     			s_logger.info("Found existing disk info from volume path: " + volume.getPath());
     			return diskInfo;
@@ -3418,7 +3434,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
                 String poolUuid = primaryStore.getUuid();
                 if(poolMors.get(poolUuid) == null) {
-                    ManagedObjectReference morDataStore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, poolUuid);
+                    boolean isManaged = false;
+                    String iScsiName = null;
+                    Map<String, String> details = vol.getDetails();
+
+                    if (details != null) {
+                        isManaged = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+                        iScsiName = details.get(DiskTO.IQN);
+                    }
+
+                    ManagedObjectReference morDataStore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, isManaged ? VmwareResource.getDatastoreName(iScsiName) : poolUuid);
                     if (morDataStore == null) {
                         String msg = "Failed to get the mounted datastore for the volume's pool " + poolUuid;
                         s_logger.error(msg);
@@ -4531,7 +4556,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), dsMo.getName());
 
                 if (!dsMo.fileExists(volumeDatastorePath)) {
-                    createVmdk(cmd, dsMo, VmwareResource.getDatastoreName(cmd.get_iScsiName()), cmd.getVolumeSize());
+                    createVmdk(cmd, dsMo, volumeDatastorePath, cmd.getVolumeSize());
                 }
             }
             else {
@@ -4587,6 +4612,35 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.error(msg, e);
             return new AttachVolumeAnswer(cmd, msg);
         }
+    }
+
+    @Override
+    public void removeManagedTargetsFromCluster(List<String> iqns) throws Exception {
+        List<HostInternetScsiHbaStaticTarget> lstManagedTargets = new ArrayList<HostInternetScsiHbaStaticTarget>();
+
+        VmwareContext context = getServiceContext();
+        VmwareHypervisorHost hyperHost = getHyperHost(context);
+        ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
+        ClusterMO cluster = new ClusterMO(context, morCluster);
+        List<Pair<ManagedObjectReference, String>> lstHosts = cluster.getClusterHosts();
+        HostMO host = new HostMO(context, lstHosts.get(0).first());
+        HostStorageSystemMO hostStorageSystem = host.getHostStorageSystemMO();
+
+        for (HostHostBusAdapter hba : hostStorageSystem.getStorageDeviceInfo().getHostBusAdapter()) {
+            if (hba instanceof HostInternetScsiHba) {
+                List<HostInternetScsiHbaStaticTarget> lstTargets = ((HostInternetScsiHba)hba).getConfiguredStaticTarget();
+
+                if (lstTargets != null) {
+                    for (HostInternetScsiHbaStaticTarget target : lstTargets) {
+                        if (iqns.contains(target.getIScsiName())) {
+                            lstManagedTargets.add(target);
+                        }
+                    }
+                }
+            }
+        }
+
+        addRemoveInternetScsiTargetsToAllHosts(false, lstManagedTargets, lstHosts);
     }
 
     private void addRemoveInternetScsiTargetsToAllHosts(final boolean add, final List<HostInternetScsiHbaStaticTarget> lstTargets,

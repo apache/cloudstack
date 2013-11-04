@@ -37,9 +37,9 @@ public class NiciraNvpList<T> {
     public void setResultCount(int result_count) {
         this.result_count = result_count;
     }
-    
+
     public boolean isEmpty() {
-    	return result_count == 0;
+        return result_count == 0;
     }
 
 }

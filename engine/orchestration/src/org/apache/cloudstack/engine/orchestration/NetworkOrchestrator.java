@@ -2187,7 +2187,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         }
                     }
                 });
-                return false;
+                return true;
             } catch ( CloudRuntimeException e ) {
                 s_logger.error("Failed to delete network", e);
                 return false;

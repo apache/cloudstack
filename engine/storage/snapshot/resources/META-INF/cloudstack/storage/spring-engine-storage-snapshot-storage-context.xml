@@ -33,6 +33,4 @@
     <bean id="DefaultVMSnapshotStrategy"
         class="org.apache.cloudstack.storage.vmsnapshot.DefaultVMSnapshotStrategy" />
 
-    <bean id="VMSnapshotHelperImpl"
-        class="org.apache.cloudstack.storage.vmsnapshot.VMSnapshotHelperImpl" />
 </beans>

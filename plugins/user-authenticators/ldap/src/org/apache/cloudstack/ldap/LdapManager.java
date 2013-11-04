@@ -47,6 +47,8 @@ public interface LdapManager extends PluggableService {
 
 	List<LdapUser> getUsers() throws NoLdapUserMatchingQueryException;
 
+    List<LdapUser> getUsersInGroup(String groupName) throws NoLdapUserMatchingQueryException;
+
 	boolean isLdapEnabled();
 
 	Pair<List<? extends LdapConfigurationVO>, Integer> listConfigurations(

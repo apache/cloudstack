@@ -53,11 +53,22 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.VM_SNAPSHOT_MEMORY, type = CommandType.BOOLEAN, required = false, description = "snapshot memory if true")
     private Boolean snapshotMemory;
 
+    @Parameter(name = ApiConstants.VM_SNAPSHOT_QUIESCEVM, type = CommandType.BOOLEAN, required = false, description = "quiesce vm if true")
+    private Boolean quiescevm;
+
     public Boolean snapshotMemory() {
         if (snapshotMemory == null) {
             return false;
         } else {
             return snapshotMemory;
+        }
+    }
+
+    public Boolean getQuiescevm() {
+        if (quiescevm == null) {
+            return false;
+        } else {
+            return quiescevm;
         }
     }
 
@@ -97,7 +108,7 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("VM Id: " + getVmId());
-        VMSnapshot result = _vmSnapshotService.creatVMSnapshot(getVmId(),getEntityId());
+        VMSnapshot result = _vmSnapshotService.creatVMSnapshot(getVmId(),getEntityId(), getQuiescevm());
         if (result != null) {
             VMSnapshotResponse response = _responseGenerator
                     .createVMSnapshotResponse(result);

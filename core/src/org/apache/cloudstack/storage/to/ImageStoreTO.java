@@ -83,6 +83,11 @@ public class ImageStoreTO implements DataStoreTO {
         return uuid;
     }
 
+    @Override
+    public String getUrl() {
+        return getUri();
+    }
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }

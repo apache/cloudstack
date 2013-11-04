@@ -381,22 +381,9 @@
                     },
 
                     socketInfo: function(data) {
-                        $.ajax({
-                            url: createURL('listHypervisors'),
-                            success: function(json) {
-                                var hypervisors = json.listhypervisorsresponse.hypervisor;
-
-                                complete($.extend(data, {
-                                    socketInfo: $(hypervisors).map(function(index, hypervisor) {
-                                        return {
-                                            name: hypervisor.name,
-                                            hosts: 0,
-                                            sockets: 0
-                                        };
-                                    })                                
-                                }));
-                            }
-                        });
+                        complete($.extend(data, {
+                            socketCount: 0
+                        }));
                     }
                 };
 
@@ -1165,7 +1152,7 @@
                                         label: 'label.state'
                                     },
                                     vlan: {
-                                        label: 'VLAN Range(s)',
+                                        label: 'VLAN/VNI Range(s)',
                                         isEditable: true
                                     },
                                     tags: {
@@ -1397,7 +1384,7 @@
                                             label: 'label.type'
                                         },
                                         vlan: {
-                                            label: 'label.vlan.id'
+                                            label: 'label.vnet.id'
                                         },
                                         broadcasturi: {
                                             label: 'broadcast URI'
@@ -1833,13 +1820,13 @@
                             },
 
                             dedicatedGuestVlanRanges: {
-                                title: 'Dedicated VLAN Ranges',
+                                title: 'Dedicated VLAN/VNI Ranges',
                                 listView: {
                                     section: 'dedicatedGuestVlanRanges',
                                     id: 'dedicatedGuestVlanRanges',
                                     fields: {
                                         guestvlanrange: {
-                                            label: 'VLAN Range(s)'
+                                            label: 'VLAN/VNI Range(s)'
                                         },
                                         domain: {
                                             label: 'label.domain'
@@ -1864,17 +1851,17 @@
                                     },
                                     actions: {
                                         add: {
-                                            label: 'Dedicate VLAN Range',
+                                            label: 'Dedicate VLAN/VNI Range',
                                             messages: {
                                                 notification: function(args) {
-                                                    return 'Dedicate VLAN Range';
+                                                    return 'Dedicate VLAN/VNI Range';
                                                 }
                                             },
                                             createForm: {
-                                                title: 'Dedicate VLAN Range',
+                                                title: 'Dedicate VLAN/VNI Range',
                                                 fields: {
                                                     vlanrange: {
-                                                        label: 'VLAN Range',
+                                                        label: 'VLAN/VNI Range',
                                                         /*  select: function(args) {
                               var items = [];
                               if(args.context.physicalNetworks[0].vlan != null && args.context.physicalNetworks[0].vlan.length > 0) {
@@ -7130,6 +7117,35 @@
                                     }
                                 }
                             });
+
+                            return listView;
+                        },
+
+                        sockets: function() {
+                            var listView = {
+                                id: 'sockets',
+                                fields: {
+                                    hypervisor: { label: 'label.hypervisor' },
+                                    sockets: { label: 'label.sockets' },
+                                    hosts: { label: 'label.hosts' }
+                                },
+                                dataProvider: function(args) {
+                                    $.ajax({
+                                        url: createURL('listHypervisors'),
+                                        success: function(json) {
+                                            args.response.success({
+                                                data: $(json.listhypervisorsresponse.hypervisor).map(function(index, hypervisor) {
+                                                    return {
+                                                        hypervisor: hypervisor.name,
+                                                        sockets: 0,
+                                                        hosts: 0
+                                                    };
+                                                })
+                                            });
+                                        }
+                                    });
+                                }
+                            };
 
                             return listView;
                         }

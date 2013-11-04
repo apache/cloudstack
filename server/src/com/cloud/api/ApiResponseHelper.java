@@ -3214,6 +3214,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public Site2SiteVpnConnectionResponse createSite2SiteVpnConnectionResponse(Site2SiteVpnConnection result) {
         Site2SiteVpnConnectionResponse response = new Site2SiteVpnConnectionResponse();
         response.setId(result.getUuid());
+        response.setPassive(result.isPassive());
 
         Long vpnGatewayId = result.getVpnGatewayId();
         if (vpnGatewayId != null) {

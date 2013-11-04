@@ -22,10 +22,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -48,16 +50,13 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.Proxy;
 import com.cloud.configuration.Config;
 import com.cloud.storage.RegisterVolumePayload;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -68,6 +67,7 @@ import com.cloud.storage.upload.UploadListener;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 @Local(value = { DownloadMonitor.class })
@@ -159,7 +159,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         Long maxTemplateSizeInBytes = getMaxTemplateSizeInBytes();
         if (vmTemplateStore != null) {
             start();
-            VirtualMachineTemplate tmpl = this._templateDao.findById(template.getId());
+            VirtualMachineTemplate tmpl = _templateDao.findById(template.getId());
             DownloadCommand dcmd = new DownloadCommand((TemplateObjectTO)(template.getTO()), maxTemplateSizeInBytes);
             dcmd.setProxy(getHttpProxy());
             if (downloadJobExists) {
@@ -170,8 +170,9 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
             }
             EndPoint ep = _epSelector.select(template);
             if (ep == null) {
-                s_logger.warn("There is no secondary storage VM for downloading template to image store " + store.getName());
-                return;
+                String errMsg = "There is no secondary storage VM for downloading template to image store " + store.getName();
+                s_logger.warn(errMsg);
+                throw new CloudRuntimeException(errMsg);
             }
             DownloadListener dl = new DownloadListener(ep, store, template, _timer, this, dcmd,
                     callback);
@@ -239,7 +240,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         Long maxVolumeSizeInBytes = getMaxVolumeSizeInBytes();
         if (volumeHost != null) {
             start();
-            Volume vol = this._volumeDao.findById(volume.getId());
+            Volume vol = _volumeDao.findById(volume.getId());
             DownloadCommand dcmd = new DownloadCommand((VolumeObjectTO)(volume.getTO()), maxVolumeSizeInBytes, checkSum, url, format);
             dcmd.setProxy(getHttpProxy());
             if (downloadJobExists) {
@@ -247,7 +248,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
                 dcmd.setResourceType(ResourceType.VOLUME);
             }
 
-            EndPoint ep = this._epSelector.select(volume);
+            EndPoint ep = _epSelector.select(volume);
             if (ep == null) {
                 s_logger.warn("There is no secondary storage VM for image store " + store.getName());
                 return;

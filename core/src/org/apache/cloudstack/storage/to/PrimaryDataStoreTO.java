@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.to;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 
 import com.cloud.agent.api.to.DataStoreTO;
@@ -31,8 +32,9 @@ public class PrimaryDataStoreTO implements DataStoreTO {
     private String host;
     private String path;
     private int port;
+    private final String url;
 
-    public PrimaryDataStoreTO(PrimaryDataStoreInfo dataStore) {
+    public PrimaryDataStoreTO(PrimaryDataStore dataStore) {
         this.uuid = dataStore.getUuid();
         this.name = dataStore.getName();
         this.id = dataStore.getId();
@@ -40,6 +42,7 @@ public class PrimaryDataStoreTO implements DataStoreTO {
         this.setHost(dataStore.getHostAddress());
         this.setPath(dataStore.getPath());
         this.setPort(dataStore.getPort());
+        this.url = dataStore.getUri();
     }
 
     public long getId() {
@@ -49,6 +52,11 @@ public class PrimaryDataStoreTO implements DataStoreTO {
     @Override
     public String getUuid() {
         return this.uuid;
+    }
+
+    @Override
+    public String getUrl() {
+        return this.url;
     }
 
     public String getName() {

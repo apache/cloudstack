@@ -49,6 +49,7 @@
                         // Populate data
                         context: context,
                         data: data,
+                        $wizard: $wizard,
                         response: {
                             success: function(args) {
                                 var $listView = $('.list-view.instances');

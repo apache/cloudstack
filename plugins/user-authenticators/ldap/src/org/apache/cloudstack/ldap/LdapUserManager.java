@@ -23,10 +23,7 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
-import javax.naming.directory.Attributes;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.SearchControls;
-import javax.naming.directory.SearchResult;
+import javax.naming.directory.*;
 
 public class LdapUserManager {
 
@@ -86,6 +83,28 @@ public class LdapUserManager {
 	return result.toString();
     }
 
+    private String generateGroupSearchFilter(final String groupName) {
+	final StringBuilder groupObjectFilter = new StringBuilder();
+	groupObjectFilter.append("(objectClass=");
+	groupObjectFilter.append(_ldapConfiguration.getGroupObject());
+	groupObjectFilter.append(")");
+
+	final StringBuilder groupNameFilter = new StringBuilder();
+	groupNameFilter.append("(");
+	groupNameFilter.append(_ldapConfiguration.getCommonNameAttribute());
+	groupNameFilter.append("=");
+	groupNameFilter.append((groupName == null ? "*" : groupName));
+	groupNameFilter.append(")");
+
+	final StringBuilder result = new StringBuilder();
+	result.append("(&");
+	result.append(groupObjectFilter);
+	result.append(groupNameFilter);
+	result.append(")");
+
+	return result.toString();
+    }
+
     public LdapUser getUser(final String username, final DirContext context) throws NamingException {
 	final NamingEnumeration<SearchResult> result = searchUsers(username, context);
 	if (result.hasMoreElements()) {
@@ -112,6 +131,44 @@ public class LdapUserManager {
 	Collections.sort(users);
 
 	return users;
+    }
+
+    public List<LdapUser> getUsersInGroup(String groupName, DirContext context) throws NamingException {
+	String attributeName = _ldapConfiguration.getGroupUniqueMemeberAttribute();
+	final SearchControls controls = new SearchControls();
+	controls.setSearchScope(_ldapConfiguration.getScope());
+	controls.setReturningAttributes(new String[]{attributeName});
+
+	NamingEnumeration<SearchResult> result = context.search(_ldapConfiguration.getBaseDn(), generateGroupSearchFilter(groupName), controls);
+
+	final List<LdapUser> users = new ArrayList<LdapUser>();
+	//Expecting only one result which has all the users
+	if (result.hasMoreElements()) {
+	    Attribute attribute = result.nextElement().getAttributes().get(attributeName);
+	    NamingEnumeration<?> values = attribute.getAll();
+
+	    while (values.hasMoreElements()) {
+		String userdn = String.valueOf(values.nextElement());
+		users.add(getUserForDn(userdn,context));
+	    }
+	}
+
+	Collections.sort(users);
+
+	return users;
+    }
+
+    private LdapUser getUserForDn(String userdn, DirContext context) throws NamingException {
+	final SearchControls controls = new SearchControls();
+	controls.setSearchScope(_ldapConfiguration.getScope());
+	controls.setReturningAttributes(_ldapConfiguration.getReturnAttributes());
+
+	NamingEnumeration<SearchResult> result = context.search(userdn, "(objectClass="+_ldapConfiguration.getUserObject()+")", controls);
+	if (result.hasMoreElements()) {
+	    return createUser(result.nextElement());
+	} else {
+	    throw new NamingException("No user found for dn " + userdn);
+	}
     }
 
     public NamingEnumeration<SearchResult> searchUsers(final DirContext context) throws NamingException {

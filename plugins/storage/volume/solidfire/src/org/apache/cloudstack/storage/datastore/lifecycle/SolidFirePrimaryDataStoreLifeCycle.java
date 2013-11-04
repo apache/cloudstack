@@ -317,10 +317,12 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
     	dataStoreHelper.attachZone(dataStore);
     	
         List<HostVO> xenServerHosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType.XenServer, scope.getScopeId());
+        List<HostVO> vmWareServerHosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType.VMware, scope.getScopeId());
         List<HostVO> kvmHosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType.KVM, scope.getScopeId());
         List<HostVO> hosts = new ArrayList<HostVO>();
 
         hosts.addAll(xenServerHosts);
+        hosts.addAll(vmWareServerHosts);
         hosts.addAll(kvmHosts);
 
         for (HostVO host : hosts) {

@@ -16,23 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.vmsnapshot;
+package org.apache.cloudstack.network.contrail.management;
 
-import com.cloud.agent.api.VMSnapshotTO;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.vm.snapshot.VMSnapshot;
-import com.cloud.vm.snapshot.VMSnapshotVO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-import java.util.List;
-
-public interface VMSnapshotHelper {
-  boolean vmSnapshotStateTransitTo(VMSnapshot vsnp, VMSnapshot.Event event) throws NoTransitionException;
-
-    Long pickRunningHost(Long vmId);
-
-    List<VolumeObjectTO> getVolumeTOList(Long vmId);
-
-    VMSnapshotTO getSnapshotWithParents(VMSnapshotVO snapshot);
+@Configuration
+public class ProviderTestConfiguration {
+    @Bean
+    ServerDBSync getServerDBSync() {
+        return new ServerDBSyncImpl();
+    }
 }

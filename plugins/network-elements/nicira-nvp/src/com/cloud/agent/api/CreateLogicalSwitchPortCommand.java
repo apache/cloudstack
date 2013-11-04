@@ -21,15 +21,15 @@ public class CreateLogicalSwitchPortCommand extends Command {
     private String _attachmentUuid;
     private String _ownerName;
     private String _nicName;
-    
+
     public CreateLogicalSwitchPortCommand(String logicalSwitchUuid, String attachmentUuid, String ownerName, String nicName) {
-        this._logicalSwitchUuid = logicalSwitchUuid;
-        this._attachmentUuid = attachmentUuid;
-        this._ownerName = ownerName;
-        this._nicName = nicName;
+        _logicalSwitchUuid = logicalSwitchUuid;
+        _attachmentUuid = attachmentUuid;
+        _ownerName = ownerName;
+        _nicName = nicName;
     }
-    
-    
+
+
     public String getLogicalSwitchUuid() {
         return _logicalSwitchUuid;
     }

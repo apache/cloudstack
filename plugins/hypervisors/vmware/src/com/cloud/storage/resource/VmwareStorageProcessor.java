@@ -23,6 +23,7 @@ import java.io.OutputStreamWriter;
 import java.net.URI;
 import java.rmi.RemoteException;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -36,7 +37,6 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -79,6 +79,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.google.gson.Gson;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.VirtualDisk;
+import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
 
 public class VmwareStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(VmwareStorageProcessor.class);
@@ -192,7 +193,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         NfsTO nfsImageStore = (NfsTO)srcStore;
         DataTO destData = cmd.getDestTO();
         DataStoreTO destStore = destData.getDataStore();
-        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)destStore;
+        DataStoreTO primaryStore = destStore;
         String secondaryStorageUrl = nfsImageStore.getUrl();
         assert (secondaryStorageUrl != null);
 
@@ -308,8 +309,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
         TemplateObjectTO template = (TemplateObjectTO)srcData;
         DataTO destData = cmd.getDestTO();
         VolumeObjectTO volume = (VolumeObjectTO)destData;
-        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volume.getDataStore();
-        PrimaryDataStoreTO srcStore = (PrimaryDataStoreTO)template.getDataStore();
+        DataStoreTO primaryStore = volume.getDataStore();
+        DataStoreTO srcStore = template.getDataStore();
 
         try {
             VmwareContext context = hostService.getServiceContext(null);
@@ -448,20 +449,22 @@ public class VmwareStorageProcessor implements StorageProcessor {
         try {
 
             NfsTO srcStore = (NfsTO)srcVolume.getDataStore();
-            PrimaryDataStoreTO destStore = (PrimaryDataStoreTO)destVolume.getDataStore();
+            DataStoreTO destStore = destVolume.getDataStore();
 
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
             String uuid = destStore.getUuid();
 
             ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, uuid);
             if (morDatastore == null) {
+                URI uri = new URI(destStore.getUrl());
+
                 morDatastore = hyperHost.mountDatastore(
                         false,
-                        destStore.getHost(), 0, destStore.getPath(),
+                        uri.getHost(), 0, uri.getPath(),
                         destStore.getUuid().replace("-", ""));
 
                 if (morDatastore == null) {
-                    throw new Exception("Unable to mount storage pool on host. storeUrl: " + destStore.getHost() + ":/" + destStore.getPath());
+                    throw new Exception("Unable to mount storage pool on host. storeUrl: " + uri.getHost() + ":/" + uri.getPath());
                 }
             }
 
@@ -549,7 +552,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         VmwareContext context = hostService.getServiceContext(cmd);
         try {
-            PrimaryDataStoreTO primaryStorage = (PrimaryDataStoreTO)srcVolume.getDataStore();
+            DataStoreTO primaryStorage = srcVolume.getDataStore();
             NfsTO destStore = (NfsTO)destVolume.getDataStore();
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
 
@@ -996,7 +999,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     @Override
     public Answer backupSnapshot(CopyCommand cmd) {
         SnapshotObjectTO srcSnapshot = (SnapshotObjectTO)cmd.getSrcTO();
-        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)srcSnapshot.getDataStore();
+        DataStoreTO primaryStore = srcSnapshot.getDataStore();
         SnapshotObjectTO destSnapshot = (SnapshotObjectTO)cmd.getDestTO();
         DataStoreTO destStore = destSnapshot.getDataStore();
         if (!(destStore instanceof NfsTO)) {
@@ -1178,7 +1181,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     private Answer attachVolume(Command cmd, DiskTO disk, boolean isAttach, boolean isManaged, String vmName, String iScsiName, String storageHost, int storagePort) {
         VolumeObjectTO volumeTO = (VolumeObjectTO)disk.getData();
-        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
+        DataStoreTO primaryStore = volumeTO.getDataStore();
         try {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(hostService.getServiceContext(null), null);
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
@@ -1194,7 +1197,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 Map<String, String> details = disk.getDetails();
 
                 morDs = hostService.getVmfsDatastore(hyperHost, VmwareResource.getDatastoreName(iScsiName), storageHost, storagePort,
-                            VmwareResource.trimIqn(iScsiName),  details.get(DiskTO.CHAP_INITIATOR_USERNAME), details.get(DiskTO.CHAP_INITIATOR_SECRET),
+                            VmwareResource.trimIqn(iScsiName), details.get(DiskTO.CHAP_INITIATOR_USERNAME), details.get(DiskTO.CHAP_INITIATOR_SECRET),
                             details.get(DiskTO.CHAP_TARGET_USERNAME), details.get(DiskTO.CHAP_TARGET_SECRET));
 
                 DatastoreMO dsMo = new DatastoreMO(hostService.getServiceContext(null), morDs);
@@ -1202,7 +1205,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), dsMo.getName());
 
                 if (!dsMo.fileExists(volumeDatastorePath)) {
-                    hostService.createVmdk(cmd, dsMo, VmwareResource.getDatastoreName(iScsiName), volumeTO.getSize());
+                    hostService.createVmdk(cmd, dsMo, volumeDatastorePath, volumeTO.getSize());
                 }
             }
             else {
@@ -1380,7 +1383,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     public Answer createVolume(CreateObjectCommand cmd) {
 
         VolumeObjectTO volume = (VolumeObjectTO)cmd.getData();
-        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volume.getDataStore();
+        DataStoreTO primaryStore = volume.getDataStore();
 
         try {
             VmwareContext context = hostService.getServiceContext(null);
@@ -1457,11 +1460,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
             VmwareContext context = hostService.getServiceContext(null);
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
             VolumeObjectTO vol = (VolumeObjectTO)cmd.getData();
-            PrimaryDataStoreTO store = (PrimaryDataStoreTO)vol.getDataStore();
+            DataStoreTO store = vol.getDataStore();
 
             ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, store.getUuid());
             if (morDs == null) {
-                String msg = "Unable to find datastore based on volume mount point " + store.getPath();
+                String msg = "Unable to find datastore based on volume mount point " + store.getUuid();
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
@@ -1498,12 +1501,23 @@ public class VmwareStorageProcessor implements StorageProcessor {
                             vmMo.safePowerOff(_shutdown_waitMs);
                         }
 
+                        // call this before calling detachAllDisksExcept
+                        // when expunging a VM, we need to see if any of its disks are serviced by managed storage
+                        // if there is one or more disk serviced by managed storage, remove the iSCSI connection(s)
+                        // don't remove the iSCSI connection(s) until the supported disk(s) is/are removed from the VM
+                        // (removeManagedTargetsFromCluster should be called after detachAllDisksExcept and vm.destroy)
+                        List<VirtualDisk> virtualDisks = vmMo.getVirtualDisks();
+                        List<String> managedIqns = getManagedIqnsFromVirtualDisks(virtualDisks);
+
                         List<String> detachedDisks = vmMo.detachAllDisksExcept(vol.getPath(), diskInfo != null ? diskInfo.getDiskDeviceBusName() : null);
                         VmwareStorageLayoutHelper.moveVolumeToRootFolder(new DatacenterMO(context, morDc), detachedDisks);
 
                         // let vmMo.destroy to delete volume for us
                         // vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
                         vmMo.destroy();
+
+                        // this.hostService.handleDatastoreAndVmdkDetach(iScsiName, storageHost, storagePort);
+                        this.hostService.removeManagedTargetsFromCluster(managedIqns);
 
                         for (NetworkDetails netDetails : networks) {
                             if (netDetails.getGCTag() != null && netDetails.getGCTag().equalsIgnoreCase("true")) {
@@ -1553,6 +1567,40 @@ public class VmwareStorageProcessor implements StorageProcessor {
             s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
         }
+    }
+
+    private List<String> getManagedIqnsFromVirtualDisks(List<VirtualDisk> virtualDisks) {
+        List<String> managedIqns = new ArrayList<String>();
+
+        if (virtualDisks != null) {
+            for (VirtualDisk virtualDisk : virtualDisks) {
+                if (virtualDisk.getBacking() instanceof VirtualDiskFlatVer2BackingInfo) {
+                    VirtualDiskFlatVer2BackingInfo backingInfo = (VirtualDiskFlatVer2BackingInfo)virtualDisk.getBacking();
+                    String path = backingInfo.getFileName();
+
+                    path = new DatastoreFile(path).getFileBaseName();
+
+                    String search = "-";
+                    int index = path.indexOf(search);
+
+                    if (index > -1) {
+                        path = path.substring(index + search.length());
+
+                        index = path.lastIndexOf(search);
+
+                        if (index > -1) {
+                            path = path.substring(0, index);
+
+                            if (path.startsWith("iqn.")) {
+                                managedIqns.add(path);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return managedIqns;
     }
 
     private Long restoreVolumeFromSecStorage(VmwareHypervisorHost hyperHost, DatastoreMO primaryDsMo, String newVolumeName,
@@ -1627,7 +1675,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         DataTO srcData = cmd.getSrcTO();
         SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
         DataTO destData = cmd.getDestTO();
-        PrimaryDataStoreTO pool = (PrimaryDataStoreTO)destData.getDataStore();
+        DataStoreTO pool = destData.getDataStore();
         DataStoreTO imageStore = srcData.getDataStore();
 
 

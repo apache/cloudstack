@@ -22,6 +22,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
 
 @Retention(RetentionPolicy.RUNTIME)
@@ -48,4 +49,6 @@ public @interface Parameter {
     String since() default "";
 
     String retrieveMethod() default "getById";
+    
+    RoleType[] authorized() default {};
 }

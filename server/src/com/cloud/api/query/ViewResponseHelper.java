@@ -87,9 +87,13 @@ public class ViewResponseHelper {
     public static final Logger s_logger = Logger.getLogger(ViewResponseHelper.class);
 
     public static List<UserResponse> createUserResponse(UserAccountJoinVO... users) {
+        return createUserResponse(null, users);
+    }
+
+    public static List<UserResponse> createUserResponse(Long domainId, UserAccountJoinVO... users) {
         List<UserResponse> respList = new ArrayList<UserResponse>();
         for (UserAccountJoinVO vt : users){
-            respList.add(ApiDBUtils.newUserResponse(vt));
+            respList.add(ApiDBUtils.newUserResponse(vt, domainId));
         }
         return respList;
     }

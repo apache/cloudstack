@@ -1864,4 +1864,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         return sql;
     }
+    
+    @DB()
+    protected Pair<List<T>, Integer> listAndCountIncludingRemovedBy(final SearchCriteria<T> sc, final Filter filter) {
+        List<T> objects = searchIncludingRemoved(sc, filter, null, false);
+        Integer count = getCount(sc);
+        return new Pair<List<T>, Integer>(objects, count);
+    }
 }

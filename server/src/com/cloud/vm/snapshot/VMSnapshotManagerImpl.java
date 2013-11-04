@@ -30,6 +30,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
@@ -310,7 +311,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_SNAPSHOT_CREATE, eventDescription = "creating VM snapshot", async = true)
-    public VMSnapshot creatVMSnapshot(Long vmId, Long vmSnapshotId) {
+    public VMSnapshot creatVMSnapshot(Long vmId, Long vmSnapshotId, Boolean quiescevm) {
         UserVmVO userVm = _userVMDao.findById(vmId);
         if (userVm == null) {
             throw new InvalidParameterValueException("Create vm to snapshot failed due to vm: " + vmId + " is not found");
@@ -319,6 +320,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         if(vmSnapshot == null){
             throw new CloudRuntimeException("VM snapshot id: " + vmSnapshotId + " can not be found");
         }
+        VMSnapshotOptions options = new VMSnapshotOptions(quiescevm);
+        vmSnapshot.setOptions(options);
         try {
             VMSnapshotStrategy strategy = findVMSnapshotStrategy(vmSnapshot);
             VMSnapshot snapshot = strategy.takeVMSnapshot(vmSnapshot);

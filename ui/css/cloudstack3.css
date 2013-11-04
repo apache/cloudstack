@@ -173,6 +173,23 @@ table tbody td.truncated > span {
   text-overflow: ellipsis;
 }
 
+/** Multiselect*/
+table thead th.multiselect,
+table tbody td.multiselect {
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+}
+
+table thead th.multiselect input,
+table tbody td.multiselect input {
+  margin: 0;
+}
+
+table thead th.multiselect input {
+  margin-left: 2px;
+}
+
 /** Actions table cell*/
 table tbody td.actions {
   width: 130px;
@@ -299,23 +316,19 @@ table th div.ui-resizable-handle {
 
 /*Login screen*/
 body.login {
-  background: transparent url(../images/bg-login.png) repeat 50% -82px;
+  background: url(../images/overlay-pattern.png) repeat center, #106CA9 url(../images/bg-login.jpg) no-repeat center;
+  background-size: auto, cover;
 }
 
 .login {
   display: block;
   width: 100%;
-  height: 245px;
-  /*+placement:shift 0 100px;*/
+  height: 350px;
+  /*+placement:shift 0 80px;*/
   position: relative;
   left: 0;
-  top: 100px;
-  background: #FFFFFF;
-  /*+box-shadow:0px 3px 5px #D5D5D5;*/
-  -moz-box-shadow: 0px 3px 5px #D5D5D5;
-  -webkit-box-shadow: 0px 3px 5px #D5D5D5;
-  -o-box-shadow: 0px 3px 5px #D5D5D5;
-  box-shadow: 0px 3px 5px #D5D5D5;
+  top: 80px;
+  background: #053663;
 }
 
 .login .select-language {
@@ -324,8 +337,9 @@ body.login {
 }
 
 .login .select-language select {
-  width: 125px;
+  width: 260px;
   border: 1px solid #808080;
+  margin-top: 30px;
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
@@ -351,33 +365,34 @@ body.login {
 }
 
 .login .fields .field label {
-  font-size: 11px;
+  font-size: 12px;
   color: #4E4F53;
-  /*+placement:displace 10px 12px;*/
+  /*+placement:displace 9px 14px;*/
   position: absolute;
-  margin-left: 10px;
-  margin-top: 12px;
+  margin-left: 9px;
+  margin-top: 14px;
 }
 
 .login .fields .field label.error {
   color: #FF0000;
   float: right;
-  left: 204px;
+  left: 264px;
   top: 0;
 }
 
 .login .fields input {
-  width: 204px;
+  width: 248px;
   height: 20px;
   margin: 5px 0 0;
-  text-indent: 7px;
+  text-indent: 1px;
+  font-size: 13px;
   border: none;
-  /*+border-radius:4px;*/
-  -moz-border-radius: 4px;
-  -webkit-border-radius: 4px;
-  -khtml-border-radius: 4px;
-  border-radius: 4px;
-  border-radius: 4px 4px 4px 4px;
+  padding: 5px;
+  /*+border-radius:3px;*/
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  -khtml-border-radius: 3px;
+  border-radius: 3px;
   /*+box-shadow:inset 0px 1px 1px #4E4E4E;*/
   -moz-box-shadow: inset 0px 1px 1px #4E4E4E;
   -webkit-box-shadow: inset 0px 1px 1px #4E4E4E;
@@ -432,7 +447,7 @@ body.login {
   width: 1000px;
   height: 100%;
   margin: auto;
-  background: #FFFFFF;
+  background: #053663;
 }
 
 /*About dialog*/
@@ -971,9 +986,9 @@ div.notification-box .container ul {
 }
 
 div.notification-box .container ul li {
-  height: 40px;
+  width: 100%;
+  height: 41px;
   border-bottom: 1px solid #CECECE;
-  overflow: auto;
   overflow-x: hidden;
   text-indent: 0;
   font-size: 12px;
@@ -983,16 +998,37 @@ div.notification-box .container ul li {
 }
 
 div.notification-box .container ul li.error {
-  background: url(../images/icons.png) no-repeat 10px -179px;
+  height: 53px;
+  background: url(../images/icons.png) no-repeat 10px -171px;
+}
+
+div.notification-box .container ul li.error .subtitle {
+  display: block;
+  width: 213px;
+  height: 10px;
+  overflow: hidden;
+  white-space: nowrap;
+  float: left;
+  text-overflow: ellipsis;
+  color: #808080;
+  text-indent: 0;
+  padding: 0;
+  margin: 0;
+  /*+placement:shift 48px 17px;*/
+  position: relative;
+  left: 48px;
+  top: 17px;
 }
 
 div.notification-box .container ul li span {
   float: left;
-  /*+placement:shift 48px 16px;*/
+  /*+placement:shift 48px 15px;*/
   position: relative;
   left: 48px;
-  top: 16px;
+  top: 15px;
   max-width: 202px;
+  font-size: 14px;
+  font-weight: 100;
   overflow: hidden;
 }
 
@@ -1087,58 +1123,75 @@ div.notification-box .button.close:hover {
 
 /*** Corner alert*/
 div.notification.corner-alert {
-  background: #EBE8E8;
+  background: #FFFFFF;
+  background: rgba(255, 255, 255, 0.95);
+  /*+box-shadow:0px 2px 10px #000000;*/
+  -moz-box-shadow: 0px 2px 10px #000000;
+  -webkit-box-shadow: 0px 2px 10px #000000;
+  -o-box-shadow: 0px 2px 10px #000000;
+  box-shadow: 0px 2px 10px #000000;
   width: 300px;
-  height: 70px;
+  height: 75px;
+  /*+border-radius:3px;*/
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  -khtml-border-radius: 3px;
+  border-radius: 3px;
   position: absolute;
   text-indent: 10px;
+  padding: 7px 7px 0;
   font-size: 12px;
-  border: 1px solid #8F8A8A;
   /*+opacity:70%;*/
   filter: alpha(opacity=70);
   -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=70);
   -moz-opacity: 0.7;
   opacity: 0.7;
-  overflow: hidden;
   z-index: 100;
-  cursor: pointer;
+  margin: 38px 0 0 -56px;
+}
+
+div.notification.corner-alert .top-arrow {
+  background: url(../images/sprites.png) no-repeat -580px -1353px;
+  width: 36px;
+  height: 15px;
+  position: absolute;
+  top: -15px;
+  left: 50px;
 }
 
 div.notification.corner-alert div.title {
   width: 100%;
   height: 33px;
-  background: url(../images/bg-dialog-header.png);
   color: #FFFFFF;
 }
 
 div.notification.corner-alert div.title span {
-  background: url(../images/icons.png) no-repeat -3px -225px;
   /*+placement:shift 0px 10px;*/
   position: relative;
   left: 0px;
   top: 10px;
-  /*+text-shadow:0px 1px 1px #3A3A3A;*/
-  -moz-text-shadow: 0px 1px 1px #3A3A3A;
-  -webkit-text-shadow: 0px 1px 1px #3A3A3A;
-  -o-text-shadow: 0px 1px 1px #3A3A3A;
-  text-shadow: 0px 1px 1px #3A3A3A;
+  color: #6D6D6D;
   padding: 3px 0 12px 24px;
-  font-weight: bold;
+  font-weight: 100;
+  font-size: 14px;
+  padding-left: 33px;
+  background: url(../images/icons.png) no-repeat 3px -223px;
 }
 
 div.notification.corner-alert.error div.title span {
-  background: url(../images/icons.png) no-repeat -4px -190px;
+  background: url(../images/icons.png) no-repeat -2px -190px;
 }
 
 div.notification.corner-alert div.message span {
   position: relative;
   padding-top: 6px;
+  font-size: 14px;
   display: block;
-}
-
-div.notification.corner-alert:hover div.message span {
-  text-decoration: underline;
-  color: #5FAAF7;
+  color: #000000;
+  /*+placement:shift 17px -2px;*/
+  position: relative;
+  left: 17px;
+  top: -2px;
 }
 
 /*Tooltips*/
@@ -1309,6 +1362,7 @@ div.list-view td.state.off span {
   width: 470px;
   display: inline-block;
   padding-top: 50px;
+  margin-left: 8px;
 }
 
 .quick-view-tooltip > div.title {
@@ -11715,7 +11769,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   color: #FFFFFF;
   font-size: 12px;
   font-weight: bold;
-  max-width: 67px;
+  max-width: 285px;
   overflow: hidden;
   white-space: nowrap;
   /*+placement:shift -1px 0px;*/
@@ -11780,6 +11834,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .destroy .icon,
 .expunge .icon,
 .remove .icon,
+.removeMulti .icon,
 .delete .icon,
 .decline .icon,
 .deleteacllist .icon {

@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
 import org.apache.cloudstack.api.response.UsageTypeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.log4j.Logger;
@@ -50,11 +51,11 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
@@ -115,7 +116,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
     }
 
     @Override
-    public List<UsageVO> getUsageRecords(GetUsageRecordsCmd cmd) {
+    public Pair<List<? extends Usage>, Integer> getUsageRecords(GetUsageRecordsCmd cmd) {
         Long accountId = cmd.getAccountId();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
@@ -212,13 +213,13 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             sc.addAnd("startDate", SearchCriteria.Op.BETWEEN, adjustedStartDate, adjustedEndDate);
             sc.addAnd("endDate", SearchCriteria.Op.BETWEEN, adjustedStartDate, adjustedEndDate);
         } else {
-            return new ArrayList<UsageVO>(); // return an empty list if we fail to validate the dates
+            return new Pair<List<? extends Usage>, Integer>(new ArrayList<Usage>(), new Integer(0)); // return an empty list if we fail to validate the dates
         }
 
-        List<UsageVO> usageRecords = null;
+        Pair<List<UsageVO>, Integer> usageRecords = null;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
-            usageRecords = _usageDao.searchAllRecords(sc, usageFilter);
+            usageRecords = _usageDao.searchAndCountAllRecords(sc, usageFilter);
         } finally {
             txn.close();
 
@@ -227,7 +228,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             swap.close();
         }
 
-        return usageRecords;
+        return new Pair<List<? extends Usage>, Integer>(usageRecords.first(), usageRecords.second());
     }
 
     @Override

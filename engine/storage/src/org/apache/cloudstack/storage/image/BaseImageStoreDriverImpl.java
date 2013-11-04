@@ -18,17 +18,13 @@
  */
 package org.apache.cloudstack.storage.image;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.storage.Proxy;
-import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.download.DownloadMonitor;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Date;
+
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -47,13 +43,17 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Date;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.DownloadAnswer;
+import com.cloud.agent.api.storage.Proxy;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.download.DownloadMonitor;
 
 public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     private static final Logger s_logger = Logger.getLogger(BaseImageStoreDriverImpl.class);
@@ -239,7 +239,14 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         try {
             DeleteCommand cmd = new DeleteCommand(data.getTO());
             EndPoint ep = _epSelector.select(data);
-            Answer answer = ep.sendMessage(cmd);
+            Answer answer = null;
+            if (ep == null) {
+                String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+                s_logger.error(errMsg);
+                answer = new Answer(cmd, false, errMsg);
+            } else {
+                answer = ep.sendMessage(cmd);
+            }
             if (answer != null && !answer.getResult()) {
                 result.setResult(answer.getDetails());
             }

@@ -1122,7 +1122,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         Boolean dpd = gw.getDpd();
 
         Site2SiteVpnCfgCommand cmd = new Site2SiteVpnCfgCommand(isCreate, localPublicIp, localPublicGateway, localGuestCidr,
-                peerGatewayIp, peerGuestCidrList, ikePolicy, espPolicy, ipsecPsk, ikeLifetime, espLifetime, dpd);
+                peerGatewayIp, peerGuestCidrList, ikePolicy, espPolicy, ipsecPsk, ikeLifetime, espLifetime, dpd, conn.isPassive());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());

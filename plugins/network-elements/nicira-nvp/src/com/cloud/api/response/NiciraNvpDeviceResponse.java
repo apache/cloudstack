@@ -16,12 +16,14 @@
 // under the License.
 package com.cloud.api.response;
 
-import com.cloud.network.NiciraNvpDeviceVO;
-import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
+
+import com.cloud.network.NiciraNvpDeviceVO;
+import com.cloud.serializer.Param;
 
 @EntityReference(value=NiciraNvpDeviceVO.class)
 public class NiciraNvpDeviceResponse extends BaseResponse {
@@ -47,7 +49,7 @@ public class NiciraNvpDeviceResponse extends BaseResponse {
     private String l3GatewayServiceUuid;
 
     public void setId(String nvpDeviceId) {
-        this.id = nvpDeviceId;
+        id = nvpDeviceId;
     }
 
     public void setPhysicalNetworkId(String physicalNetworkId) {
@@ -62,18 +64,16 @@ public class NiciraNvpDeviceResponse extends BaseResponse {
         this.deviceName = deviceName;
     }
 
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
+    }
 
+    public void setTransportZoneUuid(String transportZoneUuid) {
+        this.transportZoneUuid = transportZoneUuid;
+    }
 
-	public void setHostName(String hostName) {
-		this.hostName = hostName;
-	}
-
-	public void setTransportZoneUuid(String transportZoneUuid) {
-		this.transportZoneUuid = transportZoneUuid;
-	}
-
-	public void setL3GatewayServiceUuid(String l3GatewayServiceUuid) {
-		this.l3GatewayServiceUuid = l3GatewayServiceUuid;
-	}
+    public void setL3GatewayServiceUuid(String l3GatewayServiceUuid) {
+        this.l3GatewayServiceUuid = l3GatewayServiceUuid;
+    }
 
 }

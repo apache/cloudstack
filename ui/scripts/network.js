@@ -536,6 +536,48 @@
                                     },
                                     networkDomain: {
                                         label: 'label.network.domain'
+                                    },
+                                    domain: {
+                                        label: 'label.domain',
+                                        select: function(args) {
+                                            var items = [];
+                                            $.ajax({
+                                                url: createURL("listDomains&listAll=true"),
+                                                dataType: "json",
+                                                async: false,
+                                                success: function(json) {
+                                                    var items = [];
+                                                    items.push({
+                                                        id: "",
+                                                        description: ""
+                                                    });
+                                                    var domainObjs = json.listdomainsresponse.domain;
+                                                    $(domainObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.path
+                                                        });
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });
+                                            args.$select.change(function() {
+                                                var $form = $(this).closest('form');
+                                                if ($(this).val() == "") {
+                                                    $form.find('.form-item[rel=account]').hide();
+                                                } else {
+                                                    $form.find('.form-item[rel=account]').css('display', 'inline-block');
+                                                }
+                                            });
+                                        },
+                                    },
+                                    account: {
+                                        label: 'label.account',
+                                        validation: {
+                                            required: true
+                                        },
                                     }
                                 }
                             },
@@ -573,6 +615,17 @@
                                     $.extend(dataObj, {
                                         networkDomain: args.data.networkDomain
                                     });
+                                }
+
+                                if (args.data.domain != null && args.data.domain.length > 0) {
+                                    $.extend(dataObj, {
+                                        domainid: args.data.domain
+                                    });
+                                    if (args.data.account != null && args.data.account.length > 0) {
+                                        $.extend(dataObj, {
+                                            account: args.data.account
+                                        });
+                                    }
                                 }
 
                                 $.ajax({
@@ -1098,7 +1151,7 @@
                                         }
                                     },
                                     vlan: {
-                                        label: 'label.vlan.id'
+                                        label: 'label.vnet.id'
                                     },
                                     
                                     broadcasturi: {

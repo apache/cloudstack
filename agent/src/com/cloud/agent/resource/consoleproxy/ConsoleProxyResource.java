@@ -32,8 +32,11 @@ import java.util.Properties;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
+
+import com.google.gson.Gson;
+
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.agent.Agent.ExitStatus;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -61,7 +64,6 @@ import com.cloud.resource.ServerResourceBase;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
-import com.google.gson.Gson;
 
 /**
  * 
@@ -130,19 +132,6 @@ public class ConsoleProxyResource extends ServerResourceBase implements
         }
     }
 
-    private boolean copyCertToDirectory(String certificate, String filePath)
-            throws IOException {
-        boolean success;
-        // copy cert to the dir
-        FileWriter fstream = new FileWriter(filePath);
-        BufferedWriter out = new BufferedWriter(fstream);
-        out.write(certificate);
-        // Close the output stream
-        out.close();
-        success = true;
-        return success;
-    }
-
     protected Answer execute(final CheckConsoleProxyLoadCommand cmd) {
         return executeProxyLoadScan(cmd, cmd.getProxyVmId(),
                 cmd.getProxyVmName(), cmd.getProxyManagementIp(),
@@ -204,6 +193,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements
         return null;
     }
 
+    @Override
     public Type getType() {
         return Host.Type.ConsoleProxy;
     }

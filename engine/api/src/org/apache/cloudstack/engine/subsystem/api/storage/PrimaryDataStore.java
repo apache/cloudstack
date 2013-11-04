@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.datastore;
+package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import java.util.List;
 

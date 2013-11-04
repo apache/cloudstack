@@ -19,9 +19,9 @@ package com.cloud.network.nicira;
 public class TransportZoneBinding {
     private String zone_uuid;
     private String transport_type;
-    
+
     public TransportZoneBinding() {}
-    
+
     public TransportZoneBinding(String zone_uuid, String transport_type) {
         this.zone_uuid = zone_uuid;
         this.transport_type = transport_type;
@@ -42,5 +42,5 @@ public class TransportZoneBinding {
     public void setTransport_type(String transport_type) {
         this.transport_type = transport_type;
     }
-    
+
 }

@@ -34,6 +34,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -167,6 +168,11 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 
 		try {
 		    EndPoint ep = _epSelector.select(secStore);
+            if (ep == null) {
+                String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+                s_logger.error(errMsg);
+                return;
+            }
             ep.sendMessageAsync(ucmd, new UploadListener.Callback(ep.getId(), ul));
         } catch (Exception e) {
 			s_logger.warn("Unable to start upload of volume " + volume.getName() + " from " + secStore.getName() + " to " +url, e);
@@ -194,6 +200,11 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 			_listenerMap.put(uploadTemplateObj, ul);
 			try{
 			    EndPoint ep = _epSelector.select(secStore);
+                if (ep == null) {
+                    String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+                    s_logger.error(errMsg);
+                    return null;
+                }
                 ep.sendMessageAsync(ucmd, new UploadListener.Callback(ep.getId(), ul));
             } catch (Exception e) {
 				s_logger.warn("Unable to start upload of " + template.getUniqueName() + " from " + secStore.getName() + " to " +url, e);
@@ -205,61 +216,66 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 		return null;
 	}
 
-	@Override
-	public UploadVO createEntityDownloadURL(VMTemplateVO template, TemplateDataStoreVO vmTemplateHost, Long dataCenterId, long eventId) {
+    @Override
+    public UploadVO createEntityDownloadURL(VMTemplateVO template, TemplateDataStoreVO vmTemplateHost, Long dataCenterId, long eventId) {
 
-	    String errorString = "";
-	    boolean success = false;
-	    Type type = (template.getFormat() == ImageFormat.ISO) ? Type.ISO : Type.TEMPLATE ;
+        String errorString = "";
+        boolean success = false;
+        Type type = (template.getFormat() == ImageFormat.ISO) ? Type.ISO : Type.TEMPLATE;
 
-            // find an endpoint to send command
-            DataStore store = storeMgr.getDataStore(vmTemplateHost.getDataStoreId(), DataStoreRole.Image);
-            EndPoint ep = _epSelector.select(store);
-
-	    //Check if it already exists.
-	    List<UploadVO> extractURLList = _uploadDao.listByTypeUploadStatus(template.getId(), type, UploadVO.Status.DOWNLOAD_URL_CREATED);
-	    if (extractURLList.size() > 0) {
-               // do some check here
-               UploadVO upload = extractURLList.get(0);
-               String uploadUrl = extractURLList.get(0).getUploadUrl();
-               String[] token = uploadUrl.split("/");
-               // example: uploadUrl = https://10-11-101-112.realhostip.com/userdata/2fdd9a70-9c4a-4a04-b1d5-1e41c221a1f9.iso
-               // then token[2] = 10-11-101-112.realhostip.com, token[4] = 2fdd9a70-9c4a-4a04-b1d5-1e41c221a1f9.iso
-               String hostname = ep.getPublicAddr().replace(".", "-") + ".";
-               if ((token != null) && (token.length == 5) && (token[2].equals(hostname + _ssvmUrlDomain))) // ssvm publicip and domain suffix not changed
-                   return extractURLList.get(0);
-               else if ((token != null) && (token.length == 5) && (token[2].startsWith(hostname))) { // domain suffix changed
-                   String uuid = token[4];
-                   uploadUrl = generateCopyUrl(ep.getPublicAddr(), uuid);
-                   UploadVO vo = _uploadDao.createForUpdate();
-                   vo.setLastUpdated(new Date());
-                   vo.setUploadUrl(uploadUrl);
-                   _uploadDao.update(upload.getId(), vo);
-                   return _uploadDao.findById(upload.getId(), true);
-               } else { // ssvm publicip changed
-                   return null;
-               }
+        // find an endpoint to send command
+        DataStore store = storeMgr.getDataStore(vmTemplateHost.getDataStoreId(), DataStoreRole.Image);
+        EndPoint ep = _epSelector.select(store);
+        if (ep == null) {
+            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            return null;
         }
 
-	    // It doesn't exist so create a DB entry.
-	    UploadVO uploadTemplateObj = new UploadVO(vmTemplateHost.getDataStoreId(), template.getId(), new Date(),
-	                                                Status.DOWNLOAD_URL_NOT_CREATED, 0, type, Mode.HTTP_DOWNLOAD);
-	    uploadTemplateObj.setInstallPath(vmTemplateHost.getInstallPath());
-	    _uploadDao.persist(uploadTemplateObj);
+        //Check if it already exists.
+        List<UploadVO> extractURLList = _uploadDao.listByTypeUploadStatus(template.getId(), type, UploadVO.Status.DOWNLOAD_URL_CREATED);
+        if (extractURLList.size() > 0) {
+            // do some check here
+            UploadVO upload = extractURLList.get(0);
+            String uploadUrl = extractURLList.get(0).getUploadUrl();
+            String[] token = uploadUrl.split("/");
+            // example: uploadUrl = https://10-11-101-112.realhostip.com/userdata/2fdd9a70-9c4a-4a04-b1d5-1e41c221a1f9.iso
+            // then token[2] = 10-11-101-112.realhostip.com, token[4] = 2fdd9a70-9c4a-4a04-b1d5-1e41c221a1f9.iso
+            String hostname = ep.getPublicAddr().replace(".", "-") + ".";
+            if ((token != null) && (token.length == 5) && (token[2].equals(hostname + _ssvmUrlDomain))) // ssvm publicip and domain suffix not changed
+                return extractURLList.get(0);
+            else if ((token != null) && (token.length == 5) && (token[2].startsWith(hostname))) { // domain suffix changed
+                String uuid = token[4];
+                uploadUrl = generateCopyUrl(ep.getPublicAddr(), uuid);
+                UploadVO vo = _uploadDao.createForUpdate();
+                vo.setLastUpdated(new Date());
+                vo.setUploadUrl(uploadUrl);
+                _uploadDao.update(upload.getId(), vo);
+                return _uploadDao.findById(upload.getId(), true);
+            } else { // ssvm publicip changed
+                return null;
+            }
+        }
 
-	    try{
-    	    // Create Symlink at ssvm
-	    	String path = vmTemplateHost.getInstallPath();
-	    	String uuid = UUID.randomUUID().toString() + "." + template.getFormat().getFileExtension(); // adding "." + vhd/ova... etc.
-	    	CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)store).getMountPoint(), path, uuid, null);
-	    	Answer ans = ep.sendMessage(cmd);
-	        if (ans == null || !ans.getResult()) {
-    	        errorString = "Unable to create a link for " +type+ " id:"+template.getId() + "," + ans.getDetails();
+        // It doesn't exist so create a DB entry.
+        UploadVO uploadTemplateObj = new UploadVO(vmTemplateHost.getDataStoreId(), template.getId(), new Date(),
+                Status.DOWNLOAD_URL_NOT_CREATED, 0, type, Mode.HTTP_DOWNLOAD);
+        uploadTemplateObj.setInstallPath(vmTemplateHost.getInstallPath());
+        _uploadDao.persist(uploadTemplateObj);
+
+        try {
+            // Create Symlink at ssvm
+            String path = vmTemplateHost.getInstallPath();
+            String uuid = UUID.randomUUID().toString() + "." + template.getFormat().getFileExtension(); // adding "." + vhd/ova... etc.
+            CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)store).getMountPoint(), path, uuid, null);
+            Answer ans = ep.sendMessage(cmd);
+            if (ans == null || !ans.getResult()) {
+                errorString = "Unable to create a link for " + type + " id:" + template.getId() + "," + ans.getDetails();
                 s_logger.error(errorString);
                 throw new CloudRuntimeException(errorString);
             }
 
-    	    //Construct actual URL locally now that the symlink exists at SSVM
+            //Construct actual URL locally now that the symlink exists at SSVM
             String extractURL = generateCopyUrl(ep.getPublicAddr(), uuid);
             UploadVO vo = _uploadDao.createForUpdate();
             vo.setLastUpdated(new Date());
@@ -268,17 +284,17 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
             _uploadDao.update(uploadTemplateObj.getId(), vo);
             success = true;
             return _uploadDao.findById(uploadTemplateObj.getId(), true);
-	    }finally{
-           if(!success){
+        } finally {
+            if (!success) {
                 UploadVO uploadJob = _uploadDao.createForUpdate(uploadTemplateObj.getId());
                 uploadJob.setLastUpdated(new Date());
                 uploadJob.setErrorString(errorString);
                 uploadJob.setUploadState(Status.ERROR);
                 _uploadDao.update(uploadTemplateObj.getId(), uploadJob);
             }
-	    }
+        }
 
-	}
+    }
 
 	@Override
     public void createVolumeDownloadURL(Long entityId, String path, Type type, Long dataCenterId, Long uploadId, ImageFormat format) {

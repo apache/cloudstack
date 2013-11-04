@@ -38,6 +38,9 @@
     
     <bean id="hypervisorHelperImpl" class="org.apache.cloudstack.storage.helper.HypervisorHelperImpl" />
 
+    <bean id="VMSnapshotHelperImpl"
+          class="org.apache.cloudstack.storage.helper.VMSnapshotHelperImpl" />
+
     <bean id="objectInDataStoreManagerImpl"
         class="org.apache.cloudstack.storage.datastore.ObjectInDataStoreManagerImpl" />
 

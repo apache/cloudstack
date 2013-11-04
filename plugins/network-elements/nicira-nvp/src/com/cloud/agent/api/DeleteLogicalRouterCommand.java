@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -17,25 +17,26 @@
 package com.cloud.agent.api;
 
 /**
- * 
+ *
  */
 public class DeleteLogicalRouterCommand extends Command {
-	
-	private String _logicalRouterUuid;
-	
-	public DeleteLogicalRouterCommand(String logicalRouterUuid) {
-		this._logicalRouterUuid = logicalRouterUuid;
-	}
 
-	/* (non-Javadoc)
-	 * @see com.cloud.agent.api.Command#executeInSequence()
-	 */
-	@Override
-	public boolean executeInSequence() {
-		return false;
-	}
+    private String _logicalRouterUuid;
 
-	public String getLogicalRouterUuid() {
-		return _logicalRouterUuid;
-	}
+    public DeleteLogicalRouterCommand(String logicalRouterUuid) {
+        _logicalRouterUuid = logicalRouterUuid;
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see com.cloud.agent.api.Command#executeInSequence()
+     */
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
+
+    public String getLogicalRouterUuid() {
+        return _logicalRouterUuid;
+    }
 }

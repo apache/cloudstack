@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.framework.jobs.impl;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -34,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -54,25 +52,26 @@ import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.jobs.JobInfo.Status;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
 
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHost;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Predicate;
-import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.DbProperties;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
@@ -865,10 +864,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         try {
-            final File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
-            final Properties dbProps = new Properties();
-            PropertiesUtil.loadFromFile(dbProps, dbPropsFile);
-
+            final Properties dbProps = DbProperties.getDbProperties();
             final int cloudMaxActive = Integer.parseInt(dbProps.getProperty("db.cloud.maxActive"));
 
             int poolSize = (cloudMaxActive * 2) / 3;

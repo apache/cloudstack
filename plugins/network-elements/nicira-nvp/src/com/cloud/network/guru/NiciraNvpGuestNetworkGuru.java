@@ -62,7 +62,6 @@ import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = NetworkGuru.class)

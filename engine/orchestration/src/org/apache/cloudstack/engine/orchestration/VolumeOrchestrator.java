@@ -1222,8 +1222,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     public void updateVolumeDiskChain(long volumeId, String path, String chainInfo) {
         VolumeVO vol = _volsDao.findById(volumeId);
         boolean needUpdate = false;
+        // Volume path is not getting updated in the DB, need to find reason and fix the issue.
+        if (vol.getPath() == null)
+            return;
         if(!vol.getPath().equalsIgnoreCase(path))
-        	needUpdate = true;
+            needUpdate = true;
         
         if(chainInfo != null && (vol.getChainInfo() == null || !chainInfo.equalsIgnoreCase(vol.getChainInfo())))
         	needUpdate = true;

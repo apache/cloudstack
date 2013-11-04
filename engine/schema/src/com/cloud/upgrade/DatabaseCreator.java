@@ -18,7 +18,12 @@
  */
 package com.cloud.upgrade;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -33,7 +38,6 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.db.ScriptRunner;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 // Creates the CloudStack Database by using the 4.0 schema and apply
@@ -173,7 +177,9 @@ public class DatabaseCreator {
 
         try {
             TransactionLegacy.initDataSource(dbPropsFile);
-        } catch (NullPointerException e) {
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1);
         }
         initDB(dbPropsFile, rootPassword, databases, dryRun);
 

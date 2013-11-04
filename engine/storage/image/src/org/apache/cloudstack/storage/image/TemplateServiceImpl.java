@@ -172,12 +172,26 @@ public class TemplateServiceImpl implements TemplateService {
             return;
         }
 
-        TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(callback,
-                templateOnStore, null);
+        try {
+            TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(callback,
+                    templateOnStore, null);
 
-        AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
-        caller.setCallback(caller.getTarget().createTemplateCallback(null, null)).setContext(context);
-        store.getDriver().createAsync(store, templateOnStore, caller);
+            AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().createTemplateCallback(null, null)).setContext(context);
+            store.getDriver().createAsync(store, templateOnStore, caller);
+        } catch (CloudRuntimeException ex) {
+            // clean up already persisted template_store_ref entry in case of createTemplateCallback is never called
+            TemplateDataStoreVO templateStoreVO = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
+            if (templateStoreVO != null) {
+                TemplateInfo tmplObj = _templateFactory.getTemplate(template, store);
+                tmplObj.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+            }
+            TemplateApiResult result = new TemplateApiResult(template);
+            result.setResult(ex.getMessage());
+            if (callback != null) {
+                callback.complete(result);
+            }
+        }
     }
 
     @Override
@@ -441,7 +455,14 @@ public class TemplateServiceImpl implements TemplateService {
                             tmplTO.setId(tInfo.getId());
                             DeleteCommand dtCommand = new DeleteCommand(tmplTO);
                             EndPoint ep = _epSelector.select(store);
-                            Answer answer = ep.sendMessage(dtCommand);
+                            Answer answer = null;
+                            if (ep == null) {
+                                String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+                                s_logger.error(errMsg);
+                                answer = new Answer(dtCommand, false, errMsg);
+                            } else {
+                                answer = ep.sendMessage(dtCommand);
+                            }
                             if (answer == null || !answer.getResult()) {
                                 s_logger.info("Failed to deleted template at store: " + store.getName());
 
@@ -513,7 +534,14 @@ public class TemplateServiceImpl implements TemplateService {
     private Map<String, TemplateProp> listTemplate(DataStore ssStore) {
         ListTemplateCommand cmd = new ListTemplateCommand(ssStore.getTO());
         EndPoint ep = _epSelector.select(ssStore);
-        Answer answer = ep.sendMessage(cmd);
+        Answer answer = null;
+        if (ep == null) {
+            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            answer = new Answer(cmd, false, errMsg);
+        } else {
+            answer = ep.sendMessage(cmd);
+        }
         if (answer != null && answer.getResult()) {
             ListTemplateAnswer tanswer = (ListTemplateAnswer) answer;
             return tanswer.getTemplateInfo();
@@ -718,11 +746,23 @@ public class TemplateServiceImpl implements TemplateService {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Invoke datastore driver createAsync to create template on destination store");
         }
-        TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(null,
-                (TemplateObject) templateOnStore, future);
-        AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
-        caller.setCallback(caller.getTarget().copyTemplateCrossZoneCallBack(null, null)).setContext(context);
-        destStore.getDriver().createAsync(destStore, templateOnStore, caller);
+        try {
+            TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(null,
+                    (TemplateObject)templateOnStore, future);
+            AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().copyTemplateCrossZoneCallBack(null, null)).setContext(context);
+            destStore.getDriver().createAsync(destStore, templateOnStore, caller);
+        } catch (CloudRuntimeException ex) {
+            // clean up already persisted template_store_ref entry in case of createTemplateCallback is never called
+            TemplateDataStoreVO templateStoreVO = _vmTemplateStoreDao.findByStoreTemplate(destStore.getId(), srcTemplate.getId());
+            if (templateStoreVO != null) {
+                TemplateInfo tmplObj = _templateFactory.getTemplate(srcTemplate, destStore);
+                tmplObj.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+            }
+            TemplateApiResult res = new TemplateApiResult((TemplateObject)templateOnStore);
+            res.setResult(ex.getMessage());
+            future.complete(res);
+        }
         return future;
     }
 

@@ -19,9 +19,9 @@
 ### Please standardize naming conventions to camel-case (even for acronyms).
 
 ### Account commands
-createAccount=3
-deleteAccount=3
-updateAccount=3
+createAccount=7
+deleteAccount=7
+updateAccount=7
 disableAccount=7
 enableAccount=7
 lockAccount=7
@@ -29,8 +29,8 @@ listAccounts=15
 markDefaultZoneForAccount=1
 
 #### User commands
-createUser=3
-deleteUser=3
+createUser=7
+deleteUser=7
 updateUser=15
 listUsers=7
 lockUser=7
@@ -698,5 +698,6 @@ removeAccountFromAclGroup=7
 grantPermissionToAclGroup=7
 revokePermissionFromAclGroup=7
 
-
+#### juniper-contrail commands
+createServiceInstance=1
 

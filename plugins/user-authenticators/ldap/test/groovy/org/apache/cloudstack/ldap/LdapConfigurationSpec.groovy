@@ -220,4 +220,37 @@ class LdapConfigurationSpec extends spock.lang.Specification {
 		then: "The response should be true"
 		result == true
 	}
+
+    def "Test getgroupobject"() {
+	given: "We have configdao for ldap group object"
+	def configDao = Mock(ConfigurationDao)
+	configDao.getValue("ldap.group.object") >> groupObject
+
+	def ldapManger = Mock(LdapManager)
+	LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapManger)
+	def expectedResult = groupObject == null ? "groupOfUniqueNames" : groupObject
+
+	def result = ldapConfiguration.getGroupObject()
+	expect:
+	result == expectedResult
+	where:
+	groupObject << [null, "", "groupOfUniqueNames"]
+    }
+
+    def "Test getGroupUniqueMemeberAttribute"() {
+	given: "We have configdao for ldap group object"
+	def configDao = Mock(ConfigurationDao)
+	configDao.getValue("ldap.group.user.uniquemember") >> groupObject
+
+	def ldapManger = Mock(LdapManager)
+	LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapManger)
+	def expectedResult = groupObject == null ? "uniquemember" : groupObject
+
+	def result = ldapConfiguration.getGroupUniqueMemeberAttribute()
+	expect:
+	result == expectedResult
+	where:
+	groupObject << [null, "", "uniquemember"]
+    }
+
 }

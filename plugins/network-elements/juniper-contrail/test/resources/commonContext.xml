@@ -1,0 +1,172 @@
+<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
+  license agreements. See the NOTICE file distributed with this work for additional 
+  information regarding copyright ownership. The ASF licenses this file to 
+  you under the Apache License, Version 2.0 (the "License"); you may not use 
+  this file except in compliance with the License. You may obtain a copy of 
+  the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required 
+  by applicable law or agreed to in writing, software distributed under the 
+  License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
+  OF ANY KIND, either express or implied. See the License for the specific 
+  language governing permissions and limitations under the License. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+  xmlns:tx="http://www.springframework.org/schema/tx" xmlns:aop="http://www.springframework.org/schema/aop"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans
+                      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+                      http://www.springframework.org/schema/tx 
+                      http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+                      http://www.springframework.org/schema/aop
+                      http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+                      http://www.springframework.org/schema/context
+                      http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+  <context:annotation-config />
+<!--
+  <context:component-scan base-package="org.apache.cloudstack, com.cloud" />
+-->
+  <!--
+    @DB support
+  -->
+
+   <bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />
+   <bean id="actionEventInterceptor" class="com.cloud.event.ActionEventInterceptor" />
+  <bean id="contrailEventInterceptor" class="org.apache.cloudstack.network.contrail.management.EventUtils.EventInterceptor" />
+
+  <bean id="instantiatePostProcessor" class="com.cloud.utils.component.ComponentInstantiationPostProcessor">
+    <property name="Interceptors">
+      <list>
+        <ref bean="transactionContextBuilder" />
+        <ref bean="actionEventInterceptor" />
+	<ref bean="contrailEventInterceptor" />
+      </list>
+    </property>
+  </bean>
+
+  <bean id="eventBus" class = "org.apache.cloudstack.framework.messagebus.MessageBusBase" />
+
+  <bean id="eventDaoImpl" class="com.cloud.event.dao.EventDaoImpl" />
+
+  <bean id="actionEventUtils" class="com.cloud.event.ActionEventUtils" />
+  <bean id="usageEventDaoImpl" class="com.cloud.event.dao.UsageEventDaoImpl" />
+
+  <!--<bean id="eventUtils" class="com.cloud.event.EventUtils" />-->
+
+  <bean id="accountDaoImpl" class="com.cloud.user.dao.AccountDaoImpl" />
+  <bean id="accountDetailsDaoImpl" class="com.cloud.user.AccountDetailsDaoImpl" />
+  <bean id="accountJoinDaoImpl" class="com.cloud.api.query.dao.AccountJoinDaoImpl" />
+  <bean id="accountVlanMapDaoImpl" class="com.cloud.dc.dao.AccountVlanMapDaoImpl" />
+  <bean id="launchPermissionDaoImpl" class="com.cloud.storage.dao.LaunchPermissionDaoImpl" />
+  <bean id="primaryDataStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl" />
+  <bean id="iPAddressDaoImpl" class="com.cloud.network.dao.IPAddressDaoImpl" />
+  <bean id="apiResponseHelper" class="com.cloud.api.ApiResponseHelper" />
+  <bean id="nicDaoImpl" class="com.cloud.vm.dao.NicDaoImpl" />
+
+  <bean id="componentContext" class="com.cloud.utils.component.ComponentContext"/>
+
+  <bean id="IntegrationTestConfiguration"
+	class="org.apache.cloudstack.network.contrail.management.IntegrationTestConfiguration"/>
+
+  <bean id="HypervisorGuru"
+       class="com.cloud.hypervisor.XenServerGuru"/>
+
+  <!-- Management traffic -->
+  <bean id="PodBasedNetworkGuru"
+	class="com.cloud.network.guru.PodBasedNetworkGuru"/>
+
+  <bean id="ControlNetworkGuru"
+	class="com.cloud.network.guru.ControlNetworkGuru"/>
+
+  <bean id="PublicNetworkGuru"
+	class="com.cloud.network.guru.PublicNetworkGuru"/>
+
+  <bean id="StorageNetworkGuru"
+	class="com.cloud.network.guru.StorageNetworkGuru"/>
+
+  <bean id="DirectNetworkGuru"
+	class="com.cloud.network.guru.DirectNetworkGuru"/>
+
+  <bean id="VpcVirtualRouterElement"
+	class="com.cloud.network.element.VpcVirtualRouterElement"/>
+
+  <bean id="VirtualRouterElement"
+	class="com.cloud.network.element.VirtualRouterElement"/>
+
+  <!--
+  <bean id="Ipv6AddressManager"
+	class="com.cloud.network.Ipv6AddressManagerImpl"/>
+  -->
+
+
+  <bean id="com.cloud.network.security.SecurityGroupManager"
+	class="com.cloud.network.security.SecurityGroupManagerImpl"/>
+
+  <bean id="SecurityGroupElement"
+	class="com.cloud.network.element.SecurityGroupElement"/>
+	
+  <bean id="InternalLbVm" class="org.apache.cloudstack.network.element.InternalLoadBalancerElement">
+      <property name="name" value="InternalLbVm"/>
+  </bean>
+  <!--
+
+  <bean id="UserAuthenticator"
+	class="com.cloud.server.auth.PlainTextUserAuthenticator"/>
+  <bean id="ManagementServer"
+	class="com.cloud.server.ManagementServerImpl"/>
+
+  <bean id="SecondaryStorageVmManager"
+	class="com.cloud.storage.secondary.SecondaryStorageManagerImpl"/>
+
+  <bean id="PodAllocator"
+	class="com.cloud.agent.manager.allocator.impl.UserConcentratedAllocator"/>
+  -->
+  <bean id="com.cloud.vm.UserVmManager"
+	class="com.cloud.vm.UserVmManagerImpl"/>
+
+  <bean id="com.cloud.vm.VirtualMachineManager"
+	class="com.cloud.vm.VirtualMachineManagerImpl"/>
+
+  <!--
+  <bean id="com.cloud.vm.dao.UserVmDao"
+	class="com.cloud.vm.dao.UserVmDaoImpl"/>
+  -->
+  <bean id="ContrailElement"
+        class="org.apache.cloudstack.network.contrail.management.ContrailElementImpl"/>
+
+  <bean id="ContrailGuru"
+        class="org.apache.cloudstack.network.contrail.management.ContrailGuru"/>
+
+  <bean id="networkElements" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
+      <list>
+          <ref bean="ContrailElement"/>
+          <ref bean="VirtualRouterElement"/>
+          <ref bean="SecurityGroupElement"/>
+          <ref bean="VpcVirtualRouterElement"/>
+          <ref bean="InternalLbVm"/>
+      </list>
+    </property>
+  </bean>
+
+  <bean id="networkGurus" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
+      <list>
+          <ref bean="ContrailGuru"/>
+          <ref bean="PublicNetworkGuru"/>
+          <ref bean="PodBasedNetworkGuru"/>
+          <ref bean="ControlNetworkGuru"/>
+          <ref bean="StorageNetworkGuru"/>
+      </list>
+    </property>
+  </bean>
+
+
+  <bean id="networkModelImpl" class="com.cloud.network.NetworkModelImpl">
+    <property name="NetworkElements" value="#{networkElements.Adapters}" />
+  </bean>
+
+  <bean id="networkOrchestrator" class="org.apache.cloudstack.engine.orchestration.NetworkOrchestrator" >
+    <property name="NetworkElements" value="#{networkElements.Adapters}" />
+    <property name="NetworkGurus" value="#{networkGurus.Adapters}" />
+  </bean>
+
+</beans>

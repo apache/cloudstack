@@ -85,10 +85,7 @@
   <bean id="AccountGuestVlanMapDaoImpl" class="com.cloud.network.dao.AccountGuestVlanMapDaoImpl" />
   <bean id="StorageCacheReplacementAlgorithm" class="org.apache.cloudstack.storage.cache.manager.StorageCacheReplacementAlgorithmLRU" />
   <bean id="ServiceOfferingDetailsDao" class="com.cloud.service.dao.ServiceOfferingDetailsDaoImpl" />
-<<<<<<< HEAD
   <bean id="storageStrategyFactoryImpl" class="org.apache.cloudstack.storage.helper.StorageStrategyFactoryImpl" />
-=======
   <bean id="vmsnapshotDetailsDao" class="com.cloud.vm.snapshot.dao.VMSnapshotDetailsDaoImpl" />
   <bean id="snapshotManager" class="com.cloud.storage.snapshot.SnapshotManagerImpl" />
->>>>>>> pluggable_vm_snapshot
 </beans>

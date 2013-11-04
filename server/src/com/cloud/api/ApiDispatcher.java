@@ -33,10 +33,9 @@ import java.util.regex.Matcher;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.ApiConstants;
@@ -59,6 +58,7 @@ import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -192,7 +192,22 @@ public class ApiDispatcher {
             }
 
             //TODO: Annotate @Validate on API Cmd classes, FIXME how to process Validate
-            Validate validateAnnotation = field.getAnnotation(Validate.class);
+            RoleType[] allowedRoles = parameterAnnotation.authorized();
+            if (allowedRoles.length > 0) {
+                boolean permittedParameter = false;
+                Account caller = CallContext.current().getCallingAccount();
+                for (RoleType allowedRole : allowedRoles) {
+                    if (allowedRole.getValue() == caller.getType()) {
+                        permittedParameter = true;
+                        break;
+                    }
+                }
+                if (!permittedParameter) {
+                    s_logger.debug("Ignoring paremeter " + parameterAnnotation.name() + " as the caller is not authorized to pass it in");
+                    continue;
+                }
+            }
+            
             Object paramObj = unpackedParams.get(parameterAnnotation.name());
             if (paramObj == null) {
                 if (parameterAnnotation.required()) {

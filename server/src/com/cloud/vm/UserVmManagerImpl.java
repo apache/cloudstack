@@ -916,6 +916,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if(network == null) {
             throw new InvalidParameterValueException("unable to find a network with id " + networkId);
         }
+        if (!(network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain)
+                && !(network.getAclType() == ACLType.Account && network.getAccountId() == vmInstance.getAccountId())) {
+            throw new InvalidParameterValueException("only shared network or isolated network with the same account_id can be added to vmId: " + vmId);
+        }
         List<NicVO> allNics = _nicDao.listByVmId(vmInstance.getId());
         for(NicVO nic : allNics){
             if(nic.getNetworkId() == network.getId())
@@ -2652,7 +2656,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         + network.getId() + " doesn't belong to zone "
                         + zone.getId());
             }
-
+            if (!(network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain)
+                    && !(network.getAclType() == ACLType.Account && network.getAccountId() == accountId)) {
+                throw new InvalidParameterValueException("only shared network or isolated network with the same account_id can be added to vm");
+            }
             IpAddresses requestedIpPair = null;
             if (requestedIps != null && !requestedIps.isEmpty()) {
                 requestedIpPair = requestedIps.get(network.getId());

@@ -360,4 +360,8 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     public void handleDatastoreAndVmdkDetach(String iqn, String storageHost, int storagePort) throws Exception {
         throw new OperationNotSupportedException();
     }
+
+    public void removeManagedTargetsFromCluster(List<String> managedIqns) throws Exception {
+        throw new OperationNotSupportedException();
+    }
 }

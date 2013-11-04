@@ -30,6 +30,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 
@@ -128,9 +129,9 @@ import com.cloud.vm.dao.NicDao;
         SourceNatServiceProvider.class, StaticNatServiceProvider.class,
         PortForwardingServiceProvider.class, IpDeployer.class} )
 public class NiciraNvpElement extends AdapterBase implements
-        ConnectivityProvider, SourceNatServiceProvider,
-        PortForwardingServiceProvider, StaticNatServiceProvider,
-        NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
+ConnectivityProvider, SourceNatServiceProvider,
+PortForwardingServiceProvider, StaticNatServiceProvider,
+NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
     private static final Logger s_logger = Logger
             .getLogger(NiciraNvpElement.class);
 
@@ -217,8 +218,8 @@ public class NiciraNvpElement extends AdapterBase implements
     @Override
     public boolean implement(Network network, NetworkOffering offering,
             DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
+                    throws ConcurrentOperationException, ResourceUnavailableException,
+                    InsufficientCapacityException {
         s_logger.debug("entering NiciraNvpElement implement function for network "
                 + network.getDisplayText()
                 + " (state "
@@ -247,17 +248,6 @@ public class NiciraNvpElement extends AdapterBase implements
 
         Account owner = context.getAccount();
 
-        /**
-         * Lock the network as we might need to do multiple operations that
-         * should be done only once.
-         */
-//		Network lock = _networkDao.acquireInLockTable(network.getId(),
-//				_networkModel.getNetworkLockTimeout());
-//		if (lock == null) {
-//			throw new ConcurrentOperationException("Unable to lock network "
-//					+ network.getId());
-//		}
-
         // Implement SourceNat immediately as we have al the info already
         if (_networkModel.isProviderSupportServiceInNetwork(
                 network.getId(), Service.SourceNat, Provider.NiciraNvp)) {
@@ -277,9 +267,9 @@ public class NiciraNvpElement extends AdapterBase implements
                     BroadcastDomainType.getValue(network.getBroadcastUri()),
                     "router-" + network.getDisplayText(), publicCidr,
                     sourceNatIp.getGateway(), internalCidr, context
-                            .getDomain().getName()
-                            + "-"
-                            + context.getAccount().getAccountName());
+                    .getDomain().getName()
+                    + "-"
+                    + context.getAccount().getAccountName());
             CreateLogicalRouterAnswer answer = (CreateLogicalRouterAnswer)_agentMgr
                     .easySend(niciraNvpHost.getId(), cmd);
             if (answer.getResult() == false) {
@@ -343,7 +333,7 @@ public class NiciraNvpElement extends AdapterBase implements
                         BroadcastDomainType.getValue(network.getBroadcastUri()),
                         nicVO.getUuid(), context.getDomain().getName() + "-"
                                 + context.getAccount().getAccountName(),
-                        nic.getName());
+                                nic.getName());
                 _agentMgr.easySend(niciraNvpHost.getId(), cmd);
                 return true;
             } else {
@@ -489,7 +479,7 @@ public class NiciraNvpElement extends AdapterBase implements
     @Override
     public boolean shutdownProviderInstances(
             PhysicalNetworkServiceProvider provider, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException {
+                    throws ConcurrentOperationException, ResourceUnavailableException {
         // Nothing to do here.
         return true;
     }
@@ -618,7 +608,7 @@ public class NiciraNvpElement extends AdapterBase implements
                                 physicalNetworkId, ntwkSvcProvider.getProviderName(),
                                 deviceName);
                         _niciraNvpDao.persist(niciraNvpDevice);
-        
+
                         DetailVO detail = new DetailVO(host.getId(),
                                 "niciranvpdeviceid", String.valueOf(niciraNvpDevice
                                         .getId()));
@@ -818,7 +808,7 @@ public class NiciraNvpElement extends AdapterBase implements
     @Override
     public boolean applyIps(Network network,
             List<? extends PublicIpAddress> ipAddress, Set<Service> services)
-            throws ResourceUnavailableException {
+                    throws ResourceUnavailableException {
         if (services.contains(Service.SourceNat)) {
             // Only if we need to provide SourceNat we need to configure the logical router
             // SourceNat is required for StaticNat and PortForwarding
@@ -869,7 +859,7 @@ public class NiciraNvpElement extends AdapterBase implements
     @Override
     public boolean applyStaticNats(Network network,
             List<? extends StaticNat> rules)
-            throws ResourceUnavailableException {
+                    throws ResourceUnavailableException {
         if (!canHandle(network, Service.StaticNat)) {
             return false;
         }

@@ -53,6 +53,9 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
             required=true, description="id of the customer gateway")
     private Long customerGatewayId;
 
+    @Parameter(name=ApiConstants.PASSIVE, type=CommandType.BOOLEAN, required=false, description="connection is passive or not")
+    private Boolean passive;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -64,6 +67,13 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
 
     public Long getCustomerGatewayId() {
         return customerGatewayId;
+    }
+    
+    public boolean isPassive() {
+    	if (passive == null) {
+    		return false;
+    	}
+    	return passive;
     }
 
     /////////////////////////////////////////////////////

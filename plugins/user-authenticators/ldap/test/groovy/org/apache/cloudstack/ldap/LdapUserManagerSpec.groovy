@@ -21,8 +21,10 @@ import org.apache.cloudstack.ldap.LdapUserManager
 import spock.lang.Shared
 
 import javax.naming.NamingException
+import javax.naming.NamingEnumeration
 import javax.naming.directory.Attribute
 import javax.naming.directory.Attributes
+import javax.naming.directory.DirContext
 import javax.naming.directory.SearchControls
 import javax.naming.directory.SearchResult
 import javax.naming.ldap.LdapContext
@@ -47,6 +49,38 @@ class LdapUserManagerSpec extends spock.lang.Specification {
     @Shared
     private def principal
 
+    private def createGroupSearchContext() {
+
+	def umSearchResult = Mock(SearchResult)
+	umSearchResult.getName() >> principal;
+	umSearchResult.getAttributes() >> principal
+
+	def uniqueMembers = new BasicNamingEnumerationImpl()
+	uniqueMembers.add(umSearchResult);
+	def attributes = Mock(Attributes)
+	def uniqueMemberAttribute = Mock(Attribute)
+	uniqueMemberAttribute.getId() >> "uniquemember"
+	uniqueMemberAttribute.getAll() >> uniqueMembers
+	attributes.get("uniquemember") >> uniqueMemberAttribute
+
+	def groupSearchResult = Mock(SearchResult)
+	groupSearchResult.getName() >> principal;
+	groupSearchResult.getAttributes() >> attributes
+
+	def searchGroupResults = new BasicNamingEnumerationImpl()
+	searchGroupResults.add(groupSearchResult);
+
+	attributes = createUserAttributes(username, email, firstname, lastname)
+	SearchResult userSearchResult = createSearchResult(attributes)
+	def searchUsersResults = new BasicNamingEnumerationImpl()
+	searchUsersResults.add(userSearchResult);
+
+	def context = Mock(LdapContext)
+	context.search(_, _, _) >>> [searchGroupResults, searchUsersResults];
+
+	return context
+    }
+
     private def createContext() {
 		Attributes attributes = createUserAttributes(username, email, firstname, lastname)
 		SearchResult searchResults = createSearchResult(attributes)
@@ -65,6 +99,7 @@ class LdapUserManagerSpec extends spock.lang.Specification {
 		search.getName() >> "cn=" + attributes.getAt("uid").get();
 
 		search.getAttributes() >> attributes
+	search.getNameInNamespace() >> principal
 
 		return search
     }
@@ -105,6 +140,9 @@ class LdapUserManagerSpec extends spock.lang.Specification {
         ldapConfiguration.getFirstnameAttribute() >> "givenname"
         ldapConfiguration.getLastnameAttribute() >> "sn"
         ldapConfiguration.getBaseDn() >> "dc=cloudstack,dc=org"
+	ldapConfiguration.getCommonNameAttribute() >> "cn"
+	ldapConfiguration.getGroupObject() >> "groupOfUniqueNames"
+	ldapConfiguration.getGroupUniqueMemeberAttribute() >> "uniquemember"
 
         username = "rmurphy"
         email = "rmurphy@test.com"
@@ -202,5 +240,44 @@ class LdapUserManagerSpec extends spock.lang.Specification {
 		def result = new LdapUserManager();
 		expect: "The result is not null"
 		result != null
+    }
+
+    def "test successful generateGroupSearchFilter"() {
+	given: "ldap user manager and ldap config"
+	def ldapUserManager = new LdapUserManager(ldapConfiguration)
+	def groupName = varGroupName == null ? "*" : varGroupName
+	def expectedResult = "(&(objectClass=groupOfUniqueNames)(cn="+groupName+"))";
+
+	def result = ldapUserManager.generateGroupSearchFilter(varGroupName)
+	expect:
+	result == expectedResult
+	where: "The group name passed is set to "
+	varGroupName << ["", null, "Murphy"]
+    }
+
+    def "test successful getUsersInGroup"(){
+	given: "ldap user manager and ldap config"
+	def ldapUserManager = new LdapUserManager(ldapConfiguration)
+
+	when: "A request for users is made"
+	def result = ldapUserManager.getUsersInGroup("engineering", createGroupSearchContext())
+	then: "one user is returned"
+	result.size() == 1
+    }
+
+    def "test successful getUserForDn"(){
+	given: "ldap user manager and ldap config"
+	def ldapUserManager = new LdapUserManager(ldapConfiguration)
+
+	when: "A request for users is made"
+	def result = ldapUserManager.getUserForDn("cn=Ryan Murphy,ou=engineering,dc=cloudstack,dc=org",createContext())
+	then: "A list of users is returned"
+	result != 1
+	result.username == username
+	result.email == email
+	result.firstname == firstname
+	result.lastname == lastname
+	result.principal == principal
+
     }
 }

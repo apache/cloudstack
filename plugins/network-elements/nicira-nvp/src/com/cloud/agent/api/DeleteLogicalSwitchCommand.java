@@ -17,11 +17,11 @@
 package com.cloud.agent.api;
 
 public class DeleteLogicalSwitchCommand extends Command {
-    
+
     private String _logicalSwitchUuid;
-    
+
     public DeleteLogicalSwitchCommand(String logicalSwitchUuid) {
-        this._logicalSwitchUuid = logicalSwitchUuid;
+        _logicalSwitchUuid = logicalSwitchUuid;
     }
 
     @Override
