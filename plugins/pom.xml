@@ -121,17 +121,6 @@
       </modules>
     </profile>
     <profile>
-      <id>hyperV</id>
-      <activation>
-        <property>
-          <name>hyperV</name>
-        </property>
-      </activation>
-      <modules>
- 	   <module>hypervisors/hyperv</module>
-      </modules>
-    </profile>
-    <profile>
       <id>f5</id>
       <activation>
         <property>

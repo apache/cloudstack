@@ -60,6 +60,9 @@
     <testSourceDirectory>test</testSourceDirectory>
     <resources>
       <resource>
+        <directory>resources</directory>
+      </resource>
+      <resource>
         <directory>conf</directory>
       </resource>
     </resources>
