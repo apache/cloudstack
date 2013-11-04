@@ -18,9 +18,6 @@ package com.cloud.agent.dhcp;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -32,8 +29,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
 import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
 
