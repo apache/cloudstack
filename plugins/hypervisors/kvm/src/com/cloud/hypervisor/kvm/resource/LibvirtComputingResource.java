@@ -2910,8 +2910,7 @@ ServerResource {
         try {
             conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             ifaces = getInterfaces(conn, vmName);
-            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                    .getBytes()));
+            dm = conn.domainLookupByName(vmName);
             /*
                 We replace the private IP address with the address of the destination host.
                 This is because the VNC listens on the private IP address of the hypervisor,
