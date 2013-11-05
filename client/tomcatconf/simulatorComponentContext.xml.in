@@ -136,6 +136,14 @@
     </property>
   </bean>
 
+  <bean id="haPlanners" class="com.cloud.utils.component.AdapterList">
+    <property name="Adapters">
+      <list>
+          <ref bean="SkipHeuresticsPlanner" />
+      </list>
+    </property>
+  </bean>
+
   <!-- Deployment/allocation adapters -->
   <bean id="deploymentPlanners" class="com.cloud.utils.component.AdapterList">
     <property name="Adapters">
