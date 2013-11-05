@@ -85,6 +85,12 @@
                     return true;
                 }
 
+                var isHidden = $multi.find('th.' + fieldName).hasClass('always-hide');
+
+                if (isHidden) {
+                    return true;
+                }
+                
                 var $td = $('<td>').addClass(fieldName).appendTo($tr);
                 var $input, val;
                 var $addButton = $multi.find('form .button.add-vm:not(.custom-action)').clone();
@@ -264,7 +270,7 @@
 
                 // Align width to main header
                 _medit.refreshItemWidths($multi);
-
+                
                 if (data._hideFields &&
                     $.inArray(fieldName, data._hideFields) > -1) {
                     $td.addClass('disabled');
@@ -891,7 +897,16 @@
             $td.attr('rel', fieldName);
             $td.appendTo($inputForm);
 
-            if (field.isHidden) {
+            var isHidden = $.isFunction(field.isHidden) ?
+                    field.isHidden({ context: context }) : field.isHidden;
+
+            if (isHidden) {
+                // return true == hide only header and form column
+                // return 2 == hide header and form, as well as returned item column
+                if (isHidden === 2) {
+                    $th.addClass('always-hide');
+                }
+
                 $th.hide();
                 $td.hide();
             }
