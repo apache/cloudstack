@@ -26,6 +26,7 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -1530,6 +1531,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Object haHosts = cmd.getHaHost();
         Long startIndex = cmd.getStartIndex();
         Long pageSize = cmd.getPageSizeVal();
+        Hypervisor.HypervisorType hypervisorType = cmd.getHypervisor();
 
         Filter searchFilter = new Filter(HostJoinVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
@@ -1544,6 +1546,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("resourceState", sb.entity().getResourceState(), SearchCriteria.Op.EQ);
+        sb.and("hypervisor_type", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
 
         String haTag = _haMgr.getHaTag();
         if (haHosts != null && haTag != null && !haTag.isEmpty()) {
@@ -1599,6 +1602,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sc.setParameters("tag", haTag);
         }
 
+        if (hypervisorType != HypervisorType.None && hypervisorType != HypervisorType.Any) {
+            sc.setParameters("hypervisor_type", hypervisorType);
+        }
         // search host details by ids
         Pair<List<HostJoinVO>, Integer> uniqueHostPair = _hostJoinDao.searchAndCount(sc, searchFilter);
         Integer count = uniqueHostPair.second();

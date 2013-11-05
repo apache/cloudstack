@@ -72,6 +72,9 @@ public class HostResponse extends BaseResponse {
     @SerializedName(ApiConstants.HYPERVISOR) @Param(description="the host hypervisor")
     private HypervisorType hypervisor;
 
+    @SerializedName("cpusockets") @Param(description="the number of CPU sockets on the host")
+    private Integer cpuSockets;
+
     @SerializedName("cpunumber") @Param(description="the CPU number of the host")
     private Integer cpuNumber;
 
@@ -223,6 +226,10 @@ public class HostResponse extends BaseResponse {
 
     public void setHypervisor(HypervisorType hypervisor) {
         this.hypervisor = hypervisor;
+    }
+
+    public void setCpuSockets(Integer cpuSockets) {
+        this.cpuSockets = cpuSockets;
     }
 
     public void setCpuNumber(Integer cpuNumber) {

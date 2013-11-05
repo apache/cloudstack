@@ -321,6 +321,9 @@ public class HostVO implements Host {
     @Column(name="pod_id")
     private Long podId;
 
+    @Column(name="cpu_sockets")
+    private Integer cpuSockets;
+
     @Column(name="cpus")
     private Integer cpus;
 
@@ -501,6 +504,10 @@ public class HostVO implements Host {
         this.privateIpAddress = ipAddress;
     }
 
+    public void setCpuSockets(Integer cpuSockets) {
+        this.cpuSockets = cpuSockets;
+    }
+
     public void setCpus(Integer cpus) {
         this.cpus = cpus;
     }
@@ -619,6 +626,11 @@ public class HostVO implements Host {
 
     public void setGuid(String guid) {
         this.guid = guid;
+    }
+
+    @Override
+    public Integer getCpuSockets() {
+        return cpuSockets;
     }
 
     @Override

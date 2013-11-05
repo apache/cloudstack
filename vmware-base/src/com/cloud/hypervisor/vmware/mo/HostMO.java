@@ -913,6 +913,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         summary.setCpuCount(hardwareSummary.getNumCpuThreads());
 		summary.setMemoryBytes(hardwareSummary.getMemorySize());
 		summary.setCpuSpeed(hardwareSummary.getCpuMhz());
+        summary.setCpuSockets((int)hardwareSummary.getNumCpuPkgs());
 
 	    if(s_logger.isTraceEnabled())
 			s_logger.trace("vCenter API trace - getHyperHostResourceSummary() done");

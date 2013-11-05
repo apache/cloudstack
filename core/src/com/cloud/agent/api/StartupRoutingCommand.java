@@ -42,6 +42,7 @@ public class StartupRoutingCommand extends StartupCommand {
             return host;
         }
     }
+    Integer cpuSockets;
     int cpus;
     long speed;
     long memory;
@@ -133,6 +134,10 @@ getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStr
     	_clusterVMStates = allStates;
     }
 
+    public Integer getCpuSockets() {
+        return cpuSockets;
+    }
+
     public int getCpus() {
         return cpus;
     }
@@ -163,6 +168,10 @@ getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStr
 
     public void setSpeed(long speed) {
         this.speed = speed;
+    }
+
+    public void setCpuSockets(Integer cpuSockets) {
+        this.cpuSockets = cpuSockets;
     }
 
     public void setCpus(int cpus) {

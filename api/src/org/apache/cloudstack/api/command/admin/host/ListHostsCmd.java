@@ -21,6 +21,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -88,6 +89,9 @@ public class ListHostsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.HA_HOST, type=CommandType.BOOLEAN, description="if true, list only hosts dedicated to HA")
     private Boolean haHost;
 
+    @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="hypervisor type of host: XenServer,KVM,VMware,Hyperv,BareMetal,Simulator")
+    private String hypervisor;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -126,6 +130,10 @@ public class ListHostsCmd extends BaseListCmd {
     
     public Long getVirtualMachineId() {
         return virtualMachineId;
+    }
+
+    public HypervisorType getHypervisor() {
+        return HypervisorType.getType(hypervisor);
     }
 
     public EnumSet<HostDetails> getDetails() throws InvalidParameterValueException {

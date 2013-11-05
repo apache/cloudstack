@@ -4829,7 +4829,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (_host.cpus <= 0) {
                 throw new CloudRuntimeException("Cannot get the numbers of cpu from XenServer host " + _host.ip);
             }
-
+            Map<String, String> cpuInfo = myself.getCpuInfo(conn);
+            if (cpuInfo.get("socket_count") != null) {
+                _host.cpuSockets = Integer.parseInt(cpuInfo.get("socket_count"));
+            }
             for (final HostCpu hc : hcs) {
                 _host.speed = hc.getSpeed(conn).intValue();
                 break;
@@ -5974,6 +5977,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             cmd.setCaps(caps.toString());
 
             cmd.setSpeed(_host.speed);
+            cmd.setCpuSockets(_host.cpuSockets);
             cmd.setCpus(_host.cpus);
 
             HostMetrics hm = host.getMetrics(conn);
@@ -8074,6 +8078,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         public String storagePif2;
         public String pool;
         public int speed;
+        public Integer cpuSockets;
         public int cpus;
         public String product_version;
         public String localSRuuid;

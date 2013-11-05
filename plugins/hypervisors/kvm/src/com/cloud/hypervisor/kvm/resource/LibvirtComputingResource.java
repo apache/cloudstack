@@ -3986,6 +3986,7 @@ ServerResource {
                 (Long) info.get(4), (String) info.get(3), _hypervisorType,
                 RouterPrivateIpStrategy.HostLocal);
         cmd.setStateChanges(changes);
+        cmd.setCpuSockets((Integer)info.get(5));
         fillNetworkInformation(cmd);
         _privateIp = cmd.getPrivateIpAddress();
         cmd.getHostDetails().putAll(getVersionStrings());
@@ -4311,6 +4312,7 @@ ServerResource {
         long speed = 0;
         long cpus = 0;
         long ram = 0;
+        int cpuSockets = 0;
         String cap = null;
         try {
             Connect conn = LibvirtConnection.getConnection();
@@ -4334,6 +4336,7 @@ ServerResource {
                 speed = hosts.mhz;
             }
 
+            cpuSockets = hosts.sockets;
             cpus = hosts.cpus;
             ram = hosts.memory * 1024L;
             LibvirtCapXMLParser parser = new LibvirtCapXMLParser();
@@ -4366,8 +4369,9 @@ ServerResource {
         // 768M
         dom0ram = Math.max(dom0ram, _dom0MinMem);
         info.add(dom0ram);
+        info.add(cpuSockets);
         s_logger.debug("cpus=" + cpus + ", speed=" + speed + ", ram=" + ram
-                + ", dom0ram=" + dom0ram);
+                + ", dom0ram=" + dom0ram + ", cpu sockets=" + cpuSockets);
 
         return info;
     }
