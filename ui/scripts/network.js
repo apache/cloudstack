@@ -3368,6 +3368,12 @@
                                                     requireValidation: true,
                                                     buttonLabel: 'label.configure',
                                                     action: cloudStack.uiCustom.autoscaler(cloudStack.autoscaler)
+                                                },
+                                                isHidden: function(args) {
+                                                    // return 2 == hide header and form, as well as returned item column
+                                                    // return 2;
+
+                                                    return false;
                                                 }
                                             },
 
