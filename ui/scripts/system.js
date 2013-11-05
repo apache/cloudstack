@@ -380,9 +380,64 @@
                         }
                     },
 
-                    socketInfo: function(data) {
+                    socketInfo: function(data) {                    	
+                    	var socketCount = 0;                    	
+                    	$.ajax({
+                            url: createURL('listHypervisors'),
+                            async: false,
+                            success: function(json) {
+                                args.response.success({
+                                    data: $(json.listhypervisorsresponse.hypervisor).map(function(index, hypervisor) {                                                	
+                                    	var totalHostCount = 0;                                                	
+                                    	var currentPage = 1;
+                                    	var returnedHostCount = 0;
+                                    	var returnedHostCpusocketsSum = 0;
+                                    	var returnedHostHavingCpusockets = true;
+                                    	                                                	
+                                    	var callListHostsWithPage = function(setTotalHostCount) {                                                		
+                                    		$.ajax({
+                            					url: createURL('listHosts'),
+                                        		async: false,
+                                        		data: {
+                                        			hypervisortype: hypervisor.name,
+                                        			page: currentPage,
+                                        	        pagesize: pageSize //global variable
+                                        		},
+                                        		success: function(json) {                                                      			
+                                        			if (setTotalHostCount) {
+                                        				totalHostCount = json.listhostsresponse.count;
+                                        			}                                                    			
+                                        			returnedHostCount += json.listhostsresponse.host.length;
+                                        			                                                    			
+                                        			var items = json.listhostsresponse.host;
+                                        			for (var i = 0; i < items.length; i++) {
+                                        				if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
+                                        					returnedHostCpusocketsSum += items[i].cpusockets;
+                                        				} else {
+                                        					returnedHostHavingCpusockets = false;
+                                        				}
+                                        			}  
+                                        			
+                                        			if (returnedHostCount < totalHostCount) {
+                                        				currentPage++;
+                                        				callListHostsWithPage(false);
+                                        			}                                                    			
+                                        		}
+                            				});                                                		
+                                    	}
+                                    	
+                                    	callListHostsWithPage(true);
+                                    	
+                                    	if (returnedHostHavingCpusockets) {
+                                    		socketCount += returnedHostCpusocketsSum;
+                                    	}                                    	
+                                    })
+                                });
+                            }
+                        });
+                    	
                         complete($.extend(data, {
-                            socketCount: 0
+                            socketCount: socketCount
                         }));
                     }
                 };
@@ -7135,22 +7190,50 @@
                                         success: function(json) {
                                             args.response.success({
                                                 data: $(json.listhypervisorsresponse.hypervisor).map(function(index, hypervisor) {                                                	
-                                                	var hostCount;
-                                                	$.ajax({
-                                                		url: createURL('listHosts'),
-                                                		async: false,
-                                                		data: {
-                                                			hypervisortype: hypervisor.name
-                                                		},
-                                                		success: function(json) {                                                			
-                                                			hostCount = json.listhostsresponse.count;
-                                                		}
-                                                	});                                                	                                               	
+                                                	var totalHostCount = 0;                                                	
+                                                	var currentPage = 1;
+                                                	var returnedHostCount = 0;
+                                                	var returnedHostCpusocketsSum = 0;
+                                                	var returnedHostHavingCpusockets = true;
+                                                	                                                	
+                                                	var callListHostsWithPage = function(setTotalHostCount) {                                                		
+                                                		$.ajax({
+                                        					url: createURL('listHosts'),
+                                                    		async: false,
+                                                    		data: {
+                                                    			hypervisortype: hypervisor.name,
+                                                    			page: currentPage,
+                                                    	        pagesize: pageSize //global variable
+                                                    		},
+                                                    		success: function(json) {                                                      			
+                                                    			if (setTotalHostCount) {
+                                                    				totalHostCount = json.listhostsresponse.count;
+                                                    			}                                                    			
+                                                    			returnedHostCount += json.listhostsresponse.host.length;
+                                                    			                                                    			
+                                                    			var items = json.listhostsresponse.host;
+                                                    			for (var i = 0; i < items.length; i++) {
+                                                    				if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
+                                                    					returnedHostCpusocketsSum += items[i].cpusockets;
+                                                    				} else {
+                                                    					returnedHostHavingCpusockets = false;
+                                                    				}
+                                                    			}  
+                                                    			
+                                                    			if (returnedHostCount < totalHostCount) {
+                                                    				currentPage++;
+                                                    				callListHostsWithPage(false);
+                                                    			}                                                    			
+                                                    		}
+                                        				});                                                		
+                                                	}
                                                 	
+                                                	callListHostsWithPage(true);
+                                                	                                         	
                                                     return {
                                                         hypervisor: hypervisor.name,
-                                                        hosts: hostCount,
-                                                        sockets: 0                                                        
+                                                        hosts: totalHostCount,
+                                                        sockets: (returnedHostHavingCpusockets? returnedHostCpusocketsSum : 'unknown')                                                    
                                                     };
                                                 })
                                             });
