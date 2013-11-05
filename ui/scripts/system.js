@@ -7125,20 +7125,32 @@
                             var listView = {
                                 id: 'sockets',
                                 fields: {
-                                    hypervisor: { label: 'label.hypervisor' },
-                                    sockets: { label: 'label.sockets' },
-                                    hosts: { label: 'label.hosts' }
+                                    hypervisor: { label: 'label.hypervisor' },                                    
+                                    hosts: { label: 'label.hosts' },
+                                    sockets: { label: 'label.sockets' }
                                 },
                                 dataProvider: function(args) {
                                     $.ajax({
                                         url: createURL('listHypervisors'),
                                         success: function(json) {
                                             args.response.success({
-                                                data: $(json.listhypervisorsresponse.hypervisor).map(function(index, hypervisor) {
+                                                data: $(json.listhypervisorsresponse.hypervisor).map(function(index, hypervisor) {                                                	
+                                                	var hostCount;
+                                                	$.ajax({
+                                                		url: createURL('listHosts'),
+                                                		async: false,
+                                                		data: {
+                                                			hypervisortype: hypervisor.name
+                                                		},
+                                                		success: function(json) {                                                			
+                                                			hostCount = json.listhostsresponse.count;
+                                                		}
+                                                	});                                                	                                               	
+                                                	
                                                     return {
                                                         hypervisor: hypervisor.name,
-                                                        sockets: 0,
-                                                        hosts: 0
+                                                        hosts: hostCount,
+                                                        sockets: 0                                                        
                                                     };
                                                 })
                                             });
