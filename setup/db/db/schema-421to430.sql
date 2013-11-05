@@ -561,3 +561,18 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 'Sets the attribute for uniquemembers within a group','uniquemember',NULL,NULL,0);
 
 UPDATE `cloud`.`volumes` SET display_volume=1 where id>0;
+
+create table `cloud`.`monitoring_services` (
+`id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+`uuid` varchar(40), `service` varchar(255) COMMENT 'Service name',
+`process_name` varchar(255) COMMENT 'running process name',
+`service_name` varchar(255) COMMENT 'exact name of the running service',
+`service_path` varchar(255) COMMENT 'path of the service in system',
+`pidfile` varchar(255) COMMENT 'path of the pid file of the service',
+`isDefault` boolean COMMENT 'Default service', PRIMARY KEY (`id`)
+);
+
+insert into cloud.monitoring_services(id, service, process_name, service_name, service_path, pidfile, isDefault) values(1,'ssh','sshd', 'ssh','/etc/init.d/ssh','/var/run/sshd.pid',true);
+insert into cloud.monitoring_services(id, service, process_name, service_name, service_path, pidfile, isDefault) values(2,'dhcp','dnsmasq','dnsmasq','/etc/init.d/dnsmasq','/var/run/dnsmasq/dnsmasq.pid',false);
+insert into cloud.monitoring_services(id, service, process_name, service_name, service_path, pidfile, isDefault) values(3,'loadbalancing','haproxy','haproxy','/etc/init.d/haproxy','/var/run/haproxy.pid',false);
+insert into cloud.monitoring_services(id, service, process_name,  service_name, service_path, pidfile, isDefault) values(4,'webserver','apache2','apache2','/etc/init.d/apache2','/var/run/apache2.pid', true);

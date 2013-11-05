@@ -41,6 +41,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.to.*;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -82,17 +83,12 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetMonitorServiceCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
-import com.cloud.agent.api.to.DhcpTO;
-import com.cloud.agent.api.to.FirewallRuleTO;
-import com.cloud.agent.api.to.IpAddressTO;
-import com.cloud.agent.api.to.LoadBalancerTO;
-import com.cloud.agent.api.to.PortForwardingRuleTO;
-import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManager;
@@ -164,6 +160,7 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.LoadBalancerVO;
+import com.cloud.network.dao.MonitoringServiceVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
@@ -175,6 +172,7 @@ import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.dao.VpnUserDao;
+import com.cloud.network.dao.MonitoringServiceDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
@@ -183,6 +181,7 @@ import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.MonitoringService;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.rules.PortForwardingRule;
@@ -369,8 +368,11 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     IpAddressManager _ipAddrMgr;
     @Inject
     ConfigDepot _configDepot;
+    @Inject
+    MonitoringServiceDao _monitorServiceDao;
 
-    
+
+
     int _routerRamSize;
     int _routerCpuMHz;
     int _retry = 2;
@@ -2332,9 +2334,55 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
             finalizeUserDataAndDhcpOnStart(cmds, router, provider, guestNetworkId);
         }
+        finalizeMonitorServiceOnStrat(cmds, router, provider, routerGuestNtwkIds.get(0));
 
         return true;
     }
+
+    private void finalizeMonitorServiceOnStrat(Commands cmds, DomainRouterVO router, Provider provider, long networkId) {
+
+        NetworkVO network = _networkDao.findById(networkId);
+
+        s_logger.debug("Creating  monitoring services on "+ router +" start...");
+
+
+        // get the list of sevices for this network to monitor
+        List <MonitoringServiceVO> services = new ArrayList<MonitoringServiceVO>();
+        if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, Provider.VirtualRouter) ||
+                _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dns, Provider.VirtualRouter)) {
+            MonitoringServiceVO dhcpService = _monitorServiceDao.getServiceByName(MonitoringService.Service.Dhcp.toString());
+            if (dhcpService != null) {
+                services.add(dhcpService);
+            }
+        }
+
+        if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Lb, Provider.VirtualRouter)) {
+            MonitoringServiceVO lbService = _monitorServiceDao.getServiceByName(MonitoringService.Service.LoadBalancing.toString());
+            if (lbService != null) {
+                services.add(lbService);
+            }
+        }
+        List<MonitoringServiceVO> defaultServices = _monitorServiceDao.listDefaultServices(true);
+        services.addAll(defaultServices);
+
+        List<MonitorServiceTO> servicesTO = new ArrayList<MonitorServiceTO>();
+        for (MonitoringServiceVO service: services) {
+            MonitorServiceTO serviceTO = new MonitorServiceTO( service.getService(), service.getProcessname(), service.getServiceName(), service.getServicePath(),
+                    service.getPidFile(), service.getDefault());
+            servicesTO.add(serviceTO);
+        }
+
+        SetMonitorServiceCommand command = new SetMonitorServiceCommand(servicesTO);
+        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
+        command.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(networkId, router.getId()));
+        command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+
+        cmds.addCommand("monitor", command);
+    }
+
+
+
+
 
     protected NicProfile getControlNic(VirtualMachineProfile profile) {
         DomainRouterVO router = _routerDao.findById(profile.getId());
