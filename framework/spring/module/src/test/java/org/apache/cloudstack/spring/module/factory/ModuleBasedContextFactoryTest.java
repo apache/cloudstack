@@ -67,6 +67,16 @@ public class ModuleBasedContextFactoryTest {
     }
     
     @Test
+    public void testExcluded() throws IOException {
+        ModuleBasedContextFactory factory = new ModuleBasedContextFactory();
+        ModuleDefinitionSet set = factory.loadModules(defs, "base");
+
+        assertNull(set.getApplicationContext("excluded"));
+        assertNull(set.getApplicationContext("excluded2"));
+        assertNull(set.getApplicationContext("orphan-of-excluded"));
+    }
+    
+    @Test
     public void testBeans() throws IOException {
         ModuleBasedContextFactory factory = new ModuleBasedContextFactory();
         ModuleDefinitionSet set = factory.loadModules(defs, "base");

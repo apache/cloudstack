@@ -19,19 +19,23 @@
 package org.apache.cloudstack.spring.module.model.impl;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.EmptyStackException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.Stack;
 
 import org.apache.cloudstack.spring.module.context.ResourceApplicationContext;
 import org.apache.cloudstack.spring.module.model.ModuleDefinition;
 import org.apache.cloudstack.spring.module.model.ModuleDefinitionSet;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -40,18 +44,25 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.util.StringUtils;
 
 public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultModuleDefinitionSet.class);
     
     public static final String DEFAULT_CONFIG_RESOURCES = "DefaultConfigResources";
+    public static final String DEFAULT_CONFIG_PROPERTIES = "DefaultConfigProperties";
+    public static final String MODULES_EXCLUDE = "modules.exclude";
+    public static final String MODULES_INCLUDE_PREFIX = "modules.include.";
+    public static final String MODULE_PROPERITES = "ModuleProperties";
     public static final String DEFAULT_CONFIG_XML = "defaults-context.xml";
     
     String root;
     Map<String, ModuleDefinition> modules;
     Map<String, ApplicationContext> contexts = new HashMap<String, ApplicationContext>();
     ApplicationContext rootContext = null;
+    Set<String> excludes = new HashSet<String>();
+    Properties configProperties = null;
 
     public DefaultModuleDefinitionSet(Map<String, ModuleDefinition> modules, String root) {
         super();
@@ -136,7 +147,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
     }
     
     protected boolean shouldLoad(ModuleDefinition def) {
-        return true;
+        return ! excludes.contains(def.getName());
     }
     
     protected ApplicationContext getDefaultsContext() {
@@ -156,8 +167,51 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
                 }
             }
         });
-        
+
+        configProperties = (Properties) context.getBean(DEFAULT_CONFIG_PROPERTIES);
+        for ( Resource resource : resources ) {
+            load(resource, configProperties);
+        }
+
+        for ( Resource resource : (Resource[])context.getBean(MODULE_PROPERITES) ) {
+            load(resource, configProperties);
+        }
+
+        parseExcludes();
+
         return context;
+    }
+
+    protected void parseExcludes() {
+        for ( String exclude : configProperties.getProperty(MODULES_EXCLUDE, "").trim().split("\\s*,\\s*") ) {
+            if ( StringUtils.hasText(exclude) ) {
+                excludes.add(exclude);
+            }
+        }
+
+        for ( String key : configProperties.stringPropertyNames() ) {
+            if ( key.startsWith(MODULES_INCLUDE_PREFIX) ) {
+                String module = key.substring(MODULES_INCLUDE_PREFIX.length());
+                boolean include = configProperties.getProperty(key).equalsIgnoreCase("true");
+                if ( ! include ) {
+                    excludes.add(module);
+                }
+            }
+        }
+    }
+
+    protected void load(Resource resource, Properties props) {
+        InputStream is = null;
+        try {
+            if ( resource.exists() ) {
+                is = resource.getInputStream();
+                props.load(is);
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to load resource [" + resource + "]", e);
+        } finally {
+            IOUtils.closeQuietly(is);
+        }
     }
     
     protected void printHierarchy() {
@@ -178,6 +232,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
             return;
         
         if ( ! shouldLoad(def) ) {
+            log.info("Excluding context [{}] based on configuration", def.getName());
             return;
         }
         

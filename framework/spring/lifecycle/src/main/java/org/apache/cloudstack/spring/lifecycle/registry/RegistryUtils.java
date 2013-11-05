@@ -16,25 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.spring.module.locator.impl;
+package org.apache.cloudstack.spring.lifecycle.registry;
 
-import static org.junit.Assert.*;
+import com.cloud.utils.component.Named;
 
-import java.io.IOException;
-import java.util.Collection;
+public class RegistryUtils {
 
-import org.apache.cloudstack.spring.module.model.ModuleDefinition;
-import org.junit.Test;
+    public static String getName(Object object) {
+        if ( object instanceof Named ) {
+            String name = ((Named)object).getName();
+            if ( name != null )
+                return name;
+        }
 
-public class ClasspathModuleDefinitionSetLocatorTest {
-    
-    @Test
-    public void testDiscover() throws IOException {
-        ClasspathModuleDefinitionLocator factory = new ClasspathModuleDefinitionLocator();
-        
-        Collection<ModuleDefinition> modules = factory.locateModules("testhierarchy");
-        
-        assertEquals(8, modules.size());
+        return object == null ? null : object.getClass().getSimpleName();
     }
 
 }
