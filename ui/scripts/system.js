@@ -7688,6 +7688,9 @@
                                     state: {
                                         label: 'label.state'
                                     },
+                                    version: {
+                                    	label: 'label.version'
+                                    },
                                     guestnetworkid: {
                                         label: 'label.network.id'
                                     },
@@ -7736,7 +7739,7 @@
                                         dataType: 'json',
                                         async: true,
                                         success: function(json) {
-                                            var jsonObj = json.listroutersresponse.router[0];
+                                            var jsonObj = json.listroutersresponse.router[0];                                            
                                             addExtraPropertiesToRouterInstanceObject(jsonObj);
                                             args.response.success({
                                                 actionFilter: routerActionfilter,
@@ -16435,10 +16438,18 @@
     }
 
     var addExtraPropertiesToRouterInstanceObject = function(jsonObj) {
-        if (jsonObj.isredundantrouter == true)
+        if (jsonObj.isredundantrouter == true) {
             jsonObj["redundantRouterState"] = jsonObj.redundantstate;
-        else
+        } else {
             jsonObj["redundantRouterState"] = "";
+        }
+                
+        //jsonObj.version = '4.2.0-SNAPSHOT'; //for testing only
+        if (jsonObj.version != undefined && jsonObj.version.length > 0) {
+        	if (jsonObj.version != g_cloudstackversion) { //if VirtualRouter version is different from management server version
+        		jsonObj.version += " (Requires Upgrade)";
+        	}
+        }        
     }
 
     var refreshNspData = function(nspName) {
