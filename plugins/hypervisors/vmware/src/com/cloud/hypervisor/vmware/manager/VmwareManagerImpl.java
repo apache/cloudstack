@@ -177,7 +177,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     int _additionalPortRangeStart;
     int _additionalPortRangeSize;
     int _routerExtraPublicNics = 2;
-    int _vCenterSessionTimeout = 600000; // Timeout in milliseconds
 
     String _reserveCpu = "false";
 
@@ -279,9 +278,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
 
         _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
-
-        _vCenterSessionTimeout = NumbersUtil.parseInt(_configDao.getValue(Config.VmwareVcenterSessionTimeout.key()), 600) * 1000;
-        s_logger.info("VmwareManagerImpl config - vmware.vcenter.session.timeout: " + _vCenterSessionTimeout);
 
         _reserveCpu = _configDao.getValue(Config.VmwareReserveCpu.key());
         if(_reserveCpu == null || _reserveCpu.isEmpty()) {
@@ -987,11 +983,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public String getRootDiskController() {
         return _rootDiskController;
-    }
-
-    @Override
-    public int getVcenterSessionTimeout() {
-        return _vCenterSessionTimeout;
     }
 
     @Override

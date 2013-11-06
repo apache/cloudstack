@@ -16,18 +16,13 @@
 // under the License.
 package com.cloud.storage.resource;
 
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
-import com.cloud.configuration.Config;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareContextPool;
-import com.cloud.utils.NumbersUtil;
 
 public class VmwareSecondaryStorageContextFactory {
     private static final Logger s_logger = Logger.getLogger(VmwareSecondaryStorageContextFactory.class);
@@ -35,19 +30,11 @@ public class VmwareSecondaryStorageContextFactory {
 	private static volatile int s_seq = 1;
 
 	private static VmwareContextPool s_pool;
-    private static ConfigurationDao s_configDao;
-
-    @Inject ConfigurationDao _configDao;
 
 	public static void initFactoryEnvironment() {
 		System.setProperty("axis.socketSecureFactory", "org.apache.axis.components.net.SunFakeTrustSocketFactory");
 		s_pool = new VmwareContextPool();
 	}
-
-    @PostConstruct
-        void init() {
-            s_configDao = _configDao;
-    }
 
 	public static VmwareContext create(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
 		assert(vCenterAddress != null);
@@ -55,10 +42,8 @@ public class VmwareSecondaryStorageContextFactory {
 		assert(vCenterPassword != null);
 
 		String serviceUrl = "https://" + vCenterAddress + "/sdk/vimService";
-        int vCenterSessionTimeout = NumbersUtil.parseInt(s_configDao.getValue(Config.VmwareVcenterSessionTimeout.key()), 600) * 1000;
 		VmwareClient vimClient = new VmwareClient(vCenterAddress + "-" + s_seq++);
-        vimClient.setVcenterSessionTimeout(vCenterSessionTimeout);
-        vimClient.connect(serviceUrl, vCenterUserName, vCenterPassword);
+		vimClient.connect(serviceUrl, vCenterUserName, vCenterPassword);
 		VmwareContext context = new VmwareContext(vimClient, vCenterAddress);
 		assert(context != null);
 		
