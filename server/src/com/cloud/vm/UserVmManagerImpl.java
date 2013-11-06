@@ -2749,7 +2749,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         } else {
             if (hostName == null) {
-                hostName = uuidName;
+                //Generate name using uuid and instance.name global config
+                hostName = _configDao.getValue(Config.InstanceName.key()) + "-" + uuidName;
             }
         }
 
