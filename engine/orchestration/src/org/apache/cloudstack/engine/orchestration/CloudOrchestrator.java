@@ -164,7 +164,7 @@ public class CloudOrchestrator implements OrchestrationService {
             Long diskSize,
             List<String> computeTags,
             List<String> rootDiskTags,
-            Map<String, NicProfile> networkNicMap, DeploymentPlan plan) throws InsufficientCapacityException {
+            Map<String, NicProfile> networkNicMap, DeploymentPlan plan, Long rootDiskSize) throws InsufficientCapacityException {
 
     	// VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks, vmEntityManager);
 
@@ -191,8 +191,9 @@ public class CloudOrchestrator implements OrchestrationService {
     	Pair<DiskOfferingVO, Long> rootDiskOffering = new Pair<DiskOfferingVO, Long>(null, null);
         LinkedHashMap<DiskOfferingVO, Long> dataDiskOfferings = new LinkedHashMap<DiskOfferingVO, Long>();
 
-		ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
+		ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
 		rootDiskOffering.first(offering);
+        rootDiskOffering.second(rootDiskSize);
 
 		if(vm.getDiskOfferingId() != null){
     		DiskOfferingVO diskOffering = _diskOfferingDao.findById(vm.getDiskOfferingId());
@@ -238,7 +239,7 @@ public class CloudOrchestrator implements OrchestrationService {
     	VMInstanceVO vm = _vmDao.findByUuid(id);
 
 		Pair<DiskOffering, Long> rootDiskOffering = new Pair<DiskOffering, Long>(null, null);
-		ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
+		ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
 		rootDiskOffering.first(offering);
 
         LinkedHashMap<DiskOffering, Long> dataDiskOfferings = new LinkedHashMap<DiskOffering, Long>();

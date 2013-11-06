@@ -367,7 +367,7 @@ public class UserVmManagerTest {
         ServiceOffering so2 =  getSvcoffering(256);
 
         when(_entityMgr.findById(eq(ServiceOffering.class), anyLong())).thenReturn(so1);
-        when(_offeringDao.findByIdIncludingRemoved(anyLong())).thenReturn((ServiceOfferingVO) so1);
+        when(_offeringDao.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn((ServiceOfferingVO) so1);
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, UUID.randomUUID().toString());
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());

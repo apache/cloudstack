@@ -57,7 +57,7 @@ public class CapacityManagerTest {
         capMgr=setUp();
         when(vm.getHostId()).thenReturn(1l);
         when(vm.getServiceOfferingId()).thenReturn(2l);
-        when(SOfferingDao.findById(anyLong())).thenReturn(svo);
+        when(SOfferingDao.findById(anyLong(), anyLong())).thenReturn(svo);
         when(CDao.findByHostIdType(anyLong(), eq(Capacity.CAPACITY_TYPE_CPU))).thenReturn(cvo_cpu);
         when(CDao.findByHostIdType(anyLong(), eq(Capacity.CAPACITY_TYPE_MEMORY))).thenReturn(cvo_ram);
         when(cvo_cpu.getUsedCapacity()).thenReturn(500l);

@@ -579,3 +579,13 @@ insert into cloud.monitoring_services(id, service, process_name, service_name, s
 insert into cloud.monitoring_services(id, service, process_name, service_name, service_path, pidfile, isDefault) values(2,'dhcp','dnsmasq','dnsmasq','/etc/init.d/dnsmasq','/var/run/dnsmasq/dnsmasq.pid',false);
 insert into cloud.monitoring_services(id, service, process_name, service_name, service_path, pidfile, isDefault) values(3,'loadbalancing','haproxy','haproxy','/etc/init.d/haproxy','/var/run/haproxy.pid',false);
 insert into cloud.monitoring_services(id, service, process_name,  service_name, service_path, pidfile, isDefault) values(4,'webserver','apache2','apache2','/etc/init.d/apache2','/var/run/apache2.pid', true);
+ALTER TABLE `cloud`.`service_offering` CHANGE COLUMN `cpu` `cpu` INT(10) UNSIGNED NULL COMMENT '# of cores'  , CHANGE COLUMN `speed` `speed` INT(10) UNSIGNED NULL COMMENT 'speed per core in mhz'  , CHANGE COLUMN `ram_size` `ram_size` BIGINT(20) UNSIGNED NULL  ;
+
+CREATE TABLE `cloud`.`usage_event_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `usage_event_id` bigint unsigned NOT NULL COMMENT 'usage event id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_usage_event_details__usage_event_id` FOREIGN KEY `fk_usage_event_details__usage_event_id`(`usage_event_id`) REFERENCES `usage_event`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

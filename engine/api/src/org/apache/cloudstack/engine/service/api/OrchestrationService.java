@@ -55,6 +55,7 @@ public interface OrchestrationService {
      * @param computeTags tags for the compute
      * @param rootDiskTags tags for the root disk
      * @param networks networks that this VM should join
+     * @param rootDiskSize size the root disk in case of templates.
      * @return VirtualMachineEntity
      */
     @POST
@@ -73,7 +74,8 @@ public interface OrchestrationService {
             @QueryParam("compute-tags") List<String> computeTags,
             @QueryParam("root-disk-tags") List<String> rootDiskTags,
             @QueryParam("network-nic-map") Map<String, NicProfile> networkNicMap,
-            @QueryParam("deploymentplan") DeploymentPlan plan
+            @QueryParam("deploymentplan") DeploymentPlan plan,
+            @QueryParam("root-disk-size") Long rootDiskSize
             ) throws InsufficientCapacityException;
 
     @POST

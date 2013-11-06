@@ -263,6 +263,7 @@
   <bean id="uploadDaoImpl" class="com.cloud.storage.dao.UploadDaoImpl" />
   <bean id="usageDaoImpl" class="com.cloud.usage.dao.UsageDaoImpl" />
   <bean id="usageEventDaoImpl" class="com.cloud.event.dao.UsageEventDaoImpl" />
+  <bean id="usageEventDetailsDaoImpl" class="com.cloud.event.dao.UsageEventDetailsDaoImpl" />
   <bean id="usageIPAddressDaoImpl" class="com.cloud.usage.dao.UsageIPAddressDaoImpl" />
   <bean id="usageJobDaoImpl" class="com.cloud.usage.dao.UsageJobDaoImpl" />
   <bean id="usageLoadBalancerPolicyDaoImpl" class="com.cloud.usage.dao.UsageLoadBalancerPolicyDaoImpl" />

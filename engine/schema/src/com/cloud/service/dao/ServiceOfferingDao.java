@@ -17,6 +17,7 @@
 package com.cloud.service.dao;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.utils.db.GenericDao;
@@ -33,4 +34,8 @@ public interface ServiceOfferingDao extends GenericDao<ServiceOfferingVO, Long> 
     ServiceOfferingVO persistDeafultServiceOffering(ServiceOfferingVO offering);
     void loadDetails(ServiceOfferingVO serviceOffering);
     void saveDetails(ServiceOfferingVO serviceOffering);
+    ServiceOfferingVO findById(Long vmId, long serviceOfferingId);
+    ServiceOfferingVO findByIdIncludingRemoved(Long vmId, long serviceOfferingId);
+     boolean isDynamic(long serviceOfferingId);
+    ServiceOfferingVO getcomputeOffering(long serviceOfferingId, Integer cpuCores, Integer cpuSpeed, Integer memory);
 }

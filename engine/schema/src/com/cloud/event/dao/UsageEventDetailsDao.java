@@ -14,25 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.event.dao;
 
-import java.util.Date;
-import java.util.List;
+package com.cloud.event.dao;
 import java.util.Map;
 
-import com.cloud.event.UsageEventVO;
+import com.cloud.event.UsageEventDetailsVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface UsageEventDao extends GenericDao<UsageEventVO, Long> {
 
-    public List<UsageEventVO> listLatestEvents(Date endDate);
+public interface UsageEventDetailsDao extends GenericDao<UsageEventDetailsVO, Long> {
+    Map<String, String> findDetails(long eventId);
 
-    public List<UsageEventVO> getLatestEvent();
+    void persist(long eventId, Map<String, String> details);
 
-    List<UsageEventVO> getRecentEvents(Date endDate);
+    UsageEventDetailsVO findDetail(long eventId, String key);
 
-    List<UsageEventVO> listDirectIpEvents(Date startDate, Date endDate, long zoneId);
-
-    void saveDetails(long eventId, Map<String, String> details);
-
+    void deleteDetails(long eventId);
 }

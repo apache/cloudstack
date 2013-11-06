@@ -260,7 +260,7 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
                 }
             }
 
-            so = _offeringDao.findById(vm.getServiceOfferingId());
+            so = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
 
             if (capacityType == CapacityVO.CAPACITY_TYPE_MEMORY) {
                 usedCapacity += so.getRamSize() * 1024L * 1024L;

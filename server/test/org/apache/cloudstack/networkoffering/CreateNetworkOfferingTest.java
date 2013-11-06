@@ -24,6 +24,9 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.event.dao.UsageEventDao;
+import com.cloud.event.dao.UsageEventDetailsDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import junit.framework.TestCase;
 
 import org.junit.After;
@@ -77,6 +80,15 @@ public class CreateNetworkOfferingTest extends TestCase{
     
     @Inject
     VpcManager vpcMgr;
+
+    @Inject
+    UserVmDetailsDao userVmDetailsDao;
+
+    @Inject
+    UsageEventDao UsageEventDao;
+
+    @Inject
+    UsageEventDetailsDao usageEventDetailsDao;
 
     @Override
     @Before

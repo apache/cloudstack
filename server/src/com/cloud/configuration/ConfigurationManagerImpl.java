@@ -206,7 +206,8 @@ import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 
 @Local(value = { ConfigurationManager.class, ConfigurationService.class })
-public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService {
+public class
+        ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
 
     @Inject
@@ -1995,20 +1996,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     + ": specify the display text that has non-zero length");
         }
 
-        Long cpuNumber = cmd.getCpuNumber();
-        if ((cpuNumber == null) || (cpuNumber.intValue() <= 0) || (cpuNumber.intValue() > 2147483647)) {
+        Integer cpuNumber = cmd.getCpuNumber();
+        Integer cpuSpeed = cmd.getCpuSpeed();
+        Integer memory = cmd.getMemory();
+        boolean customized = cmd.getCustomized();
+
+        if ((cpuNumber != null) && ((cpuNumber.intValue() <=0) || (cpuNumber.intValue() > 2147483647))) {
             throw new InvalidParameterValueException("Failed to create service offering " + name
                     + ": specify the cpu number value between 1 and 2147483647");
         }
-
-        Long cpuSpeed = cmd.getCpuSpeed();
-        if ((cpuSpeed == null) || (cpuSpeed.intValue() <= 0) || (cpuSpeed.intValue() > 2147483647)) {
+        if ((cpuSpeed != null) && ((cpuSpeed.intValue() < 0) || (cpuSpeed.intValue() > 2147483647))) {
             throw new InvalidParameterValueException("Failed to create service offering " + name
                     + ": specify the cpu speed value between 1 and 2147483647");
         }
-
-        Long memory = cmd.getMemory();
-        if ((memory == null) || (memory.intValue() < 32) || (memory.intValue() > 2147483647)) {
+        if (( memory != null ) && ((memory.intValue() < 32) || (memory.intValue() > 2147483647))) {
             throw new InvalidParameterValueException("Failed to create service offering " + name
                     + ": specify the memory value between 32 and 2147483647 MB");
         }
@@ -2074,21 +2075,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return createServiceOffering(userId, cmd.getIsSystem(), vmType, cmd.getServiceOfferingName(),
-                cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(),
+                cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
                 localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(),
                 cmd.getHostTag(), cmd.getNetworkRate(), cmd.getDeploymentPlanner(), cmd.getDetails(),
                 cmd.getBytesReadRate(), cmd.getBytesWriteRate(), cmd.getIopsReadRate(), cmd.getIopsWriteRate());
     }
 
     protected ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_type,
-            String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired,
+            String name, Integer cpu, Integer ramSize, Integer speed, String displayText, boolean localStorageRequired,
             boolean offerHA, boolean limitResourceUse, boolean volatileVm,  String tags, Long domainId, String hostTag,
             Integer networkRate, String deploymentPlanner, Map<String, String> details, Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
         tags = StringUtils.cleanupTags(tags);
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA,
                 limitResourceUse, volatileVm, displayText, localStorageRequired, false, tags, isSystem, vm_type,
                 domainId, hostTag, deploymentPlanner);
-
         if ((bytesReadRate != null) && (bytesReadRate > 0))
             offering.setBytesReadRate(bytesReadRate);
         if ((bytesWriteRate != null) && (bytesWriteRate > 0))
