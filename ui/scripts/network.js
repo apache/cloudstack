@@ -3369,41 +3369,45 @@
                                                     buttonLabel: 'label.configure',
                                                     action: cloudStack.uiCustom.autoscaler(cloudStack.autoscaler)
                                                 },
-                                                isHidden: function(args) {                                                
-                                                    var lbProviderIsNetscaler = false;
-                                                    $.ajax({
-                                                    	url: createURL('listNetworkOfferings'),
-                                                    	data: {
-                                                    		id: args.context.networks[0].networkofferingid
-                                                    	},
-                                                    	async: false,
-                                                    	success: function(json) {                                                    		
-                                                    		var networkOffering = json.listnetworkofferingsresponse.networkoffering[0];                                                    		
-                                                    		var services = networkOffering.service;
-                                                    		if (services != null) {
-	                                                    		for (var i = 0; i < services.length; i++) {
-	                                                    			if (services[i].name == 'Lb') {
-	                                                    				var providers = services[i].provider;
-	                                                    				if (providers != null) {
-		                                                    				for (var k = 0; k < providers.length; k++) {
-		                                                    					if (providers[k].name == 'Netscaler') {
-		                                                    						lbProviderIsNetscaler = true;
-		                                                    						break;
-		                                                    					}
-		                                                    				}  
-	                                                    				}
-	                                                    				break;
-	                                                    			}
+                                                isHidden: function(args) {      
+                                                	if (!('vpc' in args.context)) {  //from Guest Network section                                       	
+	                                                	var lbProviderIsNetscaler = false;
+	                                                    $.ajax({
+	                                                    	url: createURL('listNetworkOfferings'),
+	                                                    	data: {
+	                                                    		id: args.context.networks[0].networkofferingid
+	                                                    	},
+	                                                    	async: false,
+	                                                    	success: function(json) {                                                    		
+	                                                    		var networkOffering = json.listnetworkofferingsresponse.networkoffering[0];                                                    		
+	                                                    		var services = networkOffering.service;
+	                                                    		if (services != null) {
+		                                                    		for (var i = 0; i < services.length; i++) {
+		                                                    			if (services[i].name == 'Lb') {
+		                                                    				var providers = services[i].provider;
+		                                                    				if (providers != null) {
+			                                                    				for (var k = 0; k < providers.length; k++) {
+			                                                    					if (providers[k].name == 'Netscaler') {
+			                                                    						lbProviderIsNetscaler = true;
+			                                                    						break;
+			                                                    					}
+			                                                    				}  
+		                                                    				}
+		                                                    				break;
+		                                                    			}
+		                                                    		}
 	                                                    		}
-                                                    		}
-                                                    	}
-                                                    });                                                       
-                                                    
-                                                    if (lbProviderIsNetscaler == true) { //AutoScale is only supported on Netscaler (but not on any other provider like VirtualRouter)
-                                                    	return false; //show AutoScale button
-                                                    } else {
-                                                    	return 2; //hide Autoscale button (both header and form)
-                                                    }                                                	
+	                                                    	}
+	                                                    });    
+	                                                    if (lbProviderIsNetscaler == true) { //AutoScale is only supported on Netscaler (but not on any other provider like VirtualRouter)
+	                                                    	return false; //show AutoScale button
+	                                                    } else {
+	                                                    	return 2; //hide Autoscale button (both header and form)
+	                                                    }     
+                                                    } else { //from VPC section
+                                                    	//VPC doesn't support autoscale
+                                                    	return 2;
+                                                    }   
                                                 }
                                             },
 
