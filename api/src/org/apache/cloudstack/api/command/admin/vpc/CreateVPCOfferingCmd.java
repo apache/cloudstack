@@ -16,7 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vpc;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -24,8 +31,8 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
@@ -55,6 +62,9 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd{
     @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST, type = CommandType.MAP, description = "provider to service mapping. " +
             "If not specified, the provider for the service will be mapped to the default provider on the physical network")
     private Map<String, String> serviceProviderList;
+
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "the ID of the service offering for the VPC router appliance")
+    private Long serviceOfferingId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -96,12 +106,17 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd{
         return serviceProviderMap;
     }
 
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
+    }
+
     @Override
     public void create() throws ResourceAllocationException {
-        VpcOffering vpcOff = _vpcProvSvc.createVpcOffering(getVpcOfferingName(), getDisplayText(), getSupportedServices(), getServiceProviders());
+        VpcOffering vpcOff = _vpcProvSvc.createVpcOffering(getVpcOfferingName(), getDisplayText(), getSupportedServices(),
+                getServiceProviders(), getServiceOfferingId());
         if (vpcOff != null) {
-            this.setEntityId(vpcOff.getId());
-            this.setEntityUuid(vpcOff.getUuid());
+            setEntityId(vpcOff.getId());
+            setEntityUuid(vpcOff.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a VPC offering");
         }
@@ -109,11 +124,11 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd{
 
     @Override
     public void execute() {
-        VpcOffering vpc = _vpcProvSvc.getVpcOffering(this.getEntityId());
+        VpcOffering vpc = _vpcProvSvc.getVpcOffering(getEntityId());
         if (vpc != null) {
             VpcOfferingResponse response = _responseGenerator.createVpcOfferingResponse(vpc);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create VPC offering");
         }
@@ -122,7 +137,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd{
 
     @Override
     public String getEventType() {
-       return EventTypes.EVENT_VPC_OFFERING_CREATE;
+        return EventTypes.EVENT_VPC_OFFERING_CREATE;
     }
 
     @Override
@@ -137,7 +152,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd{
 
     @Override
     public long getEntityOwnerId() {
-       return Account.ACCOUNT_ID_SYSTEM;
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
 }
