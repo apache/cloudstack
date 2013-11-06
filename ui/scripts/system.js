@@ -4944,6 +4944,288 @@
                         }
                     },
 
+                    // Palo Alto provider detailView
+                    pa: {
+                        type: 'detailView',
+                        id: 'paProvider',
+                        label: 'label.PA',
+                        viewAll: {
+                            label: 'label.devices',
+                            path: '_zone.paDevices'
+                        },
+                        tabs: {
+                            details: {
+                                title: 'label.details',
+                                fields: [{
+                                    name: {
+                                        label: 'label.name'
+                                    }
+                                }, {
+                                    state: {
+                                        label: 'label.state'
+                                    }
+                                }],
+                                dataProvider: function (args) {
+                                    refreshNspData("PaloAlto");
+                                    var providerObj;
+                                    $(nspHardcodingArray).each(function () {
+                                        if (this.id == "pa") {
+                                            providerObj = this;
+                                            return false; //break each loop
+                                        }
+                                    });
+                                    args.response.success({
+                                        data: providerObj,
+                                        actionFilter: networkProviderActionFilter('pa')
+                                    });
+                                }
+                            }
+                        },
+                        actions: {
+                            add: {
+                                label: 'label.add.PA.device',
+                                createForm: {
+                                    title: 'label.add.PA.device',
+                                    fields: {
+                                        ip: {
+                                            label: 'label.ip.address',
+                                            docID: 'helpPaloAltoIPAddress'
+                                        },
+                                        username: {
+                                            label: 'label.username',
+                                            docID: 'helpPaloAltoUsername'
+                                        },
+                                        password: {
+                                            label: 'label.password',
+                                            isPassword: true,
+                                            docID: 'helpPaloAltoPassword'
+                                        },
+                                        networkdevicetype: {
+                                            label: 'label.type',
+                                            docID: 'helpPaloAltoType',
+                                            select: function (args) {
+                                                var items = [];
+                                                items.push({
+                                                    id: "PaloAltoFirewall",
+                                                    description: "Palo Alto Firewall"
+                                                });
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        },
+                                        publicinterface: {
+                                            label: 'label.public.interface',
+                                            docID: 'helpPaloAltoPublicInterface'
+                                        },
+                                        privateinterface: {
+                                            label: 'label.private.interface',
+                                            docID: 'helpPaloAltoPrivateInterface'
+                                        },
+                                        //usageinterface: {
+                                        //  label: 'Usage interface',
+                                        //  docID: 'helpPaloAltoUsageInterface'
+                                        //},
+                                        numretries: {
+                                            label: 'label.numretries',
+                                            defaultValue: '2',
+                                            docID: 'helpPaloAltoRetries'
+                                        },
+                                        timeout: {
+                                            label: 'label.timeout',
+                                            defaultValue: '300',
+                                            docID: 'helpPaloAltoTimeout'
+                                        },
+                                        // inline: {
+                                        //   label: 'Mode',
+                                        //   docID: 'helpPaloAltoMode',
+                                        //   select: function(args) {
+                                        //     var items = [];
+                                        //     items.push({id: "false", description: "side by side"});
+                                        //     items.push({id: "true", description: "inline"});
+                                        //     args.response.success({data: items});
+                                        //   }
+                                        // },
+                                        publicnetwork: {
+                                            label: 'label.public.network',
+                                            defaultValue: 'untrust',
+                                            docID: 'helpPaloAltoPublicNetwork'
+                                        },
+                                        privatenetwork: {
+                                            label: 'label.private.network',
+                                            defaultValue: 'trust',
+                                            docID: 'helpPaloAltoPrivateNetwork'
+                                        },
+                                        pavr: {
+                                            label: 'label.virtual.router',
+                                            docID: 'helpPaloAltoVirtualRouter'
+                                        },
+                                        patp: {
+                                            label: 'label.PA.threat.profile',
+                                            docID: 'helpPaloAltoThreatProfile'
+                                        },
+                                        palp: {
+                                            label: 'label.PA.log.profile',
+                                            docID: 'helpPaloAltoLogProfile'
+                                        },
+                                        capacity: {
+                                            label: 'label.capacity',
+                                            validation: {
+                                                required: false,
+                                                number: true
+                                            },
+                                            docID: 'helpPaloAltoCapacity'
+                                        },
+                                        dedicated: {
+                                            label: 'label.dedicated',
+                                            isBoolean: true,
+                                            isChecked: false,
+                                            docID: 'helpPaloAltoDedicated'
+                                        }
+                                    }
+                                },
+                                action: function (args) {
+                                    if (nspMap["pa"] == null) {
+                                        $.ajax({
+                                            url: createURL("addNetworkServiceProvider&name=PaloAlto&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                                            dataType: "json",
+                                            async: true,
+                                            success: function (json) {
+                                                var jobId = json.addnetworkserviceproviderresponse.jobid;
+                                                var addPaloAltoProviderIntervalID = setInterval(function () {
+                                                    $.ajax({
+                                                        url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                        dataType: "json",
+                                                        success: function (json) {
+                                                            var result = json.queryasyncjobresultresponse;
+                                                            if (result.jobstatus == 0) {
+                                                                return; //Job has not completed
+                                                            } else {
+                                                                clearInterval(addPaloAltoProviderIntervalID);
+                                                                if (result.jobstatus == 1) {
+                                                                    nspMap["pa"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                                                    addExternalFirewall(args, selectedPhysicalNetworkObj, "addPaloAltoFirewall", "addpaloaltofirewallresponse", "pafirewall");
+                                                                } else if (result.jobstatus == 2) {
+                                                                    alert("addNetworkServiceProvider&name=Palo Alto failed. Error: " + _s(result.jobresult.errortext));
+                                                                }
+                                                            }
+                                                        },
+                                                        error: function (XMLHttpResponse) {
+                                                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                            alert("addNetworkServiceProvider&name=Palo Alto failed. Error: " + errorMsg);
+                                                        }
+                                                    });
+                                                }, 3000);
+                                            }
+                                        });
+                                    } else {
+                                        addExternalFirewall(args, selectedPhysicalNetworkObj, "addPaloAltoFirewall", "addpaloaltofirewallresponse", "pafirewall");
+                                    }
+                                },
+                                messages: {
+                                    notification: function (args) {
+                                        return 'label.add.PA.device';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            enable: {
+                                label: 'label.enable.provider',
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap["pa"].id + "&state=Enabled"),
+                                        dataType: "json",
+                                        success: function (json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function (json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'message.confirm.enable.provider';
+                                    },
+                                    notification: function () {
+                                        return 'label.enable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            disable: {
+                                label: 'label.disable.provider',
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap["pa"].id + "&state=Disabled"),
+                                        dataType: "json",
+                                        success: function (json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function (json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'message.confirm.disable.provider';
+                                    },
+                                    notification: function () {
+                                        return 'label.disable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            destroy: {
+                                label: 'label.shutdown.provider',
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("deleteNetworkServiceProvider&id=" + nspMap["pa"].id),
+                                        dataType: "json",
+                                        success: function (json) {
+                                            var jid = json.deletenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+
+                                            $(window).trigger('cloudStack.fullRefresh');
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'message.confirm.shutdown.provider';
+                                    },
+                                    notification: function (args) {
+                                        return 'label.shutdown.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            }
+                        }
+                    },
+
                     // Security groups detail view
                     securityGroups: {
                         id: 'securityGroup-providers',
@@ -9156,6 +9438,250 @@
                     }
                 }
             },
+
+            //Palo Alto devices listView
+            paDevices: {
+                id: 'paDevices',
+                title: 'label.devices',
+                listView: {
+                    id: 'paDevices',
+                    fields: {
+                        ipaddress: {
+                            label: 'label.ip.address'
+                        },
+                        fwdevicestate: {
+                            label: 'label.status'
+                        },
+                        fwdevicename: {
+                            label: 'label.type'
+                        }
+                    },
+                    actions: {
+                        add: {
+                            label: 'label.add.PA.device',
+                            createForm: {
+                                title: 'label.add.PA.device',
+                                fields: {
+                                    ip: {
+                                        label: 'label.ip.address'
+                                    },
+                                    username: {
+                                        label: 'label.username'
+                                    },
+                                    password: {
+                                        label: 'label.password',
+                                        isPassword: true
+                                    },
+                                    networkdevicetype: {
+                                        label: 'label.type',
+                                        select: function (args) {
+                                            var items = [];
+                                            items.push({
+                                                id: "PaloAltoFirewall",
+                                                description: "Palo Alto Firewall"
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
+                                    publicinterface: {
+                                        label: 'label.public.interface'
+                                    },
+                                    privateinterface: {
+                                        label: 'label.private.interface'
+                                    },
+                                    //usageinterface: {
+                                    //  label: 'label.usage.interface'
+                                    //},
+                                    numretries: {
+                                        label: 'label.numretries',
+                                        defaultValue: '2'
+                                    },
+                                    timeout: {
+                                        label: 'label.timeout',
+                                        defaultValue: '300'
+                                    },
+                                    // inline: {
+                                    //   label: 'Mode',
+                                    //   select: function(args) {
+                                    //     var items = [];
+                                    //     items.push({id: "false", description: "side by side"});
+                                    //     items.push({id: "true", description: "inline"});
+                                    //     args.response.success({data: items});
+                                    //   }
+                                    // },
+                                    publicnetwork: {
+                                        label: 'label.public.network',
+                                        defaultValue: 'untrust'
+                                    },
+                                    privatenetwork: {
+                                        label: 'label.private.network',
+                                        defaultValue: 'trust'
+                                    },
+                                    pavr: {
+                                        label: 'label.virtual.router'
+                                    },
+                                    patp: {
+                                        label: 'label.PA.threat.profile'
+                                    },
+                                    palp: {
+                                        label: 'label.PA.log.profile'
+                                    },
+                                    capacity: {
+                                        label: 'label.capacity',
+                                        validation: {
+                                            required: false,
+                                            number: true
+                                        }
+                                    },
+                                    dedicated: {
+                                        label: 'label.dedicated',
+                                        isBoolean: true,
+                                        isChecked: false
+                                    }
+                                }
+                            },
+                            action: function (args) {
+                                if (nspMap["pa"] == null) {
+                                    $.ajax({
+                                        url: createURL("addNetworkServiceProvider&name=PaloAlto&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function (json) {
+                                            var jobId = json.addnetworkserviceproviderresponse.jobid;
+                                            var addPaloAltoProviderIntervalID = setInterval(function () {
+                                                $.ajax({
+                                                    url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                    dataType: "json",
+                                                    success: function (json) {
+                                                        var result = json.queryasyncjobresultresponse;
+                                                        if (result.jobstatus == 0) {
+                                                            return; //Job has not completed
+                                                        } else {
+                                                            clearInterval(addPaloAltoProviderIntervalID);
+                                                            if (result.jobstatus == 1) {
+                                                                nspMap["pa"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                                                addExternalFirewall(args, selectedPhysicalNetworkObj, "addPaloAltoFirewall", "addpaloaltofirewallresponse", "pafirewall");
+                                                            } else if (result.jobstatus == 2) {
+                                                                alert("addNetworkServiceProvider&name=Palo Alto failed. Error: " + _s(result.jobresult.errortext));
+                                                            }
+                                                        }
+                                                    },
+                                                    error: function (XMLHttpResponse) {
+                                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                        alert("addNetworkServiceProvider&name=Palo Alto failed. Error: " + errorMsg);
+                                                    }
+                                                });
+                                            }, 3000);
+                                        }
+                                    });
+                                } else {
+                                    addExternalFirewall(args, selectedPhysicalNetworkObj, "addPaloAltoFirewall", "addpaloaltofirewallresponse", "pafirewall");
+                                }
+                            },
+                            messages: {
+                                notification: function (args) {
+                                    return 'label.add.PA.device';
+                                }
+                            },
+                            notification: {
+                                poll: pollAsyncJobResult
+                            }
+                        }
+                    },
+                    dataProvider: function (args) {
+                        $.ajax({
+                            url: createURL("listPaloAltoFirewalls&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                            data: {
+                                page: args.page,
+                                pageSize: pageSize
+                            },
+                            dataType: "json",
+                            async: false,
+                            success: function (json) {
+                                var items = json.listpaloaltofirewallresponse.paloaltofirewall;
+                                args.response.success({
+                                    data: items
+                                });
+                            }
+                        });
+                    },
+                    detailView: {
+                        name: 'Palo Alto details',
+                        actions: {
+                            'remove': {
+                                label: 'label.delete.PA',
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'message.confirm.delete.PA';
+                                    },
+                                    notification: function (args) {
+                                        return 'label.delete.PA';
+                                    }
+                                },
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("deletePaloAltoFirewall&fwdeviceid=" + args.context.paDevices[0].fwdeviceid),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function (json) {
+                                            var jid = json.deletepaloaltofirewallresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            }
+                        },
+                        tabs: {
+                            details: {
+                                title: 'label.details',
+                                fields: [{
+                                    fwdeviceid: {
+                                        label: 'label.id'
+                                    },
+                                    ipaddress: {
+                                        label: 'label.ip.address'
+                                    },
+                                    fwdevicestate: {
+                                        label: 'label.status'
+                                    },
+                                    fwdevicename: {
+                                        label: 'label.type'
+                                    },
+                                    fwdevicecapacity: {
+                                        label: 'label.capacity'
+                                    },
+                                    timeout: {
+                                        label: 'label.timeout'
+                                    }
+                                }],
+                                dataProvider: function (args) {
+                                    $.ajax({
+                                        url: createURL("listPaloAltoFirewalls&fwdeviceid=" + args.context.paDevices[0].fwdeviceid),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function (json) {
+                                            var item = json.listpaloaltofirewallresponse.paloaltofirewall[0];
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+
             // FIXME convert to nicira detailview
             // NiciraNvp devices listView
             niciraNvpDevices: {
@@ -15763,6 +16289,44 @@
         }
         url.push("fwdevicededicated=" + dedicated.toString());
 
+        // START - Palo Alto Specific Fields
+        var externalVirtualRouter = args.data.pavr;
+        if(externalVirtualRouter != null && externalVirtualRouter.length > 0) {
+            if(isQuestionMarkAdded == false) {
+                url.push("?");
+                isQuestionMarkAdded = true;
+            }
+            else {
+                url.push("&");
+            }
+            url.push("pavr=" + encodeURIComponent(externalVirtualRouter));
+        }
+
+        var externalThreatProfile = args.data.patp;
+        if(externalThreatProfile != null && externalThreatProfile.length > 0) {
+            if(isQuestionMarkAdded == false) {
+                url.push("?");
+                isQuestionMarkAdded = true;
+            }
+            else {
+                url.push("&");
+            }
+            url.push("patp=" + encodeURIComponent(externalThreatProfile));
+        }
+
+        var externalLogProfile = args.data.palp;
+        if(externalLogProfile != null && externalLogProfile.length > 0) {
+            if(isQuestionMarkAdded == false) {
+                url.push("?");
+                isQuestionMarkAdded = true;
+            }
+            else {
+                url.push("&");
+            }
+            url.push("palp=" + encodeURIComponent(externalLogProfile));
+        }
+        // END - Palo Alto Specific Fields
+
         array1.push("&url=" + todb(url.join("")));
         //construct URL ends here
 
@@ -16495,6 +17059,9 @@
                             case "JuniperSRX":
                                 nspMap["srx"] = items[i];
                                 break;
+                            case "PaloAlto":
+                                nspMap["pa"] = items[i];
+                                break;
                             case "SecurityGroupProvider":
                                 nspMap["securityGroups"] = items[i];
                                 break;
@@ -16575,6 +17142,11 @@
                 id: 'srx',
                 name: 'SRX',
                 state: nspMap.srx ? nspMap.srx.state : 'Disabled'
+            });
+            nspHardcodingArray.push({
+                id: 'pa',
+                name: 'Palo Alto',
+                state: nspMap.pa ? nspMap.pa.state : 'Disabled'
             });
         }
     };

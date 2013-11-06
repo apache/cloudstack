@@ -3792,6 +3792,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             firewallProvider = provider;
                         }
 
+                        if (provider == Provider.PaloAlto) {
+                            firewallProvider = Provider.PaloAlto;
+                        }
+                        
                         if ((service == Service.PortForwarding || service == Service.StaticNat)
                                 && provider == Provider.VirtualRouter) {
                             firewallProvider = Provider.VirtualRouter;

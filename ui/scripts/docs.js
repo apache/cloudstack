@@ -770,6 +770,75 @@ cloudStack.docs = {
         desc: 'Number of guest networks/accounts that will share this device',
         externalLink: ''
     },
+    // Add Palo Alto
+    helpPaloAltoIPAddress: {
+        desc: 'The IP address of the device',
+        externalLink: ''
+    },
+    helpPaloAltoUsername: {
+        desc: 'A user ID with valid authentication credentials that provide to access the device',
+        externalLink: ''
+    },
+    helpPaloAltoPassword: {
+        desc: 'The password for the user ID provided in Username',
+        externalLink: ''
+    },
+    helpPaloAltoType: {
+        desc: 'The type of device that is being added',
+        externalLink: ''
+    },
+    helpPaloAltoPublicInterface: {
+        desc: 'Interface of device that is configured to be part of the public network. For example, ge-0/0/2',
+        externalLink: ''
+    },
+    helpPaloAltoPrivateInterface: {
+        desc: 'Interface of device that is configured to be part of the private network. For example, ge-0/0/1',
+        externalLink: ''
+    },
+    helpPaloAltoUsageInterface: {
+        desc: 'Interface used to meter traffic. If you don\'t want to use the public interface, specify a different interface name here.',
+        externalLink: ''
+    },
+    helpPaloAltoRetries: {
+        desc: 'Number of times to attempt a command on the device before considering the operation failed. Default is 2.',
+        externalLink: ''
+    },
+    helpPaloAltoTimeout: {
+        desc: 'The time to wait for a command on the Palo Alto before considering it failed. Default is 300 seconds.',
+        externalLink: ''
+    },
+    helpPaloAltoMode: {
+        desc: 'Side by side mode is supported for the Palo Alto.',
+        externalLink: ''
+    },
+    helpPaloAltoPublicNetwork: {
+        desc: 'The name of the public network on the Palo Alto. For example, trust.',
+        externalLink: ''
+    },
+    helpPaloAltoPrivateNetwork: {
+        desc: 'The name of the private network on the Palo Alto. For example, untrust.',
+        externalLink: ''
+    },
+    helpPaloAltoVirtualRouter: {
+        desc: 'The name of the virtual router on the Palo Alto.',
+        externalLink: ''
+    },
+    helpPaloAltoThreatProfile: {
+        desc: 'The threat profile name/group to associate with allow firewall policies.',
+        externalLink: ''
+    },
+    helpPaloAltoLogProfile: {
+        desc: 'The log profile name/group to associate with allow firewall policies.',
+        externalLink: ''
+    },
+    helpPaloAltoDedicated: {
+        desc: 'Check this box to dedicate the device to a single account. The value in the Capacity field will be ignored.',
+        externalLink: ''
+    },
+    helpPaloAltoCapacity: {
+        desc: 'Number of guest networks/accounts that will share this device',
+        externalLink: ''
+    },
     // Add system service offering
     helpSystemOfferingName: {
         desc: 'Any desired name for the offering',
