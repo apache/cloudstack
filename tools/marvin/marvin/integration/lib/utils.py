@@ -113,8 +113,16 @@ def cleanup_resources(api_client, resources):
         obj.delete(api_client)
 
 
-def is_server_ssh_ready(ipaddress, port, username, password, retries=10, timeout=30, keyPairFileLocation=None):
-    """Return ssh handle else wait till sshd is running"""
+def is_server_ssh_ready(ipaddress, port, username, password, retries=10, retryinterv=30, timeout=3.0, keyPairFileLocation=None):
+    '''
+    @Name: is_server_ssh_ready
+    @Input: timeout: tcp connection timeout flag,
+            others information need to be added
+    @Output:object for remoteSSHClient
+    Name of the function is little misnomer and is not
+              verifying anything as such mentioned
+    '''
+
     try:
         ssh = remoteSSHClient(
             host=ipaddress,
@@ -123,9 +131,10 @@ def is_server_ssh_ready(ipaddress, port, username, password, retries=10, timeout
             passwd=password,
             keyPairFileLocation=keyPairFileLocation,
             retries=retries,
-            delay=timeout)
+            delay=retryinterv,
+            timeout=timeout)
     except Exception, e:
-        raise Exception("Failed to bring up ssh service in time. Waited %ss. Error is %s" % (retries * timeout, e))
+        raise Exception("SSH connection has Failed. Waited %ss. Error is %s" % (retries * retryinterv, e))
     else:
         return ssh
 
