@@ -65,6 +65,52 @@ public class Upgrade420to421 implements DbUpgrade {
     @Override
     public void performDataMigration(Connection conn) {
         upgradeResourceCount(conn);
+        updateCpuOverprovisioning(conn);
+    }
+
+    private void updateCpuOverprovisioning(Connection conn) {
+        PreparedStatement pstmt1 = null;
+        PreparedStatement pstmt2 = null;
+        PreparedStatement pstmt3 = null;
+        ResultSet result1 = null;
+        ResultSet result2 = null;
+
+        // Get cpu overprovisioning factor from global setting and update user vm details table for all the vms if factor > 1
+
+        try {
+            pstmt1 = conn.prepareStatement("select value from `cloud`.`configuration` where name='cpu.overprovisioning.factor'");
+            result1 = pstmt1.executeQuery();
+            String overprov = "1";
+            if(result1.next()){
+                overprov = result1.getString(1);
+            }
+            // Need to populate only when overprovisioning factor doesn't pre exist.
+            s_logger.debug("Starting updating user_vm_details with cpu/memory overprovisioning factors");
+            pstmt2 = conn.prepareStatement("select id from `cloud`.`vm_instance` where removed is null and id not in (select vm_id from  `cloud`.`user_vm_details` where name='cpuOvercommitRatio')");
+            pstmt3 = conn.prepareStatement("INSERT IGNORE INTO cloud.user_vm_details (vm_id, name, value) VALUES (?, ?, ?)");
+            result2 = pstmt2.executeQuery();
+            while (result2.next()) {
+                //For cpu
+                pstmt3.setLong(1, result2.getLong(1));
+                pstmt3.setString(2, "cpuOvercommitRatio");
+                pstmt3.setString(3, overprov);
+                pstmt3.executeUpdate();
+
+                // For memory
+                pstmt3.setLong(1, result2.getLong(1));
+                pstmt3.setString(2, "memoryOvercommitRatio");
+                pstmt3.setString(3, "1"); // memory overprovisioning didn't exist earlier.
+                pstmt3.executeUpdate();
+            }
+            s_logger.debug("Done updating user_vm_details with cpu/memory overprovisioning factors");
+
+
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to update cpu/memory overprovisioning factors", e);
+        } finally {
+
+        }
+
     }
 
     private void upgradeResourceCount(Connection conn) {
