@@ -818,6 +818,12 @@ public class VirtualRoutingResource implements Manager {
         return new ConsoleProxyLoadAnswer(cmd, proxyVmId, proxyVmName, success, result);
     }
 
+    public String configureMonitor(final String routerIP, final String config) {
+
+        String args= " -c " + config;
+        return  routerProxy("monitor_service.sh", routerIP, args);
+    }
+
     public String assignGuestNetwork(final String dev, final String routerIP,
             final String routerGIP, final String gateway, final String cidr,
             final String netmask, final String dns, final String domainName) {
