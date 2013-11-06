@@ -12033,7 +12033,7 @@
                                                    
                                                     if (args.data.jsonObj.name == 'cpu.overprovisioning.factor' || args.data.jsonObj.name == 'mem.overprovisioning.factor') {
                                                     	cloudStack.dialog.notice({
-                                                    		message: 'Please note - you are changing the over provisioning factor for a cluster with vms running. Please refer to the admin guide to understand the capacity calculation.'
+                                                    		message: 'Please note - if you are changing the over provisioning factor for a cluster with vms running, please refer to the admin guide to understand the capacity calculation.'
                                                     	});
                                                     }
                                                     
