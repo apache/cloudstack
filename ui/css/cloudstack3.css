@@ -318,6 +318,7 @@ table th div.ui-resizable-handle {
 body.login {
   background: url(../images/overlay-pattern.png) repeat center, #106CA9 url(../images/bg-login.jpg) no-repeat center;
   background-size: auto, cover;
+  overflow: hidden;
 }
 
 .login {
