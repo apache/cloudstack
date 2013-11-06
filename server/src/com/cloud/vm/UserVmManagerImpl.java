@@ -2732,10 +2732,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         long id = _vmDao.getNextInSequence(Long.class, "id");
 
-        if (hostName != null) {
-            // Check is hostName is RFC compliant
-            checkNameForRFCCompliance(hostName);
-        }
+
 
         String instanceName = null;
         String uuidName = UUID.randomUUID().toString();
@@ -2744,16 +2741,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (displayName != null) {
                     hostName = displayName;
                 } else {
-                    hostName = uuidName;
+                    hostName = generateHostName(uuidName);
                 }
             }
         } else {
             if (hostName == null) {
                 //Generate name using uuid and instance.name global config
-                hostName = _configDao.getValue(Config.InstanceName.key()) + "-" + uuidName;
+                hostName = generateHostName(uuidName);
             }
         }
-
+        
+        if (hostName != null) {
+            // Check is hostName is RFC compliant
+            checkNameForRFCCompliance(hostName);
+        }
         instanceName = VirtualMachineName.getVmName(id, owner.getId(), _instance);
 
         // Check if VM with instanceName already exists.
@@ -2823,6 +2824,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return vm;
+    }
+
+    private String generateHostName(String uuidName) {
+        return _instance + "-" + uuidName;
     }
 
     private UserVmVO commitUserVm(final DataCenter zone, final VirtualMachineTemplate template, final String hostName,
