@@ -33,6 +33,7 @@ import com.cloud.network.lb.LoadBalancingRule.LbCondition;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
+import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.utils.Pair;
 
 
@@ -41,6 +42,7 @@ public class LoadBalancerTO {
     String srcIp;
     int srcPort;
     String protocol;
+    String lbProtocol;
     String algorithm;
     boolean revoked;
     boolean alreadyAdded;
@@ -48,6 +50,7 @@ public class LoadBalancerTO {
     DestinationTO[] destinations;
     private StickinessPolicyTO[] stickinessPolicies;
     private HealthCheckPolicyTO[] healthCheckPolicies;
+    private LbSslCert sslCert; /* XXX: Should this be SslCertTO?  */
     private AutoScaleVmGroupTO autoScaleVmGroupTO;
     final static int MAX_STICKINESS_POLICIES = 1;
     final static int MAX_HEALTHCHECK_POLICIES = 1;
@@ -66,6 +69,8 @@ public class LoadBalancerTO {
         this.inline = inline;
         this.destinations = new DestinationTO[destinations.size()];
         this.stickinessPolicies = null;
+        this.sslCert = null;
+        this.lbProtocol = null;
         int i = 0;
         for (LbDestination destination : destinations) {
             this.destinations[i++] = new DestinationTO(destination.getIpAddress(), destination.getDestinationPortStart(), destination.isRevoked(), false);
@@ -77,12 +82,12 @@ public class LoadBalancerTO {
             List<LbStickinessPolicy> stickinessPolicies) {
 
         this(id, srcIp, srcPort, protocol, algorithm, revoked, alreadyAdded, inline, arg_destinations,
-                stickinessPolicies, null);
+                stickinessPolicies, null, null, null);
     }
 
     public LoadBalancerTO(String id, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked,
             boolean alreadyAdded, boolean inline, List<LbDestination> arg_destinations,
-            List<LbStickinessPolicy> stickinessPolicies, List<LbHealthCheckPolicy> healthCheckPolicies) {
+            List<LbStickinessPolicy> stickinessPolicies, List<LbHealthCheckPolicy> healthCheckPolicies, LbSslCert sslCert, String lbProtocol) {
         this(id, srcIp, srcPort, protocol, algorithm, revoked, alreadyAdded, inline, arg_destinations);
         this.stickinessPolicies = null;
         this.healthCheckPolicies = null;
@@ -117,6 +122,9 @@ public class LoadBalancerTO {
             if (index == 0)
                 this.healthCheckPolicies = null;
         }
+
+        this.sslCert = sslCert;
+        this.lbProtocol = lbProtocol;
     }
 
     protected LoadBalancerTO() {
@@ -140,6 +148,10 @@ public class LoadBalancerTO {
 
     public String getProtocol() {
         return protocol;
+    }
+
+    public String getLbProtocol() {
+        return lbProtocol;
     }
 
     public boolean isRevoked() {
@@ -176,6 +188,10 @@ public class LoadBalancerTO {
 
     public boolean isAutoScaleVmGroupTO() {
         return this.autoScaleVmGroupTO != null;
+    }
+
+    public LbSslCert getSslCert(){
+       return this.sslCert;
     }
 
     public static class StickinessPolicyTO {
@@ -294,6 +310,8 @@ public class LoadBalancerTO {
         public String getMonitorState() {
             return monitorState;
         }
+
+
     }
     public static class CounterTO implements Serializable {
         private final String name;
@@ -558,5 +576,4 @@ public class LoadBalancerTO {
         autoScaleVmGroupTO = new AutoScaleVmGroupTO(autoScaleVmGroup.getUuid(), autoScaleVmGroup.getMinMembers(), autoScaleVmGroup.getMaxMembers(), autoScaleVmGroup.getMemberPort(),
                 autoScaleVmGroup.getInterval(), autoScalePolicyTOs, autoScaleVmProfileTO, autoScaleVmGroup.getState(), lbAutoScaleVmGroup.getCurrentState());
     }
-
 }

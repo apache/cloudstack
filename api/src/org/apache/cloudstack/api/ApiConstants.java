@@ -36,6 +36,9 @@ public class ApiConstants {
     public static final String CATEGORY = "category";
     public static final String CAN_REVERT = "canrevert";
     public static final String CERTIFICATE = "certificate";
+    public static final String CERTIFICATE_CHAIN = "certchain";
+    public static final String CERTIFICATE_FINGERPRINT = "fingerprint";
+    public static final String CERTIFICATE_ID = "certid";
     public static final String PRIVATE_KEY = "privatekey";
     public static final String DOMAIN_SUFFIX = "domainsuffix";
     public static final String DNS_SEARCH_ORDER = "dnssearchorder";

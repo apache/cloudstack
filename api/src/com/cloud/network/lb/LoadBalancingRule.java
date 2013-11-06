@@ -36,14 +36,27 @@ public class LoadBalancingRule {
     private List<LbStickinessPolicy> stickinessPolicies;
     private LbAutoScaleVmGroup autoScaleVmGroup;
     private List<LbHealthCheckPolicy> healthCheckPolicies;
+    private LbSslCert sslCert;
+    private String lbProtocol;
 
     public LoadBalancingRule(LoadBalancer lb, List<LbDestination> destinations,
-            List<LbStickinessPolicy> stickinessPolicies, List<LbHealthCheckPolicy> healthCheckPolicies, Ip sourceIp) {
+                             List<LbStickinessPolicy> stickinessPolicies, List<LbHealthCheckPolicy> healthCheckPolicies, Ip sourceIp) {
         this.lb = lb;
         this.destinations = destinations;
         this.stickinessPolicies = stickinessPolicies;
         this.healthCheckPolicies = healthCheckPolicies;
         this.sourceIp = sourceIp;
+    }
+
+    public LoadBalancingRule(LoadBalancer lb, List<LbDestination> destinations,
+            List<LbStickinessPolicy> stickinessPolicies, List<LbHealthCheckPolicy> healthCheckPolicies, Ip sourceIp, LbSslCert sslCert, String lbProtocol) {
+        this.lb = lb;
+        this.destinations = destinations;
+        this.stickinessPolicies = stickinessPolicies;
+        this.healthCheckPolicies = healthCheckPolicies;
+        this.sourceIp = sourceIp;
+        this.sslCert = sslCert;
+        this.lbProtocol = lbProtocol;
     }
 
     public long getId() {
@@ -90,6 +103,10 @@ public class LoadBalancingRule {
         return lb.getProtocol();
     }
 
+    public String getLbProtocol() {
+        return this.lbProtocol;
+    }
+
     public FirewallRule.Purpose getPurpose() {
         return FirewallRule.Purpose.LoadBalancing;
     }
@@ -121,6 +138,10 @@ public class LoadBalancingRule {
 
     public List<LbHealthCheckPolicy> getHealthCheckPolicies() {
         return healthCheckPolicies;
+    }
+
+    public LbSslCert getLbSslCert(){
+        return sslCert;
     }
 
     public interface Destination {
@@ -412,6 +433,44 @@ public class LoadBalancingRule {
 
         public String getCurrentState() {
             return currentState;
+        }
+    }
+
+    public static class LbSslCert {
+        private String cert;
+        private String key;
+        private String password=null;
+        private String chain=null;
+        private boolean revoked;
+
+
+        public LbSslCert(String cert, String key, String password, String chain, boolean revoked) {
+            this.cert = cert;
+            this.key = key;
+            this.password = password;
+            this.chain = chain;
+            this.revoked = revoked;
+        }
+
+        public String getCert() {
+
+            return cert;
+        }
+
+        public String getKey() {
+            return key;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public String getChain() {
+            return chain;
+        }
+
+        public boolean isRevoked(){
+            return revoked;
         }
     }
 

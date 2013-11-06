@@ -41,6 +41,8 @@ ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `power_state_update_count` INT DEFA
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `power_host` bigint unsigned;
 ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__power_host` FOREIGN KEY (`power_host`) REFERENCES `cloud`.`host`(`id`);
 
+ALTER TABLE `cloud`.`load_balancing_rules` ADD COLUMN `lb_protocol` VARCHAR(40);
+
 DROP TABLE IF EXISTS `cloud`.`vm_snapshot_details`;
 CREATE TABLE `cloud`.`vm_snapshot_details` (
   `id` bigint unsigned UNIQUE NOT NULL,
@@ -463,6 +465,32 @@ CREATE VIEW `cloud`.`storage_pool_view` AS
         `cloud`.`async_job` ON async_job.instance_id = storage_pool.id
             and async_job.instance_type = 'StoragePool'
             and async_job.job_status = 0;
+
+
+CREATE TABLE `sslcerts` (
+      `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+      `uuid` varchar(40) DEFAULT NULL,
+      `account_id` bigint(20) unsigned NOT NULL,
+      `domain_id` bigint(20) unsigned NOT NULL,
+      `certificate` text NOT NULL,
+      `fingerprint` varchar(62) NOT NULL,
+      `key` text NOT NULL,
+      `chain` text,
+      `password` varchar(255) DEFAULT NULL,
+      PRIMARY KEY (`id`),
+      CONSTRAINT `fk_sslcert__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
+      CONSTRAINT `fk_sslcert__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `load_balancer_cert_map` (
+      `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+      `uuid` varchar(40) DEFAULT NULL,
+      `load_balancer_id` bigint(20) unsigned NOT NULL,
+      `certificate_id` bigint(20) unsigned NOT NULL,
+      `revoke` tinyint(1) NOT NULL DEFAULT '0',
+      PRIMARY KEY (`id`),
+      CONSTRAINT `fk_load_balancer_cert_map__certificate_id` FOREIGN KEY (`certificate_id`) REFERENCES `sslcerts` (`id`) ON DELETE CASCADE,
+      CONSTRAINT `fk_load_balancer_cert_map__load_balancer_id` FOREIGN KEY (`load_balancer_id`) REFERENCES `load_balancing_rules` (`id`) ON DELETE CASCADE);
 
 ALTER TABLE `cloud`.`host` ADD COLUMN `cpu_sockets` int(10) unsigned DEFAULT NULL COMMENT "the number of CPU sockets on the host" AFTER pod_id;
 

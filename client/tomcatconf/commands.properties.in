@@ -165,6 +165,14 @@ deleteLBHealthCheckPolicy=15
 listLoadBalancerRuleInstances=15
 updateLoadBalancerRule=15
 
+##### SSL offload commands
+
+uploadSslCert=15
+deleteSslCert=15
+listSslCerts=15
+assignCertToLoadBalancer=15
+removeCertFromLoadBalancer=15
+
 #### autoscale commands
 createCounter=1
 createCondition=15

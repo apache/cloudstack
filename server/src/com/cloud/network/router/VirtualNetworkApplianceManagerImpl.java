@@ -187,6 +187,7 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
+import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
@@ -2544,7 +2545,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
                     List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
                     Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
-                    LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList, sourceIp);
+                    LbSslCert sslCert = _lbMgr.getLbSslCert(lb.getId());
+                    LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList, sourceIp, sslCert, lb.getLbProtocol());
                     lbRules.add(loadBalancing);
                 }
             }
@@ -3680,8 +3682,11 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                         List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
                         List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
                         List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
+                        LbSslCert sslCert = _lbMgr.getLbSslCert(lb.getId());
                         Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
-                        LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList, sourceIp);
+                        LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList, sourceIp,
+                                sslCert, lb.getLbProtocol());
+
                         lbRules.add(loadBalancing);
                     }
                     return sendLBRules(router, lbRules, network.getId());
@@ -3716,8 +3721,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
                     List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
                     List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
+                    LbSslCert sslCert = _lbMgr.getLbSslCert(lb.getId());
                     Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
-                    LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList, sourceIp);
+                    LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList, sourceIp, sslCert, lb.getLbProtocol());
                     lbRules.add(loadBalancing);
                 }
                 return sendLBRules(router, lbRules, network.getId());

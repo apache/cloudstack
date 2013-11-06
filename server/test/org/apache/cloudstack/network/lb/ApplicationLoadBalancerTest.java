@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.lb;
+package org.apache.cloudstack.network.lb;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -25,6 +25,7 @@ import javax.inject.Inject;
 
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -335,7 +336,7 @@ public class ApplicationLoadBalancerTest extends TestCase {
         public AccountManager accountManager() {
             return Mockito.mock(AccountManager.class);
         }
-        
+
 
         @Bean
         public LoadBalancingRulesManager loadBalancingRulesManager() {
