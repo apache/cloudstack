@@ -1402,7 +1402,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                             baseName + "*.vmdk", store.getUuid(), newPath);
                     if(volumeTo.getVolumeType()== Volume.Type.ROOT){
                         // add memory snapshot size
-                        size = size + getVMSnapshotChainSize(context,hyperHost,cmd.getVmName()+"*.vmsn",volumeTo.getUuid(),null);
+                        size = size + getVMSnapshotChainSize(context,hyperHost,cmd.getVmName()+"*.vmsn",store.getUuid(),null);
                     }
                     volumeTo.setSize(size);
                     volumeTo.setPath(newPath);
