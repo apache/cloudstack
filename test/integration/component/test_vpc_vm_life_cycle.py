@@ -26,6 +26,7 @@ from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
 from marvin.remoteSSHClient import remoteSSHClient
+from marvin.codes import PASS
 
 import time
 
@@ -1195,10 +1196,20 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                          )
 
             self.debug("We should be allowed to ping virtual gateway")
-            self.debug("VM gateway: %s" % self.vm_1.nic[0].gateway)
+            self.debug("Finding the gateway corresponding to isolated network")
+            gateways = [nic.gateway for nic in self.vm_1.nic if nic.networkid == self.network_1.id]
 
-            res = ssh_1.execute("ping -c 1 %s" % self.vm_1.nic[0].gateway)
-            self.debug("ping -c 1 %s: %s" % (self.vm_1.nic[0].gateway, res))
+            gateway_list_validation_result = validateList(gateways)
+
+            self.assertEqual(gateway_list_validation_result[0], PASS, "gateway list validation failed due to %s" %
+                             gateway_list_validation_result[2])
+
+            gateway = gateway_list_validation_result[1]
+
+            self.debug("VM gateway: %s" % gateway)
+
+            res = ssh_1.execute("ping -c 1 %s" % gateway)
+            self.debug("ping -c 1 %s: %s" % (gateway, res))
 
             result = str(res)
             self.assertEqual(
