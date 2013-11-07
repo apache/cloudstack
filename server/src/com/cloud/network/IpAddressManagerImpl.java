@@ -1892,7 +1892,10 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                         //nic.setBroadcastType(BroadcastDomainType.Vlan);
                         //nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
                         nic.setBroadcastType(network.getBroadcastDomainType());
-                        nic.setBroadcastUri(network.getBroadcastUri());
+                        if (network.getBroadcastUri() != null)
+                            nic.setBroadcastUri(network.getBroadcastUri());
+                        else
+                            nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
                         nic.setFormat(AddressFormat.Ip4);
                         nic.setReservationId(String.valueOf(ip.getVlanTag()));
                         nic.setMacAddress(ip.getMacAddress());
