@@ -447,6 +447,7 @@ namespace HypervResource
                 pingReply = pingSender.Send(ipAddress, pingTimeout, buffer, pingOptions);
                 if (pingReply.Status == IPStatus.Success)
                 {
+                    System.Threading.Thread.Sleep(30000);
                     return true;
                 }
                 else
@@ -591,11 +592,11 @@ namespace HypervResource
                 }
 
                 string hostResource = item.HostResource[0];
-                if (!hostResource.Equals(diskFileName))
+                if (Path.Equals(hostResource, diskFileName))
                 {
-                    continue;
+                    imageToRemove = item;
+                    break;
                 }
-                imageToRemove = item;
             }
 
             // assert
@@ -739,7 +740,6 @@ namespace HypervResource
             // Disk drives are attached to a 'Parent' IDE controller.  We IDE Controller's settings for the 'Path', which our new Disk drive will use to reference it.
             VirtualSystemSettingData vmSettings = GetVmSettings(vm);
             var driveWmiObj = GetDvdDriveSettings(vmSettings);
-
             InsertDiskImage(vm, isoPath, IDE_ISO_DISK, driveWmiObj.Path);
         }
 

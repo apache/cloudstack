@@ -196,7 +196,19 @@ namespace HypervResource
                 try
                 {
                     string vmName = (string)cmd.vmName;
-                    result = true;
+                    DiskTO disk = DiskTO.ParseJson(cmd.disk);
+                    TemplateObjectTO dataStore = disk.templateObjectTO;
+
+                    if (dataStore.nfsDataStoreTO != null)
+                    {
+                        NFSTO share = dataStore.nfsDataStoreTO;
+                        Utils.connectToRemote(share.UncPath, share.Domain, share.User, share.Password);
+
+                        // The share is mapped, now attach the iso
+                        string isoPath = Path.Combine(share.UncPath.Replace('/', Path.DirectorySeparatorChar), dataStore.path);
+                        wmiCallsV2.AttachIso(vmName, isoPath);
+                        result = true;
+                    }
                 }
                 catch (Exception sysEx)
                 {
@@ -229,7 +241,18 @@ namespace HypervResource
                 try
                 {
                     string vmName = (string)cmd.vmName;
-                    result = true;
+                    DiskTO disk = DiskTO.ParseJson(cmd.disk);
+                    TemplateObjectTO dataStore = disk.templateObjectTO;
+
+                    if (dataStore.nfsDataStoreTO != null)
+                    {
+                        NFSTO share = dataStore.nfsDataStoreTO;
+                        // The share is mapped, now attach the iso
+                        string isoPath = Path.Combine(share.UncPath.Replace('/', Path.DirectorySeparatorChar),
+                            dataStore.path.Replace('/', Path.DirectorySeparatorChar));
+                        wmiCallsV2.DetachDisk(vmName, isoPath);
+                        result = true;
+                    }
                 }
                 catch (Exception sysEx)
                 {
@@ -244,6 +267,49 @@ namespace HypervResource
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.DettachAnswer);
+            }
+        }
+
+        // POST api/HypervResource/RebootCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.RebootCommand)]
+        public JContainer RebootCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.RebootCommand + cmd.ToString());
+
+                string details = null;
+                bool result = false;
+
+                try
+                {
+                    string vmName = (string)cmd.vmName;
+                    var sys = wmiCallsV2.GetComputerSystem(vmName);
+                    if (sys == null)
+                    {
+                        details = CloudStackTypes.RebootCommand + " requested unknown VM " + vmName;
+                        logger.Error(details);
+                    }
+                    else
+                    {
+                        wmiCallsV2.SetState(sys, RequiredState.Reset);
+                        result = true;
+                    }
+                }
+                catch (Exception sysEx)
+                {
+                    details = CloudStackTypes.RebootCommand + " failed due to " + sysEx.Message;
+                    logger.Error(details, sysEx);
+                }
+
+                object ansContent = new
+                {
+                    result = result,
+                    details = details
+                };
+
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.RebootAnswer);
             }
         }
 

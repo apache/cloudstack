@@ -279,6 +279,27 @@ namespace HypervResource
         }
     }
 
+    public class DiskTO
+    {
+        public string type;
+        public TemplateObjectTO templateObjectTO = null;
+
+        public static DiskTO ParseJson(dynamic json)
+        {
+            DiskTO result = null;
+            if (json != null)
+            {
+                result = new DiskTO()
+                {
+                    templateObjectTO = TemplateObjectTO.ParseJson(json.data),
+                    type = (string)json.type,
+                };
+            }
+
+            return result;
+        }
+    }
+
     enum VolumeType
     {
         UNKNOWN,
@@ -589,6 +610,7 @@ namespace HypervResource
         public const string SwiftTO = "com.cloud.agent.api.to.SwiftTO";
         public const string VirtualMachineTO = "com.cloud.agent.api.to.VirtualMachineTO";
         public const string VolumeTO = "com.cloud.agent.api.to.VolumeTO";
+        public const string DiskTO = "com.cloud.agent.api.to.DiskTO";
         public const string InternalErrorException = "com.cloud.exception.InternalErrorException";
         public const string HostType = "com.cloud.host.Host.Type";
         public const string HypervisorType = "com.cloud.hypervisor.Hypervisor.HypervisorType";
