@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -2282,7 +2283,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new InvalidParameterValueException("Only support one network per VM if security group enabled");
             }
 
-            NetworkVO network = _networkDao.findById(networkIdList.get(0).longValue());
+            NetworkVO network = _networkDao.findById(networkIdList.get(0));
 
             if (network == null) {
                 throw new InvalidParameterValueException(
@@ -2549,7 +2550,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, (isIso
                 || diskOfferingId == null ? 1 : 2));
-        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, new Long (size));
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, size);
 
         // verify security group ids
         if (securityGroupIdList != null) {
@@ -2811,14 +2812,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        for (String ntwkDomain : ntwkDomains.keySet()) {
-            for (Long ntwkId : ntwkDomains.get(ntwkDomain)) {
+        for (Entry<String, List<Long>> ntwkDomain : ntwkDomains.entrySet()) {
+            for (Long ntwkId : ntwkDomain.getValue()) {
                 // * get all vms hostNames in the network
                 List<String> hostNames = _vmInstanceDao.listDistinctHostNames(ntwkId);
                 // * verify that there are no duplicates
                 if (hostNames.contains(hostName)) {
-                    throw new InvalidParameterValueException("The vm with hostName " + hostName
-                            + " already exists in the network domain: " + ntwkDomain + "; network="
+                    throw new InvalidParameterValueException("The vm with hostName " + hostName + " already exists in the network domain: " + ntwkDomain.getKey() + "; network="
                             + _networkModel.getNetwork(ntwkId));
                 }
             }
