@@ -406,6 +406,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             AsyncCallFuture<VolumeApiResult> future = null;
             boolean isNotCreatedFromTemplate = volume.getTemplateId() == null ? true : false;
             if (isNotCreatedFromTemplate) {
+                volume = updateHypervisorSnapshotReserveForVolume(diskOffering, volume, hyperType);
                 future = volService.createVolumeAsync(volume, store);
             } else {
                 TemplateInfo templ = tmplFactory.getTemplate(template.getId(), DataStoreRole.Image);
@@ -433,6 +434,29 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             }
         }
         throw new CloudRuntimeException("create volume failed even after template re-deploy");
+    }
+
+    // For managed storage on Xen and VMware, we need to potentially make space for hypervisor snapshots.
+    // The disk offering can collect this information and pass it on to the volume that's about to be created.
+    // Ex. if you want a 10 GB CloudStack volume to reside on managed storage on Xen, this leads to an SR
+    // that is a total size of (10 GB * (hypervisorSnapshotReserveSpace / 100) + 10 GB).
+    private VolumeInfo updateHypervisorSnapshotReserveForVolume(DiskOffering diskOffering, VolumeInfo volumeInfo, HypervisorType hyperType) {
+        Integer hypervisorSnapshotReserve = diskOffering.getHypervisorSnapshotReserve();
+
+        if (hyperType == HypervisorType.KVM) {
+            hypervisorSnapshotReserve = null;
+        }
+        else if (hypervisorSnapshotReserve == null || hypervisorSnapshotReserve < 0) {
+            hypervisorSnapshotReserve = 0;
+        }
+
+        VolumeVO volume = _volsDao.findById(volumeInfo.getId());
+
+        volume.setHypervisorSnapshotReserve(hypervisorSnapshotReserve);
+
+        _volsDao.update(volume.getId(), volume);
+
+        return volFactory.getVolume(volume.getId());
     }
 
     public String getRandomVolumeName() {

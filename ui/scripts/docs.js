@@ -326,6 +326,10 @@ cloudStack.docs = {
         desc: 'Appears only if Custom IOPS is not selected. Define the maximum volume IOPS.',
         externalLink: ''
     },
+    helpDiskOfferingHypervisorSnapshotReserve: {
+        desc: 'Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware) (Ex. The value 25 means 25%.)).',
+        externalLink: ''
+    },
     helpDiskOfferingStorageTags: {
         desc: 'Comma-separated list of attributes that should be associated with the primary storage for this disk. For example "ssd,blue".',
         externalLink: ''

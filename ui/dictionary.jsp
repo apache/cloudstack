@@ -50,6 +50,7 @@ dictionary = {
 'label.custom.disk.iops': '<fmt:message key="label.custom.disk.iops" />',
 'label.disk.iops.min': '<fmt:message key="label.disk.iops.min" />',
 'label.disk.iops.max': '<fmt:message key="label.disk.iops.max" />',
+'label.hypervisor.snapshot.reserve': '<fmt:message key="label.hypervisor.snapshot.reserve" />',
 'label.acquire.new.secondary.ip': '<fmt:message key="label.acquire.new.secondary.ip" />',
 'label.view.secondary.ips': '<fmt:message key="label.view.secondary.ips" />',
 'message.acquire.ip.nic': '<fmt:message key="message.acquire.ip.nic" />',

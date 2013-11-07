@@ -16,7 +16,7 @@
 -- under the License.
 
 --;
--- Schema upgrade from 4.2.0 to 4.3.0;
+-- Schema upgrade from 4.2.1 to 4.3.0;
 --;
 
 -- Disable foreign key checking
@@ -108,6 +108,9 @@ UPDATE `cloud`.`configuration` SET `default_value` = `value`;
 
 #Upgrade the offerings and template table to have actual remove and states
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `state` CHAR(40) NOT NULL DEFAULT 'Active' COMMENT 'state for disk offering';
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `hv_ss_reserve` int(32) unsigned DEFAULT NULL COMMENT 'Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)';
+
+ALTER TABLE `cloud`.`volumes` ADD COLUMN `hv_ss_reserve` int(32) unsigned DEFAULT NULL COMMENT 'Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)';
 
 UPDATE `cloud`.`disk_offering` SET `state`='Inactive' WHERE `removed` IS NOT NULL;
 UPDATE `cloud`.`disk_offering` SET `removed`=NULL;

@@ -1241,6 +1241,7 @@
                                                 var $isCustomizedIops = $form.find('.form-item[rel=isCustomizedIops]');
                                                 var $minIops = $form.find('.form-item[rel=minIops]');
                                                 var $maxIops = $form.find('.form-item[rel=maxIops]');
+                                                var $hypervisorSnapshotReserve = $form.find('.form-item[rel=hypervisorSnapshotReserve]');
                                                 var $diskBytesReadRate = $form.find('.form-item[rel=diskBytesReadRate]');
                                                 var $diskBytesWriteRate = $form.find('.form-item[rel=diskBytesWriteRate]');
                                                 var $diskIopsReadRate = $form.find('.form-item[rel=diskIopsReadRate]');
@@ -1256,17 +1257,20 @@
 
                                                     $isCustomizedIops.css('display', 'inline-block');
 
-                                                    if ($isCustomizedIops == true) {
+                                                    if ($isCustomizedIops.find('input[type=checkbox]').is(':checked')) {
                                                         $minIops.hide();
                                                         $maxIops.hide();
                                                     } else {
                                                         $minIops.css('display', 'inline-block');
                                                         $maxIops.css('display', 'inline-block');
                                                     }
+
+                                                    $hypervisorSnapshotReserve.css('display', 'inline-block');
                                                 } else if (qosId == 'hypervisor') { // Hypervisor Qos
                                                     $isCustomizedIops.hide();
                                                     $minIops.hide();
                                                     $maxIops.hide();
+                                                    $hypervisorSnapshotReserve.hide();
 
                                                     $diskBytesReadRate.css('display', 'inline-block');
                                                     $diskBytesWriteRate.css('display', 'inline-block');
@@ -1280,6 +1284,7 @@
                                                     $isCustomizedIops.hide();
                                                     $minIops.hide();
                                                     $maxIops.hide();
+                                                    $hypervisorSnapshotReserve.hide();
                                                 }
                                             });
                                         }
@@ -1304,6 +1309,14 @@
                                         label: 'label.disk.iops.max',
                                         docID: 'helpDiskOfferingDiskIopsMax',
                                         dependsOn: 'isCustomizedIops',
+                                        validation: {
+                                            required: false,
+                                            number: true
+                                        }
+                                    },
+                                    hypervisorSnapshotReserve: {
+                                        label: 'label.hypervisor.snapshot.reserve',
+                                        docID: 'helpDiskOfferingHypervisorSnapshotReserve',
                                         validation: {
                                             required: false,
                                             number: true
@@ -1415,6 +1428,12 @@
                                                 maxiops: args.data.maxIops
                                             });
                                         }
+                                    }
+
+                                    if (args.data.hypervisorSnapshotReserve != null && args.data.hypervisorSnapshotReserve.length > 0) {
+                                        $.extend(data, {
+                                            hypervisorsnapshotreserve: args.data.hypervisorSnapshotReserve
+                                        });
                                     }
                                 } else if (args.data.qosType == 'hypervisor') {
                                     if (args.data.diskBytesReadRate != null && args.data.diskBytesReadRate.length > 0) {

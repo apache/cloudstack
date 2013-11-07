@@ -2188,7 +2188,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     protected DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized,
     		boolean localStorageRequired, boolean isDisplayOfferingEnabled, Boolean isCustomizedIops, Long minIops, Long maxIops,
-    		Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate) {
+    		Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate, Integer hypervisorSnapshotReserve) {
         long diskSize = 0;// special case for custom disk offerings
         if (numGibibytes != null && (numGibibytes <= 0)) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
@@ -2254,6 +2254,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (iopsWriteRate != null && (iopsWriteRate > 0))
             newDiskOffering.setIopsWriteRate(iopsWriteRate);
 
+        if (hypervisorSnapshotReserve != null && hypervisorSnapshotReserve < 0) {
+            throw new InvalidParameterValueException("If provided, Hypervisor Snapshot Reserve must be greater than or equal to 0.");
+        }
+
+        newDiskOffering.setHypervisorSnapshotReserve(hypervisorSnapshotReserve);
+
         CallContext.current().setEventDetails("Disk offering id=" + newDiskOffering.getId());
         DiskOfferingVO offering = _diskOfferingDao.persist(newDiskOffering);
         if (offering != null) {
@@ -2303,10 +2309,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long bytesWriteRate = cmd.getBytesWriteRate();
         Long iopsReadRate = cmd.getIopsReadRate();
         Long iopsWriteRate = cmd.getIopsWriteRate();
+        Integer hypervisorSnapshotReserve = cmd.getHypervisorSnapshotReserve();
 
         return createDiskOffering(domainId, name, description, numGibibytes, tags, isCustomized,
-        		localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops, maxIops,
-        		bytesReadRate, bytesWriteRate, iopsReadRate, iopsWriteRate);
+                localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops, maxIops,
+                bytesReadRate, bytesWriteRate, iopsReadRate, iopsWriteRate, hypervisorSnapshotReserve);
     }
 
     @Override

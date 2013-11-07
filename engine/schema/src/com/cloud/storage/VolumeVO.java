@@ -35,7 +35,6 @@ import javax.persistence.Transient;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.VirtualMachine.State;
 
 @Entity
 @Table(name = "volumes")
@@ -160,6 +159,9 @@ public class VolumeVO implements Volume {
     @Transient
     // @Column(name="reservation")
     String reservationId;
+
+    @Column(name="hv_ss_reserve")
+    Integer hypervisorSnapshotReserve;
 
     // Real Constructor
     public VolumeVO(Type type, String name, long dcId, long domainId,
@@ -579,5 +581,13 @@ public class VolumeVO implements Volume {
     // This method is used by UpdateVolume as a part of "Better control over first class objects in CS"
     public void setState(State state) {
         this.state = state;
+    }
+
+    public void setHypervisorSnapshotReserve(Integer hypervisorSnapshotReserve) {
+        this.hypervisorSnapshotReserve = hypervisorSnapshotReserve;
+    }
+
+    public Integer getHypervisorSnapshotReserve() {
+        return hypervisorSnapshotReserve;
     }
 }
