@@ -65,12 +65,22 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
             description = "policy id of the snapshot, if this is null, then use MANUAL_POLICY.")
     private Long policyId;
 
+    @Parameter(name = ApiConstants.SNAPSHOT_QUIESCEVM, type = CommandType.BOOLEAN, required = false, description = "quiesce vm if true")
+    private Boolean quiescevm;
+
     private String syncObjectType = BaseAsyncCmd.snapshotHostSyncObject;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
 
+    public Boolean getQuiescevm() {
+        if (quiescevm == null) {
+            return false;
+        } else {
+            return quiescevm;
+        }
+    }
 
     public String getAccountName() {
         return accountName;

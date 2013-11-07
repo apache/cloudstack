@@ -22,6 +22,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.*;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -58,11 +60,6 @@ import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.configuration.Config;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.dao.HostDao;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ResizeVolumePayload;
-import com.cloud.storage.Storage;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -249,8 +246,12 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
         CreateCmdResult result = null;
         try {
-            DataTO snapshotTO = snapshot.getTO();
-
+            SnapshotObjectTO snapshotTO = (SnapshotObjectTO)snapshot.getTO();
+            Object payload = snapshot.getPayload();
+            if (payload != null && payload instanceof CreateSnapshotPayload) {
+                CreateSnapshotPayload snapshotPayload = (CreateSnapshotPayload)payload;
+                snapshotTO.setQuiescevm(snapshotPayload.getQuiescevm());
+            }
 
             CreateObjectCommand cmd = new CreateObjectCommand(snapshotTO);
             EndPoint ep = epSelector.select(snapshot);

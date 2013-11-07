@@ -1383,7 +1383,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     @Override
-    public Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account) throws ResourceAllocationException {
+    public Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm) throws ResourceAllocationException {
         VolumeInfo volume = volFactory.getVolume(volumeId);
         if (volume == null) {
             throw new InvalidParameterValueException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
@@ -1397,6 +1397,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         payload.setSnapshotId(snapshotId);
         payload.setSnapshotPolicyId(policyId);
         payload.setAccount(account);
+        payload.setQuiescevm(quiescevm);
         volume.addPayload(payload);
         return volService.takeSnapshot(volume);
     }

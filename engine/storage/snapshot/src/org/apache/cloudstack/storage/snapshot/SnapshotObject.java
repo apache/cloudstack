@@ -62,6 +62,7 @@ public class SnapshotObject implements SnapshotInfo {
     private static final Logger s_logger = Logger.getLogger(SnapshotObject.class);
     private SnapshotVO snapshot;
     private DataStore store;
+    private Object payload;
     @Inject
     protected SnapshotDao snapshotDao;
     @Inject
@@ -358,6 +359,12 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public void addPayload(Object data) {
+        this.payload = data;
+    }
+
+    @Override
+    public Object getPayload() {
+        return this.payload;
     }
 
     @Override
