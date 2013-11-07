@@ -35,7 +35,7 @@ if [ "$1" = configure ]; then
 
     OLDCONFDIR="/etc/cloud/management"
     NEWCONFDIR="/etc/cloudstack/management"
-    CONFFILES="db.properties cloud.keystore key"
+    CONFFILES="db.properties key"
 
     # Copy old configuration so the admin doesn't have to do that
     # Only do so when we are installing for the first time
@@ -45,6 +45,9 @@ if [ "$1" = configure ]; then
                 cp -a $OLDCONFDIR/$FILE $NEWCONFDIR/$FILE
             fi
         done
+        if [ -f "$OLDCONFDIR/cloud.keystore" ]; then
+            cp -a $OLDCONFDIR/cloud.keystore $NEWCONFDIR/cloudmanagementserver.keystore
+        fi
     fi
 
     chmod 0640 /etc/cloudstack/management/db.properties
