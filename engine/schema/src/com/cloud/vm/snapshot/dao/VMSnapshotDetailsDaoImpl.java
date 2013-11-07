@@ -18,35 +18,14 @@
  */
 package com.cloud.vm.snapshot.dao;
 
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
+
 import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+public class VMSnapshotDetailsDaoImpl extends ResourceDetailsDaoBase<VMSnapshotDetailsVO> implements VMSnapshotDetailsDao {
 
-public class VMSnapshotDetailsDaoImpl extends GenericDaoBase<VMSnapshotDetailsVO, Long> implements VMSnapshotDetailsDao {
-    protected final SearchBuilder<VMSnapshotDetailsVO> searchDetails;
-
-    protected VMSnapshotDetailsDaoImpl() {
-        super();
-        searchDetails = createSearchBuilder();
-        searchDetails.and("vmsnapshotId", searchDetails.entity().getVmSnapshotId(), SearchCriteria.Op.EQ);
-        searchDetails.done();
-    }
     @Override
-    public Map<String, String> getDetails(Long vmSnapshotId) {
-        SearchCriteria<VMSnapshotDetailsVO> sc = searchDetails.create();
-        sc.setParameters("vmsnapshotId", vmSnapshotId);
-
-        List<VMSnapshotDetailsVO> details = listBy(sc);
-        Map<String, String> detailsMap = new HashMap<String, String>();
-        for (VMSnapshotDetailsVO detail : details) {
-            detailsMap.put(detail.getName(), detail.getValue());
-        }
-
-        return detailsMap;
+    public void addDetail(long resourceId, String key, String value) {
+        super.addDetail(new VMSnapshotDetailsVO(resourceId, key, value));
     }
 }
