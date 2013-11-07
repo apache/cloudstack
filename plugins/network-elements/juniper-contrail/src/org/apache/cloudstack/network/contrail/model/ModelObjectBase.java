@@ -17,11 +17,12 @@
 
 package org.apache.cloudstack.network.contrail.model;
 
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.TreeSet;
 
 public abstract class ModelObjectBase implements ModelObject {
-    public static class UuidComparator implements Comparator<ModelObject> {
+    public static class UuidComparator implements Comparator<ModelObject>, Serializable {
         @Override
         public int compare(ModelObject lhs, ModelObject rhs) {
             if (lhs == null) {
@@ -79,7 +80,22 @@ public abstract class ModelObjectBase implements ModelObject {
     }
 
     @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result
+                + ((_ancestors == null) ? 0 : _ancestors.hashCode());
+        result = prime * result
+                + ((_successors == null) ? 0 : _successors.hashCode());
+        return result;
+    }
+
+    @Override
     public boolean equals(Object rhs) {
+        if (this == rhs)
+            return true;
+        if (rhs == null)
+            return false;
         ModelObject other;
         try {
             other = (ModelObject) rhs;

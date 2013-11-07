@@ -63,10 +63,6 @@ public class ServerEventHandlerImpl implements ServerEventHandler {
         setClassMap();
     }
 
-    protected void finalize () {
-
-    }
-    
     private void setMethodMap() {
         _methodMap = new HashMap<String, Method>();
         Method methods[] = this.getClass().getMethods();
