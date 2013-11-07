@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -351,16 +352,16 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         svcProviderMap.put(Service.Gateway, defaultProviders);
 
         if (serviceProviders != null) {
-            for (String serviceStr : serviceProviders.keySet()) {
-                Network.Service service = Network.Service.getService(serviceStr);
+            for (Entry<String, List<String>> serviceEntry : serviceProviders.entrySet()) {
+                Network.Service service = Network.Service.getService(serviceEntry.getKey());
                 if (svcProviderMap.containsKey(service)) {
                     Set<Provider> providers = new HashSet<Provider>();
                     // don't allow to specify more than 1 provider per service
-                    if (serviceProviders.get(serviceStr) != null && serviceProviders.get(serviceStr).size() > 1) {
+                    if (serviceEntry.getValue() != null && serviceEntry.getValue().size() > 1) {
                         throw new InvalidParameterValueException("In the current release only one provider can be " +
                                 "specified for the service");
                     }
-                    for (String prvNameStr : serviceProviders.get(serviceStr)) {
+                    for (String prvNameStr : serviceEntry.getValue()) {
                         // check if provider is supported
                         Network.Provider provider = Network.Provider.getProvider(prvNameStr);
                         if (provider == null) {
@@ -371,7 +372,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     }
                     svcProviderMap.put(service, providers);
                 } else {
-                    throw new InvalidParameterValueException("Service " + serviceStr + " is not enabled for the network " +
+                    throw new InvalidParameterValueException("Service " + serviceEntry.getKey() + " is not enabled for the network " +
                             "offering, can't add a provider to it");
                 }
             }
