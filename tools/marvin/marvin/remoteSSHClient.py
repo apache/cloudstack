@@ -30,8 +30,8 @@ class remoteSSHClient(object):
     '''
     Added timeout flag for ssh connect calls.Default to 3.0 seconds
     '''
-    def __init__(self, host, port, user, passwd, retries=10, delay=30,
-                 log_lvl=logging.INFO, keyPairFiles=None, timeout=3.0):
+    def __init__(self, host, port, user, passwd, retries=20, delay=30,
+                 log_lvl=logging.INFO, keyPairFiles=None, timeout=10.0):
         self.host = None
         self.port = 22
         self.user = user
