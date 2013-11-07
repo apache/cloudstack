@@ -575,10 +575,11 @@ create table `cloud`.`monitoring_services` (
 `isDefault` boolean COMMENT 'Default service', PRIMARY KEY (`id`)
 );
 
-insert into cloud.monitoring_services(id, service, process_name, service_name, service_path, pidfile, isDefault) values(1,'ssh','sshd', 'ssh','/etc/init.d/ssh','/var/run/sshd.pid',true);
-insert into cloud.monitoring_services(id, service, process_name, service_name, service_path, pidfile, isDefault) values(2,'dhcp','dnsmasq','dnsmasq','/etc/init.d/dnsmasq','/var/run/dnsmasq/dnsmasq.pid',false);
-insert into cloud.monitoring_services(id, service, process_name, service_name, service_path, pidfile, isDefault) values(3,'loadbalancing','haproxy','haproxy','/etc/init.d/haproxy','/var/run/haproxy.pid',false);
-insert into cloud.monitoring_services(id, service, process_name,  service_name, service_path, pidfile, isDefault) values(4,'webserver','apache2','apache2','/etc/init.d/apache2','/var/run/apache2.pid', true);
+insert into cloud.monitoring_services(id, uuid, service, process_name, service_name, service_path, pidfile, isDefault) values(1, UUID(), 'ssh','sshd', 'ssh','/etc/init.d/ssh','/var/run/sshd.pid',true);
+insert into cloud.monitoring_services(id, uuid, service, process_name, service_name, service_path, pidfile, isDefault) values(2, UUID(), 'dhcp','dnsmasq','dnsmasq','/etc/init.d/dnsmasq','/var/run/dnsmasq/dnsmasq.pid',false);
+insert into cloud.monitoring_services(id, uuid, service, process_name, service_name, service_path, pidfile, isDefault) values(3, UUID(), 'loadbalancing','haproxy','haproxy','/etc/init.d/haproxy','/var/run/haproxy.pid',false);
+insert into cloud.monitoring_services(id, uuid, service, process_name,  service_name, service_path, pidfile, isDefault) values(4, UUID(), 'webserver','apache2','apache2','/etc/init.d/apache2','/var/run/apache2.pid', true);
+
 ALTER TABLE `cloud`.`service_offering` CHANGE COLUMN `cpu` `cpu` INT(10) UNSIGNED NULL COMMENT '# of cores'  , CHANGE COLUMN `speed` `speed` INT(10) UNSIGNED NULL COMMENT 'speed per core in mhz'  , CHANGE COLUMN `ram_size` `ram_size` BIGINT(20) UNSIGNED NULL  ;
 
 CREATE TABLE `cloud`.`usage_event_details` (

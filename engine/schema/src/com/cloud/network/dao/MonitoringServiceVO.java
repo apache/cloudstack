@@ -26,12 +26,13 @@ import java.util.UUID;
 public class MonitoringServiceVO implements MonitoringService {
 
     public MonitoringServiceVO(String service, String processname, String serviceName, String servicePath,
-                            String pidFile) {
+                            String pidFile, boolean defaultService) {
         this.service = service;
         this.processname = processname;
         this.servicename = serviceName;
         this.servicePath = servicePath;
         this.servicePidFile= pidFile;
+        this.defaultService = defaultService;
 
     }
 
@@ -59,7 +60,7 @@ public class MonitoringServiceVO implements MonitoringService {
     private String servicePidFile;
 
     @Column(name="isDefault")
-    private boolean isDefault;
+    private boolean defaultService;
 
 
     @Column(name = "uuid")
@@ -105,12 +106,8 @@ public class MonitoringServiceVO implements MonitoringService {
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public boolean getDefault() {
-        return isDefault;
-    }
-
-    public void setDefault(boolean isDefault) {
-        isDefault = isDefault;
+    public boolean isDefaultService() {
+        return defaultService;
     }
 
     public String getProcessname() {

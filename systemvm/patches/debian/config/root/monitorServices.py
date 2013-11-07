@@ -170,7 +170,7 @@ def checkProcessStatus( process ):
                     if isPidMatchPidFile(pidfile, pids) == StatusCodes.SUCCESS:
                         pidFileMatched = 1;
                         printd("pid file is matched ...")
-                        raisealert(log.INFO, "The process detected as running", process_name)
+                        raisealert(log.ALERT, "The process detected as running", process_name)
                         break
                     else:
                         printd("pid file is not matched ...")
@@ -201,7 +201,7 @@ def checkProcessStatus( process ):
                 if return_val == 0:
                     printd("The process" + process_name +" recovered successfully ")
                     msg="The process " +process_name+" is recovered successfully "
-                    raisealert(log.ALERT,process_name,msg)
+                    raisealert(log.INFO,process_name,msg)
 
                     break;
                 else:

@@ -2368,7 +2368,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         List<MonitorServiceTO> servicesTO = new ArrayList<MonitorServiceTO>();
         for (MonitoringServiceVO service: services) {
             MonitorServiceTO serviceTO = new MonitorServiceTO( service.getService(), service.getProcessname(), service.getServiceName(), service.getServicePath(),
-                    service.getPidFile(), service.getDefault());
+                    service.getPidFile(), service.isDefaultService());
             servicesTO.add(serviceTO);
         }
 

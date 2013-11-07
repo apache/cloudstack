@@ -35,7 +35,7 @@ public class MonitoringServiceDaoImpl extends GenericDaoBase<MonitoringServiceVO
     public MonitoringServiceDaoImpl() {
         super();
         AllFieldsSearch = createSearchBuilder();
-        AllFieldsSearch.and("isDefault", AllFieldsSearch.entity().getDefault(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("isDefault", AllFieldsSearch.entity().isDefaultService(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("service", AllFieldsSearch.entity().getService(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("processname", AllFieldsSearch.entity().getProcessname(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("servicename", AllFieldsSearch.entity().getServiceName(), SearchCriteria.Op.EQ);
