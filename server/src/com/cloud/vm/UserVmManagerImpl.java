@@ -2739,19 +2739,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (offering.isDynamic()) {
             //insert the custom value of dynamic parameters
             if (offering.getCpu() == null) {
-                if ((cpuNumber != null) && ((cpuNumber.intValue() <= 0) || (cpuNumber.intValue() > 2147483647))) {
+                if ((cpuNumber != null) && (cpuNumber <= 0)) {
                     throw new InvalidParameterValueException("Invalid CPU number value, specify a value between 1 and 2147483647");
                 }
             }
 
             if (offering.getSpeed() == null) {
-                if ((cpuSpeed != null) && ((cpuSpeed.intValue() <= 0) || (cpuSpeed.intValue() > 2147483647))) {
+                if ((cpuSpeed != null) && (cpuSpeed <= 0)) {
                     throw new InvalidParameterValueException("Invalid CPU speed value, specify a value between 1 and 2147483647");
                 }
             }
 
             if (offering.getRamSize() == null) {
-                if ((memory != null) && ((memory.intValue() < 32) || (memory.intValue() > 2147483647))) {
+                if ((memory != null) && (memory < 32)) {
                     throw new InvalidParameterValueException("Invalid memory value, specify a value between 32 and 2147483647 MB");
                 }
             }
