@@ -7973,6 +7973,10 @@
                                     version: {
                                     	label: 'label.version'
                                     },
+                                    requiresupgrade: {
+                                    	label: 'Requires Upgrade',
+                                    	converter: cloudStack.converters.toBooleanText
+                                    },
                                     guestnetworkid: {
                                         label: 'label.network.id'
                                     },
@@ -17013,14 +17017,7 @@
             jsonObj["redundantRouterState"] = jsonObj.redundantstate;
         } else {
             jsonObj["redundantRouterState"] = "";
-        }
-                
-        //jsonObj.version = '4.2.0-SNAPSHOT'; //for testing only
-        if (jsonObj.version != undefined && jsonObj.version.length > 0) {
-        	if (jsonObj.version != g_cloudstackversion) { //if VirtualRouter version is different from management server version
-        		jsonObj.version += " (Requires Upgrade)";
-        	}
-        }        
+        }  
     }
 
     var refreshNspData = function(nspName) {

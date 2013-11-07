@@ -924,11 +924,16 @@ cloudStack.converters = {
         }
         return localDate;
     },
-    toBooleanText: function(booleanValue) {
-        if (booleanValue == true)
-            return "Yes";
-
-        return "No";
+    toBooleanText: function(booleanValue) {    	
+        var text1;
+    	if (booleanValue == true) {
+    		text1 = "Yes";
+        } else if (booleanValue == false) {
+        	text1 = "No";
+        } else { //booleanValue == undefined
+        	text1 = "";
+        }
+    	return text1;        
     },
     convertHz: function(hz) {
         if (hz == null)
