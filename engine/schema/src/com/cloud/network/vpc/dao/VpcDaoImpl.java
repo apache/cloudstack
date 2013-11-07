@@ -68,7 +68,7 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
         
         CountByAccountId = createSearchBuilder(Long.class);
         CountByAccountId.select(null, Func.COUNT, CountByAccountId.entity().getId());
-        CountByAccountId.and("offeringId", CountByAccountId.entity().getAccountId(), Op.EQ);
+        CountByAccountId.and("accountId", CountByAccountId.entity().getAccountId(), Op.EQ);
         CountByAccountId.and("removed", CountByAccountId.entity().getRemoved(), Op.NULL);
         CountByAccountId.done();
     }
