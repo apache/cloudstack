@@ -132,8 +132,8 @@ public class VmwareClient {
         ctxt.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
         ctxt.put(BindingProvider.SESSION_MAINTAIN_PROPERTY, true);
 
-        ctxt.put("com.sun.xml.internal.ws.request.timeout", 600000);
-        ctxt.put("com.sun.xml.internal.ws.connect.timeout", 600000);
+        ctxt.put("com.sun.xml.internal.ws.request.timeout", 1200000);
+        ctxt.put("com.sun.xml.internal.ws.connect.timeout", 1200000);
 
         ServiceContent serviceContent = vimPort.retrieveServiceContent(SVC_INST_REF);
 
