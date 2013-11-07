@@ -108,7 +108,15 @@ public class Upgrade420to421 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update cpu/memory overprovisioning factors", e);
         } finally {
-
+            try {
+                if (pstmt1 != null)
+                    pstmt1.close();
+                if (pstmt2 != null)
+                    pstmt2.close();
+                if (pstmt3 != null)
+                    pstmt3.close();
+            } catch (SQLException e) {
+            }
         }
 
     }
@@ -131,9 +139,9 @@ public class Upgrade420to421 implements DbUpgrade {
                 long domain_id = rsAccount.getLong(2);
                 // 1. update cpu,memory for all accounts
                 pstmt2 = conn.prepareStatement( "SELECT SUM(service_offering.cpu), SUM(service_offering.ram_size)" +
-                            " FROM `cloud`.`vm_instance`, `cloud`.`service_offering`" +
-                            " WHERE vm_instance.service_offering_id = service_offering.id AND vm_instance.account_id = ?" + " AND vm_instance.removed is NULL" +
-                            " AND vm_instance.vm_type='User' AND state not in ('Destroyed', 'Error', 'Expunging')");
+                        " FROM `cloud`.`vm_instance`, `cloud`.`service_offering`" +
+                        " WHERE vm_instance.service_offering_id = service_offering.id AND vm_instance.account_id = ?" + " AND vm_instance.removed is NULL" +
+                        " AND vm_instance.vm_type='User' AND state not in ('Destroyed', 'Error', 'Expunging')");
                 pstmt2.setLong(1, account_id);
                 rsCount = pstmt2.executeQuery();
                 if (rsCount.next()) {
@@ -172,7 +180,7 @@ public class Upgrade420to421 implements DbUpgrade {
                     totalSnapshotsSize = rsCount.getLong(1);
                 }
                 pstmt4 = conn.prepareStatement("SELECT sum(template_store_ref.size) FROM `cloud`.`template_store_ref`,`cloud`.`vm_template` WHERE account_id = ?" +
-                		" AND template_store_ref.template_id = vm_template.id AND download_state = 'DOWNLOADED' AND destroyed = false AND removed is NULL");
+                        " AND template_store_ref.template_id = vm_template.id AND download_state = 'DOWNLOADED' AND destroyed = false AND removed is NULL");
                 pstmt4.setLong(1, account_id);
                 rsCount = pstmt4.executeQuery();
                 if (rsCount.next()) {
@@ -248,7 +256,7 @@ public class Upgrade420to421 implements DbUpgrade {
         pstmt.executeUpdate();
         pstmt.close();
     }
-    
+
     private static void upgradeResourceCountforDomain(Connection conn, Long domain_id, String type, Long resource_count) throws SQLException {
         //update or insert into resource_count table.
         PreparedStatement pstmt = null;
