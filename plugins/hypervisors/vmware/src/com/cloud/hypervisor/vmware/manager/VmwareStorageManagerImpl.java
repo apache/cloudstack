@@ -16,6 +16,23 @@
 // under the License.
 package com.cloud.hypervisor.vmware.manager;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.UUID;
+
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.BackupSnapshotCommand;
@@ -70,22 +87,6 @@ import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.TaskInfo;
 import com.vmware.vim25.VirtualDisk;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.UUID;
 
 public class VmwareStorageManagerImpl implements VmwareStorageManager {
     @Override
@@ -332,7 +333,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
                         workerVMName = hostService.getWorkerName(context, cmd, 0);
                         vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVMName);
-                        
+
                         if (vmMo == null) {
                             throw new Exception("Failed to find the newly create or relocated VM. vmName: " + workerVMName);
                         }
@@ -1056,7 +1057,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 // create a dummy worker vm for attaching the volume
                 DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
                 workerVm = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVmName);
-                
+
                 if (workerVm == null) {
                     String msg = "Unable to create worker VM to execute CopyVolumeCommand";
                     s_logger.error(msg);
@@ -1449,6 +1450,9 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 s_logger.debug(msg);
                 return new RevertToVMSnapshotAnswer(cmd, false, msg);
             } else {
+                if (cmd.isReloadVm()) {
+                    vmMo.reload();
+                }
                 boolean result = false;
                 if (snapshotName != null) {
                     ManagedObjectReference morSnapshot = vmMo.getSnapshotMor(snapshotName);

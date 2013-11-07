@@ -18,7 +18,6 @@ package com.cloud.agent.api;
 
 import java.util.List;
 
-import com.cloud.agent.api.to.VolumeTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 public class RevertToVMSnapshotCommand extends VMSnapshotBaseCommand {
@@ -27,4 +26,18 @@ public class RevertToVMSnapshotCommand extends VMSnapshotBaseCommand {
         super(vmName, snapshot, volumeTOs, guestOSType);
     }
 
+    public RevertToVMSnapshotCommand(String vmName, VMSnapshotTO snapshot, List<VolumeObjectTO> volumeTOs, String guestOSType, boolean reloadVm) {
+        this(vmName, snapshot, volumeTOs, guestOSType);
+        setReloadVm(reloadVm);
+    }
+
+    private boolean reloadVm = false;
+
+    public boolean isReloadVm() {
+        return reloadVm;
+    }
+
+    public void setReloadVm(boolean reloadVm) {
+        this.reloadVm = reloadVm;
+    }
 }
