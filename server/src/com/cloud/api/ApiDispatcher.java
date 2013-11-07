@@ -33,6 +33,8 @@ import java.util.regex.Matcher;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.RoleType;
@@ -49,7 +51,6 @@ import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.Validate;
 import org.apache.cloudstack.api.command.admin.resource.ArchiveAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
 import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
@@ -58,7 +59,6 @@ import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -369,7 +369,7 @@ public class ApiDispatcher {
         for (Class<?> entity : entities) {
             // For backward compatibility, we search within removed entities and let service layer deal
             // with removed ones, return empty response or error
-            Object objVO = s_instance._entityMgr.findByUuid(entity, uuid);
+            Object objVO = s_instance._entityMgr.findByUuidIncludingRemoved(entity, uuid);
             if (objVO == null) {
                 continue;
             }
