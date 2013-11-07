@@ -203,12 +203,17 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long sid = rs.getLong(1);
-                String rl = rs.getString(2);
                 long snid = rs.getLong(3);
                 return findByStoreSnapshot(role, sid, snid);
             }
         } catch (SQLException e) {
             s_logger.debug("Failed to find parent snapshot: " + e.toString());
+        } finally {
+            try {
+                if (pstmt != null)
+                    pstmt.close();
+            } catch (SQLException e) {
+            }
         }
         return null;
     }
