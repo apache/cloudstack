@@ -113,7 +113,7 @@ def cleanup_resources(api_client, resources):
         obj.delete(api_client)
 
 
-def is_server_ssh_ready(ipaddress, port, username, password, retries=10, retryinterv=30, timeout=3.0, keyPairFileLocation=None):
+def is_server_ssh_ready(ipaddress, port, username, password, retries=20, retryinterv=30, timeout=10.0, keyPairFileLocation=None):
     '''
     @Name: is_server_ssh_ready
     @Input: timeout: tcp connection timeout flag,
