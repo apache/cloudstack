@@ -58,6 +58,14 @@ public class Version {
         	return "0";
         return tokens[0] + "." + tokens[1]+ "." + tokens[2];
     }
+
+    public static String trimRouterVersion(String version){
+        String[] tokens = version.split(" ");
+        if(tokens.length >= 3){
+            return tokens[2];
+        }
+        return "0";
+    }
     
     public static void main(String[] args) {
     	System.out.println("Result is " + compare(args[0], args[1]));

@@ -144,8 +144,8 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     @SerializedName("redundantstate") @Param(description="the state of redundant virtual router")
     private String redundantState;
 
-    @SerializedName("templateversion") @Param(description="the version of template")
-    private String templateVersion;
+    @SerializedName("version") @Param(description="the version of template")
+    private String version;
 
     @SerializedName("scriptsversion") @Param(description="the version of scripts")
     private String scriptsVersion;
@@ -159,6 +159,9 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     @SerializedName("nic")  @Param(description="the list of nics associated with the router",
             responseObject = NicResponse.class, since="4.0")
     private Set<NicResponse> nics;
+
+    @SerializedName("requiresupgrade") @Param(description="true if the router template requires upgrader")
+    private boolean requiresUpgrade;
 
     public DomainRouterResponse(){
         nics = new LinkedHashSet<NicResponse>();
@@ -308,12 +311,12 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
         this.isRedundantRouter = isRedundantRouter;
     }
 
-    public String getTemplateVersion() {
-        return this.templateVersion;
+    public String getVersion() {
+        return this.version;
     }
 
-    public void setTemplateVersion(String templateVersion) {
-        this.templateVersion = templateVersion;
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     public String getScriptsVersion() {
@@ -363,5 +366,13 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
 	
 	public void setRole(String role) {
         this.role = role;
+    }
+
+    public boolean requiresUpgrade() {
+        return requiresUpgrade;
+    }
+
+    public void setRequiresUpgrade(boolean requiresUpgrade) {
+        this.requiresUpgrade = requiresUpgrade;
     }
 }

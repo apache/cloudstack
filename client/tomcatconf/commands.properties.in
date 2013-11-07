@@ -197,6 +197,7 @@ listRouters=7
 listVirtualRouterElements=7
 configureVirtualRouterElement=7
 createVirtualRouterElement=7
+upgradeRouterTemplate=1
 
 #### system vm commands
 startSystemVm=1

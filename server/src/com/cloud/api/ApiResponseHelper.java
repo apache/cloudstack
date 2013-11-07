@@ -79,6 +79,7 @@ import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
@@ -119,6 +120,7 @@ import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import org.apache.cloudstack.api.response.TrafficTypeResponse;
+import org.apache.cloudstack.api.response.UpgradeRouterTemplateResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -3791,6 +3793,21 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setVpcId(vpc.getUuid());
         }
         response.setObjectName("networkacllist");
+        return response;
+    }
+
+    @Override
+    public ListResponse<UpgradeRouterTemplateResponse> createUpgradeRouterTemplateResponse(List<Long> jobIds){
+        ListResponse<UpgradeRouterTemplateResponse> response = new ListResponse<UpgradeRouterTemplateResponse>();
+        List<UpgradeRouterTemplateResponse> responses = new ArrayList<UpgradeRouterTemplateResponse>();
+        for(Long jobId : jobIds){
+            UpgradeRouterTemplateResponse routerResponse = new UpgradeRouterTemplateResponse();
+            AsyncJob job = _entityMgr.findById(AsyncJob.class, jobId);
+            routerResponse.setAsyncJobId((job.getUuid()));
+            routerResponse.setObjectName("asyncjobs");
+            responses.add(routerResponse);
+        }
+        response.setResponses(responses);
         return response;
     }
 }

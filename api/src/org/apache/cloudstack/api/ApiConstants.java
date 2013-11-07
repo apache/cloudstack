@@ -528,6 +528,7 @@ public class ApiConstants {
     public static final String EXPUNGE = "expunge";
     public static final String FOR_DISPLAY = "fordisplay";
     public static final String PASSIVE = "passive";
+    public static final String VERSION = "version";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,14 +43,23 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.to.*;
+import com.cloud.api.ApiAsyncJobDispatcher;
+import com.cloud.api.ApiDispatcher;
+import com.cloud.api.ApiGsonHelper;
+import com.cloud.maint.Version;
+import com.cloud.utils.component.ComponentContext;
+import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -370,8 +380,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     ConfigDepot _configDepot;
     @Inject
     MonitoringServiceDao _monitorServiceDao;
-
-
+    @Inject
+    AsyncJobManager _asyncMgr;
+    @Inject
+    protected ApiAsyncJobDispatcher _asyncDispatcher;
 
     int _routerRamSize;
     int _routerCpuMHz;
@@ -3551,6 +3563,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     protected boolean sendCommandsToRouter(final VirtualRouter router, Commands cmds) throws AgentUnavailableException {
+        if(!checkRouterVersion(router)){
+            throw new CloudRuntimeException("Router requires upgrade. Unable to send command to router:" + router.getId());
+        }
         Answer[] answers = null;
         try {
             answers = _agentMgr.send(router.getHostId(), cmds);
@@ -4118,5 +4133,95 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     @Override
     public VirtualRouter findRouter(long routerId) {
         return _routerDao.findById(routerId);
+    }
+
+    @Override
+    public List<Long> upgradeRouterTemplate(UpgradeRouterTemplateCmd cmd){
+
+        List<DomainRouterVO> routers = new ArrayList<DomainRouterVO>();
+        int params = 0;
+
+        Long routerId = cmd.getId();
+        if(routerId != null)    {
+            params++;
+            DomainRouterVO router = _routerDao.findById(routerId);
+            if(router != null){
+                routers.add(router);
+            }
+        }
+
+        Long accountId = cmd.getAccountId();
+        if(accountId != null){
+            params++;
+            routers = _routerDao.listBy(accountId);
+        }
+
+        Long domainId = cmd.getDomainId();
+        if(domainId != null){
+            params++;
+            routers = _routerDao.listByDomain(domainId);
+        }
+
+        Long clusterId = cmd.getClusterId();
+        if(clusterId != null){
+            params++;
+            routers = _routerDao.listByClusterId(clusterId);
+        }
+
+        Long podId = cmd.getPodId();
+        if(podId != null){
+            params++;
+            routers = _routerDao.listByPodId(podId);
+        }
+
+        Long zoneId = cmd.getZoneId();
+        if(zoneId != null){
+            params++;
+            routers = _routerDao.listByDataCenter(zoneId);
+        }
+
+        if(params > 1){
+            throw new InvalidParameterValueException("Multiple parameters not supported. Specify only one among routerId/zoneId/podId/clusterId/accountId/domainId");
+        }
+
+        if(routers != null){
+            return rebootRouters(routers);
+        }
+
+        return null;
+    }
+
+    //Checks if the router is at the required version
+    // Compares MS version and router version
+    private boolean checkRouterVersion(VirtualRouter router){
+        String trimmedVersion = Version.trimRouterVersion(router.getTemplateVersion());
+        return (Version.compare(trimmedVersion, _minVRVersion) >= 0);
+    }
+
+    private List<Long> rebootRouters(List<DomainRouterVO> routers){
+        List<Long> jobIds = new ArrayList<Long>();
+        for(DomainRouterVO router: routers){
+            if(!checkRouterVersion(router)){
+                    s_logger.debug("Upgrading template for router: "+router.getId());
+                    ApiDispatcher.getInstance();
+                    Map<String, String> params = new HashMap<String, String>();
+                    params.put("ctxUserId", "1");
+                    params.put("ctxAccountId", "" + router.getAccountId());
+
+                    RebootRouterCmd cmd = new RebootRouterCmd();
+                    ComponentContext.inject(cmd);
+                    params.put("id", ""+router.getId());
+                    params.put("ctxStartEventId", "1");
+                    AsyncJobVO job = new AsyncJobVO(UUID.randomUUID().toString(), User.UID_SYSTEM, router.getAccountId(), RebootRouterCmd.class.getName(),
+                            ApiGsonHelper.getBuilder().create().toJson(params), router.getId(),
+                            cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null);
+                    job.setDispatcher(_asyncDispatcher.getName());
+                    long jobId = _asyncMgr.submitAsyncJob(job);
+                    jobIds.add(jobId);
+            } else {
+                s_logger.debug("Router: "+router.getId()+" is already at the latest version. No upgrade required" );
+            }
+        }
+        return jobIds;
     }
 }

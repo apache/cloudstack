@@ -14,32 +14,32 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.router;
+package org.apache.cloudstack.api.response;
 
+import com.cloud.serializer.Param;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
+import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
+import org.apache.cloudstack.jobs.JobInfo;
 
-/**
- *  bridge internal and external traffic.
- */
-public interface VirtualRouter extends VirtualMachine {
-    public enum Role {
-		VIRTUAL_ROUTER, LB, INTERNAL_LB_VM
-	}
-    Role getRole();
-    boolean getIsRedundantRouter();
-    public enum RedundantState {
-        UNKNOWN,
-        MASTER,
-        BACKUP,
-        FAULT
+import java.util.Date;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+@EntityReference(value = JobInfo.class)
+@SuppressWarnings("unused")
+public class UpgradeRouterTemplateResponse extends BaseResponse {
+    @SerializedName(ApiConstants.JOB_ID) @Param(description="the id of AsyncJob")
+    private String asyncJobId;
+
+    public String getAsyncJobId() {
+        return asyncJobId;
     }
-    RedundantState getRedundantState();
-    String getPublicIpAddress();
-    boolean isStopPending();
-    void setStopPending(boolean stopPending);
-    /**
-     * @return
-     */
-    Long getVpcId();
-    String getTemplateVersion();
+
+    public void setAsyncJobId(String asyncJobId) {
+        this.asyncJobId = asyncJobId;
+    }
 }

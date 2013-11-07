@@ -204,6 +204,13 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     }
 
     @Override
+    public List<DomainRouterVO> listByClusterId(Long clusterId) {
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+        //ToDo: Add cluster criteria
+        return listBy(sc);
+    }
+
+    @Override
     public List<DomainRouterVO> listByPodIdAndStates(Long podId, State... states) {
         SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
         sc.setParameters("podId", podId);

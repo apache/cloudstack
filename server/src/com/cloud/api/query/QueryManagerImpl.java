@@ -1090,7 +1090,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<DomainRouterResponse> searchForRouters(ListRoutersCmd cmd) {
         Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(),
                 cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(),
-                cmd.getVpcId(), cmd.getForVpc(), cmd.getRole());
+                cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), cmd.getVersion());
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
 
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first()
@@ -1103,7 +1103,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd) {
         Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(),
                 cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(),
-                cmd.getVpcId(), cmd.getForVpc(), cmd.getRole());
+                cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), null);
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
 
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first()
@@ -1113,7 +1113,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     private Pair<List<DomainRouterJoinVO>, Integer> searchForRoutersInternal(BaseListProjectAndAccountResourcesCmd cmd, Long id,
-            String name, String state, Long zoneId, Long podId, Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc, String role) {
+            String name, String state, Long zoneId, Long podId, Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc,
+            String role, String version) {
 
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1147,6 +1148,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
         sb.and("role", sb.entity().getRole(), SearchCriteria.Op.EQ);
+        sb.and("version", sb.entity().getTemplateVersion(), SearchCriteria.Op.EQ);
 
         if (forVpc != null) {
             if (forVpc) {
@@ -1208,6 +1210,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (role != null) {
             sc.setParameters("role", role);
+        }
+
+        if(version != null){
+            sc.setParameters("version", "Cloudstack Release "+version + "%");
         }
 
         // search VR details by ids

@@ -42,6 +42,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -2874,6 +2875,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ReplaceNetworkACLListCmd.class);
         cmdList.add(UpdateNetworkACLItemCmd.class);
         cmdList.add(CleanVMReservationsCmd.class);
+        cmdList.add(UpgradeRouterTemplateCmd.class);
         return cmdList;
     }
 
