@@ -121,6 +121,14 @@ public class VmwareGuestOsMapper {
 		s_mapper.put("CentOS 5.6 (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_64_GUEST);
 		s_mapper.put("CentOS 6.0 (32-bit)", VirtualMachineGuestOsIdentifier.CENTOS_GUEST);
 		s_mapper.put("CentOS 6.0 (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_64_GUEST);
+        s_mapper.put("CentOS 6.1 (32-bit)", VirtualMachineGuestOsIdentifier.CENTOS_GUEST);
+        s_mapper.put("CentOS 6.1 (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_64_GUEST);
+        s_mapper.put("CentOS 6.2 (32-bit)", VirtualMachineGuestOsIdentifier.CENTOS_GUEST);
+        s_mapper.put("CentOS 6.2 (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_64_GUEST);
+        s_mapper.put("CentOS 6.3 (32-bit)", VirtualMachineGuestOsIdentifier.CENTOS_GUEST);
+        s_mapper.put("CentOS 6.3 (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_64_GUEST);
+        s_mapper.put("CentOS 6.4 (32-bit)", VirtualMachineGuestOsIdentifier.CENTOS_GUEST);
+        s_mapper.put("CentOS 6.4 (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_64_GUEST);
 		s_mapper.put("Other CentOS (32-bit)", VirtualMachineGuestOsIdentifier.CENTOS_GUEST);
 		s_mapper.put("Other CentOS (64-bit)", VirtualMachineGuestOsIdentifier.CENTOS_64_GUEST);
 
