@@ -86,6 +86,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     public ObjectInDataStoreManagerImpl() {
         stateMachines = new StateMachine2<State, Event, DataObjectInStore>();
         stateMachines.addTransition(State.Allocated, Event.CreateOnlyRequested, State.Creating);
+        stateMachines.addTransition(State.Allocated, Event.DestroyRequested, State.Destroying);
         stateMachines.addTransition(State.Creating, Event.OperationFailed, State.Allocated);
         stateMachines.addTransition(State.Creating, Event.OperationSuccessed, State.Ready);
         stateMachines.addTransition(State.Ready, Event.CopyingRequested, State.Copying);
@@ -256,13 +257,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
             // Image store
             switch (dataObj.getType()) {
             case TEMPLATE:
-                TemplateDataStoreVO destTmpltStore = templateDataStoreDao.findByStoreTemplate(dataStore.getId(), objId);
-                if (destTmpltStore != null && destTmpltStore.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-                    return templateDataStoreDao.remove(destTmpltStore.getId());
-                } else {
-                    s_logger.warn("Template " + objId + " is not found on image store " + dataStore.getId() + ", so no need to delete");
-                    return true;
-                }
+                return true;
             case SNAPSHOT:
                 SnapshotDataStoreVO destSnapshotStore = snapshotDataStoreDao.findByStoreSnapshot(dataStore.getRole(), dataStore.getId(), objId);
                 if (destSnapshotStore != null && destSnapshotStore.getState() != ObjectInDataStoreStateMachine.State.Ready) {
