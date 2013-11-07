@@ -233,11 +233,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             CreateTemplateContext<TemplateApiResult> context) {
         TemplateApiResult result = callback.getResult();
         TemplateInfo template = context.template;
-        if (result.isFailed()) {
-            // failed in creating template, we need to remove those already
-            // populated template entry
-            _tmpltDao.remove(template.getId());
-        } else {
+        if (result.isSuccess()) {
             VMTemplateVO tmplt = _tmpltDao.findById(template.getId());
             long accountId = tmplt.getAccountId();
             if (template.getSize() != null) {
