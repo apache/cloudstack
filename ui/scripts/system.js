@@ -12301,6 +12301,12 @@
                                         },
                                         type: {
                                             label: 'label.type'
+                                        },                                                                                
+                                        hypervisor: {
+                                        	label: 'label.hypervisor'
+                                        },
+                                        hypervisorversion: {
+                                        	label: 'label.hypervisor.version'
                                         },
                                         hosttags: {
                                             label: 'label.host.tags',
@@ -12348,10 +12354,7 @@
                                         },
                                         ipaddress: {
                                             label: 'label.ip.address'
-                                        },
-                                        version: {
-                                            label: 'label.version'
-                                        },
+                                        },                                        
                                         disconnected: {
                                             label: 'label.last.disconnected'
                                         }
