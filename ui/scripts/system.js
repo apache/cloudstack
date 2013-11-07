@@ -7394,41 +7394,57 @@
                         },
                         virtualRouters: function() {
                             var listView = $.extend(true, {}, cloudStack.sections.system.subsections.virtualRouters.listView, {
-                                dataProvider: function(args) {
-                                    var searchByArgs = args.filterBy.search.value.length ?
-                                        '&keyword=' + args.filterBy.search.value : '';
-
+                                dataProvider: function(args) {                                	
+                                	var data = {};
+                                    listViewDataProvider(args, data);
+                                	
                                     var routers = [];
+                                    
+                                    //get account-owned routers
                                     $.ajax({
-                                        url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + searchByArgs),
-                                        async: true,
+                                        url: createURL('listRouters'),
+                                        data: $.extend(data,{
+                                        	listAll: true
+                                        }), 
+                                        async: false,
                                         success: function(json) {
-                                            var items = json.listroutersresponse.router ?
-                                                json.listroutersresponse.router : [];
-
+                                            var items = json.listroutersresponse.router ? json.listroutersresponse.router : [];
                                             $(items).map(function(index, item) {
                                                 routers.push(item);
                                             });
-
-                                            // Get project routers
-                                            $.ajax({
-                                                url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + "&projectid=-1"),
-                                                async: true,
-                                                success: function(json) {
-                                                    var items = json.listroutersresponse.router ?
-                                                        json.listroutersresponse.router : [];
-
-                                                    $(items).map(function(index, item) {
-                                                        routers.push(item);
-                                                    });
-                                                    args.response.success({
-                                                        actionFilter: routerActionfilter,
-                                                        data: $(routers).map(mapRouterType)
-                                                    });
-                                                }
-                                            });
+                                              
+                                            //get project-owned routers
+                                            var toSearchByProjectid = true;                                            
+                                            if (args.filterBy != null) {
+                                            	if (args.filterBy.advSearch != null && typeof(args.filterBy.advSearch) == "object") { //advanced search
+                                            		if ('account' in args.filterBy.advSearch  && args.filterBy.advSearch.account.length > 0) { //if account is specified in advanced search, don't search project-owned routers
+                                            			toSearchByProjectid = false;  //since account and projectid can't be specified together
+                                            		}
+                                            	}
+                                            }
+                                            if (toSearchByProjectid) {                                             	
+	                                            $.ajax({
+	                                            	url: createURL('listRouters'),                                                 
+	                                                data: $.extend(data,{
+	                                                	listAll: true,
+	                                                	projectid: -1
+	                                                }), 
+	                                                async: false,
+	                                                success: function(json) {
+	                                                    var items = json.listroutersresponse.router ? json.listroutersresponse.router : [];	
+	                                                    $(items).map(function(index, item) {
+	                                                        routers.push(item);
+	                                                    });
+	                                                }
+	                                            });
+                                            }
                                         }
-                                    });
+                                    });                                    
+
+                                    args.response.success({
+                                        actionFilter: routerActionfilter,
+                                        data: $(routers).map(mapRouterType)
+                                    });                                    
                                 },
 
                                 detailView: {
@@ -7558,6 +7574,110 @@
                             }
                         }
                     },
+                                        
+                    advSearchFields: {
+                        name: {
+                            label: 'Name'
+                        },
+                        zoneid: {
+                            label: 'Zone',
+                            select: function(args) {
+                                $.ajax({
+                                    url: createURL('listZones'),
+                                    data: {
+                                        listAll: true
+                                    },
+                                    success: function(json) {
+                                        var zones = json.listzonesresponse.zone ? json.listzonesresponse.zone : [];
+
+                                        args.response.success({
+                                            data: $.map(zones, function(zone) {
+                                                return {
+                                                    id: zone.id,
+                                                    description: zone.name
+                                                };
+                                            })
+                                        });
+                                    }
+                                });
+                            }
+                        },                        
+                        podid: {
+                            label: 'Pod',
+                            dependsOn: 'zoneid',
+                            select: function (args) {                            	
+                                $.ajax({
+                                    url: createURL("listPods&zoneid=" + args.zoneid),
+                                    dataType: "json",
+                                    async: true,
+                                    success: function (json) {                                    
+                                        var pods = json.listpodsresponse.pod ? json.listpodsresponse.pod : [];
+                                        args.response.success({
+                                            data: $.map(pods, function(pod) {
+                                                return {
+                                                    id: pod.id,
+                                                    description: pod.name
+                                                };
+                                            })
+                                        });                                        
+                                    }
+                                });
+                            }
+                        },                                                
+                        domainid: {
+                            label: 'Domain',
+                            select: function(args) {
+                                if (isAdmin() || isDomainAdmin()) {
+                                    $.ajax({
+                                        url: createURL('listDomains'),
+                                        data: {
+                                            listAll: true,
+                                            details: 'min'
+                                        },
+                                        success: function(json) {
+                                            var array1 = [{
+                                                id: '',
+                                                description: ''
+                                            }];
+                                            var domains = json.listdomainsresponse.domain;
+                                            if (domains != null && domains.length > 0) {
+                                                for (var i = 0; i < domains.length; i++) {
+                                                    array1.push({
+                                                        id: domains[i].id,
+                                                        description: domains[i].path
+                                                    });
+                                                }
+                                            }
+                                            args.response.success({
+                                                data: array1
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    args.response.success({
+                                        data: null
+                                    });
+                                }
+                            },
+                            isHidden: function(args) {
+                                if (isAdmin() || isDomainAdmin())
+                                    return false;
+                                else
+                                    return true;
+                            }
+                        },
+
+                        account: {
+                            label: 'Account',
+                            isHidden: function(args) {
+                                if (isAdmin() || isDomainAdmin())
+                                    return false;
+                                else
+                                    return true;
+                            }
+                        }
+                    },                    
+                    
                     dataProvider: function(args) {
                         var array1 = [];
                         if (args.filterBy != null) {
