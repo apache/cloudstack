@@ -63,7 +63,7 @@ body.install-wizard {
 
 #main-area {
   width: 1024px;
-  height: 700px;
+  height: 729px;
   margin: auto;
   border: 1px solid #D4D4D4;
   /*+box-shadow:0px -5px 11px #B7B7B7;*/
@@ -76,7 +76,7 @@ body.install-wizard {
 
 #container {
   /*[empty]width:;*/
-  height: 700px;
+  height: 100%;
   margin: auto;
   position: relative;
 }
@@ -1671,19 +1671,18 @@ div.list-view td.state.off span {
 
 .project-view .ui-tabs ul li.ui-state-default a {
   background: #6D747D;
-  border-top: 1px solid #90969E;
-  /*+box-shadow:inset -1px 1px 1px #575D64;*/
-  -moz-box-shadow: inset -1px 1px 1px #575D64;
-  -webkit-box-shadow: inset -1px 1px 1px #575D64;
-  -o-box-shadow: inset -1px 1px 1px #575D64;
-  box-shadow: inset -1px 1px 1px #575D64;
-  border-right: 1px solid #90969E;
+  /*+box-shadow:inset -1px -2px 12px #596066;*/
+  -moz-box-shadow: inset -1px -2px 12px #596066;
+  -webkit-box-shadow: inset -1px -2px 12px #596066;
+  -o-box-shadow: inset -1px -2px 12px #596066;
+  box-shadow: inset -1px -2px 12px #596066;
   color: #FFFFFF;
-  /*+text-shadow:0px 1px 1px #000000;*/
-  -moz-text-shadow: 0px 1px 1px #000000;
-  -webkit-text-shadow: 0px 1px 1px #000000;
-  -o-text-shadow: 0px 1px 1px #000000;
-  text-shadow: 0px 1px 1px #000000;
+  font-weight: bold;
+  /*+text-shadow:0px -1px 1px #3A3E42;*/
+  -moz-text-shadow: 0px -1px 1px #3A3E42;
+  -webkit-text-shadow: 0px -1px 1px #3A3E42;
+  -o-text-shadow: 0px -1px 1px #3A3E42;
+  text-shadow: 0px -1px 1px #3A3E42;
 }
 
 .ui-tabs ul li.ui-state-hover a {
@@ -2461,7 +2460,6 @@ div.detail-group.actions td {
 /*Navigation*/
 #navigation,
 #browser {
-  height: 728px;
 }
 
 #navigation {
@@ -2495,6 +2493,7 @@ div.detail-group.actions td {
 
 .project-view #navigation ul {
   border-right: 1px solid #464C53;
+  background: #6D747D;
 }
 
 #navigation ul li {
@@ -2506,6 +2505,7 @@ div.detail-group.actions td {
 .project-view #navigation ul li {
   background-image: url(../images/bg-nav-item-project-view.png);
   background-position: 0px 0px;
+  border: none;
 }
 
 .project-view #navigation ul li span {
@@ -2701,11 +2701,10 @@ div.detail-group.actions td {
 /*Browser*/
 #browser {
   width: 794px;
-  height: 700px;
+  height: 100%;
   max-width: 794px;
   position: relative;
   float: left;
-  background: #FFFFFF;
   overflow: hidden;
 }
 
@@ -2718,7 +2717,6 @@ div.detail-group.actions td {
 
 #browser div.panel {
   height: 100%;
-  background: #FFFFFF;
   border-right: 1px solid #A5A5A5;
   overflow: visible;
   background-color: #F7F7F7;
@@ -2758,7 +2756,6 @@ div.detail-group.actions td {
 }
 
 .ui-tabs div.ui-tabs-panel {
-  background: #FFFFFF;
   position: relative;
 }
 
@@ -3397,7 +3394,7 @@ div.toolbar div.filters select {
 }
 
 .project-view #breadcrumbs ul li {
-  background: url(../images/bg-breadcrumb-project-view.png) 0px -2px;
+  color: #FFFFFF !important;
 }
 
 #breadcrumbs ul li,
@@ -8668,6 +8665,21 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   box-shadow: 0px 0px 1px #FFFFFF;
 }
 
+.project-view .system-dashboard .head {
+  color: #FFFFFF;
+  /*+text-shadow:0px -1px #000000;*/
+  -moz-text-shadow: 0px -1px #000000;
+  -webkit-text-shadow: 0px -1px #000000;
+  -o-text-shadow: 0px -1px #000000;
+  text-shadow: 0px -1px #000000;
+  /*+box-shadow:none;*/
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+  -o-box-shadow: none;
+  box-shadow: none;
+  padding-top: 14px;
+}
+
 .system-dashboard .view-more,
 .system-dashboard .view-all {
   float: right;
@@ -9429,6 +9441,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   width: 510px;
   height: 230px;
   float: left;
+  background: #777E88;
 }
 
 .project-dashboard-view .compute-and-storage .system-dashboard ul,
@@ -9439,9 +9452,10 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 
 .project-dashboard-view .compute-and-storage .system-dashboard li,
 .project-dashboard-view .users .system-dashboard li {
-  width: 159px;
+  width: 156px;
   height: 161px;
-  background-position: 300px -1018px;
+  background: #3D4045;
+  color: #FFFFFF;
 }
 
 .project-dashboard-view .compute-and-storage .system-dashboard li .icon,
