@@ -305,6 +305,8 @@ CREATE TABLE `cloud`.`acl_group` (
   `description` varchar(255) default NULL,
   `uuid` varchar(40),
   `domain_id` bigint unsigned NOT NULL,  
+  `account_id` bigint unsigned NOT NULL,
+  `view` varchar(40) default 'User' COMMENT 'response review this group account should see for result',
   `removed` datetime COMMENT 'date the group was removed',
   `created` datetime COMMENT 'date the group was created',
   PRIMARY KEY  (`id`),
@@ -337,6 +339,7 @@ CREATE TABLE `cloud`.`acl_role` (
   CONSTRAINT `uc_acl_role__uuid` UNIQUE (`uuid`)  
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
+
 CREATE TABLE `cloud`.`acl_group_role_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `group_id` bigint unsigned NOT NULL,
@@ -348,6 +351,60 @@ CREATE TABLE `cloud`.`acl_group_role_map` (
   CONSTRAINT `fk_acl_group_role_map__role_id` FOREIGN KEY(`role_id`) REFERENCES `acl_role` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;        
 
+CREATE TABLE `acl_policy` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `uuid` varchar(40) DEFAULT NULL,
+  `domain_id` bigint(20) unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,  
+  `removed` datetime DEFAULT NULL COMMENT 'date the role was removed',
+  `created` datetime DEFAULT NULL COMMENT 'date the role was created',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`),
+  UNIQUE KEY `uc_acl_role__uuid` (`uuid`),
+  KEY `i_acl_role__removed` (`removed`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `acl_group_policy_map` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `group_id` bigint(20) unsigned NOT NULL,
+  `policy_id` bigint(20) unsigned NOT NULL,
+  `removed` datetime DEFAULT NULL COMMENT 'date the policy was revoked from the group',
+  `created` datetime DEFAULT NULL COMMENT 'date the policy was attached to the group',
+  PRIMARY KEY (`id`),
+  KEY `fk_acl_group_policy_map__group_id` (`group_id`),
+  KEY `fk_acl_group_policy_map__policy_id` (`policy_id`),
+  CONSTRAINT `fk_acl_group_policy_map__group_id` FOREIGN KEY (`group_id`) REFERENCES `acl_group` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_acl_group_policy_map__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `acl_policy` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `acl_permission` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `action` varchar(100) NOT NULL,
+  `resource_type` varchar(100) NOT NULL,
+  `scope_id` bigint(20) unsigned NOT NULL,
+  `scope` varchar(40) DEFAULT NULL,
+  `access_type` varchar(40) NOT NULL,
+  `permission` int(1) unsigned NOT NULL COMMENT '1 allowed, 0 for denied',
+  `removed` datetime DEFAULT NULL COMMENT 'date the permission was revoked',
+  `created` datetime DEFAULT NULL COMMENT 'date the permission was granted',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `acl_policy_permission_map` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `policy_id` bigint(20) unsigned NOT NULL,
+  `permission_id` bigint(20) unsigned NOT NULL,
+  `removed` datetime DEFAULT NULL COMMENT 'date the permission was removed from the policy',
+  `created` datetime DEFAULT NULL COMMENT 'date the permission was added to the policy',
+  PRIMARY KEY (`id`),
+  KEY `fk_acl_policy_permission_map__policy_id` (`policy_id`),
+  KEY `fk_acl_policy_permission_map__permission_id` (`permission_id`),
+  CONSTRAINT `fk_acl_policy_permission_map__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `acl_policy` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_acl_policy_permission_map__permission_id` FOREIGN KEY (`permission_id`) REFERENCES `acl_permission` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
 
 INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created, role_type) VALUES (1, 'NORMAL', 'Domain user role', UUID(), 1, Now(), 'Static');
 INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created, role_type) VALUES (2, 'ADMIN', 'Root admin role', UUID(), 1, Now(), 'Static');
