@@ -17,7 +17,6 @@
 package com.cloud.utils.db;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -41,12 +40,9 @@ import org.apache.commons.pool.KeyedObjectPoolFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.commons.pool.impl.StackKeyedObjectPoolFactory;
 import org.apache.log4j.Logger;
-import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
-import org.jasypt.properties.EncryptableProperties;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.mgmt.JmxUtil;
 
@@ -107,8 +103,6 @@ public class TransactionLegacy {
     private long _txnTime;
     private Statement _stmt;
     private String _creator;
-
-    private TransactionLegacy _prev = null;
 
     public static TransactionLegacy currentTxn() {
         return currentTxn(true);
@@ -1016,6 +1010,7 @@ public class TransactionLegacy {
     private static DataSource s_usageDS;
     private static DataSource s_awsapiDS;
     private static DataSource s_simulatorDS;
+    private static boolean s_dbHAEnabled;
 
     static {
         // Initialize with assumed db.properties file
@@ -1031,10 +1026,14 @@ public class TransactionLegacy {
         }
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public static void initDataSource(Properties dbProps) {
         try {
             if (dbProps.size() == 0)
                 return;
+            
+            s_dbHAEnabled = Boolean.valueOf(dbProps.getProperty("db.ha.enabled"));
+            s_logger.info("Is Data Base High Availiability enabled? Ans : " + s_dbHAEnabled);
             
             // FIXME:  If params are missing...default them????
             final int cloudMaxActive = Integer.parseInt(dbProps.getProperty("db.cloud.maxActive"));
@@ -1071,6 +1070,14 @@ public class TransactionLegacy {
             final boolean cloudPoolPreparedStatements = Boolean.parseBoolean(dbProps.getProperty("db.cloud.poolPreparedStatements"));
             final String url = dbProps.getProperty("db.cloud.url.params");
 
+            String cloudDbHAParams = null;
+            String cloudSlaves = null;
+            if(s_dbHAEnabled) {
+                cloudDbHAParams = getDBHAParams("cloud", dbProps);
+                cloudSlaves = dbProps.getProperty("db.cloud.slaves");
+                s_logger.info("The slaves configured for Cloud Data base is/are : " + cloudSlaves);
+            }
+            
             final boolean useSSL = Boolean.parseBoolean(dbProps.getProperty("db.cloud.useSSL"));
             if (useSSL) {
                 System.setProperty("javax.net.ssl.keyStore", dbProps.getProperty("db.cloud.keyStore"));
@@ -1082,8 +1089,8 @@ public class TransactionLegacy {
             final GenericObjectPool cloudConnectionPool = new GenericObjectPool(null, cloudMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
                     cloudMaxWait, cloudMaxIdle, cloudTestOnBorrow, false, cloudTimeBtwEvictionRunsMillis, 1, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle);
 
-            final ConnectionFactory cloudConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://" + cloudHost + ":" + cloudPort + "/" + cloudDbName +
-                    "?autoReconnect=" + cloudAutoReconnect + (url != null ? "&" + url : "") + (useSSL ? "&useSSL=true" : ""), cloudUsername, cloudPassword);
+            final ConnectionFactory cloudConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://" + cloudHost + (s_dbHAEnabled ? "," + cloudSlaves : "") + ":" + cloudPort + "/" + cloudDbName +
+                    "?autoReconnect=" + cloudAutoReconnect + (url != null ? "&" + url : "") + (useSSL ? "&useSSL=true" : "") + (s_dbHAEnabled ? "&" + cloudDbHAParams : ""), cloudUsername, cloudPassword);
 
             final KeyedObjectPoolFactory poolableObjFactory = (cloudPoolPreparedStatements ? new StackKeyedObjectPoolFactory() : null);
 
@@ -1108,8 +1115,8 @@ public class TransactionLegacy {
             final GenericObjectPool usageConnectionPool = new GenericObjectPool(null, usageMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
                     usageMaxWait, usageMaxIdle);
 
-            final ConnectionFactory usageConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://" + usageHost + ":" + usagePort + "/" + usageDbName +
-                    "?autoReconnect=" + usageAutoReconnect + (usageUrl != null ? "&" + usageUrl : ""), usageUsername, usagePassword);
+            final ConnectionFactory usageConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://" + usageHost + (s_dbHAEnabled ? "," + dbProps.getProperty("db.cloud.slaves") : "") + ":" + usagePort + "/" + usageDbName +
+                    "?autoReconnect=" + usageAutoReconnect + (usageUrl != null ? "&" + usageUrl : "") + (s_dbHAEnabled ? "&" + getDBHAParams("usage", dbProps) : ""), usageUsername, usagePassword);
 
             final PoolableConnectionFactory usagePoolableConnectionFactory = new PoolableConnectionFactory(usageConnectionFactory, usageConnectionPool,
                     new StackKeyedObjectPoolFactory(), null, false, false);
@@ -1121,8 +1128,8 @@ public class TransactionLegacy {
             final String awsapiDbName = dbProps.getProperty("db.awsapi.name");
             final GenericObjectPool awsapiConnectionPool = new GenericObjectPool(null, usageMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
                     usageMaxWait, usageMaxIdle);
-            final ConnectionFactory awsapiConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://" + cloudHost + ":" + cloudPort + "/" + awsapiDbName +
-                    "?autoReconnect=" + usageAutoReconnect, cloudUsername, cloudPassword);
+            final ConnectionFactory awsapiConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://" + cloudHost + (s_dbHAEnabled ? "," + cloudSlaves : "") + ":" + cloudPort + "/" + awsapiDbName +
+                    "?autoReconnect=" + cloudAutoReconnect + (s_dbHAEnabled ? "&" + cloudDbHAParams : ""), cloudUsername, cloudPassword);
             final PoolableConnectionFactory awsapiPoolableConnectionFactory = new PoolableConnectionFactory(awsapiConnectionFactory, awsapiConnectionPool,
                     new StackKeyedObjectPoolFactory(), null, false, false);
 
@@ -1160,7 +1167,19 @@ public class TransactionLegacy {
             s_logger.warn("Unable to load db configuration, using defaults with 5 connections. Falling back on assumed datasource on localhost:3306 using username:password=cloud:cloud. Please check your configuration", e);
         }
     }
+    
+    private static String getDBHAParams(String dbName,Properties dbProps) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("failOverReadOnly=" + dbProps.getProperty("db." + dbName + ".failOverReadOnly"));
+        sb.append("&").append("reconnectAtTxEnd=" + dbProps.getProperty("db." + dbName + ".reconnectAtTxEnd"));
+        sb.append("&").append("autoReconnectForPools=" + dbProps.getProperty("db." + dbName + ".autoReconnectForPools"));
+        sb.append("&").append("secondsBeforeRetryMaster=" + dbProps.getProperty("db." + dbName + ".secondsBeforeRetryMaster"));
+        sb.append("&").append("queriesBeforeRetryMaster=" + dbProps.getProperty("db." + dbName + ".queriesBeforeRetryMaster"));
+        sb.append("&").append("initialTimeout=" + dbProps.getProperty("db." + dbName + ".initialTimeout"));
+        return sb.toString();
+    }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private static DataSource getDefaultDataSource(final String database) {
         final GenericObjectPool connectionPool = new GenericObjectPool(null, 5);
         final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(
