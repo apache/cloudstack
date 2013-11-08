@@ -26,14 +26,14 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
-@Table(name="firewall_rule_details")
-public class FirewallRuleDetailVO implements ResourceDetail{
+@Table(name="user_ip_address_details")
+public class UserIpAddressDetailVO implements ResourceDetail{
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     @Column(name="id")
     private long id;
 
-    @Column(name="firewall_rule_id")
+    @Column(name="user_ip_address_id")
     private long resourceId;
 
     @Column(name="name")
@@ -45,9 +45,9 @@ public class FirewallRuleDetailVO implements ResourceDetail{
     @Column(name="display")
     private boolean display;
 
-    public FirewallRuleDetailVO() {}
+    public UserIpAddressDetailVO() {}
 
-    public FirewallRuleDetailVO(long networkId, String name, String value) {
+    public UserIpAddressDetailVO(long networkId, String name, String value) {
         this.resourceId = networkId;
         this.name = name;
         this.value = value;

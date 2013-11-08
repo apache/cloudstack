@@ -321,6 +321,8 @@
   <bean id="AffinityGroupVMMapDaoImpl" class="org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDaoImpl" />
   <bean id="AffinityGroupDomainMapDaoImpl" class="org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDaoImpl" />
   <bean id="FirewallRuleDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDaoImpl" />
+  <bean id="UserIpAddressDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDaoImpl" />
+
   
   <bean id="databaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker" />
 

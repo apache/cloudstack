@@ -619,3 +619,13 @@ CREATE TABLE `cloud`.`usage_event_details` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_usage_event_details__usage_event_id` FOREIGN KEY `fk_usage_event_details__usage_event_id`(`usage_event_id`) REFERENCES `usage_event`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`user_ip_address_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `user_ip_address_id` bigint unsigned NOT NULL COMMENT 'User ip address id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_user_ip_address_details__user_ip_address_id` FOREIGN KEY `fk_user_ip_address_details__user_ip_address_id`(`user_ip_address_id`) REFERENCES `user_ip_address`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
