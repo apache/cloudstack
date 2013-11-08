@@ -32,7 +32,6 @@
   </build>
   <modules>
     <module>console-proxy</module>
-    <module>console-proxy-rdp/rdpconsole</module>
     <module>secondary-storage</module>
   </modules>
 </project>
