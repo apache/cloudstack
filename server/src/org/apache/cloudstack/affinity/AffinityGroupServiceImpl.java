@@ -36,14 +36,6 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 import org.springframework.context.annotation.Primary;
-
-
-
-
-
-
-
-
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -60,7 +52,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -372,35 +363,26 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
     @Override
     public List<String> listAffinityGroupTypes() {
-        Account caller = CallContext.current().getCallingAccount();
-
         List<String> types = new ArrayList<String>();
-        Map<String, AffinityGroupProcessor> componentMap = ComponentContext.getComponentsOfType(AffinityGroupProcessor.class);
 
-        if (componentMap.size() > 0) {
-            for (Entry<String, AffinityGroupProcessor> entry : componentMap.entrySet()) {
-                AffinityGroupProcessor processor = entry.getValue();
-                if (processor.isAdminControlledGroup()) {
-                    continue; // we dont list the type if this group can be
-                              // created only as an admin/system operation.
-                }
-                types.add(processor.getType());
+        for (AffinityGroupProcessor processor : _affinityProcessors) {
+            if (processor.isAdminControlledGroup()) {
+                continue; // we dont list the type if this group can be
+                          // created only as an admin/system operation.
             }
-
+            types.add(processor.getType());
         }
+
         return types;
     }
 
     protected Map<String, AffinityGroupProcessor> getAffinityTypeToProcessorMap() {
         Map<String, AffinityGroupProcessor> typeProcessorMap = new HashMap<String, AffinityGroupProcessor>();
-        Map<String, AffinityGroupProcessor> componentMap = ComponentContext
-                .getComponentsOfType(AffinityGroupProcessor.class);
 
-        if (componentMap.size() > 0) {
-            for (Entry<String, AffinityGroupProcessor> entry : componentMap.entrySet()) {
-                typeProcessorMap.put(entry.getValue().getType(), entry.getValue());
-            }
+        for (AffinityGroupProcessor processor : _affinityProcessors) {
+            typeProcessorMap.put(processor.getType(), processor);
         }
+
         return typeProcessorMap;
     }
 
