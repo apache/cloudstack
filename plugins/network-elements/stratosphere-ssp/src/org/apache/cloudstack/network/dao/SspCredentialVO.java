@@ -23,6 +23,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.utils.db.Encrypt;
+
 @Entity
 @Table(name="external_stratosphere_ssp_credentials")
 public class SspCredentialVO {
@@ -38,6 +40,7 @@ public class SspCredentialVO {
     @Column(name="username")
     private String username;
 
+    @Encrypt
     @Column(name="password")
     private String password;
 
