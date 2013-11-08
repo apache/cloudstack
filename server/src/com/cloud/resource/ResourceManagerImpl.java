@@ -1926,6 +1926,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         host.setType(com.cloud.host.Host.Type.Routing);
         host.setDetails(details);
         host.setCaps(ssCmd.getCapabilities());
+        host.setCpuSockets(ssCmd.getCpuSockets());
         host.setCpus(ssCmd.getCpus());
         host.setTotalMemory(ssCmd.getMemory());
         host.setSpeed(ssCmd.getSpeed());

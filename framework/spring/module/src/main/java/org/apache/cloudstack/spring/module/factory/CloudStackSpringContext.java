@@ -37,6 +37,7 @@ public class CloudStackSpringContext {
 
     private static final Logger log = LoggerFactory.getLogger(CloudStackSpringContext.class);
     
+    public static final String CLOUDSTACK_CONTEXT_SERVLET_KEY = CloudStackSpringContext.class.getSimpleName();
     public static final String CLOUDSTACK_CONTEXT = "META-INF/cloudstack";
     public static final String CLOUDSTACK_BASE = "bootstrap";
     

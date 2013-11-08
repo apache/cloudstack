@@ -24,5 +24,14 @@
                       http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
     <bean id="DefaultConfigResources" class="java.util.ArrayList" />
+    <bean id="DefaultConfigProperties" class="java.util.Properties" />
+
+    <bean id="ModuleProperties" class="org.apache.cloudstack.spring.module.factory.QuietLoaderFactory" >
+        <property name="resources">
+            <list>
+                <value>classpath:modules.properties</value>
+            </list>
+        </property>
+    </bean>
 
 </beans>

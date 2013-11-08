@@ -51,11 +51,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.CheckOnHostCommand;
+import com.cloud.agent.api.routing.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
@@ -157,14 +160,6 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
-import com.cloud.agent.api.routing.IpAssocAnswer;
-import com.cloud.agent.api.routing.IpAssocCommand;
-import com.cloud.agent.api.routing.IpAssocVpcCommand;
-import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.api.routing.SetNetworkACLAnswer;
-import com.cloud.agent.api.routing.SetNetworkACLCommand;
-import com.cloud.agent.api.routing.SetSourceNatAnswer;
-import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
@@ -204,6 +199,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestResourceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InputDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.guestNetType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VirtioSerialDef;
@@ -1298,6 +1294,8 @@ ServerResource {
                 return storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
             } else if (cmd instanceof PvlanSetupCommand) {
                 return execute((PvlanSetupCommand) cmd);
+            } else if (cmd instanceof SetMonitorServiceCommand) {
+                return execute((SetMonitorServiceCommand) cmd);
             } else if (cmd instanceof CheckOnHostCommand) {
                 return execute((CheckOnHostCommand)cmd);
             } else {
@@ -1661,14 +1659,19 @@ ServerResource {
         }
     }
 
-    private String getVlanIdFromBridge(String brName) {
+    private String getBroadcastUriFromBridge(String brName) {
         String pif= matchPifFileInDirectory(brName);
-        String[] pifparts = pif.split("\\.");
-
-        if(pifparts.length == 2) {
-            return pifparts[1];
+        Pattern pattern = Pattern.compile("(\\D+)(\\d+)");
+        Matcher matcher = pattern.matcher(pif);
+        if(matcher.find()) {
+            if (brName.startsWith("brvx")){
+                return BroadcastDomainType.Vxlan.toUri(matcher.group(2)).toString();
+            }
+            else{
+                return BroadcastDomainType.Vlan.toUri(matcher.group(2)).toString();
+            }
         } else {
-            s_logger.debug("failed to get vlan id from bridge " + brName
+            s_logger.debug("failed to get vNet id from bridge " + brName
                            + "attached to physical interface" + pif);
             return "";
         }
@@ -1875,6 +1878,19 @@ ServerResource {
         }
     }
 
+    private Answer execute(SetMonitorServiceCommand cmd) {
+
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String config = cmd.getConfiguration();
+
+        String result = _virtRouterResource.configureMonitor(routerIp, config);
+
+        if (result != null) {
+            return new Answer(cmd, false, "SetMonitorServiceCommand failed");
+        }
+        return new Answer(cmd);
+
+    }
     private SetNetworkACLAnswer execute(SetNetworkACLCommand cmd) {
         String[] results = new String[cmd.getRules().length];
 
@@ -1926,7 +1942,7 @@ ServerResource {
 
             for (InterfaceDef pluggedNic : pluggedNics) {
                 String pluggedVlanBr = pluggedNic.getBrName();
-                String pluggedVlanId = getVlanIdFromBridge(pluggedVlanBr);
+                String pluggedVlanId = getBroadcastUriFromBridge(pluggedVlanBr);
                 if (pubVlan.equalsIgnoreCase(Vlan.UNTAGGED)
                         && pluggedVlanBr.equalsIgnoreCase(_publicBridgeName)) {
                     break;
@@ -1967,25 +1983,25 @@ ServerResource {
             conn = LibvirtConnection.getConnectionByVmName(routerName);
             IpAddressTO[] ips = cmd.getIpAddresses();
             Integer devNum = 0;
-            Map<String, Integer> vlanToNicNum = new HashMap<String, Integer>();
+            Map<String, Integer> broadcastUriToNicNum = new HashMap<String, Integer>();
             List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
 
             for (InterfaceDef pluggedNic : pluggedNics) {
                 String pluggedVlan = pluggedNic.getBrName();
                 if (pluggedVlan.equalsIgnoreCase(_linkLocalBridgeName)) {
-                    vlanToNicNum.put("LinkLocal",devNum);
+                    broadcastUriToNicNum.put("LinkLocal", devNum);
                 } else if (pluggedVlan.equalsIgnoreCase(_publicBridgeName)
                         || pluggedVlan.equalsIgnoreCase(_privBridgeName)
                         || pluggedVlan.equalsIgnoreCase(_guestBridgeName)) {
-                    vlanToNicNum.put(Vlan.UNTAGGED,devNum);
+                    broadcastUriToNicNum.put(BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString(), devNum);
                 } else {
-                    vlanToNicNum.put(getVlanIdFromBridge(pluggedVlan),devNum);
+                    broadcastUriToNicNum.put(getBroadcastUriFromBridge(pluggedVlan), devNum);
                 }
                 devNum++;
             }
 
             for (IpAddressTO ip : ips) {
-                String nicName = "eth" + vlanToNicNum.get(ip.getBroadcastUri());
+                String nicName = "eth" + broadcastUriToNicNum.get(ip.getBroadcastUri());
                 String netmask = Long.toString(NetUtils.getCidrSize(ip.getVlanNetmask()));
                 String subnet = NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());
                 _virtRouterResource.assignVpcIpToRouter(routerIP, ip.isAdd(), ip.getPublicIp(),
@@ -2013,19 +2029,19 @@ ServerResource {
         try {
             conn = LibvirtConnection.getConnectionByVmName(routerName);
             List<InterfaceDef> nics = getInterfaces(conn, routerName);
-            Map<String, Integer> vlanAllocatedToVM = new HashMap<String, Integer>();
+            Map<String, Integer> broadcastUriAllocatedToVM = new HashMap<String, Integer>();
             Integer nicPos = 0;
             for (InterfaceDef nic : nics) {
                 if (nic.getBrName().equalsIgnoreCase(_linkLocalBridgeName)) {
-                    vlanAllocatedToVM.put("LinkLocal", nicPos);
+                    broadcastUriAllocatedToVM.put("LinkLocal", nicPos);
                 } else {
                     if (nic.getBrName().equalsIgnoreCase(_publicBridgeName)
                             || nic.getBrName().equalsIgnoreCase(_privBridgeName)
                             || nic.getBrName().equalsIgnoreCase(_guestBridgeName)) {
-                        vlanAllocatedToVM.put(Vlan.UNTAGGED, nicPos);
+                        broadcastUriAllocatedToVM.put(BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString(), nicPos);
                     } else {
-                        String vlanId = getVlanIdFromBridge(nic.getBrName());
-                        vlanAllocatedToVM.put(vlanId, nicPos);
+                        String broadcastUri = getBroadcastUriFromBridge(nic.getBrName());
+                        broadcastUriAllocatedToVM.put(broadcastUri, nicPos);
                     }
                 }
                 nicPos++;
@@ -2036,14 +2052,14 @@ ServerResource {
             int nicNum = 0;
             boolean newNic = false;
             for (IpAddressTO ip : ips) {
-                if (!vlanAllocatedToVM.containsKey(ip.getBroadcastUri())) {
+                if (!broadcastUriAllocatedToVM.containsKey(ip.getBroadcastUri())) {
                     /* plug a vif into router */
                     VifHotPlug(conn, routerName, ip.getBroadcastUri(),
                             ip.getVifMacAddress());
-                    vlanAllocatedToVM.put(ip.getBroadcastUri(), nicPos++);
+                    broadcastUriAllocatedToVM.put(ip.getBroadcastUri(), nicPos++);
                     newNic = true;
                 }
-                nicNum = vlanAllocatedToVM.get(ip.getBroadcastUri());
+                nicNum = broadcastUriAllocatedToVM.get(ip.getBroadcastUri());
                 networkUsage(routerIp, "addVif", "eth" + nicNum);
                 result = _virtRouterResource.assignPublicIpAddress(routerName,
                         routerIp, ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(),
@@ -2895,8 +2911,7 @@ ServerResource {
         try {
             conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             ifaces = getInterfaces(conn, vmName);
-            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                    .getBytes()));
+            dm = conn.domainLookupByName(vmName);
             /*
                 We replace the private IP address with the address of the destination host.
                 This is because the VNC listens on the private IP address of the hypervisor,
@@ -3986,6 +4001,7 @@ ServerResource {
                 (Long) info.get(4), (String) info.get(3), _hypervisorType,
                 RouterPrivateIpStrategy.HostLocal);
         cmd.setStateChanges(changes);
+        cmd.setCpuSockets((Integer)info.get(5));
         fillNetworkInformation(cmd);
         _privateIp = cmd.getPrivateIpAddress();
         cmd.getHostDetails().putAll(getVersionStrings());
@@ -4311,6 +4327,7 @@ ServerResource {
         long speed = 0;
         long cpus = 0;
         long ram = 0;
+        int cpuSockets = 0;
         String cap = null;
         try {
             Connect conn = LibvirtConnection.getConnection();
@@ -4334,6 +4351,7 @@ ServerResource {
                 speed = hosts.mhz;
             }
 
+            cpuSockets = hosts.sockets;
             cpus = hosts.cpus;
             ram = hosts.memory * 1024L;
             LibvirtCapXMLParser parser = new LibvirtCapXMLParser();
@@ -4366,8 +4384,9 @@ ServerResource {
         // 768M
         dom0ram = Math.max(dom0ram, _dom0MinMem);
         info.add(dom0ram);
+        info.add(cpuSockets);
         s_logger.debug("cpus=" + cpus + ", speed=" + speed + ", ram=" + ram
-                + ", dom0ram=" + dom0ram);
+                + ", dom0ram=" + dom0ram + ", cpu sockets=" + cpuSockets);
 
         return info;
     }
@@ -4378,6 +4397,21 @@ ServerResource {
         try {
             dm = conn.domainLookupByName(vmName);
             String vmDef = dm.getXMLDesc(0);
+            LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+            parser.parseDomainXML(vmDef);
+            for (InterfaceDef nic :parser.getInterfaces()) {
+                if ((nic.getNetType() == guestNetType.BRIDGE) && (nic.getBrName().startsWith("cloudVirBr"))) {
+                    try {
+                        int vnetId = Integer.parseInt(nic.getBrName().replaceFirst("cloudVirBr", ""));
+                        String pifName = getPif(_guestBridgeName);
+                        String newBrName = "br" + pifName + "-"+ vnetId;
+                        vmDef = vmDef.replaceAll("'" + nic.getBrName() + "'", "'" + newBrName + "'");
+                        s_logger.debug("VM bridge name is changed from " + nic.getBrName() + " to " + newBrName);
+                    } catch (NumberFormatException e) {
+                        continue;
+                    }
+                }
+            }
             s_logger.debug(vmDef);
             msg = stopVM(conn, vmName);
             msg = startVM(conn, vmName, vmDef);

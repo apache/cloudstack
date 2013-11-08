@@ -185,4 +185,8 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
 	void setReservationId(String reserv);
 	Storage.ImageFormat getFormat();
 	Long getVmSnapshotChainSize();
+
+    void setHypervisorSnapshotReserve(Integer hypervisorSnapshotReserve);
+
+    Integer getHypervisorSnapshotReserve();
 }

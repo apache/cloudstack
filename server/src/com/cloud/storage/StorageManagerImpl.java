@@ -875,19 +875,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
 
         long totalOverProvCapacity;
-        if (storagePool.getPoolType() == StoragePoolType.NetworkFilesystem) {
+        if (storagePool.getPoolType() == StoragePoolType.NetworkFilesystem || storagePool.getPoolType() == StoragePoolType.VMFS) {
             BigDecimal overProvFactor = getStorageOverProvisioningFactor(storagePool.getDataCenterId());
-            totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(storagePool.getCapacityBytes())).longValue();// All
-            // this
-            // for
-            // the
-            // inaccuracy
-            // of
-            // floats
-            // for
-            // big
-            // number
-            // multiplication.
+            totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(storagePool.getCapacityBytes())).longValue();
+            // All this is for the inaccuracy of floats for big number multiplication.
         } else {
             totalOverProvCapacity = storagePool.getCapacityBytes();
         }
@@ -1596,7 +1587,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         long totalOverProvCapacity;
-        if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
+        if (pool.getPoolType() == StoragePoolType.NetworkFilesystem || pool.getPoolType() == StoragePoolType.VMFS) {
             totalOverProvCapacity = getStorageOverProvisioningFactor(pool.getDataCenterId()).multiply(new BigDecimal(pool.getCapacityBytes()))
                     .longValue();
         } else {

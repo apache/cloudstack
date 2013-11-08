@@ -98,6 +98,9 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
     @Column(name="mgmt_server_id")
     private Long managementServerId;
 
+    @Column(name="cpu_sockets")
+    private Integer cpuSockets;
+
     @Column(name="cpus")
     private Integer cpus;
 
@@ -247,6 +250,10 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
 
     public Long getManagementServerId() {
         return managementServerId;
+    }
+
+    public Integer getCpuSockets() {
+        return cpuSockets;
     }
 
     public Integer getCpus() {

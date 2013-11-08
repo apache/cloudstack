@@ -584,7 +584,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         File confFile = PropertiesUtil.findConfigFile("db.properties");
         /* This line may throw a NPE, but that's due to fail to find db.properities, meant some bugs in the other places */
         String confPath = confFile.getParent();
-        String keystorePath = confPath + "/cloud.keystore";
+        String keystorePath = confPath + "/cloudmanagementserver.keystore";
         File keystoreFile = new File(keystorePath);
         boolean dbExisted = (dbString != null && !dbString.isEmpty());
 

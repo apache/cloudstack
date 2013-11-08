@@ -43,5 +43,7 @@
     </bean>
 
     <bean class="org.apache.cloudstack.networkoffering.ChildTestConfiguration" />
-
+    <bean id="UservmDetailsDaoImpl" class="com.cloud.vm.dao.UserVmDetailsDaoImpl" />
+    <bean id="usageEventDaoImpl" class="com.cloud.event.dao.UsageEventDaoImpl" />
+    <bean id="usageEventDetailsDaoImpl" class="com.cloud.event.dao.UsageEventDetailsDaoImpl" />
 </beans>

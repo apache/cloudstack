@@ -223,4 +223,6 @@
     <bean id="GlobalLoadBalancingRulesServiceImpl"
         class="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl" />
 
+    <bean id="certServiceImpl" class="org.apache.cloudstack.network.lb.CertServiceImpl" />
+
 </beans>

@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.routing.*;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
@@ -113,7 +114,6 @@ import org.apache.cloudstack.engine.orchestration.VolumeOrchestrator;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
@@ -214,34 +214,6 @@ import com.cloud.agent.api.ValidateSnapshotCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
-import com.cloud.agent.api.routing.CreateIpAliasCommand;
-import com.cloud.agent.api.routing.DeleteIpAliasCommand;
-import com.cloud.agent.api.routing.DhcpEntryCommand;
-import com.cloud.agent.api.routing.DnsMasqConfigCommand;
-import com.cloud.agent.api.routing.IpAliasTO;
-import com.cloud.agent.api.routing.IpAssocAnswer;
-import com.cloud.agent.api.routing.IpAssocCommand;
-import com.cloud.agent.api.routing.IpAssocVpcCommand;
-import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
-import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
-import com.cloud.agent.api.routing.SavePasswordCommand;
-import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
-import com.cloud.agent.api.routing.SetFirewallRulesCommand;
-import com.cloud.agent.api.routing.SetNetworkACLAnswer;
-import com.cloud.agent.api.routing.SetNetworkACLCommand;
-import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
-import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
-import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
-import com.cloud.agent.api.routing.SetSourceNatAnswer;
-import com.cloud.agent.api.routing.SetSourceNatCommand;
-import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
-import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
-import com.cloud.agent.api.routing.SetStaticRouteAnswer;
-import com.cloud.agent.api.routing.SetStaticRouteCommand;
-import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
-import com.cloud.agent.api.routing.VmDataCommand;
-import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
@@ -572,6 +544,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((SetStaticRouteCommand) cmd);
             } else if (clz == UnregisterNicCommand.class) {
                 answer = execute((UnregisterNicCommand) cmd);
+            } else if (clz == SetMonitorServiceCommand.class) {
+                answer = execute((SetMonitorServiceCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -790,6 +764,36 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     + VmwareHelper.getExceptionMessage(e), e);
         }
         return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
+    }
+
+    protected Answer execute(SetMonitorServiceCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource SetMonitorServiceCommand: " + _gson.toJson(cmd));
+        }
+
+        String controlIp = getRouterSshControlIp(cmd);
+        String config = cmd.getConfiguration();
+
+        String args = "";
+
+        args += " -c " + config;
+
+        try {
+            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/monitor_service.sh " + args);
+
+            if (!result.first()) {
+                String msg=  "monitor_service.sh failed on domain router " + controlIp + " failed " + result.second();
+                s_logger.error(msg);
+                return new Answer(cmd, false, msg);
+            }
+
+            return new Answer(cmd);
+
+        } catch (Throwable e) {
+            s_logger.error("Unexpected exception: " + e.toString(), e);
+            return new Answer(cmd, false, "SetMonitorServiceCommand failed due to " + VmwareHelper.getExceptionMessage(e));
+        }
     }
 
     protected Answer execute(SetPortForwardingRulesCommand cmd) {
@@ -2513,7 +2517,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         for (DiskTO vol : disks) {
             if (vol.getType() != Volume.Type.ISO) {
                 VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
-                PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
+                DataStoreTO primaryStore = volumeTO.getDataStore();
                 if (primaryStore.getUuid() != null && !primaryStore.getUuid().isEmpty()) {
                     validatedDisks.add(vol);
                 }
@@ -2673,7 +2677,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
                     for (DiskTO vol : disks) {
                         if (vol.getType() == Volume.Type.ROOT) {
-                            PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)vol.getData().getDataStore();
+                            DataStoreTO primaryStore = vol.getData().getDataStore();
                             rootDiskDataStoreDetails = dataStoresDetails.get(primaryStore.getUuid());
                         }
                     }
@@ -2832,7 +2836,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
                     
 	                VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
-	                PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
+	                DataStoreTO primaryStore = volumeTO.getDataStore();
 	                Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(primaryStore.getUuid());
 	                assert (volumeDsDetails != null);
 	                
@@ -2984,7 +2988,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     	) throws Exception {
     	
         VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
-        PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
+        DataStoreTO primaryStore = volumeTO.getDataStore();
         Map<String, String> details = vol.getDetails();
         boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
 
@@ -3431,7 +3435,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         for (DiskTO vol : disks) {
             if (vol.getType() != Volume.Type.ISO) {
                 VolumeObjectTO volumeTO = (VolumeObjectTO)vol.getData();
-                PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volumeTO.getDataStore();
+                DataStoreTO primaryStore = volumeTO.getDataStore();
                 String poolUuid = primaryStore.getUuid();
                 if(poolMors.get(poolUuid) == null) {
                     boolean isManaged = false;
@@ -3462,7 +3466,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     	Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
         for (DiskTO vol : disks) {
             if (vol.getType() == Volume.Type.ROOT) {
-                PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)vol.getData().getDataStore();
+                DataStoreTO primaryStore = vol.getData().getDataStore();
                 rootDiskDataStoreDetails = dataStoresDetails.get(primaryStore.getUuid());
             }
         }
@@ -5456,11 +5460,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareContext context = getServiceContext();
             VmwareHypervisorHost hyperHost = getHyperHost(context);
             VolumeObjectTO vol = (VolumeObjectTO)cmd.getData();
-            PrimaryDataStoreTO store = (PrimaryDataStoreTO)vol.getDataStore();
+            DataStoreTO store = vol.getDataStore();
 
             ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, store.getUuid());
             if (morDs == null) {
-                String msg = "Unable to find datastore based on volume mount point " + store.getPath();
+                String msg = "Unable to find datastore based on volume mount point " + store.getUrl();
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
@@ -6041,6 +6045,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         cmd.setCaps("hvm");
         cmd.setDom0MinMemory(0);
         cmd.setSpeed(summary.getCpuSpeed());
+        cmd.setCpuSockets(summary.getCpuSockets());
         cmd.setCpus((int) summary.getCpuCount());
         cmd.setMemory(summary.getMemoryBytes());
     }

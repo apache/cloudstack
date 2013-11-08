@@ -18,12 +18,7 @@ package com.cloud.service;
 
 import java.util.Map;
 
-import javax.persistence.Column;
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
-import javax.persistence.PrimaryKeyJoinColumn;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import javax.persistence.*;
 
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.DiskOfferingVO;
@@ -34,14 +29,18 @@ import com.cloud.vm.VirtualMachine;
 @DiscriminatorValue(value="Service")
 @PrimaryKeyJoinColumn(name="id")
 public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering {
+    public enum DynamicParameters {
+        cpuSpeed, cpuNumber, memory
+    };
+
     @Column(name="cpu")
-	private int cpu;
+    private Integer cpu;
 
     @Column(name="speed")
-    private int speed;
+    private Integer speed;
 
     @Column(name="ram_size")
-	private int ramSize;
+    private Integer ramSize;
 
     @Column(name="nw_rate")
     private Integer rateMbps;
@@ -83,7 +82,8 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         super();
     }
 
-    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vm_type, boolean defaultUse) {
+    public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText,
+                             boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vm_type, boolean defaultUse) {
         super(name, displayText, false, tags, recreatable, useLocalStorage, systemUse, true);
         this.cpu = cpu;
         this.ramSize = ramSize;
@@ -97,7 +97,8 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.vm_type = vm_type == null ? null : vm_type.toString().toLowerCase();
     }
 
-    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, boolean limitCpuUse, boolean volatileVm, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vm_type, Long domainId) {
+    public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, boolean limitCpuUse,
+                             boolean volatileVm, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vm_type, Long domainId) {
         super(name, displayText, false, tags, recreatable, useLocalStorage, systemUse, true, domainId);
         this.cpu = cpu;
         this.ramSize = ramSize;
@@ -110,12 +111,14 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.vm_type = vm_type == null ? null : vm_type.toString().toLowerCase();
     }
 
-    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, boolean limitResourceUse, boolean volatileVm, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vm_type, Long domainId, String hostTag) {
-        this(name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, limitResourceUse, volatileVm, displayText, useLocalStorage, recreatable, tags, systemUse, vm_type, domainId);
+    public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, boolean limitResourceUse,
+                              boolean volatileVm, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vm_type, Long domainId, String hostTag) {
+        this(name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, limitResourceUse, volatileVm, displayText, useLocalStorage, recreatable, tags, systemUse,
+            vm_type, domainId);
         this.hostTag = hostTag;
     }
 
-    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps,
+    public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps,
             boolean offerHA, boolean limitResourceUse, boolean volatileVm, String displayText, boolean useLocalStorage,
             boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vm_type, Long domainId,
             String hostTag, String deploymentPlanner) {
@@ -159,7 +162,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 	}
 
 	@Override
-	public int getCpu() {
+	public Integer getCpu() {
 	    return cpu;
 	}
 
@@ -176,12 +179,12 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 	}
 
 	@Override
-	public int getSpeed() {
+	public Integer getSpeed() {
 	    return speed;
 	}
 
 	@Override
-	public int getRamSize() {
+	public Integer getRamSize() {
 	    return ramSize;
 	}
 
@@ -252,4 +255,10 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     public void setDetails(Map<String, String> details) {
         this.details = details;
     }
+
+    public boolean isDynamic() {
+        return cpu == null || speed == null || ramSize == null;
+    }
+
+
 }

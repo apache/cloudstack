@@ -940,7 +940,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         Long snapshotId = payload.getSnapshotId();
         Account snapshotOwner = payload.getAccount();
         SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotId, volume.getDataStore());
-
+        snapshot.addPayload(payload);
         try {
             SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.TAKE);
 

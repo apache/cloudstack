@@ -86,6 +86,9 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.MAX_IOPS, type=CommandType.LONG, required=false, description="max iops of the disk offering")
     private Long maxIops;
 
+    @Parameter(name=ApiConstants.HYPERVISOR_SNAPSHOT_RESERVE, type=CommandType.INTEGER, required=false, description="Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)")
+    private Integer hypervisorSnapshotReserve;
+
 /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -148,6 +151,10 @@ public class CreateDiskOfferingCmd extends BaseCmd {
 
     public Boolean getDisplayOffering() {
         return displayOffering;
+    }
+
+    public Integer getHypervisorSnapshotReserve() {
+        return hypervisorSnapshotReserve;
     }
 
     /////////////////////////////////////////////////////

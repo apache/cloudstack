@@ -61,17 +61,17 @@ public interface ServiceOffering extends DiskOffering, InfrastructureEntity, Int
     /**
      * @return # of cpu.
      */
-    int getCpu();
+    Integer getCpu();
 
     /**
      * @return speed in mhz
      */
-    int getSpeed();
+    Integer getSpeed();
 
     /**
      * @return ram size in megabytes
      */
-    int getRamSize();
+    Integer getRamSize();
 
     /**
      * @return Does this service plan offer HA?
@@ -117,4 +117,6 @@ public interface ServiceOffering extends DiskOffering, InfrastructureEntity, Int
     String getSystemVmType();
 
     String getDeploymentPlanner();
+
+    boolean isDynamic();
 }

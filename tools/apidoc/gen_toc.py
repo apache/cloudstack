@@ -79,6 +79,7 @@ known_categories = {
     'ServiceOffering': 'Service Offering',
     'DiskOffering': 'Disk Offering',
     'LoadBalancer': 'Load Balancer',
+    'SslCert': 'Load Balancer',
     'Router': 'Router',
     'SystemVm': 'System VM',
     'Configuration': 'Configuration',

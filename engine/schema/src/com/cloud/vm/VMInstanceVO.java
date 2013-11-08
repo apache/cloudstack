@@ -163,6 +163,23 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name="disk_offering_id")
     protected Long diskOfferingId;
     
+    //
+    // Power state for VM state sync
+    //
+    @Enumerated(value=EnumType.STRING)
+    @Column(name="power_state", updatable=true)
+    protected PowerState powerState;
+    
+    @Column(name="power_state_update_time", updatable=true, nullable=false)
+    @Temporal(value=TemporalType.TIMESTAMP)
+    protected Date powerStateUpdateTime;
+    
+    @Column(name="power_state_update_count", updatable=true)
+    protected int powerStateUpdateCount;
+    
+    @Column(name="power_host", updatable=true)
+    protected Long powerHostId;
+        
     public VMInstanceVO(long id,
             long serviceOfferingId,
             String name,
@@ -499,6 +516,38 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     public Boolean isDynamicallyScalable() {
         return this.dynamicallyScalable;
+    }
+    
+    public VirtualMachine.PowerState getPowerState() {
+        return powerState;
+    }
+   
+    public void setPowerState(PowerState powerState) {
+        this.powerState = powerState;
+    }
+   
+    public Date getPowerStateUpdateTime() {
+        return powerStateUpdateTime;
+    }
+   
+    public void setPowerStateUpdateTime(Date updateTime) {
+        powerStateUpdateTime = updateTime;
+    }
+   
+    public int getPowerStateUpdateCount() {
+        return powerStateUpdateCount;
+    }
+   
+    public void setPowerStateUpdateCount(int count) {
+        powerStateUpdateCount = count;
+    }
+   
+    public Long getPowerHostId() {
+        return powerHostId;
+    }
+   
+    public void setPowerHostId(Long hostId) {
+        powerHostId = hostId;
     }
 
 }

@@ -21,7 +21,6 @@ import com.vmware.vim25.ComputeResourceSummary;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.VirtualMachineConfigSpec;
-
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 /**

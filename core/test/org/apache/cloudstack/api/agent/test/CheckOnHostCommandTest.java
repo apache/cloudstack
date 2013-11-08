@@ -86,6 +86,10 @@ public class CheckOnHostCommandTest {
 
         public Long getTotalMemory() {
             return 100000000000L;
+        }
+
+        public Integer getCpuSockets() {
+            return 1;
         };
 
         public Integer getCpus() {
@@ -287,6 +291,12 @@ public class CheckOnHostCommandTest {
     public void testGetTotalMemory() {
         Long m = host.getTotalMemory();
         assertTrue(m == 100000000000L);
+    }
+
+    @Test
+    public void testGetCpuSockets() {
+        Integer cpuSockets = host.getCpuSockets();
+        assertTrue(cpuSockets == 1);
     }
 
     @Test

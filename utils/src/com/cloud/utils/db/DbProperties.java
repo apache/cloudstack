@@ -65,12 +65,15 @@ public class DbProperties {
                 if ( is == null ) {
                     is = PropertiesUtil.openStreamFromURL("db.properties");
                 }
+
                 if ( is == null ) {
                     System.err.println("Failed to find db.properties");
                     log.error("Failed to find db.properties");
                 }
 
-                dbProps.load(is);
+                if ( is != null ) {
+                    dbProps.load(is);
+                }
 
                 EncryptionSecretKeyChecker checker = new EncryptionSecretKeyChecker();
                 checker.check(dbProps);

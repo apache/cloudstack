@@ -22,6 +22,7 @@ public class CreateSnapshotPayload {
 	private Long snapshotPolicyId;
 	private Long snapshotId;
 	private Account account;
+    private boolean quiescevm;
 
 	public Long getSnapshotPolicyId() {
 		return snapshotPolicyId;
@@ -45,6 +46,14 @@ public class CreateSnapshotPayload {
 
     public void setAccount(Account account) {
         this.account = account;
+    }
+
+    public void setQuiescevm(boolean quiescevm) {
+        this.quiescevm = quiescevm;
+    }
+
+    public boolean getQuiescevm() {
+        return this.quiescevm;
     }
 
 }

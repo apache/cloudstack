@@ -25,6 +25,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -41,13 +44,14 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     protected static final Logger s_logger = Logger.getLogger(ServiceOfferingDaoImpl.class);
 
     @Inject protected ServiceOfferingDetailsDao detailsDao;
+    @Inject protected UserVmDetailsDao userVmDetailsDao;
 
     protected final SearchBuilder<ServiceOfferingVO> UniqueNameSearch;
     protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByDomainIdSearch;
     protected final SearchBuilder<ServiceOfferingVO> SystemServiceOffering;
     protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByKeywordSearch;
     protected final SearchBuilder<ServiceOfferingVO> PublicServiceOfferingSearch;
-    
+
     public ServiceOfferingDaoImpl() {
         super();
         
@@ -134,7 +138,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     public List<ServiceOfferingVO> findPublicServiceOfferings(){
     	SearchCriteria<ServiceOfferingVO> sc = PublicServiceOfferingSearch.create();
     	sc.setParameters("system", false);
-        return listBy(sc);    	
+        return listBy(sc);
     }
     
     @Override @DB
@@ -179,5 +183,49 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         }
         
         detailsDao.saveDetails(resourceDetails);
+    }
+
+    public ServiceOfferingVO findById(Long vmId, long serviceOfferingId) {
+        ServiceOfferingVO offering = super.findById(serviceOfferingId);
+        if (offering.isDynamic()) {
+            if (vmId == null) {
+                throw new CloudRuntimeException("missing argument vmId");
+            }
+            Map<String, String> dynamicOffering = userVmDetailsDao.listDetailsKeyPairs(vmId);
+            offering.setCpu(Integer.parseInt(dynamicOffering.get(ServiceOfferingVO.DynamicParameters.cpuNumber.name())));
+            offering.setSpeed(Integer.parseInt(dynamicOffering.get(ServiceOfferingVO.DynamicParameters.cpuSpeed.name())));
+            offering.setRamSize(Integer.parseInt(dynamicOffering.get(ServiceOfferingVO.DynamicParameters.memory.name())));
+            return offering;
+        }
+        return offering;
+    }
+
+    public ServiceOfferingVO findByIdIncludingRemoved(Long vmId, long serviceOfferingId) {
+        ServiceOfferingVO offering = super.findByIdIncludingRemoved(serviceOfferingId);
+        if (offering.isDynamic()) {
+            if (vmId == null) {
+                throw new CloudRuntimeException("missing argument vmId");
+            }
+            Map<String, String> dynamicOffering = userVmDetailsDao.listDetailsKeyPairs(vmId);
+            offering.setCpu(Integer.parseInt(dynamicOffering.get(ServiceOfferingVO.DynamicParameters.cpuNumber.name())));
+            offering.setSpeed(Integer.parseInt(dynamicOffering.get(ServiceOfferingVO.DynamicParameters.cpuSpeed.name())));
+            offering.setRamSize(Integer.parseInt(dynamicOffering.get(ServiceOfferingVO.DynamicParameters.memory.name())));
+            return offering;
+
+        }
+        return offering;
+    }
+
+    public boolean isDynamic(long serviceOfferingId) {
+        ServiceOfferingVO offering = super.findById(serviceOfferingId);
+        return offering.getCpu() == null || offering.getSpeed() == null || offering.getRamSize() == null;
+    }
+
+    public ServiceOfferingVO getcomputeOffering(long serviceOfferingId, Integer cpuCores, Integer cpuSpeed, Integer memory) {
+        ServiceOfferingVO offering = super.findById(serviceOfferingId);
+        offering.setCpu(cpuCores);
+        offering.setSpeed(cpuSpeed);
+        offering.setRamSize(memory);
+        return offering;
     }
 }

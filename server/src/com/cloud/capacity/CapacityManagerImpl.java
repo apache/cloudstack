@@ -60,7 +60,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.org.Cluster;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceListener;
 import com.cloud.resource.ResourceManager;
@@ -81,7 +80,6 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.fsm.StateListener;
@@ -174,7 +172,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @DB
     @Override
     public boolean releaseVmCapacity(VirtualMachine vm, final boolean moveFromReserved, final boolean moveToReservered, final Long hostId) {
-        final ServiceOfferingVO svo = _offeringsDao.findById(vm.getServiceOfferingId());
+        final ServiceOfferingVO svo = _offeringsDao.findById(vm.getId(), vm.getServiceOfferingId());
         CapacityVO capacityCpu = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_CPU);
         CapacityVO capacityMemory = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_MEMORY);
         Long clusterId = null;
@@ -270,7 +268,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         final float cpuOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId, "cpuOvercommitRatio").getValue());
         final float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId, "memoryOvercommitRatio").getValue());
 
-        final ServiceOfferingVO svo = _offeringsDao.findById(vm.getServiceOfferingId());
+        final ServiceOfferingVO svo = _offeringsDao.findById(vm.getId(), vm.getServiceOfferingId());
 
         CapacityVO capacityCpu = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_CPU);
         CapacityVO capacityMem = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_MEMORY);
@@ -549,16 +547,23 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         Float cpuOvercommitRatio = 1f;
         Float ramOvercommitRatio = 1f;
         for (VMInstanceVO vm : vms) {
-            UserVmDetailVO vmDetailCpu = _userVmDetailsDao.findDetail(vm.getId(), "cpuOvercommitRatio");
-            UserVmDetailVO vmDetailRam = _userVmDetailsDao.findDetail(vm.getId(),"memoryOvercommitRatio");
+            Map<String, String> vmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
+            String vmDetailCpu = vmDetails.get("cpuOvercommitRatio");
+            String vmDetailRam = vmDetails.get("memoryOvercommitRatio");
             if (vmDetailCpu != null ) {
                 //if vmDetail_cpu is not null it means it is running in a overcommited cluster.
-                cpuOvercommitRatio = Float.parseFloat(vmDetailCpu.getValue());
-                ramOvercommitRatio = Float.parseFloat(vmDetailRam.getValue());
+                cpuOvercommitRatio = Float.parseFloat(vmDetailCpu);
+                ramOvercommitRatio = Float.parseFloat(vmDetailRam);
             }
             ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
-            usedMemory += ((so.getRamSize() * 1024L * 1024L)/ramOvercommitRatio)*clusterRamOvercommitRatio;
-            usedCpu += ((so.getCpu() * so.getSpeed())/cpuOvercommitRatio)*clusterCpuOvercommitRatio;
+            if (so.isDynamic()) {
+                usedMemory += ((Integer.parseInt(vmDetails.get(ServiceOfferingVO.DynamicParameters.memory.name())) * 1024L * 1024L)/ramOvercommitRatio)*clusterRamOvercommitRatio;
+                usedCpu += ((Integer.parseInt(vmDetails.get(ServiceOfferingVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(ServiceOfferingVO.DynamicParameters.cpuSpeed.name())))/cpuOvercommitRatio)*clusterCpuOvercommitRatio;
+            }
+            else {
+                usedMemory += ((so.getRamSize() * 1024L * 1024L)/ramOvercommitRatio)*clusterRamOvercommitRatio;
+                usedCpu += ((so.getCpu() * so.getSpeed())/cpuOvercommitRatio)*clusterCpuOvercommitRatio;
+            }
         }
 
         List<VMInstanceVO> vmsByLastHostId = _vmDao.listByLastHostId(host.getId());
@@ -599,34 +604,58 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         CapacityVO memCap = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_MEMORY);
 
         if (cpuCap != null && memCap != null){
+
+            long hostTotalCpu = host.getCpus().longValue() * host.getSpeed().longValue();
+
+            if (cpuCap.getTotalCapacity() != hostTotalCpu) {
+                s_logger.debug("Calibrate total cpu for host: " + host.getId() + " old total CPU:"
+                        + cpuCap.getTotalCapacity() + " new total CPU:" + hostTotalCpu);
+                cpuCap.setTotalCapacity(hostTotalCpu);
+
+            }
+
         	if (cpuCap.getUsedCapacity() == usedCpu && cpuCap.getReservedCapacity() == reservedCpu) {
         		s_logger.debug("No need to calibrate cpu capacity, host:" + host.getId() + " usedCpu: " + cpuCap.getUsedCapacity()
         				+ " reservedCpu: " + cpuCap.getReservedCapacity());
-        	} else if (cpuCap.getReservedCapacity() != reservedCpu) {
-        		s_logger.debug("Calibrate reserved cpu for host: " + host.getId() + " old reservedCpu:" + cpuCap.getReservedCapacity()
-        				+ " new reservedCpu:" + reservedCpu);
-        		cpuCap.setReservedCapacity(reservedCpu);
-        	} else if (cpuCap.getUsedCapacity() != usedCpu) {
-        		s_logger.debug("Calibrate used cpu for host: " + host.getId() + " old usedCpu:" + cpuCap.getUsedCapacity() + " new usedCpu:"
-        				+ usedCpu);
-        		cpuCap.setUsedCapacity(usedCpu);
+            } else {
+                if (cpuCap.getReservedCapacity() != reservedCpu) {
+                    s_logger.debug("Calibrate reserved cpu for host: " + host.getId() + " old reservedCpu:"
+                            + cpuCap.getReservedCapacity() + " new reservedCpu:" + reservedCpu);
+                    cpuCap.setReservedCapacity(reservedCpu);
+                }
+                if (cpuCap.getUsedCapacity() != usedCpu) {
+                    s_logger.debug("Calibrate used cpu for host: " + host.getId() + " old usedCpu:"
+                            + cpuCap.getUsedCapacity() + " new usedCpu:" + usedCpu);
+                    cpuCap.setUsedCapacity(usedCpu);
+                }
         	}
+
+            if (memCap.getTotalCapacity() != host.getTotalMemory()) {
+                s_logger.debug("Calibrate total memory for host: " + host.getId() + " old total memory:"
+                        + memCap.getTotalCapacity() + " new total memory:" + host.getTotalMemory());
+                memCap.setTotalCapacity(host.getTotalMemory());
+
+            }
 
 	        if (memCap.getUsedCapacity() == usedMemory && memCap.getReservedCapacity() == reservedMemory) {
 	            s_logger.debug("No need to calibrate memory capacity, host:" + host.getId() + " usedMem: " + memCap.getUsedCapacity()
 	                    + " reservedMem: " + memCap.getReservedCapacity());
-	        } else if (memCap.getReservedCapacity() != reservedMemory) {
-	            s_logger.debug("Calibrate reserved memory for host: " + host.getId() + " old reservedMem:" + memCap.getReservedCapacity()
-	                    + " new reservedMem:" + reservedMemory);
-	            memCap.setReservedCapacity(reservedMemory);
-	        } else if (memCap.getUsedCapacity() != usedMemory) {
-	            /*
-	             * Didn't calibrate for used memory, because VMs can be in state(starting/migrating) that I don't know on which host they are
-	             * allocated
-	             */
-	            s_logger.debug("Calibrate used memory for host: " + host.getId() + " old usedMem: " + memCap.getUsedCapacity()
-	                    + " new usedMem: " + usedMemory);
-	            memCap.setUsedCapacity(usedMemory);
+            } else {
+                if (memCap.getReservedCapacity() != reservedMemory) {
+                    s_logger.debug("Calibrate reserved memory for host: " + host.getId() + " old reservedMem:"
+                            + memCap.getReservedCapacity() + " new reservedMem:" + reservedMemory);
+                    memCap.setReservedCapacity(reservedMemory);
+                }
+                if (memCap.getUsedCapacity() != usedMemory) {
+                    /*
+                     * Didn't calibrate for used memory, because VMs can be in
+                     * state(starting/migrating) that I don't know on which host
+                     * they are allocated
+                     */
+                    s_logger.debug("Calibrate used memory for host: " + host.getId() + " old usedMem: "
+                            + memCap.getUsedCapacity() + " new usedMem: " + usedMemory);
+                    memCap.setUsedCapacity(usedMemory);
+                }
 	        }
 
 	        try {

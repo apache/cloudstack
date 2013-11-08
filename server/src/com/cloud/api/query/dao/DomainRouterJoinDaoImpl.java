@@ -22,6 +22,8 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.maint.Version;
+import com.cloud.network.VirtualNetworkApplianceService;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -76,6 +78,11 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         routerResponse.setState(router.getState());
         routerResponse.setIsRedundantRouter(router.isRedundantRouter());
         routerResponse.setRedundantState(router.getRedundantState().toString());
+        if(router.getTemplateVersion() != null){
+            String routerVersion = Version.trimRouterVersion(router.getTemplateVersion());
+            routerResponse.setVersion(routerVersion);
+            routerResponse.setRequiresUpgrade((Version.compare(routerVersion, VirtualNetworkApplianceService._minVRVersion) < 0));
+        }
 
         if (caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
                 || caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {

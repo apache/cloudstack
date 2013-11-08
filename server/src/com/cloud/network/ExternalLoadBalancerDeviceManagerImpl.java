@@ -899,7 +899,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             if ((destinations != null && !destinations.isEmpty()) || rule.isAutoScaleConfig()) {
                 boolean inline = _networkMgr.isNetworkInlineMode(network);
                 LoadBalancerTO loadBalancer = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, inline, destinations, rule.getStickinessPolicies(),
-                        rule.getHealthCheckPolicies());
+                        rule.getHealthCheckPolicies(), rule.getLbSslCert(), rule.getLbProtocol());
                 if (rule.isAutoScaleConfig()) {
                     loadBalancer.setAutoScaleVmGroup(rule.getAutoScaleVmGroup());
                 }
@@ -1184,7 +1184,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             if ((destinations != null && !destinations.isEmpty()) || !rule.isAutoScaleConfig()) {
                 boolean inline = _networkMgr.isNetworkInlineMode(network);
                 LoadBalancerTO loadBalancer = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked,
-                        false, inline, destinations, rule.getStickinessPolicies(), rule.getHealthCheckPolicies());
+                        false, inline, destinations, rule.getStickinessPolicies(), rule.getHealthCheckPolicies(), rule.getLbSslCert(), rule.getLbProtocol());
                 loadBalancersToApply.add(loadBalancer);
             }
         }
@@ -1218,5 +1218,5 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             }
         }
         return null;
-    }
+   }
 }

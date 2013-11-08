@@ -41,4 +41,5 @@ public interface VirtualRouter extends VirtualMachine {
      * @return
      */
     Long getVpcId();
+    String getTemplateVersion();
 }

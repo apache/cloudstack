@@ -252,7 +252,7 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/cl
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
 for name in db.properties log4j-cloud.xml tomcat6-nonssl.conf tomcat6-ssl.conf server-ssl.xml server-nonssl.xml \
-            catalina.policy catalina.properties classpath.conf tomcat-users.xml web.xml environment.properties ; do
+            catalina.policy catalina.properties classpath.conf tomcat-users.xml web.xml environment.properties cloudmanagementserver.keystore ; do
   mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/$name \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
 done
@@ -450,6 +450,13 @@ else
     echo "Unable to determine ssl settings for tomcat.conf, please run cloudstack-setup-management manually"
 fi
 
+if [ -f "%{_sysconfdir}/cloud.rpmsave/management/cloud.keystore" ]; then
+    mv %{_sysconfdir}/%{name}/management/cloudmanagementserver.keystore %{_sysconfdir}/%{name}/management/cloudmanagementserver.keystore.rpmnew
+    cp -p %{_sysconfdir}/cloud.rpmsave/management/cloud.keystore %{_sysconfdir}/%{name}/management/cloudmanagementserver.keystore
+    # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
+    mv %{_sysconfdir}/cloud.rpmsave/management/cloud.keystore %{_sysconfdir}/cloud.rpmsave/management/cloud.keystore.rpmsave
+fi
+
 %preun agent
 /sbin/service cloudstack-agent stop || true
 if [ "$1" == "0" ] ; then
@@ -539,6 +546,7 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/management/cloud-bridge.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/commons-logging.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/ec2-service.properties
+%config(noreplace) %{_sysconfdir}/%{name}/management/cloudmanagementserver.keystore
 %attr(0755,root,root) %{_initrddir}/%{name}-management
 %attr(0755,root,root) %{_bindir}/%{name}-setup-management
 %attr(0755,root,root) %{_bindir}/%{name}-update-xenserver-licenses

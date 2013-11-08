@@ -58,6 +58,7 @@ import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UpgradeRouterTemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -440,4 +441,5 @@ public class ViewResponseHelper {
         }
         return new ArrayList<AffinityGroupResponse>(vrDataList.values());
     }
+
 }

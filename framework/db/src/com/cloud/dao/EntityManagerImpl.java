@@ -57,6 +57,7 @@ public class EntityManagerImpl extends ManagerBase implements EntityManager {
         return dao.findByUuid(uuid);
     }
 
+    @Override
     public <T> T findByUuidIncludingRemoved(Class<T> entityType, String uuid) {
         // Finds and returns a unique VO using uuid, null if entity not found in db
         GenericDao<? extends T, String> dao = (GenericDao<? extends T, String>)GenericDaoBase.getDao(entityType);
@@ -94,7 +95,7 @@ public class EntityManagerImpl extends ManagerBase implements EntityManager {
         _name = name;
         
         return true;
-    } 
+    }
 
     @Override
     public boolean start() {

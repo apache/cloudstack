@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.event.dao.UsageEventDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -38,6 +39,8 @@ import com.cloud.event.dao.UsageEventDao;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
+import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class UsageEventUtils {
 
@@ -101,6 +104,19 @@ public class UsageEventUtils {
                                          long securityGroupId, String entityType, String entityUUID) {
         saveUsageEvent(usageType, accountId, zoneId, vmId, securityGroupId);
         publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
+    }
+
+    public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId,
+                                         String resourceName, Long offeringId, Long templateId, String resourceType,
+                                         String entityType, String entityUUID, Map<String, String> details) {
+        saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, resourceType, details);
+        publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
+    }
+
+    private static void saveUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId, String resourceType, Map<String,String> details) {
+        UsageEventVO usageEvent = new UsageEventVO(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, resourceType);
+        _usageEventDao.persist(usageEvent);
+        _usageEventDao.saveDetails(usageEvent.getId(), details);
     }
 
     public static void saveUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId, Long size) {

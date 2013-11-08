@@ -52,6 +52,7 @@ import com.cloud.utils.script.Script;
 public class NetUtils {
     protected final static Logger s_logger = Logger.getLogger(NetUtils.class);
     public final static String HTTP_PORT = "80";
+    public final static String HTTPS_PORT = "443";
     public final static int VPN_PORT = 500;
     public final static int VPN_NATT_PORT = 4500;
     public final static int VPN_L2TP_PORT = 1701;
@@ -61,6 +62,8 @@ public class NetUtils {
     public final static String ANY_PROTO = "any";
     public final static String ICMP_PROTO = "icmp";
     public final static String ALL_PROTO = "all";
+    public final static String HTTP_PROTO = "http";
+    public final static String SSL_PROTO = "ssl";
 
     public final static String ALL_CIDRS = "0.0.0.0/0";
     public final static int PORT_RANGE_MIN = 0;

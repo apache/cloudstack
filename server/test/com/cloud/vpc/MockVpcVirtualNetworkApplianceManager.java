@@ -24,7 +24,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.network.vpc.NetworkACLItem;
-import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
+import org.apache.cloudstack.api.command.admin.router.*;
 import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeployDestination;
@@ -418,6 +418,11 @@ VpcVirtualNetworkApplianceService {
     public VirtualRouter findRouter(long routerId) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public List<Long> upgradeRouterTemplate(UpgradeRouterTemplateCmd cmd) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override

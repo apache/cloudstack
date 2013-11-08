@@ -33,6 +33,7 @@ public class SnapshotObjectTO implements DataTO {
     private String name;
     private HypervisorType hypervisorType;
     private long id;
+    private boolean quiescevm;
 
     public SnapshotObjectTO() {
 
@@ -54,6 +55,7 @@ public class SnapshotObjectTO implements DataTO {
         this.dataStore = snapshot.getDataStore().getTO();
         this.setName(snapshot.getName());
         this.hypervisorType = snapshot.getHypervisorType();
+        this.quiescevm = false;
     }
 
     @Override
@@ -127,6 +129,14 @@ public class SnapshotObjectTO implements DataTO {
 
     public void setHypervisorType(HypervisorType hypervisorType) {
         this.hypervisorType = hypervisorType;
+    }
+
+    public boolean getquiescevm() {
+        return this.quiescevm;
+    }
+
+    public void setQuiescevm(boolean quiescevm) {
+        this.quiescevm = quiescevm;
     }
 
     @Override

@@ -33,6 +33,12 @@ import com.cloud.utils.fsm.StateObject;
  */
 public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, InternalIdentity, StateObject<VirtualMachine.State> {
 
+	public enum PowerState {
+	    PowerUnknown,
+	    PowerOn,
+	    PowerOff,
+    }
+
     public enum State {
         Starting(true, "VM is being started.  At this state, you should find host id filled which means it's being started on that host."),
         Running(false, "VM is running.  host id has the host that it is running on."),
@@ -111,6 +117,15 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
             s_fsm.addTransition(State.Expunging, VirtualMachine.Event.ExpungeOperation, State.Expunging);
             s_fsm.addTransition(State.Error, VirtualMachine.Event.DestroyRequested, State.Expunging);
             s_fsm.addTransition(State.Error, VirtualMachine.Event.ExpungeOperation, State.Expunging);
+            			
+            s_fsm.addTransition(State.Stopping, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running);
+            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running);
+            s_fsm.addTransition(State.Running, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running);
+            s_fsm.addTransition(State.Migrating, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running);
+            s_fsm.addTransition(State.Starting, VirtualMachine.Event.FollowAgentPowerOffReport, State.Stopped);
+            s_fsm.addTransition(State.Stopping, VirtualMachine.Event.FollowAgentPowerOffReport, State.Stopped);
+            s_fsm.addTransition(State.Running, VirtualMachine.Event.FollowAgentPowerOffReport, State.Stopped);
+            s_fsm.addTransition(State.Migrating, VirtualMachine.Event.FollowAgentPowerOffReport, State.Stopped);
         }
         
         public static boolean isVmStarted(State oldState, Event e, State newState) {
@@ -179,6 +194,10 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
         AgentReportMigrated,
         RevertRequested,
         SnapshotRequested,
+        
+        // added for new VMSync logic
+        FollowAgentPowerOnReport,
+        FollowAgentPowerOffReport,        
     };
 
     public enum Type {

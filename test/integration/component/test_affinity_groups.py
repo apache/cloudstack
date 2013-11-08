@@ -20,7 +20,7 @@ from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
-from marvin import remoteSSHClient
+from marvin.sshClient import SshClient
 from nose.plugins.attrib import attr
 
 class Services:

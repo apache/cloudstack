@@ -20,9 +20,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -51,7 +53,7 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
     private static final String COPY_ALL_EVENTS = "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size) " +
             "SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size FROM cloud.usage_event vmevt WHERE vmevt.id <= ?";
     private static final String MAX_EVENT = "select max(id) from cloud.usage_event where created <= ?";
-
+    @Inject protected UsageEventDetailsDao usageEventDetailsDao;
 
     public UsageEventDaoImpl () {
         latestEventsSearch = createSearchBuilder();
@@ -182,6 +184,11 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
         sc.setParameters("zoneid", zoneId);
         sc.setParameters("networktype", Vlan.VlanType.DirectAttached.toString());
         return listBy(sc, filter);
+    }
+
+    @Override
+    public void saveDetails(long eventId, Map<String, String> details) {
+         usageEventDetailsDao.persist(eventId, details);
     }
 
 }

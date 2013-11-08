@@ -63,6 +63,7 @@ import org.apache.cloudstack.test.utils.SpringUtils;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.dc.dao.DedicatedResourceDao;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventVO;
@@ -88,7 +89,7 @@ import com.cloud.vm.dao.UserVmDao;
 public class AffinityApiUnitTest {
 
     @Inject
-    AffinityGroupService _affinityService;
+    AffinityGroupServiceImpl _affinityService;
 
     @Inject
     AccountManager _acctMgr;
@@ -143,6 +144,10 @@ public class AffinityApiUnitTest {
         when(_acctMgr.finalizeOwner((Account) anyObject(), anyString(), anyLong(), anyLong())).thenReturn(acct);
         when(_processor.getType()).thenReturn("mock");
         when(_accountDao.findByIdIncludingRemoved(0L)).thenReturn(acct);
+
+        List<AffinityGroupProcessor> affinityProcessors = new ArrayList<AffinityGroupProcessor>();
+        affinityProcessors.add(_processor);
+        _affinityService.setAffinityGroupProcessors(affinityProcessors);
 
         AffinityGroupVO group = new AffinityGroupVO("group1", "mock", "mock group", domainId, 200L,
                 ControlledEntity.ACLType.Account);

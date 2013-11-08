@@ -34,7 +34,7 @@ public class ClasspathModuleDefinitionSetLocatorTest {
         
         Collection<ModuleDefinition> modules = factory.locateModules("testhierarchy");
         
-        assertEquals(5, modules.size());
+        assertEquals(8, modules.size());
     }
 
 }

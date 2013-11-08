@@ -31,6 +31,7 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Web.Http;
+using CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2;
 
 namespace HypervResource
 {
@@ -196,7 +197,19 @@ namespace HypervResource
                 try
                 {
                     string vmName = (string)cmd.vmName;
-                    result = true;
+                    DiskTO disk = DiskTO.ParseJson(cmd.disk);
+                    TemplateObjectTO dataStore = disk.templateObjectTO;
+
+                    if (dataStore.nfsDataStoreTO != null)
+                    {
+                        NFSTO share = dataStore.nfsDataStoreTO;
+                        Utils.ConnectToRemote(share.UncPath, share.Domain, share.User, share.Password);
+
+                        // The share is mapped, now attach the iso
+                        string isoPath = Path.Combine(share.UncPath.Replace('/', Path.DirectorySeparatorChar), dataStore.path);
+                        wmiCallsV2.AttachIso(vmName, isoPath);
+                        result = true;
+                    }
                 }
                 catch (Exception sysEx)
                 {
@@ -229,7 +242,18 @@ namespace HypervResource
                 try
                 {
                     string vmName = (string)cmd.vmName;
-                    result = true;
+                    DiskTO disk = DiskTO.ParseJson(cmd.disk);
+                    TemplateObjectTO dataStore = disk.templateObjectTO;
+
+                    if (dataStore.nfsDataStoreTO != null)
+                    {
+                        NFSTO share = dataStore.nfsDataStoreTO;
+                        // The share is mapped, now attach the iso
+                        string isoPath = Path.Combine(share.UncPath.Replace('/', Path.DirectorySeparatorChar),
+                            dataStore.path.Replace('/', Path.DirectorySeparatorChar));
+                        wmiCallsV2.DetachDisk(vmName, isoPath);
+                        result = true;
+                    }
                 }
                 catch (Exception sysEx)
                 {
@@ -244,6 +268,49 @@ namespace HypervResource
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.DettachAnswer);
+            }
+        }
+
+        // POST api/HypervResource/RebootCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.RebootCommand)]
+        public JContainer RebootCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.RebootCommand + cmd.ToString());
+
+                string details = null;
+                bool result = false;
+
+                try
+                {
+                    string vmName = (string)cmd.vmName;
+                    var sys = wmiCallsV2.GetComputerSystem(vmName);
+                    if (sys == null)
+                    {
+                        details = CloudStackTypes.RebootCommand + " requested unknown VM " + vmName;
+                        logger.Error(details);
+                    }
+                    else
+                    {
+                        wmiCallsV2.SetState(sys, RequiredState.Reset);
+                        result = true;
+                    }
+                }
+                catch (Exception sysEx)
+                {
+                    details = CloudStackTypes.RebootCommand + " failed due to " + sysEx.Message;
+                    logger.Error(details, sysEx);
+                }
+
+                object ansContent = new
+                {
+                    result = result,
+                    details = details
+                };
+
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.RebootAnswer);
             }
         }
 
@@ -696,23 +763,40 @@ namespace HypervResource
                 logger.Info(CloudStackTypes.ModifyStoragePoolCommand + cmd.ToString());
                 string details = null;
                 string localPath;
+                StoragePoolType poolType;
                 object ansContent;
 
-                bool result = ValidateStoragePoolCommand(cmd, out localPath, ref details);
+                bool result = ValidateStoragePoolCommand(cmd, out localPath, out poolType, ref details);
                 if (!result)
                 {
                     ansContent = new
-                        {
-                            result = result,
-                            details = details
-                        };
+                    {
+                        result = result,
+                        details = details
+                    };
                     return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
                 }
 
                 var tInfo = new Dictionary<string, string>();
-                long capacityBytes;
-                long availableBytes;
-                GetCapacityForLocalPath(localPath, out capacityBytes, out availableBytes);
+                long capacityBytes = 0;
+                long availableBytes = 0;
+                if (poolType == StoragePoolType.Filesystem)
+                {
+                    GetCapacityForLocalPath(localPath, out capacityBytes, out availableBytes);
+                }
+                else if (poolType == StoragePoolType.NetworkFilesystem)
+                {
+                    NFSTO share = new NFSTO();
+                    String uriStr = "cifs://" + (string)cmd.pool.host + (string)cmd.pool.path;
+                    share.uri = new Uri(uriStr);
+                    // Check access to share.
+                    Utils.ConnectToRemote(share.UncPath, share.Domain, share.User, share.Password);
+                    Utils.GetShareDetails(share.UncPath, out capacityBytes, out availableBytes);
+                }
+                else
+                {
+                    result = false;
+                }
 
                 String uuid = null;
                 var poolInfo = new
@@ -727,34 +811,37 @@ namespace HypervResource
                 };
 
                 ansContent = new
-                    {
-                        result = result,
-                        details = details,
-                        templateInfo = tInfo,
-                        poolInfo = poolInfo
-                    };
+                {
+                    result = result,
+                    details = details,
+                    templateInfo = tInfo,
+                    poolInfo = poolInfo
+                };
+
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.ModifyStoragePoolAnswer);
             }
         }
 
-        private bool ValidateStoragePoolCommand(dynamic cmd, out string localPath, ref string details)
+        private bool ValidateStoragePoolCommand(dynamic cmd, out string localPath, out StoragePoolType poolType, ref string details)
         {
             dynamic pool = cmd.pool;
             string poolTypeStr = pool.type;
-            StoragePoolType poolType;
             localPath = cmd.localPath;
-            if (!Enum.TryParse<StoragePoolType>(poolTypeStr, out poolType) || poolType != StoragePoolType.Filesystem)
+            if (!Enum.TryParse<StoragePoolType>(poolTypeStr, out poolType))
             {
                 details = "Request to create / modify unsupported pool type: " + (poolTypeStr == null ? "NULL" : poolTypeStr) + "in cmd " + JsonConvert.SerializeObject(cmd);
                 logger.Error(details);
                 return false;
             }
-            if (!Directory.Exists(localPath))
+
+            if (poolType != StoragePoolType.Filesystem &&
+                poolType != StoragePoolType.NetworkFilesystem)
             {
-                details = "Request to create / modify unsupported StoragePoolType.Filesystem with non-existent path:" + (localPath == null ? "NULL" : localPath) + "in cmd " + JsonConvert.SerializeObject(cmd);
+                details = "Request to create / modify unsupported pool type: " + (poolTypeStr == null ? "NULL" : poolTypeStr) + "in cmd " + JsonConvert.SerializeObject(cmd);
                 logger.Error(details);
                 return false;
             }
+
             return true;
         }
 
@@ -1318,6 +1405,70 @@ namespace HypervResource
             }
         }
 
+        // POST api/HypervResource/PrepareForMigrationCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.PrepareForMigrationCommand)]
+        public JContainer PrepareForMigrationCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.PrepareForMigrationCommand + cmd.ToString());
+
+                string details = null;
+                bool result = false;
+
+                try
+                {
+                    details = "NOP - failure";
+                }
+                catch (Exception sysEx)
+                {
+                    details = CloudStackTypes.PrepareForMigrationCommand + " failed due to " + sysEx.Message;
+                    logger.Error(details, sysEx);
+                }
+
+                object ansContent = new
+                {
+                    result = result,
+                    details = details
+                };
+
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.PrepareForMigrationAnswer);
+            }
+        }
+
+        // POST api/HypervResource/MigrateCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.MigrateCommand)]
+        public JContainer MigrateCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.MigrateCommand + cmd.ToString());
+
+                string details = null;
+                bool result = false;
+
+                try
+                {
+                    details = "NOP - failure";
+                }
+                catch (Exception sysEx)
+                {
+                    details = CloudStackTypes.MigrateCommand + " failed due to " + sysEx.Message;
+                    logger.Error(details, sysEx);
+                }
+
+                object ansContent = new
+                {
+                    result = result,
+                    details = details
+                };
+
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.MigrateAnswer);
+            }
+        }
+
         // POST api/HypervResource/StartupCommand
         [HttpPost]
         [ActionName(CloudStackTypes.StartupCommand)]
@@ -1383,6 +1534,9 @@ namespace HypervResource
                     logger.Debug(CloudStackTypes.StartupStorageCommand + " set available bytes to " + available);
 
                     string ipAddr = strtRouteCmd.privateIpAddress;
+                    var vmStates = wmiCallsV2.GetVmSync(config.PrivateIpAddress);
+                    strtRouteCmd.vms = Utils.CreateCloudStackMapObject(vmStates);
+
                     StoragePoolInfo pi = new StoragePoolInfo(
                         poolGuid.ToString(),
                         ipAddr,

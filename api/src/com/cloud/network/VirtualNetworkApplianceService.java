@@ -23,6 +23,9 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
+
+import java.util.List;
 
 public interface VirtualNetworkApplianceService {
     /**
@@ -66,4 +69,7 @@ public interface VirtualNetworkApplianceService {
     
     VirtualRouter findRouter(long routerId);
 
+    List<Long> upgradeRouterTemplate(UpgradeRouterTemplateCmd cmd);
+
+    public static final String _minVRVersion = "4.2.0";
 }

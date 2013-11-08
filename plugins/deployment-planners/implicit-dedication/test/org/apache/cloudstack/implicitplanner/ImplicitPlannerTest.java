@@ -19,6 +19,7 @@ package org.apache.cloudstack.implicitplanner;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -34,6 +35,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -163,7 +165,6 @@ public class ImplicitPlannerTest {
         acct.setId(accountId);
 
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
-
         CallContext.register(user, acct);
     }
 

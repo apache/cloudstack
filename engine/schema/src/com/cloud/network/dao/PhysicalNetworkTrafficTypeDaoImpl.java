@@ -41,6 +41,7 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
     final GenericSearchBuilder<PhysicalNetworkTrafficTypeVO, String> vmWareAllFieldsSearch;
     final GenericSearchBuilder<PhysicalNetworkTrafficTypeVO, String> simulatorAllFieldsSearch;
     final GenericSearchBuilder<PhysicalNetworkTrafficTypeVO, String> ovmAllFieldsSearch;
+    final GenericSearchBuilder<PhysicalNetworkTrafficTypeVO, String> hypervAllFieldsSearch;
 
     protected PhysicalNetworkTrafficTypeDaoImpl() {
         super();
@@ -54,6 +55,13 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
         kvmAllFieldsSearch.and("trafficType", kvmAllFieldsSearch.entity().getTrafficType(), Op.EQ);
         kvmAllFieldsSearch.selectFields(kvmAllFieldsSearch.entity().getKvmNetworkLabel());
         kvmAllFieldsSearch.done();
+
+        hypervAllFieldsSearch = createSearchBuilder(String.class);
+        hypervAllFieldsSearch.and("physicalNetworkId", hypervAllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
+        hypervAllFieldsSearch.and("trafficType", hypervAllFieldsSearch.entity().getTrafficType(), Op.EQ);
+        hypervAllFieldsSearch.selectFields(hypervAllFieldsSearch.entity().getHypervNetworkLabel());
+        hypervAllFieldsSearch.done();
+
 
         xenAllFieldsSearch = createSearchBuilder(String.class);
         xenAllFieldsSearch.and("physicalNetworkId", xenAllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
@@ -114,7 +122,10 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
         	sc = ovmAllFieldsSearch.create();
         } else if (hType == HypervisorType.BareMetal) {
         	return null;
-        } else {
+        } else if (hType == HypervisorType.Hyperv) {
+            sc = hypervAllFieldsSearch.create();
+        } 
+        else {
             assert(false) : "We don't handle this hypervisor type";
             return null;
         }

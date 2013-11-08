@@ -205,7 +205,11 @@ public class BridgeVifDriver extends VifDriverBase {
 
     private void deleteVnetBr(String brName) {
         synchronized (_vnetBridgeMonitor) {
-            String cmdout = Script.runSimpleBashScript("ls /sys/class/net/" + brName + "/brif | tr '\n' ' '");
+            String cmdout = Script.runSimpleBashScript("ls /sys/class/net/" + brName);
+            if (cmdout == null)
+                // Bridge does not exist
+                return;
+            cmdout = Script.runSimpleBashScript("ls /sys/class/net/" + brName + "/brif | tr '\n' ' '");
             if (cmdout != null && cmdout.contains("vnet")) {
                 // Active VM remains on that bridge
                 return;

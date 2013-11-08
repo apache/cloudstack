@@ -18,6 +18,7 @@
 package org.apache.cloudstack.network.contrail.management;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -931,7 +932,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
         s_logger.debug("equal " + siModel.getQualifiedName());
     }
     
-    static class ServiceInstanceComparator implements Comparator<ServiceInstance> {
+    static class ServiceInstanceComparator implements Comparator<ServiceInstance>, Serializable {
         @Override
         public int compare(ServiceInstance obj1, ServiceInstance obj2) {
             String name1 = StringUtils.join(obj1.getQualifiedName(), ':');

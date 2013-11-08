@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.driver;
 
+import java.text.NumberFormat;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -278,8 +279,7 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         Long minIops = volumeInfo.getMinIops();
         Long maxIops = volumeInfo.getMaxIops();
 
-        if (minIops == null || minIops <= 0 ||
-                maxIops == null || maxIops <= 0) {
+        if (minIops == null || minIops <= 0 || maxIops == null || maxIops <= 0) {
             long defaultMaxIops = getDefaultMaxIops(storagePoolId);
 
             iops = new Iops(getDefaultMinIops(storagePoolId), defaultMaxIops, getDefaultBurstIops(storagePoolId, defaultMaxIops));
@@ -288,10 +288,20 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             iops = new Iops(volumeInfo.getMinIops(), volumeInfo.getMaxIops(), getDefaultBurstIops(storagePoolId, volumeInfo.getMaxIops()));
         }
 
-        long volumeSize = volumeInfo.getSize() * 2; // in reality, use a multiplier that's at cluster-level scope
+        long volumeSize = volumeInfo.getSize();
+        Integer hypervisorSnapshotReserve = volumeInfo.getHypervisorSnapshotReserve();
+
+        if (hypervisorSnapshotReserve != null) {
+            if (hypervisorSnapshotReserve < 25) {
+                hypervisorSnapshotReserve = 25;
+            }
+
+            volumeSize += volumeSize * (hypervisorSnapshotReserve / 100f);
+        }
 
         long sfVolumeId = SolidFireUtil.createSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword,
-                getSolidFireVolumeName(volumeInfo.getName()), sfAccountId, volumeSize, true, volumeInfo.getSize().toString(),
+                getSolidFireVolumeName(volumeInfo.getName()), sfAccountId, volumeSize, true,
+                NumberFormat.getNumberInstance().format(volumeInfo.getSize().toString()),
                 iops.getMinIops(), iops.getMaxIops(), iops.getBurstIops());
 
         return SolidFireUtil.getSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword, sfVolumeId);
@@ -410,8 +420,7 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             SolidFireConnection sfConnection = getSolidFireConnection(storagePoolId);
 
             if (!sfAccountExists(sfAccountName, sfConnection)) {
-                SolidFireUtil.SolidFireAccount sfAccount = createSolidFireAccount(sfAccountName,
-                        sfConnection);
+                SolidFireUtil.SolidFireAccount sfAccount = createSolidFireAccount(sfAccountName, sfConnection);
 
                 updateCsDbWithAccountInfo(account.getId(), sfAccount);
             }

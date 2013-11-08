@@ -36,6 +36,9 @@ public class ApiConstants {
     public static final String CATEGORY = "category";
     public static final String CAN_REVERT = "canrevert";
     public static final String CERTIFICATE = "certificate";
+    public static final String CERTIFICATE_CHAIN = "certchain";
+    public static final String CERTIFICATE_FINGERPRINT = "fingerprint";
+    public static final String CERTIFICATE_ID = "certid";
     public static final String PRIVATE_KEY = "privatekey";
     public static final String DOMAIN_SUFFIX = "domainsuffix";
     public static final String DNS_SEARCH_ORDER = "dnssearchorder";
@@ -54,12 +57,14 @@ public class ApiConstants {
     public static final String CUSTOMIZED_IOPS = "customizediops";
     public static final String MIN_IOPS = "miniops";
     public static final String MAX_IOPS = "maxiops";
+    public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";
     public static final String DESCRIPTION = "description";
     public static final String DESTINATION_ZONE_ID = "destzoneid";
     public static final String DETAILS = "details";
     public static final String DEVICE_ID = "deviceid";
     public static final String DISK_OFFERING_ID = "diskofferingid";
     public static final String DISK_SIZE = "disksize";
+    public static final String ROOT_DISK_SIZE = "rootdisksize";
     public static final String DISPLAY_NAME = "displayname";
     public static final String DISPLAY_NETWORK = "displaynetwork";
     public static final String DISPLAY_NIC = "displaynic";
@@ -208,6 +213,7 @@ public class ApiConstants {
     public static final String SNAPSHOT_ID = "snapshotid";
     public static final String SNAPSHOT_POLICY_ID = "snapshotpolicyid";
     public static final String SNAPSHOT_TYPE = "snapshottype";
+    public static final String SNAPSHOT_QUIESCEVM = "quiescevm";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
     public static final String START_DATE = "startdate";
     public static final String START_IP = "startip";
@@ -349,6 +355,7 @@ public class ApiConstants {
     public static final String XEN_NETWORK_LABEL = "xennetworklabel";
     public static final String KVM_NETWORK_LABEL = "kvmnetworklabel";
     public static final String VMWARE_NETWORK_LABEL = "vmwarenetworklabel";
+    public static final String HYPERV_NETWORK_LABEL = "hypervnetworklabel";
     public static final String NETWORK_SERVICE_PROVIDER_ID = "nspid";
     public static final String SERVICE_LIST = "servicelist";
     public static final String CAN_ENABLE_INDIVIDUAL_SERVICE = "canenableindividualservice";
@@ -526,6 +533,7 @@ public class ApiConstants {
     public static final String EXPUNGE = "expunge";
     public static final String FOR_DISPLAY = "fordisplay";
     public static final String PASSIVE = "passive";
+    public static final String VERSION = "version";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

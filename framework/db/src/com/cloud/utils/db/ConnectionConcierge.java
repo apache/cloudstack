@@ -144,8 +144,10 @@ public class ConnectionConcierge {
             PreparedStatement pstmt = null;
             try {
                 if (conn != null) {
-                    pstmt = conn.prepareStatement("SELECT 1");
-                    pstmt.executeQuery();
+                    synchronized (conn) {
+                        pstmt = conn.prepareStatement("SELECT 1");
+                        pstmt.executeQuery();
+                    }
                 }
                 return null;
             } catch (Throwable th) {

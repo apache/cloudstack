@@ -26,6 +26,7 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -1089,7 +1090,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<DomainRouterResponse> searchForRouters(ListRoutersCmd cmd) {
         Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(),
                 cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(),
-                cmd.getVpcId(), cmd.getForVpc(), cmd.getRole());
+                cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), cmd.getVersion());
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
 
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first()
@@ -1102,7 +1103,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd) {
         Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(),
                 cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(),
-                cmd.getVpcId(), cmd.getForVpc(), cmd.getRole());
+                cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), null);
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
 
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first()
@@ -1112,7 +1113,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     private Pair<List<DomainRouterJoinVO>, Integer> searchForRoutersInternal(BaseListProjectAndAccountResourcesCmd cmd, Long id,
-            String name, String state, Long zoneId, Long podId, Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc, String role) {
+            String name, String state, Long zoneId, Long podId, Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc,
+            String role, String version) {
 
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1146,6 +1148,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
         sb.and("role", sb.entity().getRole(), SearchCriteria.Op.EQ);
+        sb.and("version", sb.entity().getTemplateVersion(), SearchCriteria.Op.EQ);
 
         if (forVpc != null) {
             if (forVpc) {
@@ -1207,6 +1210,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (role != null) {
             sc.setParameters("role", role);
+        }
+
+        if(version != null){
+            sc.setParameters("version", "Cloudstack Release "+version + "%");
         }
 
         // search VR details by ids
@@ -1530,6 +1537,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Object haHosts = cmd.getHaHost();
         Long startIndex = cmd.getStartIndex();
         Long pageSize = cmd.getPageSizeVal();
+        Hypervisor.HypervisorType hypervisorType = cmd.getHypervisor();
 
         Filter searchFilter = new Filter(HostJoinVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
@@ -1544,6 +1552,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("resourceState", sb.entity().getResourceState(), SearchCriteria.Op.EQ);
+        sb.and("hypervisor_type", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
 
         String haTag = _haMgr.getHaTag();
         if (haHosts != null && haTag != null && !haTag.isEmpty()) {
@@ -1599,6 +1608,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sc.setParameters("tag", haTag);
         }
 
+        if (hypervisorType != HypervisorType.None && hypervisorType != HypervisorType.Any) {
+            sc.setParameters("hypervisor_type", hypervisorType);
+        }
         // search host details by ids
         Pair<List<HostJoinVO>, Integer> uniqueHostPair = _hostJoinDao.searchAndCount(sc, searchFilter);
         Integer count = uniqueHostPair.second();
@@ -2425,7 +2437,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
             _accountMgr.checkAccess(caller, null, true, vmInstance);
 
-            ServiceOfferingVO offering = _srvOfferingDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
+            ServiceOfferingVO offering = _srvOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
             sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
 
             // Only return offerings with the same Guest IP type and storage

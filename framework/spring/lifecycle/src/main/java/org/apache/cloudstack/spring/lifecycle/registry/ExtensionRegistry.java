@@ -34,7 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanNameAware;
 
-import com.cloud.utils.component.Named;
 import com.cloud.utils.component.Registry;
 
 public class ExtensionRegistry implements Registry<Object>, Configurable, BeanNameAware {
@@ -81,7 +80,7 @@ public class ExtensionRegistry implements Registry<Object>, Configurable, BeanNa
             }
         }
         
-        String name = getName(item);
+        String name = RegistryUtils.getName(item);
         
         if ( name != null && exclude.size() > 0 && exclude.contains(name) ) {
             return false;
@@ -103,7 +102,7 @@ public class ExtensionRegistry implements Registry<Object>, Configurable, BeanNa
                 break;
             }
             
-            if ( getName(registered.get(i)).equals(orderTest) ) {
+            if ( RegistryUtils.getName(registered.get(i)).equals(orderTest) ) {
                 i++;
             }
         }
@@ -115,16 +114,6 @@ public class ExtensionRegistry implements Registry<Object>, Configurable, BeanNa
         log.debug("Registering extension [{}] in [{}]", name, this.name);
         
         return true;
-    }
-    
-    protected String getName(Object object) {
-        if ( object instanceof Named ) {
-            String name = ((Named)object).getName();
-            if ( name != null )
-                return name;
-        }
-        
-        return object == null ? null : object.getClass().getSimpleName();
     }
 
     @Override

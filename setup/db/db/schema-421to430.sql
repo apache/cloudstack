@@ -16,7 +16,7 @@
 -- under the License.
 
 --;
--- Schema upgrade from 4.2.0 to 4.3.0;
+-- Schema upgrade from 4.2.1 to 4.3.0;
 --;
 
 -- Disable foreign key checking
@@ -40,6 +40,8 @@ ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `power_state_update_time` DATETIME;
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `power_state_update_count` INT DEFAULT 0;
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `power_host` bigint unsigned;
 ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__power_host` FOREIGN KEY (`power_host`) REFERENCES `cloud`.`host`(`id`);
+
+ALTER TABLE `cloud`.`load_balancing_rules` ADD COLUMN `lb_protocol` VARCHAR(40);
 
 DROP TABLE IF EXISTS `cloud`.`vm_snapshot_details`;
 CREATE TABLE `cloud`.`vm_snapshot_details` (
@@ -108,6 +110,9 @@ UPDATE `cloud`.`configuration` SET `default_value` = `value`;
 
 #Upgrade the offerings and template table to have actual remove and states
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `state` CHAR(40) NOT NULL DEFAULT 'Active' COMMENT 'state for disk offering';
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `hv_ss_reserve` int(32) unsigned DEFAULT NULL COMMENT 'Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)';
+
+ALTER TABLE `cloud`.`volumes` ADD COLUMN `hv_ss_reserve` int(32) unsigned DEFAULT NULL COMMENT 'Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)';
 
 UPDATE `cloud`.`disk_offering` SET `state`='Inactive' WHERE `removed` IS NOT NULL;
 UPDATE `cloud`.`disk_offering` SET `removed`=NULL;
@@ -461,6 +466,107 @@ CREATE VIEW `cloud`.`storage_pool_view` AS
             and async_job.instance_type = 'StoragePool'
             and async_job.job_status = 0;
 
+
+CREATE TABLE `sslcerts` (
+      `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+      `uuid` varchar(40) DEFAULT NULL,
+      `account_id` bigint(20) unsigned NOT NULL,
+      `domain_id` bigint(20) unsigned NOT NULL,
+      `certificate` text NOT NULL,
+      `fingerprint` varchar(62) NOT NULL,
+      `key` text NOT NULL,
+      `chain` text,
+      `password` varchar(255) DEFAULT NULL,
+      PRIMARY KEY (`id`),
+      CONSTRAINT `fk_sslcert__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
+      CONSTRAINT `fk_sslcert__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `load_balancer_cert_map` (
+      `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+      `uuid` varchar(40) DEFAULT NULL,
+      `load_balancer_id` bigint(20) unsigned NOT NULL,
+      `certificate_id` bigint(20) unsigned NOT NULL,
+      `revoke` tinyint(1) NOT NULL DEFAULT '0',
+      PRIMARY KEY (`id`),
+      CONSTRAINT `fk_load_balancer_cert_map__certificate_id` FOREIGN KEY (`certificate_id`) REFERENCES `sslcerts` (`id`) ON DELETE CASCADE,
+      CONSTRAINT `fk_load_balancer_cert_map__load_balancer_id` FOREIGN KEY (`load_balancer_id`) REFERENCES `load_balancing_rules` (`id`) ON DELETE CASCADE);
+
+ALTER TABLE `cloud`.`host` ADD COLUMN `cpu_sockets` int(10) unsigned DEFAULT NULL COMMENT "the number of CPU sockets on the host" AFTER pod_id;
+ALTER TABLE `cloud`.`physical_network_traffic_types` ADD COLUMN `hyperv_network_label` varchar(255) DEFAULT NULL COMMENT 'The network name label of the physical device dedicated to this traffic on a HyperV host';
+
+DROP VIEW IF EXISTS `cloud`.`host_view`;
+CREATE VIEW `cloud`.`host_view` AS
+    select
+        host.id,
+        host.uuid,
+        host.name,
+        host.status,
+        host.disconnected,
+        host.type,
+        host.private_ip_address,
+        host.version,
+        host.hypervisor_type,
+        host.hypervisor_version,
+        host.capabilities,
+        host.last_ping,
+        host.created,
+        host.removed,
+        host.resource_state,
+        host.mgmt_server_id,
+        host.cpu_sockets,
+        host.cpus,
+        host.speed,
+        host.ram,
+        cluster.id cluster_id,
+        cluster.uuid cluster_uuid,
+        cluster.name cluster_name,
+        cluster.cluster_type,
+        data_center.id data_center_id,
+        data_center.uuid data_center_uuid,
+        data_center.name data_center_name,
+        data_center.networktype data_center_type,
+        host_pod_ref.id pod_id,
+        host_pod_ref.uuid pod_uuid,
+        host_pod_ref.name pod_name,
+        host_tags.tag,
+        guest_os_category.id guest_os_category_id,
+        guest_os_category.uuid guest_os_category_uuid,
+        guest_os_category.name guest_os_category_name,
+        mem_caps.used_capacity memory_used_capacity,
+        mem_caps.reserved_capacity memory_reserved_capacity,
+        cpu_caps.used_capacity cpu_used_capacity,
+        cpu_caps.reserved_capacity cpu_reserved_capacity,
+        async_job.id job_id,
+        async_job.uuid job_uuid,
+        async_job.job_status job_status,
+        async_job.account_id job_account_id
+    from
+        `cloud`.`host`
+            left join
+        `cloud`.`cluster` ON host.cluster_id = cluster.id
+            left join
+        `cloud`.`data_center` ON host.data_center_id = data_center.id
+            left join
+        `cloud`.`host_pod_ref` ON host.pod_id = host_pod_ref.id
+            left join
+        `cloud`.`host_details` ON host.id = host_details.host_id
+            and host_details.name = 'guest.os.category.id'
+            left join
+        `cloud`.`guest_os_category` ON guest_os_category.id = CONVERT( host_details.value , UNSIGNED)
+            left join
+        `cloud`.`host_tags` ON host_tags.host_id = host.id
+            left join
+        `cloud`.`op_host_capacity` mem_caps ON host.id = mem_caps.host_id
+            and mem_caps.capacity_type = 0
+            left join
+        `cloud`.`op_host_capacity` cpu_caps ON host.id = cpu_caps.host_id
+            and cpu_caps.capacity_type = 1
+            left join
+        `cloud`.`async_job` ON async_job.instance_id = host.id
+            and async_job.instance_type = 'Host'
+            and async_job.job_status = 0;
+
 CREATE TABLE `cloud`.`firewall_rule_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `firewall_rule_id` bigint unsigned NOT NULL COMMENT 'Firewall rule id',
@@ -487,3 +593,29 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 'Sets the attribute for uniquemembers within a group','uniquemember',NULL,NULL,0);
 
 UPDATE `cloud`.`volumes` SET display_volume=1 where id>0;
+
+create table `cloud`.`monitoring_services` (
+`id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+`uuid` varchar(40), `service` varchar(255) COMMENT 'Service name',
+`process_name` varchar(255) COMMENT 'running process name',
+`service_name` varchar(255) COMMENT 'exact name of the running service',
+`service_path` varchar(255) COMMENT 'path of the service in system',
+`pidfile` varchar(255) COMMENT 'path of the pid file of the service',
+`isDefault` boolean COMMENT 'Default service', PRIMARY KEY (`id`)
+);
+
+insert into cloud.monitoring_services(id, uuid, service, process_name, service_name, service_path, pidfile, isDefault) values(1, UUID(), 'ssh','sshd', 'ssh','/etc/init.d/ssh','/var/run/sshd.pid',true);
+insert into cloud.monitoring_services(id, uuid, service, process_name, service_name, service_path, pidfile, isDefault) values(2, UUID(), 'dhcp','dnsmasq','dnsmasq','/etc/init.d/dnsmasq','/var/run/dnsmasq/dnsmasq.pid',false);
+insert into cloud.monitoring_services(id, uuid, service, process_name, service_name, service_path, pidfile, isDefault) values(3, UUID(), 'loadbalancing','haproxy','haproxy','/etc/init.d/haproxy','/var/run/haproxy.pid',false);
+insert into cloud.monitoring_services(id, uuid, service, process_name,  service_name, service_path, pidfile, isDefault) values(4, UUID(), 'webserver','apache2','apache2','/etc/init.d/apache2','/var/run/apache2.pid', true);
+
+ALTER TABLE `cloud`.`service_offering` CHANGE COLUMN `cpu` `cpu` INT(10) UNSIGNED NULL COMMENT '# of cores'  , CHANGE COLUMN `speed` `speed` INT(10) UNSIGNED NULL COMMENT 'speed per core in mhz'  , CHANGE COLUMN `ram_size` `ram_size` BIGINT(20) UNSIGNED NULL  ;
+
+CREATE TABLE `cloud`.`usage_event_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `usage_event_id` bigint unsigned NOT NULL COMMENT 'usage event id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_usage_event_details__usage_event_id` FOREIGN KEY `fk_usage_event_details__usage_event_id`(`usage_event_id`) REFERENCES `usage_event`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

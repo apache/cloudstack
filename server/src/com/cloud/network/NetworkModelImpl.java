@@ -941,16 +941,21 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         // from the network offering
         boolean isUserVmsDefaultNetwork = false;
         boolean isDomRGuestOrPublicNetwork = false;
+        boolean isSystemVmNetwork = false;
         if (vm != null) {
             Nic nic = _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
             if (vm.getType() == Type.User && nic != null && nic.isDefaultNic()) {
                 isUserVmsDefaultNetwork = true;
             } else if (vm.getType() == Type.DomainRouter && ntwkOff != null && (ntwkOff.getTrafficType() == TrafficType.Public || ntwkOff.getTrafficType() == TrafficType.Guest)) {
                 isDomRGuestOrPublicNetwork = true;
+            } else if (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm) {
+                isSystemVmNetwork = true;
             }
         }
         if (isUserVmsDefaultNetwork || isDomRGuestOrPublicNetwork) {
             return _configMgr.getServiceOfferingNetworkRate(vm.getServiceOfferingId(), network.getDataCenterId());
+        } else if (isSystemVmNetwork) {
+            return -1;
         } else {
             return _configMgr.getNetworkOfferingNetworkRate(ntwkOff.getId(), network.getDataCenterId());
         }
@@ -1174,6 +1179,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                                break;
                     case VMware : label = mgmtTraffic.getVmwareNetworkLabel();
                                   break;
+                    case Hyperv:
+                        label = mgmtTraffic.getHypervNetworkLabel();
+                        break;
                 }
                 return label;
             }
@@ -1199,6 +1207,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                                break;
                     case VMware : label = storageTraffic.getVmwareNetworkLabel();
                                   break;
+                    case Hyperv:
+                        label = storageTraffic.getHypervNetworkLabel();
+                        break;
                 }
                 return label;
             }
@@ -1544,6 +1555,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                 case VMware:
                     label = publicTraffic.getVmwareNetworkLabel();
                     break;
+                case Hyperv:
+                    label = publicTraffic.getHypervNetworkLabel();
+                    break;
                 }
                 return label;
             }
@@ -1573,6 +1587,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                 case VMware:
                     label = guestTraffic.getVmwareNetworkLabel();
                     break;
+                case Hyperv:
+                    label = guestTraffic.getHypervNetworkLabel();
+                    break;
+                    
                 }
                 return label;
             }

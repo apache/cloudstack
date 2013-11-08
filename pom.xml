@@ -535,7 +535,7 @@
               <exclude>CHANGES</exclude>
               <exclude>INSTALL.md</exclude>
               <exclude>.idea/</exclude>
-              <exclude>*.log</exclude>
+              <exclude>**/*.log</exclude>
               <exclude>**/*.patch</exclude>
               <exclude>**/.classpath</exclude>
               <exclude>**/.project</exclude>

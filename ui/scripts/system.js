@@ -380,9 +380,64 @@
                         }
                     },
 
-                    socketInfo: function(data) {
+                    socketInfo: function(data) {                    	
+                    	var socketCount = 0;                    	
+                    	$.ajax({
+                            url: createURL('listHypervisors'),
+                            async: false,
+                            success: function(json) {
+                                args.response.success({
+                                    data: $(json.listhypervisorsresponse.hypervisor).map(function(index, hypervisor) {                                                	
+                                    	var totalHostCount = 0;                                                	
+                                    	var currentPage = 1;
+                                    	var returnedHostCount = 0;
+                                    	var returnedHostCpusocketsSum = 0;
+                                    	var returnedHostHavingCpusockets = true;
+                                    	                                                	
+                                    	var callListHostsWithPage = function(setTotalHostCount) {                                                		
+                                    		$.ajax({
+                            					url: createURL('listHosts'),
+                                        		async: false,
+                                        		data: {
+                                        			hypervisortype: hypervisor.name,
+                                        			page: currentPage,
+                                        	        pagesize: pageSize //global variable
+                                        		},
+                                        		success: function(json) {                                                      			
+                                        			if (setTotalHostCount) {
+                                        				totalHostCount = json.listhostsresponse.count;
+                                        			}                                                    			
+                                        			returnedHostCount += json.listhostsresponse.host.length;
+                                        			                                                    			
+                                        			var items = json.listhostsresponse.host;
+                                        			for (var i = 0; i < items.length; i++) {
+                                        				if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
+                                        					returnedHostCpusocketsSum += items[i].cpusockets;
+                                        				} else {
+                                        					returnedHostHavingCpusockets = false;
+                                        				}
+                                        			}  
+                                        			
+                                        			if (returnedHostCount < totalHostCount) {
+                                        				currentPage++;
+                                        				callListHostsWithPage(false);
+                                        			}                                                    			
+                                        		}
+                            				});                                                		
+                                    	}
+                                    	
+                                    	callListHostsWithPage(true);
+                                    	
+                                    	if (returnedHostHavingCpusockets) {
+                                    		socketCount += returnedHostCpusocketsSum;
+                                    	}                                    	
+                                    })
+                                });
+                            }
+                        });
+                    	
                         complete($.extend(data, {
-                            socketCount: 0
+                            socketCount: socketCount
                         }));
                     }
                 };
@@ -4889,6 +4944,288 @@
                         }
                     },
 
+                    // Palo Alto provider detailView
+                    pa: {
+                        type: 'detailView',
+                        id: 'paProvider',
+                        label: 'label.PA',
+                        viewAll: {
+                            label: 'label.devices',
+                            path: '_zone.paDevices'
+                        },
+                        tabs: {
+                            details: {
+                                title: 'label.details',
+                                fields: [{
+                                    name: {
+                                        label: 'label.name'
+                                    }
+                                }, {
+                                    state: {
+                                        label: 'label.state'
+                                    }
+                                }],
+                                dataProvider: function (args) {
+                                    refreshNspData("PaloAlto");
+                                    var providerObj;
+                                    $(nspHardcodingArray).each(function () {
+                                        if (this.id == "pa") {
+                                            providerObj = this;
+                                            return false; //break each loop
+                                        }
+                                    });
+                                    args.response.success({
+                                        data: providerObj,
+                                        actionFilter: networkProviderActionFilter('pa')
+                                    });
+                                }
+                            }
+                        },
+                        actions: {
+                            add: {
+                                label: 'label.add.PA.device',
+                                createForm: {
+                                    title: 'label.add.PA.device',
+                                    fields: {
+                                        ip: {
+                                            label: 'label.ip.address',
+                                            docID: 'helpPaloAltoIPAddress'
+                                        },
+                                        username: {
+                                            label: 'label.username',
+                                            docID: 'helpPaloAltoUsername'
+                                        },
+                                        password: {
+                                            label: 'label.password',
+                                            isPassword: true,
+                                            docID: 'helpPaloAltoPassword'
+                                        },
+                                        networkdevicetype: {
+                                            label: 'label.type',
+                                            docID: 'helpPaloAltoType',
+                                            select: function (args) {
+                                                var items = [];
+                                                items.push({
+                                                    id: "PaloAltoFirewall",
+                                                    description: "Palo Alto Firewall"
+                                                });
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        },
+                                        publicinterface: {
+                                            label: 'label.public.interface',
+                                            docID: 'helpPaloAltoPublicInterface'
+                                        },
+                                        privateinterface: {
+                                            label: 'label.private.interface',
+                                            docID: 'helpPaloAltoPrivateInterface'
+                                        },
+                                        //usageinterface: {
+                                        //  label: 'Usage interface',
+                                        //  docID: 'helpPaloAltoUsageInterface'
+                                        //},
+                                        numretries: {
+                                            label: 'label.numretries',
+                                            defaultValue: '2',
+                                            docID: 'helpPaloAltoRetries'
+                                        },
+                                        timeout: {
+                                            label: 'label.timeout',
+                                            defaultValue: '300',
+                                            docID: 'helpPaloAltoTimeout'
+                                        },
+                                        // inline: {
+                                        //   label: 'Mode',
+                                        //   docID: 'helpPaloAltoMode',
+                                        //   select: function(args) {
+                                        //     var items = [];
+                                        //     items.push({id: "false", description: "side by side"});
+                                        //     items.push({id: "true", description: "inline"});
+                                        //     args.response.success({data: items});
+                                        //   }
+                                        // },
+                                        publicnetwork: {
+                                            label: 'label.public.network',
+                                            defaultValue: 'untrust',
+                                            docID: 'helpPaloAltoPublicNetwork'
+                                        },
+                                        privatenetwork: {
+                                            label: 'label.private.network',
+                                            defaultValue: 'trust',
+                                            docID: 'helpPaloAltoPrivateNetwork'
+                                        },
+                                        pavr: {
+                                            label: 'label.virtual.router',
+                                            docID: 'helpPaloAltoVirtualRouter'
+                                        },
+                                        patp: {
+                                            label: 'label.PA.threat.profile',
+                                            docID: 'helpPaloAltoThreatProfile'
+                                        },
+                                        palp: {
+                                            label: 'label.PA.log.profile',
+                                            docID: 'helpPaloAltoLogProfile'
+                                        },
+                                        capacity: {
+                                            label: 'label.capacity',
+                                            validation: {
+                                                required: false,
+                                                number: true
+                                            },
+                                            docID: 'helpPaloAltoCapacity'
+                                        },
+                                        dedicated: {
+                                            label: 'label.dedicated',
+                                            isBoolean: true,
+                                            isChecked: false,
+                                            docID: 'helpPaloAltoDedicated'
+                                        }
+                                    }
+                                },
+                                action: function (args) {
+                                    if (nspMap["pa"] == null) {
+                                        $.ajax({
+                                            url: createURL("addNetworkServiceProvider&name=PaloAlto&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                                            dataType: "json",
+                                            async: true,
+                                            success: function (json) {
+                                                var jobId = json.addnetworkserviceproviderresponse.jobid;
+                                                var addPaloAltoProviderIntervalID = setInterval(function () {
+                                                    $.ajax({
+                                                        url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                        dataType: "json",
+                                                        success: function (json) {
+                                                            var result = json.queryasyncjobresultresponse;
+                                                            if (result.jobstatus == 0) {
+                                                                return; //Job has not completed
+                                                            } else {
+                                                                clearInterval(addPaloAltoProviderIntervalID);
+                                                                if (result.jobstatus == 1) {
+                                                                    nspMap["pa"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                                                    addExternalFirewall(args, selectedPhysicalNetworkObj, "addPaloAltoFirewall", "addpaloaltofirewallresponse", "pafirewall");
+                                                                } else if (result.jobstatus == 2) {
+                                                                    alert("addNetworkServiceProvider&name=Palo Alto failed. Error: " + _s(result.jobresult.errortext));
+                                                                }
+                                                            }
+                                                        },
+                                                        error: function (XMLHttpResponse) {
+                                                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                            alert("addNetworkServiceProvider&name=Palo Alto failed. Error: " + errorMsg);
+                                                        }
+                                                    });
+                                                }, 3000);
+                                            }
+                                        });
+                                    } else {
+                                        addExternalFirewall(args, selectedPhysicalNetworkObj, "addPaloAltoFirewall", "addpaloaltofirewallresponse", "pafirewall");
+                                    }
+                                },
+                                messages: {
+                                    notification: function (args) {
+                                        return 'label.add.PA.device';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            enable: {
+                                label: 'label.enable.provider',
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap["pa"].id + "&state=Enabled"),
+                                        dataType: "json",
+                                        success: function (json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function (json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'message.confirm.enable.provider';
+                                    },
+                                    notification: function () {
+                                        return 'label.enable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            disable: {
+                                label: 'label.disable.provider',
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap["pa"].id + "&state=Disabled"),
+                                        dataType: "json",
+                                        success: function (json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function (json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'message.confirm.disable.provider';
+                                    },
+                                    notification: function () {
+                                        return 'label.disable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            destroy: {
+                                label: 'label.shutdown.provider',
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("deleteNetworkServiceProvider&id=" + nspMap["pa"].id),
+                                        dataType: "json",
+                                        success: function (json) {
+                                            var jid = json.deletenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+
+                                            $(window).trigger('cloudStack.fullRefresh');
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'message.confirm.shutdown.provider';
+                                    },
+                                    notification: function (args) {
+                                        return 'label.shutdown.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            }
+                        }
+                    },
+
                     // Security groups detail view
                     securityGroups: {
                         id: 'securityGroup-providers',
@@ -7057,41 +7394,57 @@
                         },
                         virtualRouters: function() {
                             var listView = $.extend(true, {}, cloudStack.sections.system.subsections.virtualRouters.listView, {
-                                dataProvider: function(args) {
-                                    var searchByArgs = args.filterBy.search.value.length ?
-                                        '&keyword=' + args.filterBy.search.value : '';
-
+                                dataProvider: function(args) {                                	
+                                	var data = {};
+                                    listViewDataProvider(args, data);
+                                	
                                     var routers = [];
+                                    
+                                    //get account-owned routers
                                     $.ajax({
-                                        url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + searchByArgs),
-                                        async: true,
+                                        url: createURL('listRouters'),
+                                        data: $.extend(data,{
+                                        	listAll: true
+                                        }), 
+                                        async: false,
                                         success: function(json) {
-                                            var items = json.listroutersresponse.router ?
-                                                json.listroutersresponse.router : [];
-
+                                            var items = json.listroutersresponse.router ? json.listroutersresponse.router : [];
                                             $(items).map(function(index, item) {
                                                 routers.push(item);
                                             });
-
-                                            // Get project routers
-                                            $.ajax({
-                                                url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + "&projectid=-1"),
-                                                async: true,
-                                                success: function(json) {
-                                                    var items = json.listroutersresponse.router ?
-                                                        json.listroutersresponse.router : [];
-
-                                                    $(items).map(function(index, item) {
-                                                        routers.push(item);
-                                                    });
-                                                    args.response.success({
-                                                        actionFilter: routerActionfilter,
-                                                        data: $(routers).map(mapRouterType)
-                                                    });
-                                                }
-                                            });
+                                              
+                                            //get project-owned routers
+                                            var toSearchByProjectid = true;                                            
+                                            if (args.filterBy != null) {
+                                            	if (args.filterBy.advSearch != null && typeof(args.filterBy.advSearch) == "object") { //advanced search
+                                            		if ('account' in args.filterBy.advSearch  && args.filterBy.advSearch.account.length > 0) { //if account is specified in advanced search, don't search project-owned routers
+                                            			toSearchByProjectid = false;  //since account and projectid can't be specified together
+                                            		}
+                                            	}
+                                            }
+                                            if (toSearchByProjectid) {                                             	
+	                                            $.ajax({
+	                                            	url: createURL('listRouters'),                                                 
+	                                                data: $.extend(data,{
+	                                                	listAll: true,
+	                                                	projectid: -1
+	                                                }), 
+	                                                async: false,
+	                                                success: function(json) {
+	                                                    var items = json.listroutersresponse.router ? json.listroutersresponse.router : [];	
+	                                                    $(items).map(function(index, item) {
+	                                                        routers.push(item);
+	                                                    });
+	                                                }
+	                                            });
+                                            }
                                         }
-                                    });
+                                    });                                    
+
+                                    args.response.success({
+                                        actionFilter: routerActionfilter,
+                                        data: $(routers).map(mapRouterType)
+                                    });                                    
                                 },
 
                                 detailView: {
@@ -7125,20 +7478,60 @@
                             var listView = {
                                 id: 'sockets',
                                 fields: {
-                                    hypervisor: { label: 'label.hypervisor' },
-                                    sockets: { label: 'label.sockets' },
-                                    hosts: { label: 'label.hosts' }
+                                    hypervisor: { label: 'label.hypervisor' },                                    
+                                    hosts: { label: 'label.hosts' },
+                                    sockets: { label: 'label.sockets' }
                                 },
                                 dataProvider: function(args) {
                                     $.ajax({
                                         url: createURL('listHypervisors'),
                                         success: function(json) {
                                             args.response.success({
-                                                data: $(json.listhypervisorsresponse.hypervisor).map(function(index, hypervisor) {
+                                                data: $(json.listhypervisorsresponse.hypervisor).map(function(index, hypervisor) {                                                	
+                                                	var totalHostCount = 0;                                                	
+                                                	var currentPage = 1;
+                                                	var returnedHostCount = 0;
+                                                	var returnedHostCpusocketsSum = 0;
+                                                	var returnedHostHavingCpusockets = true;
+                                                	                                                	
+                                                	var callListHostsWithPage = function(setTotalHostCount) {                                                		
+                                                		$.ajax({
+                                        					url: createURL('listHosts'),
+                                                    		async: false,
+                                                    		data: {
+                                                    			hypervisortype: hypervisor.name,
+                                                    			page: currentPage,
+                                                    	        pagesize: pageSize //global variable
+                                                    		},
+                                                    		success: function(json) {                                                      			
+                                                    			if (setTotalHostCount) {
+                                                    				totalHostCount = json.listhostsresponse.count;
+                                                    			}                                                    			
+                                                    			returnedHostCount += json.listhostsresponse.host.length;
+                                                    			                                                    			
+                                                    			var items = json.listhostsresponse.host;
+                                                    			for (var i = 0; i < items.length; i++) {
+                                                    				if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
+                                                    					returnedHostCpusocketsSum += items[i].cpusockets;
+                                                    				} else {
+                                                    					returnedHostHavingCpusockets = false;
+                                                    				}
+                                                    			}  
+                                                    			
+                                                    			if (returnedHostCount < totalHostCount) {
+                                                    				currentPage++;
+                                                    				callListHostsWithPage(false);
+                                                    			}                                                    			
+                                                    		}
+                                        				});                                                		
+                                                	}
+                                                	
+                                                	callListHostsWithPage(true);
+                                                	                                         	
                                                     return {
                                                         hypervisor: hypervisor.name,
-                                                        sockets: 0,
-                                                        hosts: 0
+                                                        hosts: totalHostCount,
+                                                        sockets: (returnedHostHavingCpusockets? returnedHostCpusocketsSum : 'unknown')                                                    
                                                     };
                                                 })
                                             });
@@ -7181,6 +7574,110 @@
                             }
                         }
                     },
+                                        
+                    advSearchFields: {
+                        name: {
+                            label: 'Name'
+                        },
+                        zoneid: {
+                            label: 'Zone',
+                            select: function(args) {
+                                $.ajax({
+                                    url: createURL('listZones'),
+                                    data: {
+                                        listAll: true
+                                    },
+                                    success: function(json) {
+                                        var zones = json.listzonesresponse.zone ? json.listzonesresponse.zone : [];
+
+                                        args.response.success({
+                                            data: $.map(zones, function(zone) {
+                                                return {
+                                                    id: zone.id,
+                                                    description: zone.name
+                                                };
+                                            })
+                                        });
+                                    }
+                                });
+                            }
+                        },                        
+                        podid: {
+                            label: 'Pod',
+                            dependsOn: 'zoneid',
+                            select: function (args) {                            	
+                                $.ajax({
+                                    url: createURL("listPods&zoneid=" + args.zoneid),
+                                    dataType: "json",
+                                    async: true,
+                                    success: function (json) {                                    
+                                        var pods = json.listpodsresponse.pod ? json.listpodsresponse.pod : [];
+                                        args.response.success({
+                                            data: $.map(pods, function(pod) {
+                                                return {
+                                                    id: pod.id,
+                                                    description: pod.name
+                                                };
+                                            })
+                                        });                                        
+                                    }
+                                });
+                            }
+                        },                                                
+                        domainid: {
+                            label: 'Domain',
+                            select: function(args) {
+                                if (isAdmin() || isDomainAdmin()) {
+                                    $.ajax({
+                                        url: createURL('listDomains'),
+                                        data: {
+                                            listAll: true,
+                                            details: 'min'
+                                        },
+                                        success: function(json) {
+                                            var array1 = [{
+                                                id: '',
+                                                description: ''
+                                            }];
+                                            var domains = json.listdomainsresponse.domain;
+                                            if (domains != null && domains.length > 0) {
+                                                for (var i = 0; i < domains.length; i++) {
+                                                    array1.push({
+                                                        id: domains[i].id,
+                                                        description: domains[i].path
+                                                    });
+                                                }
+                                            }
+                                            args.response.success({
+                                                data: array1
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    args.response.success({
+                                        data: null
+                                    });
+                                }
+                            },
+                            isHidden: function(args) {
+                                if (isAdmin() || isDomainAdmin())
+                                    return false;
+                                else
+                                    return true;
+                            }
+                        },
+
+                        account: {
+                            label: 'Account',
+                            isHidden: function(args) {
+                                if (isAdmin() || isDomainAdmin())
+                                    return false;
+                                else
+                                    return true;
+                            }
+                        }
+                    },                    
+                    
                     dataProvider: function(args) {
                         var array1 = [];
                         if (args.filterBy != null) {
@@ -7593,6 +8090,13 @@
                                     state: {
                                         label: 'label.state'
                                     },
+                                    version: {
+                                    	label: 'label.version'
+                                    },
+                                    requiresupgrade: {
+                                    	label: 'Requires Upgrade',
+                                    	converter: cloudStack.converters.toBooleanText
+                                    },
                                     guestnetworkid: {
                                         label: 'label.network.id'
                                     },
@@ -7641,7 +8145,7 @@
                                         dataType: 'json',
                                         async: true,
                                         success: function(json) {
-                                            var jsonObj = json.listroutersresponse.router[0];
+                                            var jsonObj = json.listroutersresponse.router[0];                                            
                                             addExtraPropertiesToRouterInstanceObject(jsonObj);
                                             args.response.success({
                                                 actionFilter: routerActionfilter,
@@ -9058,6 +9562,250 @@
                     }
                 }
             },
+
+            //Palo Alto devices listView
+            paDevices: {
+                id: 'paDevices',
+                title: 'label.devices',
+                listView: {
+                    id: 'paDevices',
+                    fields: {
+                        ipaddress: {
+                            label: 'label.ip.address'
+                        },
+                        fwdevicestate: {
+                            label: 'label.status'
+                        },
+                        fwdevicename: {
+                            label: 'label.type'
+                        }
+                    },
+                    actions: {
+                        add: {
+                            label: 'label.add.PA.device',
+                            createForm: {
+                                title: 'label.add.PA.device',
+                                fields: {
+                                    ip: {
+                                        label: 'label.ip.address'
+                                    },
+                                    username: {
+                                        label: 'label.username'
+                                    },
+                                    password: {
+                                        label: 'label.password',
+                                        isPassword: true
+                                    },
+                                    networkdevicetype: {
+                                        label: 'label.type',
+                                        select: function (args) {
+                                            var items = [];
+                                            items.push({
+                                                id: "PaloAltoFirewall",
+                                                description: "Palo Alto Firewall"
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
+                                    publicinterface: {
+                                        label: 'label.public.interface'
+                                    },
+                                    privateinterface: {
+                                        label: 'label.private.interface'
+                                    },
+                                    //usageinterface: {
+                                    //  label: 'label.usage.interface'
+                                    //},
+                                    numretries: {
+                                        label: 'label.numretries',
+                                        defaultValue: '2'
+                                    },
+                                    timeout: {
+                                        label: 'label.timeout',
+                                        defaultValue: '300'
+                                    },
+                                    // inline: {
+                                    //   label: 'Mode',
+                                    //   select: function(args) {
+                                    //     var items = [];
+                                    //     items.push({id: "false", description: "side by side"});
+                                    //     items.push({id: "true", description: "inline"});
+                                    //     args.response.success({data: items});
+                                    //   }
+                                    // },
+                                    publicnetwork: {
+                                        label: 'label.public.network',
+                                        defaultValue: 'untrust'
+                                    },
+                                    privatenetwork: {
+                                        label: 'label.private.network',
+                                        defaultValue: 'trust'
+                                    },
+                                    pavr: {
+                                        label: 'label.virtual.router'
+                                    },
+                                    patp: {
+                                        label: 'label.PA.threat.profile'
+                                    },
+                                    palp: {
+                                        label: 'label.PA.log.profile'
+                                    },
+                                    capacity: {
+                                        label: 'label.capacity',
+                                        validation: {
+                                            required: false,
+                                            number: true
+                                        }
+                                    },
+                                    dedicated: {
+                                        label: 'label.dedicated',
+                                        isBoolean: true,
+                                        isChecked: false
+                                    }
+                                }
+                            },
+                            action: function (args) {
+                                if (nspMap["pa"] == null) {
+                                    $.ajax({
+                                        url: createURL("addNetworkServiceProvider&name=PaloAlto&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function (json) {
+                                            var jobId = json.addnetworkserviceproviderresponse.jobid;
+                                            var addPaloAltoProviderIntervalID = setInterval(function () {
+                                                $.ajax({
+                                                    url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                    dataType: "json",
+                                                    success: function (json) {
+                                                        var result = json.queryasyncjobresultresponse;
+                                                        if (result.jobstatus == 0) {
+                                                            return; //Job has not completed
+                                                        } else {
+                                                            clearInterval(addPaloAltoProviderIntervalID);
+                                                            if (result.jobstatus == 1) {
+                                                                nspMap["pa"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                                                addExternalFirewall(args, selectedPhysicalNetworkObj, "addPaloAltoFirewall", "addpaloaltofirewallresponse", "pafirewall");
+                                                            } else if (result.jobstatus == 2) {
+                                                                alert("addNetworkServiceProvider&name=Palo Alto failed. Error: " + _s(result.jobresult.errortext));
+                                                            }
+                                                        }
+                                                    },
+                                                    error: function (XMLHttpResponse) {
+                                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                        alert("addNetworkServiceProvider&name=Palo Alto failed. Error: " + errorMsg);
+                                                    }
+                                                });
+                                            }, 3000);
+                                        }
+                                    });
+                                } else {
+                                    addExternalFirewall(args, selectedPhysicalNetworkObj, "addPaloAltoFirewall", "addpaloaltofirewallresponse", "pafirewall");
+                                }
+                            },
+                            messages: {
+                                notification: function (args) {
+                                    return 'label.add.PA.device';
+                                }
+                            },
+                            notification: {
+                                poll: pollAsyncJobResult
+                            }
+                        }
+                    },
+                    dataProvider: function (args) {
+                        $.ajax({
+                            url: createURL("listPaloAltoFirewalls&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                            data: {
+                                page: args.page,
+                                pageSize: pageSize
+                            },
+                            dataType: "json",
+                            async: false,
+                            success: function (json) {
+                                var items = json.listpaloaltofirewallresponse.paloaltofirewall;
+                                args.response.success({
+                                    data: items
+                                });
+                            }
+                        });
+                    },
+                    detailView: {
+                        name: 'Palo Alto details',
+                        actions: {
+                            'remove': {
+                                label: 'label.delete.PA',
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'message.confirm.delete.PA';
+                                    },
+                                    notification: function (args) {
+                                        return 'label.delete.PA';
+                                    }
+                                },
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("deletePaloAltoFirewall&fwdeviceid=" + args.context.paDevices[0].fwdeviceid),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function (json) {
+                                            var jid = json.deletepaloaltofirewallresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            }
+                        },
+                        tabs: {
+                            details: {
+                                title: 'label.details',
+                                fields: [{
+                                    fwdeviceid: {
+                                        label: 'label.id'
+                                    },
+                                    ipaddress: {
+                                        label: 'label.ip.address'
+                                    },
+                                    fwdevicestate: {
+                                        label: 'label.status'
+                                    },
+                                    fwdevicename: {
+                                        label: 'label.type'
+                                    },
+                                    fwdevicecapacity: {
+                                        label: 'label.capacity'
+                                    },
+                                    timeout: {
+                                        label: 'label.timeout'
+                                    }
+                                }],
+                                dataProvider: function (args) {
+                                    $.ajax({
+                                        url: createURL("listPaloAltoFirewalls&fwdeviceid=" + args.context.paDevices[0].fwdeviceid),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function (json) {
+                                            var item = json.listpaloaltofirewallresponse.paloaltofirewall[0];
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+
             // FIXME convert to nicira detailview
             // NiciraNvp devices listView
             niciraNvpDevices: {
@@ -11406,6 +12154,13 @@
                                                 data: data,
                                                 success: function(json) {
                                                     var item = json.updateconfigurationresponse.configuration;
+                                                   
+                                                    if (args.data.jsonObj.name == 'cpu.overprovisioning.factor' || args.data.jsonObj.name == 'mem.overprovisioning.factor') {
+                                                    	cloudStack.dialog.notice({
+                                                    		message: 'Please note - if you are changing the over provisioning factor for a cluster with vms running, please refer to the admin guide to understand the capacity calculation.'
+                                                    	});
+                                                    }
+                                                    
                                                     args.response.success({
                                                         data: item
                                                     });
@@ -12323,6 +13078,12 @@
                                         },
                                         type: {
                                             label: 'label.type'
+                                        },                                                                                
+                                        hypervisor: {
+                                        	label: 'label.hypervisor'
+                                        },
+                                        hypervisorversion: {
+                                        	label: 'label.hypervisor.version'
                                         },
                                         hosttags: {
                                             label: 'label.host.tags',
@@ -12370,10 +13131,7 @@
                                         },
                                         ipaddress: {
                                             label: 'label.ip.address'
-                                        },
-                                        version: {
-                                            label: 'label.version'
-                                        },
+                                        },                                        
                                         disconnected: {
                                             label: 'label.last.disconnected'
                                         }
@@ -15665,6 +16423,44 @@
         }
         url.push("fwdevicededicated=" + dedicated.toString());
 
+        // START - Palo Alto Specific Fields
+        var externalVirtualRouter = args.data.pavr;
+        if(externalVirtualRouter != null && externalVirtualRouter.length > 0) {
+            if(isQuestionMarkAdded == false) {
+                url.push("?");
+                isQuestionMarkAdded = true;
+            }
+            else {
+                url.push("&");
+            }
+            url.push("pavr=" + encodeURIComponent(externalVirtualRouter));
+        }
+
+        var externalThreatProfile = args.data.patp;
+        if(externalThreatProfile != null && externalThreatProfile.length > 0) {
+            if(isQuestionMarkAdded == false) {
+                url.push("?");
+                isQuestionMarkAdded = true;
+            }
+            else {
+                url.push("&");
+            }
+            url.push("patp=" + encodeURIComponent(externalThreatProfile));
+        }
+
+        var externalLogProfile = args.data.palp;
+        if(externalLogProfile != null && externalLogProfile.length > 0) {
+            if(isQuestionMarkAdded == false) {
+                url.push("?");
+                isQuestionMarkAdded = true;
+            }
+            else {
+                url.push("&");
+            }
+            url.push("palp=" + encodeURIComponent(externalLogProfile));
+        }
+        // END - Palo Alto Specific Fields
+
         array1.push("&url=" + todb(url.join("")));
         //construct URL ends here
 
@@ -16340,10 +17136,11 @@
     }
 
     var addExtraPropertiesToRouterInstanceObject = function(jsonObj) {
-        if (jsonObj.isredundantrouter == true)
+        if (jsonObj.isredundantrouter == true) {
             jsonObj["redundantRouterState"] = jsonObj.redundantstate;
-        else
+        } else {
             jsonObj["redundantRouterState"] = "";
+        }  
     }
 
     var refreshNspData = function(nspName) {
@@ -16388,6 +17185,9 @@
                                 break;
                             case "JuniperSRX":
                                 nspMap["srx"] = items[i];
+                                break;
+                            case "PaloAlto":
+                                nspMap["pa"] = items[i];
                                 break;
                             case "SecurityGroupProvider":
                                 nspMap["securityGroups"] = items[i];
@@ -16469,6 +17269,11 @@
                 id: 'srx',
                 name: 'SRX',
                 state: nspMap.srx ? nspMap.srx.state : 'Disabled'
+            });
+            nspHardcodingArray.push({
+                id: 'pa',
+                name: 'Palo Alto',
+                state: nspMap.pa ? nspMap.pa.state : 'Disabled'
             });
         }
     };

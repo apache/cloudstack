@@ -45,6 +45,9 @@ public class TrafficTypeResponse extends BaseResponse {
     @SerializedName(ApiConstants.VMWARE_NETWORK_LABEL) @Param(description="The network name label of the physical device dedicated to this traffic on a VMware host")
     private String vmwareNetworkLabel;
 
+    @SerializedName(ApiConstants.HYPERV_NETWORK_LABEL) @Param(description="The network name label of the physical device dedicated to this traffic on a HyperV host")
+    private String hypervNetworkLabel;
+
 
     @Override
     public String getObjectId() {
@@ -82,9 +85,16 @@ public class TrafficTypeResponse extends BaseResponse {
     public String getKvmLabel() {
         return kvmNetworkLabel;
     }
+    public String getHypervLabel() {
+        return hypervNetworkLabel;
+    }
 
     public void setXenLabel(String xenLabel) {
         this.xenNetworkLabel = xenLabel;
+    }
+    
+    public void setHypervLabel(String hypervLabel) {
+        this.hypervNetworkLabel = hypervLabel;
     }
 
     public void setKvmLabel(String kvmLabel) {

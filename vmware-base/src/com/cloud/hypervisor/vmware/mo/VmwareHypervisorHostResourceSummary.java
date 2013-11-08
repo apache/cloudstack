@@ -20,6 +20,7 @@ public class VmwareHypervisorHostResourceSummary {
 	private long memoryBytes;
 	private long cpuCount;
 	private long cpuSpeed;
+    private Integer cpuSockets;
 
 	public VmwareHypervisorHostResourceSummary() {
 	}
@@ -47,4 +48,12 @@ public class VmwareHypervisorHostResourceSummary {
 	public void setCpuSpeed(long cpuSpeed) {
 		this.cpuSpeed = cpuSpeed;
 	}
+
+    public Integer getCpuSockets() {
+        return cpuSockets;
+    }
+
+    public void setCpuSockets(Integer cpuSockets) {
+        this.cpuSockets = cpuSockets;
+    }
 }

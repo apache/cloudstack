@@ -98,6 +98,7 @@ import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
+import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.network.lb.dao.ElasticLbVmMapDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.RedundantState;
@@ -290,6 +291,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     private void createApplyLoadBalancingRulesCommands(
             List<LoadBalancingRule> rules, DomainRouterVO elbVm, Commands cmds, long guestNetworkId) {
 
+        /* XXX: cert */
         LoadBalancerTO[] lbs = new LoadBalancerTO[rules.size()];
         int i = 0;
         for (LoadBalancingRule rule : rules) {
@@ -302,7 +304,8 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             int srcPort = rule.getSourcePortStart();
             String uuid = rule.getUuid();
             List<LbDestination> destinations = rule.getDestinations();
-            LoadBalancerTO lb = new LoadBalancerTO(uuid, elbIp, srcPort, protocol, algorithm, revoked, false, false, destinations);
+            LoadBalancerTO lb = new LoadBalancerTO(uuid, elbIp, srcPort, protocol, algorithm, revoked,
+                                    false, false, destinations);
             lbs[i++] = lb;
         }
 
@@ -377,8 +380,9 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
                 List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
                 List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
                 Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
+                LbSslCert sslCert = _lbMgr.getLbSslCert(lb.getId());
                 LoadBalancingRule loadBalancing = new LoadBalancingRule(
-                        lb, dstList, policyList, hcPolicyList, sourceIp);
+                        lb, dstList, policyList, hcPolicyList, sourceIp, sslCert, lb.getLbProtocol());
                 lbRules.add(loadBalancing);
             }
             return applyLBRules(elbVm, lbRules, network.getId());
@@ -664,7 +668,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
                 
                 result = _lbMgr.createPublicLoadBalancer(lb.getXid(), lb.getName(), lb.getDescription(),
                         lb.getSourcePortStart(), lb.getDefaultPortStart(), ipId.longValue(), lb.getProtocol(),
-                        lb.getAlgorithm(), false, CallContext.current());
+                        lb.getAlgorithm(), false, CallContext.current(), lb.getLbProtocol());
             } catch (NetworkRuleConflictException e) {
                 s_logger.warn("Failed to create LB rule, not continuing with ELB deployment");
                 if (newIp) {

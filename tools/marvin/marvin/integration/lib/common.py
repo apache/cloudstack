@@ -19,9 +19,10 @@
 
 #Import Local Modules
 from marvin.cloudstackAPI import *
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin.sshClient import SshClient
 from utils import *
 from base import *
+from marvin.codes import PASS
 
 #Import System modules
 import time
@@ -198,13 +199,25 @@ def get_template(apiclient, zoneid, ostype, services=None):
                                                                     ostypeid)
     return
 
+def get_hypervisor_type(apiclient):
+
+    """Return the hypervisor type of the hosts in setup"""
+
+    hosts = list_hosts(apiclient, type='Routing', listall=True)
+
+    hosts_list_validation_result = validateList(hosts)
+
+    assert hosts_list_validation_result[0] == PASS, "host list validation failed"
+
+    return hosts_list_validation_result[1].hypervisor
+
 
 def download_systemplates_sec_storage(server, services):
     """Download System templates on sec storage"""
 
     try:
         # Login to management server
-        ssh = remoteSSHClient(
+        ssh = SshClient(
                                           server["ipaddress"],
                                           server["port"],
                                           server["username"],

@@ -133,6 +133,10 @@ public class EventTypes {
     public static final String EVENT_LB_HEALTHCHECKPOLICY_CREATE = "LB.HEALTHCHECKPOLICY.CREATE";
     public static final String EVENT_LB_HEALTHCHECKPOLICY_DELETE = "LB.HEALTHCHECKPOLICY.DELETE";
     public static final String EVENT_LOAD_BALANCER_UPDATE = "LB.UPDATE";
+    public static final String EVENT_LB_CERT_UPLOAD = "LB.CERT.UPLOAD";
+    public static final String EVENT_LB_CERT_DELETE = "LB.CERT.DELETE";
+    public static final String EVENT_LB_CERT_ASSIGN = "LB.CERT.ASSIGN";
+    public static final String EVENT_LB_CERT_REMOVE = "LB.CERT.REMOVE";
 
     // Global Load Balancer rules
     public static final String EVENT_ASSIGN_TO_GLOBAL_LOAD_BALANCER_RULE = "GLOBAL.LB.ASSIGN";
@@ -511,6 +515,10 @@ public class EventTypes {
         entityEventDetails.put(EVENT_LB_STICKINESSPOLICY_CREATE, LoadBalancer.class.getName());
         entityEventDetails.put(EVENT_LB_STICKINESSPOLICY_DELETE, LoadBalancer.class.getName());
         entityEventDetails.put(EVENT_LOAD_BALANCER_UPDATE, LoadBalancer.class.getName());
+        entityEventDetails.put(EVENT_LB_CERT_UPLOAD, LoadBalancer.class.getName());
+        entityEventDetails.put(EVENT_LB_CERT_DELETE, LoadBalancer.class.getName());
+        entityEventDetails.put(EVENT_LB_CERT_ASSIGN, LoadBalancer.class.getName());
+        entityEventDetails.put(EVENT_LB_CERT_REMOVE, LoadBalancer.class.getName());
 
         // Account events
         entityEventDetails.put(EVENT_ACCOUNT_DISABLE, Account.class.getName());

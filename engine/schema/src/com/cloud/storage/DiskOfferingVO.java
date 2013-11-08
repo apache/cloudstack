@@ -127,6 +127,9 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name = "state")
     State state;
 
+    @Column(name="hv_ss_reserve")
+    Integer hypervisorSnapshotReserve;
+
     public DiskOfferingVO() {
         uuid = UUID.randomUUID().toString();
     }
@@ -439,5 +442,13 @@ public class DiskOfferingVO implements DiskOffering {
     @Override
     public Long getIopsWriteRate() {
         return iopsWriteRate;
+    }
+
+    public void setHypervisorSnapshotReserve(Integer hypervisorSnapshotReserve) {
+        this.hypervisorSnapshotReserve = hypervisorSnapshotReserve;
+    }
+
+    public Integer getHypervisorSnapshotReserve() {
+        return hypervisorSnapshotReserve;
     }
 }

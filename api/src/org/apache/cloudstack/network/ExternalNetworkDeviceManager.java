@@ -42,6 +42,7 @@ public interface ExternalNetworkDeviceManager extends Manager {
         public static final NetworkDevice NetscalerSDXLoadBalancer = new NetworkDevice("NetscalerSDXLoadBalancer", Network.Provider.Netscaler.getName());
         public static final NetworkDevice F5BigIpLoadBalancer = new NetworkDevice("F5BigIpLoadBalancer", Network.Provider.F5BigIp.getName());
         public static final NetworkDevice JuniperSRXFirewall = new NetworkDevice("JuniperSRXFirewall", Network.Provider.JuniperSRX.getName());
+        public static final NetworkDevice PaloAltoFirewall = new NetworkDevice("PaloAltoFirewall", Network.Provider.PaloAlto.getName());
         public static final NetworkDevice NiciraNvp = new NetworkDevice("NiciraNvp", Network.Provider.NiciraNvp.getName());
         public static final NetworkDevice CiscoVnmc = new NetworkDevice("CiscoVnmc", Network.Provider.CiscoVnmc.getName());
 

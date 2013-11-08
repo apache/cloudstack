@@ -114,7 +114,8 @@ public class DefaultModuleDefinition implements ModuleDefinition {
         if ( ! moduleUrl.equals(selfUrl) ) {
             throw new IOException("Resource [" + location() + "] and [" +
                     self.getURL() + "] do not appear to be the same resource, " + 
-                    "please ensure the name property is correct");
+                    "please ensure the name property is correct or that the " +
+                    "module is not defined twice");
         }
     }
     

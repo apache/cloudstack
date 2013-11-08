@@ -25,6 +25,10 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import com.citrix.netscaler.nitro.resource.config.ssl.sslcertkey;
+import com.citrix.netscaler.nitro.resource.config.ssl.sslvserver_sslcertkey_binding;
+import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
+import com.cloud.utils.ssh.SshHelper;
 import org.apache.log4j.Logger;
 
 import com.citrix.netscaler.nitro.exception.nitro_exception;
@@ -235,6 +239,7 @@ public class NetscalerResource implements ServerResource {
 
             //enable load balancing feature
             enableLoadBalancingFeature();
+            SSL.enableSslFeature(_netscalerService);
 
             //if the the device is cloud stack provisioned then make it part of the public network
             if (_cloudManaged) {
@@ -550,6 +555,8 @@ public class NetscalerResource implements ServerResource {
                 String lbAlgorithm = loadBalancer.getAlgorithm();
                 String nsVirtualServerName  = generateNSVirtualServerName(srcIp, srcPort);
                 String nsMonitorName = generateNSMonitorName(srcIp, srcPort);
+                LbSslCert sslCert = loadBalancer.getSslCert();
+
                 if(loadBalancer.isAutoScaleVmGroupTO()) {
                     applyAutoScaleConfig(loadBalancer);
                    // Continue to process all the rules.
@@ -558,6 +565,7 @@ public class NetscalerResource implements ServerResource {
                 boolean hasMonitor = false;
                 boolean deleteMonitor = false;
                 boolean destinationsToAdd = false;
+                boolean deleteCert = false;
                 for (DestinationTO destination : loadBalancer.getDestinations()) {
                     if (!destination.isRevoked()) {
                         destinationsToAdd = true;
@@ -655,9 +663,35 @@ public class NetscalerResource implements ServerResource {
                                 }
 
                             }
+
+
+                            if(sslCert != null && lbProtocol.equals(NetUtils.SSL_PROTO)) {
+                                if ( sslCert.isRevoked() ){
+                                    deleteCert = true;
+                                } else{
+
+                                    String certName = generateSslCertName(srcIp, srcPort);
+                                    String keyName = generateSslKeyName(srcIp, srcPort);
+                                    String certKeyName = generateSslCertKeyName(srcIp, srcPort);
+
+                                    if ( SSL.isSslCertKeyPresent(_netscalerService, certKeyName)){
+                                        SSL.deleteSslCertKey(_netscalerService, certKeyName);
+                                    }
+
+
+                                    SSL.uploadCert(_ip, _username, _password, certName, sslCert.getCert().getBytes());
+                                    SSL.uploadKey(_ip, _username, _password, keyName, sslCert.getKey().getBytes());
+
+                                    SSL.createSslCertKey(_netscalerService, certName, keyName, certKeyName, sslCert.getPassword());
+                                    SSL.bindCertKeyToVserver(_netscalerService, certKeyName, nsVirtualServerName);
+                                }
+
+                            }
+
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Successfully added LB destination: " + destination.getDestIp() + ":" + destination.getDestPort() + " to load balancer " + srcIp + ":" + srcPort);
                             }
+
                         } else {
                             // remove a destination from the deployed load balancing rule
                             com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding[] serviceBindings = com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.get(_netscalerService, nsVirtualServerName);
@@ -731,10 +765,26 @@ public class NetscalerResource implements ServerResource {
                         }
                         removeLBVirtualServer(nsVirtualServerName);
                         deleteMonitor = true;
+                        deleteCert = true;
                     }
                 }
                 if(deleteMonitor) {
                     removeLBMonitor(nsMonitorName);
+                }
+                if ( sslCert != null && deleteCert){
+
+                    String certName = generateSslCertName(srcIp, srcPort);
+                    String keyName = generateSslKeyName(srcIp, srcPort);
+                    String certKeyName = generateSslCertKeyName(srcIp, srcPort);
+
+                    // unbind before deleting
+                    if ( nsVirtualServerExists(nsVirtualServerName) ){
+                        SSL.unbindCertKeyFromVserver(_netscalerService, certKeyName, nsVirtualServerName);
+                    }
+
+                    SSL.deleteSslCertKey(_netscalerService, certKeyName);
+                    SSL.deleteCertFile(_ip, _username, _password, certName);
+                    SSL.deleteKeyFile(_ip, _username, _password, keyName);
                 }
 
             }
@@ -1666,6 +1716,173 @@ public class NetscalerResource implements ServerResource {
         }
     }
 
+    /* SSL Termination */
+    private static class SSL {
+
+        private static  final String SSL_CERT_PATH = "/nsconfig/ssl/";
+        private static  final int SSH_PORT = 22;
+
+        private static boolean isSslCertKeyPresent(nitro_service ns, String certKeyName) throws ExecutionException {
+
+            String filter = "certkey:" + certKeyName;
+
+            try {
+                if (sslcertkey.count_filtered(ns, filter) > 0) return true;
+            } catch (nitro_exception e){
+                throw new ExecutionException("Failed to get certkey " + e.getMessage());
+            } catch (Exception e){
+                throw new ExecutionException("Failed to get certkey " + e.getMessage());
+            }
+
+            return false;
+        }
+
+        private static void deleteSslCertKey(nitro_service ns, String certKeyName) throws ExecutionException {
+            try {
+
+                sslcertkey certkey = new sslcertkey();
+                certkey.set_certkey(certKeyName);
+                sslcertkey.delete(ns, certkey);
+
+            } catch (nitro_exception e){
+                throw new ExecutionException("Failed to delete certkey " + e.getMessage());
+            } catch (Exception e){
+                throw new ExecutionException("Failed to delete certkey " + e.getMessage());
+            }
+
+        }
+
+        private static void deleteCertFile(String nsIp, String username, String password, String certName) throws Exception {
+            SshHelper.sshExecute(nsIp,SSH_PORT,username,null,password,"shell rm " + SSL_CERT_PATH + certName);
+        }
+
+        private static void deleteKeyFile(String nsIp, String username, String password, String keyName) throws Exception {
+            SshHelper.sshExecute(nsIp,SSH_PORT,username,null,password,"shell rm " + SSL_CERT_PATH + keyName);
+        }
+
+        private static void createSslCertKey(nitro_service ns, String certName, String keyName, String certKeyName, String password) throws ExecutionException {
+            s_logger.debug("Adding cert to netscaler");
+            try {
+                sslcertkey certkey = new sslcertkey();
+                certkey.set_certkey(certKeyName);
+                certkey.set_cert(SSL_CERT_PATH + certName);
+                certkey.set_key(SSL_CERT_PATH + keyName);
+
+                if( password != null ) {
+                    certkey.set_passplain(password);
+                }
+
+                certkey.perform_operation(ns);
+
+            } catch (nitro_exception e){
+                throw new ExecutionException("Failed to add certkey binding " + e.getMessage());
+            } catch (Exception e){
+                throw new ExecutionException("Failed to add certkey binding " + e.getMessage());
+            }
+
+        }
+
+        public static void updateCertKey(nitro_service ns, String certKeyName, String cert, String key, String password) throws ExecutionException {
+            try{
+                sslcertkey certkey = sslcertkey.get(ns, certKeyName);
+                if ( cert != null )
+                    certkey.set_cert(cert);
+                if ( key != null )
+                    certkey.set_key(cert);
+                if ( password != null )
+                    certkey.set_passplain(cert);
+
+                sslcertkey.change(ns,certkey);
+
+            } catch (nitro_exception e){
+                throw new ExecutionException("Failed to update ssl on load balancer due to " + e.getMessage());
+            } catch (Exception e){
+                throw new ExecutionException("Failed to update ssl on load balancer due to " + e.getMessage());
+            }
+        }
+
+        private static void bindCertKeyToVserver(nitro_service ns, String certKeyName, String vserver) throws ExecutionException {
+            s_logger.debug("Adding cert to netscaler");
+
+            try {
+                sslvserver_sslcertkey_binding cert_binding = new sslvserver_sslcertkey_binding();
+                cert_binding.set_certkeyname(certKeyName);
+                cert_binding.set_vservername(vserver);
+                cert_binding.perform_operation(ns);
+            } catch (nitro_exception e){
+                throw new ExecutionException("Failed to bind certkey to vserver due to " + e.getMessage());
+            } catch (Exception e){
+                throw new ExecutionException("Failed to bind certkey to vserver due to " + e.getMessage());
+            }
+        }
+
+        private static void unbindCertKeyFromVserver(nitro_service ns, String certKeyName, String vserver) throws ExecutionException {
+            try {
+
+                sslvserver_sslcertkey_binding cert_binding = new sslvserver_sslcertkey_binding();
+                cert_binding.set_certkeyname(certKeyName);
+                cert_binding.set_vservername(vserver);
+                sslvserver_sslcertkey_binding.delete(ns,cert_binding);
+
+            } catch (nitro_exception e){
+                throw new ExecutionException("Failed to unbind certkey to vserver due to " + e.getMessage());
+            } catch (Exception e){
+                throw new ExecutionException("Failed to unbind certkey to vserver due to " + e.getMessage());
+            }
+
+        }
+
+
+        private static void uploadCert(String nsIp, String user, String password, String certName, byte[] certData) throws ExecutionException {
+            try {
+                SshHelper.scpTo(nsIp,SSH_PORT,user,null,password, SSL_CERT_PATH, certData, certName, null);
+            } catch (Exception e){
+                throw new ExecutionException("Failed to copy private key to device " + e.getMessage());
+            }
+        }
+
+        private static void uploadKey(String nsIp, String user, String password, String keyName, byte[] keyData) throws ExecutionException {
+            try {
+                SshHelper.scpTo(nsIp, SSH_PORT, user, null, password, SSL_CERT_PATH, keyData, keyName, null);
+            }  catch (Exception e){
+                throw new ExecutionException("Failed to copy private key to device " + e.getMessage());
+            }
+        }
+
+
+        private static void enableSslFeature(nitro_service ns) throws ExecutionException {
+            try {
+                base_response result = ns.enable_features(new String[]{"SSL"});
+                if( result.errorcode != 0 )
+                    throw new ExecutionException("Unable to enable SSL on LB");
+            } catch (nitro_exception e){
+                throw new ExecutionException("Failed to enable ssl feature on load balancer due to " + e.getMessage());
+            } catch (Exception e){
+                throw new ExecutionException("Failed to enable ssl feature on load balancer due to " + e.getMessage());
+            }
+        }
+
+        public static boolean checkSslFeature(nitro_service ns) throws ExecutionException {
+            try {
+                String[] features = ns.get_enabled_features();
+                if (features != null) {
+                    for (String feature : features) {
+                        if (feature.equalsIgnoreCase("SSL")) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            } catch (nitro_exception e){
+                throw new ExecutionException("Failed to check ssl feature on load balancer due to " + e.getMessage());
+            } catch (Exception e){
+                throw new ExecutionException("Failed to check ssl feature on load balancer due to " + e.getMessage());
+            }
+        }
+
+
+    }
+
 
     private void enableVPXInterfaces(String publicIf, String privateIf, ns ns_obj) {
         // enable VPX to use 10 gigabit Ethernet interfaces if public/private interface
@@ -2110,6 +2327,25 @@ public class NetscalerResource implements ServerResource {
         }
     }
 
+    private boolean nsVirtualServerExists(String vserverName) throws ExecutionException {
+        try {
+            if (com.citrix.netscaler.nitro.resource.config.lb.lbvserver.get(_netscalerService, vserverName) != null) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (nitro_exception e) {
+            if (e.getErrorCode() == NitroError.NS_RESOURCE_NOT_EXISTS) {
+                return false;
+            } else {
+                throw new ExecutionException("Failed to verify VServer " + vserverName + " exists on the NetScaler device due to " + e.getMessage());
+            }
+        } catch (Exception e) {
+            throw new ExecutionException("Failed to verify VServer " + vserverName + " exists on the NetScaler device due to " + e.getMessage());
+        }
+    }
+
+
     private boolean nsVlanNsipBindingExists(long vlanTag, String vlanSelfIp) throws ExecutionException {
         try {
             vlan_nsip_binding[] vlanNsipBindings = vlan_nsip_binding.get(_netscalerService, vlanTag);
@@ -2308,11 +2544,14 @@ public class NetscalerResource implements ServerResource {
 
     private String getNetScalerProtocol(LoadBalancerTO loadBalancer) throws ExecutionException {
         String port = Integer.toString(loadBalancer.getSrcPort());
-        String lbProtocol = loadBalancer.getProtocol();
+        String lbProtocol = loadBalancer.getLbProtocol();
         StickinessPolicyTO[] stickyPolicies = loadBalancer.getStickinessPolicies();
         String nsProtocol = "TCP";
 
-        if ((stickyPolicies != null) && (stickyPolicies.length > 0) && (stickyPolicies[0] != null)){
+        if(lbProtocol == null)
+            lbProtocol = loadBalancer.getProtocol();
+
+       if ((stickyPolicies != null) && (stickyPolicies.length > 0) && (stickyPolicies[0] != null)){
             StickinessPolicyTO stickinessPolicy = stickyPolicies[0];
             if (StickinessMethodType.LBCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName()) ||
                     (StickinessMethodType.AppCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName()))) {
@@ -2320,6 +2559,10 @@ public class NetscalerResource implements ServerResource {
                 return nsProtocol;
             }
         }
+
+
+        if( lbProtocol.equalsIgnoreCase(NetUtils.SSL_PROTO) || lbProtocol.equalsIgnoreCase(NetUtils.HTTP_PROTO))
+            return lbProtocol.toUpperCase();
 
         if (port.equals(NetUtils.HTTP_PORT)) {
             nsProtocol = "HTTP";
@@ -3379,6 +3622,18 @@ public class NetscalerResource implements ServerResource {
 
     private String generateSnmpMetricName(String counterName) {
         return counterName.replace(' ', '_');
+    }
+
+    private String generateSslCertName(String srcIp, long srcPort) {
+        // maximum length supported by NS is 31
+        return genObjectName("Cloud-Cert", srcIp, srcPort);
+    }
+
+    private String generateSslKeyName(String srcIp, long srcPort) {
+        return genObjectName("Cloud-Key", srcIp, srcPort);
+    }
+    private String generateSslCertKeyName(String srcIp, long srcPort) {
+        return genObjectName("Cloud-CertKey", srcIp, srcPort);
     }
 
     private String genObjectName(Object... args) {

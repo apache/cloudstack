@@ -239,8 +239,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
     @Override
     public String getPhysicalNetworkName(PhysicalNetworkVO phys_net) {
         String physname = phys_net.getName();
-        physname = physname.replaceAll("\\s", "");
-        physname.replace("_", "");
+        physname = physname.replaceAll("\\s", "").replace("_", "");
         return physname;
     }
 

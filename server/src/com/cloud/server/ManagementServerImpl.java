@@ -42,6 +42,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -286,6 +287,11 @@ import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRuleI
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRulesCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.RemoveFromLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListSslCertsCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.AssignCertToLoadBalancerCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.RemoveCertFromLoadBalancerCmd;
 import org.apache.cloudstack.api.command.user.nat.CreateIpForwardingRuleCmd;
 import org.apache.cloudstack.api.command.user.nat.DeleteIpForwardingRuleCmd;
 import org.apache.cloudstack.api.command.user.nat.DisableStaticNatCmd;
@@ -2874,6 +2880,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ReplaceNetworkACLListCmd.class);
         cmdList.add(UpdateNetworkACLItemCmd.class);
         cmdList.add(CleanVMReservationsCmd.class);
+        cmdList.add(UpgradeRouterTemplateCmd.class);
+        cmdList.add(UploadSslCertCmd.class);
+        cmdList.add(DeleteSslCertCmd.class);
+        cmdList.add(ListSslCertsCmd.class);
+        cmdList.add(AssignCertToLoadBalancerCmd.class);
+        cmdList.add(RemoveCertFromLoadBalancerCmd.class);
         return cmdList;
     }
 

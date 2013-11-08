@@ -18,6 +18,7 @@
 package org.apache.cloudstack.network.contrail.model;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.TreeSet;
 
@@ -38,7 +39,7 @@ import com.cloud.exception.InternalErrorException;
  * The update method pushes updates to the contrail API server.
  */
 public interface ModelObject {
-    public static class ModelReference implements Comparable<ModelReference> {
+    public static class ModelReference implements Comparable<ModelReference>, Serializable {
         WeakReference<ModelObject> reference;
         ModelReference(ModelObject obj) {
             reference = new WeakReference<ModelObject>(obj);
@@ -57,8 +58,22 @@ public interface ModelObject {
             
             return lhs.compareTo(rhs);
         }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result
+                    + ((reference == null) ? 0 : reference.hashCode());
+            return result;
+        }
+
         @Override
         public boolean equals(Object other) {
+            if (this == other)
+                return true;
+            if (other == null)
+                return false;
             try {
                 ModelReference rhs = (ModelReference) other;
                 return compareTo(rhs) == 0;
@@ -69,6 +84,8 @@ public interface ModelObject {
         public ModelObject get() {
             return reference.get();
         }
+        
+        
     };
     
     public void addSuccessor(ModelObject child);

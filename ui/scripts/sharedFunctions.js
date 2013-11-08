@@ -46,7 +46,6 @@ var md5HashedLogin = false;
 
 //page size for API call (e.g."listXXXXXXX&pagesize=N" )
 var pageSize = 30;
-
 var rootAccountId = 1;
 
 //async action
@@ -923,11 +922,16 @@ cloudStack.converters = {
         }
         return localDate;
     },
-    toBooleanText: function(booleanValue) {
-        if (booleanValue == true)
-            return "Yes";
-
-        return "No";
+    toBooleanText: function(booleanValue) {    	
+        var text1;
+    	if (booleanValue == true) {
+    		text1 = "Yes";
+        } else if (booleanValue == false) {
+        	text1 = "No";
+        } else { //booleanValue == undefined
+        	text1 = "";
+        }
+    	return text1;        
     },
     convertHz: function(hz) {
         if (hz == null)

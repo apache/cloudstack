@@ -937,7 +937,7 @@ public class HypervisorHostHelper {
 
             if(vlanId != null && !UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId) ) {
                 createGCTag = true;
-                vid = Integer.parseInt(BroadcastDomainType.getValue(vlanId));
+                vid = Integer.parseInt(vlanId);
             }
         }
 
@@ -1205,7 +1205,7 @@ public class HypervisorHostHelper {
         return false;
     }
 
-    public static VirtualMachineMO createWorkerVM(VmwareHypervisorHost hyperHost, 
+    public static VirtualMachineMO createWorkerVM(VmwareHypervisorHost hyperHost,
     	DatastoreMO dsMo, String vmName) throws Exception {
     	
     	// Allow worker VM to float within cluster so that we will have better chance to
@@ -1247,7 +1247,7 @@ public class HypervisorHostHelper {
         
         if(workingVM != null) {
         	workingVM.setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER, "true");
-        	String workerTag = String.format("%d-%s", System.currentTimeMillis(), 
+        	String workerTag = String.format("%d-%s", System.currentTimeMillis(),
         		hyperHost.getContext().getStockObject("noderuninfo"));
            	workingVM.setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER_TAG, workerTag);
         }

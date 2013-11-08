@@ -102,6 +102,9 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
             "rule will be created for. Required when public Ip address is not associated with any Guest network yet (VPC case)")
     private Long networkId;
 
+    @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, description="The protocol for the LB")
+    private String lbProtocol;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -227,6 +230,10 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
         return null;
     }
 
+    public String getLbProtocol(){
+        return lbProtocol;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -282,7 +289,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
         try {
             LoadBalancer result = _lbService.createPublicLoadBalancerRule(getXid(), getName(), getDescription(), 
                     getSourcePortStart(), getSourcePortEnd(), getDefaultPortStart(), getDefaultPortEnd(), getSourceIpAddressId(), getProtocol(), getAlgorithm(),
-                    getNetworkId(), getEntityOwnerId(), getOpenFirewall());
+                    getNetworkId(), getEntityOwnerId(), getOpenFirewall(), getLbProtocol());
             this.setEntityId(result.getId());
             this.setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException e) {

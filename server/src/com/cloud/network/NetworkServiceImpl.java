@@ -3542,7 +3542,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_TRAFFIC_TYPE_CREATE, eventDescription = "Creating Physical Network TrafficType", create = true)
-    public PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficTypeStr, String xenLabel, String kvmLabel, String vmwareLabel, String simulatorLabel, String vlan) {
+    public PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficTypeStr, String xenLabel, String kvmLabel, String vmwareLabel, String simulatorLabel, String vlan, String hypervLabel) {
 
         // verify input parameters
         PhysicalNetworkVO network = _physicalNetworkDao.findById(physicalNetworkId);
@@ -3592,7 +3592,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             if (xenLabel == null) {
                 xenLabel = getDefaultXenNetworkLabel(trafficType);
             }
-            PhysicalNetworkTrafficTypeVO pNetworktrafficType = new PhysicalNetworkTrafficTypeVO(physicalNetworkId, trafficType, xenLabel, kvmLabel, vmwareLabel, simulatorLabel, vlan);
+            PhysicalNetworkTrafficTypeVO pNetworktrafficType = new PhysicalNetworkTrafficTypeVO(physicalNetworkId, trafficType, xenLabel, kvmLabel, vmwareLabel, simulatorLabel, vlan, hypervLabel);
             pNetworktrafficType = _pNTrafficTypeDao.persist(pNetworktrafficType);
 
             return pNetworktrafficType;
@@ -3636,7 +3636,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_TRAFFIC_TYPE_UPDATE, eventDescription = "Updating physical network TrafficType", async = true)
-    public PhysicalNetworkTrafficType updatePhysicalNetworkTrafficType(Long id, String xenLabel, String kvmLabel, String vmwareLabel) {
+    public PhysicalNetworkTrafficType updatePhysicalNetworkTrafficType(Long id, String xenLabel, String kvmLabel, String vmwareLabel, String hypervLabel) {
 
         PhysicalNetworkTrafficTypeVO trafficType = _pNTrafficTypeDao.findById(id);
 
@@ -3661,6 +3661,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 vmwareLabel = null;
             }
             trafficType.setVmwareNetworkLabel(vmwareLabel);
+        }
+
+        if (hypervLabel != null) {
+            if("".equals(hypervLabel)){
+                hypervLabel = null;
+            }
+            trafficType.setHypervNetworkLabel(hypervLabel);
         }
         _pNTrafficTypeDao.update(id, trafficType);
 

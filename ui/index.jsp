@@ -1722,6 +1722,8 @@
         <script type="text/javascript" src="plugins/plugins.js?t=<%=now%>"></script>
         <script type="text/javascript" src="modules/modules.js?t=<%=now%>"></script>
         <script type="text/javascript" src="scripts/plugins.js?t=<%=now%>"></script>
+
+        <!-- localized messages -->
+        <jsp:include page="dictionary.jsp" />
     </body>
 </html>
-<jsp:include page="dictionary.jsp" />

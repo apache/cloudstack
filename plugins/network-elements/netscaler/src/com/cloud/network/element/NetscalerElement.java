@@ -161,6 +161,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     @Inject
     ExternalLoadBalancerDeviceDao _externalLoadBalancerDeviceDao;
 
+
     private boolean canHandle(Network config, Service service) {
         DataCenter zone = _dcDao.findById(config.getDataCenterId());
         boolean handleInAdvanceZone = (zone.getNetworkType() == NetworkType.Advanced &&
@@ -277,7 +278,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
         // Supports only Public load balancing
         lbCapabilities.put(Capability.LbSchemes, LoadBalancerContainer.Scheme.Public.toString());
-        
+
         // Specifies that load balancing rules can support autoscaling and the list of counters it supports
         AutoScaleCounter counter;
         List<AutoScaleCounter> counterList = new ArrayList<AutoScaleCounter>();
@@ -318,6 +319,10 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         Map<Capability, String> staticNatCapabilities = new HashMap<Capability, String>();
         staticNatCapabilities.put(Capability.ElasticIp, "true");
         capabilities.put(Service.StaticNat, staticNatCapabilities);
+
+        // Supports SSL offloading
+        lbCapabilities.put(Capability.SslTermination, "true");
+
 
         // TODO - Murali, please put correct capabilities here
         Map<Capability, String> firewallCapabilities = new HashMap<Capability, String>();
@@ -516,6 +521,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         cmdList.add(DeleteNetscalerLoadBalancerCmd.class);
         cmdList.add(ListNetscalerLoadBalancerNetworksCmd.class);
         cmdList.add(ListNetscalerLoadBalancersCmd.class);
+
         return cmdList;
     }
 
@@ -732,7 +738,8 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             List<LbDestination> destinations = rule.getDestinations();
 
             if ((destinations != null && !destinations.isEmpty()) || rule.isAutoScaleConfig()) {
-                LoadBalancerTO loadBalancer = new LoadBalancerTO(lbUuid, srcIp, srcPort, protocol, algorithm, revoked, false, false, destinations, rule.getStickinessPolicies(), rule.getHealthCheckPolicies());
+                LoadBalancerTO loadBalancer = new LoadBalancerTO(lbUuid, srcIp, srcPort, protocol, algorithm, revoked, false, false, destinations,
+                                                    rule.getStickinessPolicies(), rule.getHealthCheckPolicies(), rule.getLbSslCert(), rule.getLbProtocol());
                 if (rule.isAutoScaleConfig()) {
                     loadBalancer.setAutoScaleVmGroup(rule.getAutoScaleVmGroup());
                 }
@@ -894,7 +901,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
             if ((destinations != null && !destinations.isEmpty()) || rule.isAutoScaleConfig()) {
                 LoadBalancerTO loadBalancer = new LoadBalancerTO(lbUuid, srcIp, srcPort, protocol, algorithm, revoked,
-                        false, false, destinations, null, rule.getHealthCheckPolicies());
+                        false, false, destinations, null, rule.getHealthCheckPolicies(), rule.getLbSslCert(), rule.getLbProtocol());
                 loadBalancersToApply.add(loadBalancer);
             }
         }
@@ -1024,5 +1031,4 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         }
         return true;
     }
-
 }

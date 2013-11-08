@@ -75,7 +75,10 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Parameter(name=ApiConstants.FOR_VPC, type=CommandType.BOOLEAN, description="if true is passed for this parameter, list only VPC routers")
     private Boolean forVpc;
-    
+
+    @Parameter(name=ApiConstants.VERSION, type=CommandType.STRING, description="list virtual router elements by version")
+    private String version;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -115,7 +118,11 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     public Boolean getForVpc() {
         return forVpc;
     }
-    
+
+    public String getVersion() {
+        return version;
+    }
+
     public String getRole() {
         return Role.VIRTUAL_ROUTER.toString();
     }

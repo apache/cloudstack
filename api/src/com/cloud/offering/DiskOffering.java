@@ -89,4 +89,7 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
 
     Long getIopsWriteRate();
 
+    void setHypervisorSnapshotReserve(Integer hypervisorSnapshotReserve);
+
+    Integer getHypervisorSnapshotReserve();
 }

@@ -63,5 +63,6 @@ namespace HypervResource
         VirtualSystemSettingData GetVmSettings(ComputerSystem vm);
         void patchSystemVmIso(string vmName, string systemVmIso);
         void SetState(ComputerSystem vm, ushort requiredState);
+        Dictionary<String, VmState> GetVmSync(String privateIpAddress);
     }
 }

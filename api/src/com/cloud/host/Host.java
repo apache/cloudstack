@@ -107,6 +107,11 @@ public interface Host extends StateObject<Status>, Identity, InternalIdentity {
     Long getTotalMemory();
 
     /**
+     * @return # of cpu sockets in a machine.
+     */
+    Integer getCpuSockets();
+
+    /**
      * @return # of cores in a machine.  Note two cpus with two cores each returns 4.
      */
     Integer getCpus();

@@ -41,17 +41,17 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.CPU_NUMBER, type=CommandType.LONG, required=true, description="the CPU number of the service offering")
-    private Long cpuNumber;
+    @Parameter(name=ApiConstants.CPU_NUMBER, type=CommandType.INTEGER, required=false, description="the CPU number of the service offering")
+    private Integer cpuNumber;
 
-    @Parameter(name=ApiConstants.CPU_SPEED, type=CommandType.LONG, required=true, description="the CPU speed of the service offering in MHz.")
-    private Long cpuSpeed;
+    @Parameter(name=ApiConstants.CPU_SPEED, type=CommandType.INTEGER, required=false, description="the CPU speed of the service offering in MHz.")
+    private Integer cpuSpeed;
 
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the service offering")
     private String displayText;
 
-    @Parameter(name=ApiConstants.MEMORY, type=CommandType.LONG, required=true, description="the total memory of the service offering in MB")
-    private Long memory;
+    @Parameter(name=ApiConstants.MEMORY, type=CommandType.INTEGER, required=false, description="the total memory of the service offering in MB")
+    private Integer memory;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the service offering")
     private String serviceOfferingName;
@@ -109,11 +109,11 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getCpuNumber() {
+    public Integer getCpuNumber() {
         return cpuNumber;
     }
 
-    public Long getCpuSpeed() {
+    public Integer getCpuSpeed() {
         return cpuSpeed;
     }
 
@@ -121,7 +121,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return displayText;
     }
 
-    public Long getMemory() {
+    public Integer getMemory() {
         return memory;
     }
 
@@ -172,6 +172,11 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     public String getDeploymentPlanner() {
         return deploymentPlanner;
     }
+
+    public boolean getCustomized() {
+        return (cpuNumber == null || memory == null || cpuSpeed == null);
+    }
+
 
     public Map<String, String> getDetails() {
         if (details == null || details.isEmpty()) {

@@ -86,7 +86,7 @@ public interface VolumeOrchestrationService {
 
     boolean canVmRestartOnAnotherServer(long vmId);
 
-    DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, VirtualMachineTemplate template, VirtualMachine vm, Account owner);
+    DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, VirtualMachineTemplate template, VirtualMachine vm, Account owner);
 
     String getVmNameFromVolumeId(long volumeId);
 

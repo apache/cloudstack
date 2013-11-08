@@ -188,6 +188,18 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.DISPLAY_VM, type=CommandType.BOOLEAN, since="4.2", description="an optional field, whether to the display the vm to the end user or not.")
     private Boolean displayVm;
 
+    @Parameter(name=ApiConstants.CPU_SPEED, type = CommandType.INTEGER, since="4.3", description = "optional field to specify the cpu speed when using dynamic compute offering.")
+    private Integer cpuSpeed;
+
+    @Parameter(name=ApiConstants.MEMORY, type = CommandType.INTEGER, since="4.3", description = "optional field to specify the memory when using dynamic compute offering")
+    private Integer memory;
+
+    @Parameter(name=ApiConstants.CPU_NUMBER, type=CommandType.INTEGER, since="4.3", description = "optional field to specify the number of cpu cores when using dynamic offering.")
+    private Integer cpuNumber;
+
+    @Parameter(name=ApiConstants.ROOT_DISK_SIZE, type=CommandType.LONG, since="4.3", description = "optional field to specify the number of cpu cores when using dynamic offering.")
+    private Long rootdisksize;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -225,6 +237,22 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     public Boolean getDisplayVm() {
         return displayVm;
+    }
+
+    public Integer getMemory() {
+        return memory;
+    }
+
+    public Integer getCpuSpeed() {
+        return cpuSpeed;
+    }
+
+    public Integer getCpuNumber() {
+        return cpuNumber;
+    }
+
+    public Long getRootdisksize() {
+        return rootdisksize;
     }
 
     public List<Long> getSecurityGroupIdList() {
@@ -495,19 +523,19 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                     throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
                 } else {
                     vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name,
-                            displayName, diskOfferingId, size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList());
+                            displayName, diskOfferingId, size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList(), cpuSpeed, memory, cpuNumber, rootdisksize);
                 }
             } else {
                 if (zone.isSecurityGroupEnabled())  {
                     vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(),
-                            owner, name, displayName, diskOfferingId, size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList());
+                            owner, name, displayName, diskOfferingId, size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList(), cpuSpeed, memory, cpuNumber, rootdisksize );
 
                 } else {
                     if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
                         throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
                     }
                     vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName,
-                            diskOfferingId, size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList());
+                            diskOfferingId, size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList(), cpuSpeed, memory, cpuNumber, rootdisksize);
 
                 }
             }

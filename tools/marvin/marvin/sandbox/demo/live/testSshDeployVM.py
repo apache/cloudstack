@@ -20,7 +20,7 @@
 
 import marvin
 from marvin.cloudstackTestCase import *
-from marvin.remoteSSHClient import remoteSSHClient 
+from marvin.sshClient import SshClient 
 
 
 @UserName('demo', 'ROOT', '0')
@@ -84,7 +84,7 @@ class TestSshDeployVm(cloudstackTestCase):
 
         # SSH login and compare hostname        
         self.debug("Attempting to SSH into %s over %s of %s"%(nattedip, "22", vm.name))
-        ssh_client = remoteSSHClient(nattedip, "22", "root", "password")
+        ssh_client = SshClient(nattedip, "22", "root", "password")
         stdout = ssh_client.execute("hostname")
 
         self.assertEqual(hostname, stdout[0], "cloudstack VM name and hostname \

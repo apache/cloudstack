@@ -18,11 +18,10 @@
  */
 package com.cloud.vm.snapshot.dao;
 
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
+
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 
-import java.util.Map;
-
-public interface VMSnapshotDetailsDao extends GenericDao<VMSnapshotDetailsVO, Long> {
-    Map<String, String> getDetails(Long vmSnapshotId);
+public interface VMSnapshotDetailsDao extends GenericDao<VMSnapshotDetailsVO, Long>, ResourceDetailsDao<VMSnapshotDetailsVO> {
 }

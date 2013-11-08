@@ -79,7 +79,7 @@ public interface VolumeApiService {
 
     Volume detachVolumeFromVM(DetachVolumeCmd cmmd);
 
-	Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account)
+	Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm)
 			throws ResourceAllocationException;
 
 	Snapshot allocSnapshot(Long volumeId, Long policyId)
