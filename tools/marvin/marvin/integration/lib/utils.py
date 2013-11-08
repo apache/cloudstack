@@ -118,7 +118,7 @@ def is_server_ssh_ready(ipaddress, port, username, password, retries=20, retryin
     @Name: is_server_ssh_ready
     @Input: timeout: tcp connection timeout flag,
             others information need to be added
-    @Output:object for SshClient    
+    @Output:object for remoteSSHClient
     Name of the function is little misnomer and is not
               verifying anything as such mentioned
     '''
@@ -129,12 +129,12 @@ def is_server_ssh_ready(ipaddress, port, username, password, retries=20, retryin
             port=port,
             user=username,
             passwd=password,
-            keyPairFiles=keyPairFileLocation,
+            keyPairFileLocation=keyPairFileLocation,
             retries=retries,
             delay=retryinterv,
             timeout=timeout)
     except Exception, e:
-        raise Exception("SSH connection has Failed. Waited %ss. Error is %s" % (retries * retryinterv, str(e)))
+        raise Exception("SSH connection has Failed. Waited %ss. Error is %s" % (retries * retryinterv, e))
     else:
         return ssh
 

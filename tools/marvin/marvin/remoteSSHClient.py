@@ -26,7 +26,7 @@ from marvin.codes import (
 from contextlib import closing
 
 
-class SshClient(object):
+class remoteSSHClient(object):
     '''
     Added timeout flag for ssh connect calls.Default to 3.0 seconds
     '''
@@ -92,9 +92,9 @@ class SshClient(object):
         while self.retryCnt >= 0:
             try:
                 self.logger.debug("SSH Connection: Host:%s User:%s\
-                                   Port:%s" %
-                                  (self.host, self.user, str(self.port)
-                                   ))
+                                   Port:%s KeyPairFile: %s" %
+                                  (self.host, self.user, str(self.port),
+                                   str(self.keyPairFiles)))
                 if self.keyPairFiles is None:
                     self.ssh.connect(hostname=self.host,
                                      port=self.port,
@@ -177,6 +177,6 @@ class SshClient(object):
 
 
 if __name__ == "__main__":
-    with contextlib.closing(SshClient("10.223.75.10", 22, "root",
+    with contextlib.closing(remoteSSHClient("10.223.75.10", 22, "root",
                                             "password")) as ssh:
         print ssh.execute("ls -l")

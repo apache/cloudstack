@@ -38,7 +38,7 @@ from marvin.integration.lib.common import (get_domain,
                                         random_gen
                                         )
 from marvin.cloudstackAPI import createLBStickinessPolicy
-from marvin.sshClient import SshClient
+from marvin.remoteSSHClient import remoteSSHClient
 
 
 class Services:
@@ -383,7 +383,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
             # If Round Robin Algorithm is chosen,
             # each ssh command should alternate between VMs
 
-            ssh_1  = SshClient(
+            ssh_1  = remoteSSHClient(
                                     ip_addr,
                                     22,
                                     self.services["natrule"]["username"],

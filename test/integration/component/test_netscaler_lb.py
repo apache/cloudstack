@@ -25,7 +25,7 @@ from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
-from marvin.sshClient import SshClient
+from marvin.remoteSSHClient import remoteSSHClient
 import datetime
 
 
@@ -1228,7 +1228,7 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
         self.debug("SSH into netscaler: %s" %
                                     self.services["netscaler"]["ipaddress"])
         try:
-            ssh_client = SshClient(
+            ssh_client = remoteSSHClient(
                                     self.services["netscaler"]["ipaddress"],
                                     22,
                                     self.services["netscaler"]["username"],
@@ -2104,7 +2104,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
 
         self.debug("SSH into Netscaler to verify other resources are deleted")
         try:
-            ssh_client = SshClient(
+            ssh_client = remoteSSHClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -2430,7 +2430,7 @@ class TestVmWithLb(cloudstackTestCase):
                 )
         self.debug("SSH into Netscaler to verify other resources are deleted")
         try:
-            ssh_client = SshClient(
+            ssh_client = remoteSSHClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -2523,7 +2523,7 @@ class TestVmWithLb(cloudstackTestCase):
                                         e))
         self.debug("SSH into Netscaler to rules still persist")
         try:
-            ssh_client = SshClient(
+            ssh_client = remoteSSHClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -2596,7 +2596,7 @@ class TestVmWithLb(cloudstackTestCase):
                                         e))
         self.debug("SSH into Netscaler to rules still persist")
         try:
-            ssh_client = SshClient(
+            ssh_client = remoteSSHClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -2709,7 +2709,7 @@ class TestVmWithLb(cloudstackTestCase):
                                         e))
         self.debug("SSH into Netscaler to rules still persist")
         try:
-            ssh_client = SshClient(
+            ssh_client = remoteSSHClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -2797,7 +2797,7 @@ class TestVmWithLb(cloudstackTestCase):
                                         e))
         self.debug("SSH into Netscaler to rules still persist")
         try:
-            ssh_client = SshClient(
+            ssh_client = remoteSSHClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -2880,7 +2880,7 @@ class TestVmWithLb(cloudstackTestCase):
         time.sleep(int(delay[0].value) + int(wait[0].value))
         self.debug("SSH into Netscaler to rules still persist")
         try:
-            ssh_client = SshClient(
+            ssh_client = remoteSSHClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -2936,7 +2936,7 @@ class TestVmWithLb(cloudstackTestCase):
                 )
         self.debug("SSH into Netscaler to verify other resources are deleted")
         try:
-            ssh_client = SshClient(
+            ssh_client = remoteSSHClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
