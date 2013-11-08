@@ -107,7 +107,7 @@ public class AssignVMCmd extends BaseCmd  {
                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm");
            }
            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", userVm).get(0);
-           response.setResponseName(DeployVMCmd.getResultObjectName());
+           response.setResponseName(getCommandName());
            this.setResponseObject(response);
         }catch (Exception e){
             e.printStackTrace();
