@@ -29,14 +29,11 @@ import net.juniper.contrail.api.ApiConnector;
 import net.juniper.contrail.api.types.ServiceInstance;
 import net.juniper.contrail.api.types.VirtualNetwork;
 
-import org.apache.log4j.Logger;
-
-import com.google.gson.Gson;
-
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.contrail.api.response.ServiceInstanceResponse;
 import org.apache.cloudstack.network.contrail.model.ServiceInstanceModel;
 import org.apache.cloudstack.network.contrail.model.VirtualMachineModel;
+import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.dc.DataCenter;
@@ -61,6 +58,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.dao.UserVmDao;
+import com.google.gson.Gson;
 
 @Local(value = {ServiceManager.class})
 public class ServiceManagerImpl implements ServiceManager {
@@ -98,7 +96,7 @@ public class ServiceManagerImpl implements ServiceManager {
      */
     @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "createServiceInstance", create = true)
     private ServiceVirtualMachine createServiceVM(DataCenter zone, Account owner, VirtualMachineTemplate template, ServiceOffering serviceOffering, String name,
-        ServiceInstance siObj, Network left, Network right) {
+            ServiceInstance siObj, Network left, Network right) {
         long id = _vmDao.getNextInSequence(Long.class, "id");
 
         DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
@@ -111,8 +109,8 @@ public class ServiceManagerImpl implements ServiceManager {
 
         String instanceName = VirtualMachineName.getVmName(id, owner.getId(), "SRV");
         ServiceVirtualMachine svm =
-            new ServiceVirtualMachine(id, instanceName, name, template.getId(), serviceOffering.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                zone.getId(), owner.getDomainId(), owner.getAccountId(), false);
+                new ServiceVirtualMachine(id, instanceName, name, template.getId(), serviceOffering.getId(), template.getHypervisorType(), template.getGuestOSId(),
+                        zone.getId(), owner.getDomainId(), owner.getAccountId(), false);
 
         // database synchronization code must be able to distinguish service instance VMs.
         Map<String, String> kvmap = new HashMap<String, String>();
@@ -132,7 +130,7 @@ public class ServiceManagerImpl implements ServiceManager {
 
     @Override
     public ServiceVirtualMachine createServiceInstance(DataCenter zone, Account owner, VirtualMachineTemplate template, ServiceOffering serviceOffering, String name,
-        Network left, Network right) {
+            Network left, Network right) {
         s_logger.debug("createServiceInstance by " + owner.getAccountName());
         // TODO: permission model.
         // service instances need to be able to access the public network.
@@ -227,10 +225,12 @@ public class ServiceManagerImpl implements ServiceManager {
     @Override
     public ServiceInstanceResponse createServiceInstanceResponse(long instanceId) {
         s_logger.debug("ServiceInstance response for id: " + instanceId);
+
         UserVmVO vm = _vmDao.findById(instanceId);
         ServiceInstanceResponse response = new ServiceInstanceResponse();
         response.setId(vm.getUuid());
         Account owner = _accountService.getAccount(vm.getAccountId());
+
         if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             Project project = ApiDBUtils.findProjectByProjectAccountIdIncludingRemoved(owner.getAccountId());
             response.setProjectId(project.getUuid());

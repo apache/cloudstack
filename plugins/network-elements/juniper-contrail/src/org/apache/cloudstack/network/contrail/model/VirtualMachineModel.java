@@ -27,12 +27,8 @@ import net.juniper.contrail.api.types.Project;
 import net.juniper.contrail.api.types.ServiceInstance;
 import net.juniper.contrail.api.types.VirtualMachine;
 
-import org.apache.log4j.Logger;
-
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
 import org.apache.cloudstack.network.contrail.management.ContrailManager;
+import org.apache.log4j.Logger;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.network.dao.NetworkDao;
@@ -42,11 +38,13 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.NicDao;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 public class VirtualMachineModel extends ModelObjectBase {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineModel.class);
 
-    private String _uuid;
+    private final String _uuid;
     private long _instanceId;
 
     /*
@@ -113,8 +111,12 @@ public class VirtualMachineModel extends ModelObjectBase {
                 throw new CloudRuntimeException("Unable to read service-instance object", ex);
             }
             if (siObj == null) {
+                //If the ServiceInstance object is null, do not call build. It will break in many places. Instead, call update passing the controller as parameter.
+                //It will then create a new ServiceInstance is that's null.
                 siModel = new ServiceInstanceModel(serviceUuid);
-                siModel.build(controller, siObj);
+                siModel.update(controller);
+
+                siObj = siModel.getServiceInstance();
             }
         }
         _serviceModel = siModel;
@@ -197,21 +199,21 @@ public class VirtualMachineModel extends ModelObjectBase {
 
     boolean isActiveInstance(VMInstanceVO instance) {
         switch (instance.getState()) {
-            case Migrating:
-            case Starting:
-            case Running:
-            case Shutdowned:
-            case Stopped:
-            case Stopping:
-                return true;
+        case Migrating:
+        case Starting:
+        case Running:
+        case Shutdowned:
+        case Stopped:
+        case Stopping:
+            return true;
 
-            case Destroyed:
-            case Error:
-            case Expunging:
-                return false;
+        case Destroyed:
+        case Error:
+        case Expunging:
+            return false;
 
-            default:
-                s_logger.warn("Unknown VMInstance state " + instance.getState().getDescription());
+        default:
+            s_logger.warn("Unknown VMInstance state " + instance.getState().getDescription());
         }
         return true;
     }
@@ -255,17 +257,17 @@ public class VirtualMachineModel extends ModelObjectBase {
             String tag;
 
             switch (nic.getDeviceId()) {
-                case 0:
-                    tag = "management";
-                    break;
-                case 1:
-                    tag = "left";
-                    break;
-                case 2:
-                    tag = "right";
-                    break;
-                default:
-                    tag = null;
+            case 0:
+                tag = "management";
+                break;
+            case 1:
+                tag = "left";
+                break;
+            case 2:
+                tag = "right";
+                break;
+            default:
+                tag = null;
             }
 
             VMInterfaceModel vmiModel = getVMInterface(nic.getUuid());

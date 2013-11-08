@@ -167,7 +167,8 @@ public class AgentShell implements IAgentShell, Daemon {
 
     void loadProperties() throws ConfigurationException {
         final File file = PropertiesUtil.findConfigFile("agent.properties");
-        if (file == null) {
+
+        if (null == file) {
             throw new ConfigurationException("Unable to find agent.properties.");
         }
 
@@ -303,12 +304,17 @@ public class AgentShell implements IAgentShell, Daemon {
         // For KVM agent, do it specially here
 
         File file = new File("/etc/cloudstack/agent/log4j-cloud.xml");
-        if (!file.exists()) {
+        if(!file.exists()) {
             file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
         }
-        DOMConfigurator.configureAndWatch(file.getAbsolutePath());
 
-        s_logger.info("Agent started");
+        if (null != file) {
+            DOMConfigurator.configureAndWatch(file.getAbsolutePath());
+
+            s_logger.info("Agent started");
+        } else {
+            s_logger.error("Could not start the Agent because the absolut path of the \"log4j-cloud.xml\" file cannot be determined.");
+        }
 
         final Class<?> c = this.getClass();
         _version = c.getPackage().getImplementationVersion();
