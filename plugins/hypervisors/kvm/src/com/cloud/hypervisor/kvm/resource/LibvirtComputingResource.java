@@ -199,6 +199,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestResourceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InputDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.guestNetType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VirtioSerialDef;
@@ -4396,6 +4397,21 @@ ServerResource {
         try {
             dm = conn.domainLookupByName(vmName);
             String vmDef = dm.getXMLDesc(0);
+            LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+            parser.parseDomainXML(vmDef);
+            for (InterfaceDef nic :parser.getInterfaces()) {
+                if ((nic.getNetType() == guestNetType.BRIDGE) && (nic.getBrName().startsWith("cloudVirBr"))) {
+                    try {
+                        int vnetId = Integer.parseInt(nic.getBrName().replaceFirst("cloudVirBr", ""));
+                        String pifName = getPif(_guestBridgeName);
+                        String newBrName = "br" + pifName + "-"+ vnetId;
+                        vmDef = vmDef.replaceAll("'" + nic.getBrName() + "'", "'" + newBrName + "'");
+                        s_logger.debug("VM bridge name is changed from " + nic.getBrName() + " to " + newBrName);
+                    } catch (NumberFormatException e) {
+                        continue;
+                    }
+                }
+            }
             s_logger.debug(vmDef);
             msg = stopVM(conn, vmName);
             msg = startVM(conn, vmName, vmDef);
