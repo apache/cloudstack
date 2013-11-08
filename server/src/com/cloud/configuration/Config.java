@@ -192,6 +192,14 @@ public enum Config {
     AlertPurgeInterval("Advanced", ManagementServer.class, Integer.class, "alert.purge.interval", "86400", "The interval (in seconds) to wait before running the alert purge thread", null),
     AlertPurgeDelay("Advanced", ManagementServer.class, Integer.class, "alert.purge.delay", "0", "Alerts older than specified number days will be purged. Set this value to 0 to never delete alerts", null),
     HostReservationReleasePeriod("Advanced", ManagementServer.class, Integer.class, "host.reservation.release.period", "300000", "The interval in milliseconds between host reservation release checks", null),
+    UseSystemPublicIps("Advanced", ManagementServer.class, Boolean.class, "use.system.public.ips", "true",
+            "If true, when account has dedicated public ip range(s), once the ips dedicated to the account have been" +
+            " consumed ips will be acquired from the system pool",
+            null, ConfigurationParameterScope.account.toString()),
+    UseSystemGuestVlans("Advanced", ManagementServer.class, Boolean.class, "use.system.guest.vlans", "true",
+                "If true, when account has dedicated guest vlan range(s), once the vlans dedicated to the account have been" +
+                " consumed vlans will be allocated from the system pool",
+                null, ConfigurationParameterScope.account.toString()),
     // LB HealthCheck Interval.
     LBHealthCheck("Advanced", ManagementServer.class, String.class, "healthcheck.update.interval", "600",
             "Time Interval to fetch the LB health check states (in sec)", null),
@@ -379,6 +387,7 @@ public enum Config {
 	IntervalToEchoBaremetalSecurityGroupAgent("Advanced", ManagementServer.class, Integer.class, "interval.baremetal.securitygroup.agent.echo", "10", "Interval to echo baremetal security group agent, in seconds", null),
 	TimeoutToEchoBaremetalSecurityGroupAgent("Advanced", ManagementServer.class, Integer.class, "timeout.baremetal.securitygroup.agent.echo", "3600", "Timeout to echo baremetal security group agent, in seconds, the provisioning process will be treated as a failure", null),
     BaremetalIpmiLanInterface("Advanced", ManagementServer.class, String.class, "baremetal.ipmi.lan.interface", "default", "option specified in -I option of impitool. candidates are: open/bmc/lipmi/lan/lanplus/free/imb, see ipmitool man page for details. default valule 'default' means using default option of ipmitool", null),
+    BaremetalIpmiRetryTimes("Advanced", ManagementServer.class, String.class, "baremetal.ipmi.fail.retry", "5", "ipmi interface will be temporary out of order after power opertions(e.g. cycle, on), it leads following commands fail immediately. The value specifies retry times before accounting it as real failure", null),
 
     ApiLimitEnabled("Advanced", ManagementServer.class, Boolean.class, "api.throttling.enabled", "false", "Enable/disable Api rate limit", null),
 	ApiLimitInterval("Advanced", ManagementServer.class, Integer.class, "api.throttling.interval", "1", "Time interval (in seconds) to reset API count", null),
