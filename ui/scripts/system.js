@@ -14950,12 +14950,9 @@
                             fields: {
                                 name: {
                                     label: 'label.name'
-                                },
-                                url: {
-                                    label: 'label.url'
-                                },
-                                providername: {
-                                    label: 'Provider'
+                                },                                
+                                protocol: {
+                                    label: 'label.protocol'
                                 }
                             },
 
@@ -15635,6 +15632,9 @@
                                         }, {
                                             url: {
                                                 label: 'label.url'
+                                            },
+                                            protocol: {
+                                                label: 'label.protocol'
                                             },
                                             providername: {
                                                 label: 'Provider'
