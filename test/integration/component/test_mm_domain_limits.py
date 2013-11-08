@@ -56,7 +56,7 @@ class Services:
                                 "displaytext": "Tiny Instance",
                                 "cpunumber": 1,
                                 "cpuspeed": 100,    # in MHz
-                                "memory": 5120,    # In MBs
+                                "memory": 2048,    # In MBs
                         },
                         "virtual_machine": {
                                 "displayname": "TestVM",
@@ -183,7 +183,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
 
         Resources.updateLimit(self.apiclient,
                               resourcetype=9,
-                              max=15360,
+                              max=6144,
                               account=self.child_do_admin_1.name,
                               domainid=self.child_do_admin_1.domainid)
 
@@ -203,17 +203,17 @@ class TestDomainMemoryLimits(cloudstackTestCase):
 
         Resources.updateLimit(self.apiclient,
                               resourcetype=9,
-                              max=15360,
+                              max=6144,
                               account=self.child_do_admin_2.name,
                               domainid=self.child_do_admin_2.domainid)
         return
 
     @attr(tags=["advanced", "advancedns","simulator"])
     def test_01_change_service_offering(self):
-        """Test Deploy VM with 5 GB RAM & verify the usage"""
+        """Test Deploy VM with specified RAM & verify the usage"""
 
         # Validate the following
-        # 1. Create compute offering with 5 GB RAM & Deploy VM in the created domain
+        # 1. Create compute offering with specified RAM & Deploy VM in the created domain
         # 2. List Resource count for the root admin Memory usage
         # 3. Upgrade and downgrade service offering
         # 4. Resource count should list properly for the domain
@@ -228,7 +228,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.domain = domain
 
             #Resetting memory count in service offering
-            self.services["service_offering"]["memory"] = 5120
+            self.services["service_offering"]["memory"] = 2048
 
             self.debug("Creating an instance with service offering: %s" %
                                                     self.service_offering.name)
@@ -266,24 +266,24 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.assertEqual(resource_count_after_stop, expected_resource_count,
                          "Resource count should be same after stopping the instance")
 
-            self.debug("Creating service offering with 7 GB RAM")
-            self.services["service_offering"]["memory"] = 7168
-            self.service_offering_7gb = ServiceOffering.create(
+            self.debug("Creating service offering with 5 GB RAM")
+            self.services["service_offering"]["memory"] = 5120
+            self.service_offering_5gb = ServiceOffering.create(
                                             self.apiclient,
                                             self.services["service_offering"]
                                             )
             # Adding to cleanup list after execution
-            self.cleanup.append(self.service_offering_7gb)
+            self.cleanup.append(self.service_offering_5gb)
 
             self.debug(
                 "Upgrade service offering of instance %s from %s to %s" %
                                             (vm.name,
                                              self.service_offering.name,
-                                             self.service_offering_7gb.name))
+                                             self.service_offering_5gb.name))
 
             try:
                 vm.change_service_offering(self.apiclient,
-                                serviceOfferingId=self.service_offering_7gb.id)
+                                serviceOfferingId=self.service_offering_5gb.id)
             except Exception as e:
                 self.fail("Failed to change service offering of vm %s - %s" %
                                                                 (vm.name, e))
@@ -305,7 +305,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
             self.debug(
                 "Down grade service offering of instance %s from %s to %s" %
                                             (vm.name,
-                                             self.service_offering_7gb.name,
+                                             self.service_offering_5gb.name,
                                              self.service_offering.name))
 
             try:
@@ -349,15 +349,15 @@ class TestDomainMemoryLimits(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns","simulator"])
     def test_02_migrate_vm(self):
-        """Test Deploy VM with 5 GB RAM & verify the usage"""
+        """Test Deploy VM with specified RAM & verify the usage"""
 
         # Validate the following
-        # 1. Create compute offering with 5 GB RAM & Deploy VM in the created domain
+        # 1. Create compute offering with specified RAM & Deploy VM in the created domain
         # 2. List Resource count for the root admin Memory usage
         # 3. Migrate vm to another host, resource count should list properly.
 
         #Resetting memory count in service offering
-        self.services["service_offering"]["memory"] = 5120
+        self.services["service_offering"]["memory"] = 2048
 
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts()
@@ -408,15 +408,15 @@ class TestDomainMemoryLimits(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns","simulator"])
     def test_03_delete_vm(self):
-        """Test Deploy VM with 5 GB RAM & verify the usage"""
+        """Test Deploy VM with specified RAM & verify the usage"""
 
         # Validate the following
-        # 1. Create compute offering with 5 GB RAM & Deploy VM in the created domain
+        # 1. Create compute offering with specified RAM & Deploy VM in the created domain
         # 2. List Resource count for the root admin Memory usage
         # 3. Delete vm, resource count should list as 0 after delete operation.
 
         # Resetting the memory count of service offering
-        self.services["service_offering"]["memory"] = 5120
+        self.services["service_offering"]["memory"] = 2048
 
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts()
@@ -467,16 +467,16 @@ class TestDomainMemoryLimits(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns","simulator"])
     def test_04_deploy_multiple_vm(self):
-        """Test Deploy multiple VM with 5 GB RAM & verify the usage"""
+        """Test Deploy multiple VM with specified RAM & verify the usage"""
 
         # Validate the following
-        # 1. Create compute offering with 5 GB RAM
+        # 1. Create compute offering with specified RAM
         # 2. Deploy multiple VMs with this service offering
         # 3. List Resource count for the root admin Memory usage
         # 4. Memory usage should list properly
 
         # Resetting the memory count of service offering
-        self.services["service_offering"]["memory"] = 5120
+        self.services["service_offering"]["memory"] = 2048
 
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts()
@@ -607,7 +607,7 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
                                                             self.domain.name)
         Resources.updateLimit(self.apiclient,
                               resourcetype=9,
-                              max=10240,
+                              max=4096,
                               account=self.parentd_admin.name,
                               domainid=self.parentd_admin.domainid)
         self.debug("Creating a sub-domain under: %s" % self.parent_domain.name)
@@ -631,14 +631,14 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
                                                         self.cdomain_1.name)
         Resources.updateLimit(self.apiclient,
                               resourcetype=9,
-                              max=5120,
+                              max=2048,
                               domainid=self.cadmin_1.domainid)
 
         self.debug("Updating the Memory resource count for account: %s" %
                                                         self.cadmin_1.name)
         Resources.updateLimit(self.apiclient,
                               resourcetype=9,
-                              max=2148,
+                              max=2048,
                               account=self.cadmin_1.name,
                               domainid=self.cadmin_1.domainid)
 
@@ -653,14 +653,14 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
                                                         self.cdomain_2.name)
         Resources.updateLimit(self.apiclient,
                               resourcetype=9,
-                              max=5120,
+                              max=2048,
                               domainid=self.cadmin_2.domainid)
 
         self.debug("Updating the Memory resource count for domain: %s" %
                                                         self.cadmin_2.name)
         Resources.updateLimit(self.apiclient,
                               resourcetype=9,
-                              max=2148,
+                              max=2048,
                               account=self.cadmin_2.name,
                               domainid=self.cadmin_2.domainid)
 
@@ -684,9 +684,8 @@ class TestMultipleChildDomainsMemory(cloudstackTestCase):
         """Test memory limits with multiple child domains"""
 
         # Validate the following
-        # 1. Create Domain1 with 10 GB RAM and 2 child domains with 5 GB
-        #    each.Assign 2 GB for Domain1 admin1 & Domain1 User1 .Assign 2
-        #    GB for Domain2 admin1 & Domain2 User1
+        # 1. Create Domain1 with 4 GB RAM and 2 child domains with 2 GB
+        #    each.
         # 2. Deploy VM's by Domain1 admin1/user1/ Domain2 user1/Admin1 account
         #    and verify the resource updates
         # 3. Deploy VM by admin account after reaching max parent domain limit
