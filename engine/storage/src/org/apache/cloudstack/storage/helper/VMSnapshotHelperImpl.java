@@ -122,7 +122,7 @@ public class VMSnapshotHelperImpl implements VMSnapshotHelper {
 
     private VMSnapshotTO convert2VMSnapshotTO(VMSnapshotVO vo) {
         return new VMSnapshotTO(vo.getId(), vo.getName(),  vo.getType(), vo.getCreated().getTime(), vo.getDescription(),
-                vo.getCurrent(), null);
+                vo.getCurrent(), null, true);
     }
 
     @Override
