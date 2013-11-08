@@ -1190,6 +1190,15 @@ var addExtraPropertiesToUcsBladeObject = function(jsonObj) {
 	jsonObj.bladeid = array1[2];
 }
 
+var processPropertiesInImagestoreObject = function(jsonObj) {	
+	if (jsonObj.url != undefined) {
+		var url = jsonObj.url; //e.g. 'cifs://10.1.1.1/aaa/aaa2/aaa3?user=bbb&password=ccc&domain=ddd'
+		var passwordIndex = url.indexOf('&password='); //38
+		var domainIndex = url.indexOf('&domain=');    //51
+		jsonObj.url = url.substring(0, passwordIndex) + url.substring(domainIndex); //remove '&password=ccc' from jsonObj.url
+	}	
+}
+
 //find service object in network object
 
     function ipFindNetworkServiceByName(pName, networkObj) {

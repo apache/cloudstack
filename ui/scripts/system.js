@@ -7254,8 +7254,14 @@
                                                         url: createURL('listImageStores' + searchByArgs),
                                                         data: data,
                                                         success: function(json) {
-                                                            args.response.success({
-                                                                data: json.listimagestoresresponse.imagestore
+                                                            var items = json.listimagestoresresponse.imagestore;                                                        	
+                                                            if (items != undefined) {
+                                                            	for (var i = 0; i < items.length; i++) {
+                                                            		processPropertiesInImagestoreObject(items[i]);
+                                                            	}
+                                                            }                                                            
+                                                        	args.response.success({
+                                                                data: items
                                                             });
                                                         },
                                                         error: function(json) {
@@ -7263,19 +7269,6 @@
                                                         }
                                                     });
                                                 }
-
-                                                /*
-                        ,
-                        detailView: {
-                          updateContext: function (args) {
-                            return {
-                              zones: [{}]
-                            };
-
-                          }
-                        }
-                        */
-
                                             }
                                         },
                                         cacheStorage: {
@@ -15678,7 +15671,8 @@
                                                 dataType: "json",
                                                 async: true,
                                                 success: function(json) {
-                                                    var item = json.listimagestoresresponse.imagestore[0];
+                                                    var item = json.listimagestoresresponse.imagestore[0];                                                    
+                                                    processPropertiesInImagestoreObject(item);                                                    
                                                     args.response.success({
                                                         actionFilter: secondarystorageActionfilter,
                                                         data: item
