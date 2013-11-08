@@ -4776,7 +4776,7 @@ ServerResource {
         Calendar _timestamp;
     }
 
-    private VmStatsEntry getVmStat(Connect conn, String vmName)
+    VmStatsEntry getVmStat(Connect conn, String vmName)
             throws LibvirtException {
         Domain dm = null;
         try {
@@ -4821,10 +4821,10 @@ ServerResource {
             }
 
             if (oldStats != null) {
-                long deltarx = rx - oldStats._rx;
+                double deltarx = rx - oldStats._rx;
                 if (deltarx > 0)
                     stats.setNetworkReadKBs(deltarx / 1024);
-                long deltatx = tx - oldStats._tx;
+                double deltatx = tx - oldStats._tx;
                 if (deltatx > 0)
                     stats.setNetworkWriteKBs(deltatx / 1024);
             }
@@ -4850,10 +4850,10 @@ ServerResource {
                 long deltaiowr = io_wr - oldStats._io_wr;
                 if (deltaiowr > 0)
                     stats.setDiskWriteIOs(deltaiowr);
-                long deltabytesrd = bytes_rd - oldStats._bytes_rd;
+                double deltabytesrd = bytes_rd - oldStats._bytes_rd;
                 if (deltabytesrd > 0)
                     stats.setDiskReadKBs(deltabytesrd / 1024);
-                long deltabyteswr = bytes_wr - oldStats._bytes_wr;
+                double deltabyteswr = bytes_wr - oldStats._bytes_wr;
                 if (deltabyteswr > 0)
                     stats.setDiskWriteKBs(deltabyteswr / 1024);
             }
