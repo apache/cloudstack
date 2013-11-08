@@ -330,7 +330,7 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
     return 'snapshot exists' in result
 
 def validateList(inp):
-        '''
+    """
     @name: validateList
     @Description: 1. A utility function to validate
                  whether the input passed is a list
@@ -349,7 +349,7 @@ def validateList(inp):
                                               default to None.
                                               INVALID_INPUT
                                               EMPTY_LIST
-    '''
+    """
     ret = [FAIL, None, None]
     if inp is None:
         ret[2] = INVALID_INPUT
