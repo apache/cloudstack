@@ -31,6 +31,7 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Web.Http;
+using CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2;
 
 namespace HypervResource
 {
@@ -1449,6 +1450,9 @@ namespace HypervResource
                     logger.Debug(CloudStackTypes.StartupStorageCommand + " set available bytes to " + available);
 
                     string ipAddr = strtRouteCmd.privateIpAddress;
+                    var vmStates = wmiCallsV2.GetVmSync(config.PrivateIpAddress);
+                    strtRouteCmd.vms = Utils.CreateCloudStackMapObject(vmStates);
+
                     StoragePoolInfo pi = new StoragePoolInfo(
                         poolGuid.ToString(),
                         ipAddr,

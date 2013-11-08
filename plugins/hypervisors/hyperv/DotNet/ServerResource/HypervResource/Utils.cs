@@ -45,6 +45,16 @@ namespace HypervResource
             return new JObject(objTypeValuePairing);
         }
 
+        /// <summary>
+        /// serialize dictonary to map json type
+        /// </summary>
+        /// <param name="objValue">Object's data, can be an anonymous object, e.g. </param>
+        /// <returns></returns>
+        public static JToken CreateCloudStackMapObject(object objValue)
+        {
+            JToken objContent = JToken.FromObject(objValue);
+            return objContent;
+        }
 
         /// <summary>
         /// Copy file on network share to local volume.

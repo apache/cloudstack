@@ -396,6 +396,20 @@ namespace HypervResource
         }
     }
 
+    public class VmState
+    {
+        [JsonProperty("state")]
+        public String state;
+        [JsonProperty("host")]
+        String host;
+        public VmState() { }
+        public VmState(String vmState, String host)
+        {
+            this.state = vmState;
+            this.host = host;
+        }
+    }
+
     public struct StoragePoolInfo
     {
         [JsonProperty("uuid")]

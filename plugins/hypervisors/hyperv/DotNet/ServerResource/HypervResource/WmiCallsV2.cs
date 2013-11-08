@@ -1549,6 +1549,19 @@ namespace HypervResource
             return null;
         }
 
+        public Dictionary<String, VmState> GetVmSync(String privateIpAddress)
+        {
+            List<String> vms = GetVmElementNames();
+            Dictionary<String, VmState> vmSyncStates = new Dictionary<string, VmState>();
+            String vmState;
+            foreach (String vm in vms)
+            {
+                 vmState = EnabledState.ToCloudStackState(GetComputerSystem(vm).EnabledState);
+                 vmSyncStates.Add(vm, new VmState(vmState, privateIpAddress));
+            }
+            return vmSyncStates;
+        }
+
         public List<string> GetVmElementNames()
         {
             List<string> result = new List<string>();
