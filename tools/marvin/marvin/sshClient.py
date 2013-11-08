@@ -178,5 +178,5 @@ class SshClient(object):
 
 if __name__ == "__main__":
     with contextlib.closing(SshClient("10.223.75.10", 22, "root",
-                                            "password")) as ssh:
+                                      "password")) as ssh:
         print ssh.execute("ls -l")

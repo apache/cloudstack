@@ -22,7 +22,7 @@
 #Import Local Modules
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-import marvin.remoteSSHClient
+import marvin.sshClient
 from utils import *
 from base import *
 
@@ -102,7 +102,7 @@ def download_systemplates_sec_storage(server, services):
 
     try:
         # Login to management server
-        ssh = marvin.remoteSSHClient.remoteSSHClient(
+        ssh = marvin.sshClient.SshClient(
                                           server["ipaddress"],
                                           server["port"],
                                           server["username"],

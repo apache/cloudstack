@@ -29,7 +29,7 @@ import socket
 import urlparse
 import datetime
 from marvin.cloudstackAPI import *
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin.sshClient import SshClient
 from marvin.codes import *
 
 
@@ -124,7 +124,7 @@ def is_server_ssh_ready(ipaddress, port, username, password, retries=20, retryin
     '''
 
     try:
-        ssh = remoteSSHClient(
+        ssh = SshClient(
             host=ipaddress,
             port=port,
             user=username,
@@ -190,7 +190,7 @@ def get_process_status(hostip, port, username, password, linklocalip, process, h
     """Double hop and returns a process status"""
 
     #SSH to the machine
-    ssh = remoteSSHClient(hostip, port, username, password)
+    ssh = SshClient(hostip, port, username, password)
     if str(hypervisor).lower() == 'vmware':
         ssh_command = "ssh -i /var/cloudstack/management/.ssh/id_rsa -ostricthostkeychecking=no "
     else:
@@ -296,7 +296,7 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
     mgtSvr, user, passwd = config.mgtSvr[0].mgtSvrIp, config.mgtSvr[0].user, config.mgtSvr[0].passwd
 
     try:
-        ssh_client = remoteSSHClient(
+        ssh_client = SshClient(
             mgtSvr,
             22,
             user,
