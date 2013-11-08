@@ -460,7 +460,7 @@ class TestPortForwarding(cloudstackTestCase):
                 "SSHing into VM with IP address %s after NAT rule deletion" %
                                                  self.virtual_machine.ipaddress)
 
-           SshClient(
+            SshClient(
                                             src_nat_ip_addr.ipaddress,
                                             self.virtual_machine.ssh_port,
                                             self.virtual_machine.username,
