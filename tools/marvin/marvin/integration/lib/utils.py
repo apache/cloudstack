@@ -329,11 +329,10 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
                       (config.mgtSvr[0].mgtSvrIp, e))
     return 'snapshot exists' in result
 
-
 def validateList(inp):
-        '''
-        @name: validateList
-        @Description: 1. A utility function to validate
+    """
+    @name: validateList
+    @Description: 1. A utility function to validate
                  whether the input passed is a list
               2. The list is empty or not
               3. If it is list and not empty, return PASS and first element
@@ -350,18 +349,18 @@ def validateList(inp):
                                               default to None.
                                               INVALID_INPUT
                                               EMPTY_LIST
-        '''
-        ret = [FAIL, None, None]
-        if inp is None:
-            ret[2] = INVALID_INPUT
-            return ret
-        if not isinstance(inp, list):
-            ret[2] = INVALID_INPUT
-            return ret
-        if len(inp) == 0:
-            ret[2] = EMPTY_LIST
-            return ret
-        return [PASS, inp[0], None]
+    """
+    ret = [FAIL, None, None]
+    if inp is None:
+        ret[2] = INVALID_INPUT
+        return ret
+    if not isinstance(inp, list):
+        ret[2] = INVALID_INPUT
+        return ret
+    if len(inp) == 0:
+        ret[2] = EMPTY_LIST
+        return ret
+    return [PASS, inp[0], None]
 
 def verifyElementInList(inp, toverify, responsevar=None,  pos=0):
     '''
