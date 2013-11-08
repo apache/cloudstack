@@ -113,7 +113,7 @@ namespace HypervResource
             }
         }
 
-        public static void connectToRemote(string remoteUNC, string domain, string username, string password)
+        public static void ConnectToRemote(string remoteUNC, string domain, string username, string password)
         {
             NETRESOURCE nr = new NETRESOURCE();
             nr.dwType = RESOURCETYPE_DISK;
@@ -130,13 +130,28 @@ namespace HypervResource
             }
         }
 
-        public static void disconnectRemote(string remoteUNC)
+        public static void DisconnectRemote(string remoteUNC)
         {
             int ret = WNetCancelConnection2(remoteUNC, CONNECT_UPDATE_PROFILE, false);
             if (ret != NO_ERROR)
             {
                 throw new ArgumentException("net disconnect of share " + remoteUNC + "failed with " + getErrorForNumber(ret));
             }
+        }
+
+        public static void GetShareDetails(string remoteUNC, out long capacity, out long available)
+        {
+            ulong freeBytesAvailable;
+            ulong totalNumberOfBytes;
+            ulong totalNumberOfFreeBytes;
+
+            if (!GetDiskFreeSpaceEx(remoteUNC, out freeBytesAvailable, out totalNumberOfBytes, out totalNumberOfFreeBytes))
+            {
+                throw new ArgumentException("Not able to retrieve the capcity details of the share " + remoteUNC);
+            }
+
+            available = freeBytesAvailable > 0 ? (long)freeBytesAvailable : 0;
+            capacity = totalNumberOfBytes > 0 ? (long)totalNumberOfBytes : 0;
         }
 
         // from http://stackoverflow.com/a/2541569/939250
@@ -156,6 +171,12 @@ namespace HypervResource
 
         [DllImport("Mpr.dll")]
         private static extern int WNetCancelConnection2(string lpName, int dwFlags, bool fForce);
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        private static extern bool GetDiskFreeSpaceEx(string lpDirectoryName,
+           out ulong lpFreeBytesAvailable,
+           out ulong lpTotalNumberOfBytes,
+           out ulong lpTotalNumberOfFreeBytes);
         #endregion
 
         #region consts
