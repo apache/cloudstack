@@ -178,7 +178,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         CallContext.current().setEventDetails("Volume Id: "+getVolumeId());
         Snapshot snapshot;
         try {
-            snapshot = _volumeService.takeSnapshot(this.getVolumeId(), this.getPolicyId(), this.getEntityId(), _accountService.getAccount(getEntityOwnerId()));
+            snapshot = _volumeService.takeSnapshot(this.getVolumeId(), this.getPolicyId(), this.getEntityId(), _accountService.getAccount(getEntityOwnerId()), getQuiescevm());
             if (snapshot != null) {
                 SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
                 response.setResponseName(getCommandName());
