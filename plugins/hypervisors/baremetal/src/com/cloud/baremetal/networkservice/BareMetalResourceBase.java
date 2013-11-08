@@ -90,6 +90,8 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 	protected Script2 _bootOrRebootCommand;
 	protected String _vmName;
 	protected VMInstanceDao vmDao;
+    protected int ipmiRetryTimes = 5;
+
 
 	private void changeVmState(String vmName, VirtualMachine.State state) {
 		synchronized (_vms) {
@@ -157,10 +159,16 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 		    _isEchoScAgent = Boolean.valueOf(echoScAgent);
 		}
 
+        ConfigurationDao configDao = ComponentContext.getComponent(ConfigurationDao.class);
         String ipmiIface = "default";
         try {
-            ConfigurationDao configDao = ComponentContext.getComponent(ConfigurationDao.class);
             ipmiIface = configDao.getValue(Config.BaremetalIpmiLanInterface.key());
+        } catch (Exception e) {
+            s_logger.debug(e.getMessage(), e);
+        }
+
+        try {
+            ipmiRetryTimes = Integer.valueOf(configDao.getValue(Config.BaremetalIpmiRetryTimes.key()));
         } catch (Exception e) {
             s_logger.debug(e.getMessage(), e);
         }
@@ -260,7 +268,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
     }
 
     protected boolean doScript(Script cmd, OutputInterpreter interpreter) {
-        return doScript(cmd, interpreter, 5);
+        return doScript(cmd, interpreter, ipmiRetryTimes);
     }
 
 	protected boolean doScript(Script cmd, OutputInterpreter interpreter, int retry) {
