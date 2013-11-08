@@ -55,7 +55,7 @@ class Services:
                                 "displaytext": "Tiny Instance",
                                 "cpunumber": 1,
                                 "cpuspeed": 100,    # in MHz
-                                "memory": 5120,    # In MBs
+                                "memory": 2048,    # In MBs
                         },
                         "virtual_machine": {
                                 "displayname": "TestVM",
@@ -177,10 +177,10 @@ class TestMemoryLimits(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns","simulator"])
     def test_01_stop_start_instance(self):
-        """Test Deploy VM with 5 GB RAM & verify the usage"""
+        """Test Deploy VM with specified RAM & verify the usage"""
 
         # Validate the following
-        # 1. Create compute offering with 5 GB RAM & Deploy VM as root admin
+        # 1. Create compute offering with specified RAM & Deploy VM as root admin
         # 2 .List Resource count for the root admin Memory usage
         # 3. Stop and start instance, resource count should list properly.
 
@@ -229,10 +229,10 @@ class TestMemoryLimits(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns","simulator"])
     def test_02_migrate_instance(self):
-        """Test Deploy VM with 5 GB RAM & verify the usage"""
+        """Test Deploy VM with specified RAM & verify the usage"""
 
         # Validate the following
-        # 1. Create compute offering with 5 GB RAM & Deploy VM as root admin
+        # 1. Create compute offering with specified RAM & Deploy VM as root admin
         # 2. List Resource count for the root admin Memory usage
         # 3. Migrate vm, resource count should list properly.
 
@@ -268,10 +268,10 @@ class TestMemoryLimits(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns","simulator"])
     def test_03_delete_instance(self):
-        """Test Deploy VM with 5 GB RAM & verify the usage"""
+        """Test Deploy VM with specified GB RAM & verify the usage"""
 
         # Validate the following
-        # 1. Create compute offering with 5 GB RAM & Deploy VM as root admin
+        # 1. Create compute offering with specified RAM & Deploy VM as root admin
         # 2. List Resource count for the root admin Memory usage
         # 3. Delete instance, resource count should be 0 after delete operation.
 
@@ -306,11 +306,11 @@ class TestMemoryLimits(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "advancedns","simulator"])
-    def test_04_deploy_multiple_vm_with_5gb_ram(self):
-        """Test Deploy multiple VM with 5 GB RAM & verify the usage"""
+    def test_04_deploy_multiple_vm(self):
+        """Test Deploy multiple VM with specified RAM & verify the usage"""
 
         # Validate the following
-        # 1. Create compute offering with 5 GB RAM
+        # 1. Create compute offering with specified RAM
         # 2. Deploy multiple VMs with this service offering
         # 3. List Resource count for the root admin Memory usage
         # 4. Memory usage should list properly
@@ -550,10 +550,10 @@ class TestDomainMemoryLimitsConfiguration(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns","simulator"])
     def test_02_migrate_instance(self):
-        """Test Deploy VM with 5 GB memory & verify the usage"""
+        """Test Deploy VM with specified memory & verify the usage"""
 
         # Validate the following
-        # 1. Create compute offering with 5 GB memory in child domains of root domain & Deploy VM
+        # 1. Create compute offering with specified memory in child domains of root domain & Deploy VM
         # 2. List Resource count
         # 3. Migrate instance to another host
         # 4. Resource count should list properly.
@@ -608,10 +608,10 @@ class TestDomainMemoryLimitsConfiguration(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns","simulator"])
     def test_03_delete_instance(self):
-        """Test Deploy VM with 5 GB RAM & verify the usage"""
+        """Test Deploy VM with specified RAM & verify the usage"""
 
         # Validate the following
-        # 1. Create compute offering with 5 GB RAM in child domains of root domain & Deploy VM
+        # 1. Create compute offering with specified RAM in child domains of root domain & Deploy VM
         # 2. List Resource count for the Memory usage
         # 3. Delete instance
         # 4. Resource count should list as 0
@@ -663,16 +663,16 @@ class TestDomainMemoryLimitsConfiguration(cloudstackTestCase):
     @attr(tags=["advanced", "advancedns","simulator"])
     @attr(configuration='max.account.memory')
     def test_04_deploy_multiple_vm(self):
-        """Test Deploy multiple VM with 5 GB memory & verify the usage"""
-	    #keep the configuration value - max.account.memory = 20480
+        """Test Deploy multiple VM with 2 GB memory & verify the usage"""
+	    #keep the configuration value - max.account.memory = 8192 (maximum 4 instances per account with 2 GB RAM)
 
         # Validate the following
-        # 1. Create compute offering with 5 GB RAM
+        # 1. Create compute offering with 2 GB RAM
         # 2. Deploy multiple VMs with this service offering in child domains of root domain
         # 3. List Resource count for the root admin Memory usage
         # 4. Memory usage should list properly
 
-        self.debug("Creating service offering with 5 GB RAM")
+        self.debug("Creating service offering with 2 GB RAM")
         self.service_offering = ServiceOffering.create(
                                             self.apiclient,
                                             self.services["service_offering"]
@@ -695,8 +695,8 @@ class TestDomainMemoryLimitsConfiguration(cloudstackTestCase):
                                 domainid = self.domain.id
                                 )
 
-            if memory_account_gc[0].max != 20480:
-                self.skipTest("This test case requires configuration value max.account.memory to be 20480")
+            if memory_account_gc[0].max != 8192:
+                self.skipTest("This test case requires configuration value max.account.memory to be 8192")
 
 	        api_client = self.testClient.createUserApiClient(
                              UserName=self.account.name,

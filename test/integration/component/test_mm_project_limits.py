@@ -55,7 +55,7 @@ class Services:
                                 "displaytext": "Tiny Instance",
                                 "cpunumber": 1,
                                 "cpuspeed": 100,    # in MHz
-                                "memory": 5120,    # In MBs
+                                "memory": 2048,    # In MBs
                         },
                         "virtual_machine": {
                                 "displayname": "TestVM",
