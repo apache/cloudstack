@@ -493,6 +493,7 @@ CREATE TABLE `load_balancer_cert_map` (
       CONSTRAINT `fk_load_balancer_cert_map__load_balancer_id` FOREIGN KEY (`load_balancer_id`) REFERENCES `load_balancing_rules` (`id`) ON DELETE CASCADE);
 
 ALTER TABLE `cloud`.`host` ADD COLUMN `cpu_sockets` int(10) unsigned DEFAULT NULL COMMENT "the number of CPU sockets on the host" AFTER pod_id;
+ALTER TABLE `cloud`.`physical_network_traffic_types` ADD COLUMN `hyperv_network_label` varchar(255) DEFAULT NULL COMMENT 'The network name label of the physical device dedicated to this traffic on a HyperV host';
 
 DROP VIEW IF EXISTS `cloud`.`host_view`;
 CREATE VIEW `cloud`.`host_view` AS

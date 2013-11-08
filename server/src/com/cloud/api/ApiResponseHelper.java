@@ -2696,6 +2696,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setXenLabel(result.getXenNetworkLabel());
         response.setKvmLabel(result.getKvmNetworkLabel());
         response.setVmwareLabel(result.getVmwareNetworkLabel());
+        response.setHypervLabel(result.getHypervNetworkLabel());
 
         response.setObjectName("traffictype");
         return response;

@@ -1179,6 +1179,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                                break;
                     case VMware : label = mgmtTraffic.getVmwareNetworkLabel();
                                   break;
+                    case Hyperv:
+                        label = mgmtTraffic.getHypervNetworkLabel();
+                        break;
                 }
                 return label;
             }
@@ -1204,6 +1207,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                                break;
                     case VMware : label = storageTraffic.getVmwareNetworkLabel();
                                   break;
+                    case Hyperv:
+                        label = storageTraffic.getHypervNetworkLabel();
+                        break;
                 }
                 return label;
             }
@@ -1549,6 +1555,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                 case VMware:
                     label = publicTraffic.getVmwareNetworkLabel();
                     break;
+                case Hyperv:
+                    label = publicTraffic.getHypervNetworkLabel();
+                    break;
                 }
                 return label;
             }
@@ -1578,6 +1587,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                 case VMware:
                     label = guestTraffic.getVmwareNetworkLabel();
                     break;
+                case Hyperv:
+                    label = guestTraffic.getHypervNetworkLabel();
+                    break;
+                    
                 }
                 return label;
             }

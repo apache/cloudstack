@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.TrafficTypeResponse;
 import org.apache.log4j.Logger;
 
@@ -53,6 +54,8 @@ public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.VMWARE_NETWORK_LABEL, type=CommandType.STRING, description="The network name label of the physical device dedicated to this traffic on a VMware host")
     private String vmwareLabel;
 
+    @Parameter(name=ApiConstants.HYPERV_NETWORK_LABEL, type=CommandType.STRING, description="The network name label of the physical device dedicated to this traffic on a Hyperv host")
+    private String hypervLabel;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -73,6 +76,10 @@ public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
         return vmwareLabel;
     }
 
+    public String getHypervLabel() {
+        return hypervLabel;
+    }
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -89,7 +96,7 @@ public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        PhysicalNetworkTrafficType result = _networkService.updatePhysicalNetworkTrafficType(getId(), getXenLabel(), getKvmLabel(), getVmwareLabel());
+        PhysicalNetworkTrafficType result = _networkService.updatePhysicalNetworkTrafficType(getId(), getXenLabel(), getKvmLabel(), getVmwareLabel(), getHypervLabel());
         if (result != null) {
             TrafficTypeResponse response = _responseGenerator.createTrafficTypeResponse(result);
             response.setResponseName(getCommandName());

@@ -1738,7 +1738,7 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
                                 _networkSvc.addTrafficTypeToPhysicalNetwork(mgmtPhyNetwork.getId(),
                                         TrafficType.Storage.toString(), mgmtTraffic.getXenNetworkLabel(),
                                         mgmtTraffic.getKvmNetworkLabel(), mgmtTraffic.getVmwareNetworkLabel(),
-                                        mgmtTraffic.getSimulatorNetworkLabel(), mgmtTraffic.getVlan());
+                                        mgmtTraffic.getSimulatorNetworkLabel(), mgmtTraffic.getVlan(), mgmtTraffic.getHypervNetworkLabel());
                                 s_logger.info("No storage traffic type was specified by admin, create default storage traffic on physical network "
                                         + mgmtPhyNetwork.getId() + " with same configure of management traffic type");
                             }

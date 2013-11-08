@@ -315,7 +315,7 @@ public class ManagementServerMock {
             _znet = _networkService.getPhysicalNetwork(id);
             List<PhysicalNetworkVO> nets = _physicalNetworkDao.listByZoneAndTrafficType(_zone.getId(), TrafficType.Public);
             if (nets == null || nets.isEmpty()) {
-                _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Public.toString(), null, null, null, null, null);
+                _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Public.toString(), null, null, null, null, null, null);
             }
         } catch (InvalidParameterValueException e) {
             List<String> isolationMethods = new ArrayList<String>();
@@ -325,7 +325,7 @@ public class ManagementServerMock {
                     null, "znet");
             List<PhysicalNetworkVO> nets = _physicalNetworkDao.listByZoneAndTrafficType(_zone.getId(), TrafficType.Public);
             if (nets == null || nets.isEmpty()) {
-                _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Public.toString(), null, null, null, null, null);
+                _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Public.toString(), null, null, null, null, null, null);
             }
         }
         if (_znet.getState() != PhysicalNetwork.State.Enabled) {
@@ -344,7 +344,7 @@ public class ManagementServerMock {
         }
         if (!found) {
             _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Guest.toString(),
-                    null, null, null, null, null);
+                    null, null, null, null, null, null);
         }
 
         Pair<List<? extends PhysicalNetworkServiceProvider>, Integer> providers =

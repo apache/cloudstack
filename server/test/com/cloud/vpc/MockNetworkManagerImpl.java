@@ -520,7 +520,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
      */
     @Override
     public PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficType,
-            String xenLabel, String kvmLabel, String vmwareLabel, String simulatorLabel, String vlan) {
+            String xenLabel, String kvmLabel, String vmwareLabel, String simulatorLabel, String vlan, String hypervLabel) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -547,7 +547,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
      */
     @Override
     public PhysicalNetworkTrafficType updatePhysicalNetworkTrafficType(Long id, String xenLabel, String kvmLabel,
-            String vmwareLabel) {
+            String vmwareLabel, String hypervLabel) {
         // TODO Auto-generated method stub
         return null;
     }
