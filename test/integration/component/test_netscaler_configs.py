@@ -25,7 +25,7 @@ from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin.sshClient import SshClient
 import datetime
 
 
@@ -1745,7 +1745,7 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
         self.debug("SSH into netscaler: %s" %
                                     self.services["netscaler"]["ipaddress"])
         try:
-            ssh_client = remoteSSHClient(
+            ssh_client = SshClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -1891,7 +1891,7 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
                                     listall=True
                                     )
             nw = network_list[0]
-            ssh_client = remoteSSHClient(
+            ssh_client = SshClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -2051,7 +2051,7 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
         self.debug("SSH into netscaler: %s" %
                                     self.services["netscaler"]["ipaddress"])
         try:
-            ssh_client = remoteSSHClient(
+            ssh_client = SshClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -2249,7 +2249,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
         self.debug("SSH into netscaler: %s" %
                                     self.services["netscaler"]["ipaddress"])
         try:
-            ssh_client = remoteSSHClient(
+            ssh_client = SshClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -2334,7 +2334,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                                     listall=True
                                     )
             nw = network_list[0]
-            ssh_client = remoteSSHClient(
+            ssh_client = SshClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -2396,7 +2396,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                                     listall=True
                                     )
             nw = network_list[0]
-            ssh_client = remoteSSHClient(
+            ssh_client = SshClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
@@ -2458,7 +2458,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                                     listall=True
                                     )
             nw = network_list[0]
-            ssh_client = remoteSSHClient(
+            ssh_client = SshClient(
                                     self.services["netscaler"]["ipaddress"],
                                     self.services["netscaler"]["port"],
                                     self.services["netscaler"]["username"],
