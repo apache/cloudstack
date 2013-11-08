@@ -39,7 +39,7 @@ from marvin.integration.lib.common import (get_domain,
 from marvin.cloudstackAPI.createEgressFirewallRule import createEgressFirewallRuleCmd
 from marvin.cloudstackAPI.deleteEgressFirewallRule import deleteEgressFirewallRuleCmd
 
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin.sshClient import SshClient
 import time
 
 class Services:
@@ -270,7 +270,7 @@ class TestEgressFWRules(cloudstackTestCase):
             fd.write(expect_script)
             fd.close()
 
-            ssh = remoteSSHClient(host=sourceip,
+            ssh = SshClient(host=sourceip,
                                   port=22,
                                   user='root',
                                   passwd=self.services["host_password"])
