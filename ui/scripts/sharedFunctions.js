@@ -1230,6 +1230,17 @@ var addExtraPropertiesToUcsBladeObject = function(jsonObj) {
         return url;
     }
 
+    function smbURL(server, path, smbUsername, smbPassword, smbDomain) {
+        var url = '';
+        if (server.indexOf('://') == -1) {
+        	url += 'cifs://';
+        }
+        
+        url += (server + path + '?user=' + smbUsername + '&password=' + smbPassword + '&domain=' + smbDomain);
+               
+        return url;
+    }
+    
     function presetupURL(server, path) {
         var url;
         if (server.indexOf("://") == -1)

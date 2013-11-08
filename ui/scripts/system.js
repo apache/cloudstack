@@ -15016,7 +15016,8 @@
                                                         },
                                                         success: function(json) {
                                                             var objs = json.liststorageprovidersresponse.dataStoreProvider;
-                                                            var items = [];
+                                                            //var items = [];
+                                                            var items = [{id: 'SMB', description: 'SMB'}]; //temporary, before Rajesh adds 'SMB' to listStorageProviders API response.
                                                             if (objs != null) {
                                                                 for (var i = 0; i < objs.length; i++) {
                                                                     if (objs[i].name == 'NFS')
@@ -15038,11 +15039,16 @@
                                                             args.$select.change(function() {
                                                                 var $form = $(this).closest('form');
                                                                 if ($(this).val() == "NFS") {
-                                                                    //NFS
+                                                                	//NFS, SMB
                                                                     $form.find('.form-item[rel=zoneid]').css('display', 'inline-block');
                                                                     $form.find('.form-item[rel=nfsServer]').css('display', 'inline-block');
-                                                                    $form.find('.form-item[rel=path]').css('display', 'inline-block');
-
+                                                                    $form.find('.form-item[rel=path]').css('display', 'inline-block');  
+                                                                    
+                                                                    //SMB
+                                                                    $form.find('.form-item[rel=smbUsername]').hide();
+                                                                    $form.find('.form-item[rel=smbPassword]').hide();
+                                                                    $form.find('.form-item[rel=smbDomain]').hide();
+                                                                    
                                                                     //S3
                                                                     $form.find('.form-item[rel=accesskey]').hide();
                                                                     $form.find('.form-item[rel=secretkey]').hide();
@@ -15063,13 +15069,50 @@
                                                                     $form.find('.form-item[rel=url]').hide();
                                                                     $form.find('.form-item[rel=account]').hide();
                                                                     $form.find('.form-item[rel=username]').hide();
-                                                                    $form.find('.form-item[rel=key]').hide();
+                                                                    $form.find('.form-item[rel=key]').hide();    
+                                                                } else if ($(this).val() == "SMB") {   
+                                                                	//NFS, SMB
+                                                                    $form.find('.form-item[rel=zoneid]').css('display', 'inline-block');
+                                                                    $form.find('.form-item[rel=nfsServer]').css('display', 'inline-block');
+                                                                    $form.find('.form-item[rel=path]').css('display', 'inline-block');  
+                                                                    
+                                                                    //SMB
+                                                                    $form.find('.form-item[rel=smbUsername]').css('display', 'inline-block');
+                                                                    $form.find('.form-item[rel=smbPassword]').css('display', 'inline-block');
+                                                                    $form.find('.form-item[rel=smbDomain]').css('display', 'inline-block');
+                                                                    
+                                                                    //S3
+                                                                    $form.find('.form-item[rel=accesskey]').hide();
+                                                                    $form.find('.form-item[rel=secretkey]').hide();
+                                                                    $form.find('.form-item[rel=bucket]').hide();
+                                                                    $form.find('.form-item[rel=endpoint]').hide();
+                                                                    $form.find('.form-item[rel=usehttps]').hide();
+                                                                    $form.find('.form-item[rel=connectiontimeout]').hide();
+                                                                    $form.find('.form-item[rel=maxerrorretry]').hide();
+                                                                    $form.find('.form-item[rel=sockettimeout]').hide();
+
+                                                                    $form.find('.form-item[rel=createNfsCache]').find('input').removeAttr('checked');
+                                                                    $form.find('.form-item[rel=createNfsCache]').hide();
+                                                                    $form.find('.form-item[rel=nfsCacheZoneid]').hide();
+                                                                    $form.find('.form-item[rel=nfsCacheNfsServer]').hide();
+                                                                    $form.find('.form-item[rel=nfsCachePath]').hide();
+
+                                                                    //Swift
+                                                                    $form.find('.form-item[rel=url]').hide();
+                                                                    $form.find('.form-item[rel=account]').hide();
+                                                                    $form.find('.form-item[rel=username]').hide();
+                                                                    $form.find('.form-item[rel=key]').hide();                                                                                                                                   
                                                                 } else if ($(this).val() == "S3") {
-                                                                    //NFS
+                                                                	//NFS, SMB
                                                                     $form.find('.form-item[rel=zoneid]').hide();
                                                                     $form.find('.form-item[rel=nfsServer]').hide();
-                                                                    $form.find('.form-item[rel=path]').hide();
-
+                                                                    $form.find('.form-item[rel=path]').hide();  
+                                                                    
+                                                                    //SMB
+                                                                    $form.find('.form-item[rel=smbUsername]').hide();
+                                                                    $form.find('.form-item[rel=smbPassword]').hide();
+                                                                    $form.find('.form-item[rel=smbDomain]').hide();
+                                                                    
                                                                     //S3
                                                                     $form.find('.form-item[rel=accesskey]').css('display', 'inline-block');
                                                                     $form.find('.form-item[rel=secretkey]').css('display', 'inline-block');
@@ -15094,11 +15137,16 @@
                                                                     $form.find('.form-item[rel=username]').hide();
                                                                     $form.find('.form-item[rel=key]').hide();
                                                                 } else if ($(this).val() == "Swift") {
-                                                                    //NFS
+                                                                	//NFS, SMB
                                                                     $form.find('.form-item[rel=zoneid]').hide();
                                                                     $form.find('.form-item[rel=nfsServer]').hide();
-                                                                    $form.find('.form-item[rel=path]').hide();
-
+                                                                    $form.find('.form-item[rel=path]').hide();      
+                                                                    
+                                                                    //SMB
+                                                                    $form.find('.form-item[rel=smbUsername]').hide();
+                                                                    $form.find('.form-item[rel=smbPassword]').hide();
+                                                                    $form.find('.form-item[rel=smbDomain]').hide();
+                                                                    
                                                                     //S3
                                                                     $form.find('.form-item[rel=accesskey]').hide();
                                                                     $form.find('.form-item[rel=secretkey]').hide();
@@ -15130,7 +15178,7 @@
                                             },
 
 
-                                            //NFS (begin)
+                                            //NFS, SMB (begin)
                                             zoneid: {
                                                 label: 'Zone',
                                                 docID: 'helpSecondaryStorageZone',
@@ -15177,8 +15225,31 @@
                                                 validation: {
                                                     required: true
                                                 }
+                                            },     
+                                            //NFS, SMB (end)
+                                            
+                                            
+                                            //SMB (begin)                                            
+                                            smbUsername: {
+                                            	label: 'SMB Username',
+                                            	validation: {
+                                                    required: true
+                                                }
                                             },
-                                            //NFS (end)
+                                            smbPassword: {
+                                            	label: 'SMB Password',
+                                            	isPassword: true,
+                                            	validation: {
+                                                    required: true
+                                                }
+                                            },
+                                            smbDomain: {
+                                            	label: 'SMB Domain',
+                                            	validation: {
+                                                    required: true
+                                                }
+                                            },
+                                            //SMB (end)
 
 
                                             //S3 (begin)
@@ -15337,7 +15408,33 @@
                                                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                                     args.response.error(errorMsg);
                                                 }
+                                            });    
+                                        } else if (args.data.provider == 'SMB') {
+                                        	var zoneid = args.data.zoneid;
+                                            var nfs_server = args.data.nfsServer;
+                                            var path = args.data.path;
+                                            var url = smbURL(nfs_server, path, args.data.smbUsername, args.data.smbPassword, args.data.smbDomain);
+
+                                            $.extend(data, {
+                                                provider: args.data.provider,
+                                                zoneid: zoneid,
+                                                url: url
                                             });
+
+                                            $.ajax({
+                                                url: createURL('addImageStore'),
+                                                data: data,
+                                                success: function(json) {
+                                                    var item = json.addimagestoreresponse.imagestore;
+                                                    args.response.success({
+                                                        data: item
+                                                    });
+                                                },
+                                                error: function(XMLHttpResponse) {
+                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                    args.response.error(errorMsg);
+                                                }
+                                            });    
                                         } else if (args.data.provider == 'S3') {
                                             $.extend(data, {
                                                 provider: args.data.provider,
