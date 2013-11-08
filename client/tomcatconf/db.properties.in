@@ -86,9 +86,9 @@ db.simulator.autoReconnect=true
 # High Availability And Cluster Properties
 db.ha.enabled=false
 # cloud stack Database
-db.cloud.slaves=localhost,localhost     #Comma Separated list of slaves
+db.cloud.slaves=localhost,localhost
 db.cloud.autoReconnect=true
-db.cloud.failOverReadOnly=false         #Do not change this parameter to true
+db.cloud.failOverReadOnly=false
 db.cloud.reconnectAtTxEnd=true
 db.cloud.autoReconnectForPools=true
 db.cloud.secondsBeforeRetryMaster=3600
@@ -96,9 +96,9 @@ db.cloud.queriesBeforeRetryMaster=5000
 db.cloud.initialTimeout=3600
 
 #usage Database
-db.usage.slaves=localhost,localhost     #Comma Separated list of slaves
+db.usage.slaves=localhost,localhost
 db.usage.autoReconnect=true
-db.usage.failOverReadOnly=false         #Do not change this parameter to true
+db.usage.failOverReadOnly=false
 db.usage.reconnectAtTxEnd=true
 db.usage.autoReconnectForPools=true
 db.usage.secondsBeforeRetryMaster=3600
