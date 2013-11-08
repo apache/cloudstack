@@ -462,7 +462,9 @@
                         $value.html(_s(
                             $input.attr('value')
                         ));
-                    else if ($input.is('input[type=checkbox]')) {
+                    else if ($input.is('input[type=password]')) {
+                        $value.html('');
+                    } else if ($input.is('input[type=checkbox]')) {
                         var val = $input.is(':checked');
 
                         $value.data('detail-view-boolean-value', _s(val));
@@ -628,6 +630,7 @@
                 var isBoolean = $value.data('detail-view-editable-boolean');
                 var data = !isBoolean ? cloudStack.sanitizeReverse($value.html()) : $value.data('detail-view-boolean-value');
                 var rules = $value.data('validation-rules') ? $value.data('validation-rules') : {};
+                var isPassword = $value.data('detail-view-is-password');
 
                 $value.html('');
 
@@ -667,7 +670,7 @@
                     $value.append(
                         $('<input>').attr({
                             name: name,
-                            type: 'text',
+                            type: isPassword ? 'password' : 'text',
                             value: data
                         }).addClass('disallowSpecialCharacters').data('original-value', data)
                     );
@@ -1004,6 +1007,8 @@
                 } else if (value.isBoolean) {
                     $value.data('detail-view-editable-boolean', true);
                     $value.data('detail-view-boolean-value', content == 'Yes' ? true : false);
+                } else {
+                    $value.data('detail-view-is-password', value.isPassword);
                 }
 
                 return true;
