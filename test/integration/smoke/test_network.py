@@ -578,7 +578,7 @@ class TestPortForwarding(cloudstackTestCase):
                 "SSHing into VM with IP address %s after NAT rule deletion" %
                                                  self.virtual_machine.ipaddress)
 
-           SshClient(
+            SshClient(
                                             ip_address.ipaddress.ipaddress,
                                             self.virtual_machine.ssh_port,
                                             self.virtual_machine.username,
@@ -741,7 +741,7 @@ class TestRebootRouter(cloudstackTestCase):
         try:
             self.debug("SSH into VM (ID : %s ) after reboot" % self.vm_1.id)
 
-           SshClient(
+            SshClient(
                                     self.public_ip.ipaddress.ipaddress,
                                     self.services["natrule"]["publicport"],
                                     self.vm_1.username,
