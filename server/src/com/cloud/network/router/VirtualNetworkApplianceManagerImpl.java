@@ -2060,6 +2060,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             try {
                 int priority = getUpdatedPriority(guestNetwork, routers, router);
                 router.setPriority(priority);
+                router = _routerDao.persist(router);
             } catch (InsufficientVirtualNetworkCapcityException e) {
                 s_logger.error("Failed to get update priority!", e);
                 throw new CloudRuntimeException("Failed to get update priority!");
