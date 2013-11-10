@@ -45,7 +45,9 @@ import com.vmware.vim25.HttpNfcLeaseDeviceUrl;
 import com.vmware.vim25.HttpNfcLeaseInfo;
 import com.vmware.vim25.HttpNfcLeaseState;
 import com.vmware.vim25.LongPolicy;
+import com.vmware.vim25.LocalizedMethodFault;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.MethodFault;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.OvfCreateImportSpecParams;
 import com.vmware.vim25.OvfCreateImportSpecResult;
@@ -1377,17 +1379,28 @@ public class HypervisorHostHelper {
                         }
                     }
                 } catch (Exception e) {
-                    s_logger.error("Failed to complete file upload task. " + e.getMessage());
-                    // Set flag to cleanup the stale template left due to failed import operation, if any
-                    importSuccess = false;
-                    throw e;
+                    String erroMsg = "File upload task failed to complete due to: " + e.getMessage();
+                    s_logger.error(erroMsg);
+                    importSuccess = false; // Set flag to cleanup the stale template left due to failed import operation, if any
+                    throw new Exception(erroMsg);
+                } catch (Throwable th) {
+                    String errorMsg = "throwable caught during file upload task: " + th.getMessage();
+                    s_logger.error(errorMsg);
+                    importSuccess = false; // Set flag to cleanup the stale template left due to failed import operation, if any
+                    throw new Exception(errorMsg, th); 
                 } finally {
                     progressReporter.close();
                 }
                 if (bytesAlreadyWritten == totalBytes) {
                     leaseMo.updateLeaseProgress(100);
                 }
-            }
+            } else if(state == HttpNfcLeaseState.ERROR) {
+                LocalizedMethodFault error = leaseMo.getLeaseError();
+                MethodFault fault = error.getFault();
+                String erroMsg = "Object creation on vCenter failed due to: Exception: " + fault.getClass().getName() + ", message: " + error.getLocalizedMessage();
+                s_logger.error(erroMsg);
+                throw new Exception(erroMsg);
+             }
         } finally {
             if (!importSuccess) {
                 s_logger.error("Aborting the lease on " + vmName + " after import operation failed.");
