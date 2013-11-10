@@ -41,8 +41,9 @@ class cloudstackTestClient(object):
                  dbSvrDetails, asyncTimeout=3600,
                  defaultWorkerThreads=10,
                  logging=None):
+        self.mgmtDetails = mgmtDetails
         self.connection = \
-            cloudstackConnection.cloudConnection(mgmtDetails,
+            cloudstackConnection.cloudConnection(self.mgmtDetails,
                                                  asyncTimeout,
                                                  logging)
         self.apiClient =\
@@ -148,12 +149,12 @@ class cloudstackTestClient(object):
             apiKey = registerUserRes.apikey
             securityKey = registerUserRes.secretkey
 
+        mgtDetails = self.mgmtDetails
+        mgtDetails.apiKey = apiKey
+        mgtDetails.securityKey = securityKey
+
         newUserConnection =\
-            cloudstackConnection.cloudConnection(self.connection.mgtSvr,
-                                                 self.connection.port,
-                                                 self.connection.user,
-                                                 self.connection.passwd,
-                                                 apiKey, securityKey,
+            cloudstackConnection.cloudConnection(mgtDetails,
                                                  self.connection.asyncTimeout,
                                                  self.connection.logging)
         self.userApiClient =\
