@@ -23,13 +23,10 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
-import junit.framework.TestCase;
 import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,19 +37,17 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 import static org.apache.commons.io.FileUtils.readFileToString;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.when;
+import static org.junit.Assert.fail;
+import static org.junit.Assert.assertTrue;
 
-public class CertServiceTest extends TestCase {
+public class CertServiceTest {
 
-    private static final Logger s_logger = Logger.getLogger( CertServiceTest.class);
-
-    @Override
     @Before
     public void setUp() {
         Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
@@ -60,58 +55,16 @@ public class CertServiceTest extends TestCase {
         CallContext.register(user, account);
     }
 
-    @Override
     @After
     public void tearDown() {
         CallContext.unregister();
     }
 
     @Test
-    public void testUploadSslCert() throws Exception {
-
-        /* Test1 : Given a Certificate in bad format (Not PEM), upload should fail */
-        runUploadSslCertBadFormat();
-
-        /* Test2: Given a Certificate which is not X509, upload should fail */
-        runUploadSslCertNotX509();
-
-        /* Test3: Given an expired certificate, upload should fail */
-        runUploadSslCertExpiredCert();
-
-        /* Test4: Given a private key which has a different algorithm than the certificate,
-           upload should fail.
-         */
-        runUploadSslCertBadkeyAlgo();
-
-        /* Test5: Given a private key which does not match the public key in the certificate,
-           upload should fail
-         */
-        runUploadSslCertBadkeyPair();
-
-        /* Test6: Given an encrypted private key with a bad password. Upload should fail. */
-        runUploadSslCertBadPassword();
-
-        /* Test7: If no chain is given, the certificate should be self signed. Else, uploadShould Fail */
-        runUploadSslCertNoChain();
-
-        /* Test8: Chain is given but does not have root certificate */
-        runUploadSslCertNoRootCert();
-
-        /* Test9: The chain given is not the correct chain for the certificate */
-        runUploadSslCertBadChain();
-
-        /* Test10: Given a Self-signed Certificate with encrypted key, upload should succeed */
-        runUploadSslCertSelfSignedNoPassword();
-
-        /* Test11: Given a Self-signed Certificate with non-encrypted key, upload should succeed */
-        runUploadSslCertSelfSignedWithPassword();
-
-        /* Test12: Given a certificate signed by a CA and a valid CA chain, upload should succeed */
-        runUploadSslCertWithCAChain();
-
-    }
-
-    private void runUploadSslCertWithCAChain() throws Exception {
+    /**
+     * Given a certificate signed by a CA and a valid CA chain, upload should succeed
+     */
+    public void runUploadSslCertWithCAChain() throws Exception {
         //To change body of created methods use File | Settings | File Templates.
 
         TransactionLegacy txn = TransactionLegacy.open("runUploadSslCertWithCAChain");
@@ -165,7 +118,11 @@ public class CertServiceTest extends TestCase {
         certService.uploadSslCert(uploadCmd);
     }
 
-    private void runUploadSslCertSelfSignedWithPassword() throws Exception {
+    @Test
+    /**
+     * Given a Self-signed Certificate with non-encrypted key, upload should succeed
+     */
+    public void runUploadSslCertSelfSignedWithPassword() throws Exception {
 
         TransactionLegacy txn = TransactionLegacy.open("runUploadSslCertSelfSignedWithPassword");
 
@@ -212,7 +169,11 @@ public class CertServiceTest extends TestCase {
         certService.uploadSslCert(uploadCmd);
     }
 
-    private void runUploadSslCertSelfSignedNoPassword() throws Exception {
+    @Test
+    /**
+     * Given a Self-signed Certificate with encrypted key, upload should succeed
+     */
+    public void runUploadSslCertSelfSignedNoPassword() throws Exception {
 
         TransactionLegacy txn = TransactionLegacy.open("runUploadSslCertSelfSignedNoPassword");
 
@@ -255,7 +216,8 @@ public class CertServiceTest extends TestCase {
     }
 
 
-    private void runUploadSslCertBadChain()  throws IOException, IllegalAccessException, NoSuchFieldException {
+    @Test
+    public void runUploadSslCertBadChain()  throws IOException, IllegalAccessException, NoSuchFieldException {
         //To change body of created methods use File | Settings | File Templates.
         String certFile  = getClass().getResource("/certs/rsa_ca_signed.crt").getFile();
         String keyFile   = getClass().getResource("/certs/rsa_ca_signed.key").getFile();
@@ -300,12 +262,14 @@ public class CertServiceTest extends TestCase {
 
         try {
             certService.uploadSslCert(uploadCmd);
+            fail("The chain given is not the correct chain for the certificate");
         } catch (Exception e) {
             assertTrue(e.getMessage().contains("Invalid certificate chain"));
         }
     }
 
-    private void runUploadSslCertNoRootCert()  throws IOException, IllegalAccessException, NoSuchFieldException {
+    @Test
+    public void runUploadSslCertNoRootCert()  throws IOException, IllegalAccessException, NoSuchFieldException {
 
                 //To change body of created methods use File | Settings | File Templates.
         String certFile  = getClass().getResource("/certs/rsa_ca_signed.crt").getFile();
@@ -351,13 +315,15 @@ public class CertServiceTest extends TestCase {
 
         try {
             certService.uploadSslCert(uploadCmd);
+            fail("Chain is given but does not have root certificate");
         } catch (Exception e) {
             assertTrue(e.getMessage().contains("No root certificates found"));
         }
 
     }
 
-    private void runUploadSslCertNoChain() throws IOException, IllegalAccessException, NoSuchFieldException {
+    @Test
+    public void runUploadSslCertNoChain() throws IOException, IllegalAccessException, NoSuchFieldException {
 
         String certFile = getClass().getResource("/certs/rsa_ca_signed.crt").getFile();
         String keyFile  = getClass().getResource("/certs/rsa_ca_signed.key").getFile();
@@ -394,16 +360,17 @@ public class CertServiceTest extends TestCase {
         passField.setAccessible(true);
         passField.set(uploadCmd, password);
 
-
         try {
             certService.uploadSslCert(uploadCmd);
+            fail("If no chain is given, the certificate should be self signed. Else, uploadShould Fail");
         } catch (Exception e) {
             assertTrue(e.getMessage().contains("No chain given and certificate not self signed"));
         }
 
     }
 
-    private void runUploadSslCertBadPassword() throws IOException, IllegalAccessException, NoSuchFieldException {
+    @Test
+    public void runUploadSslCertBadPassword() throws IOException, IllegalAccessException, NoSuchFieldException {
 
         String certFile = getClass().getResource("/certs/rsa_self_signed_with_pwd.crt").getFile();
         String keyFile  = getClass().getResource("/certs/rsa_self_signed_with_pwd.key").getFile();
@@ -443,13 +410,15 @@ public class CertServiceTest extends TestCase {
 
         try {
             certService.uploadSslCert(uploadCmd);
+            fail("Given an encrypted private key with a bad password. Upload should fail.");
         } catch (Exception e) {
             assertTrue(e.getMessage().contains("please check password and data"));
         }
 
     }
 
-    private void runUploadSslCertBadkeyPair() throws IOException, IllegalAccessException, NoSuchFieldException {
+    @Test
+    public void runUploadSslCertBadkeyPair() throws IOException, IllegalAccessException, NoSuchFieldException {
         // Reading appropritate files
         String certFile = getClass().getResource("/certs/rsa_self_signed.crt").getFile();
         String keyFile  = getClass().getResource("/certs/rsa_random_pkey.key").getFile();
@@ -487,7 +456,8 @@ public class CertServiceTest extends TestCase {
         }
     }
 
-    private void runUploadSslCertBadkeyAlgo() throws IOException, IllegalAccessException, NoSuchFieldException {
+    @Test
+    public void runUploadSslCertBadkeyAlgo() throws IOException, IllegalAccessException, NoSuchFieldException {
 
         // Reading appropritate files
         String certFile = getClass().getResource("/certs/rsa_self_signed.crt").getFile();
@@ -521,12 +491,14 @@ public class CertServiceTest extends TestCase {
 
         try {
             certService.uploadSslCert(uploadCmd);
+            fail("Given a private key which has a different algorithm than the certificate, upload should fail");
         } catch (Exception e) {
             assertTrue(e.getMessage().contains("Public and private key have different algorithms"));
         }
     }
 
-    private void runUploadSslCertExpiredCert() throws IOException, IllegalAccessException, NoSuchFieldException {
+    @Test
+    public void runUploadSslCertExpiredCert() throws IOException, IllegalAccessException, NoSuchFieldException {
 
         // Reading appropritate files
         String certFile = getClass().getResource("/certs/expired_cert.crt").getFile();
@@ -560,12 +532,14 @@ public class CertServiceTest extends TestCase {
 
         try {
             certService.uploadSslCert(uploadCmd);
+            fail("Given an expired certificate, upload should fail");
         } catch (Exception e) {
             assertTrue(e.getMessage().contains("Certificate expired"));
         }
     }
 
-    private void runUploadSslCertNotX509() throws IOException, IllegalAccessException, NoSuchFieldException {
+    @Test
+    public void runUploadSslCertNotX509() throws IOException, IllegalAccessException, NoSuchFieldException {
         // Reading appropritate files
         String certFile = getClass().getResource("/certs/non_x509_pem.crt").getFile();
         String keyFile  = getClass().getResource("/certs/rsa_self_signed.key").getFile();
@@ -598,12 +572,14 @@ public class CertServiceTest extends TestCase {
 
         try {
             certService.uploadSslCert(uploadCmd);
+            fail("Given a Certificate which is not X509, upload should fail");
         } catch (Exception e) {
             assertTrue(e.getMessage().contains("Expected X509 certificate"));
         }
     }
 
-    private void runUploadSslCertBadFormat() throws IOException, IllegalAccessException, NoSuchFieldException {
+    @Test
+    public void runUploadSslCertBadFormat() throws IOException, IllegalAccessException, NoSuchFieldException {
 
         // Reading appropritate files
         String certFile = getClass().getResource("/certs/bad_format_cert.crt").getFile();
@@ -637,6 +613,7 @@ public class CertServiceTest extends TestCase {
 
         try {
             certService.uploadSslCert(uploadCmd);
+            fail("Given a Certificate in bad format (Not PEM), upload should fail");
         } catch (Exception e) {
             assertTrue(e.getMessage().contains("Invalid certificate format"));
         }
@@ -644,20 +621,10 @@ public class CertServiceTest extends TestCase {
 
 
     @Test
-    public void testDeleteSslCert() throws Exception {
-        /* Test1: Delete with an invalid ID should fail */
-        runDeleteSslCertInvalidId();
-
-        /* Test2: Delete with a cert id bound to a lb should fail */
-        runDeleteSslCertBoundCert();
-
-        /* Test3: Delete with a valid Id should succeed */
-        runDeleteSslCertValid();
-
-
-    }
-
-    private void runDeleteSslCertValid() throws Exception {
+    /**
+     * Delete with a valid Id should succeed
+     */
+    public void runDeleteSslCertValid() throws Exception {
 
         TransactionLegacy txn = TransactionLegacy.open("runDeleteSslCertValid");
 
@@ -690,7 +657,8 @@ public class CertServiceTest extends TestCase {
         certService.deleteSslCert(deleteCmd);
     }
 
-    private void runDeleteSslCertBoundCert() throws NoSuchFieldException, IllegalAccessException {
+    @Test
+    public void runDeleteSslCertBoundCert() throws NoSuchFieldException, IllegalAccessException {
 
         TransactionLegacy txn = TransactionLegacy.open("runDeleteSslCertBoundCert");
 
@@ -731,6 +699,7 @@ public class CertServiceTest extends TestCase {
 
         try {
             certService.deleteSslCert(deleteCmd);
+            fail("Delete with a cert id bound to a lb should fail");
         }catch (Exception e){
             assertTrue(e.getMessage().contains("Certificate in use by a loadbalancer"));
         }
@@ -738,7 +707,8 @@ public class CertServiceTest extends TestCase {
 
     }
 
-    private void runDeleteSslCertInvalidId() throws NoSuchFieldException, IllegalAccessException {
+    @Test
+    public void runDeleteSslCertInvalidId() throws NoSuchFieldException, IllegalAccessException {
 
         TransactionLegacy txn = TransactionLegacy.open("runDeleteSslCertInvalidId");
 
@@ -768,6 +738,7 @@ public class CertServiceTest extends TestCase {
 
         try {
             certService.deleteSslCert(deleteCmd);
+            fail("Delete with an invalid ID should fail");
         }catch (Exception e){
             assertTrue(e.getMessage().contains("Invalid certificate id"));
         }
