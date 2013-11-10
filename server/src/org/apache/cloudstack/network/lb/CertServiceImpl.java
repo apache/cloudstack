@@ -24,16 +24,20 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+
 import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListSslCertsCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
 import org.apache.cloudstack.api.response.SslCertResponse;
+
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.db.DB;
+
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMReader;
@@ -45,6 +49,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.ejb.Local;
 import javax.inject.Inject;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
@@ -228,7 +233,7 @@ public class CertServiceImpl implements  CertService {
             }
 
         } catch (IOException e) {
-            throw new IllegalArgumentException("Parsing certificate/key failed: " + e.getMessage());
+            throw new IllegalArgumentException("Parsing certificate/key failed: " + e.getMessage(), e);
         }
 
         validateCert(cert, _chain != null? true: false);
@@ -273,7 +278,7 @@ public class CertServiceImpl implements  CertService {
         try {
             ((X509Certificate)cert).checkValidity();
         } catch (Exception e) {
-            throw new IllegalArgumentException("Certificate expired or not valid");
+            throw new IllegalArgumentException("Certificate expired or not valid", e);
         }
 
         if( !chain_present ) {
@@ -281,7 +286,7 @@ public class CertServiceImpl implements  CertService {
             try {
                 cert.verify(pubKey);
             } catch (Exception e) {
-                throw new IllegalArgumentException("No chain given and certificate not self signed");
+                throw new IllegalArgumentException("No chain given and certificate not self signed", e);
             }
         }
     }
@@ -309,15 +314,15 @@ public class CertServiceImpl implements  CertService {
                 throw new IllegalArgumentException("Bad public-private key");
 
         } catch (BadPaddingException e) {
-            throw new IllegalArgumentException("Bad public-private key");
+            throw new IllegalArgumentException("Bad public-private key", e);
         } catch (IllegalBlockSizeException e) {
-            throw new IllegalArgumentException("Bad public-private key");
+            throw new IllegalArgumentException("Bad public-private key", e);
         } catch (NoSuchPaddingException e) {
-            throw new IllegalArgumentException("Bad public-private key");
+            throw new IllegalArgumentException("Bad public-private key", e);
         } catch (InvalidKeyException e) {
-            throw new IllegalArgumentException("Invalid public-private key");
+            throw new IllegalArgumentException("Invalid public-private key", e);
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalArgumentException("Invalid algorithm for public-private key");
+            throw new IllegalArgumentException("Invalid algorithm for public-private key", e);
         }
     }
 
@@ -363,11 +368,11 @@ public class CertServiceImpl implements  CertService {
             CertPathBuilder builder = CertPathBuilder.getInstance("PKIX");
             builder.build(params);
         } catch (InvalidAlgorithmParameterException e) {
-            throw new IllegalArgumentException("Invalid certificate chain",null);
+            throw new IllegalArgumentException("Invalid certificate chain", e);
         } catch (CertPathBuilderException e) {
-            throw new IllegalArgumentException("Invalid certificate chain",null);
+            throw new IllegalArgumentException("Invalid certificate chain", e);
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalArgumentException("Invalid certificate chain",null);
+            throw new IllegalArgumentException("Invalid certificate chain", e);
         }
 
     }
@@ -380,7 +385,12 @@ public class CertServiceImpl implements  CertService {
                pGet = new KeyPassword(password.toCharArray());
 
           PEMReader privateKey = new PEMReader(new StringReader(key), pGet);
-          Object obj = privateKey.readObject();
+          Object obj = null;
+          try {
+              obj = privateKey.readObject();
+          } finally {
+              IOUtils.closeQuietly(privateKey);
+          }
 
         try {
 
@@ -389,9 +399,8 @@ public class CertServiceImpl implements  CertService {
 
             return (PrivateKey) obj;
 
-        }catch (Exception e){
-            e.printStackTrace();
-            throw new IOException("Invalid Key format or invalid password.");
+        } catch (Exception e){
+            throw new IOException("Invalid Key format or invalid password.", e);
         }
     }
 
@@ -402,6 +411,8 @@ public class CertServiceImpl implements  CertService {
             return (Certificate) certPem.readObject();
         } catch (Exception e) {
             throw new InvalidParameterValueException("Invalid Certificate format. Expected X509 certificate");
+        } finally {
+            IOUtils.closeQuietly(certPem);
         }
     }
 
@@ -419,7 +430,7 @@ public class CertServiceImpl implements  CertService {
             }
         }
         if ( certs.size() == 0 )
-            throw new IllegalArgumentException("Unable to decode certificate chain",null);
+            throw new IllegalArgumentException("Unable to decode certificate chain");
 
         return certs;
     }
