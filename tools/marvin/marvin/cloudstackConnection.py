@@ -34,7 +34,8 @@ from requests import RequestException
 class cloudConnection(object):
     """ Connections to make API calls to the cloudstack management server
     """
-    def __init__(self, mgmtDet,asyncTimeout=3600, logging=None, scheme='http',path='client/api'):
+    def __init__(self, mgmtDet, asyncTimeout=3600, logging=None,
+                 path='client/api'):
         self.loglevel()  # Turn off requests logs
         self.apiKey = mgmtDet.apiKey
         self.securityKey = mgmtDet.securityKey
@@ -47,6 +48,7 @@ class cloudConnection(object):
         self.logging = logging
         self.path = path
         self.retries = 5
+        self.mgtDetails = mgmtDet
         self.protocol = "http"
         self.asyncTimeout = asyncTimeout
         self.auth = True
@@ -59,11 +61,9 @@ class cloudConnection(object):
                        % (self.protocol, self.mgtSvr, self.port, self.path)
 
     def __copy__(self):
-        return cloudConnection(self.mgtSvr, self.port, self.user,
-                               self.passwd, self.apiKey,
-                               self.securityKey,
-                               self.asyncTimeout, self.logging,
-                               self.protocol,
+        return cloudConnection(self.mgtDetails,
+                               self.asyncTimeout,
+                               self.logging,
                                self.path)
 
     def loglevel(self, lvl=logging.WARNING):
