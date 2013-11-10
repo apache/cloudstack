@@ -738,6 +738,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 } catch (NoTransitionException e) {
                     s_logger.debug("Unable to destroy existing volume: " + e.toString());
                 }
+                // In case of VMware VM will continue to use the old root disk until expunged, so force expunge old root disk
+                if (vm.getHypervisorType() == HypervisorType.VMware) {
+                    s_logger.info("Expunging volume " + existingVolume.getId() + " from primary data store");
+                    AsyncCallFuture<VolumeApiResult> future = volService.expungeVolumeAsync(volFactory.getVolume(existingVolume.getId()));
+                    try {
+                        future.get();
+                    } catch (Exception e) {
+                        s_logger.debug("Failed to expunge volume:" + existingVolume.getId(), e);
+                    }
+                }
                 
                 return newVolume;
             }
