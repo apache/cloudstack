@@ -84,6 +84,7 @@ import javax.naming.ConfigurationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
@@ -567,7 +568,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
     @Override
     public GetDomRVersionAnswer getDomRVersion(GetDomRVersionCmd cmd) {
-        return new GetDomRVersionAnswer(cmd, null, null, null);
+        return new GetDomRVersionAnswer(cmd, null, "CloudStack Release 4.2.0", UUID.randomUUID().toString());
     }
 
     @Override
