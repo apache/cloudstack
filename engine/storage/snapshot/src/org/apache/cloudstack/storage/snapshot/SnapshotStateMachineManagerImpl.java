@@ -51,6 +51,7 @@ public class SnapshotStateMachineManagerImpl implements SnapshotStateMachineMana
         stateMachine.addTransition(Snapshot.State.Copying, Event.OperationFailed, Snapshot.State.BackedUp);
         stateMachine.addTransition(Snapshot.State.Destroying, Event.OperationSucceeded, Snapshot.State.Destroyed);
         stateMachine.addTransition(Snapshot.State.Destroying, Event.OperationFailed, State.BackedUp);
+        stateMachine.addTransition(Snapshot.State.Allocated, Event.OperationFailed, State.Error);
 
         stateMachine.registerListener(new SnapshotStateListener());
     }

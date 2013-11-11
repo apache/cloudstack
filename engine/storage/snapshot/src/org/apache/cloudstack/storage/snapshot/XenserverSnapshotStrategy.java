@@ -18,7 +18,7 @@ package org.apache.cloudstack.storage.snapshot;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.Volume;
+import com.cloud.storage.*;
 import com.cloud.utils.db.DB;
 import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
@@ -32,9 +32,6 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.utils.NumbersUtil;
@@ -255,6 +252,11 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 
         try {
             VolumeInfo volumeInfo = snapshot.getBaseVolume();
+            StoragePool store = (StoragePool)volumeInfo.getDataStore();
+            if (store != null && store.getStatus() != StoragePoolStatus.Up) {
+                snapshot.processEvent(Event.OperationFailed);
+                throw new CloudRuntimeException("store is not in up state");
+            }
             volumeInfo.stateTransit(Volume.Event.SnapshotRequested);
             SnapshotResult result = null;
             try {

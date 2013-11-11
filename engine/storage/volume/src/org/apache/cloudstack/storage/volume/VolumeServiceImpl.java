@@ -1303,11 +1303,7 @@ public class VolumeServiceImpl implements VolumeService {
 
     @Override
     public SnapshotInfo takeSnapshot(VolumeInfo volume) {
-        PrimaryDataStore store = (PrimaryDataStore)volume.getDataStore();
 
-        if (store.getStatus() != StoragePoolStatus.Up) {
-            throw new CloudRuntimeException("store is not in up state");
-        }
 
 
         SnapshotInfo snapshot = null;
