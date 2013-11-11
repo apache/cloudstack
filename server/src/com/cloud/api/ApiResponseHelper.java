@@ -1023,6 +1023,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setPublicEndPort(Integer.toString(fwRule.getSourcePortEnd()));
         List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(fwRule.getId());
         response.setCidrList(StringUtils.join(cidrs, ","));
+        
+        Network guestNtwk = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
+        response.setNetworkId(guestNtwk.getUuid());
 
         IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
         response.setPublicIpAddressId(ip.getUuid());
