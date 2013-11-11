@@ -32,6 +32,7 @@ from requests import RequestException
 
 
 class cloudConnection(object):
+
     """ Connections to make API calls to the cloudstack management server
     """
     def __init__(self, mgmtDet, asyncTimeout=3600, logging=None,
@@ -56,7 +57,7 @@ class cloudConnection(object):
            (self.apiKey is None and self.securityKey is None):
             self.auth = False
         if mgmtDet.useHttps == "True":
-           self.protocol = "https"
+            self.protocol = "https"
         self.baseurl = "%s://%s:%d/%s"\
                        % (self.protocol, self.mgtSvr, self.port, self.path)
 
@@ -157,12 +158,12 @@ class cloudConnection(object):
 
             #Verify whether protocol is "http", then call the request over http
             if self.protocol == "http":
-               if method == 'POST':
-                   response = requests.post(self.baseurl, params=payload,
+                if method == 'POST':
+                    response = requests.post(self.baseurl, params=payload,
+                                             verify=https_flag)
+                else:
+                    response = requests.get(self.baseurl, params=payload,
                                             verify=https_flag)
-               else:
-                   response = requests.get(self.baseurl, params=payload,
-                                           verify=https_flag)
             else:
                 '''
                 If protocol is https, then create the  connection url with \
@@ -170,20 +171,6 @@ class cloudConnection(object):
                 provided as part of cert
                 '''
                 try:
-                   if method == 'POST':
-                       response = requests.post(self.baseurl, params=payload,
-                                                cert=cert_path, verify=https_flag)
-                   else:
-                       response = requests.get(self.baseurl, params=payload,
-                                               cert=cert_path, verify=https_flag)
-                except Exception,e:
-                    '''
-                    If an exception occurs with current CA certs,\
-                     then try with default certs path, we dont need \
-                    to mention here the cert path
-                    '''
-                    self.logging.debug( "Creating CS connection over https \
-                                        didnt worked with user provided certs %s"%e )
                     if method == 'POST':
                         response = requests.post(self.baseurl,
                                                  params=payload,
