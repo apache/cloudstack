@@ -59,6 +59,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected final SearchBuilder<VolumeVO> DetachedAccountIdSearch;
     protected final SearchBuilder<VolumeVO> TemplateZoneSearch;
     protected final GenericSearchBuilder<VolumeVO, SumCount> TotalSizeByPoolSearch;
+    protected final GenericSearchBuilder<VolumeVO, SumCount> TotalVMSnapshotSizeByPoolSearch;
     protected final GenericSearchBuilder<VolumeVO, Long> ActiveTemplateSearch;
     protected final SearchBuilder<VolumeVO> InstanceStatesSearch;
     protected final SearchBuilder<VolumeVO> AllFieldsSearch;
@@ -316,6 +317,15 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         TotalSizeByPoolSearch.and("state", TotalSizeByPoolSearch.entity().getState(), Op.NEQ);
         TotalSizeByPoolSearch.done();
 
+        TotalVMSnapshotSizeByPoolSearch = createSearchBuilder(SumCount.class);
+        TotalVMSnapshotSizeByPoolSearch.select("sum", Func.SUM, TotalVMSnapshotSizeByPoolSearch.entity().getVmSnapshotChainSize());
+        TotalVMSnapshotSizeByPoolSearch.and("poolId", TotalVMSnapshotSizeByPoolSearch.entity().getPoolId(), Op.EQ);
+        TotalVMSnapshotSizeByPoolSearch.and("removed", TotalVMSnapshotSizeByPoolSearch.entity().getRemoved(), Op.NULL);
+        TotalVMSnapshotSizeByPoolSearch.and("state", TotalVMSnapshotSizeByPoolSearch.entity().getState(), Op.NEQ);
+        TotalVMSnapshotSizeByPoolSearch.and("vType", TotalVMSnapshotSizeByPoolSearch.entity().getVolumeType(), Op.EQ);
+        TotalVMSnapshotSizeByPoolSearch.and("instanceId", TotalVMSnapshotSizeByPoolSearch.entity().getInstanceId(), Op.NNULL);
+        TotalVMSnapshotSizeByPoolSearch.done();
+
         ActiveTemplateSearch = createSearchBuilder(Long.class);
         ActiveTemplateSearch.and("pool", ActiveTemplateSearch.entity().getPoolId(), Op.EQ);
         ActiveTemplateSearch.and("template", ActiveTemplateSearch.entity().getTemplateId(), Op.EQ);
@@ -514,6 +524,20 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         List<SumCount> results = customSearch(sc, null);
         SumCount sumCount = results.get(0);
         return new Pair<Long, Long>(sumCount.count, sumCount.sum);
+    }
+
+    @Override
+    public long getVMSnapshotSizeByPool(long poolId) {
+        SearchCriteria<SumCount> sc = TotalVMSnapshotSizeByPoolSearch.create();
+        sc.setParameters("poolId", poolId);
+        sc.setParameters("state", State.Destroy);
+        sc.setParameters("vType", Volume.Type.ROOT.toString());
+        List<SumCount> results = customSearch(sc, null);
+        if (results != null) {
+            return results.get(0).sum;
+        } else {
+            return 0;
+        }
     }
 
     @Override
