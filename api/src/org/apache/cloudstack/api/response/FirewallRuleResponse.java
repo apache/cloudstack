@@ -73,6 +73,9 @@ public class FirewallRuleResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.VM_GUEST_IP) @Param(description="the vm ip address for the port forwarding rule")
     private String destNatVmIp;
+    
+    @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the id of the guest network the port forwarding rule belongs to")
+    private String networkId;
 
 
     public String getDestNatVmIp() {
@@ -195,5 +198,9 @@ public class FirewallRuleResponse extends BaseResponse {
 
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
+    }
+
+    public void setNetworkId(String networkId) {
+        this.networkId = networkId;
     }
 }
