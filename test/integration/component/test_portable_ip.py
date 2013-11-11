@@ -807,13 +807,11 @@ class TestAssociatePublicIp(cloudstackTestCase):
         try:
 
             self.debug("Trying to SSH to ip: %s" % portableip.ipaddress.ipaddress)
-
-           SshClient(
-                        portableip.ipaddress.ipaddress,
-                        self.services['natrule']["publicport"],
-                        self.virtual_machine.username,
-                        self.virtual_machine.password
-                        )
+            SshClient(portableip.ipaddress.ipaddress,
+                      self.services['natrule']["publicport"],
+                      self.virtual_machine.username,
+                      self.virtual_machine.password
+                      )
         except Exception as e:
             self.fail("Exception while SSHing : %s" % e)
 
@@ -1532,13 +1530,11 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
         try:
 
             self.debug("Trying to SSH to ip: %s" % portableip.ipaddress.ipaddress)
-
-           SshClient(
-                        portableip.ipaddress.ipaddress,
-                        self.services['natrule']["publicport"],
-                        self.virtual_machine2.username,
-                        self.virtual_machine2.password
-                        )
+            SshClient(portableip.ipaddress.ipaddress,
+                      self.services['natrule']["publicport"],
+                      self.virtual_machine2.username,
+                      self.virtual_machine2.password
+                      )
         except Exception as e:
             self.fail("Exception while SSHing : %s" % e)
 
