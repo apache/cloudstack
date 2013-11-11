@@ -133,7 +133,7 @@ public class SocketWrapper extends PipelineImpl {
       sslContext.init(null, new TrustManager[] { new TrustAllX509TrustManager() }, null);
 
       SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
-      sslSocket = (SSLSocket) sslSocketFactory.createSocket(socket, address.getHostString(), address.getPort(), true);
+      sslSocket = (SSLSocket) sslSocketFactory.createSocket(socket, address.getHostName(), address.getPort(), true);
       sslSocket.startHandshake();
 
       InputStream sis = sslSocket.getInputStream();
