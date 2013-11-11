@@ -271,6 +271,8 @@ class cloudConnection(object):
                                 self.auth,
                                 payload=payload,
                                 method=method)
+        if response is None:
+            return None
         self.logging.debug("Request: %s Response: %s" %
                            (response.url, response.text))
         try:
