@@ -24,7 +24,6 @@ import os, sys, time
 import XenAPIPlugin
 sys.path.extend(["/usr/lib/xcp/sm/", "/usr/local/sbin/", "/sbin/"])
 import base64
-import hostvmstats
 import socket
 import stat
 import tempfile
@@ -42,15 +41,6 @@ def echo(fn):
         return res
     return wrapped
 
-@echo
-def gethostvmstats(session, args):
-    collect_host_stats = args['collectHostStats']
-    consolidation_function = args['consolidationFunction']
-    interval = args['interval']
-    start_time = args['startTime']
-    result = hostvmstats.get_stats(session, collect_host_stats, consolidation_function, interval, start_time)
-    return result
-    
 @echo
 def setup_iscsi(session, args):
    uuid=args['uuid']
@@ -1470,7 +1460,7 @@ def getDomRVersion(session, args):
     return txt
 
 if __name__ == "__main__":
-     XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, 
+     XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi,  
                             "getgateway": getgateway, "preparemigration": preparemigration, 
                             "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  
                             "ipassoc": ipassoc, "savePassword": savePassword, 
