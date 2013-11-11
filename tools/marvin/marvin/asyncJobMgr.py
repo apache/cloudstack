@@ -88,7 +88,7 @@ class workThread(threading.Thread):
                     time.mktime(jobstatus.endTime.timetuple()) - time.mktime(
                         jobstatus.startTime.timetuple())
             else:
-                result = self.connection.marvin_request(cmd)
+                result = self.connection.marvinRequest(cmd)
                 if result is None:
                     jobstatus.status = False
                 else:
