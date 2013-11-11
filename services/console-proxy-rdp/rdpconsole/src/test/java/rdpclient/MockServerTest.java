@@ -154,7 +154,7 @@ public class MockServerTest extends TestCase {
 		//System.setProperty("javax.net.debug", "ssl");
 
 		final SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-		SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket(socket, address.getHostString(), address.getPort(), true);
+		SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket(socket, address.getHostName(), address.getPort(), true);
 		sslSocket.setEnabledCipherSuites(sslSocket.getSupportedCipherSuites());
 		sslSocket.startHandshake();
 
