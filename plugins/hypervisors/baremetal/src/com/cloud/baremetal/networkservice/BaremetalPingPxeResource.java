@@ -32,6 +32,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.baremetal.PreparePxeServerAnswer;
@@ -142,7 +143,8 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
 			return null;
 		} else {
 			SSHCmdHelper.releaseSshConnection(sshConnection);
-			return new PingRoutingCommand(getType(), id, new HashMap<String, State>());
+			return new PingRoutingCommand(getType(), id, new HashMap<String, State>(),
+				new HashMap<String, HostVmStateReportEntry>());
 		}
 	}
 	

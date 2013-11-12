@@ -31,8 +31,10 @@ public class PingRoutingWithNwGroupsCommand extends PingRoutingCommand {
 		super();
 	}
 
-	public PingRoutingWithNwGroupsCommand(Host.Type type, long id, Map<String, State> states, HashMap<String, Pair<Long, Long>> nwGrpStates) {
-		super(type, id, states);
+	public PingRoutingWithNwGroupsCommand(Host.Type type, long id, 
+		Map<String, State> states, Map<String, HostVmStateReportEntry> hostVmStateReport, 
+		HashMap<String, Pair<Long, Long>> nwGrpStates) {
+		super(type, id, states, hostVmStateReport);
 		newGroupStates = nwGrpStates;
 	}
 

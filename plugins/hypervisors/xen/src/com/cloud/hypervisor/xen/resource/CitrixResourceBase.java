@@ -63,6 +63,7 @@ import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.HostStatsEntry;
+import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.ManageSnapshotAnswer;
@@ -188,6 +189,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.google.gson.Gson;
@@ -225,6 +227,7 @@ import com.xensource.xenapi.VLAN;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.VMGuestMetrics;
 import com.xensource.xenapi.XenAPIObject;
+
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -239,6 +242,7 @@ import org.xml.sax.InputSource;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -347,6 +351,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+    protected static HashMap<Types.VmPowerState, PowerState> s_powerStatesTable;
+    static {
+    	s_powerStatesTable = new HashMap<Types.VmPowerState, PowerState>();
+        s_powerStatesTable.put(Types.VmPowerState.HALTED, PowerState.PowerOff);
+        s_powerStatesTable.put(Types.VmPowerState.PAUSED, PowerState.PowerOn);
+        s_powerStatesTable.put(Types.VmPowerState.RUNNING, PowerState.PowerOn);
+        s_powerStatesTable.put(Types.VmPowerState.SUSPENDED, PowerState.PowerOn);
+        s_powerStatesTable.put(Types.VmPowerState.UNRECOGNIZED, PowerState.PowerUnknown);
+    }
+
+    // TODO vmsync {
     protected static HashMap<Types.VmPowerState, State> s_statesTable;
     static {
         s_statesTable = new HashMap<Types.VmPowerState, State>();
@@ -356,6 +371,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         s_statesTable.put(Types.VmPowerState.SUSPENDED, State.Running);
         s_statesTable.put(Types.VmPowerState.UNRECOGNIZED, State.Unknown);
     }
+    // TODO vmsync }
 
     public XsHost getHost() {
         return _host;
@@ -2975,7 +2991,61 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         final State state = s_statesTable.get(ps);
         return state == null ? State.Unknown : state;
     }
+    
+    private static PowerState convertPowerState(Types.VmPowerState powerState) {
+        return s_powerStatesTable.get(powerState);
+    }
 
+    protected HashMap<String, HostVmStateReportEntry> getHostVmStateReport(Connection conn) {
+        final HashMap<String, HostVmStateReportEntry> vmStates = new HashMap<String, HostVmStateReportEntry>();
+        Map<VM, VM.Record>  vm_map = null;
+        for (int i = 0; i < 2; i++) {
+            try {
+                vm_map = VM.getAllRecords(conn);  //USE THIS TO GET ALL VMS FROM  A CLUSTER
+                break;
+            } catch (final Throwable e) {
+                s_logger.warn("Unable to get vms", e);
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (final InterruptedException ex) {
+
+            }
+        }
+
+        if (vm_map == null) {
+            return null;
+        }
+        for (VM.Record record: vm_map.values()) {
+            if (record.isControlDomain || record.isASnapshot || record.isATemplate) {
+                continue; // Skip DOM0
+            }
+
+            VmPowerState ps = record.powerState;
+            Host host = record.residentOn;
+            String xstoolsversion = getVMXenToolsVersion(record.platform);
+            String host_uuid = null;
+            if( ! isRefNull(host) ) {
+                try {
+                    host_uuid = host.getUuid(conn);
+                } catch (BadServerResponse e) {
+                    s_logger.error("Failed to get host uuid for host " + host.toWireString(), e);
+                } catch (XenAPIException e) {
+                    s_logger.error("Failed to get host uuid for host " + host.toWireString(), e);
+                } catch (XmlRpcException e) {
+                    s_logger.error("Failed to get host uuid for host " + host.toWireString(), e);
+                }
+                vmStates.put(
+                	record.nameLabel, 
+                	new HostVmStateReportEntry(convertPowerState(ps), host_uuid, xstoolsversion)
+                );
+            }
+        }
+
+        return vmStates;
+    }
+    
+    // TODO vmsync {
     protected HashMap<String, Ternary<String, State, String>> getAllVms(Connection conn) {
         final HashMap<String, Ternary<String, State, String>> vmStates = new HashMap<String, Ternary<String, State, String>>();
         Map<VM, VM.Record>  vm_map = null;
@@ -3025,6 +3095,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         return vmStates;
     }
+    // TODO vmsync }
 
     protected State getVmState(Connection conn, final String vmName) {
         int retry = 3;
@@ -4749,13 +4820,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             Connection conn = getConnection();
             if (!_canBridgeFirewall && !_isOvs) {
-                return new PingRoutingCommand(getType(), id, null);
+                return new PingRoutingCommand(getType(), id, null, getHostVmStateReport(conn));
             } else if (_isOvs) {
                 List<Pair<String, Long>>ovsStates = ovsFullSyncStates();
-                return new PingRoutingWithOvsCommand(getType(), id, null, ovsStates);
+                return new PingRoutingWithOvsCommand(getType(), id, null, getHostVmStateReport(conn), ovsStates);
             }else {
                 HashMap<String, Pair<Long, Long>> nwGrpStates = syncNetworkGroups(conn, id);
-                return new PingRoutingWithNwGroupsCommand(getType(), id, null, nwGrpStates);
+                return new PingRoutingWithNwGroupsCommand(getType(), id, null, getHostVmStateReport(conn), nwGrpStates);
             }
         } catch (Exception e) {
             s_logger.warn("Unable to get current status", e);
@@ -5010,6 +5081,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         cmd.setHypervisorType(HypervisorType.XenServer);
         cmd.setCluster(_cluster);
         cmd.setPoolSync(false);
+        cmd.setHostVmStateReport(this.getHostVmStateReport(conn));
 
         Pool pool;
         try {

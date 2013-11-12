@@ -23,6 +23,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -46,7 +47,9 @@ public class KvmDummyResourceBase extends ServerResourceBase implements ServerRe
 
 	@Override
 	public StartupCommand[] initialize() {
-		StartupRoutingCommand cmd = new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.KVM, new HashMap<String, String>(), new HashMap<String, VmState>());
+		StartupRoutingCommand cmd = new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.KVM, 
+			new HashMap<String, String>(), new HashMap<String, VmState>(),
+			new HashMap<String, HostVmStateReportEntry>());
 		cmd.setDataCenter(_zoneId);
 		cmd.setPod(_podId);
 		cmd.setCluster(_clusterId);
