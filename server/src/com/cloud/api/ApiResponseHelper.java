@@ -2374,12 +2374,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
             response.setPublicIpAddressId(ip.getUuid());
             response.setPublicIpAddress(ip.getAddress().addr());
-        } else if (fwRule.getTrafficType() == FirewallRule.TrafficType.Egress) {
-            response.setPublicIpAddress(null);
-            Network network = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
-            response.setNetworkId(network.getUuid());
         }
-
+        
+        Network network = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
+        response.setNetworkId(network.getUuid());
+        
         FirewallRule.State state = fwRule.getState();
         String stateToSet = state.toString();
         if (state.equals(FirewallRule.State.Revoke)) {
