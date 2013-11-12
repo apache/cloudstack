@@ -193,7 +193,7 @@ public class VirtualMachineMO extends BaseMO {
 	}
 
 	public boolean powerOn() throws Exception {
-		if(getPowerState() == VirtualMachinePowerState.POWERED_ON)
+		if(getResetSafePowerState() == VirtualMachinePowerState.POWERED_ON)
 			return true;
 
 		ManagedObjectReference morTask = _context.getService().powerOnVMTask(_mor, null);
@@ -210,7 +210,7 @@ public class VirtualMachineMO extends BaseMO {
 	}
 
 	public boolean powerOff() throws Exception {
-		if(getPowerState() == VirtualMachinePowerState.POWERED_OFF)
+		if(getResetSafePowerState() == VirtualMachinePowerState.POWERED_OFF)
 			return true;
 
 		return powerOffNoCheck();
@@ -218,7 +218,7 @@ public class VirtualMachineMO extends BaseMO {
 
 	public boolean safePowerOff(int shutdownWaitMs) throws Exception {
 
-		if(getPowerState() == VirtualMachinePowerState.POWERED_OFF)
+		if(getResetSafePowerState() == VirtualMachinePowerState.POWERED_OFF)
 			return true;
 
 		if(isVMwareToolsRunning()) {
@@ -229,14 +229,14 @@ public class VirtualMachineMO extends BaseMO {
 				shutdown();
 
 				long startTick = System.currentTimeMillis();
-				while(getPowerState() != VirtualMachinePowerState.POWERED_OFF && System.currentTimeMillis() - startTick < shutdownWaitMs) {
+				while(getResetSafePowerState() != VirtualMachinePowerState.POWERED_OFF && System.currentTimeMillis() - startTick < shutdownWaitMs) {
 					try {
 						Thread.sleep(1000);
 					} catch(InterruptedException e) {
 					}
 				}
 
-				if(getPowerState() != VirtualMachinePowerState.POWERED_OFF) {
+				if(getResetSafePowerState() != VirtualMachinePowerState.POWERED_OFF) {
 					s_logger.info("can not gracefully shutdown VM within " + (shutdownWaitMs/1000) + " seconds, we will perform force power off on VM " + vmName);
 					return powerOffNoCheck();
 				}
@@ -261,7 +261,7 @@ public class VirtualMachineMO extends BaseMO {
 			// wait up to 5 seconds to make sure to avoid race conditioning for immediate following on operations
 			// that relies on a powered-off VM
 			long startTick = System.currentTimeMillis();
-			while(getPowerState() != VirtualMachinePowerState.POWERED_OFF && System.currentTimeMillis() - startTick < 5000) {
+			while(getResetSafePowerState() != VirtualMachinePowerState.POWERED_OFF && System.currentTimeMillis() - startTick < 5000) {
 				try {
 					Thread.sleep(1000);
 				} catch(InterruptedException e) {
@@ -269,7 +269,7 @@ public class VirtualMachineMO extends BaseMO {
 			}
 			return true;
 		} else {
-			 if(getPowerState() == VirtualMachinePowerState.POWERED_OFF) {
+			 if(getResetSafePowerState() == VirtualMachinePowerState.POWERED_OFF) {
 				 // to help deal with possible race-condition
 				 s_logger.info("Current power-off task failed. However, VM has been switched to the state we are expecting for");
 				 return true;
@@ -281,7 +281,7 @@ public class VirtualMachineMO extends BaseMO {
 		return false;
 	}
 
-	public VirtualMachinePowerState getPowerState() throws Exception {
+	public VirtualMachinePowerState getResetSafePowerState() throws Exception {
 
 	    VirtualMachinePowerState powerState = VirtualMachinePowerState.POWERED_OFF;
 
@@ -305,6 +305,10 @@ public class VirtualMachineMO extends BaseMO {
 	    }
 
 	    return powerState;
+	}
+	
+	public VirtualMachinePowerState getPowerState() throws Exception {
+        return (VirtualMachinePowerState)getContext().getVimClient().getDynamicProperty(_mor, "runtime.powerState");
 	}
 
 	public boolean reset() throws Exception {

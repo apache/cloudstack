@@ -59,6 +59,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.routing.*;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
@@ -69,7 +70,6 @@ import org.libvirt.DomainInterfaceStats;
 import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 import org.libvirt.NodeInfo;
-
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -112,6 +112,7 @@ import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.HostStatsEntry;
+import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.ManageSnapshotAnswer;
@@ -236,8 +237,8 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
-
 import com.ceph.rados.Rados;
 import com.ceph.rados.RadosException;
 import com.ceph.rados.IoCTX;
@@ -373,6 +374,8 @@ ServerResource {
     protected int _timeout;
     protected int _cmdsTimeout;
     protected int _stopTimeout;
+    
+    // TODO vmsync {
     protected static HashMap<DomainInfo.DomainState, State> s_statesTable;
     static {
         s_statesTable = new HashMap<DomainInfo.DomainState, State>();
@@ -388,6 +391,24 @@ ServerResource {
                 State.Unknown);
         s_statesTable.put(DomainInfo.DomainState.VIR_DOMAIN_SHUTDOWN,
                 State.Stopping);
+    }
+    // TODO vmsync }
+
+    protected static HashMap<DomainInfo.DomainState, PowerState> s_powerStatesTable;
+    static {
+    	s_powerStatesTable = new HashMap<DomainInfo.DomainState, PowerState>();
+    	s_powerStatesTable.put(DomainInfo.DomainState.VIR_DOMAIN_SHUTOFF,
+                PowerState.PowerOff);
+    	s_powerStatesTable.put(DomainInfo.DomainState.VIR_DOMAIN_PAUSED,
+                PowerState.PowerOn);
+    	s_powerStatesTable.put(DomainInfo.DomainState.VIR_DOMAIN_RUNNING,
+                PowerState.PowerOn);
+    	s_powerStatesTable.put(DomainInfo.DomainState.VIR_DOMAIN_BLOCKED,
+                PowerState.PowerOn);
+    	s_powerStatesTable.put(DomainInfo.DomainState.VIR_DOMAIN_NOSTATE,
+                PowerState.PowerUnknown);
+    	s_powerStatesTable.put(DomainInfo.DomainState.VIR_DOMAIN_SHUTDOWN,
+                PowerState.PowerOff);
     }
 
     protected HashMap<String, State> _vms = new HashMap<String, State>(20);
@@ -2812,6 +2833,11 @@ ServerResource {
         final State state = s_statesTable.get(ps);
         return state == null ? State.Unknown : state;
     }
+    
+    protected PowerState convertToPowerState(DomainInfo.DomainState ps) {
+        final PowerState state = s_powerStatesTable.get(ps);
+        return state == null ? PowerState.PowerUnknown : state;
+    }
 
     protected State getVmState(Connect conn, final String vmName) {
         int retry = 3;
@@ -3960,10 +3986,10 @@ ServerResource {
 
         if (!_can_bridge_firewall) {
             return new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id,
-                    newStates);
+                    newStates, this.getHostVmStateReport());
         } else {
             HashMap<String, Pair<Long, Long>> nwGrpStates = syncNetworkGroups(id);
-            return new PingRoutingWithNwGroupsCommand(getType(), id, newStates,
+            return new PingRoutingWithNwGroupsCommand(getType(), id, newStates, this.getHostVmStateReport(),
                     nwGrpStates);
         }
     }
@@ -4008,6 +4034,7 @@ ServerResource {
         cmd.setPool(_pool);
         cmd.setCluster(_clusterId);
         cmd.setGatewayIpAddress(_localGateway);
+        cmd.setHostVmStateReport(getHostVmStateReport());
 
         StartupStorageCommand sscmd = null;
         try {
@@ -4306,6 +4333,104 @@ ServerResource {
                         + "; vm state=" + state.toString());
 
                 vmStates.put(vmName, state);
+            } catch (final LibvirtException e) {
+                s_logger.warn("Unable to get vms", e);
+            } finally {
+                try {
+                    if (dm != null) {
+                        dm.free();
+                    }
+                } catch (LibvirtException e) {
+                    s_logger.trace("Ignoring libvirt error.", e);
+                }
+            }
+        }
+
+        return vmStates;
+    }
+    
+    private HashMap<String, HostVmStateReportEntry> getHostVmStateReport() {
+        final HashMap<String, HostVmStateReportEntry> vmStates = new HashMap<String, HostVmStateReportEntry>();
+        Connect conn = null;
+
+        if (_hypervisorType == HypervisorType.LXC) {
+        try {
+            conn = LibvirtConnection.getConnectionByType(HypervisorType.LXC.toString());
+            vmStates.putAll(getHostVmStateReport(conn));
+        } catch (LibvirtException e) {
+            s_logger.debug("Failed to get connection: " + e.getMessage());
+        }
+        }
+
+        if (_hypervisorType == HypervisorType.KVM) {
+        try {
+            conn = LibvirtConnection.getConnectionByType(HypervisorType.KVM.toString());
+            vmStates.putAll(getHostVmStateReport(conn));
+        } catch (LibvirtException e) {
+            s_logger.debug("Failed to get connection: " + e.getMessage());
+        }
+        }
+
+        return vmStates;
+    }
+    
+    private HashMap<String, HostVmStateReportEntry> getHostVmStateReport(Connect conn) {
+        final HashMap<String, HostVmStateReportEntry> vmStates = new HashMap<String, HostVmStateReportEntry>();
+
+        String[] vms = null;
+        int[] ids = null;
+
+        try {
+            ids = conn.listDomains();
+        } catch (final LibvirtException e) {
+            s_logger.warn("Unable to listDomains", e);
+            return null;
+        }
+        try {
+            vms = conn.listDefinedDomains();
+        } catch (final LibvirtException e) {
+            s_logger.warn("Unable to listDomains", e);
+            return null;
+        }
+
+        Domain dm = null;
+        for (int i = 0; i < ids.length; i++) {
+            try {
+                dm = conn.domainLookupByID(ids[i]);
+
+                DomainInfo.DomainState ps = dm.getInfo().state;
+
+                final PowerState state = convertToPowerState(ps);
+
+                s_logger.trace("VM " + dm.getName() + ": powerstate = " + ps
+                        + "; vm state=" + state.toString());
+                String vmName = dm.getName();
+                vmStates.put(vmName, new HostVmStateReportEntry(state, conn.getHostName(), null));
+            } catch (final LibvirtException e) {
+                s_logger.warn("Unable to get vms", e);
+            } finally {
+                try {
+                    if (dm != null) {
+                        dm.free();
+                    }
+                } catch (LibvirtException e) {
+                    s_logger.trace("Ignoring libvirt error.", e);
+                }
+            }
+        }
+
+        for (int i = 0; i < vms.length; i++) {
+            try {
+
+                dm = conn.domainLookupByName(vms[i]);
+
+                DomainInfo.DomainState ps = dm.getInfo().state;
+                final PowerState state = convertToPowerState(ps);
+                String vmName = dm.getName();
+                s_logger.trace("VM " + vmName + ": powerstate = " + ps
+                        + "; vm state=" + state.toString());
+
+                vmStates.put(vmName, new HostVmStateReportEntry(state, conn.getHostName(), null));
             } catch (final LibvirtException e) {
                 s_logger.warn("Unable to get vms", e);
             } finally {

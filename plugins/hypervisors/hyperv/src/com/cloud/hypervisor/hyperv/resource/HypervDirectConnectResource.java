@@ -42,7 +42,6 @@ import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckRouterAnswer;
 import com.cloud.agent.api.CheckRouterCommand;
@@ -51,6 +50,7 @@ import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
+import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PingCommand;
@@ -158,7 +158,8 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                 new StartupRoutingCommand(0, 0, 0, 0, null,
                         Hypervisor.HypervisorType.Hyperv,
                         RouterPrivateIpStrategy.HostLocal,
-                        new HashMap<String, VmState>());
+                        new HashMap<String, VmState>(),
+                        new HashMap<String, HostVmStateReportEntry>());
 
         // Identity within the data centre is decided by CloudStack kernel,
         // and passed via ServerResource.configure()
@@ -293,7 +294,8 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
     @Override
     public final PingCommand getCurrentStatus(final long id) {
-        PingCommand pingCmd = new PingRoutingCommand(getType(), id, null);
+    	// TODO, need to report VM states on host
+        PingCommand pingCmd = new PingRoutingCommand(getType(), id, null, null);
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Ping host " + _name + " (IP " + _agentIp + ")");

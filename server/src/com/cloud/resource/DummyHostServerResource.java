@@ -23,6 +23,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -57,7 +58,8 @@ public class DummyHostServerResource extends ServerResourceBase {
 	@Override
 	public PingCommand getCurrentStatus(long id) {
         HashMap<String, VirtualMachine.State> newStates = new HashMap<String, VirtualMachine.State>();
-        return new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id, newStates);
+        return new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id, newStates,
+        	new HashMap<String, HostVmStateReportEntry>());
 	}
 
 	@Override
