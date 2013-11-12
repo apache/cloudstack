@@ -27,6 +27,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.DiskOfferingVO;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -2273,6 +2274,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Filter searchFilter = new Filter(DiskOfferingJoinVO.class, "sortKey", isAscending, cmd.getStartIndex(),
                 cmd.getPageSizeVal());
         SearchCriteria<DiskOfferingJoinVO> sc = _diskOfferingJoinDao.createSearchCriteria();
+        sc.addAnd("type", Op.EQ, DiskOfferingVO.Type.Disk);
 
         Account account = CallContext.current().getCallingAccount();
         Object name = cmd.getDiskOfferingName();
