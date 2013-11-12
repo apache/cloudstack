@@ -7,8 +7,18 @@ http://cloudstack.apache.org/docs
 Version 4.2.1
 ------------------------
 
-Please check the release notes for details
+New Features:
 
+*CLOUDSTACK-4817: Configurable option to choose single vs multipart upload for S3 API
+*CLOUDSTACK-4717: Allow network with public IP Address without needing SourceNAT
+*CLOUDSTACK-4649: Device Id Changes for Xen
+*CLOUDSTACK-4816: Provide configurable option to choose single vs multipart upload to S3 object storage
+*CLOUDSTACK-3677: Xenserver VMSnapshot
+*CLOUDSTACK-723:  UCS rework
+
+Fixed Issues Filter: 
+
+    https://issues.apache.org/jira/issues/?filter=12325707
 
 Version 4.2.0
 ------------------------
