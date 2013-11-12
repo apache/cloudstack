@@ -23,10 +23,12 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.network.rules.FirewallRule;
@@ -47,6 +49,10 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.UUID, entityType = IPAddressResponse.class,
             description="the id of IP address of the firwall services")
     private Long ipAddressId;
+    
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class,
+            description="list firewall rules for ceratin network", since="4.3")
+    private Long networkId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -62,6 +68,10 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
    
     public Long getId() {
         return id;
+    }
+    
+    public Long getNetworkId() {
+        return networkId;
     }
 
     /////////////////////////////////////////////////////
