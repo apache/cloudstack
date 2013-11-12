@@ -587,6 +587,7 @@ public class VolumeVO implements Volume {
         this.hypervisorSnapshotReserve = hypervisorSnapshotReserve;
     }
 
+    @Override
     public Integer getHypervisorSnapshotReserve() {
         return hypervisorSnapshotReserve;
     }

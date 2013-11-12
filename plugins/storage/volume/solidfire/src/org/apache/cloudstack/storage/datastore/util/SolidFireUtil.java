@@ -97,8 +97,10 @@ public class SolidFireUtil
         return volumeCreateResult.result.volumeID;
     }
 
-    public static void deleteSolidFireVolume(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, long lVolumeId)
+    public static SolidFireVolume deleteSolidFireVolume(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, long lVolumeId)
     {
+        SolidFireVolume sfVolume = getSolidFireVolume(strSfMvip, iSfPort, strSfAdmin, strSfPassword, lVolumeId);
+
         final Gson gson = new GsonBuilder().create();
 
         VolumeToDelete volumeToDelete = new VolumeToDelete(lVolumeId);
@@ -106,6 +108,8 @@ public class SolidFireUtil
         String strVolumeToDeleteJson = gson.toJson(volumeToDelete);
 
         executeJsonRpc(strVolumeToDeleteJson, strSfMvip, iSfPort, strSfAdmin, strSfPassword);
+
+        return sfVolume;
     }
 
    public static void purgeSolidFireVolume(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, long lVolumeId)
@@ -137,8 +141,9 @@ public class SolidFireUtil
         String strVolumeIqn = getVolumeIqn(volumeGetResult, lVolumeId);
         long lAccountId = getVolumeAccountId(volumeGetResult, lVolumeId);
         String strVolumeStatus = getVolumeStatus(volumeGetResult, lVolumeId);
+        long lTotalSize = getVolumeTotalSize(volumeGetResult, lVolumeId);
 
-        return new SolidFireVolume(lVolumeId, strVolumeName, strVolumeIqn, lAccountId, strVolumeStatus);
+        return new SolidFireVolume(lVolumeId, strVolumeName, strVolumeIqn, lAccountId, strVolumeStatus, lTotalSize);
     }
 
     public static List<SolidFireVolume> getSolidFireVolumesForAccountId(String strSfMvip, int iSfPort,
@@ -160,7 +165,7 @@ public class SolidFireUtil
         List<SolidFireVolume> sfVolumes = new ArrayList<SolidFireVolume>();
 
         for (VolumeGetResult.Result.Volume volume : volumeGetResult.result.volumes) {
-            sfVolumes.add(new SolidFireVolume(volume.volumeID, volume.name, volume.iqn, volume.accountID, volume.status));
+            sfVolumes.add(new SolidFireVolume(volume.volumeID, volume.name, volume.iqn, volume.accountID, volume.status, volume.totalSize));
         }
 
         return sfVolumes;
@@ -175,15 +180,17 @@ public class SolidFireUtil
         private final String _iqn;
         private final long _accountId;
         private final String _status;
+        private final long _totalSize;
 
         public SolidFireVolume(long id, String name, String iqn,
-                long accountId, String status)
+                long accountId, String status, long totalSize)
         {
             _id = id;
             _name = name;
             _iqn = "/" + iqn + "/0";
             _accountId = accountId;
             _status = status;
+            _totalSize = totalSize;
         }
 
         public long getId()
@@ -211,6 +218,10 @@ public class SolidFireUtil
             return ACTIVE.equalsIgnoreCase(_status);
         }
 
+        public long getTotalSize() {
+            return _totalSize;
+        }
+
         @Override
         public int hashCode() {
             return _iqn.hashCode();
@@ -235,7 +246,7 @@ public class SolidFireUtil
 
             if (_id == sfv._id && _name.equals(sfv._name) &&
                 _iqn.equals(sfv._iqn) && _accountId == sfv._accountId &&
-                isActive() == sfv.isActive()) {
+                isActive() == sfv.isActive() && getTotalSize() == sfv.getTotalSize()) {
                 return true;
             }
 
@@ -402,7 +413,7 @@ public class SolidFireUtil
         List<SolidFireVolume> deletedVolumes = new ArrayList<SolidFireVolume> ();
 
         for (VolumeGetResult.Result.Volume volume : volumeGetResult.result.volumes) {
-            deletedVolumes.add(new SolidFireVolume(volume.volumeID, volume.name, volume.iqn, volume.accountID, volume.status));
+            deletedVolumes.add(new SolidFireVolume(volume.volumeID, volume.name, volume.iqn, volume.accountID, volume.status, volume.totalSize));
         }
 
         return deletedVolumes;
@@ -748,6 +759,7 @@ public class SolidFireUtil
                 private String iqn;
                 private long accountID;
                 private String status;
+                private long totalSize;
             }
         }
     }
@@ -927,8 +939,7 @@ public class SolidFireUtil
             return volumeGetResult.result.volumes[0].name;
         }
 
-        throw new CloudRuntimeException("Could not determine the name of the volume, " +
-                "but the volume was created with an ID of " + lVolumeId + ".");
+        throw new CloudRuntimeException("Could not determine the name of the volume for volume ID of " + lVolumeId + ".");
     }
 
     private static String getVolumeIqn(VolumeGetResult volumeGetResult, long lVolumeId)
@@ -939,8 +950,7 @@ public class SolidFireUtil
             return volumeGetResult.result.volumes[0].iqn;
         }
 
-        throw new CloudRuntimeException("Could not determine the IQN of the volume, " +
-                "but the volume was created with an ID of " + lVolumeId + ".");
+        throw new CloudRuntimeException("Could not determine the IQN of the volume for volume ID of " + lVolumeId + ".");
     }
 
     private static long getVolumeAccountId(VolumeGetResult volumeGetResult, long lVolumeId)
@@ -951,8 +961,7 @@ public class SolidFireUtil
             return volumeGetResult.result.volumes[0].accountID;
         }
 
-        throw new CloudRuntimeException("Could not determine the volume's account ID, " +
-                "but the volume was created with an ID of " + lVolumeId + ".");
+        throw new CloudRuntimeException("Could not determine the account ID of the volume for volume ID of " + lVolumeId + ".");
     }
 
     private static String getVolumeStatus(VolumeGetResult volumeGetResult, long lVolumeId)
@@ -963,7 +972,17 @@ public class SolidFireUtil
             return volumeGetResult.result.volumes[0].status;
         }
 
-        throw new CloudRuntimeException("Could not determine the status of the volume, " +
-                "but the volume was created with an ID of " + lVolumeId + ".");
+        throw new CloudRuntimeException("Could not determine the status of the volume for volume ID of " + lVolumeId + ".");
+    }
+
+    private static long getVolumeTotalSize(VolumeGetResult volumeGetResult, long lVolumeId)
+    {
+        if (volumeGetResult.result.volumes != null && volumeGetResult.result.volumes.length == 1 &&
+            volumeGetResult.result.volumes[0].volumeID == lVolumeId)
+        {
+            return volumeGetResult.result.volumes[0].totalSize;
+        }
+
+        throw new CloudRuntimeException("Could not determine the total size of the volume for volume ID of " + lVolumeId + ".");
     }
 }

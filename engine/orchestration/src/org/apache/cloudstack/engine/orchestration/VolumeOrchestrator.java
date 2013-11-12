@@ -374,6 +374,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @DB
     public VolumeInfo createVolume(VolumeInfo volume, VirtualMachine vm, VirtualMachineTemplate template, DataCenter dc, Pod pod, Long clusterId, ServiceOffering offering,
             DiskOffering diskOffering, List<StoragePool> avoids, long size, HypervisorType hyperType) {
+        volume = updateHypervisorSnapshotReserveForVolume(diskOffering, volume, hyperType);
+
         StoragePool pool = null;
 
         if (diskOffering != null && diskOffering.isCustomized()) {
@@ -393,8 +395,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         pool = findStoragePool(dskCh, dc, pod, clusterId, vm.getHostId(), vm, avoidPools);
         if (pool == null) {
-            s_logger.warn("Unable to find storage pool when create volume " + volume.getName());
-            throw new CloudRuntimeException("Unable to find storage pool when create volume" + volume.getName());
+            s_logger.warn("Unable to find suitable primary storage when creating volume " + volume.getName());
+            throw new CloudRuntimeException("Unable to find suitable primary storage when creating volume " + volume.getName());
         }
 
         if (s_logger.isDebugEnabled()) {
@@ -406,7 +408,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             AsyncCallFuture<VolumeApiResult> future = null;
             boolean isNotCreatedFromTemplate = volume.getTemplateId() == null ? true : false;
             if (isNotCreatedFromTemplate) {
-                volume = updateHypervisorSnapshotReserveForVolume(diskOffering, volume, hyperType);
                 future = volService.createVolumeAsync(volume, store);
             } else {
                 TemplateInfo templ = tmplFactory.getTemplate(template.getId(), DataStoreRole.Image);

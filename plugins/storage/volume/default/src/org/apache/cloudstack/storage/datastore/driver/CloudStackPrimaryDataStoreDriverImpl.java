@@ -23,6 +23,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.cloud.storage.*;
+
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.log4j.Logger;
 
@@ -130,6 +131,11 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     @Override
     public ChapInfo getChapInfo(VolumeInfo volumeInfo) {
         return null;
+    }
+
+    @Override
+    public long getVolumeSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool) {
+        return volume.getSize();
     }
 
     @Override

@@ -141,7 +141,6 @@ public class VolumeObject implements VolumeInfo {
         return volumeVO.getMaxIops();
     }
 
-    @Override
     public void setHypervisorSnapshotReserve(Integer hypervisorSnapshotReserve) {
         volumeVO.setHypervisorSnapshotReserve(hypervisorSnapshotReserve);
     }
