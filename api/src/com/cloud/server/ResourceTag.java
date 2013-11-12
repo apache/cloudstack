@@ -32,7 +32,7 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         Network (true, true),
         Nic (false, true),
         LoadBalancer (true, false),
-        PortForwardingRule (true, false),
+        PortForwardingRule (true, true),
         FirewallRule (true, true),
         SecurityGroup (true, false),
         PublicIpAddress (true, true),

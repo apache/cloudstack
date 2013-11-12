@@ -95,6 +95,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         _daoMap.put(ResourceObjectType.Storage, _storageDetailsDao);
         _daoMap.put(ResourceObjectType.FirewallRule, _firewallRuleDetailsDao);
         _daoMap.put(ResourceObjectType.PublicIpAddress, _userIpAddressDetailsDao);
+        _daoMap.put(ResourceObjectType.PortForwardingRule, _firewallRuleDetailsDao);
 
         return true;
     }
