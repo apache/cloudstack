@@ -150,7 +150,7 @@ class TestVMOwnership(cloudstackTestCase):
             cls.service_offering = ServiceOffering.create(cls.api_client,
                                                           cls.services["service_offering"])
             # Cleanup
-            cls._cleanup = [cls.service_offering]
+            cls._cleanup.append(cls.service_offering)
             # Create domain, account, user, project and volumes.
             cls.domain_account_user1   = create_domain_account_user()
             cls.domain_account_user2   = create_domain_account_user()
