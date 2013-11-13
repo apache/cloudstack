@@ -1860,6 +1860,14 @@ class Host:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.findHostsForMigration(cmd))
 
+    @classmethod
+    def update(cls, apiclient, **kwargs):
+        """Update host information"""
+
+        cmd = updateHost.updateHostCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.updateHost(cmd))
+
 
 class StoragePool:
     """Manage Storage pools (Primary Storage)"""
