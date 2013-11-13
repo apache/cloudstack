@@ -778,7 +778,20 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 String loadBalancingIpAddress = existedGuestIp;
 
                 if (loadBalancingIpAddress == null) {
-                    loadBalancingIpAddress = _ipAddrMgr.acquireGuestIpAddress(network, null);
+                    if (network.getGuestType() == Network.GuestType.Isolated) {
+                        loadBalancingIpAddress = _ipAddrMgr.acquireGuestIpAddress(network, null);
+                    } else if (network.getGuestType() == Network.GuestType.Shared) {
+                        try {
+                            PublicIp directIp = _ipAddrMgr.assignPublicIpAddress(network.getDataCenterId(),
+                                    null, _accountDao.findById(network.getAccountId()), VlanType.DirectAttached, network.getId(),
+                                    null, true);
+                            loadBalancingIpAddress = directIp.getAddress().addr();
+                        } catch (InsufficientCapacityException capException) {
+                            String msg = "Ran out of guest IP addresses from the shared network.";
+                            s_logger.error(msg);
+                            throw new ResourceUnavailableException(msg, DataCenter.class, network.getDataCenterId());
+                        }
+                    }
                 }
 
                 if (loadBalancingIpAddress == null) {
