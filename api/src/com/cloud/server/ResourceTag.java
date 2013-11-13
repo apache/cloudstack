@@ -41,7 +41,7 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         NetworkACL (true, false),
         StaticRoute (true, false),
         VMSnapshot (true, false),
-        RemoteAccessVpn (true, false),
+        RemoteAccessVpn (true, true),
         Zone (false, true),
         ServiceOffering (false, true),
         Storage(false, true);
