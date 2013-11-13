@@ -13654,7 +13654,7 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();                                                
-                                                } else if (protocol == "SMB") { //"SMB" show almost the same fields as "nfs" does, except 3 more SMB-specific fields ().                                                  
+                                                } else if (protocol == "SMB") { //"SMB" show almost the same fields as "nfs" does, except 3 more SMB-specific fields.                                                  
                                                     $form.find('.form-item[rel=server]').css('display', 'inline-block');                                                   
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("");
                                                     
@@ -14031,38 +14031,32 @@
                                 var url = null;
                                 if (args.data.protocol == "nfs") {                                    
                                     var path = args.data.path;
-
                                     if (path.substring(0, 1) != "/")
                                         path = "/" + path;
                                     url = nfsURL(server, path);
                                     
                                 } else if (args.data.protocol == "SMB") {                                    
                                     var path = args.data.path;
-
                                     if (path.substring(0, 1) != "/")
                                         path = "/" + path;
                                     url = smbURL(server, path, args.data.smbUsername, args.data.smbPassword, args.data.smbDomain);                                
                                 } else if (args.data.protocol == "PreSetup") {                                    
                                     var path = args.data.path;
-
                                     if (path.substring(0, 1) != "/")
                                         path = "/" + path;
                                     url = presetupURL(server, path);
                                 } else if (args.data.protocol == "ocfs2") {                                    
                                     var path = args.data.path;
-
                                     if (path.substring(0, 1) != "/")
                                         path = "/" + path;
                                     url = ocfs2URL(server, path);
                                 } else if (args.data.protocol == "SharedMountPoint") {                                    
                                     var path = args.data.path;
-
                                     if (path.substring(0, 1) != "/")
                                         path = "/" + path;
                                     url = SharedMountPointURL(server, path);
                                 } else if (args.data.protocol == "clvm") {                                   
                                     var vg = args.data.volumegroup;
-
                                     if (vg.substring(0, 1) != "/")
                                         vg = "/" + vg;
                                     url = clvmURL(vg);
@@ -14071,18 +14065,15 @@
                                     var rbdpool = args.data.rbdpool;
                                     var rbdid = args.data.rbdid;
                                     var rbdsecret = args.data.rbdsecret;
-
                                     url = rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret);
                                 } else if (args.data.protocol == "vmfs") {                                    
                                     var path = args.data.vCenterDataCenter;
-
                                     if (path.substring(0, 1) != "/")
                                         path = "/" + path;
                                     path += "/" + args.data.vCenterDataStore;
                                     url = vmfsURL("dummy", path);
                                 } else {                                    
                                     var iqn = args.data.iqn;
-
                                     if (iqn.substring(0, 1) != "/")
                                         iqn = "/" + iqn;
                                     var lun = args.data.lun;
