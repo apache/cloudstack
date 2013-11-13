@@ -70,6 +70,7 @@
       <HintPath>..\packages\NSubstitute.1.6.1.0\lib\NET40\NSubstitute.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Core" />
     <Reference Include="System.Management" />
     <Reference Include="System.Net.Http" />
@@ -101,6 +102,12 @@
     </Compile>
     <Compile Include="AgentShellException.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="ProjectInstaller.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ProjectInstaller.Designer.cs">
+      <DependentUpon>ProjectInstaller.cs</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AgentSettings.Designer.cs">
       <AutoGen>True</AutoGen>
