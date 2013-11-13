@@ -589,7 +589,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
         CapacityVO cpuCap = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_CPU);
         CapacityVO memCap = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_MEMORY);
-        memCap.setTotalCapacity(host.getTotalMemory());
+
         if (cpuCap != null && memCap != null){
 
             long hostTotalCpu = host.getCpus().longValue() * host.getSpeed().longValue();

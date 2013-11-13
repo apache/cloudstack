@@ -6035,7 +6035,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             Set<VM> vms = host.getResidentVMs(conn);
             for (VM vm : vms) {
                 if (vm.getIsControlDomain(conn)) {
-                    dom0Ram = vm.getMemoryStaticMax(conn);
+                    dom0Ram = vm.getMemoryDynamicMax(conn);
                     break;
                 }
             }
