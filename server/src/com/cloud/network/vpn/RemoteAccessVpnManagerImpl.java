@@ -25,13 +25,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.command.user.vpn.ListRemoteAccessVpnsCmd;
 import org.apache.cloudstack.api.command.user.vpn.ListVpnUsersCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.domain.DomainVO;
@@ -81,10 +81,10 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.net.NetUtils;
@@ -592,6 +592,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         // do some parameter validation
         Account caller = CallContext.current().getCallingAccount();
         Long ipAddressId = cmd.getPublicIpId();
+        Long vpnId = cmd.getId();
+        Long networkId = cmd.getNetworkId();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         if (ipAddressId != null) {
@@ -619,6 +621,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("serverAddressId", sb.entity().getServerAddressId(), Op.EQ);
+        sb.and("id", sb.entity().getId(), Op.EQ);
+        sb.and("networkId", sb.entity().getNetworkId(), Op.EQ);
         sb.and("state", sb.entity().getState(), Op.EQ);
 
         SearchCriteria<RemoteAccessVpnVO> sc = sb.create();
@@ -629,6 +633,14 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         if (ipAddressId != null) {
             sc.setParameters("serverAddressId", ipAddressId);
+        }
+        
+        if (vpnId != null) {
+            sc.setParameters("id", vpnId);
+        }
+        
+        if (networkId != null) {
+            sc.setParameters("networkId", networkId);
         }
 
         Pair<List<RemoteAccessVpnVO>, Integer> result = _remoteAccessVpnDao.searchAndCount(sc, filter);
