@@ -763,9 +763,9 @@ class TestResourceLimitsProject(cloudstackTestCase):
         # Get the Root disk of VM
         volumes = list_volumes(
                             self.apiclient,
+                            virtualmachineid=virtual_machine_1.id,
                             projectid=self.project.id,
-                            type='ROOT',
-                            listall=True
+                            type='ROOT'
                             )
         self.assertEqual(
                         isinstance(volumes, list),
