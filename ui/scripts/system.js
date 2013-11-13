@@ -13526,6 +13526,10 @@
                                                     description: "nfs"
                                                 });
                                                 items.push({
+                                                    id: "SMB",
+                                                    description: "SMB/cifs"
+                                                });
+                                                items.push({
                                                     id: "SharedMountPoint",
                                                     description: "SharedMountPoint"
                                                 });
@@ -13547,6 +13551,10 @@
                                                     description: "nfs"
                                                 });
                                                 items.push({
+                                                    id: "SMB",
+                                                    description: "SMB/cifs"
+                                                });
+                                                items.push({
                                                     id: "PreSetup",
                                                     description: "PreSetup"
                                                 });
@@ -13564,6 +13572,10 @@
                                                     description: "nfs"
                                                 });
                                                 items.push({
+                                                    id: "SMB",
+                                                    description: "SMB/cifs"
+                                                });
+                                                items.push({
                                                     id: "vmfs",
                                                     description: "vmfs"
                                                 });
@@ -13577,6 +13589,10 @@
                                                     description: "nfs"
                                                 });
                                                 items.push({
+                                                    id: "SMB",
+                                                    description: "SMB/cifs"
+                                                });
+                                                items.push({
                                                     id: "ocfs2",
                                                     description: "ocfs2"
                                                 });
@@ -13588,6 +13604,10 @@
                                                 items.push({
                                                     id: "nfs",
                                                     description: "nfs"
+                                                });
+                                                items.push({
+                                                    id: "SMB",
+                                                    description: "SMB/cifs"
                                                 });
                                                 items.push({
                                                     id: "SharedMountPoint",
@@ -13610,26 +13630,71 @@
                                                     return;
 
 
-                                                if (protocol == "nfs") {
-                                                    //$("#add_pool_server_container", $dialogAddPool).show();
-                                                    $form.find('.form-item[rel=server]').css('display', 'inline-block');
-                                                    //$dialogAddPool.find("#add_pool_nfs_server").val("");
+                                                if (protocol == "nfs") {                                                    
+                                                    $form.find('.form-item[rel=server]').css('display', 'inline-block');                                                   
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("");
-
-                                                    //$('li[input_group="nfs"]', $dialogAddPool).show();
-                                                    $form.find('.form-item[rel=path]').css('display', 'inline-block');
-                                                    //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.path"]+":");
+                                                    
+                                                    $form.find('.form-item[rel=path]').css('display', 'inline-block');                                                    
                                                     var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
                                                     $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
-
-                                                    //$('li[input_group="iscsi"]', $dialogAddPool).hide();
+                                                   
+                                                    $form.find('.form-item[rel=smbUsername]').hide();
+                                                    $form.find('.form-item[rel=smbPassword]').hide();
+                                                    $form.find('.form-item[rel=smbDomain]').hide();
+                                                    
                                                     $form.find('.form-item[rel=iqn]').hide();
                                                     $form.find('.form-item[rel=lun]').hide();
-
-                                                    //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                                                   
                                                     $form.find('.form-item[rel=volumegroup]').hide();
+                                                    
+                                                    $form.find('.form-item[rel=vCenterDataCenter]').hide();
+                                                    $form.find('.form-item[rel=vCenterDataStore]').hide();
 
-                                                    //$('li[input_group="vmfs"]', $dialogAddPool).hide();
+                                                    $form.find('.form-item[rel=rbdmonitor]').hide();
+                                                    $form.find('.form-item[rel=rbdpool]').hide();
+                                                    $form.find('.form-item[rel=rbdid]').hide();
+                                                    $form.find('.form-item[rel=rbdsecret]').hide();                                                
+                                                } else if (protocol == "SMB") { //"SMB" show almost the same fields as "nfs" does, except 3 more SMB-specific fields ().                                                  
+                                                    $form.find('.form-item[rel=server]').css('display', 'inline-block');                                                   
+                                                    $form.find('.form-item[rel=server]').find(".value").find("input").val("");
+                                                    
+                                                    $form.find('.form-item[rel=path]').css('display', 'inline-block');                                                    
+                                                    var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
+                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
+                                                                                                       
+                                                    $form.find('.form-item[rel=smbUsername]').css('display', 'inline-block');     
+                                                    $form.find('.form-item[rel=smbPassword]').css('display', 'inline-block');  
+                                                    $form.find('.form-item[rel=smbDomain]').css('display', 'inline-block');  
+                                                    
+                                                    $form.find('.form-item[rel=iqn]').hide();
+                                                    $form.find('.form-item[rel=lun]').hide();
+                                                   
+                                                    $form.find('.form-item[rel=volumegroup]').hide();
+                                                    
+                                                    $form.find('.form-item[rel=vCenterDataCenter]').hide();
+                                                    $form.find('.form-item[rel=vCenterDataStore]').hide();
+
+                                                    $form.find('.form-item[rel=rbdmonitor]').hide();
+                                                    $form.find('.form-item[rel=rbdpool]').hide();
+                                                    $form.find('.form-item[rel=rbdid]').hide();
+                                                    $form.find('.form-item[rel=rbdsecret]').hide();                                                        
+                                                } else if (protocol == "ocfs2") { //ocfs2 is the same as nfs, except no server field.                                                    
+                                                    $form.find('.form-item[rel=server]').hide();                                                   
+                                                    $form.find('.form-item[rel=server]').find(".value").find("input").val("");
+                                                    
+                                                    $form.find('.form-item[rel=path]').css('display', 'inline-block');                                                    
+                                                    var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
+                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
+                                                    
+                                                    $form.find('.form-item[rel=smbUsername]').hide();
+                                                    $form.find('.form-item[rel=smbPassword]').hide();
+                                                    $form.find('.form-item[rel=smbDomain]').hide();
+                                                    
+                                                    $form.find('.form-item[rel=iqn]').hide();
+                                                    $form.find('.form-item[rel=lun]').hide();
+                                                   
+                                                    $form.find('.form-item[rel=volumegroup]').hide();
+                                                    
                                                     $form.find('.form-item[rel=vCenterDataCenter]').hide();
                                                     $form.find('.form-item[rel=vCenterDataStore]').hide();
 
@@ -13637,53 +13702,23 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
-                                                } else if (protocol == "ocfs2") { //ocfs2 is the same as nfs, except no server field.
-                                                    //$dialogAddPool.find("#add_pool_server_container").hide();
-                                                    $form.find('.form-item[rel=server]').hide();
-                                                    //$dialogAddPool.find("#add_pool_nfs_server").val("");
-                                                    $form.find('.form-item[rel=server]').find(".value").find("input").val("");
-
-                                                    //$('li[input_group="nfs"]', $dialogAddPool).show();
-                                                    $form.find('.form-item[rel=path]').css('display', 'inline-block');
-                                                    //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.path"]+":");
-                                                    var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
-                                                    $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
-
-                                                    //$('li[input_group="iscsi"]', $dialogAddPool).hide();
-                                                    $form.find('.form-item[rel=iqn]').hide();
-                                                    $form.find('.form-item[rel=lun]').hide();
-
-                                                    //$('li[input_group="clvm"]', $dialogAddPool).hide();
-                                                    $form.find('.form-item[rel=volumegroup]').hide();
-
-                                                    //$('li[input_group="vmfs"]', $dialogAddPool).hide();
-                                                    $form.find('.form-item[rel=vCenterDataCenter]').hide();
-                                                    $form.find('.form-item[rel=vCenterDataStore]').hide();
-
-                                                    $form.find('.form-item[rel=rbdmonitor]').hide();
-                                                    $form.find('.form-item[rel=rbdpool]').hide();
-                                                    $form.find('.form-item[rel=rbdid]').hide();
-                                                    $form.find('.form-item[rel=rbdsecret]').hide();
-                                                } else if (protocol == "PreSetup") {
-                                                    //$dialogAddPool.find("#add_pool_server_container").hide();
-                                                    $form.find('.form-item[rel=server]').hide();
-                                                    //$dialogAddPool.find("#add_pool_nfs_server").val("localhost");
+                                                } else if (protocol == "PreSetup") {                                                   
+                                                    $form.find('.form-item[rel=server]').hide();                                                    
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("localhost");
-
-                                                    //$('li[input_group="nfs"]', $dialogAddPool).show();
-                                                    $form.find('.form-item[rel=path]').css('display', 'inline-block');
-                                                    //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.SR.name"]+":");
+                                                   
+                                                    $form.find('.form-item[rel=path]').css('display', 'inline-block');                                                   
                                                     var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
                                                     $form.find('.form-item[rel=path]').find(".name").find("label").text("SR Name-Label:").prepend($required);
-
-                                                    //$('li[input_group="iscsi"]', $dialogAddPool).hide();
+                                                    
+                                                    $form.find('.form-item[rel=smbUsername]').hide();
+                                                    $form.find('.form-item[rel=smbPassword]').hide();
+                                                    $form.find('.form-item[rel=smbDomain]').hide();
+                                                    
                                                     $form.find('.form-item[rel=iqn]').hide();
                                                     $form.find('.form-item[rel=lun]').hide();
-
-                                                    //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                                                    
                                                     $form.find('.form-item[rel=volumegroup]').hide();
-
-                                                    //$('li[input_group="vmfs"]', $dialogAddPool).hide();
+                                                    
                                                     $form.find('.form-item[rel=vCenterDataCenter]').hide();
                                                     $form.find('.form-item[rel=vCenterDataStore]').hide();
 
@@ -13691,23 +13726,21 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
-                                                } else if (protocol == "iscsi") {
-                                                    //$dialogAddPool.find("#add_pool_server_container").show();
-                                                    $form.find('.form-item[rel=server]').css('display', 'inline-block');
-                                                    //$dialogAddPool.find("#add_pool_nfs_server").val("");
+                                                } else if (protocol == "iscsi") {                                                    
+                                                    $form.find('.form-item[rel=server]').css('display', 'inline-block');                                                    
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("");
-
-                                                    //$('li[input_group="nfs"]', $dialogAddPool).hide();
+                                                   
                                                     $form.find('.form-item[rel=path]').hide();
-
-                                                    //$('li[input_group="iscsi"]', $dialogAddPool).show();
+                                                    
+                                                    $form.find('.form-item[rel=smbUsername]').hide();
+                                                    $form.find('.form-item[rel=smbPassword]').hide();
+                                                    $form.find('.form-item[rel=smbDomain]').hide();
+                                                    
                                                     $form.find('.form-item[rel=iqn]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=lun]').css('display', 'inline-block');
-
-                                                    //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                                                    
                                                     $form.find('.form-item[rel=volumegroup]').hide();
-
-                                                    //$('li[input_group="vmfs"]', $dialogAddPool).hide();
+                                                   
                                                     $form.find('.form-item[rel=vCenterDataCenter]').hide();
                                                     $form.find('.form-item[rel=vCenterDataStore]').hide();
 
@@ -13715,23 +13748,21 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
-                                                } else if ($(this).val() == "clvm") {
-                                                    //$("#add_pool_server_container", $dialogAddPool).hide();
-                                                    $form.find('.form-item[rel=server]').hide();
-                                                    //$dialogAddPool.find("#add_pool_nfs_server").val("localhost");
+                                                } else if ($(this).val() == "clvm") {                                                    
+                                                    $form.find('.form-item[rel=server]').hide();                                                   
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("localhost");
-
-                                                    //$('li[input_group="nfs"]', $dialogAddPool).hide();
+                                                   
                                                     $form.find('.form-item[rel=path]').hide();
-
-                                                    //$('li[input_group="iscsi"]', $dialogAddPool).hide();
+                                                    
+                                                    $form.find('.form-item[rel=smbUsername]').hide();
+                                                    $form.find('.form-item[rel=smbPassword]').hide();
+                                                    $form.find('.form-item[rel=smbDomain]').hide();
+                                                    
                                                     $form.find('.form-item[rel=iqn]').hide();
                                                     $form.find('.form-item[rel=lun]').hide();
-
-                                                    //$('li[input_group="clvm"]', $dialogAddPool).show();
+                                                   
                                                     $form.find('.form-item[rel=volumegroup]').css('display', 'inline-block');
-
-                                                    //$('li[input_group="vmfs"]', $dialogAddPool).hide();
+                                                   
                                                     $form.find('.form-item[rel=vCenterDataCenter]').hide();
                                                     $form.find('.form-item[rel=vCenterDataStore]').hide();
 
@@ -13739,23 +13770,21 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
-                                                } else if (protocol == "vmfs") {
-                                                    //$dialogAddPool.find("#add_pool_server_container").show();
-                                                    $form.find('.form-item[rel=server]').css('display', 'inline-block');
-                                                    //$dialogAddPool.find("#add_pool_nfs_server").val("");
+                                                } else if (protocol == "vmfs") {                                                   
+                                                    $form.find('.form-item[rel=server]').css('display', 'inline-block');                                                  
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("");
-
-                                                    //$('li[input_group="nfs"]', $dialogAddPool).hide();
+                                                   
                                                     $form.find('.form-item[rel=path]').hide();
-
-                                                    //$('li[input_group="iscsi"]', $dialogAddPool).hide();
+                                                    
+                                                    $form.find('.form-item[rel=smbUsername]').hide();
+                                                    $form.find('.form-item[rel=smbPassword]').hide();
+                                                    $form.find('.form-item[rel=smbDomain]').hide();
+                                                    
                                                     $form.find('.form-item[rel=iqn]').hide();
                                                     $form.find('.form-item[rel=lun]').hide();
-
-                                                    //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                                                   
                                                     $form.find('.form-item[rel=volumegroup]').hide();
-
-                                                    //$('li[input_group="vmfs"]', $dialogAddPool).show();
+                                                   
                                                     $form.find('.form-item[rel=vCenterDataCenter]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=vCenterDataStore]').css('display', 'inline-block');
 
@@ -13763,25 +13792,23 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
-                                                } else if (protocol == "SharedMountPoint") { //"SharedMountPoint" show the same fields as "nfs" does.
-                                                    //$dialogAddPool.find("#add_pool_server_container").hide();
-                                                    $form.find('.form-item[rel=server]').hide();
-                                                    //$dialogAddPool.find("#add_pool_nfs_server").val("localhost");
+                                                } else if (protocol == "SharedMountPoint") { //"SharedMountPoint" show the same fields as "nfs" does.                                                    
+                                                    $form.find('.form-item[rel=server]').hide();                                                    
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("localhost");
-
-                                                    //$('li[input_group="nfs"]', $dialogAddPool).show();
+                                                    
                                                     $form.find('.form-item[rel=path]').css('display', 'inline-block');
                                                     var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
                                                     $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
-
-                                                    //$('li[input_group="iscsi"]', $dialogAddPool).hide();
+                                                    
+                                                    $form.find('.form-item[rel=smbUsername]').hide();
+                                                    $form.find('.form-item[rel=smbPassword]').hide();
+                                                    $form.find('.form-item[rel=smbDomain]').hide();
+                                                    
                                                     $form.find('.form-item[rel=iqn]').hide();
                                                     $form.find('.form-item[rel=lun]').hide();
-
-                                                    //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                                                   
                                                     $form.find('.form-item[rel=volumegroup]').hide();
-
-                                                    //$('li[input_group="vmfs"]', $dialogAddPool).hide();
+                                                    
                                                     $form.find('.form-item[rel=vCenterDataCenter]').hide();
                                                     $form.find('.form-item[rel=vCenterDataStore]').hide();
 
@@ -13809,20 +13836,19 @@
                                                     $form.find('.form-item[rel=path]').hide();
                                                     $form.find('.form-item[rel=vCenterDataCenter]').hide();
                                                     $form.find('.form-item[rel=vCenterDataStore]').hide();
-                                                } else {
-                                                    //$dialogAddPool.find("#add_pool_server_container").show();
-                                                    $form.find('.form-item[rel=server]').css('display', 'inline-block');
-                                                    //$dialogAddPool.find("#add_pool_nfs_server").val("");
+                                                    
+                                                    $form.find('.form-item[rel=smbUsername]').hide();
+                                                    $form.find('.form-item[rel=smbPassword]').hide();
+                                                    $form.find('.form-item[rel=smbDomain]').hide();
+                                                } else {                                                   
+                                                    $form.find('.form-item[rel=server]').css('display', 'inline-block');                                                    
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("");
-
-                                                    //$('li[input_group="iscsi"]', $dialogAddPool).hide();
+                                                    
                                                     $form.find('.form-item[rel=iqn]').hide();
                                                     $form.find('.form-item[rel=lun]').hide();
-
-                                                    //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                                                    
                                                     $form.find('.form-item[rel=volumegroup]').hide();
-
-                                                    //$('li[input_group="vmfs"]', $dialogAddPool).hide();
+                                                   
                                                     $form.find('.form-item[rel=vCenterDataCenter]').hide();
                                                     $form.find('.form-item[rel=vCenterDataStore]').hide();
 
@@ -13830,6 +13856,10 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
+                                                    
+                                                    $form.find('.form-item[rel=smbUsername]').hide();
+                                                    $form.find('.form-item[rel=smbPassword]').hide();
+                                                    $form.find('.form-item[rel=smbDomain]').hide();
                                                 }
                                             });
 
@@ -13857,6 +13887,30 @@
                                         isHidden: true
                                     },
 
+                                    //SMB                                           
+                                    smbUsername: {
+                                    	label: 'SMB Username',
+                                    	validation: {
+                                            required: true
+                                        },
+                                        isHidden: true
+                                    },
+                                    smbPassword: {
+                                    	label: 'SMB Password',
+                                    	isPassword: true,
+                                    	validation: {
+                                            required: true
+                                        },
+                                        isHidden: true
+                                    },
+                                    smbDomain: {
+                                    	label: 'SMB Domain',
+                                    	validation: {
+                                            required: true
+                                        },
+                                        isHidden: true
+                                    },                                    
+                                    
                                     //iscsi
                                     iqn: {
                                         label: 'label.target.iqn',
@@ -13975,36 +14029,38 @@
 
                                 var server = args.data.server;
                                 var url = null;
-                                if (args.data.protocol == "nfs") {
-                                    //var path = trim($thisDialog.find("#add_pool_path").val());
+                                if (args.data.protocol == "nfs") {                                    
                                     var path = args.data.path;
 
                                     if (path.substring(0, 1) != "/")
                                         path = "/" + path;
                                     url = nfsURL(server, path);
-                                } else if (args.data.protocol == "PreSetup") {
-                                    //var path = trim($thisDialog.find("#add_pool_path").val());
+                                    
+                                } else if (args.data.protocol == "SMB") {                                    
+                                    var path = args.data.path;
+
+                                    if (path.substring(0, 1) != "/")
+                                        path = "/" + path;
+                                    url = smbURL(server, path, args.data.smbUsername, args.data.smbPassword, args.data.smbDomain);                                
+                                } else if (args.data.protocol == "PreSetup") {                                    
                                     var path = args.data.path;
 
                                     if (path.substring(0, 1) != "/")
                                         path = "/" + path;
                                     url = presetupURL(server, path);
-                                } else if (args.data.protocol == "ocfs2") {
-                                    //var path = trim($thisDialog.find("#add_pool_path").val());
+                                } else if (args.data.protocol == "ocfs2") {                                    
                                     var path = args.data.path;
 
                                     if (path.substring(0, 1) != "/")
                                         path = "/" + path;
                                     url = ocfs2URL(server, path);
-                                } else if (args.data.protocol == "SharedMountPoint") {
-                                    //var path = trim($thisDialog.find("#add_pool_path").val());
+                                } else if (args.data.protocol == "SharedMountPoint") {                                    
                                     var path = args.data.path;
 
                                     if (path.substring(0, 1) != "/")
                                         path = "/" + path;
                                     url = SharedMountPointURL(server, path);
-                                } else if (args.data.protocol == "clvm") {
-                                    //var vg = trim($thisDialog.find("#add_pool_clvm_vg").val());
+                                } else if (args.data.protocol == "clvm") {                                   
                                     var vg = args.data.volumegroup;
 
                                     if (vg.substring(0, 1) != "/")
@@ -14017,16 +14073,14 @@
                                     var rbdsecret = args.data.rbdsecret;
 
                                     url = rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret);
-                                } else if (args.data.protocol == "vmfs") {
-                                    //var path = trim($thisDialog.find("#add_pool_vmfs_dc").val());
+                                } else if (args.data.protocol == "vmfs") {                                    
                                     var path = args.data.vCenterDataCenter;
 
                                     if (path.substring(0, 1) != "/")
                                         path = "/" + path;
                                     path += "/" + args.data.vCenterDataStore;
                                     url = vmfsURL("dummy", path);
-                                } else {
-                                    //var iqn = trim($thisDialog.find("#add_pool_iqn").val());
+                                } else {                                    
                                     var iqn = args.data.iqn;
 
                                     if (iqn.substring(0, 1) != "/")
@@ -14044,7 +14098,6 @@
                                     dataType: "json",
                                     success: function(json) {
                                         var item = json.createstoragepoolresponse.storagepool;
-
                                         args.response.success({
                                             data: item
                                         });
@@ -15007,7 +15060,7 @@
                                                         success: function(json) {
                                                             var objs = json.liststorageprovidersresponse.dataStoreProvider;
                                                             //var items = [];
-                                                            var items = [{id: 'SMB', description: 'SMB'}]; //temporary, before Rajesh adds 'SMB' to listStorageProviders API response.
+                                                            var items = [{id: 'SMB', description: 'SMB/cifs'}]; //temporary, before Rajesh adds 'SMB' to listStorageProviders API response.
                                                             if (objs != null) {
                                                                 for (var i = 0; i < objs.length; i++) {
                                                                     if (objs[i].name == 'NFS')
