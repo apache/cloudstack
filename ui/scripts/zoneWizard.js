@@ -1832,7 +1832,9 @@
                     provider: {
                         label: 'Provider',
                         select: function(args) {
-                        	var storageproviders = [];      
+                        	var storageproviders = [];  
+                        	storageproviders.push({ id: '', description: ''});                         	
+                        	
                         	$.ajax({
                         		url: createURL('listImageStores'),
                         		data: {
@@ -1842,7 +1844,7 @@
                         		success: function(json) {                        			
                         			var s3stores = json.listimagestoresresponse.imagestore;
                         			if(s3stores != null && s3stores.length > 0) {                        				
-                        				storageproviders.push({ id: 'S3', description: 'S3'});
+                        				storageproviders.push({ id: 'S3', description: 'S3'}); //if (region-wide) S3 store exists already, only "S3" option should be included here. Any other type of store is not allowed to be created since cloudstack doesn't support multiple types of store at this point. 
                         			} else {
                         				$.ajax({
                                             url: createURL('listStorageProviders'),
@@ -1851,8 +1853,7 @@
                                             },
                                             async: false,
                                             success: function(json) {
-                                                var objs = json.liststorageprovidersresponse.dataStoreProvider;
-                                                storageproviders.push({ id: '', description: ''}); 
+                                                var objs = json.liststorageprovidersresponse.dataStoreProvider;                                                
                                                 if (objs != null) {
                                                     for (var i = 0; i < objs.length; i++) {    
                                                     	storageproviders.push({
@@ -1863,6 +1864,7 @@
                                                 }                                    
                                             }
                                         });
+                        				storageproviders.push({ id: 'SMB', description: 'SMB/cifs'}); //temporary, before Rajesh adds 'SMB' to listStorageProviders API response.                                        
                         			}                        		                    			
                                     args.response.success({
                                         data: storageproviders
@@ -1880,6 +1882,11 @@
                                             $fields.filter('[rel=nfsServer]').hide();
                                             $fields.filter('[rel=path]').hide();
 
+                                            //SMB
+                                            $fields.filter('[rel=smbUsername]').hide();
+                                            $fields.filter('[rel=smbPassword]').hide();
+                                            $fields.filter('[rel=smbDomain]').hide();
+                                            
                                             //S3
                                             $fields.filter('[rel=accesskey]').hide();
                                             $fields.filter('[rel=secretkey]').hide();
@@ -1908,6 +1915,44 @@
                                             $fields.filter('[rel=nfsServer]').css('display', 'inline-block');
                                             $fields.filter('[rel=path]').css('display', 'inline-block');
 
+                                            //SMB
+                                            $fields.filter('[rel=smbUsername]').hide();
+                                            $fields.filter('[rel=smbPassword]').hide();
+                                            $fields.filter('[rel=smbDomain]').hide();
+                                            
+                                            //S3
+                                            $fields.filter('[rel=accesskey]').hide();
+                                            $fields.filter('[rel=secretkey]').hide();
+                                            $fields.filter('[rel=bucket]').hide();
+                                            $fields.filter('[rel=endpoint]').hide();
+                                            $fields.filter('[rel=usehttps]').hide();
+                                            $fields.filter('[rel=connectiontimeout]').hide();
+                                            $fields.filter('[rel=maxerrorretry]').hide();
+                                            $fields.filter('[rel=sockettimeout]').hide();
+
+                                            $fields.filter('[rel=createNfsCache]').hide();
+                                            $fields.filter('[rel=createNfsCache]').find('input').removeAttr('checked');
+                                            $fields.filter('[rel=nfsCacheNfsServer]').hide();
+                                            $fields.filter('[rel=nfsCachePath]').hide();
+
+                                            //Swift
+                                            $fields.filter('[rel=url]').hide();
+                                            $fields.filter('[rel=account]').hide();
+                                            $fields.filter('[rel=username]').hide();
+                                            $fields.filter('[rel=key]').hide();
+                                        } else if ($(this).val() == "SMB") {
+                                        	$fields.filter('[rel=name]').css('display', 'inline-block');
+                                        	
+                                        	//NFS
+                                            $fields.filter('[rel=zoneid]').css('display', 'inline-block');
+                                            $fields.filter('[rel=nfsServer]').css('display', 'inline-block');
+                                            $fields.filter('[rel=path]').css('display', 'inline-block');
+
+                                            //SMB
+                                            $fields.filter('[rel=smbUsername]').css('display', 'inline-block');
+                                            $fields.filter('[rel=smbPassword]').css('display', 'inline-block');
+                                            $fields.filter('[rel=smbDomain]').css('display', 'inline-block');
+                                            
                                             //S3
                                             $fields.filter('[rel=accesskey]').hide();
                                             $fields.filter('[rel=secretkey]').hide();
@@ -1944,6 +1989,11 @@
                                             $fields.filter('[rel=nfsServer]').hide();
                                             $fields.filter('[rel=path]').hide();
 
+                                            //SMB
+                                            $fields.filter('[rel=smbUsername]').hide();
+                                            $fields.filter('[rel=smbPassword]').hide();
+                                            $fields.filter('[rel=smbDomain]').hide();
+                                            
                                             //S3
                                             if(s3stores != null && s3stores.length > 0) {
                                             	 $fields.filter('[rel=accesskey]').hide();
@@ -1983,6 +2033,11 @@
                                             $fields.filter('[rel=nfsServer]').hide();
                                             $fields.filter('[rel=path]').hide();
 
+                                            //SMB
+                                            $fields.filter('[rel=smbUsername]').hide();
+                                            $fields.filter('[rel=smbPassword]').hide();
+                                            $fields.filter('[rel=smbDomain]').hide();
+                                            
                                             //S3
                                             $fields.filter('[rel=accesskey]').hide();
                                             $fields.filter('[rel=secretkey]').hide();
@@ -2016,7 +2071,7 @@
                         isHidden: true
                     },
                     
-                    //NFS (begin)
+                    //NFS, SMB (begin)
                     nfsServer: {
                         label: 'label.nfs.server',
                         validation: {
@@ -2031,9 +2086,31 @@
                         },
                         isHidden: true
                     },
-                    //NFS (end)
+                    //NFS, SMB (end)
 
 
+                    //SMB (begin)                                            
+                    smbUsername: {
+                    	label: 'SMB Username',
+                    	validation: {
+                            required: true
+                        }
+                    },
+                    smbPassword: {
+                    	label: 'SMB Password',
+                    	isPassword: true,
+                    	validation: {
+                            required: true
+                        }
+                    },
+                    smbDomain: {
+                    	label: 'SMB Domain',
+                    	validation: {
+                            required: true
+                        }
+                    },
+                    //SMB (end)
+                    
                     //S3 (begin)
                     accesskey: {
                         label: 'label.s3.access_key',
@@ -4152,7 +4229,36 @@
                         var url = nfsURL(nfs_server, path);
 
                         $.extend(data, {
-                            provider: 'NFS',
+                            provider: args.data.secondaryStorage.provider,
+                            zoneid: args.data.returnedZone.id,
+                            url: url
+                        });
+
+                        $.ajax({
+                            url: createURL('addImageStore'),
+                            data: data,
+                            success: function(json) {
+                                complete({
+                                    data: $.extend(args.data, {
+                                        returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
+                                    })
+                                });
+                            },
+                            error: function(XMLHttpResponse) {
+                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                error('addSecondaryStorage', errorMsg, {
+                                    fn: 'addSecondaryStorage',
+                                    args: args
+                                });
+                            }
+                        });
+                    } else if (args.data.secondaryStorage.provider == 'SMB') {
+                        var nfs_server = args.data.secondaryStorage.nfsServer;
+                        var path = args.data.secondaryStorage.path;
+                        var url = smbURL(nfs_server, path, args.data.secondaryStorage.smbUsername, args.data.secondaryStorage.smbPassword, args.data.secondaryStorage.smbDomain);
+
+                        $.extend(data, {
+                            provider: args.data.secondaryStorage.provider,
                             zoneid: args.data.returnedZone.id,
                             url: url
                         });
