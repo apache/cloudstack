@@ -41,6 +41,7 @@ import com.cloud.vm.snapshot.VMSnapshotManager;
 
 public enum Config {
 
+
     // Alert
 
     AlertEmailAddresses(
@@ -62,6 +63,9 @@ public enum Config {
             "Password for SMTP authentication (applies only if alert.smtp.useAuth is true).",
             null),
     AlertSMTPPort("Alert", ManagementServer.class, Integer.class, "alert.smtp.port", "465", "Port the SMTP server is listening on.", null),
+    AlertSMTPConnectionTimeout("Alert", ManagementServer.class, Integer.class, "alert.smtp.connectiontimeout", "30000",
+            "Socket connection timeout value in milliseconds. -1 for infinite timeout.", null),
+    AlertSMTPTimeout("Alert", ManagementServer.class, Integer.class, "alert.smtp.timeout", "30000", "Socket I/O timeout value in milliseconds. -1 for infinite timeout.", null),
     AlertSMTPUseAuth("Alert", ManagementServer.class, String.class, "alert.smtp.useAuth", null, "If true, use SMTP authentication when sending emails.", null),
     AlertSMTPUsername(
             "Alert",

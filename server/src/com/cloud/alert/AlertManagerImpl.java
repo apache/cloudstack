@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Timer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -32,6 +34,7 @@ import javax.mail.Authenticator;
 import javax.mail.Message.RecipientType;
 import javax.mail.MessagingException;
 import javax.mail.PasswordAuthentication;
+import javax.mail.SendFailedException;
 import javax.mail.Session;
 import javax.mail.URLName;
 import javax.mail.internet.InternetAddress;
@@ -79,6 +82,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.storage.StorageManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
 
@@ -132,6 +136,12 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     private double _localStorageCapacityThreshold = 0.75;
     Map<Short, Double> _capacityTypeThresholdMap = new HashMap<Short, Double>();
 
+    private final ExecutorService _executor;
+
+    public AlertManagerImpl() {
+        _executor = Executors.newCachedThreadPool(new NamedThreadFactory("Email-Alerts-Sender"));
+    }
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
@@ -151,12 +161,14 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         String smtpPassword = configs.get("alert.smtp.password");
         String emailSender = configs.get("alert.email.sender");
         String smtpDebugStr = configs.get("alert.smtp.debug");
+        int smtpTimeout = NumbersUtil.parseInt(configs.get("alert.smtp.timeout"), 30000);
+        int smtpConnectionTimeout = NumbersUtil.parseInt(configs.get("alert.smtp.connectiontimeout"), 30000);
         boolean smtpDebug = false;
         if (smtpDebugStr != null) {
             smtpDebug = Boolean.parseBoolean(smtpDebugStr);
         }
 
-        _emailAlert = new EmailAlert(emailAddresses, smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, smtpDebug);
+        _emailAlert = new EmailAlert(emailAddresses, smtpHost, smtpPort, smtpConnectionTimeout, smtpTimeout, useAuth, smtpUsername, smtpPassword, emailSender, smtpDebug);
 
         String publicIPCapacityThreshold = _configDao.getValue(Config.PublicIpCapacityThreshold.key());
         String privateIPCapacityThreshold = _configDao.getValue(Config.PrivateIpCapacityThreshold.key());
@@ -729,9 +741,11 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         private final String _smtpUsername;
         private final String _smtpPassword;
         private final String _emailSender;
+        private int _smtpTimeout;
+        private int _smtpConnectionTimeout;
 
-        public EmailAlert(String[] recipientList, String smtpHost, int smtpPort, boolean smtpUseAuth, final String smtpUsername, final String smtpPassword,
-                String emailSender, boolean smtpDebug) {
+        public EmailAlert(String[] recipientList, String smtpHost, int smtpPort, int smtpConnectionTimeout, int smtpTimeout, boolean smtpUseAuth, final String smtpUsername,
+                final String smtpPassword, String emailSender, boolean smtpDebug) {
             if (recipientList != null) {
                 _recipientList = new InternetAddress[recipientList.length];
                 for (int i = 0; i < recipientList.length; i++) {
@@ -749,19 +763,27 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             _smtpUsername = smtpUsername;
             _smtpPassword = smtpPassword;
             _emailSender = emailSender;
+            _smtpTimeout = smtpTimeout;
+            _smtpConnectionTimeout = smtpConnectionTimeout;
 
             if (_smtpHost != null) {
                 Properties smtpProps = new Properties();
                 smtpProps.put("mail.smtp.host", smtpHost);
                 smtpProps.put("mail.smtp.port", smtpPort);
-                smtpProps.put("mail.smtp.auth", "" + smtpUseAuth);
+                smtpProps.put("mail.smtp.auth", ""+smtpUseAuth);
+                smtpProps.put("mail.smtp.timeout", _smtpTimeout);
+                smtpProps.put("mail.smtp.connectiontimeout", _smtpConnectionTimeout);
+
                 if (smtpUsername != null) {
                     smtpProps.put("mail.smtp.user", smtpUsername);
                 }
 
                 smtpProps.put("mail.smtps.host", smtpHost);
                 smtpProps.put("mail.smtps.port", smtpPort);
-                smtpProps.put("mail.smtps.auth", "" + smtpUseAuth);
+                smtpProps.put("mail.smtps.auth", ""+smtpUseAuth);
+                smtpProps.put("mail.smtps.timeout", _smtpTimeout);
+                smtpProps.put("mail.smtps.connectiontimeout", _smtpConnectionTimeout);
+
                 if (smtpUsername != null) {
                     smtpProps.put("mail.smtps.user", smtpUsername);
                 }
@@ -831,11 +853,26 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 } else {
                     smtpTrans = new SMTPTransport(_smtpSession, new URLName("smtp", _smtpHost, _smtpPort, null, _smtpUsername, _smtpPassword));
                 }
-                smtpTrans.connect();
-                smtpTrans.sendMessage(msg, msg.getAllRecipients());
-                smtpTrans.close();
+                sendMessage(smtpTrans, msg);
             }
         }
+
+        private void sendMessage(final SMTPTransport smtpTrans, final SMTPMessage msg) {
+            _executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        smtpTrans.connect();
+                        smtpTrans.sendMessage(msg, msg.getAllRecipients());
+                        smtpTrans.close();
+                    } catch (SendFailedException e) {
+                        s_logger.error(" Failed to send email alert " + e);
+                    } catch (MessagingException e) {
+                        s_logger.error(" Failed to send email alert " + e);
+                    }
+                }
+            });
+         }
 
         public void clearAlert(short alertType, long dataCenterId, Long podId) {
             if (alertType != -1) {
