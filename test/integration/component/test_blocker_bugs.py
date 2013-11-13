@@ -630,7 +630,7 @@ class TestRouterRestart(cloudstackTestCase):
         # No need
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "advancedns", "eip"])
+    @attr(tags = ["advanced", "advancedns", "eip"])
     def test_01_restart_network_cleanup(self):
         """TS_BUG_008-Test restart network
         """
