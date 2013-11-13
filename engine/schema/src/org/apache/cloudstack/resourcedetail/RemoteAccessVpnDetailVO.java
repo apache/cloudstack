@@ -26,14 +26,14 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
-@Table(name="user_ip_address_details")
-public class UserIpAddressDetailVO implements ResourceDetail{
+@Table(name="remote_access_vpn_details")
+public class RemoteAccessVpnDetailVO implements ResourceDetail{
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     @Column(name="id")
     private long id;
 
-    @Column(name="user_ip_address_id")
+    @Column(name="remote_access_vpn_id")
     private long resourceId;
 
     @Column(name="name")
@@ -45,9 +45,9 @@ public class UserIpAddressDetailVO implements ResourceDetail{
     @Column(name="display")
     private boolean display;
 
-    public UserIpAddressDetailVO() {}
+    public RemoteAccessVpnDetailVO() {}
 
-    public UserIpAddressDetailVO(long id, String name, String value) {
+    public RemoteAccessVpnDetailVO(long id, String name, String value) {
         this.resourceId = id;
         this.name = name;
         this.value = value;
