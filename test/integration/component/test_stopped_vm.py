@@ -1256,7 +1256,7 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
 
-    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
+    @attr(tags = ["advanced", "eip", "advancedns"])
     def test_01_deploy_vm_no_startvm(self):
         """Test Deploy Virtual Machine with no startVM parameter
         """
