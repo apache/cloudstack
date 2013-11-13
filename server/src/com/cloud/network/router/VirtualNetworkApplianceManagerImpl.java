@@ -2210,12 +2210,12 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
             finalizeUserDataAndDhcpOnStart(cmds, router, provider, guestNetworkId);
         }
-        finalizeMonitorServiceOnStrat(cmds, router, provider, routerGuestNtwkIds.get(0));
+        finalizeMonitorServiceOnStrat(cmds, profile, router, provider, routerGuestNtwkIds.get(0));
 
         return true;
     }
 
-    private void finalizeMonitorServiceOnStrat(Commands cmds, DomainRouterVO router, Provider provider, long networkId) {
+    private void finalizeMonitorServiceOnStrat(Commands cmds, VirtualMachineProfile profile, DomainRouterVO router, Provider provider, long networkId) {
 
         NetworkVO network = _networkDao.findById(networkId);
 
@@ -2248,17 +2248,17 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             servicesTO.add(serviceTO);
         }
 
+        // TODO : This is a hacking fix
+        // at VR startup time, information in VirtualMachineProfile may not updated to DB yet, 
+        // getRouterControlIp() may give wrong IP under basic network mode in VMware environment
+        NicProfile controlNic = getControlNic(profile);
         SetMonitorServiceCommand command = new SetMonitorServiceCommand(servicesTO);
-        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
+        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlNic.getIp4Address());
         command.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(networkId, router.getId()));
         command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
         cmds.addCommand("monitor", command);
     }
-
-
-
-
 
     protected NicProfile getControlNic(VirtualMachineProfile profile) {
         DomainRouterVO router = _routerDao.findById(profile.getId());
