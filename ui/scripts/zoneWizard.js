@@ -1473,11 +1473,7 @@
                                 items.push({
                                     id: "nfs",
                                     description: "nfs"
-                                });
-                                items.push({
-                                    id: "SMB",
-                                    description: "SMB/cifs"
-                                });
+                                });                               
                                 items.push({
                                     id: "SharedMountPoint",
                                     description: "SharedMountPoint"
@@ -1494,11 +1490,7 @@
                                 items.push({
                                     id: "nfs",
                                     description: "nfs"
-                                });
-                                items.push({
-                                    id: "SMB",
-                                    description: "SMB/cifs"
-                                });
+                                });                               
                                 items.push({
                                     id: "PreSetup",
                                     description: "PreSetup"
@@ -1515,11 +1507,7 @@
                                 items.push({
                                     id: "nfs",
                                     description: "nfs"
-                                });
-                                items.push({
-                                    id: "SMB",
-                                    description: "SMB/cifs"
-                                });
+                                });                                
                                 items.push({
                                     id: "vmfs",
                                     description: "vmfs"
@@ -1527,16 +1515,21 @@
                                 args.response.success({
                                     data: items
                                 });
+                            } else if (selectedClusterObj.hypervisortype == "Hyperv") {    
+                            	var items = []; 
+                            	items.push({
+                                    id: "SMB",
+                                    description: "SMB/cifs"
+                                });
+                            	args.response.success({
+                                    data: items
+                                });
                             } else if (selectedClusterObj.hypervisortype == "Ovm") {
                                 var items = [];
                                 items.push({
                                     id: "nfs",
                                     description: "nfs"
-                                });
-                                items.push({
-                                    id: "SMB",
-                                    description: "SMB/cifs"
-                                });
+                                });                                
                                 items.push({
                                     id: "ocfs2",
                                     description: "ocfs2"
@@ -1549,11 +1542,7 @@
                                 items.push({
                                     id: "nfs",
                                     description: "nfs"
-                                });
-                                items.push({
-                                    id: "SMB",
-                                    description: "SMB/cifs"
-                                });
+                                });                               
                                 items.push({
                                     id: "SharedMountPoint",
                                     description: "SharedMountPoint"
