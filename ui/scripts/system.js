@@ -5718,6 +5718,10 @@
                                                     args.response.success({                                                        
                                                         data: args.context.physicalResources[0]
                                                     });
+                                                },
+                                                error: function(XMLHttpResponse) {
+                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                    args.response.error(errorMsg);
                                                 }
                                             });
                                         },
@@ -15986,7 +15990,7 @@
     var zoneActionfilter = function(args) {
         var jsonObj = args.context.item;
         var allowedActions = ['enableSwift'];
-
+       
         if (jsonObj.vmwaredcId == null)
             allowedActions.push('addVmwareDc');
         else
