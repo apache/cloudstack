@@ -52,6 +52,15 @@ CREATE TABLE `cloud`.`vm_snapshot_details` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `cloud`.`snapshot_details`;
+CREATE TABLE `cloud`.`snapshot_details` (
+  `id` bigint unsigned UNIQUE NOT NULL,
+  `snapshot_id` bigint unsigned NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `cloud`.`vm_work_job` (
   `id` bigint unsigned UNIQUE NOT NULL,
   `step` char(32) NOT NULL COMMENT 'state',

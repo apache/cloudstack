@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import java.util.Date;
+import java.util.Map;
 
 @EntityReference(value=StoragePool.class)
 public class StoragePoolResponse extends BaseResponse {
@@ -93,6 +94,16 @@ public class StoragePoolResponse extends BaseResponse {
             " false otherwise")
     private Boolean suitableForMigration;
 
+    @SerializedName(ApiConstants.STORAGE_CAPABILITIES) @Param(description="the storage pool capabilities")
+    private Map<String, String> caps;
+
+    public Map<String, String> getCaps() {
+        return caps;
+    }
+
+    public void setCaps(Map<String, String> cap) {
+        this.caps = cap;
+    }
     /**
      * @return the scope
      */

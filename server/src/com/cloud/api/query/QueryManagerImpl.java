@@ -83,6 +83,9 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
@@ -342,6 +345,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     
     @Inject
     ResourceTagDao _resourceTagDao;
+    @Inject
+    DataStoreManager dataStoreManager;
 
     /*
      * (non-Javadoc)
@@ -1994,6 +1999,16 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         List<StoragePoolResponse> poolResponses = ViewResponseHelper.createStoragePoolResponse(result.first().toArray(
                 new StoragePoolJoinVO[result.first().size()]));
+        for(StoragePoolResponse poolResponse : poolResponses) {
+            DataStore store = dataStoreManager.getPrimaryDataStore(Integer.parseInt(poolResponse.getId()));
+            if (store != null) {
+                DataStoreDriver driver = store.getDriver();
+                if (driver != null && driver.getCapabilities() != null) {
+                    poolResponse.setCaps(driver.getCapabilities());
+                }
+            }
+        }
+
         response.setResponses(poolResponses, result.second());
         return response;
     }

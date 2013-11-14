@@ -21,17 +21,14 @@ package org.apache.cloudstack.storage.image;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
@@ -84,6 +81,11 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         } catch (URISyntaxException e) {
             return null;
         }
+    }
+
+    @Override
+    public Map<String, String> getCapabilities() {
+        return null;
     }
 
     @Override
