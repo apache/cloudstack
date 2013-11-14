@@ -312,6 +312,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 DataCenterVO zone = _dcDao.findById(dcId);
                 boolean securityGroupEnabled = zone.isSecurityGroupEnabled();
                 params.put("securitygroupenabled", Boolean.toString(securityGroupEnabled));
+                details.put("securitygroupenabled", Boolean.toString(securityGroupEnabled));
 
                 params.put("wait", Integer.toString(_wait));
                 details.put("wait", Integer.toString(_wait));
