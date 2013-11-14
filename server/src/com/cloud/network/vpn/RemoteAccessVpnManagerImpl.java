@@ -109,8 +109,9 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     @Inject FirewallManager _firewallMgr;
     @Inject UsageEventDao _usageEventDao;
     @Inject ConfigurationDao _configDao;
-    @Inject List<RemoteAccessVPNServiceProvider> _vpnServiceProviders;
-    @Inject ConfigurationServer _configServer;
+    List<RemoteAccessVPNServiceProvider> _vpnServiceProviders;
+
+	@Inject ConfigurationServer _configServer;
     @Inject VpcDao _vpcDao;
 
     int _userLimit;
@@ -695,4 +696,14 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {RemoteAccessVpnClientIpRange};
     }
+
+    public List<RemoteAccessVPNServiceProvider> getVpnServiceProviders() {
+        return _vpnServiceProviders;
+    }
+
+    public void setVpnServiceProviders(
+            List<RemoteAccessVPNServiceProvider> vpnServiceProviders) {
+        this._vpnServiceProviders = vpnServiceProviders;
+	}
+
 }

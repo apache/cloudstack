@@ -144,7 +144,9 @@
 
     <bean id="regionServiceImpl" class="org.apache.cloudstack.region.RegionServiceImpl" />
 
-    <bean id="remoteAccessVpnManagerImpl" class="com.cloud.network.vpn.RemoteAccessVpnManagerImpl" />
+    <bean id="remoteAccessVpnManagerImpl" class="com.cloud.network.vpn.RemoteAccessVpnManagerImpl" >
+        <property name="vpnServiceProviders" value="#{remoteAccessVPNServiceProviderRegistry.registered}" />
+    </bean>
 
     <bean id="resourceLimitManagerImpl" class="com.cloud.resourcelimit.ResourceLimitManagerImpl" />
 
