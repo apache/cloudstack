@@ -24,6 +24,7 @@ import os, sys, time
 import XenAPIPlugin
 sys.path.extend(["/opt/xensource/sm/", "/usr/local/sbin/", "/sbin/"])
 import base64
+import hostvmstats
 import socket
 import stat
 import tempfile
@@ -53,6 +54,15 @@ def add_to_VCPUs_params_live(session, args):
         return 'false'
     return 'true'
 
+@echo
+def gethostvmstats(session, args):
+    collect_host_stats = args['collectHostStats']
+    consolidation_function = args['consolidationFunction']
+    interval = args['interval']
+    start_time = args['startTime']
+    result = hostvmstats.get_stats(session, collect_host_stats, consolidation_function, interval, start_time)
+    return result
+    
 @echo
 def setup_iscsi(session, args):
    uuid=args['uuid']
@@ -1619,7 +1629,7 @@ def bumpUpPriority(session, args):
 
 
 if __name__ == "__main__":
-     XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi,  
+     XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, 
                             "getgateway": getgateway, "preparemigration": preparemigration, 
                             "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  
                             "savePassword": savePassword, 
