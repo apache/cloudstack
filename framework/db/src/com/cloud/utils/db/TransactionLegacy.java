@@ -1034,7 +1034,7 @@ public class TransactionLegacy {
             
             s_dbHAEnabled = Boolean.valueOf(dbProps.getProperty("db.ha.enabled"));
             s_logger.info("Is Data Base High Availiability enabled? Ans : " + s_dbHAEnabled);
-            
+            String loadBalanceStrategy = dbProps.getProperty("db.ha.loadBalanceStrategy");
             // FIXME:  If params are missing...default them????
             final int cloudMaxActive = Integer.parseInt(dbProps.getProperty("db.cloud.maxActive"));
             final int cloudMaxIdle = Integer.parseInt(dbProps.getProperty("db.cloud.maxIdle"));
@@ -1090,7 +1090,7 @@ public class TransactionLegacy {
                     cloudMaxWait, cloudMaxIdle, cloudTestOnBorrow, false, cloudTimeBtwEvictionRunsMillis, 1, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle);
 
             final ConnectionFactory cloudConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://" + cloudHost + (s_dbHAEnabled ? "," + cloudSlaves : "") + ":" + cloudPort + "/" + cloudDbName +
-                    "?autoReconnect=" + cloudAutoReconnect + (url != null ? "&" + url : "") + (useSSL ? "&useSSL=true" : "") + (s_dbHAEnabled ? "&" + cloudDbHAParams : ""), cloudUsername, cloudPassword);
+                    "?autoReconnect=" + cloudAutoReconnect + (url != null ? "&" + url : "") + (useSSL ? "&useSSL=true" : "") + (s_dbHAEnabled ? "&" + cloudDbHAParams : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : ""), cloudUsername, cloudPassword);
 
             final KeyedObjectPoolFactory poolableObjFactory = (cloudPoolPreparedStatements ? new StackKeyedObjectPoolFactory() : null);
 
@@ -1116,7 +1116,7 @@ public class TransactionLegacy {
                     usageMaxWait, usageMaxIdle);
 
             final ConnectionFactory usageConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://" + usageHost + (s_dbHAEnabled ? "," + dbProps.getProperty("db.cloud.slaves") : "") + ":" + usagePort + "/" + usageDbName +
-                    "?autoReconnect=" + usageAutoReconnect + (usageUrl != null ? "&" + usageUrl : "") + (s_dbHAEnabled ? "&" + getDBHAParams("usage", dbProps) : ""), usageUsername, usagePassword);
+                    "?autoReconnect=" + usageAutoReconnect + (usageUrl != null ? "&" + usageUrl : "") + (s_dbHAEnabled ? "&" + getDBHAParams("usage", dbProps) : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : ""), usageUsername, usagePassword);
 
             final PoolableConnectionFactory usagePoolableConnectionFactory = new PoolableConnectionFactory(usageConnectionFactory, usageConnectionPool,
                     new StackKeyedObjectPoolFactory(), null, false, false);
@@ -1129,7 +1129,7 @@ public class TransactionLegacy {
             final GenericObjectPool awsapiConnectionPool = new GenericObjectPool(null, usageMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
                     usageMaxWait, usageMaxIdle);
             final ConnectionFactory awsapiConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://" + cloudHost + (s_dbHAEnabled ? "," + cloudSlaves : "") + ":" + cloudPort + "/" + awsapiDbName +
-                    "?autoReconnect=" + cloudAutoReconnect + (s_dbHAEnabled ? "&" + cloudDbHAParams : ""), cloudUsername, cloudPassword);
+                    "?autoReconnect=" + cloudAutoReconnect + (s_dbHAEnabled ? "&" + cloudDbHAParams : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : ""), cloudUsername, cloudPassword);
             final PoolableConnectionFactory awsapiPoolableConnectionFactory = new PoolableConnectionFactory(awsapiConnectionFactory, awsapiConnectionPool,
                     new StackKeyedObjectPoolFactory(), null, false, false);
 
