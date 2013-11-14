@@ -1411,5 +1411,15 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     public List<DomainRouterVO> getVpcRouters(long vpcId) {
         return _routerDao.listByVpcId(vpcId);
     }
+    
+    @Override
+    public boolean start() {
+        return true;
+    }
+    
+    @Override
+    public boolean stop() {
+        return true;
+    }    
 
 }
