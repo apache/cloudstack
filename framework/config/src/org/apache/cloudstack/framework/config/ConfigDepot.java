@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.framework.config;
 
+import java.util.List;
+
 /**
  * ConfigDepot is a repository of configurations.
  *
@@ -23,4 +25,6 @@ package org.apache.cloudstack.framework.config;
 public interface ConfigDepot {
 
     ConfigKey<?> get(String paramName);
+
+    List<ConfigKey<?>> getConfigListByScope(String scope);
 }

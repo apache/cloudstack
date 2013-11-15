@@ -29,6 +29,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
@@ -83,7 +85,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value=DeploymentPlanner.class)
-public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPlanner {
+public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPlanner, Configurable{
     private static final Logger s_logger = Logger.getLogger(FirstFitPlanner.class);
     @Inject protected HostDao _hostDao;
     @Inject protected DataCenterDao _dcDao;
@@ -246,11 +248,11 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
         // if he changes these values
         Map<Short, Float> disableThresholdMap = new HashMap<Short, Float>();
 
-        String cpuDisableThresholdString = _configDao.getValue(Config.CPUCapacityDisableThreshold.key());
+        String cpuDisableThresholdString = ClusterCPUCapacityDisableThreshold.value().toString();
         float cpuDisableThreshold = NumbersUtil.parseFloat(cpuDisableThresholdString, 0.85F);
         disableThresholdMap.put(Capacity.CAPACITY_TYPE_CPU, cpuDisableThreshold);
 
-        String memoryDisableThresholdString = _configDao.getValue(Config.MemoryCapacityDisableThreshold.key());
+        String memoryDisableThresholdString = ClusterMemoryCapacityDisableThreshold.value().toString();
         float memoryDisableThreshold = NumbersUtil.parseFloat(memoryDisableThresholdString, 0.85F);
         disableThresholdMap.put(Capacity.CAPACITY_TYPE_MEMORY, memoryDisableThreshold);
 
@@ -283,10 +285,10 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
             }
             if (capacity == Capacity.CAPACITY_TYPE_CPU) {
                 clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity,
-                        plan.getDataCenterId(), Config.CPUCapacityDisableThreshold.key(), cpu_requested);
+                        plan.getDataCenterId(), ClusterCPUCapacityDisableThreshold.key(), cpu_requested);
             } else if (capacity == Capacity.CAPACITY_TYPE_MEMORY) {
                 clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity,
-                        plan.getDataCenterId(), Config.MemoryCapacityDisableThreshold.key(), ram_requested);
+                        plan.getDataCenterId(), ClusterMemoryCapacityDisableThreshold.key(), ram_requested);
             }
 
             if (clustersCrossingThreshold != null && clustersCrossingThreshold.size() != 0) {
@@ -521,5 +523,15 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
     public PlannerResourceUsage getResourceUsage(VirtualMachineProfile vmProfile,
             DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
         return PlannerResourceUsage.Shared;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return DeploymentClusterPlanner.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {ClusterCPUCapacityDisableThreshold, ClusterMemoryCapacityDisableThreshold};
     }
 }

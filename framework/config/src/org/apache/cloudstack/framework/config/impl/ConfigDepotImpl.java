@@ -76,8 +76,14 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
 
     HashMap<String, Pair<String, ConfigKey<?>>> _allKeys = new HashMap<String, Pair<String, ConfigKey<?>>>(1007);
 
+    HashMap<ConfigKey.Scope, List<ConfigKey<?>>> _scopeLevelConfigsMap = new HashMap<ConfigKey.Scope, List<ConfigKey<?>>>();
+
     public ConfigDepotImpl() {
         ConfigKey.init(this);
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.Zone, new ArrayList<ConfigKey<?>>());
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.Cluster, new ArrayList<ConfigKey<?>>());
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.StoragePool, new ArrayList<ConfigKey<?>>());
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.Account, new ArrayList<ConfigKey<?>>());
     }
 
     @Override
@@ -108,7 +114,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
                                                 ": " + key.toString());
             }
             _allKeys.put(key.key(), new Pair<String, ConfigKey<?>>(configurable.getConfigComponentName(), key));
-            
+
             ConfigurationVO vo = _configDao.findById(key.key());
             if (vo == null) {
                 vo = new ConfigurationVO(configurable.getConfigComponentName(), key);
@@ -124,6 +130,10 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
                     vo.setUpdated(date);
                     _configDao.persist(vo);
                 }
+            }
+            if (key.scope() != ConfigKey.Scope.Global) {
+                List<ConfigKey<?>> currentConfigs = _scopeLevelConfigsMap.get(key.scope());
+                currentConfigs.add(key);
             }
         }
         
@@ -170,6 +180,11 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     @Inject
     public void setConfigurables(List<Configurable> configurables) {
         this._configurables = configurables;
+    }
+
+    @Override
+    public List<ConfigKey<?>> getConfigListByScope(String scope) {
+        return _scopeLevelConfigsMap.get(ConfigKey.Scope.valueOf(scope));
     }
 
 }
