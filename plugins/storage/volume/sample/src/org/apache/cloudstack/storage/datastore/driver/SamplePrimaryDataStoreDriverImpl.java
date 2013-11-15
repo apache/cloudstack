@@ -43,6 +43,9 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
     private static final Logger s_logger = Logger.getLogger(SamplePrimaryDataStoreDriverImpl.class);
     @Inject
@@ -54,6 +57,11 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
 
     public SamplePrimaryDataStoreDriverImpl() {
 
+    }
+
+    @Override
+    public Map<String, String> getCapabilities() {
+        return null;
     }
 
     @Override

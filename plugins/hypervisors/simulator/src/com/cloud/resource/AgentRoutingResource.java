@@ -29,6 +29,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.ReadyAnswer;
@@ -53,6 +54,7 @@ import com.cloud.simulator.MockVMVO;
 import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.Pair;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 
 public class AgentRoutingResource extends AgentStorageResource {
@@ -114,7 +116,7 @@ public class AgentRoutingResource extends AgentStorageResource {
         }
         final HashMap<String, State> newStates = sync();
         HashMap<String, Pair<Long, Long>> nwGrpStates = _simMgr.syncNetworkGroups(hostGuid);
-        return new PingRoutingWithNwGroupsCommand(getType(), id, newStates, nwGrpStates);
+        return new PingRoutingWithNwGroupsCommand(getType(), id, newStates, getHostVmStateReport(), nwGrpStates);
     }
 
     @Override
@@ -274,6 +276,18 @@ public class AgentRoutingResource extends AgentStorageResource {
         info.add(dom0Ram);
 
         return info;
+    }
+    
+    protected HashMap<String, HostVmStateReportEntry> getHostVmStateReport() {
+    	HashMap<String, HostVmStateReportEntry> report = new HashMap<String, HostVmStateReportEntry>();
+    	
+    	for(String vmName : _runningVms.keySet()) {
+    		report.put(vmName, new HostVmStateReportEntry(PowerState.PowerOn, agentHost.getName(), null));
+    	}
+    	
+    	
+    	
+    	return report;
     }
 
     protected HashMap<String, State> sync() {

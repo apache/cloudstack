@@ -76,10 +76,7 @@ def fetch_api_client(config_file='datacenterCfg'):
     asyncTimeout = 3600
     return cloudstackAPIClient.CloudStackAPIClient(
             cloudstackConnection.cloudConnection(
-                                                mgt.mgtSvrIp,
-                                                mgt.port,
-                                                mgt.apiKey,
-                                                mgt.securityKey,
+                                                mgt,
                                                 asyncTimeout,
                                                 testClientLogger
                                                 )

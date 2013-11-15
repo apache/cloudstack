@@ -258,7 +258,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 _creationMonitors.add(0, new Pair<Integer, StartupCommandProcessor>(
                         _monitorId, creator));
             } else {
-                _creationMonitors.add(0, new Pair<Integer, StartupCommandProcessor>(
+                _creationMonitors.add(new Pair<Integer, StartupCommandProcessor>(
                         _monitorId, creator));
             }
         }

@@ -1275,6 +1275,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String vmSnapshotName = cmd.getTarget().getSnapshotName();
         String vmSnapshotDesc = cmd.getTarget().getDescription();
         boolean snapshotMemory = cmd.getTarget().getType() == VMSnapshot.Type.DiskAndMemory;
+        boolean quiescevm = cmd.getTarget().getQuiescevm();
         VirtualMachineMO vmMo = null;
         VmwareContext context = hostService.getServiceContext(cmd);
         Map<String, String> mapNewDisk = new HashMap<String, String>();
@@ -1303,7 +1304,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             } else {
                 if (vmMo.getSnapshotMor(vmSnapshotName) != null){
                     s_logger.debug("VM snapshot " + vmSnapshotName + " already exists");
-                }else if (!vmMo.createSnapshot(vmSnapshotName, vmSnapshotDesc, snapshotMemory, true)) {
+                }else if (!vmMo.createSnapshot(vmSnapshotName, vmSnapshotDesc, snapshotMemory, quiescevm)) {
                     return new CreateVMSnapshotAnswer(cmd, false,
                             "Unable to create snapshot due to esxi internal failed");
                 }

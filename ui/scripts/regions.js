@@ -475,8 +475,33 @@
                             path: 'regions.lbUnderGSLB',
                             label: 'assigned load balancing'
                         },
-                        actions: {
-                            remove: {
+                        actions: {                            
+                        	edit: {
+                                label: 'label.edit',
+                                action: function(args) {                                	
+                                    var data = {
+                                    	id: args.context.GSLB[0].id,
+                                    	description: args.data.description,
+                                    	gslblbmethod: args.data.gslblbmethod
+                                    };                                    
+                                    $.ajax({
+                                        url: createURL('updateGlobalLoadBalancerRule'),
+                                        data: data,
+                                        success: function(json) {                                        	
+                                            var jid = json.updategloballoadbalancerruleresponse.jobid;                                           
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });                                            
+                                        }
+                                    });
+                                },                                
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },                        	
+                        	remove: {
                                 label: 'delete GSLB',
                                 messages: {
                                     confirm: function(args) {
@@ -517,13 +542,30 @@
                                     }
                                 }, {
                                     description: {
-                                        label: 'label.description'
+                                        label: 'label.description',
+                                        isEditable: true
                                     },
                                     gslbdomainname: {
                                         label: 'GSLB Domain Name'
                                     },
                                     gslblbmethod: {
-                                        label: 'Algorithm'
+                                        label: 'Algorithm',
+                                        isEditable: true,
+                                        select: function(args) {
+                                            var array1 = [{
+                                                id: 'roundrobin',
+                                                description: 'roundrobin'
+                                            }, {
+                                                id: 'leastconn',
+                                                description: 'leastconn'
+                                            }, {
+                                                id: 'proximity',
+                                                description: 'proximity'
+                                            }];
+                                            args.response.success({
+                                                data: array1
+                                            });
+                                        }
                                     },
                                     gslbservicetype: {
                                         label: 'Service Type'

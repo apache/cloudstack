@@ -35,7 +35,6 @@ import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.trilead.ssh2.SCPClient;
-
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -61,6 +60,7 @@ import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.HostStatsEntry;
+import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateAnswer;
@@ -131,6 +131,7 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.trilead.ssh2.SCPClient;
 
@@ -153,17 +154,28 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
     boolean _canBridgeFirewall;
     static boolean _isHeartBeat = false;
     List<String> _bridges = null;
-	protected HashMap<String, State> _vms = new HashMap<String, State>(50);
-	static HashMap<String, State> _stateMaps;
 	private final Map<String, Pair<Long, Long>> _vmNetworkStats= new ConcurrentHashMap<String, Pair<Long, Long>>();
 	private static String _ovsAgentPath = "/opt/ovs-agent-latest";
-	
+
+	// TODO vmsync {
+	static HashMap<String, State> _stateMaps;
+	protected HashMap<String, State> _vms = new HashMap<String, State>(50);
 	static {
 		_stateMaps = new HashMap<String, State>();
 		_stateMaps.put("RUNNING", State.Running);
 		_stateMaps.put("DOWN", State.Stopped);
 		_stateMaps.put("ERROR", State.Error);
 		_stateMaps.put("SUSPEND", State.Stopped);
+	}
+	// TODO vmsync }
+	
+	static HashMap<String, PowerState> _powerStateMaps;
+	static {
+		_powerStateMaps = new HashMap<String, PowerState>();
+		_powerStateMaps.put("RUNNING", PowerState.PowerOn);
+		_powerStateMaps.put("DOWN", PowerState.PowerOff);
+		_powerStateMaps.put("ERROR", PowerState.PowerUnknown);
+		_powerStateMaps.put("SUSPEND", PowerState.PowerOff);
 	}
 	
 	@Override
@@ -303,6 +315,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 			//TODO: introudce PIF
 			cmd.setPrivateIpAddress(_ip);
 			cmd.setStorageIpAddress(_ip);
+			cmd.setHostVmStateReport(getHostVmStateReport());
 			
 			String defaultBridge = OvmBridge.getBridgeByIp(_conn, _ip);
 			if (_publicNetworkName == null) {
@@ -397,7 +410,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 		try {
 			OvmHost.ping(_conn);
 			HashMap<String, State> newStates = sync();
-			return new PingRoutingCommand(getType(), id, newStates);
+			return new PingRoutingCommand(getType(), id, newStates, this.getHostVmStateReport());
 		} catch (XmlRpcException e) {
 			s_logger.debug("Check agent status failed", e);
 			return null;
@@ -785,6 +798,25 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         return state;
     }
 
+    private PowerState toPowerState(String vmName, String s) {
+        PowerState state = _powerStateMaps.get(s);
+        if (state == null) {
+            s_logger.debug("Unkown state " + s + " for " + vmName);
+            state = PowerState.PowerUnknown;
+        }
+        return state;
+    }
+           
+    protected HashMap<String, HostVmStateReportEntry> getHostVmStateReport() throws XmlRpcException {
+        final HashMap<String, HostVmStateReportEntry> vmStates = new HashMap<String, HostVmStateReportEntry>();
+        Map<String, String> vms = OvmHost.getAllVms(_conn);
+        for (final Map.Entry<String, String> entry : vms.entrySet()) {
+            PowerState state = toPowerState(entry.getKey(), entry.getValue());
+            vmStates.put(entry.getKey(), new HostVmStateReportEntry(state, _conn.getIp(), null));
+        }
+        return vmStates;
+    }
+    
     protected HashMap<String, State> getAllVms() throws XmlRpcException {
         final HashMap<String, State> vmStates = new HashMap<String, State>();
         Map<String, String> vms = OvmHost.getAllVms(_conn);

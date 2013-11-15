@@ -523,7 +523,7 @@ class TestDefaultGroupEgress(cloudstackTestCase):
         #    CIDR: 0.0.0.0/0
         # 5. deployVirtualMachine into this security group (ssh)
         # 6. deployed VM should be Running, ssh should be allowed into the VM,
-        #    ping out to google.com from the VM should fail,
+        #    ping out to google.com from the VM should be successful,
         #    ssh from within VM to mgt server should pass
 
         security_group = SecurityGroup.create(
@@ -617,7 +617,7 @@ class TestDefaultGroupEgress(cloudstackTestCase):
 
         result = str(res)
         self.assertEqual(
-                         result.count("0 received"),
+                         result.count("1 received"),
                          1,
                          "Ping to outside world from VM should be successful"
                          )
@@ -625,8 +625,8 @@ class TestDefaultGroupEgress(cloudstackTestCase):
         try:
             self.debug("SSHing into management server from VM")
             res = ssh.execute("ssh %s@%s" % (
-                                    self.services["mgmt_server"]["username"],
-                                    self.services["mgmt_server"]["ipaddress"]
+                                   self.apiclient.connection.user,
+                                   self.apiclient.connection.mgtSvr
                                  ))
             self.debug("SSH result: %s" % str(res))
 
@@ -725,7 +725,7 @@ class TestDefaultGroupEgressAfterDeploy(cloudstackTestCase):
         # 5. authorizeSecurityGroupEgress to allow ssh access only out to
         #    CIDR: 0.0.0.0/0
         # 6. deployed VM should be Running, ssh should be allowed into the VM,
-        #    ping out to google.com from the VM should fail
+        #    ping out to google.com from the VM should be successful
 
         security_group = SecurityGroup.create(
                                               self.apiclient,
@@ -819,7 +819,7 @@ class TestDefaultGroupEgressAfterDeploy(cloudstackTestCase):
 
         result = str(res)
         self.assertEqual(
-                         result.count("0 received"),
+                         result.count("1 received"),
                          1,
                          "Ping to outside world from VM should be successful"
                          )
@@ -907,7 +907,7 @@ class TestRevokeEgressRule(cloudstackTestCase):
         #    CIDR: 0.0.0.0/0
         # 5. deployVirtualMachine into this security group (ssh)
         # 6. deployed VM should be Running, ssh should be allowed into the VM,
-        #    ping out to google.com from the VM should fail,
+        #    ping out to google.com from the VM should be successful,
         #    ssh from within VM to mgt server should pass
         # 7. Revoke egress rule. Verify ping and SSH access to management server
         #    is restored
@@ -1005,7 +1005,7 @@ class TestRevokeEgressRule(cloudstackTestCase):
 
         result = str(res)
         self.assertEqual(
-                         result.count("0 received"),
+                         result.count("1 received"),
                          1,
                          "Ping to outside world from VM should be successful"
                          )
@@ -1014,7 +1014,7 @@ class TestRevokeEgressRule(cloudstackTestCase):
             self.debug("SSHing into management server from VM")
             res = ssh.execute("ssh %s@%s" % (
                                     self.services["mgmt_server"]["username"],
-                                    self.services["mgmt_server"]["ipaddress"]
+                                    self.apiclient.connection.mgtSvr
                                  ))
             self.debug("SSH result: %s" % str(res))
 
@@ -1062,16 +1062,16 @@ class TestRevokeEgressRule(cloudstackTestCase):
 
         result = str(res)
         self.assertEqual(
-                         result.count("1 received"),
+                         result.count("0 received"),
                          1,
-                         "Ping to outside world from VM should be successful"
+                         "Ping to outside world from VM should fail"
                          )
 
         try:
             self.debug("SSHing into management server from VM")
             res = ssh.execute("ssh %s@%s" % (
                                     self.services["mgmt_server"]["username"],
-                                    self.services["mgmt_server"]["ipaddress"]
+                                    self.apiclient.connection.mgtSvr
                                  ))
             self.debug("SSH result: %s" % str(res))
 
@@ -1439,8 +1439,7 @@ class TestMultipleAccountsEgressRuleNeg(cloudstackTestCase):
         try:
             self.debug("SSHing into VM type B from VM A")
             self.debug("VM IP: %s" % self.virtual_machineB.ssh_ip)
-            res = ssh.execute("ssh %s@%s" % (
-                                self.services["virtual_machine"]["username"],
+            res = ssh.execute("ssh -o 'BatchMode=yes' %s" % (
                                 self.virtual_machineB.ssh_ip
                                 ))
             self.debug("SSH result: %s" % str(res))
@@ -1450,10 +1449,14 @@ class TestMultipleAccountsEgressRuleNeg(cloudstackTestCase):
                       (self.virtual_machineA.ipaddress, e)
                       )
         result = str(res)
-        self.assertEqual(
-                    result.count("Connection timed out"),
-                    1,
-                    "SSH into management server from VM should not be successful"
+
+        # SSH failure may result in one of the following three error messages
+        ssh_failure_result_set = ["ssh: connect to host %s port 22: No route to host" % self.virtual_machineB.ssh_ip,
+                                  "ssh: connect to host %s port 22: Connection timed out" % self.virtual_machineB.ssh_ip,
+                                  "Host key verification failed."]
+
+        self.assertFalse(set(res).isdisjoint(ssh_failure_result_set),
+                    "SSH into VM of other account should not be successful"
                     )
         return
 

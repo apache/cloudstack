@@ -27,13 +27,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-import org.apache.cloudstack.api.command.user.firewall.ListEgressFirewallRulesCmd;
 import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.domain.dao.DomainDao;
@@ -70,7 +69,6 @@ import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.PortForwardingRuleVO;
-import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -88,11 +86,11 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
-import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.UserVmVO;
@@ -256,7 +254,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     public Pair<List<? extends FirewallRule>, Integer> listFirewallRules(ListFirewallRulesCmd cmd) {
         Long ipId = cmd.getIpAddressId();
         Long id = cmd.getId();
-        Long networkId = null;
+        Long networkId = cmd.getNetworkId();
         Map<String, String> tags = cmd.getTags();
         FirewallRule.TrafficType trafficType = cmd.getTrafficType();
 
@@ -283,14 +281,9 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("trafficType", sb.entity().getTrafficType(), Op.EQ);
-        if (cmd instanceof ListEgressFirewallRulesCmd ) {
-            networkId =((ListEgressFirewallRulesCmd)cmd).getNetworkId();
-            sb.and("networkId", sb.entity().getNetworkId(), Op.EQ);
-        } else {
+        sb.and("networkId", sb.entity().getNetworkId(), Op.EQ);
         sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
-        }
         sb.and("purpose", sb.entity().getPurpose(), Op.EQ);
-
 
         if (tags != null && !tags.isEmpty()) {
             SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
@@ -323,10 +316,10 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
         if (ipId != null) {
             sc.setParameters("ip", ipId);
-        } else if (cmd instanceof ListEgressFirewallRulesCmd) {
-            if (networkId != null) {
-                sc.setParameters("networkId", networkId);
-            }
+        }
+        
+        if (networkId != null) {
+            sc.setParameters("networkId", networkId);
         }
 
         sc.setParameters("purpose", Purpose.Firewall);

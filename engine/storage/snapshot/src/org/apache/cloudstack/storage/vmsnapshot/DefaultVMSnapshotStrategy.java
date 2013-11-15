@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -111,8 +112,12 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             VMSnapshotVO currentSnapshot = vmSnapshotDao.findCurrentSnapshotByVmId(userVm.getId());
             if (currentSnapshot != null)
                 current = vmSnapshotHelper.getSnapshotWithParents(currentSnapshot);
+            VMSnapshotOptions options = ((VMSnapshotVO) vmSnapshot).getOptions();
+            boolean quiescevm = true;
+            if (options != null)
+                quiescevm = options.needQuiesceVM();
             VMSnapshotTO target = new VMSnapshotTO(vmSnapshot.getId(),  vmSnapshot.getName(), vmSnapshot.getType(), null, vmSnapshot.getDescription(), false,
-                    current);
+                    current, quiescevm);
             if (current == null)
                 vmSnapshotVO.setParent(null);
             else
@@ -174,7 +179,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             String vmInstanceName = userVm.getInstanceName();
             VMSnapshotTO parent = vmSnapshotHelper.getSnapshotWithParents(vmSnapshotVO).getParent();
             VMSnapshotTO vmSnapshotTO = new VMSnapshotTO(vmSnapshot.getId(), vmSnapshot.getName(), vmSnapshot.getType(),
-                    vmSnapshot.getCreated().getTime(), vmSnapshot.getDescription(), vmSnapshot.getCurrent(), parent);
+                    vmSnapshot.getCreated().getTime(), vmSnapshot.getDescription(), vmSnapshot.getCurrent(), parent, true);
             GuestOSVO guestOS = guestOSDao.findById(userVm.getGuestOSId());
             DeleteVMSnapshotCommand deleteSnapshotCommand = new DeleteVMSnapshotCommand(vmInstanceName, vmSnapshotTO, volumeTOs,guestOS.getDisplayName());
 
@@ -330,7 +335,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             VMSnapshotTO parent = vmSnapshotHelper.getSnapshotWithParents(snapshot).getParent();
 
             VMSnapshotTO vmSnapshotTO = new VMSnapshotTO(snapshot.getId(), snapshot.getName(), snapshot.getType(),
-                    snapshot.getCreated().getTime(), snapshot.getDescription(), snapshot.getCurrent(), parent);
+                    snapshot.getCreated().getTime(), snapshot.getDescription(), snapshot.getCurrent(), parent, true);
             Long hostId = vmSnapshotHelper.pickRunningHost(vmSnapshot.getVmId());
             GuestOSVO guestOS = guestOSDao.findById(userVm.getGuestOSId());
             RevertToVMSnapshotCommand revertToSnapshotCommand = new RevertToVMSnapshotCommand(vmInstanceName, vmSnapshotTO, volumeTOs, guestOS.getDisplayName());

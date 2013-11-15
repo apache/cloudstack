@@ -31,6 +31,7 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.HttpNfcLeaseInfo;
 import com.vmware.vim25.HttpNfcLeaseManifestEntry;
 import com.vmware.vim25.HttpNfcLeaseState;
+import com.vmware.vim25.LocalizedMethodFault;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectSpec;
 import com.vmware.vim25.OvfCreateImportSpecResult;
@@ -82,6 +83,10 @@ public class HttpNfcLeaseMO extends BaseMO {
 	public HttpNfcLeaseInfo getLeaseInfo() throws Exception {
 		return (HttpNfcLeaseInfo)_context.getVimClient().getDynamicProperty(_mor, "info");
 	}
+
+    public LocalizedMethodFault getLeaseError() throws Exception {
+        return (LocalizedMethodFault)_context.getVimClient().getDynamicProperty(_mor, "error");
+    }
 
 	public List<HttpNfcLeaseManifestEntry> getLeaseManifest() throws Exception {
 		return _context.getService().httpNfcLeaseGetManifest(_mor);

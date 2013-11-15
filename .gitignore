@@ -1,4 +1,4 @@
-# Licensed to the Apache Software Foundation (ASF) under one
+G# Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
 # regarding copyright ownership.  The ASF licenses this file
@@ -83,3 +83,5 @@ build-indep-stamp
 configure-stamp
 *_flymake.js
 engine/storage/integration-test/test-output
+tools/apidoc/log/
+log/

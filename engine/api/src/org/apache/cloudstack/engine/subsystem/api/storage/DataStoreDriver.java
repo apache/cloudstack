@@ -23,7 +23,10 @@ import com.cloud.agent.api.to.DataTO;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 
+import java.util.Map;
+
 public interface DataStoreDriver {
+    Map<String, String>  getCapabilities();
     DataTO getTO(DataObject data);
     DataStoreTO getStoreTO(DataStore store);
     void createAsync(DataStore store, DataObject data, AsyncCompletionCallback<CreateCmdResult> callback);

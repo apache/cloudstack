@@ -21,6 +21,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.*;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -41,10 +42,6 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.utils.NumbersUtil;
@@ -260,6 +257,14 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     @Override
     @DB
     public SnapshotInfo takeSnapshot(SnapshotInfo snapshot) {
+        Object payload = snapshot.getPayload();
+        if (payload != null) {
+            CreateSnapshotPayload createSnapshotPayload = (CreateSnapshotPayload)payload;
+            if (createSnapshotPayload.getQuiescevm()) {
+                throw new InvalidParameterValueException("can't handle quiescevm equal true for volume snapshot");
+            }
+        }
+
         SnapshotVO snapshotVO = snapshotDao.acquireInLockTable(snapshot.getId());
         if (snapshotVO == null) {
             throw new CloudRuntimeException("Failed to get lock on snapshot:" + snapshot.getId());

@@ -1900,7 +1900,7 @@
         			allowedActions.push("takeSnapshot");
     	            allowedActions.push("recurringSnapshot");
         		} else {        			
-        			if(jsonObj.vmstate == 'Stopped') {
+        			if(jsonObj.vmstate == 'Stopped' || jsonObj.virtualmachineid == undefined) { //volume of stopped VM, or detached volume
         				allowedActions.push("takeSnapshot");
         			}
         		}

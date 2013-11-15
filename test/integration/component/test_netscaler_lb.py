@@ -149,6 +149,7 @@ class TestLbSourceNat(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls._cleanup = []
         cls.api_client = super(
                                TestLbSourceNat,
                                cls
@@ -164,9 +165,7 @@ class TestLbSourceNat(cloudstackTestCase):
                            )
         try:
            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
-           cls._cleanup = [
-                    cls.netscaler
-                    ]
+           cls._cleanup.append(cls.netscaler)
            cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
@@ -359,6 +358,7 @@ class TestLbOnIpWithPf(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls._cleanup = []
         cls.api_client = super(
                                TestLbOnIpWithPf,
                                cls
@@ -374,9 +374,7 @@ class TestLbOnIpWithPf(cloudstackTestCase):
                             )
         try:
            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
-           cls._cleanup = [
-                    cls.netscaler
-                    ]
+           cls._cleanup.append(cls.netscaler)
            cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
@@ -573,6 +571,7 @@ class TestPfOnIpWithLb(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls._cleanup = []
         cls.api_client = super(
                                TestPfOnIpWithLb,
                                cls
@@ -588,9 +587,7 @@ class TestPfOnIpWithLb(cloudstackTestCase):
                             )
         try:
            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
-           cls._cleanup = [
-                    cls.netscaler
-                    ]
+           cls._cleanup.append(cls.netscaler)
            cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
@@ -788,6 +785,7 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls._cleanup = []
         cls.api_client = super(
                                TestLbOnNonSourceNat,
                                cls
@@ -803,9 +801,7 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
                             )
         try:
            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
-           cls._cleanup = [
-                    cls.netscaler
-                    ]
+           cls._cleanup.append(cls.netscaler)
            cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
@@ -1006,6 +1002,7 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls._cleanup = []
         cls.api_client = super(
                                TestAddMultipleVmsLb,
                                cls
@@ -1021,9 +1018,7 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
                             )
         try:
            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
-           cls._cleanup = [
-                    cls.netscaler
-                    ]
+           cls._cleanup.append(cls.netscaler)
            cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
@@ -1286,6 +1281,7 @@ class TestMultipleLbRules(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls._cleanup = []
         cls.api_client = super(
                                TestMultipleLbRules,
                                cls
@@ -1301,9 +1297,7 @@ class TestMultipleLbRules(cloudstackTestCase):
                             )
         try:
            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
-           cls._cleanup = [
-                    cls.netscaler
-                    ]
+           cls._cleanup.append(cls.netscaler)
            cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],
@@ -1606,6 +1600,7 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls._cleanup = []
         cls.api_client = super(
                                TestMultipleLbRulesSameIp,
                                cls
@@ -1619,11 +1614,10 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+
         try:
            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
-           cls._cleanup = [
-                    cls.netscaler
-                    ]
+           cls._cleanup.append(cls.netscaler)
            cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
                                             cls.services["network_offering"],

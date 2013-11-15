@@ -111,7 +111,7 @@ public class HypervisorHelperImpl implements HypervisorHelper {
         int wait = NumbersUtil.parseInt(value, 1800);
         Long hostId = vmSnapshotHelper.pickRunningHost(virtualMachine.getId());
         VMSnapshotTO vmSnapshotTO = new VMSnapshotTO(1L,  UUID.randomUUID().toString(), VMSnapshot.Type.DiskAndMemory, null, null, false,
-                null);
+                null, true);
         GuestOSVO guestOS = guestOSDao.findById(virtualMachine.getGuestOSId());
         List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(virtualMachine.getId());
         CreateVMSnapshotCommand ccmd = new CreateVMSnapshotCommand(virtualMachine.getInstanceName(),vmSnapshotTO ,volumeTOs, guestOS.getDisplayName(),virtualMachine.getState());

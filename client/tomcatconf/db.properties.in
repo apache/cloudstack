@@ -85,6 +85,7 @@ db.simulator.autoReconnect=true
 
 # High Availability And Cluster Properties
 db.ha.enabled=false
+db.ha.loadBalanceStrategy=com.cloud.utils.db.StaticStrategy
 # cloud stack Database
 db.cloud.slaves=localhost,localhost
 db.cloud.autoReconnect=true

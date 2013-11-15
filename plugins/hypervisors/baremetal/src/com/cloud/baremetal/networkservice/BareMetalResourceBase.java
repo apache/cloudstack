@@ -31,7 +31,6 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.ApiConstants;
 
 import com.cloud.agent.IAgentControl;
@@ -41,6 +40,7 @@ import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateAnswer;
@@ -77,6 +77,7 @@ import com.cloud.utils.script.Script2;
 import com.cloud.utils.script.Script2.ParamType;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -332,10 +333,36 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 
         return states;
     }
+    
+    protected Map<String, HostVmStateReportEntry> getHostVmStateReport() {
+        Map<String, HostVmStateReportEntry> states = new HashMap<String, HostVmStateReportEntry>();
+        if (hostId != null) {
+            vmDao = ComponentContext.getComponent(VMInstanceDao.class);
+            final List<? extends VMInstanceVO> vms = vmDao.listByHostId(hostId);
+            for (VMInstanceVO vm : vms) {
+                states.put(
+                	vm.getInstanceName(), 
+                	new HostVmStateReportEntry(
+                	    vm.getState() == State.Running ? PowerState.PowerOn : PowerState.PowerOff, "host-" + hostId, null
+                	)
+                );
+            }
+        }
+        /*
+         * Map<String, State> changes = new HashMap<String, State>();
+         * 
+         * if (_vmName != null) { State state = getVmState(); if (state != null)
+         * { changes.put(_vmName, state); } }
+         */
+
+        return states;
+    }
 
 	@Override
 	public StartupCommand[] initialize() {
-		StartupRoutingCommand cmd = new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.BareMetal, new HashMap<String, String>(), null);
+		StartupRoutingCommand cmd = new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.BareMetal, 
+			new HashMap<String, String>(), null, null);
+		
 		cmd.setDataCenter(_zone);
 		cmd.setPod(_pod);
 		cmd.setCluster(_cluster);
@@ -372,7 +399,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 			return null;
 		}
 
-		return new PingRoutingCommand(getType(), id, deltaSync());
+		return new PingRoutingCommand(getType(), id, deltaSync(), getHostVmStateReport());
 	}
 
 	protected Answer execute(IpmISetBootDevCommand cmd) {

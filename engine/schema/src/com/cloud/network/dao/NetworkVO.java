@@ -189,7 +189,7 @@ public class NetworkVO implements Network {
         this.dataCenterId = dataCenterId;
         this.physicalNetworkId = physicalNetworkId;
         if (state == null) {
-            state = State.Allocated;
+            this.state = State.Allocated;
         } else {
             this.state = state;
         }

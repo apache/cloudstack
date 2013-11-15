@@ -169,7 +169,7 @@ public class DummyResource implements ServerResource {
         final StartupRoutingCommand cmd = new StartupRoutingCommand(
                 (Integer) info.get(0), (Long) info.get(1), (Long) info.get(2),
                 (Long) info.get(4), (String) info.get(3), HypervisorType.KVM,
-                RouterPrivateIpStrategy.HostLocal, changes);
+                RouterPrivateIpStrategy.HostLocal, changes, null);
         fillNetworkInformation(cmd);
         cmd.getHostDetails().putAll(getVersionStrings());
         cmd.setCluster(getConfiguredProperty("cluster", "1"));

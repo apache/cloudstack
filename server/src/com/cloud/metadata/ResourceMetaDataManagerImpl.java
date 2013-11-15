@@ -27,6 +27,8 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
+import org.apache.cloudstack.resourcedetail.dao.RemoteAccessVpnDetailsDao;
+import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -75,6 +77,10 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     StoragePoolDetailsDao _storageDetailsDao;
     @Inject
     FirewallRuleDetailsDao _firewallRuleDetailsDao;
+    @Inject
+    UserIpAddressDetailsDao _userIpAddressDetailsDao;
+    @Inject
+    RemoteAccessVpnDetailsDao _vpnDetailsDao;
     
     private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> _daoMap= 
             new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
@@ -91,7 +97,11 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         _daoMap.put(ResourceObjectType.Zone, _dcDetailsDao);
         _daoMap.put(ResourceObjectType.Storage, _storageDetailsDao);
         _daoMap.put(ResourceObjectType.FirewallRule, _firewallRuleDetailsDao);
-        
+        _daoMap.put(ResourceObjectType.PublicIpAddress, _userIpAddressDetailsDao);
+        _daoMap.put(ResourceObjectType.PortForwardingRule, _firewallRuleDetailsDao);
+        _daoMap.put(ResourceObjectType.LoadBalancer, _firewallRuleDetailsDao);
+        _daoMap.put(ResourceObjectType.RemoteAccessVpn, _vpnDetailsDao);
+
         return true;
     }
 

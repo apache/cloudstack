@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -69,7 +70,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.DateUtil;
@@ -474,19 +474,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     }
 
-    private long getVMSnapshotAllocatedCapacity(StoragePoolVO pool){
-        List<VolumeVO> volumes = _volumeDao.findByPoolId(pool.getId());
-        long totalSize = 0;
-        for (VolumeVO volume : volumes) {
-            if(volume.getInstanceId() == null)
-                continue;
-            Long chainSize = volume.getVmSnapshotChainSize();
-            if(chainSize != null)
-                totalSize += chainSize;
-        }
-        return totalSize;
-    }
-
     @Override
     public long getAllocatedPoolCapacity(StoragePoolVO pool, VMTemplateVO templateForVmCreation){
 
@@ -495,7 +482,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         long totalAllocatedSize = sizes.second() + sizes.first() * _extraBytesPerVolume;
 
         // Get size for VM Snapshots
-        totalAllocatedSize = totalAllocatedSize + getVMSnapshotAllocatedCapacity(pool);
+        totalAllocatedSize = totalAllocatedSize + _volumeDao.getVMSnapshotSizeByPool(pool.getId());
 
         // Iterate through all templates on this storage pool
         boolean tmpinstalled = false;
@@ -602,9 +589,10 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
         CapacityVO cpuCap = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_CPU);
         CapacityVO memCap = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_MEMORY);
-
         if (cpuCap != null && memCap != null){
-
+            if ( host.getTotalMemory() != null ) {
+                memCap.setTotalCapacity(host.getTotalMemory());
+            }      
             long hostTotalCpu = host.getCpus().longValue() * host.getSpeed().longValue();
 
             if (cpuCap.getTotalCapacity() != hostTotalCpu) {
@@ -976,6 +964,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {CpuOverprovisioningFactor, MemOverprovisioningFactor};
+        return new ConfigKey<?>[] {CpuOverprovisioningFactor, MemOverprovisioningFactor, StorageCapacityDisableThreshold, StorageOverprovisioningFactor, StorageAllocatedCapacityDisableThreshold};
     }
 }

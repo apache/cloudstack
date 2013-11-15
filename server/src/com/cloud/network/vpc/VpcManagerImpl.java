@@ -1420,10 +1420,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     Network privateNtwk = null;
                     if (BroadcastDomainType.getSchemeValue(BroadcastDomainType.fromString(broadcastUri)) == BroadcastDomainType.Lswitch) {
                         String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
-
                         privateNtwk = _ntwkDao.getPrivateNetwork(broadcastUri, cidr,
                                 gatewayOwnerId, dcId, networkOfferingId);
-                        s_logger.info("found and using existing network for vpc " + vpc + ": " + broadcastUri);
+                        // if the dcid is different we get no network so next we try to create it
                     }
                     if (privateNtwk == null) {
                         s_logger.info("creating new network for vpc " + vpc + " using broadcast uri: " + broadcastUri);
@@ -1431,6 +1430,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkIdFinal,
                                 broadcastUri, ipAddress, null, gateway, netmask, gatewayOwnerId, vpcId, isSourceNat, networkOfferingId);
                     } else { // create the nic/ip as createPrivateNetwork doesn''t do that work for us now
+                        s_logger.info("found and using existing network for vpc " + vpc + ": " + broadcastUri);
                         DataCenterVO dc = _dcDao.lockRow(physNetFinal.getDataCenterId(), true);
 
                         //add entry to private_ip_address table

@@ -46,6 +46,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.routing.*;
+
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
@@ -161,6 +162,7 @@ import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.HostStatsEntry;
+import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.ManageSnapshotAnswer;
@@ -301,6 +303,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VmDetailConstants;
@@ -358,6 +361,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected StorageSubsystemCommandHandler storageHandler;
 
+    protected static HashMap<VirtualMachinePowerState, PowerState> s_powerStatesTable;
+    static {
+    	s_powerStatesTable = new HashMap<VirtualMachinePowerState, PowerState>();
+    	s_powerStatesTable.put(VirtualMachinePowerState.POWERED_ON, PowerState.PowerOn);
+    	s_powerStatesTable.put(VirtualMachinePowerState.POWERED_OFF, PowerState.PowerOff);
+    	s_powerStatesTable.put(VirtualMachinePowerState.SUSPENDED, PowerState.PowerOn);
+    }
+    
+    // TODO vmsync {
+    // deprecated, will delete after full replacement
+    //
     protected static HashMap<VirtualMachinePowerState, State> s_statesTable;
     static {
         s_statesTable = new HashMap<VirtualMachinePowerState, State>();
@@ -365,6 +379,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         s_statesTable.put(VirtualMachinePowerState.POWERED_OFF, State.Stopped);
         s_statesTable.put(VirtualMachinePowerState.SUSPENDED, State.Stopped);
     }
+    // TODO vmsync }
 
     public Gson getGson() {
         return _gson;
@@ -2559,7 +2574,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             long requestedMaxMemoryInMb = vmSpec.getMaxRam() / (1024 * 1024);
 
             // Check if VM is really running on hypervisor host
-            if (getVmState(vmMo) != State.Running) {
+            if (getVmPowerState(vmMo) != PowerState.PowerOn) {
                 throw new CloudRuntimeException("Found that the VM " + vmMo.getVmName() + " is not running. Unable to scale-up this VM");
             }
 
@@ -2609,7 +2624,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
-            // mark VM as starting state so that sync() can know not to report stopped too early
+            // mark VM as starting state so that sync can know not to report stopped too early
             synchronized (_vms) {
                 _vms.put(vmInternalCSName, State.Starting);
             }
@@ -2639,7 +2654,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             boolean hasSnapshot = false;
             if (vmMo != null) {
                 s_logger.info("VM " + vmInternalCSName + " already exists, tear down devices for reconfiguration");
-                if (getVmState(vmMo) != State.Stopped)
+                if (getVmPowerState(vmMo) != PowerState.PowerOff)
                     vmMo.safePowerOff(_shutdown_waitMs);
              
                 // retrieve disk information before we tear down
@@ -2662,7 +2677,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     takeVmFromOtherHyperHost(hyperHost, vmInternalCSName);
 
-                    if (getVmState(vmMo) != State.Stopped)
+                    if (getVmPowerState(vmMo) != PowerState.PowerOff)
                         vmMo.safePowerOff(_shutdown_waitMs);
                     
                     diskInfoBuilder = vmMo.getDiskInfoBuilder();
@@ -3885,7 +3900,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 try {
                     vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK, "0");
 
-                    if (getVmState(vmMo) != State.Stopped) {
+                    if (getVmPowerState(vmMo) != PowerState.PowerOff) {
                         if (vmMo.safePowerOff(_shutdown_waitMs)) {
                             state = State.Stopped;
                             return new StopAnswer(cmd, "Stop VM " + cmd.getVmName() + " Succeed", true);
@@ -5488,7 +5503,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         List<NetworkDetails> networks = vmMo.getNetworksWithDetails();
 
                         // tear down all devices first before we destroy the VM to avoid accidently delete disk backing files
-                        if (getVmState(vmMo) != State.Stopped)
+                        if (getVmPowerState(vmMo) != PowerState.PowerOff)
                             vmMo.safePowerOff(_shutdown_waitMs);
                         vmMo.tearDownDevices(new Class<?>[] { /* VirtualDisk.class, */ VirtualEthernetCard.class });
                         vmMo.destroy();
@@ -5813,86 +5828,85 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public PingCommand getCurrentStatus(long id) {
-    	try {
-	        HashMap<String, State> newStates = sync();
-	        if (newStates == null) {
-	            return null;
-	        }
-	
-	        try {
-	            // take the chance to do left-over dummy VM cleanup from previous run
-	            VmwareContext context = getServiceContext();
-	            VmwareHypervisorHost hyperHost = getHyperHost(context);
-	            VmwareManager mgr = hyperHost.getContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-	
-	            if(hyperHost.isHyperHostConnected()) {
-	                mgr.gcLeftOverVMs(context);
-	
-                    s_logger.info("Scan hung worker VM to recycle");
-                    
-            		int workerKey = ((HostMO)hyperHost).getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_WORKER);
-            		int workerTagKey = ((HostMO)hyperHost).getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_WORKER_TAG);
-            		String workerPropName = String.format("value[%d]", workerKey);
-            		String workerTagPropName = String.format("value[%d]", workerTagKey);
+		gcAndKillHungWorkerVMs();
+        
+		HashMap<String, State> newStates = sync();
+        if (newStates == null) {
+            return null;
+        }
+        return new PingRoutingCommand(getType(), id, newStates, syncHostVmStates());
+    }
+    
+    private void gcAndKillHungWorkerVMs() {
+        try {
+            // take the chance to do left-over dummy VM cleanup from previous run
+            VmwareContext context = getServiceContext();
+            VmwareHypervisorHost hyperHost = getHyperHost(context);
+            VmwareManager mgr = hyperHost.getContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
-                    // GC worker that has been running for too long
-                    ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(
-                            new String[] {"name", "config.template", workerPropName, workerTagPropName, 
-                            		 });
-                    if(ocs != null) {
-                        for(ObjectContent oc : ocs) {
-                            List<DynamicProperty> props = oc.getPropSet();
-                            if(props != null) {
-                                boolean template = false;
-                                boolean isWorker = false;
-                                String workerTag = null;
+            if(hyperHost.isHyperHostConnected()) {
+                mgr.gcLeftOverVMs(context);
 
-                                for(DynamicProperty prop : props) {
-                                    if(prop.getName().equals("config.template")) {
-                                        template = (Boolean)prop.getVal();
-                                    } else if(prop.getName().equals(workerPropName)) {
-                                    	CustomFieldStringValue val = (CustomFieldStringValue)prop.getVal();
-                                    	if(val != null && val.getValue() != null && val.getValue().equalsIgnoreCase("true"))
-                                    		isWorker = true;
-                                    }
-                                    else if(prop.getName().equals(workerTagPropName)) {
-                                    	CustomFieldStringValue val = (CustomFieldStringValue)prop.getVal();
-                                    	workerTag = val.getValue();
-                                    }
+                s_logger.info("Scan hung worker VM to recycle");
+                
+        		int workerKey = ((HostMO)hyperHost).getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_WORKER);
+        		int workerTagKey = ((HostMO)hyperHost).getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_WORKER_TAG);
+        		String workerPropName = String.format("value[%d]", workerKey);
+        		String workerTagPropName = String.format("value[%d]", workerTagKey);
+
+                // GC worker that has been running for too long
+                ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(
+                        new String[] {"name", "config.template", workerPropName, workerTagPropName, 
+                        		 });
+                if(ocs != null) {
+                    for(ObjectContent oc : ocs) {
+                        List<DynamicProperty> props = oc.getPropSet();
+                        if(props != null) {
+                            boolean template = false;
+                            boolean isWorker = false;
+                            String workerTag = null;
+
+                            for(DynamicProperty prop : props) {
+                                if(prop.getName().equals("config.template")) {
+                                    template = (Boolean)prop.getVal();
+                                } else if(prop.getName().equals(workerPropName)) {
+                                	CustomFieldStringValue val = (CustomFieldStringValue)prop.getVal();
+                                	if(val != null && val.getValue() != null && val.getValue().equalsIgnoreCase("true"))
+                                		isWorker = true;
                                 }
+                                else if(prop.getName().equals(workerTagPropName)) {
+                                	CustomFieldStringValue val = (CustomFieldStringValue)prop.getVal();
+                                	workerTag = val.getValue();
+                                }
+                            }
 
-                                VirtualMachineMO vmMo = new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
-                                if(!template && isWorker) {
-                                    boolean recycle = false;
-                                    recycle = mgr.needRecycle(workerTag);
+                            VirtualMachineMO vmMo = new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
+                            if(!template && isWorker) {
+                                boolean recycle = false;
+                                recycle = mgr.needRecycle(workerTag);
 
-                                    if(recycle) {
-                                        s_logger.info("Recycle pending worker VM: " + vmMo.getName());
+                                if(recycle) {
+                                    s_logger.info("Recycle pending worker VM: " + vmMo.getName());
 
-                                        vmMo.powerOff();
-                                        vmMo.destroy();
-                                    }
+                                    vmMo.powerOff();
+                                    vmMo.destroy();
                                 }
                             }
                         }
-	                }
-	            } else {
-	                s_logger.error("Host is no longer connected.");
-	                return null;
-	            }
-	        } catch (Throwable e) {
-	            if (e instanceof RemoteException) {
-	                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-	                invalidateServiceContext();
-	                return null;
-	            }
-	        }
-	
-	        return new PingRoutingCommand(getType(), id, newStates);
+                    }
+                }
+            } else {
+                s_logger.error("Host is no longer connected.");
+            }
         
-    	} finally {
-    		recycleServiceContext();
-    	}
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+                invalidateServiceContext();
+            }
+        } finally {
+        	recycleServiceContext();
+        }
     }
 
     @Override
@@ -5935,7 +5949,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 	        }
 	
 	        cmd.setHypervisorType(HypervisorType.VMware);
+	        
+	        // TODO vmsync {
+	        // deprecated after full replacement
 	        cmd.setStateChanges(changes);
+	        // TODO vmsync}
+	        
+	        cmd.setHostVmStateReport(syncHostVmStates());
+	        
 	        cmd.setCluster(_cluster);
 	        cmd.setHypervisorVersion(hostApiVersion);
 	
@@ -6091,6 +6112,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    protected HashMap<String, HostVmStateReportEntry> syncHostVmStates() {
+       try {
+           return getHostVmStateReport();
+       } catch(Exception e) {
+            return new HashMap<String, HostVmStateReportEntry>();
+       }
+    }
+    
     protected HashMap<String, State> sync() {
         HashMap<String, State> changes = new HashMap<String, State>();
         HashMap<String, State> oldStates = null;
@@ -6295,6 +6324,65 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return VirtualMachineGuestOsIdentifier.OTHER_GUEST;
     }
 
+    private HashMap<String, HostVmStateReportEntry> getHostVmStateReport() throws Exception {
+        VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+        
+		int key = ((HostMO)hyperHost).getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+		if(key == 0) {
+			s_logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
+		}
+		String instanceNameCustomField = "value[" + key + "]";
+        
+        // CLOUD_VM_INTERNAL_NAME stores the internal CS generated vm name. This was earlier stored in name. Now, name can be either the hostname or
+        // the internal CS name, but the custom field CLOUD_VM_INTERNAL_NAME always stores the internal CS name.
+        ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(
+        	new String[] { "name", "runtime.powerState", "config.template", instanceNameCustomField }
+        );
+
+        HashMap<String, HostVmStateReportEntry> newStates = new HashMap<String, HostVmStateReportEntry>();
+        if (ocs != null && ocs.length > 0) {
+            for (ObjectContent oc : ocs) {
+                List<DynamicProperty> objProps = oc.getPropSet();
+                if (objProps != null) {
+
+                    boolean isTemplate = false;
+                    String name = null;
+                    String VMInternalCSName = null;
+                    VirtualMachinePowerState powerState = VirtualMachinePowerState.POWERED_OFF;
+                    for (DynamicProperty objProp : objProps) {
+                        if (objProp.getName().equals("config.template")) {
+                            if (objProp.getVal().toString().equalsIgnoreCase("true")) {
+                                isTemplate = true;
+                            }
+                        } else if (objProp.getName().equals("runtime.powerState")) {
+                            powerState = (VirtualMachinePowerState) objProp.getVal();
+                        } else if (objProp.getName().equals("name")) {
+                            name = (String) objProp.getVal();
+                        } else if(objProp.getName().contains(instanceNameCustomField)) {
+		                	if(objProp.getVal() != null)
+		                		VMInternalCSName = ((CustomFieldStringValue)objProp.getVal()).getValue();
+		                }
+                        else {
+                            assert (false);
+                        }
+                    }
+                    
+                    if (VMInternalCSName != null)
+                        name = VMInternalCSName;
+
+                    if (!isTemplate) {
+                        newStates.put(
+                        	name, 
+                        	new HostVmStateReportEntry(convertPowerState(powerState), hyperHost.getHyperHostName(), null)
+                        );
+                    }
+                }
+            }
+        }
+        return newStates;
+    }
+    
+    // TODO vmsync {
     private HashMap<String, State> getVmStates() throws Exception {
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
         
@@ -6462,6 +6550,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
         return vmResponseMap;
     }
+    // TODO vmsync }
 
     protected String networkUsage(final String privateIpAddress, final String option, final String ethName) {
         String args = null;
@@ -6572,6 +6661,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return connect(vmname, ipAddress, 3922);
     }
 
+    // TODO vmsync {
+    // deprecated after full replacement
     private static State convertState(VirtualMachinePowerState powerState) {
         return s_statesTable.get(powerState);
     }
@@ -6580,7 +6671,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VirtualMachineRuntimeInfo runtimeInfo = vmMo.getRuntimeInfo();
         return convertState(runtimeInfo.getPowerState());
     }
+    // TODO vmsync }
+    
+    private static PowerState convertPowerState(VirtualMachinePowerState powerState) {
+        return s_powerStatesTable.get(powerState);
+    }
 
+    public static PowerState getVmPowerState(VirtualMachineMO vmMo) throws Exception {
+        VirtualMachineRuntimeInfo runtimeInfo = vmMo.getRuntimeInfo();
+        return convertPowerState(runtimeInfo.getPowerState());
+    }
+ 
     private static HostStatsEntry getHyperHostStats(VmwareHypervisorHost hyperHost) throws Exception {
         ComputeResourceSummary hardwareSummary = hyperHost.getHyperHostHardwareSummary();
         if(hardwareSummary == null)

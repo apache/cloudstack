@@ -37,6 +37,8 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     Pair<Long, Long> getNonDestroyedCountAndTotalByPool(long poolId);
 
+    long getVMSnapshotSizeByPool(long poolId);
+
     List<VolumeVO> findByInstance(long id);
 
     List<VolumeVO> findByInstanceAndType(long id, Volume.Type vType);

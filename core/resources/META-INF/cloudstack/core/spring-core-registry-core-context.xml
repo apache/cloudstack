@@ -213,6 +213,16 @@
             </list>
         </property>
     </bean>
+    
+    <bean id="remoteAccessVPNServiceProviderRegistry"
+        class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="excludeKey" value="remote.access.vpn.service.provider.exclude" />
+        <property name="preRegistered">
+            <list>
+                <ref bean="VpcVirtualRouter" />
+            </list>
+        </property>
+    </bean>
 
     <bean id="affinityProcessorsRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
