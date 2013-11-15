@@ -161,14 +161,23 @@
                 validation: {
                     required: false
                 }
+            },
+            ldapGroupName: {
+                label: 'label.ldap.group.name',
+                docID: 'helpLdapGroupName',
+                validation: {
+                    required: false
+                }
             }
+
         },
 
         action: function(args) {
             var array1 = [];
             var ldapStatus = isLdapEnabled();
-            console.log("creating user: " + args.username);
-            array1.push("&username=" + args.username);
+            if (args.username) {
+                array1.push("&username=" + args.username);
+            }
 
             if (!ldapStatus) {
                 var password = args.data.password;
@@ -179,7 +188,7 @@
                 array1.push("&firstname=" + args.data.firstname);
                 array1.push("&lastname=" + args.data.lastname);
 
-                var password = args.data.password;
+                password = args.data.password;
                 if (md5Hashed) {
                     password = $.md5(password);
                 }
@@ -207,25 +216,43 @@
             if (args.data.networkdomain !== null && args.data.networkdomain.length > 0) {
                 array1.push("&networkdomain=" + args.data.networkdomain);
             }
+            if (args.groupname && args.groupname !== null && args.groupname.length > 0) {
+                array1.push("&group=" + args.groupname);
+            }
 
             if (ldapStatus) {
-                console.log("doing an ldap add");
-                $.ajax({
-                    url: createURL('ldapCreateAccount' + array1.join("")),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                        var item = json.createaccountresponse.account;
-                        args.response.success({
-                            data: item
-                        });
-                    },
-                    error: function(XMLHttpResponse) {
-                        args.response.error(parseXMLHttpResponse(XMLHttpResponse));
-                    }
-                });
+                if (args.groupname) {
+                    $.ajax({
+                        url: createURL('importLdapUsers' + array1.join("")),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {
+                            var count = json.ldapuserresponse.count;
+                            args.response.success({
+                                data: count
+                            });
+                        },
+                        error: function(XMLHttpResponse) {
+                            args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                        }
+                    });
+                } else if (args.username) {
+                    $.ajax({
+                        url: createURL('ldapCreateAccount' + array1.join("")),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {
+                            var item = json.createaccountresponse.account;
+                            args.response.success({
+                                data: item
+                            });
+                        },
+                        error: function(XMLHttpResponse) {
+                            args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                        }
+                    });
+                }
             } else {
-                console.log("doing normal user add");
                 $.ajax({
                     url: createURL('createAccount' + array1.join("")),
                     dataType: "json",

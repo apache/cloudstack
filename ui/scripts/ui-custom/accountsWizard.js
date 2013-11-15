@@ -33,16 +33,47 @@
 
                 var completeAction = function() {
                     var data = cloudStack.serializeForm($form);
-                    var username = data.username;
-                    var bulkAdd = (username instanceof Array);
-                    if (bulkAdd) {
-                        console.log("doing bulk add");
-                        for (var i = 0; i < username.length; i++) {
-                            console.log("creating user " + username[i]);
+                    var groupname = $.trim(data.ldapGroupName);
+                    if (groupname) {
+                        args.action({
+                            context: context,
+                            data: data,
+                            groupname: groupname,
+                            response: {
+                                error: function(message) {
+                                    if (message) {
+                                        cloudStack.dialog.notice({
+                                            message: message
+                                        });
+                                    }
+                                }
+                            }
+                        });
+                    } else {
+                        var username = data.username;
+                        var bulkAdd = (username instanceof Array);
+                        if (bulkAdd) {
+                            for (var i = 0; i < username.length; i++) {
+                                args.action({
+                                    context: context,
+                                    data: data,
+                                    username: username[i],
+                                    response: {
+                                        error: function(message) {
+                                            if (message) {
+                                                cloudStack.dialog.notice({
+                                                    message: message
+                                                });
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                        } else {
                             args.action({
                                 context: context,
                                 data: data,
-                                username: username[i],
+                                username: username,
                                 response: {
                                     error: function(message) {
                                         if (message) {
@@ -54,21 +85,6 @@
                                 }
                             });
                         }
-                    } else {
-                        args.action({
-                            context: context,
-                            data: data,
-                            username: username,
-                            response: {
-                                error: function(message) {
-                                    if (message) {
-                                        cloudStack.dialog.notice({
-                                            message: message
-                                        });
-                                    }
-                                }
-                            }
-                        });
                     }
                 };
 
@@ -92,25 +108,38 @@
 
                 if (ldapStatus) {
                     var $table = $wizard.find('.ldap-account-choice tbody');
+                    $("#label_ldap_group_name").live("keypress", function(event) {
+                        if ($table.find("#tr-groupname-message").length === 0) {
+                            $("<tr id='tr-groupname-message'>").appendTo($table).append("<td colspan=\"4\">All The users from the given group name will be imported</td>");
+                        }
+                        $table.find("tr").hide();
+                        $table.find("#tr-groupname-message").show();
+                    });
+                    $("#label_ldap_group_name").live("blur", function(event) {
+                        if (!$(this).val()) {
+                            $table.find("tr").show();
+                            $table.find("#tr-groupname-message").hide();
+                        }
+                    });
                     $.ajax({
-			url: createURL("listLdapUsers&listtype=new"),
+                        url: createURL("listLdapUsers&listtype=new"),
                         dataType: "json",
                         async: false,
                         success: function(json) {
-			    if (json.ldapuserresponse.count > 0) {
-				$(json.ldapuserresponse.LdapUser).each(function() {
-				    var result = $("<tr>");
-				    result.append("<td><input type=\"checkbox\" class=\"required\" name=\"username\" value=\"" + this.username + "\"></td>");
-				    result.append("<td>" + this.firstname + " " + this.lastname + "</td>");
-				    result.append("<td>" + this.username + "</td>");
-				    result.append("<td>" + this.email + "</td>");
-				    $table.append(result);
-				});
-			    } else {
+                            if (json.ldapuserresponse.count > 0) {
+                                $(json.ldapuserresponse.LdapUser).each(function() {
+                                    var result = $("<tr>");
+                                    result.append("<td><input type=\"checkbox\" name=\"username\" value=\"" + this.username + "\"></td>");
+                                    result.append("<td>" + this.firstname + " " + this.lastname + "</td>");
+                                    result.append("<td>" + this.username + "</td>");
+                                    result.append("<td>" + this.email + "</td>");
+                                    $table.append(result);
+                                });
+                            } else {
                                 var result = $("<tr>");
-				result.append("<td colspan=\"4\">No data to show</td>");
+                                result.append("<td colspan=\"4\">No data to show</td>");
                                 $table.append(result);
-			    }
+                            }
                         }
                     });
                 } else {
@@ -123,7 +152,6 @@
                         }
                     });
 
-                    //console.log(informationWithinLdap.$formContainer);
                     var informationWithinLdapForm = informationWithinLdap.$formContainer.find('form .form-item');
                     informationWithinLdapForm.find('.value #label_username').addClass('required');
                     informationWithinLdapForm.find('.value #password').addClass('required');
@@ -135,6 +163,10 @@
                     $wizard.find('.manual-account-details').append(informationWithinLdapForm).children().css('background', 'none');
                     $wizard.find('.ldap-account-choice').css('display', 'none');
                     $wizard.removeClass('multi-wizard');
+                }
+
+                if (!ldapStatus) {
+                    delete args.informationNotInLdap.ldapGroupName;
                 }
 
                 var informationNotInLdap = cloudStack.dialog.createForm({
