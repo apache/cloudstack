@@ -281,6 +281,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
 
         return
 
+    @attr(tags=["advanced", "basic"])
     def test_01_deploy_instance_with_is_volatile_offering(self):
         """ Test deploy an instance with service offerings with IsVolatile set.
         """
@@ -311,6 +312,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
                              )
         return
 
+    @attr(tags=["advanced", "basic"])
     def test_02_reboot_instance_with_is_volatile_offering(self):
         """ Test rebooting instances created with isVolatile service offerings
         """
@@ -388,6 +390,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
 
         return
 
+    @attr(tags=["advanced", "basic"])
     def test_03_restore_vm_with_new_template(self):
         """ Test restoring a vm with different template than the one it was created with
         """
@@ -503,6 +506,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
 
 	    return
 
+    @attr(tags=["advanced", "basic"])
     def test_04_reoccuring_snapshot_rules(self):
         """
         1) Create a VM using the Service offering IsVolatile enabled
