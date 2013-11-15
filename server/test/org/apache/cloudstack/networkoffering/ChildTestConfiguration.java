@@ -24,6 +24,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.region.PortableIpDaoImpl;
 import org.apache.cloudstack.region.dao.RegionDaoImpl;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
@@ -306,6 +307,11 @@ public class ChildTestConfiguration {
     @Bean
     public ConfigurationDao configDao() {
         return Mockito.mock(ConfigurationDao.class);
+    }
+
+    @Bean
+    public ConfigDepot configDepot() {
+        return Mockito.mock(ConfigDepot.class);
     }
 
     @Bean
