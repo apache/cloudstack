@@ -1401,7 +1401,7 @@ class TestMaxAccountNetworks(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "advancedns", "simulator",
-                "api", "basic", "eip", "sg"])
+                "api", "eip"])
     def test_maxAccountNetworks(self):
         """Test Limit number of guest account specific networks
         """
