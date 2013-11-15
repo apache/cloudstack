@@ -523,7 +523,7 @@ class TestDefaultGroupEgress(cloudstackTestCase):
         #    CIDR: 0.0.0.0/0
         # 5. deployVirtualMachine into this security group (ssh)
         # 6. deployed VM should be Running, ssh should be allowed into the VM,
-        #    ping out to google.com from the VM should fail,
+        #    ping out to google.com from the VM should be successful,
         #    ssh from within VM to mgt server should pass
 
         security_group = SecurityGroup.create(
@@ -617,7 +617,7 @@ class TestDefaultGroupEgress(cloudstackTestCase):
 
         result = str(res)
         self.assertEqual(
-                         result.count("0 received"),
+                         result.count("1 received"),
                          1,
                          "Ping to outside world from VM should be successful"
                          )
@@ -625,8 +625,8 @@ class TestDefaultGroupEgress(cloudstackTestCase):
         try:
             self.debug("SSHing into management server from VM")
             res = ssh.execute("ssh %s@%s" % (
-                                    self.services["mgmt_server"]["username"],
-                                    self.services["mgmt_server"]["ipaddress"]
+                                   self.apiclient.connection.user,
+                                   self.apiclient.connection.mgtSvr
                                  ))
             self.debug("SSH result: %s" % str(res))
 
@@ -725,7 +725,7 @@ class TestDefaultGroupEgressAfterDeploy(cloudstackTestCase):
         # 5. authorizeSecurityGroupEgress to allow ssh access only out to
         #    CIDR: 0.0.0.0/0
         # 6. deployed VM should be Running, ssh should be allowed into the VM,
-        #    ping out to google.com from the VM should fail
+        #    ping out to google.com from the VM should be successful
 
         security_group = SecurityGroup.create(
                                               self.apiclient,
@@ -819,7 +819,7 @@ class TestDefaultGroupEgressAfterDeploy(cloudstackTestCase):
 
         result = str(res)
         self.assertEqual(
-                         result.count("0 received"),
+                         result.count("1 received"),
                          1,
                          "Ping to outside world from VM should be successful"
                          )
