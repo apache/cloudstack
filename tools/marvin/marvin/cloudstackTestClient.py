@@ -23,6 +23,7 @@ import random
 import string
 import hashlib
 from configGenerator import ConfigManager
+from marvin.integration.lib.utils import random_gen
 
 '''
 @Desc  : CloudStackTestClient is encapsulated class for getting various \
@@ -125,7 +126,7 @@ class cloudstackTestClient(object):
             createAcctCmd = createAccount.createAccountCmd()
             createAcctCmd.accounttype = acctType
             createAcctCmd.domainid = domId
-            createAcctCmd.email = "test-" + self.random_gen()\
+            createAcctCmd.email = "test-" + random_gen()\
                 + "@cloudstack.org"
             createAcctCmd.firstname = UserName
             createAcctCmd.lastname = UserName
