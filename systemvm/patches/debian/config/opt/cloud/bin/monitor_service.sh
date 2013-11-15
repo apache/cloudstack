@@ -64,7 +64,7 @@ crontab -l | grep -v  monitorServices.py | crontab -
 create_config $config
 
 #add cron job
-(crontab -l ; echo "*/3 * * * * python /root/monitorServices.py") | crontab -
+(crontab -l ;echo -e "SHELL=/bin/bash\nPATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n */1 * * * * /usr/bin/python /root/monitorServices.py") | crontab -
 
 
 unlock_exit 0 $lock $locked

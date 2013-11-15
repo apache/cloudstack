@@ -62,8 +62,13 @@ def getConfig( config_file_path = "/etc/monitor.conf" ):
     return  process_dict
 
 def printd (msg):
+
     return 0
-    print msg
+
+    f= open(monitor_log,'r+')
+    f.seek(0, 2)
+    f.write(str(msg)+"\n")
+    f.close()
 
 def raisealert(severity, msg, process_name=None):
     #timeStr=str(time.ctime())
@@ -74,12 +79,6 @@ def raisealert(severity, msg, process_name=None):
 
     msg = 'logger -t monit '+ log
     pout = Popen(msg, shell=True, stdout=PIPE)
-
-
-    #f= open(monitor_log,'r+')
-    #f.seek(0, 2)
-    #f.write(str(log))
-    #f.close()
 
 
 def isPidMatchPidFile(pidfile, pids):
@@ -119,7 +118,7 @@ def checkProcessStatus( process ):
     service_name = process.get('servicename')
     pidfile = process.get('pidfile')
     #temp_out = None
-    restartFailed=0
+    restartFailed=False
     pidFileMatched=1
     cmd=''
     if process_name is None:
@@ -186,34 +185,32 @@ def checkProcessStatus( process ):
                     for pid in pids:
                         cmd = 'kill -9 '+pid;
                         printd(cmd)
-                        Popen(cmd, shell=True, stdout=PIPE)
+                        Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT)
 
                 cmd = 'service ' + service_name + ' restart'
-                try:
-                    time.sleep(1)
-                    return_val= check_call(cmd , shell=True)
-                except CalledProcessError:
-                    restartFailed=1
-                    msg="service "+ process_name +" restart failed"
-                    printd(msg)
-                    continue
+
+                time.sleep(1)
+                #return_val= check_call(cmd , shell=True)
+
+                cout = Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT)
+                return_val = cout.wait()
 
                 if return_val == 0:
                     printd("The process" + process_name +" recovered successfully ")
                     msg="The process " +process_name+" is recovered successfully "
-                    raisealert(log.INFO,process_name,msg)
+                    raisealert(log.INFO,msg,process_name)
 
                     break;
                 else:
                     #retry restarting the process for few tries
                     printd("process restart failing trying again ....")
-                    restartFailed=1
+                    restartFailed=True
                     time.sleep(1)
                     continue
         #for end here
 
-        if restartFailed == 1:
-            msg="The process %s recover failed ", process_name;
+        if restartFailed == True:
+            msg="The process %s recover failed "%process_name
             raisealert(log.ALERT,process_name,msg)
 
             printd("Restart failed after number of retries")
