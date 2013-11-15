@@ -1219,6 +1219,7 @@ dictionary = {
 'label.zone.step.3.title': '<fmt:message key="label.zone.step.3.title" />',
 'label.zone.step.4.title': '<fmt:message key="label.zone.step.4.title" />',
 'label.zone.wide': '<fmt:message key="label.zone.wide" />',
+'label.ldap.group.name': '<fmt:message key="label.ldap.group.name" />',
 'managed.state': '<fmt:message key="managed.state" />',
 'message.acquire.new.ip': '<fmt:message key="message.acquire.new.ip" />',
 'message.acquire.new.ip.vpc': '<fmt:message key="message.acquire.new.ip.vpc" />',

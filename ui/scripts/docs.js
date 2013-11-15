@@ -1196,5 +1196,9 @@ cloudStack.docs = {
     helpUploadVolumeChecksum: {
         desc: 'Use the hash that you created at the start of the volume upload procedure',
         externalLink: ''
+    },
+    helpLdapGroupName: {
+        desc: 'The group name from which you want to import LDAP users',
+        externalLink: ''
     }
 };
