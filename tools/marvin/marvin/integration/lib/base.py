@@ -742,7 +742,7 @@ class Volume:
             cmd.url = services["url"]
         return Volume(apiclient.uploadVolume(cmd).__dict__)
 
-    def wait_for_upload(self, apiclient, timeout=5, interval=60):
+    def wait_for_upload(self, apiclient, timeout=10, interval=60):
         """Wait for upload"""
         # Sleep to ensure template is in proper state before download
         time.sleep(interval)
