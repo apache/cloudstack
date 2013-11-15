@@ -36,6 +36,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.deploy.DeploymentClusterPlanner;
+import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -117,6 +119,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -214,6 +217,8 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
     EntityManager _entityMgr;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    ConfigDepot _configDepot;
     @Inject
     HostPodDao _podDao;
     @Inject
@@ -372,8 +377,8 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
         weightBasedParametersForValidation.add(Config.LocalStorageCapacityThreshold.key());
         weightBasedParametersForValidation.add(CapacityManager.StorageAllocatedCapacityDisableThreshold.key());
         weightBasedParametersForValidation.add(CapacityManager.StorageCapacityDisableThreshold.key());
-        weightBasedParametersForValidation.add(Config.CPUCapacityDisableThreshold.key());
-        weightBasedParametersForValidation.add(Config.MemoryCapacityDisableThreshold.key());
+        weightBasedParametersForValidation.add(DeploymentClusterPlanner.ClusterCPUCapacityDisableThreshold.key());
+        weightBasedParametersForValidation.add(DeploymentClusterPlanner.ClusterMemoryCapacityDisableThreshold.key());
         weightBasedParametersForValidation.add(Config.AgentLoadThreshold.key());
         weightBasedParametersForValidation.add(Config.VmUserDispersionWeight.key());
 
@@ -625,8 +630,17 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
                         + (((name.toLowerCase()).contains("password")) ? "*****" : (((value == null) ? "" : value))));
         // check if config value exists
         ConfigurationVO config = _configDao.findByName(name);
+        String catergory = null;
+
+        // FIX ME - All configuration parameters are not moved from config.java to configKey
         if (config == null) {
-            throw new InvalidParameterValueException("Config parameter with name " + name + " doesn't exist");
+            if ( _configDepot.get(name) == null ) {
+                s_logger.warn("Probably the component manager where configuration variable " + name + " is defined needs to implement Configurable interface");
+                throw new InvalidParameterValueException("Config parameter with name " + name + " doesn't exist");
+            }
+            catergory = _configDepot.get(name).category();
+        } else {
+            catergory = config.getCategory();
         }
 
         if (value == null) {
@@ -667,7 +681,7 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
                     "cannot handle multiple IDs, provide only one ID corresponding to the scope");
         }
 
-        String updatedValue = updateConfiguration(userId, name, config.getCategory(), value, scope, id);
+        String updatedValue = updateConfiguration(userId, name, catergory, value, scope, id);
         if ((value == null && updatedValue == null) || updatedValue.equalsIgnoreCase(value)) {
             return _configDao.findByName(name);
         } else {

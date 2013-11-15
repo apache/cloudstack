@@ -57,8 +57,6 @@ public enum Config {
 	VlanCapacityThreshold("Alert", ManagementServer.class, Float.class, "zone.vlan.capacity.notificationthreshold", "0.75", "Percentage (as a value between 0 and 1) of Zone Vlan utilization above which alerts will be sent about low number of Zone Vlans.", null),
 	DirectNetworkPublicIpCapacityThreshold("Alert", ManagementServer.class, Float.class, "zone.directnetwork.publicip.capacity.notificationthreshold", "0.75", "Percentage (as a value between 0 and 1) of Direct Network Public Ip Utilization above which alerts will be sent about low number of direct network public ips.", null),
 	LocalStorageCapacityThreshold("Alert", ManagementServer.class, Float.class, "cluster.localStorage.capacity.notificationthreshold", "0.75", "Percentage (as a value between 0 and 1) of local storage utilization above which alerts will be sent about low local storage available.", null),
-	CPUCapacityDisableThreshold("Alert", ManagementServer.class, Float.class, "cluster.cpu.allocated.capacity.disablethreshold", "0.85", "Percentage (as a value between 0 and 1) of cpu utilization above which allocators will disable using the cluster for low cpu available. Keep the corresponding notification threshold lower than this to be notified beforehand.", null, ConfigKey.Scope.Cluster.toString()),
-	MemoryCapacityDisableThreshold("Alert", ManagementServer.class, Float.class, "cluster.memory.allocated.capacity.disablethreshold", "0.85", "Percentage (as a value between 0 and 1) of memory utilization above which allocators will disable using the cluster for low memory available. Keep the corresponding notification threshold lower than this to be notified beforehand.", null, ConfigKey.Scope.Cluster.toString()),
 
 
 	// Storage

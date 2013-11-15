@@ -44,6 +44,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.commons.codec.binary.Base64;
@@ -771,9 +772,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     public List<ConfigurationVO> getConfigListByScope(String scope, Long resourceId) {
 
         // Getting the list of parameters defined at the scope
-        List<Config> configList = Config.getConfigListByScope(scope);
+        List<ConfigKey<?>> configList = _configDepot.getConfigListByScope(scope);
         List<ConfigurationVO> configVOList = new ArrayList<ConfigurationVO>();
-        for (Config param:configList){
+        for (ConfigKey<?> param:configList){
             ConfigurationVO configVo = _configDao.findByName(param.toString());
             configVo.setValue(_configDepot.get(param.toString()).valueIn(resourceId).toString());
             configVOList.add(configVo);
