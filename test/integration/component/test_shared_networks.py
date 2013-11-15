@@ -1696,25 +1696,19 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Shared Network created: %s" % self.network.id)
 
-        try:
+        with self.assertRaises(Exception):
             self.project2_admin_account_virtual_machine = VirtualMachine.create(
                                                            self.api_client,
                                                            self.services["virtual_machine"],
-                                                           accountid=self.admin_account.name,
-                                                           domainid=self.admin_account.domainid,
                                                            networkids=self.network.id,
                                                            projectid=self.project2.id,
                                                            serviceofferingid=self.service_offering.id
                                                            )
-            self.fail("Virtual Machine got created in admin account with network specified but the network used is of scope project and the project2 is not assigned for the network.")
-        except Exception as e:
-            self.debug("Virtual Machine creation failed as network used have scoped only for project project1. Exception: %s" % e)
-
+        self.debug("Deploying a vm to project other than the one in which \
+                   network is created raised an Exception as expected")
         self.project1_admin_account_virtual_machine = VirtualMachine.create(
                                                        self.api_client,
                                                        self.services["virtual_machine"],
-                                                       accountid=self.admin_account.name,
-                                                       domainid=self.admin_account.domainid,
                                                        networkids=self.network.id,
                                                        projectid=self.project1.id,
                                                        serviceofferingid=self.service_offering.id
