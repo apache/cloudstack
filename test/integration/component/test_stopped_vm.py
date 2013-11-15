@@ -770,7 +770,7 @@ class TestDeployVM(cloudstackTestCase):
                               type='DATADISK',
                               account=self.account.name,
                               domainid=self.account.domainid,
-                              listall=True
+                              virtualmachineid=self.virtual_machine_2.id
                               )
         self.assertEqual(
                          isinstance(volumes, list),
