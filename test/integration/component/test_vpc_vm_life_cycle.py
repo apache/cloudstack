@@ -651,15 +651,13 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         """ Test recover an instance in VPC networks
         """
 
-        # Validate the following
-        # 1. Recover the virtual machines.
-        # 2. Vm should be in stopped state. State both the instances
-        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
-        #    works as expected.
-        # 3. Make sure that we are able to access google.com from this user Vm
+        self.debug("Deleted instacnes ..")
+        try:
+            self.vm_1.delete(self.apiclient)
+            self.vm_2.delete(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop the virtual instances, %s" % e)
 
-        self.debug("Recovering the expunged virtual machines in account: %s" %
-                                                self.account.name)
         try:
             self.vm_1.recover(self.apiclient)
             self.vm_2.recover(self.apiclient)
@@ -1421,15 +1419,11 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         """ Test recover an instance in VPC networks
         """
 
-        # Validate the following
-        # 1. Recover the virtual machines.
-        # 2. Vm should be in stopped state. State both the instances
-        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
-        #    works as expected.
-        # 3. Make sure that we are able to access google.com from this user Vm
+        try:
+            self.vm_2.delete(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to destroy the virtual instances, %s" % e)
 
-        self.debug("Recovering the expunged virtual machines in account: %s" %
-                                                self.account.name)
         try:
             self.vm_2.recover(self.apiclient)
         except Exception as e:
