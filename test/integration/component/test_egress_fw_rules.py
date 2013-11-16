@@ -214,7 +214,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                                          networkids=[str(self.network.id)],
                                                          projectid=project.id if project else None)
         except Exception as e:
-            self.debug('error=%s' % e)
+            self.fail("Virtual machine deployment failed with exception: %s" % e)
         self.debug("Deployed instance in account: %s" % self.account.name)
 
     def exec_script_on_user_vm(self, script, exec_cmd_params, expected_result, negative_test=False):
