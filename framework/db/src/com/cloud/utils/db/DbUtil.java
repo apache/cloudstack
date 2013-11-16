@@ -208,13 +208,14 @@ public class DbUtil {
         }
         
         PreparedStatement pstmt = null;
+        ResultSet rs = null;
         try {
             pstmt = conn.prepareStatement("SELECT COALESCE(GET_LOCK(?, ?),0)");
 
             pstmt.setString(1, name);
             pstmt.setInt(2, timeoutSeconds);
             
-            ResultSet rs = pstmt.executeQuery();
+            rs = pstmt.executeQuery();
             if (rs != null && rs.first()) {
             	 if(rs.getInt(1) > 0) {
             		 return true;
@@ -228,13 +229,8 @@ public class DbUtil {
         } catch (Throwable e) {
             s_logger.error("GET_LOCK() throws exception ", e);
         } finally {
-        	if (pstmt != null) {
-        		try {
-        			pstmt.close();
-        		} catch (Throwable e) {
-        			s_logger.error("What the heck? ", e);
-        		}
-        	}
+            closeStatement(pstmt);
+            closeResultSet(rs);
         }
         
         removeConnectionForGlobalLocks(name);
@@ -259,10 +255,11 @@ public class DbUtil {
         }
         
         PreparedStatement pstmt = null;
+        ResultSet rs = null;
         try {
             pstmt = conn.prepareStatement("SELECT COALESCE(RELEASE_LOCK(?), 0)");
             pstmt.setString(1, name);
-            ResultSet rs = pstmt.executeQuery();
+            rs = pstmt.executeQuery();
             if(rs != null && rs.first())
             	return rs.getInt(1) > 0;
             s_logger.error("RELEASE_LOCK() returns unexpected result : " + rs.getInt(1));
@@ -271,13 +268,9 @@ public class DbUtil {
         } catch (Throwable e) {
             s_logger.error("RELEASE_LOCK() throws exception ", e);
         } finally {
-        	try {
-            	if (pstmt != null) {
-    	        	pstmt.close();
-            	}
-        		conn.close();
-        	} catch(SQLException e) {
-        	}
+            closeResultSet(rs);
+            closeStatement(pstmt);
+            closeConnection(conn);
         }
         return false;
     }
@@ -305,7 +298,7 @@ public class DbUtil {
                 resultSet.close();
             }
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             s_logger.warn("Ignored exception while closing result set.",e);
         }
 
@@ -319,7 +312,7 @@ public class DbUtil {
                 statement.close();
             }
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             s_logger.warn("Ignored exception while closing statement.",e);
         }
 
@@ -333,7 +326,7 @@ public class DbUtil {
                 connection.close();
             }
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             s_logger.warn("Ignored exception while close connection.",e);
         }
 
