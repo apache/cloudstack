@@ -27,6 +27,8 @@ public interface DataStoreManager {
 
     DataStore getPrimaryDataStore(long storeId);
 
+    DataStore getPrimaryDataStore(String storeUuid);
+
     DataStore getDataStore(String uuid, DataStoreRole role);
 
     List<DataStore> getImageStoresByScope(ZoneScope scope);

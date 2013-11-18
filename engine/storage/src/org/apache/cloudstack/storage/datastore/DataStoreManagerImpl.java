@@ -88,6 +88,11 @@ public class DataStoreManagerImpl implements DataStoreManager {
     }
 
     @Override
+    public DataStore getPrimaryDataStore(String storeUuid) {
+        return primaryStoreMgr.getPrimaryDataStore(storeUuid);
+    }
+
+    @Override
     public List<DataStore> getImageCacheStores(Scope scope) {
         return imageDataStoreMgr.listImageCacheStores(scope);
     }
