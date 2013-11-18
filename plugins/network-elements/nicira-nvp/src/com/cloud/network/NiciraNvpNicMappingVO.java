@@ -46,7 +46,7 @@ public class NiciraNvpNicMappingVO implements InternalIdentity {
     public NiciraNvpNicMappingVO () {
     }
 
-    public NiciraNvpNicMappingVO (String logicalSwitchUuid, String logicalSwitchPortUuid, String nicUuid) {
+    public NiciraNvpNicMappingVO (final String logicalSwitchUuid, final String logicalSwitchPortUuid, final String nicUuid) {
         this.logicalSwitchUuid = logicalSwitchUuid;
         this.logicalSwitchPortUuid = logicalSwitchPortUuid;
         this.nicUuid = nicUuid;
@@ -56,7 +56,7 @@ public class NiciraNvpNicMappingVO implements InternalIdentity {
         return logicalSwitchUuid;
     }
 
-    public void setLogicalSwitchUuid(String logicalSwitchUuid) {
+    public void setLogicalSwitchUuid(final String logicalSwitchUuid) {
         this.logicalSwitchUuid = logicalSwitchUuid;
     }
 
@@ -64,7 +64,7 @@ public class NiciraNvpNicMappingVO implements InternalIdentity {
         return logicalSwitchPortUuid;
     }
 
-    public void setLogicalSwitchPortUuid(String logicalSwitchPortUuid) {
+    public void setLogicalSwitchPortUuid(final String logicalSwitchPortUuid) {
         this.logicalSwitchPortUuid = logicalSwitchPortUuid;
     }
 

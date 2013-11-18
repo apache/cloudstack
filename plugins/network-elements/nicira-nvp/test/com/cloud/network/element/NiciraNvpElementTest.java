@@ -72,59 +72,60 @@ import com.cloud.vm.ReservationContext;
 
 public class NiciraNvpElementTest {
 
-    NiciraNvpElement _element = new NiciraNvpElement();
-    NetworkOrchestrationService _networkManager = mock(NetworkOrchestrationService.class);
-    NetworkModel _networkModel = mock(NetworkModel.class);
-    NetworkServiceMapDao _ntwkSrvcDao = mock(NetworkServiceMapDao.class);
-    AgentManager _agentManager = mock(AgentManager.class);
-    HostDao _hostDao = mock(HostDao.class);
-    NiciraNvpDao _niciraNvpDao = mock(NiciraNvpDao.class);
-    NiciraNvpRouterMappingDao _niciraNvpRouterMappingDao = mock(NiciraNvpRouterMappingDao.class);
+    private static final long NETWORK_ID = 42L;
+    NiciraNvpElement element = new NiciraNvpElement();
+    NetworkOrchestrationService networkManager = mock(NetworkOrchestrationService.class);
+    NetworkModel networkModel = mock(NetworkModel.class);
+    NetworkServiceMapDao ntwkSrvcDao = mock(NetworkServiceMapDao.class);
+    AgentManager agentManager = mock(AgentManager.class);
+    HostDao hostDao = mock(HostDao.class);
+    NiciraNvpDao niciraNvpDao = mock(NiciraNvpDao.class);
+    NiciraNvpRouterMappingDao niciraNvpRouterMappingDao = mock(NiciraNvpRouterMappingDao.class);
 
     @Before
     public void setUp() throws ConfigurationException {
-        _element._resourceMgr = mock(ResourceManager.class);
-        _element._networkManager = _networkManager;
-        _element._ntwkSrvcDao = _ntwkSrvcDao;
-        _element._networkModel = _networkModel;
-        _element._agentMgr = _agentManager;
-        _element._hostDao = _hostDao;
-        _element._niciraNvpDao = _niciraNvpDao;
-        _element._niciraNvpRouterMappingDao = _niciraNvpRouterMappingDao;
+        element.resourceMgr = mock(ResourceManager.class);
+        element.networkManager = networkManager;
+        element.ntwkSrvcDao = ntwkSrvcDao;
+        element.networkModel = networkModel;
+        element.agentMgr = agentManager;
+        element.hostDao = hostDao;
+        element.niciraNvpDao = niciraNvpDao;
+        element.niciraNvpRouterMappingDao = niciraNvpRouterMappingDao;
 
         // Standard responses
-        when(_networkModel.isProviderForNetwork(Provider.NiciraNvp, 42L)).thenReturn(true);
+        when(networkModel.isProviderForNetwork(Provider.NiciraNvp, NETWORK_ID)).thenReturn(true);
 
-        _element.configure("NiciraNvpTestElement", Collections.<String, Object> emptyMap());
+        element.configure("NiciraNvpTestElement", Collections.<String, Object> emptyMap());
     }
 
     @Test
     public void canHandleTest() {
         Network net = mock(Network.class);
         when(net.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Lswitch);
-        when(net.getId()).thenReturn(42L);
+        when(net.getId()).thenReturn(NETWORK_ID);
 
-        when(_ntwkSrvcDao.canProviderSupportServiceInNetwork(42L, Service.Connectivity, Provider.NiciraNvp)).thenReturn(true);
+        when(ntwkSrvcDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.Connectivity, Provider.NiciraNvp)).thenReturn(true);
         // Golden path
-        assertTrue(_element.canHandle(net, Service.Connectivity));
+        assertTrue(element.canHandle(net, Service.Connectivity));
 
         when(net.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Vlan);
         // Only broadcastdomaintype lswitch is supported
-        assertFalse(_element.canHandle(net, Service.Connectivity));
+        assertFalse(element.canHandle(net, Service.Connectivity));
 
         when(net.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Lswitch);
-        when(_ntwkSrvcDao.canProviderSupportServiceInNetwork(42L, Service.Connectivity, Provider.NiciraNvp)).thenReturn(false);
+        when(ntwkSrvcDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.Connectivity, Provider.NiciraNvp)).thenReturn(false);
         // No nvp provider in the network
-        assertFalse(_element.canHandle(net, Service.Connectivity));
+        assertFalse(element.canHandle(net, Service.Connectivity));
 
-        when(_networkModel.isProviderForNetwork(Provider.NiciraNvp, 42L)).thenReturn(false);
-        when(_ntwkSrvcDao.canProviderSupportServiceInNetwork(42L, Service.Connectivity, Provider.NiciraNvp)).thenReturn(true);
+        when(networkModel.isProviderForNetwork(Provider.NiciraNvp, NETWORK_ID)).thenReturn(false);
+        when(ntwkSrvcDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.Connectivity, Provider.NiciraNvp)).thenReturn(true);
         // NVP provider does not provide Connectivity for this network
-        assertFalse(_element.canHandle(net, Service.Connectivity));
+        assertFalse(element.canHandle(net, Service.Connectivity));
 
-        when(_networkModel.isProviderForNetwork(Provider.NiciraNvp, 42L)).thenReturn(true);
+        when(networkModel.isProviderForNetwork(Provider.NiciraNvp, NETWORK_ID)).thenReturn(true);
         // Only service Connectivity is supported
-        assertFalse(_element.canHandle(net, Service.Dhcp));
+        assertFalse(element.canHandle(net, Service.Dhcp));
 
     }
 
@@ -132,10 +133,10 @@ public class NiciraNvpElementTest {
     public void implementTest() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         Network network = mock(Network.class);
         when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Lswitch);
-        when(network.getId()).thenReturn(42L);
+        when(network.getId()).thenReturn(NETWORK_ID);
 
         NetworkOffering offering = mock(NetworkOffering.class);
-        when(offering.getId()).thenReturn(42L);
+        when(offering.getId()).thenReturn(NETWORK_ID);
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
 
@@ -148,19 +149,17 @@ public class NiciraNvpElementTest {
         ReservationContext context = mock(ReservationContext.class);
         when(context.getDomain()).thenReturn(dom);
         when(context.getAccount()).thenReturn(acc);
-
-        // assertTrue(_element.implement(network, offering, dest, context));
     }
 
     @Test
     public void applyIpTest() throws ResourceUnavailableException {
         Network network = mock(Network.class);
         when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Lswitch);
-        when(network.getId()).thenReturn(42L);
-        when(network.getPhysicalNetworkId()).thenReturn(42L);
+        when(network.getId()).thenReturn(NETWORK_ID);
+        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
 
         NetworkOffering offering = mock(NetworkOffering.class);
-        when(offering.getId()).thenReturn(42L);
+        when(offering.getId()).thenReturn(NETWORK_ID);
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
 
@@ -186,23 +185,23 @@ public class NiciraNvpElementTest {
         List<NiciraNvpDeviceVO> deviceList = new ArrayList<NiciraNvpDeviceVO>();
         NiciraNvpDeviceVO nndVO = mock(NiciraNvpDeviceVO.class);
         NiciraNvpRouterMappingVO nnrmVO = mock(NiciraNvpRouterMappingVO.class);
-        when(_niciraNvpRouterMappingDao.findByNetworkId(42L)).thenReturn(nnrmVO);
+        when(niciraNvpRouterMappingDao.findByNetworkId(NETWORK_ID)).thenReturn(nnrmVO);
         when(nnrmVO.getLogicalRouterUuid()).thenReturn("abcde");
-        when(nndVO.getHostId()).thenReturn(42L);
+        when(nndVO.getHostId()).thenReturn(NETWORK_ID);
         HostVO hvo = mock(HostVO.class);
-        when(hvo.getId()).thenReturn(42L);
+        when(hvo.getId()).thenReturn(NETWORK_ID);
         when(hvo.getDetail("l3gatewayserviceuuid")).thenReturn("abcde");
-        when(_hostDao.findById(42L)).thenReturn(hvo);
+        when(hostDao.findById(NETWORK_ID)).thenReturn(hvo);
         deviceList.add(nndVO);
-        when(_niciraNvpDao.listByPhysicalNetwork(42L)).thenReturn(deviceList);
+        when(niciraNvpDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(deviceList);
 
         ConfigurePublicIpsOnLogicalRouterAnswer answer = mock(ConfigurePublicIpsOnLogicalRouterAnswer.class);
         when(answer.getResult()).thenReturn(true);
-        when(_agentManager.easySend(eq(42L), any(ConfigurePublicIpsOnLogicalRouterCommand.class))).thenReturn(answer);
+        when(agentManager.easySend(eq(NETWORK_ID), any(ConfigurePublicIpsOnLogicalRouterCommand.class))).thenReturn(answer);
 
-        assertTrue(_element.applyIps(network, ipAddresses, services));
+        assertTrue(element.applyIps(network, ipAddresses, services));
 
-        verify(_agentManager, atLeast(1)).easySend(eq(42L),
+        verify(agentManager, atLeast(1)).easySend(eq(NETWORK_ID),
                 argThat(new ArgumentMatcher<ConfigurePublicIpsOnLogicalRouterCommand>() {
                     @Override
                     public boolean matches(Object argument) {

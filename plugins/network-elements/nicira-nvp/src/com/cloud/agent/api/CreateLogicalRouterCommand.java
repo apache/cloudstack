@@ -20,28 +20,28 @@ package com.cloud.agent.api;
  *
  */
 public class CreateLogicalRouterCommand extends Command {
-    private String _gatewayServiceUuid;
-    private String _logicalSwitchUuid;
-    private long _vlanId;
-    private String _name;
-    private String _ownerName;
-    private String _publicIpCidr;
-    private String _publicNextHop;
-    private String _internalIpCidr;
+    private String gatewayServiceUuid;
+    private String logicalSwitchUuid;
+    private long vlanId;
+    private String name;
+    private String ownerName;
+    private String publicIpCidr;
+    private String publicNextHop;
+    private String internalIpCidr;
 
-    public CreateLogicalRouterCommand(String gatewayServiceUuid, long vlanId,
-            String logicalSwitchUuid, String name,
-            String publicIpCidr, String publicNextHop,
-            String internalIpCidr, String ownerName) {
+    public CreateLogicalRouterCommand(final String gatewayServiceUuid, final long vlanId,
+            final String logicalSwitchUuid, final String name,
+            final String publicIpCidr, final String publicNextHop,
+            final String internalIpCidr, final String ownerName) {
         super();
-        _gatewayServiceUuid = gatewayServiceUuid;
-        _logicalSwitchUuid = logicalSwitchUuid;
-        _vlanId = vlanId;
-        _name = name;
-        _ownerName = ownerName;
-        _publicIpCidr = publicIpCidr;
-        _publicNextHop = publicNextHop;
-        _internalIpCidr = internalIpCidr;
+        this.gatewayServiceUuid = gatewayServiceUuid;
+        this.logicalSwitchUuid = logicalSwitchUuid;
+        this.vlanId = vlanId;
+        this.name = name;
+        this.ownerName = ownerName;
+        this.publicIpCidr = publicIpCidr;
+        this.publicNextHop = publicNextHop;
+        this.internalIpCidr = internalIpCidr;
     }
 
     @Override
@@ -50,66 +50,66 @@ public class CreateLogicalRouterCommand extends Command {
     }
 
     public String getGatewayServiceUuid() {
-        return _gatewayServiceUuid;
+        return gatewayServiceUuid;
     }
 
-    public void setGatewayServiceUuid(String gatewayServiceUuid) {
-        _gatewayServiceUuid = gatewayServiceUuid;
+    public void setGatewayServiceUuid(final String gatewayServiceUuid) {
+        this.gatewayServiceUuid = gatewayServiceUuid;
     }
 
     public String getLogicalSwitchUuid() {
-        return _logicalSwitchUuid;
+        return logicalSwitchUuid;
     }
 
-    public void setLogicalSwitchUuid(String logicalSwitchUuid) {
-        _logicalSwitchUuid = logicalSwitchUuid;
+    public void setLogicalSwitchUuid(final String logicalSwitchUuid) {
+        this.logicalSwitchUuid = logicalSwitchUuid;
     }
 
     public long getVlanId() {
-        return _vlanId;
+        return vlanId;
     }
 
-    public void setVlanId(long vlanId) {
-        _vlanId = vlanId;
+    public void setVlanId(final long vlanId) {
+        this.vlanId = vlanId;
     }
 
     public String getName() {
-        return _name;
+        return name;
     }
 
-    public void setName(String name) {
-        _name = name;
+    public void setName(final String name) {
+        this.name = name;
     }
 
     public String getOwnerName() {
-        return _ownerName;
+        return ownerName;
     }
 
-    public void setOwnerName(String ownerName) {
-        _ownerName = ownerName;
+    public void setOwnerName(final String ownerName) {
+        this.ownerName = ownerName;
     }
 
     public String getPublicIpCidr() {
-        return _publicIpCidr;
+        return publicIpCidr;
     }
 
-    public void setPublicIpCidr(String publicIpCidr) {
-        _publicIpCidr = publicIpCidr;
+    public void setPublicIpCidr(final String publicIpCidr) {
+        this.publicIpCidr = publicIpCidr;
     }
 
     public String getInternalIpCidr() {
-        return _internalIpCidr;
+        return internalIpCidr;
     }
 
-    public void setInternalIpCidr(String internalIpCidr) {
-        _internalIpCidr = internalIpCidr;
+    public void setInternalIpCidr(final String internalIpCidr) {
+        this.internalIpCidr = internalIpCidr;
     }
 
     public String getPublicNextHop() {
-        return _publicNextHop;
+        return publicNextHop;
     }
 
-    public void setPublicNextHop(String publicNextHop) {
-        _publicNextHop = publicNextHop;
+    public void setPublicNextHop(final String publicNextHop) {
+        this.publicNextHop = publicNextHop;
     }
 }

@@ -34,7 +34,7 @@ public abstract class NatRule {
         return match;
     }
 
-    public void setMatch(Match match) {
+    public void setMatch(final Match match) {
         this.match = match;
     }
 
@@ -42,7 +42,7 @@ public abstract class NatRule {
         return uuid;
     }
 
-    public void setUuid(UUID uuid) {
+    public void setUuid(final UUID uuid) {
         this.uuid = uuid;
     }
 
@@ -50,7 +50,7 @@ public abstract class NatRule {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(final String type) {
         this.type = type;
     }
 
@@ -58,7 +58,7 @@ public abstract class NatRule {
         return order;
     }
 
-    public void setOrder(int order) {
+    public void setOrder(final int order) {
         this.order = order;
     }
 
@@ -74,7 +74,7 @@ public abstract class NatRule {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (this == obj)
             return true;
         if (obj == null)
@@ -102,7 +102,7 @@ public abstract class NatRule {
         return true;
     }
 
-    public boolean equalsIgnoreUuid(Object obj) {
+    public boolean equalsIgnoreUuid(final Object obj) {
         if (this == obj)
             return true;
         if (obj == null)
@@ -124,6 +124,4 @@ public abstract class NatRule {
             return false;
         return true;
     }
-
-
 }

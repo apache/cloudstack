@@ -21,15 +21,15 @@ public class NiciraNvpApiException extends Exception {
     public NiciraNvpApiException() {
     }
 
-    public NiciraNvpApiException(String message) {
+    public NiciraNvpApiException(final String message) {
         super(message);
     }
 
-    public NiciraNvpApiException(Throwable cause) {
+    public NiciraNvpApiException(final Throwable cause) {
         super(cause);
     }
 
-    public NiciraNvpApiException(String message, Throwable cause) {
+    public NiciraNvpApiException(final String message, final Throwable cause) {
         super(message, cause);
     }
 

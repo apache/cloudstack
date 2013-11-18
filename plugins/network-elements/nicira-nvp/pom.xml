@@ -42,7 +42,7 @@
         </dependencies>
         <executions>
           <execution>
-            <phase>process-sources</phase>
+            <phase>process-classes</phase>
             <goals>
               <goal>check</goal>
             </goals>

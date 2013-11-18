@@ -31,7 +31,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 @Component
 @Local(value=NiciraNvpDao.class)
 public class NiciraNvpDaoImpl extends GenericDaoBase<NiciraNvpDeviceVO, Long>
-implements NiciraNvpDao {
+        implements NiciraNvpDao {
 
     protected final SearchBuilder<NiciraNvpDeviceVO> physicalNetworkIdSearch;
 
@@ -42,7 +42,7 @@ implements NiciraNvpDao {
     }
 
     @Override
-    public List<NiciraNvpDeviceVO> listByPhysicalNetwork(long physicalNetworkId) {
+    public List<NiciraNvpDeviceVO> listByPhysicalNetwork(final long physicalNetworkId) {
         SearchCriteria<NiciraNvpDeviceVO> sc = physicalNetworkIdSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
         return search(sc, null);

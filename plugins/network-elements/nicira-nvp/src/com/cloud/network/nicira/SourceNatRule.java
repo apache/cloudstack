@@ -29,7 +29,7 @@ public class SourceNatRule extends NatRule {
         return toSourceIpAddressMax;
     }
 
-    public void setToSourceIpAddressMax(String toSourceIpAddressMax) {
+    public void setToSourceIpAddressMax(final String toSourceIpAddressMax) {
         this.toSourceIpAddressMax = toSourceIpAddressMax;
     }
 
@@ -37,7 +37,7 @@ public class SourceNatRule extends NatRule {
         return toSourceIpAddressMin;
     }
 
-    public void setToSourceIpAddressMin(String toSourceIpAddressMin) {
+    public void setToSourceIpAddressMin(final String toSourceIpAddressMin) {
         this.toSourceIpAddressMin = toSourceIpAddressMin;
     }
 
@@ -45,7 +45,7 @@ public class SourceNatRule extends NatRule {
         return toSourcePort;
     }
 
-    public void setToSourcePort(Integer toSourcePort) {
+    public void setToSourcePort(final Integer toSourcePort) {
         this.toSourcePort = toSourcePort;
     }
 
@@ -67,7 +67,7 @@ public class SourceNatRule extends NatRule {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (this == obj)
             return true;
         if (!super.equals(obj))
@@ -94,7 +94,7 @@ public class SourceNatRule extends NatRule {
     }
 
     @Override
-    public boolean equalsIgnoreUuid(Object obj) {
+    public boolean equalsIgnoreUuid(final Object obj) {
         if (this == obj)
             return true;
         if (!super.equalsIgnoreUuid(obj))

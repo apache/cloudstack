@@ -26,14 +26,28 @@
         <property name="eachLine" value="true"/>
     </module>
 
+    <module name="TreeWalker">
+        <module name="LineLength">
+            <property name="max" value="180"/>
+        </module>
+
+        <module name="RedundantImport"/>
+        <module name="UnusedImports"/>
+
+        <module name="PackageName"/>
+        <module name="ParameterName"/>
+        <module name="TypeName"/>
+        <module name="AvoidStarImport"/>
+    </module>
     <module name="RegexpSingleline">
-        <!-- \s matches whitespace character, $ matches end of line. -->
+        <!-- \s matches whitespace character, $ matches end of line.-->
         <property name="format" value="\s+$"/>
         <property name="message" value="Line has trailing spaces."/>
     </module>
-    <module name="TreeWalker">
-       <module name="RedundantImport"/>
-       <module name="UnusedImports"/>
-    </module>
+
+    <!-- some modules that we should soon add
+    <module name="MagicNumber"/> -->
+
+    <!--  some modules that we should soon add -->
 
 </module>

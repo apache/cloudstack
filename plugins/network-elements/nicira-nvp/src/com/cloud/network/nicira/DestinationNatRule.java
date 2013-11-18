@@ -28,15 +28,18 @@ public class DestinationNatRule extends NatRule {
         return toDestinationIpAddress;
     }
 
-    public void setToDestinationIpAddress(String toDestinationIpAddress) {
+
+    public void setToDestinationIpAddress(final String toDestinationIpAddress) {
         this.toDestinationIpAddress = toDestinationIpAddress;
     }
+
 
     public Integer getToDestinationPort() {
         return toDestinationPort;
     }
 
-    public void setToDestinationPort(Integer toDestinationPort) {
+
+    public void setToDestinationPort(final Integer toDestinationPort) {
         this.toDestinationPort = toDestinationPort;
     }
 
@@ -57,45 +60,59 @@ public class DestinationNatRule extends NatRule {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (!super.equals(obj))
+        }
+        if (!super.equals(obj)) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         DestinationNatRule other = (DestinationNatRule) obj;
         if (toDestinationIpAddress == null) {
-            if (other.toDestinationIpAddress != null)
+            if (other.toDestinationIpAddress != null) {
                 return false;
-        } else if (!toDestinationIpAddress.equals(other.toDestinationIpAddress))
+            }
+        } else if (!toDestinationIpAddress.equals(other.toDestinationIpAddress)) {
             return false;
+        }
         if (toDestinationPort == null) {
-            if (other.toDestinationPort != null)
+            if (other.toDestinationPort != null) {
                 return false;
-        } else if (!toDestinationPort.equals(other.toDestinationPort))
+            }
+        } else if (!toDestinationPort.equals(other.toDestinationPort)) {
             return false;
+        }
         return true;
     }
 
     @Override
     public boolean equalsIgnoreUuid(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (!super.equalsIgnoreUuid(obj))
+        }
+        if (!super.equalsIgnoreUuid(obj)) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         DestinationNatRule other = (DestinationNatRule) obj;
         if (toDestinationIpAddress == null) {
-            if (other.toDestinationIpAddress != null)
+            if (other.toDestinationIpAddress != null) {
                 return false;
-        } else if (!toDestinationIpAddress.equals(other.toDestinationIpAddress))
+            }
+        } else if (!toDestinationIpAddress.equals(other.toDestinationIpAddress)) {
             return false;
+        }
         if (toDestinationPort == null) {
-            if (other.toDestinationPort != null)
+            if (other.toDestinationPort != null) {
                 return false;
-        } else if (!toDestinationPort.equals(other.toDestinationPort))
+            }
+        } else if (!toDestinationPort.equals(other.toDestinationPort)) {
             return false;
+        }
         return true;
     }
 

@@ -19,31 +19,29 @@ package com.cloud.network.nicira;
 import java.util.List;
 
 public class LogicalSwitch {
-    private String display_name;
-    private boolean port_isolation_enabled;
+    private String displayName;
+    private boolean portIsolationEnabled;
     private List<NiciraNvpTag> tags;
-    private List<TransportZoneBinding> transport_zones;
+    private List<TransportZoneBinding> transportZones;
     private String type;
     private String uuid;
-    private String _href;
-    //private RequestQueryParameters _query;
-    //private LogicalSwitchRelations _relations;
-    private String _schema;
+    private String href;
+    private String schema;
 
-    public String getDisplay_name() {
-        return display_name;
+    public String getDisplayName() {
+        return displayName;
     }
 
-    public void setDisplay_name(String display_name) {
-        this.display_name = display_name;
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
-    public boolean isPort_isolation_enabled() {
-        return port_isolation_enabled;
+    public boolean isPortIsolationEnabled() {
+        return portIsolationEnabled;
     }
 
-    public void setPort_isolation_enabled(boolean port_isolation_enabled) {
-        this.port_isolation_enabled = port_isolation_enabled;
+    public void setPortIsolationEnabled(boolean portIsolationEnabled) {
+        this.portIsolationEnabled = portIsolationEnabled;
     }
 
     public String getType() {
@@ -62,20 +60,20 @@ public class LogicalSwitch {
         this.uuid = uuid;
     }
 
-    public String get_href() {
-        return _href;
+    public String getHref() {
+        return href;
     }
 
-    public void set_href(String _href) {
-        this._href = _href;
+    public void setHref(String href) {
+        this.href = href;
     }
 
-    public String get_schema() {
-        return _schema;
+    public String getSchema() {
+        return schema;
     }
 
-    public void set_schema(String _schema) {
-        this._schema = _schema;
+    public void setSchema(String schema) {
+        this.schema = schema;
     }
 
     public List<NiciraNvpTag> getTags() {
@@ -86,13 +84,12 @@ public class LogicalSwitch {
         this.tags = tags;
     }
 
-    public List<TransportZoneBinding> getTransport_zones() {
-        return transport_zones;
+    public List<TransportZoneBinding> getTransportZones() {
+        return transportZones;
     }
 
-    public void setTransport_zones(List<TransportZoneBinding> transport_zones) {
-        this.transport_zones = transport_zones;
+    public void setTransportZones(List<TransportZoneBinding> transportZones) {
+        this.transportZones = transportZones;
     }
-
 
 }

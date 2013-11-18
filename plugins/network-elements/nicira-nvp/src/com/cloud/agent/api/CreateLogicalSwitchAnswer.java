@@ -17,20 +17,20 @@
 package com.cloud.agent.api;
 
 public class CreateLogicalSwitchAnswer extends Answer {
-    private String _logicalSwitchUuid;
+    private String logicalSwitchUuid;
 
-    public CreateLogicalSwitchAnswer(Command command, boolean success,
-            String details, String logicalSwitchUuid) {
+    public CreateLogicalSwitchAnswer(final Command command, final boolean success,
+            final String details, final String logicalSwitchUuid) {
         super(command, success, details);
-        _logicalSwitchUuid = logicalSwitchUuid;
+        this.logicalSwitchUuid = logicalSwitchUuid;
     }
 
-    public CreateLogicalSwitchAnswer(Command command, Exception e) {
+    public CreateLogicalSwitchAnswer(final Command command, final Exception e) {
         super(command, e);
     }
 
     public String getLogicalSwitchUuid() {
-        return _logicalSwitchUuid;
+        return logicalSwitchUuid;
     }
 
 }

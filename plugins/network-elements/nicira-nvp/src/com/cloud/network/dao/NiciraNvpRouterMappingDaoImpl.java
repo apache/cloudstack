@@ -39,10 +39,11 @@ public class NiciraNvpRouterMappingDaoImpl extends GenericDaoBase<NiciraNvpRoute
     }
 
     @Override
-    public NiciraNvpRouterMappingVO findByNetworkId(long id) {
+    public NiciraNvpRouterMappingVO findByNetworkId(final long id) {
         SearchCriteria<NiciraNvpRouterMappingVO> sc = networkSearch.create();
         sc.setParameters("network_id", id);
         return findOneBy(sc);
     }
+
 
 }

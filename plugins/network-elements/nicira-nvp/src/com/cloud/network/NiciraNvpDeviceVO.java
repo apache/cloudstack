@@ -56,8 +56,8 @@ public class NiciraNvpDeviceVO implements InternalIdentity {
         uuid = UUID.randomUUID().toString();
     }
 
-    public NiciraNvpDeviceVO(long hostId, long physicalNetworkId,
-            String providerName, String deviceName) {
+    public NiciraNvpDeviceVO(final long hostId, final long physicalNetworkId,
+            final String providerName, final String deviceName) {
         super();
         this.hostId = hostId;
         this.physicalNetworkId = physicalNetworkId;

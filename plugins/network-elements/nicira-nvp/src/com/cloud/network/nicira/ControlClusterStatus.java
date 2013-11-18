@@ -17,67 +17,65 @@
 package com.cloud.network.nicira;
 
 public class ControlClusterStatus {
-    private String cluster_status;
-    private Stats node_stats;
-    private Stats lqueue_stats;
-    private Stats lport_stats;
-    private Stats lrouterport_stats;
-    private Stats lswitch_stats;
-    private Stats zone_stats;
-    private Stats lrouter_stats;
-    private Stats security_profile_stats;
+    private String clusterStatus;
+    private Stats nodeStats;
+    private Stats queueStats;
+    private Stats portStats;
+    private Stats routerportStats;
+    private Stats switchStats;
+    private Stats zoneStats;
+    private Stats routerStats;
+    private Stats securityProfileStats;
 
     public String getClusterStatus() {
-        return cluster_status;
+        return clusterStatus;
     }
 
     public Stats getNodeStats() {
-        return node_stats;
+        return nodeStats;
     }
 
     public Stats getLqueueStats() {
-        return lqueue_stats;
+        return queueStats;
     }
 
     public Stats getLportStats() {
-        return lport_stats;
+        return portStats;
     }
 
     public Stats getLrouterportStats() {
-        return lrouterport_stats;
+        return routerportStats;
     }
 
     public Stats getLswitchStats() {
-        return lswitch_stats;
+        return switchStats;
     }
 
     public Stats getZoneStats() {
-        return zone_stats;
+        return zoneStats;
     }
 
     public Stats getLrouterStats() {
-        return lrouter_stats;
+        return routerStats;
     }
 
     public Stats getSecurityProfileStats() {
-        return security_profile_stats;
+        return securityProfileStats;
     }
 
     public class Stats {
-        private int error_state_count;
-        private int registered_count;
-        private int active_count;
+        private int errorStateCount;
+        private int registeredCount;
+        private int activeCount;
 
         public int getErrorStateCount() {
-            return error_state_count;
+            return errorStateCount;
         }
-
         public int getRegisteredCount() {
-            return registered_count;
+            return registeredCount;
         }
-
         public int getActiveCount() {
-            return active_count;
+            return activeCount;
         }
 
     }

@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Entity
 @Table(name="nicira_nvp_router_map")
 public class NiciraNvpRouterMappingVO implements InternalIdentity {
+    //FIXME the ddl for this table should be in one of the upgrade scripts
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="id")
@@ -42,12 +43,12 @@ public class NiciraNvpRouterMappingVO implements InternalIdentity {
     public NiciraNvpRouterMappingVO() {
     }
 
-    public NiciraNvpRouterMappingVO(String logicalRouterUuid, long networkId) {
+    public NiciraNvpRouterMappingVO(final String logicalRouterUuid, final long networkId) {
         this.logicalRouterUuid = logicalRouterUuid;
         this.networkId = networkId;
     }
 
-    public NiciraNvpRouterMappingVO(long id, String logicalRouterUuid, long networkId) {
+    public NiciraNvpRouterMappingVO(final long id, final String logicalRouterUuid, final long networkId) {
         this.id = id;
         this.logicalRouterUuid = logicalRouterUuid;
         this.networkId = networkId;
@@ -58,7 +59,7 @@ public class NiciraNvpRouterMappingVO implements InternalIdentity {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(final long id) {
         this.id = id;
     }
 
@@ -66,7 +67,7 @@ public class NiciraNvpRouterMappingVO implements InternalIdentity {
         return logicalRouterUuid;
     }
 
-    public void setLogicalRouterUuid(String logicalRouterUuid) {
+    public void setLogicalRouterUuid(final String logicalRouterUuid) {
         this.logicalRouterUuid = logicalRouterUuid;
     }
 
@@ -74,7 +75,7 @@ public class NiciraNvpRouterMappingVO implements InternalIdentity {
         return networkId;
     }
 
-    public void setNetworkId(long networkId) {
+    public void setNetworkId(final long networkId) {
         this.networkId = networkId;
     }
 

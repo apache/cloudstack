@@ -21,14 +21,13 @@ package com.cloud.agent.api;
  */
 public class DeleteLogicalRouterCommand extends Command {
 
-    private String _logicalRouterUuid;
+    private final String logicalRouterUuid;
 
     public DeleteLogicalRouterCommand(String logicalRouterUuid) {
-        _logicalRouterUuid = logicalRouterUuid;
+        this.logicalRouterUuid = logicalRouterUuid;
     }
 
-    /*
-     * (non-Javadoc)
+    /* (non-Javadoc)
      * @see com.cloud.agent.api.Command#executeInSequence()
      */
     @Override
@@ -37,6 +36,6 @@ public class DeleteLogicalRouterCommand extends Command {
     }
 
     public String getLogicalRouterUuid() {
-        return _logicalRouterUuid;
+        return logicalRouterUuid;
     }
 }
