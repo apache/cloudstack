@@ -27,19 +27,15 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.network.Network;
 import com.cloud.network.dao.RouterNetworkDao;
-import com.cloud.network.dao.RouterNetworkDaoImpl;
 import com.cloud.network.dao.RouterNetworkVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserStatisticsDao;
-import com.cloud.user.dao.UserStatisticsDaoImpl;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder.JoinType;
@@ -50,7 +46,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
 @Component
@@ -63,6 +58,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     protected SearchBuilder<DomainRouterVO> HostUpSearch;
     protected SearchBuilder<DomainRouterVO> StateNetworkTypeSearch;
     protected SearchBuilder<DomainRouterVO> OutsidePodSearch;
+    protected SearchBuilder<DomainRouterVO> clusterSearch;
     @Inject HostDao _hostsDao;
     @Inject RouterNetworkDao _routerNetworkDao;
     @Inject UserStatisticsDao _userStatsDao;
@@ -117,7 +113,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         StateNetworkTypeSearch = createSearchBuilder();
         StateNetworkTypeSearch.select(null, Func.DISTINCT, StateNetworkTypeSearch.entity().getId());
         StateNetworkTypeSearch.and("state", StateNetworkTypeSearch.entity().getState(), Op.EQ);
-        SearchBuilder<RouterNetworkVO> joinRouterNetwork4 = _routerNetworkDao.createSearchBuilder();
+        SearchBuilder<RouterNetworkVO> joinRouterNetwork4 =_routerNetworkDao.createSearchBuilder();
         joinRouterNetwork4.and("networkId", joinRouterNetwork4.entity().getNetworkId(), Op.EQ);
         joinRouterNetwork4.and("type", joinRouterNetwork4.entity().getGuestType(), Op.EQ);
         StateNetworkTypeSearch.join("networkRouter", joinRouterNetwork4, joinRouterNetwork4.entity().getRouterId(), StateNetworkTypeSearch.entity().getId(), JoinType.INNER);
@@ -139,6 +135,11 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         OutsidePodSearch.and("role", OutsidePodSearch.entity().getRole(), Op.EQ);
         OutsidePodSearch.done();
 
+        clusterSearch = createSearchBuilder();
+        SearchBuilder<HostVO> clusterHost = _hostsDao.createSearchBuilder();
+        clusterHost.and("clusterId", clusterHost.entity().getClusterId(), Op.EQ);
+        clusterSearch.join("host", clusterHost, clusterSearch.entity().getHostId(), clusterHost.entity().getId(),JoinType.INNER);
+        clusterSearch.done();
     }
 
     @Override
@@ -205,8 +206,8 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
 
     @Override
     public List<DomainRouterVO> listByClusterId(Long clusterId) {
-        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
-        //ToDo: Add cluster criteria
+        SearchCriteria<DomainRouterVO> sc = clusterSearch.create();
+        sc.setJoinParameters("host", "clusterId", clusterId);
         return listBy(sc);
     }
 

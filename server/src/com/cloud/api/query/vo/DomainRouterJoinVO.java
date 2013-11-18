@@ -101,6 +101,9 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     @Column(name="data_center_name")
     private String dataCenterName = null;
 
+    @Column(name="cluster_id")
+    private long clusterId;
+
     @Column(name="dns1")
     private String dns1 = null;
 
@@ -332,6 +335,10 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 
     public String getHostName() {
         return hostName;
+    }
+
+    public Long getClusterId() {
+        return clusterId;
     }
 
     public long getTemplateId() {
