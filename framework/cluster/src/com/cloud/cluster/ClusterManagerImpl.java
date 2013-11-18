@@ -40,13 +40,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.cluster.dao.ManagementServerHostPeerDao;
@@ -256,15 +255,15 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                         try {
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Cluster PDU " + getSelfPeerName() + " -> " + pdu.getDestPeer() + ". agent: " + pdu.getAgentId() + ", pdu seq: " +
-                                    pdu.getSequenceId() + ", pdu ack seq: " + pdu.getAckSequenceId() + ", json: " + pdu.getJsonPackage());
+                                        pdu.getSequenceId() + ", pdu ack seq: " + pdu.getAckSequenceId() + ", json: " + pdu.getJsonPackage());
                             }
 
                             long startTick = System.currentTimeMillis();
                             String strResult = peerService.execute(pdu);
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Cluster PDU " + getSelfPeerName() + " -> " + pdu.getDestPeer() + " completed. time: " +
-                                    (System.currentTimeMillis() - startTick) + "ms. agent: " + pdu.getAgentId() + ", pdu seq: " + pdu.getSequenceId() +
-                                    ", pdu ack seq: " + pdu.getAckSequenceId() + ", json: " + pdu.getJsonPackage());
+                                        (System.currentTimeMillis() - startTick) + "ms. agent: " + pdu.getAgentId() + ", pdu seq: " + pdu.getSequenceId() +
+                                        ", pdu ack seq: " + pdu.getAckSequenceId() + ", json: " + pdu.getJsonPackage());
                             }
 
                             if ("true".equals(strResult))
@@ -274,7 +273,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                             invalidatePeerService(pdu.getDestPeer());
                             if (s_logger.isInfoEnabled()) {
                                 s_logger.info("Exception on remote execution, peer: " + pdu.getDestPeer() + ", iteration: " + i + ", exception message :" +
-                                    e.getMessage());
+                                        e.getMessage());
                             }
                         }
                     }
@@ -564,7 +563,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                         if (profiler.getDuration() >= HeartbeatInterval.value()) {
                             if (s_logger.isDebugEnabled())
                                 s_logger.debug("Management server heartbeat takes too long to finish. profiler: " + profiler.toString() + ", profilerHeartbeatUpdate: " +
-                                    profilerHeartbeatUpdate.toString() + ", profilerPeerScan: " + profilerPeerScan.toString());
+                                        profilerHeartbeatUpdate.toString() + ", profilerPeerScan: " + profilerPeerScan.toString());
                         }
                     }
 
@@ -625,8 +624,10 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         if (_heartbeatConnection != null) {
             Connection conn = TransactionLegacy.getStandaloneConnection();
             if (conn != null) {
-                _heartbeatConnection.reset(TransactionLegacy.getStandaloneConnection());
+                _heartbeatConnection.reset(conn);
             }
+            // The stand-alone connection does not have to be closed here because there will be another reference to it.
+            // As a matter of fact, it will be assigned to the connection instance variable in the ConnectionConcierge class.
         }
     }
 
@@ -720,7 +721,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                     }
                 }
             }
-                break;
+            break;
 
             case nodeRemoved: {
                 List<ManagementServerHostVO> l = msg.getNodes();
@@ -730,11 +731,10 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                     }
                 }
             }
-                break;
+            break;
 
             default:
                 break;
-
         }
     }
 
@@ -772,7 +772,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                 s_logger.info("Found " + inactiveList.size() + " inactive management server node based on timestamp");
                 for (ManagementServerHostVO host : inactiveList)
                     s_logger.info("management server node msid: " + host.getMsid() + ", name: " + host.getName() + ", service ip: " + host.getServiceIP() +
-                        ", version: " + host.getVersion());
+                            ", version: " + host.getVersion());
             }
 
             List<ManagementServerHostVO> downHostList = new ArrayList<ManagementServerHostVO>();
@@ -810,7 +810,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
             if (_mshostPeerDao.countStateSeenInPeers(_mshostId, _runId, ManagementServerHost.State.Down) > 0) {
                 String msg =
-                    "We have detected that at least one management server peer reports that this management server is down, perform active fencing to avoid split-brain situation";
+                        "We have detected that at least one management server peer reports that this management server is down, perform active fencing to avoid split-brain situation";
                 s_logger.error(msg);
                 throw new ActiveFencingException(msg);
             }
@@ -831,7 +831,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                         if (entry.getKey().longValue() != _mshostId.longValue()) {
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Detected management node left because of invalidated session, id:" + entry.getKey() + ", nodeIP:" +
-                                    entry.getValue().getServiceIP());
+                                        entry.getValue().getServiceIP());
                             }
                             invalidatedNodeList.add(entry.getValue());
                         }
@@ -918,8 +918,8 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         if (profiler.getDuration() >= HeartbeatInterval.value()) {
             if (s_logger.isDebugEnabled())
                 s_logger.debug("Peer scan takes too long to finish. profiler: " + profiler.toString() + ", profilerQueryActiveList: " +
-                    profilerQueryActiveList.toString() + ", profilerSyncClusterInfo: " + profilerSyncClusterInfo.toString() + ", profilerInvalidatedNodeList: " +
-                    profilerInvalidatedNodeList.toString() + ", profilerRemovedList: " + profilerRemovedList.toString());
+                        profilerQueryActiveList.toString() + ", profilerSyncClusterInfo: " + profilerSyncClusterInfo.toString() + ", profilerInvalidatedNodeList: " +
+                        profilerInvalidatedNodeList.toString() + ", profilerRemovedList: " + profilerRemovedList.toString());
         }
     }
 
@@ -970,7 +970,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                     }
 
                     _mshostDao.update(mshost.getId(), getCurrentRunId(), NetUtils.getHostName(), version, _clusterNodeIP, _currentServiceAdapter.getServicePort(),
-                        DateUtil.currentGMTTime());
+                            DateUtil.currentGMTTime());
                 }
 
                 return mshost;
@@ -1165,19 +1165,19 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                         throw new ConfigurationException(msg);
                     } else {
                         String msg =
-                            "Detected another management node with localhost IP is considered as running in DB, however it is not pingable, we will continue cluster initialization with this management server node";
+                                "Detected another management node with localhost IP is considered as running in DB, however it is not pingable, we will continue cluster initialization with this management server node";
                         s_logger.info(msg);
                     }
                 } else {
                     if (pingManagementNode(peer.getMsid())) {
                         String msg =
-                            "Detected that another management node with the same IP " + peer.getServiceIP() +
+                                "Detected that another management node with the same IP " + peer.getServiceIP() +
                                 " is already running, please check your cluster configuration";
                         s_logger.error(msg);
                         throw new ConfigurationException(msg);
                     } else {
                         String msg =
-                            "Detected that another management node with the same IP " + peer.getServiceIP() +
+                                "Detected that another management node with the same IP " + peer.getServiceIP() +
                                 " is considered as running in DB, however it is not pingable, we will continue cluster initialization with this management server node";
                         s_logger.info(msg);
                     }

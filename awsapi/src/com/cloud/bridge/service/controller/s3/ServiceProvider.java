@@ -34,15 +34,14 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.axis2.AxisFault;
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.springframework.stereotype.Component;
 
 import com.amazon.ec2.AmazonEC2SkeletonInterface;
 import com.amazon.s3.AmazonS3SkeletonInterface;
-
-import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
-
 import com.cloud.bridge.model.MHostVO;
 import com.cloud.bridge.model.SHost;
 import com.cloud.bridge.model.SHostVO;
@@ -111,8 +110,8 @@ public class ServiceProvider extends ManagerBase {
         instance = this;
     }
 
+    @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-
         initialize();
         return true;
     }
@@ -122,7 +121,7 @@ public class ServiceProvider extends ManagerBase {
         long mhostId = 0;
         if (mhost != null)
             mhostId = mhost.getId() != null ? mhost.getId().longValue() : 0L;
-        return mhostId;
+            return mhostId;
     }
 
     /**
@@ -268,12 +267,16 @@ public class ServiceProvider extends ManagerBase {
         File propertiesFile = ConfigurationHelper.findConfigurationFile("cloud-bridge.properties");
         properties = new Properties();
         if (propertiesFile != null) {
+            FileInputStream startProps = null;
             try {
-                properties.load(new FileInputStream(propertiesFile));
+                startProps = new FileInputStream(propertiesFile);
+                properties.load(startProps);
             } catch (FileNotFoundException e) {
                 logger.warn("Unable to open properties file: " + propertiesFile.getAbsolutePath(), e);
             } catch (IOException e) {
                 logger.warn("Unable to read properties file: " + propertiesFile.getAbsolutePath(), e);
+            } finally {
+                IOUtils.closeQuietly(startProps);
             }
 
             logger.info("Use startup properties file: " + propertiesFile.getAbsolutePath());
