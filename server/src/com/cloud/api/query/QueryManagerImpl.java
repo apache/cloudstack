@@ -1095,7 +1095,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     @Override
     public ListResponse<DomainRouterResponse> searchForRouters(ListRoutersCmd cmd) {
         Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(),
-                cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(),
+                cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(),
                 cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), cmd.getVersion());
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
 
@@ -1108,7 +1108,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     @Override
     public ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd) {
         Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(),
-                cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(),
+                cmd.getState(), cmd.getZoneId(), cmd.getPodId(), null, cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(),
                 cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), null);
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
 
@@ -1119,7 +1119,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     private Pair<List<DomainRouterJoinVO>, Integer> searchForRoutersInternal(BaseListProjectAndAccountResourcesCmd cmd, Long id,
-            String name, String state, Long zoneId, Long podId, Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc,
+            String name, String state, Long zoneId, Long podId, Long clusterId, Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc,
             String role, String version) {
 
         Account caller = CallContext.current().getCallingAccount();
@@ -1151,10 +1151,11 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
         sb.and("role", sb.entity().getRole(), SearchCriteria.Op.EQ);
-        sb.and("version", sb.entity().getTemplateVersion(), SearchCriteria.Op.EQ);
+        sb.and("version", sb.entity().getTemplateVersion(), SearchCriteria.Op.LIKE);
 
         if (forVpc != null) {
             if (forVpc) {
@@ -1200,6 +1201,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (podId != null) {
             sc.setParameters("podId", podId);
+        }
+
+        if (clusterId != null) {
+            sc.setParameters("clusterId", clusterId);
         }
 
         if (hostId != null) {

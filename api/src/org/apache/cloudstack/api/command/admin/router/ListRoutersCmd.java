@@ -21,6 +21,7 @@ import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -65,6 +66,10 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
             description="the Zone ID of the router")
     private Long zoneId;
 
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType=ClusterResponse.class,
+            description="the cluster ID of the router")
+    private Long clusterId;
+
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType=NetworkResponse.class,
             description="list by network id")
     private Long networkId;
@@ -105,6 +110,10 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
 
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public Long getClusterId() {
+        return clusterId;
     }
 
     public Long getNetworkId() {
