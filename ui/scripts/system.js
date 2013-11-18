@@ -7620,7 +7620,29 @@
                                     }
                                 });
                             }
-                        },                                                
+                        },                         
+                        clusterid: {
+                            label: 'label.cluster',    
+                            dependsOn: 'podid',
+                            select: function(args) {
+                                $.ajax({
+                                    url: createURL("listClusters&podid=" + args.podid),
+                                    dataType: "json",
+                                    async: false,
+                                    success: function(json) {
+                                        var clusters = json.listclustersresponse.cluster ? json.listclustersresponse.cluster : [];                                        
+                                        args.response.success({
+                                            data: $.map(clusters, function(cluster) {
+                                                return {
+                                                    id: cluster.id,
+                                                    description: cluster.name
+                                                };
+                                            })
+                                        });       
+                                    }
+                                });
+                            }
+                        },                          
                         domainid: {
                             label: 'Domain',
                             select: function(args) {
