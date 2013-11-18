@@ -31,6 +31,8 @@ public class VmwareSecondaryStorageContextFactory {
 
 	private static VmwareContextPool s_pool;
 
+    public static int s_vCenterSessionTimeout = 1200000; // Timeout in milliseconds
+
 	public static void initFactoryEnvironment() {
 		System.setProperty("axis.socketSecureFactory", "org.apache.axis.components.net.SunFakeTrustSocketFactory");
 		s_pool = new VmwareContextPool();
@@ -43,6 +45,7 @@ public class VmwareSecondaryStorageContextFactory {
 
 		String serviceUrl = "https://" + vCenterAddress + "/sdk/vimService";
 		VmwareClient vimClient = new VmwareClient(vCenterAddress + "-" + s_seq++);
+        vimClient.setVcenterSessionTimeout(s_vCenterSessionTimeout);
 		vimClient.connect(serviceUrl, vCenterUserName, vCenterPassword);
 		VmwareContext context = new VmwareContext(vimClient, vCenterAddress);
 		assert(context != null);
@@ -58,7 +61,8 @@ public class VmwareSecondaryStorageContextFactory {
 		if(context == null) {
 			context = create(vCenterAddress, vCenterUserName, vCenterPassword);
 		} else {
-			if(!context.validate()) {
+            // Validate current context and verify if vCenter session timeout value of the context matches the timeout value set by Admin
+            if(!context.validate() || (context.getVimClient().getVcenterSessionTimeout() != s_vCenterSessionTimeout)) {
 				s_logger.info("Validation of the context faild. dispose and create a new one");
 				context.close();
 				context = create(vCenterAddress, vCenterUserName, vCenterPassword);
@@ -76,4 +80,9 @@ public class VmwareSecondaryStorageContextFactory {
 	public static void invalidate(VmwareContext context) {
 		context.close();
 	}
+
+     public static void setVcenterSessionTimeout(int timeout) {
+         s_vCenterSessionTimeout = timeout;
+     }
+
 }

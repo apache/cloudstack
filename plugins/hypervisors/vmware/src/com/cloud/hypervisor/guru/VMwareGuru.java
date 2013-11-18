@@ -368,6 +368,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
             _cmdExecLogDao.persist(execLog);
             cmd.setContextParam("execid", String.valueOf(execLog.getId()));
     		cmd.setContextParam("noderuninfo", String.format("%d-%d", _clusterMgr.getManagementNodeId(), _clusterMgr.getCurrentRunId()));
+            cmd.setContextParam("vCenterSessionTimeout", String.valueOf(_vmwareMgr.getVcenterSessionTimeout()));
 
             if(cmd instanceof BackupSnapshotCommand ||
                     cmd instanceof CreatePrivateTemplateFromVolumeCommand ||
