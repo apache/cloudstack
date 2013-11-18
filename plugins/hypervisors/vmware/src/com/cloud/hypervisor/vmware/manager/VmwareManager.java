@@ -69,5 +69,7 @@ public interface VmwareManager {
     
     public String getRootDiskController();
 
+    public int getVcenterSessionTimeout();
+
     boolean isLegacyZone(long dcId);
 }

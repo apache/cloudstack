@@ -45,6 +45,7 @@ import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.google.gson.Gson;
@@ -206,6 +207,8 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
             return null;
         }
 
+        int vCenterSessionTimeout = NumbersUtil.parseInt(cmd.getContextParam("vCenterSessionTimeout"), 1200000);
+
         try {
             _resource.ensureOutgoingRuleForAddress(vCenterAddress);
             
@@ -213,9 +216,10 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     		if(context == null) {
     			s_logger.info("Open new VmwareContext. vCenter: " + vCenterAddress + ", user: " + username 
     				+ ", password: " + StringUtils.getMaskedPasswordForDisplay(password));
+                VmwareSecondaryStorageContextFactory.setVcenterSessionTimeout(vCenterSessionTimeout);
                 context = VmwareSecondaryStorageContextFactory.getContext(vCenterAddress, username, password);
     		}
-    		
+
             if (context != null) {
                 context.registerStockObject("serviceconsole", cmd.getContextParam("serviceconsole"));
                 context.registerStockObject("manageportgroup", cmd.getContextParam("manageportgroup"));
