@@ -32,6 +32,8 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
+import org.apache.commons.io.IOUtils;
+
 //
 // Finding classes in a given package code is taken and modified from
 // Credit: http://internna.blogspot.com/2007/11/java-5-retrieving-all-classes-from.html
@@ -39,7 +41,7 @@ import java.util.jar.JarInputStream;
 public class OnwireClassRegistry {
 
     private List<String> packages = new ArrayList<String>();
-    private Map<String, Class<?>> registry = new HashMap<String, Class<?>>();
+    private final Map<String, Class<?>> registry = new HashMap<String, Class<?>>();
 
     public OnwireClassRegistry() {
         registry.put("Object", Object.class);
@@ -166,9 +168,11 @@ public class OnwireClassRegistry {
                         }
                     }
                 }
+                IOUtils.closeQuietly(jarFile);
             }
         } while (jarEntry != null);
 
+        IOUtils.closeQuietly(jarFile);
         return classes;
     }
 
