@@ -58,6 +58,10 @@ public class ApplicationLoadBalancerRuleVO extends FirewallRuleVO implements App
     
     @Column(name="source_ip_address_network_id")
     Long sourceIpNetworkId;
+
+    @Column(name="lb_protocol")
+    String lbProtocol;
+
     
     @Column(name="source_ip_address")
     @Enumerated(value=EnumType.STRING)
@@ -112,6 +116,11 @@ public class ApplicationLoadBalancerRuleVO extends FirewallRuleVO implements App
     }
 
     @Override
+    public String getLbProtocol() {
+        return lbProtocol;
+    }
+
+    @Override
     public int getDefaultPortStart() {
         return defaultPortStart;
     }
@@ -130,4 +139,6 @@ public class ApplicationLoadBalancerRuleVO extends FirewallRuleVO implements App
     public int getInstancePort() {
         return defaultPortStart;
     }
+
+
 }

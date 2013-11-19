@@ -27,6 +27,8 @@ public interface LoadBalancerContainer {
     String getDescription();
     
     String getAlgorithm();
+
+    String getLbProtocol();
     
     Scheme getScheme();
 
