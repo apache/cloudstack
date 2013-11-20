@@ -336,8 +336,9 @@ namespace HypervResource
             }
 
             String publicIpAddress = "";
+            int nicCount = 0;
             // Add the Nics to the VM in the deviceId order.
-            for (int i = 0; i <= 2; i++)
+            foreach (var nc in nicInfo)
             {
                 foreach (var nic in nicInfo)
                 {
@@ -360,18 +361,23 @@ namespace HypervResource
                         }
                     }
 
-                    if (i == 2)
+                    if (nicCount == 2)
                     {
                          publicIpAddress = nic.ip;
                     }
 
-                    if (nicid == i)
+                    if (nicid == nicCount)
                     {
                         // Create network adapter
                         var newAdapter = CreateNICforVm(newVm, mac);
+                        String switchName ="";
+                        if (nic.name != null)
+                        {
+                            switchName =  nic.name;
+                        }
 
                         // connection to vswitch
-                        var portSettings = AttachNicToPort(newVm, newAdapter);
+                        var portSettings = AttachNicToPort(newVm, newAdapter, switchName);
 
                         // set vlan
                         if (vlan != null)
@@ -383,6 +389,7 @@ namespace HypervResource
                             newAdapter.Path, portSettings.Path, (vlan == null ? "No VLAN" : "VLAN " + vlan));
                     }
                 }
+                nicCount++;
             }
 
             // pass the boot args for the VM using KVP component.
@@ -459,10 +466,18 @@ namespace HypervResource
             return false;
         }
 
-        private EthernetPortAllocationSettingData AttachNicToPort(ComputerSystem newVm, SyntheticEthernetPortSettingData newAdapter)
+        private EthernetPortAllocationSettingData AttachNicToPort(ComputerSystem newVm, SyntheticEthernetPortSettingData newAdapter, String vSwitchName)
         {
             // Get the virtual switch
-            VirtualEthernetSwitch vSwitch = GetExternalVirtSwitch();
+            VirtualEthernetSwitch vSwitch = GetExternalVirtSwitch(vSwitchName);
+            //check the the recevied vSwitch is the same as vSwitchName.
+            if (!vSwitchName.Equals("")  && !vSwitch.ElementName.Equals(vSwitchName))
+            {
+               var errMsg = string.Format("Internal error, coudl not find Virtual Switch with the name : " +vSwitchName);
+               var ex = new WmiException(errMsg);
+               logger.Error(errMsg, ex);
+               throw ex;
+            }
 
             // Create port for adapter
             var defaultEthernetPortSettings = EthernetPortAllocationSettingData.GetInstances(vSwitch.Scope, "InstanceID LIKE \"%Default\"");
@@ -1157,7 +1172,7 @@ namespace HypervResource
         {
             // Work back from the first *bound* external NIC we find.
             var externNICs = ExternalEthernetPort.GetInstances("IsBound = TRUE");
-
+            VirtualEthernetSwitch vSwitch = null;
             // Assert
             if (externNICs.Count == 0 )
             {
@@ -1166,8 +1181,7 @@ namespace HypervResource
                 logger.Error(errMsg, ex);
                 throw ex;
             }
-
-            ExternalEthernetPort externNIC = externNICs.OfType<ExternalEthernetPort>().First();
+            foreach(ExternalEthernetPort externNIC in externNICs.OfType<ExternalEthernetPort>()) { 
             // A sequence of ASSOCIATOR objects need to be traversed to get from external NIC the vswitch.
             // We use ManagementObjectSearcher objects to execute this sequence of questions
             // NB: default scope of ManagementObjectSearcher is '\\.\root\cimv2', which does not contain
@@ -1217,7 +1231,7 @@ namespace HypervResource
             var vSwitchQuery = new RelatedObjectQuery(switchPort.Path.Path, VirtualEthernetSwitch.CreatedClassName);
             var vSwitchSearch = new ManagementObjectSearcher(externNIC.Scope, vSwitchQuery);
             var vSwitchCollection = new VirtualEthernetSwitch.VirtualEthernetSwitchCollection(vSwitchSearch.Get());
-        
+
             // assert
             if (vSwitchCollection.Count < 1)
             {
@@ -1226,7 +1240,12 @@ namespace HypervResource
                 logger.Error(errMsg, ex);
                 throw ex;
             }
-            VirtualEthernetSwitch vSwitch = vSwitchCollection.OfType<VirtualEthernetSwitch>().First();
+            vSwitch = vSwitchCollection.OfType<VirtualEthernetSwitch>().First();
+            if (vSwitch.ElementName.Equals(vSwitchName) == true)
+            {
+                return vSwitch;
+            }
+            }
             return vSwitch;
         }
 
