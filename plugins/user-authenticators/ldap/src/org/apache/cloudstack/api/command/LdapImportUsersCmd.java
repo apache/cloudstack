@@ -58,12 +58,12 @@ public class LdapImportUsersCmd extends BaseListCmd {
     private Map<String, String> details;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Specifies the domain to which the ldap users are to be "
-            + "imported. If no domain is specified, a domain will created using group parameter. If the group is also not specified, a domain name based on the OU information will be "
-            + "created. If no OU hierarchy exists, will be defaulted to ROOT domain")
+               + "imported. If no domain is specified, a domain will created using group parameter. If the group is also not specified, a domain name based on the OU information will be "
+               + "created. If no OU hierarchy exists, will be defaulted to ROOT domain")
     private Long domainId;
 
     @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "Specifies the group name from which the ldap users are to be imported. "
-            + "If no group is specified, all the users will be imported.")
+               + "If no group is specified, all the users will be imported.")
     private String groupName;
 
     private Domain _domain;
@@ -84,7 +84,7 @@ public class LdapImportUsersCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
-            NetworkRuleConflictException {
+        NetworkRuleConflictException {
 
         List<LdapUser> users;
         try {
@@ -103,7 +103,7 @@ public class LdapImportUsersCmd extends BaseListCmd {
             Domain domain = getDomain(user);
             try {
                 _accountService.createUserAccount(user.getUsername(), generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, user.getUsername(),
-                        accountType, domain.getId(), domain.getNetworkDomain(), details, UUID.randomUUID().toString(), UUID.randomUUID().toString());
+                                                  accountType, domain.getId(), domain.getNetworkDomain(), details, UUID.randomUUID().toString(), UUID.randomUUID().toString());
                 addedUsers.add(user);
             } catch (InvalidParameterValueException ex) {
                 s_logger.error("Failed to create user with username: " + user.getUsername() +" ::: "+ex.getMessage());

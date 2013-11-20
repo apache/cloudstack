@@ -32,41 +32,41 @@ import com.cloud.utils.db.SearchCriteria.Op;
 @Component
 @Local(value = { LdapConfigurationDao.class })
 public class LdapConfigurationDaoImpl extends
-		GenericDaoBase<LdapConfigurationVO, Long> implements
-		LdapConfigurationDao {
-	private final SearchBuilder<LdapConfigurationVO> hostnameSearch;
-	private final SearchBuilder<LdapConfigurationVO> listAllConfigurationsSearch;
+    GenericDaoBase<LdapConfigurationVO, Long> implements
+    LdapConfigurationDao {
+    private final SearchBuilder<LdapConfigurationVO> hostnameSearch;
+    private final SearchBuilder<LdapConfigurationVO> listAllConfigurationsSearch;
 
-	public LdapConfigurationDaoImpl() {
-		super();
-		hostnameSearch = createSearchBuilder();
-		hostnameSearch.and("hostname", hostnameSearch.entity().getHostname(),
-				SearchCriteria.Op.EQ);
-		hostnameSearch.done();
+    public LdapConfigurationDaoImpl() {
+        super();
+        hostnameSearch = createSearchBuilder();
+        hostnameSearch.and("hostname", hostnameSearch.entity().getHostname(),
+                           SearchCriteria.Op.EQ);
+        hostnameSearch.done();
 
-		listAllConfigurationsSearch = createSearchBuilder();
-		listAllConfigurationsSearch.and("hostname", listAllConfigurationsSearch
-				.entity().getHostname(), Op.EQ);
-		listAllConfigurationsSearch.and("port", listAllConfigurationsSearch
-				.entity().getPort(), Op.EQ);
-		listAllConfigurationsSearch.done();
-	}
+        listAllConfigurationsSearch = createSearchBuilder();
+        listAllConfigurationsSearch.and("hostname", listAllConfigurationsSearch
+                                        .entity().getHostname(), Op.EQ);
+        listAllConfigurationsSearch.and("port", listAllConfigurationsSearch
+                                        .entity().getPort(), Op.EQ);
+        listAllConfigurationsSearch.done();
+    }
 
-	@Override
-	public LdapConfigurationVO findByHostname(final String hostname) {
-		final SearchCriteria<LdapConfigurationVO> sc = hostnameSearch.create();
-		sc.setParameters("hostname", hostname);
-		return findOneBy(sc);
-	}
+    @Override
+    public LdapConfigurationVO findByHostname(final String hostname) {
+        final SearchCriteria<LdapConfigurationVO> sc = hostnameSearch.create();
+        sc.setParameters("hostname", hostname);
+        return findOneBy(sc);
+    }
 
-	@Override
-	public Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(
-			final String hostname, final int port) {
-		final SearchCriteria<LdapConfigurationVO> sc = listAllConfigurationsSearch
-				.create();
-		if (hostname != null) {
-			sc.setParameters("hostname", hostname);
-		}
-		return searchAndCount(sc, null);
-	}
+    @Override
+    public Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(
+        final String hostname, final int port) {
+        final SearchCriteria<LdapConfigurationVO> sc = listAllConfigurationsSearch
+                .create();
+        if (hostname != null) {
+            sc.setParameters("hostname", hostname);
+        }
+        return searchAndCount(sc, null);
+    }
 }
