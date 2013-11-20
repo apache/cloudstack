@@ -595,7 +595,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpPodNetmask: {
-        desc: 'The network prefix that defines the pod\'s subnet. Use CIDR notation.',
+        desc: 'The network prefix that defines the pod\'s subnet.',
         externalLink: ''
     },
     helpPodStartIP: {
