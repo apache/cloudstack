@@ -83,8 +83,7 @@ public class iScsiAdmStorageAdaptor implements StorageAdaptor {
             System.out.println("Failed to add iSCSI target " + volumeUuid);
 
             return false;
-        }
-        else {
+        } else {
             s_logger.debug("Successfully added iSCSI target " + volumeUuid);
             System.out.println("Successfully added to iSCSI target " + volumeUuid);
         }
@@ -102,8 +101,7 @@ public class iScsiAdmStorageAdaptor implements StorageAdaptor {
 
                 // ex. sudo iscsiadm -m node -T iqn.2012-03.com.test:volume1 -p 192.168.233.10:3260 --op update -n node.session.auth.password -v password
                 executeChapCommand(volumeUuid, pool, "node.session.auth.password", chapInitiatorSecret, "password");
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 return false;
             }
         }
@@ -123,8 +121,7 @@ public class iScsiAdmStorageAdaptor implements StorageAdaptor {
             System.out.println("Failed to log in to iSCSI target " + volumeUuid);
 
             return false;
-        }
-        else {
+        } else {
             s_logger.debug("Successfully logged in to iSCSI target " + volumeUuid);
             System.out.println("Successfully logged in to iSCSI target " + volumeUuid);
         }
@@ -153,8 +150,7 @@ public class iScsiAdmStorageAdaptor implements StorageAdaptor {
 
             try {
                 Thread.sleep(timeBetweenTries);
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 // don't do anything
             }
         }
@@ -265,8 +261,7 @@ public class iScsiAdmStorageAdaptor implements StorageAdaptor {
             System.out.println("Failed to log out of iSCSI target /" + iqn + "/" + lun + " : message = " + result);
 
             return false;
-        }
-        else {
+        } else {
             s_logger.debug("Successfully logged out of iSCSI target /" + iqn + "/" + lun);
             System.out.println("Successfully logged out of iSCSI target /" + iqn + "/" + lun);
         }
@@ -340,14 +335,12 @@ public class iScsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, PhysicalDiskFormat format, long size,
-            KVMStoragePool destPool, int timeout) {
+    public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout) {
         throw new UnsupportedOperationException("Creating a disk from a template is not yet supported for this configuration.");
     }
 
     @Override
-    public KVMPhysicalDisk createTemplateFromDisk(KVMPhysicalDisk disk, String name, PhysicalDiskFormat format,
-            long size, KVMStoragePool destPool) {
+    public KVMPhysicalDisk createTemplateFromDisk(KVMPhysicalDisk disk, String name, PhysicalDiskFormat format, long size, KVMStoragePool destPool) {
         throw new UnsupportedOperationException("Creating a template from a disk is not yet supported for this configuration.");
     }
 

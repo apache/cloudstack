@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.server.ResourceTag;
 
-@APICommand(name = "addResourceDetail", description="Adds detail for the Resource.", responseObject=SuccessResponse.class)
+@APICommand(name = "addResourceDetail", description = "Adds detail for the Resource.", responseObject = SuccessResponse.class)
 public class AddResourceDetailCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddResourceDetailCmd.class.getName());
     private static final String s_name = "addResourceDetailresponse";
@@ -41,14 +41,17 @@ public class AddResourceDetailCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required=true, description = "Map of (key/value pairs)")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = true, description = "Map of (key/value pairs)")
     private Map details;
 
-    @Parameter(name=ApiConstants.RESOURCE_TYPE, type=CommandType.STRING, required=true, description="type of the resource")
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, required = true, description = "type of the resource")
     private String resourceType;
 
-    @Parameter(name=ApiConstants.RESOURCE_ID, type=CommandType.STRING, required=true,
-            collectionType=CommandType.STRING, description="resource id to create the details for")
+    @Parameter(name = ApiConstants.RESOURCE_ID,
+               type = CommandType.STRING,
+               required = true,
+               collectionType = CommandType.STRING,
+               description = "resource id to create the details for")
     private String resourceId;
 
     /////////////////////////////////////////////////////
@@ -62,7 +65,7 @@ public class AddResourceDetailCmd extends BaseAsyncCmd {
             Collection<?> servicesCollection = details.values();
             Iterator<?> iter = servicesCollection.iterator();
             while (iter.hasNext()) {
-                HashMap<String, String> services = (HashMap<String, String>) iter.next();
+                HashMap<String, String> services = (HashMap<String, String>)iter.next();
                 String key = services.get("key");
                 String value = services.get("value");
                 detailsMap.put(key, value);
@@ -78,6 +81,7 @@ public class AddResourceDetailCmd extends BaseAsyncCmd {
     public String getResourceId() {
         return resourceId;
     }
+
 /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -86,7 +90,6 @@ public class AddResourceDetailCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-
 
     @Override
     public long getEntityOwnerId() {
@@ -101,11 +104,11 @@ public class AddResourceDetailCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "adding details to the resource ";
+        return "adding details to the resource ";
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         _resourceMetaDataService.addResourceMetaData(getResourceId(), getResourceType(), getDetails());
         setResponseObject(new SuccessResponse(getCommandName()));
     }

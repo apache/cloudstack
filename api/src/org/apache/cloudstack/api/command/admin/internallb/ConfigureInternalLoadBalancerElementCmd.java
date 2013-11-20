@@ -40,8 +40,10 @@ import javax.inject.Inject;
 
 import java.util.List;
 
-@APICommand(name = "configureInternalLoadBalancerElement", responseObject=InternalLoadBalancerElementResponse.class,
-            description="Configures an Internal Load Balancer element.", since="4.2.0")
+@APICommand(name = "configureInternalLoadBalancerElement",
+            responseObject = InternalLoadBalancerElementResponse.class,
+            description = "Configures an Internal Load Balancer element.",
+            since = "4.2.0")
 public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ConfigureInternalLoadBalancerElementCmd.class.getName());
     private static final String s_name = "configureinternalloadbalancerelementresponse";
@@ -53,17 +55,19 @@ public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = InternalLoadBalancerElementResponse.class,
-            required=true, description="the ID of the internal lb provider")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = InternalLoadBalancerElementResponse.class,
+               required = true,
+               description = "the ID of the internal lb provider")
     private Long id;
 
-    @Parameter(name=ApiConstants.ENABLED, type=CommandType.BOOLEAN, required=true, description="Enables/Disables the Internal Load Balancer element")
+    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = true, description = "Enables/Disables the Internal Load Balancer element")
     private Boolean enabled;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     public Long getId() {
         return id;
@@ -94,14 +98,14 @@ public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "configuring internal load balancer element: " + id;
+        return "configuring internal load balancer element: " + id;
     }
 
     @Override
-    public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
+    public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         CallContext.current().setEventDetails("Internal load balancer element: " + id);
         VirtualRouterProvider result = _service.get(0).configureInternalLoadBalancerElement(getId(), getEnabled());
-        if (result != null){
+        if (result != null) {
             InternalLoadBalancerElementResponse routerResponse = _responseGenerator.createInternalLbElementResponse(result);
             routerResponse.setResponseName(getCommandName());
             this.setResponseObject(routerResponse);

@@ -128,60 +128,18 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 
 @Configuration
-@ComponentScan(basePackageClasses={
-        AccountVlanMapDaoImpl.class,
-        VolumeDaoImpl.class,
-        HostPodDaoImpl.class,
-        DomainDaoImpl.class,
-        ServiceOfferingDaoImpl.class,
-        ServiceOfferingDetailsDaoImpl.class,
-        VlanDaoImpl.class,
-        IPAddressDaoImpl.class,
-        ResourceTagsDaoImpl.class,
-        AccountDaoImpl.class,
-        InstanceGroupDaoImpl.class,
-        UserAccountJoinDaoImpl.class,
-        CapacityDaoImpl.class,
-        SnapshotDaoImpl.class,
-        HostDaoImpl.class,
-        VMInstanceDaoImpl.class,
-        HostTransferMapDaoImpl.class,
-        PortForwardingRulesDaoImpl.class,
-        PrivateIpDaoImpl.class,
-        UsageEventDaoImpl.class,
-        PodVlanMapDaoImpl.class,
-        DiskOfferingDaoImpl.class,
-        DataCenterDaoImpl.class,
-        DataCenterIpAddressDaoImpl.class,
-        DataCenterVnetDaoImpl.class,
-        PodVlanDaoImpl.class,
-        DataCenterDetailsDaoImpl.class,
-        NicSecondaryIpDaoImpl.class,
-        UserIpv6AddressDaoImpl.class,
-        UserDaoImpl.class,
-        NicDaoImpl.class,
-        NetworkDomainDaoImpl.class,
-        HostDetailsDaoImpl.class,
-        HostTagsDaoImpl.class,
-        ClusterDaoImpl.class,
-        FirewallRulesDaoImpl.class,
-        FirewallRulesCidrsDaoImpl.class,
-        PhysicalNetworkDaoImpl.class,
-        PhysicalNetworkTrafficTypeDaoImpl.class,
-        PhysicalNetworkServiceProviderDaoImpl.class,
-        LoadBalancerDaoImpl.class,
-        NetworkServiceMapDaoImpl.class,
-        PrimaryDataStoreDaoImpl.class,
-        StoragePoolDetailsDaoImpl.class,
-        PortableIpRangeDaoImpl.class,
-        RegionDaoImpl.class,
-        PortableIpDaoImpl.class,
-        AccountGuestVlanMapDaoImpl.class
-    },
-includeFilters={@Filter(value=ChildTestConfiguration.Library.class, type=FilterType.CUSTOM)},
-useDefaultFilters=false
-        )
-
+@ComponentScan(basePackageClasses = {AccountVlanMapDaoImpl.class, VolumeDaoImpl.class, HostPodDaoImpl.class, DomainDaoImpl.class, ServiceOfferingDaoImpl.class,
+                       ServiceOfferingDetailsDaoImpl.class, VlanDaoImpl.class, IPAddressDaoImpl.class, ResourceTagsDaoImpl.class, AccountDaoImpl.class, InstanceGroupDaoImpl.class,
+                       UserAccountJoinDaoImpl.class, CapacityDaoImpl.class, SnapshotDaoImpl.class, HostDaoImpl.class, VMInstanceDaoImpl.class, HostTransferMapDaoImpl.class,
+                       PortForwardingRulesDaoImpl.class, PrivateIpDaoImpl.class, UsageEventDaoImpl.class, PodVlanMapDaoImpl.class, DiskOfferingDaoImpl.class,
+                       DataCenterDaoImpl.class, DataCenterIpAddressDaoImpl.class, DataCenterVnetDaoImpl.class, PodVlanDaoImpl.class, DataCenterDetailsDaoImpl.class,
+                       NicSecondaryIpDaoImpl.class, UserIpv6AddressDaoImpl.class, UserDaoImpl.class, NicDaoImpl.class, NetworkDomainDaoImpl.class, HostDetailsDaoImpl.class,
+                       HostTagsDaoImpl.class, ClusterDaoImpl.class, FirewallRulesDaoImpl.class, FirewallRulesCidrsDaoImpl.class, PhysicalNetworkDaoImpl.class,
+                       PhysicalNetworkTrafficTypeDaoImpl.class, PhysicalNetworkServiceProviderDaoImpl.class, LoadBalancerDaoImpl.class, NetworkServiceMapDaoImpl.class,
+                       PrimaryDataStoreDaoImpl.class, StoragePoolDetailsDaoImpl.class, PortableIpRangeDaoImpl.class, RegionDaoImpl.class, PortableIpDaoImpl.class,
+                       AccountGuestVlanMapDaoImpl.class},
+               includeFilters = {@Filter(value = ChildTestConfiguration.Library.class, type = FilterType.CUSTOM)},
+               useDefaultFilters = false)
 public class ChildTestConfiguration {
 
     @Bean
@@ -208,7 +166,7 @@ public class ChildTestConfiguration {
     public AlertManager alertMgr() {
         return Mockito.mock(AlertManager.class);
     }
-    
+
     @Bean
     public EntityManager entityMgr() {
         return Mockito.mock(EntityManager.class);
@@ -351,7 +309,7 @@ public class ChildTestConfiguration {
 
     @Bean
     public DataCenterLinkLocalIpAddressDao datacenterLinkLocalIpAddressDao() {
-    	return Mockito.mock(DataCenterLinkLocalIpAddressDao.class);
+        return Mockito.mock(DataCenterLinkLocalIpAddressDao.class);
     }
 
     @Bean

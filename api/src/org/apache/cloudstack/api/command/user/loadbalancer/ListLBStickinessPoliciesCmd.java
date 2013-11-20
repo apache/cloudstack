@@ -34,18 +34,16 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.user.Account;
 
-@APICommand(name = "listLBStickinessPolicies", description = "Lists LBStickiness policies.", responseObject = LBStickinessResponse.class, since="3.0.0")
+@APICommand(name = "listLBStickinessPolicies", description = "Lists LBStickiness policies.", responseObject = LBStickinessResponse.class, since = "3.0.0")
 public class ListLBStickinessPoliciesCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger
-            .getLogger(ListLBStickinessPoliciesCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListLBStickinessPoliciesCmd.class.getName());
 
     private static final String s_name = "listlbstickinesspoliciesresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class,
-            required = true, description = "the ID of the load balancer rule")
+    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the load balancer rule")
     private Long lbRuleId;
 
     // ///////////////////////////////////////////////////

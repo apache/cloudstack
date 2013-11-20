@@ -20,15 +20,12 @@ import java.util.List;
 
 import com.cloud.utils.db.GenericDao;
 
-
-public interface LBStickinessPolicyDao extends
-        GenericDao<LBStickinessPolicyVO, Long> {
+public interface LBStickinessPolicyDao extends GenericDao<LBStickinessPolicyVO, Long> {
     void remove(long loadBalancerId);
 
     void remove(long loadBalancerId, Boolean pending);
 
     List<LBStickinessPolicyVO> listByLoadBalancerId(long loadBalancerId);
 
-    List<LBStickinessPolicyVO> listByLoadBalancerId(long loadBalancerId,
-            boolean revoke);
+    List<LBStickinessPolicyVO> listByLoadBalancerId(long loadBalancerId, boolean revoke);
 }

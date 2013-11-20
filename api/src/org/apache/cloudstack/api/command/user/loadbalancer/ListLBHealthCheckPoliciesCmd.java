@@ -36,18 +36,16 @@ import com.cloud.network.rules.HealthCheckPolicy;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 
-@APICommand(name = "listLBHealthCheckPolicies", description = "Lists load balancer HealthCheck policies.", responseObject = LBHealthCheckResponse.class, since="4.2.0")
+@APICommand(name = "listLBHealthCheckPolicies", description = "Lists load balancer HealthCheck policies.", responseObject = LBHealthCheckResponse.class, since = "4.2.0")
 public class ListLBHealthCheckPoliciesCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger
-            .getLogger(ListLBHealthCheckPoliciesCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListLBHealthCheckPoliciesCmd.class.getName());
 
     private static final String s_name = "listlbhealthcheckpoliciesresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class,
-            required = true, description = "the ID of the load balancer rule")
+    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the load balancer rule")
     private Long lbRuleId;
 
     // ///////////////////////////////////////////////////

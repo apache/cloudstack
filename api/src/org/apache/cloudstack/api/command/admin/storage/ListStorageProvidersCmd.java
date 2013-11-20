@@ -36,30 +36,30 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@APICommand(name = "listStorageProviders", description="Lists storage providers.", responseObject=StorageProviderResponse.class)
+@APICommand(name = "listStorageProviders", description = "Lists storage providers.", responseObject = StorageProviderResponse.class)
 public class ListStorageProvidersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListStorageProvidersCmd.class.getName());
     private static final String s_name = "liststorageprovidersresponse";
-    
-    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="the type of storage provider: either primary or image", required = true)
+
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "the type of storage provider: either primary or image", required = true)
     private String type;
-    
+
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     public String getType() {
         return this.type;
     }
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
-            NetworkRuleConflictException {
+        NetworkRuleConflictException {
         if (getType() == null) {
             throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "need to specify type: either primary or image");
         }
-       
+
         List<StorageProviderResponse> providers = this.dataStoreProviderApiService.getDataStoreProviders(getType());
         ListResponse<StorageProviderResponse> responses = new ListResponse<StorageProviderResponse>();
         for (StorageProviderResponse provider : providers) {

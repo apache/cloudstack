@@ -32,7 +32,10 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listNetworkServiceProviders", description="Lists network serviceproviders for a given physical network.", responseObject=ProviderResponse.class, since="3.0.0")
+@APICommand(name = "listNetworkServiceProviders",
+            description = "Lists network serviceproviders for a given physical network.",
+            responseObject = ProviderResponse.class,
+            since = "3.0.0")
 public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkServiceProvidersCmd.class.getName());
     private static final String _name = "listnetworkserviceprovidersresponse";
@@ -41,14 +44,13 @@ public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType=PhysicalNetworkResponse.class,
-            description="the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list providers by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list providers by name")
     private String name;
 
-    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list providers by state")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "list providers by state")
     private String state;
 
     /////////////////////////////////////////////////////
@@ -85,9 +87,9 @@ public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
-        Pair<List<? extends PhysicalNetworkServiceProvider>, Integer> serviceProviders = _networkService.listNetworkServiceProviders(getPhysicalNetworkId(),
-                getName(), getState(), this.getStartIndex(), this.getPageSizeVal());
+    public void execute() {
+        Pair<List<? extends PhysicalNetworkServiceProvider>, Integer> serviceProviders = _networkService.listNetworkServiceProviders(getPhysicalNetworkId(), getName(), getState(),
+            this.getStartIndex(), this.getPageSizeVal());
         ListResponse<ProviderResponse> response = new ListResponse<ProviderResponse>();
         List<ProviderResponse> serviceProvidersResponses = new ArrayList<ProviderResponse>();
         for (PhysicalNetworkServiceProvider serviceProvider : serviceProviders.first()) {
@@ -99,6 +101,5 @@ public class ListNetworkServiceProvidersCmd extends BaseListCmd {
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
-
 
 }

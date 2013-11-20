@@ -41,24 +41,21 @@ import com.cloud.network.BigSwitchVnsDeviceVO;
 import com.cloud.network.element.BigSwitchVnsElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listBigSwitchVnsDevices", responseObject=BigSwitchVnsDeviceResponse.class, description="Lists BigSwitch Vns devices", since = "4.1.0")
+@APICommand(name = "listBigSwitchVnsDevices", responseObject = BigSwitchVnsDeviceResponse.class, description = "Lists BigSwitch Vns devices", since = "4.1.0")
 public class ListBigSwitchVnsDevicesCmd extends BaseListCmd {
-	public static final Logger s_logger = Logger.getLogger(ListBigSwitchVnsDevicesCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListBigSwitchVnsDevicesCmd.class.getName());
     private static final String s_name = "listbigswitchvnsdeviceresponse";
-    @Inject BigSwitchVnsElementService _bigswitchVnsElementService;
+    @Inject
+    BigSwitchVnsElementService _bigswitchVnsElementService;
 
-   /////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID,
-            entityType = PhysicalNetworkResponse.class,
-            description="the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name=VnsConstants.BIGSWITCH_VNS_DEVICE_ID, type=CommandType.UUID,
-		entityType = BigSwitchVnsDeviceResponse.class,
-            description="bigswitch vns device ID")
+    @Parameter(name = VnsConstants.BIGSWITCH_VNS_DEVICE_ID, type = CommandType.UUID, entityType = BigSwitchVnsDeviceResponse.class, description = "bigswitch vns device ID")
     private Long bigswitchVnsDeviceId;
 
     /////////////////////////////////////////////////////
@@ -78,8 +75,7 @@ public class ListBigSwitchVnsDevicesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
-    ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
             List<BigSwitchVnsDeviceVO> bigswitchDevices = _bigswitchVnsElementService.listBigSwitchVnsDevices(this);
             ListResponse<BigSwitchVnsDeviceResponse> response = new ListResponse<BigSwitchVnsDeviceResponse>();
@@ -87,8 +83,7 @@ public class ListBigSwitchVnsDevicesCmd extends BaseListCmd {
 
             if (bigswitchDevices != null && !bigswitchDevices.isEmpty()) {
                 for (BigSwitchVnsDeviceVO bigswitchDeviceVO : bigswitchDevices) {
-			BigSwitchVnsDeviceResponse bigswitchDeviceResponse =
-				_bigswitchVnsElementService.createBigSwitchVnsDeviceResponse(bigswitchDeviceVO);
+                    BigSwitchVnsDeviceResponse bigswitchDeviceResponse = _bigswitchVnsElementService.createBigSwitchVnsDeviceResponse(bigswitchDeviceVO);
                     bigswitchDevicesResponse.add(bigswitchDeviceResponse);
                 }
             }
@@ -96,7 +91,7 @@ public class ListBigSwitchVnsDevicesCmd extends BaseListCmd {
             response.setResponses(bigswitchDevicesResponse);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

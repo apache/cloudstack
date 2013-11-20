@@ -33,17 +33,16 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "nic_ip_alias")
-public class NicIpAliasVO implements NicIpAlias  {
+public class NicIpAliasVO implements NicIpAlias {
 
-    public NicIpAliasVO(Long nicId, String ipaddr, Long vmId,
-                        Long accountId, Long domainId, Long networkId, String gateway, String netmask) {
+    public NicIpAliasVO(Long nicId, String ipaddr, Long vmId, Long accountId, Long domainId, Long networkId, String gateway, String netmask) {
         this.nicId = nicId;
         this.vmId = vmId;
         this.ip4Address = ipaddr;
         this.accountId = accountId;
         this.domainId = domainId;
         this.networkId = networkId;
-        this.netmask =netmask;
+        this.netmask = netmask;
         this.gateway = gateway;
         this.state = NicIpAlias.state.active;
         String cidr = NetUtils.getCidrFromGatewayAndNetmask(gateway, netmask);
@@ -64,10 +63,10 @@ public class NicIpAliasVO implements NicIpAlias  {
     @Column(name = "nic_Id")
     long nicId;
 
-    @Column(name="domain_id", updatable=false)
+    @Column(name = "domain_id", updatable = false)
     long domainId;
 
-    @Column(name="account_id", updatable=false)
+    @Column(name = "account_id", updatable = false)
     private Long accountId;
 
     @Column(name = "ip4_address")
@@ -97,15 +96,12 @@ public class NicIpAliasVO implements NicIpAlias  {
     @Column(name = "gateway")
     String gateway;
 
-    @Column(name= "state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
     NicIpAlias.state state;
 
     @Column(name = "start_ip_of_subnet")
     String startIpOfSubnet;
-
-
-
 
     public long getId() {
         return id;
@@ -195,20 +191,20 @@ public class NicIpAliasVO implements NicIpAlias  {
         this.aliasCount = count;
     }
 
-    public void setNetmask(String netmask){
+    public void setNetmask(String netmask) {
         this.netmask = netmask;
     }
 
-    public  String getNetmask() {
+    public String getNetmask() {
         return netmask;
     }
 
-    public  String getGateway() {
-        return  gateway;
+    public String getGateway() {
+        return gateway;
     }
 
     public void setGateway(String gateway) {
-          this.gateway = gateway;
+        this.gateway = gateway;
     }
 
     public NicIpAlias.state getState() {

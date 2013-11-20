@@ -26,21 +26,22 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name=("autoscale_policy_condition_map"))
+@Table(name = ("autoscale_policy_condition_map"))
 public class AutoScalePolicyConditionMapVO implements InternalIdentity {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="policy_id")
+    @Column(name = "policy_id")
     private long policyId;
 
-    @Column(name="condition_id")
+    @Column(name = "condition_id")
     private long conditionId;
 
-    public AutoScalePolicyConditionMapVO() { }
+    public AutoScalePolicyConditionMapVO() {
+    }
 
     public AutoScalePolicyConditionMapVO(long policyId, long conditionId) {
         this.policyId = policyId;

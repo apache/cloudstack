@@ -29,9 +29,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value=NiciraNvpDao.class)
-public class NiciraNvpDaoImpl extends GenericDaoBase<NiciraNvpDeviceVO, Long>
-        implements NiciraNvpDao {
+@Local(value = NiciraNvpDao.class)
+public class NiciraNvpDaoImpl extends GenericDaoBase<NiciraNvpDeviceVO, Long> implements NiciraNvpDao {
 
     protected final SearchBuilder<NiciraNvpDeviceVO> physicalNetworkIdSearch;
 

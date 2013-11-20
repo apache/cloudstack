@@ -65,14 +65,14 @@ public class DnsNotifier extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
-    InsufficientCapacityException {
+    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException, InsufficientCapacityException {
         return true;
     }
 
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
-    ResourceUnavailableException, InsufficientCapacityException {
+        ResourceUnavailableException, InsufficientCapacityException {
         // signal to the dns server that this vm is up and running and set the ip address to hostname mapping.
         vm.getHostName();
         nic.getIp4Address();

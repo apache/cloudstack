@@ -40,12 +40,11 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class CallContext {
     private static final Logger s_logger = Logger.getLogger(CallContext.class);
     private static ManagedThreadLocal<CallContext> s_currentContext = new ManagedThreadLocal<CallContext>();
-    private static ManagedThreadLocal<Stack<CallContext>> s_currentContextStack = 
-            new ManagedThreadLocal<Stack<CallContext>>() {
-                @Override
-                protected Stack<CallContext> initialValue() {
-                    return new Stack<CallContext>();
-                }
+    private static ManagedThreadLocal<Stack<CallContext>> s_currentContextStack = new ManagedThreadLocal<Stack<CallContext>>() {
+        @Override
+        protected Stack<CallContext> initialValue() {
+            return new Stack<CallContext>();
+        }
     };
 
     private String contextId;
@@ -149,9 +148,9 @@ public class CallContext {
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Registered: " + callingContext);
         }
-        
+
         s_currentContextStack.get().push(callingContext);
-        
+
         return callingContext;
     }
 
@@ -199,11 +198,11 @@ public class CallContext {
     }
 
     public static void unregisterAll() {
-        while ( unregister() != null ) {
+        while (unregister() != null) {
             // NOOP
         }
     }
-    
+
     public static CallContext unregister() {
         CallContext context = s_currentContext.get();
         if (context == null) {
@@ -228,7 +227,7 @@ public class CallContext {
         Stack<CallContext> stack = s_currentContextStack.get();
         stack.pop();
 
-        if ( ! stack.isEmpty() ) {
+        if (!stack.isEmpty()) {
             s_currentContext.set(stack.peek());
         }
 
@@ -262,7 +261,7 @@ public class CallContext {
     public String getEventDetails() {
         return eventDetails;
     }
-    
+
     public String getEventType() {
         return eventType;
     }
@@ -270,7 +269,7 @@ public class CallContext {
     public void setEventType(String eventType) {
         this.eventType = eventType;
     }
-    
+
     public String getEventDescription() {
         return eventDescription;
     }
@@ -281,7 +280,7 @@ public class CallContext {
 
     public static void setActionEventInfo(String eventType, String description) {
         CallContext context = CallContext.current();
-        if ( context != null ) {
+        if (context != null) {
             context.setEventType(eventType);
             context.setEventDescription(description);
         }
@@ -289,9 +288,6 @@ public class CallContext {
 
     @Override
     public String toString() {
-        return new StringBuilder("CCtxt[acct=").append(getCallingAccountId())
-                .append("; user=").append(getCallingUserId())
-                .append("; id=").append(contextId)
-                .append("]").toString();
+        return new StringBuilder("CCtxt[acct=").append(getCallingAccountId()).append("; user=").append(getCallingUserId()).append("; id=").append(contextId).append("]").toString();
     }
 }

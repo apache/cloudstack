@@ -17,52 +17,52 @@
 package com.cloud.network.bigswitch;
 
 public class PortData {
-	private Port port;
+    private Port port;
 
-	public Port getPort() {
-		return this.port;
-	}
+    public Port getPort() {
+        return this.port;
+    }
 
-	public PortData() {
-		this.port = new Port();
-	}
+    public PortData() {
+        this.port = new Port();
+    }
 
-	public class Port {
-	    private String id;
-	    private String name;
-	    private String tenant_id;
-	    private String state;
+    public class Port {
+        private String id;
+        private String name;
+        private String tenant_id;
+        private String state;
 
-	    public String getId() {
-	        return id;
-	    }
+        public String getId() {
+            return id;
+        }
 
-	    public void setId(String id) {
-	        this.id = id;
-	    }
+        public void setId(String id) {
+            this.id = id;
+        }
 
-	    public String getName() {
-	        return name;
-	    }
+        public String getName() {
+            return name;
+        }
 
-	    public void setName(String name) {
-	        this.name = name;
-	    }
+        public void setName(String name) {
+            this.name = name;
+        }
 
-	    public String getTenant_id() {
-	        return tenant_id;
-	    }
+        public String getTenant_id() {
+            return tenant_id;
+        }
 
-	    public void setTenant_id(String tenant_id) {
-	        this.tenant_id = tenant_id;
-	    }
+        public void setTenant_id(String tenant_id) {
+            this.tenant_id = tenant_id;
+        }
 
-	    public String getState() {
-	        return state;
-	    }
+        public String getState() {
+            return state;
+        }
 
-	    public void setState(String state) {
-	        this.state = state;
-	    }
-	}
+        public void setState(String state) {
+            this.state = state;
+        }
+    }
 }

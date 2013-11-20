@@ -49,116 +49,115 @@ import com.cloud.vm.VirtualMachine.State;
 import com.trilead.ssh2.SCPClient;
 
 public class BaremetalDhcpResourceBase extends ManagerBase implements ServerResource {
-	private static final Logger s_logger = Logger.getLogger(BaremetalDhcpResourceBase.class);
-	String _name;
-	String _guid;
-	String _username;
-	String _password;
-	String _ip;
-	String _zoneId;
-	String _dns;
-	
-	@Override
-	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-		_name = name;
-		_guid = (String)params.get("guid");
-		_ip = (String)params.get("ip");
-		_username = (String)params.get("username");
-		_password = (String)params.get("password");
-		_zoneId = (String)params.get("zone");
-		_dns = (String)params.get("dns");
-		
-		if (_guid == null) {
-			throw new ConfigurationException("No Guid specified");
-		}
-		
-		if (_zoneId == null) {
-			throw new ConfigurationException("No Zone specified");
-		}
-		
-		if (_ip == null) {
-			throw new ConfigurationException("No IP specified");
-		}
-		
-		if (_username == null) {
-			throw new ConfigurationException("No username specified");
-		}
-		
-		if (_password == null) {
-			throw new ConfigurationException("No password specified");
-		}
-		
-		if (_dns == null) {
-			throw new ConfigurationException("No dns specified");
-		}
-		
-		return true;
-	}
+    private static final Logger s_logger = Logger.getLogger(BaremetalDhcpResourceBase.class);
+    String _name;
+    String _guid;
+    String _username;
+    String _password;
+    String _ip;
+    String _zoneId;
+    String _dns;
 
-	@Override
-	public boolean start() {
-		return true;
-	}
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        _name = name;
+        _guid = (String)params.get("guid");
+        _ip = (String)params.get("ip");
+        _username = (String)params.get("username");
+        _password = (String)params.get("password");
+        _zoneId = (String)params.get("zone");
+        _dns = (String)params.get("dns");
 
-	@Override
-	public boolean stop() {
-		return true;
-	}
+        if (_guid == null) {
+            throw new ConfigurationException("No Guid specified");
+        }
 
-	@Override
-	public String getName() {
-		return _name;
-	}
+        if (_zoneId == null) {
+            throw new ConfigurationException("No Zone specified");
+        }
 
-	@Override
-	public Type getType() {
-		return Type.BaremetalDhcp;
-	}
+        if (_ip == null) {
+            throw new ConfigurationException("No IP specified");
+        }
 
-	@Override
-	public StartupCommand[] initialize() {
-		StartupExternalDhcpCommand cmd = new StartupExternalDhcpCommand();
-		cmd.setName(_name);
-		cmd.setDataCenter(_zoneId);
-		cmd.setPrivateIpAddress(_ip);
-		cmd.setStorageIpAddress("");
-		cmd.setVersion("");
-		cmd.setGuid(_guid);
-		return new StartupCommand[]{cmd};
-	}
+        if (_username == null) {
+            throw new ConfigurationException("No username specified");
+        }
 
-	@Override
-	public PingCommand getCurrentStatus(long id) {
-		//TODO: check server
-		return new PingRoutingCommand(getType(), id, new HashMap<String, State>(),
-			new HashMap<String, HostVmStateReportEntry>());
-	}
+        if (_password == null) {
+            throw new ConfigurationException("No password specified");
+        }
 
-	protected ReadyAnswer execute(ReadyCommand cmd) {
-		s_logger.debug("External DHCP resource " + _name + " is ready");
-		return new ReadyAnswer(cmd);
-	}
-	
-	@Override
-	public Answer executeRequest(Command cmd) {
-		if (cmd instanceof ReadyCommand) {
-			return execute((ReadyCommand) cmd);
-		} else {
-			return Answer.createUnsupportedCommandAnswer(cmd);
-		}
-	}
+        if (_dns == null) {
+            throw new ConfigurationException("No dns specified");
+        }
 
-	@Override
-	public void disconnected() {
-	}
+        return true;
+    }
 
-	@Override
-	public IAgentControl getAgentControl() {
-		return null;
-	}
+    @Override
+    public boolean start() {
+        return true;
+    }
 
-	@Override
-	public void setAgentControl(IAgentControl agentControl) {
-	}
+    @Override
+    public boolean stop() {
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return _name;
+    }
+
+    @Override
+    public Type getType() {
+        return Type.BaremetalDhcp;
+    }
+
+    @Override
+    public StartupCommand[] initialize() {
+        StartupExternalDhcpCommand cmd = new StartupExternalDhcpCommand();
+        cmd.setName(_name);
+        cmd.setDataCenter(_zoneId);
+        cmd.setPrivateIpAddress(_ip);
+        cmd.setStorageIpAddress("");
+        cmd.setVersion("");
+        cmd.setGuid(_guid);
+        return new StartupCommand[] {cmd};
+    }
+
+    @Override
+    public PingCommand getCurrentStatus(long id) {
+        //TODO: check server
+        return new PingRoutingCommand(getType(), id, new HashMap<String, State>(), new HashMap<String, HostVmStateReportEntry>());
+    }
+
+    protected ReadyAnswer execute(ReadyCommand cmd) {
+        s_logger.debug("External DHCP resource " + _name + " is ready");
+        return new ReadyAnswer(cmd);
+    }
+
+    @Override
+    public Answer executeRequest(Command cmd) {
+        if (cmd instanceof ReadyCommand) {
+            return execute((ReadyCommand)cmd);
+        } else {
+            return Answer.createUnsupportedCommandAnswer(cmd);
+        }
+    }
+
+    @Override
+    public void disconnected() {
+    }
+
+    @Override
+    public IAgentControl getAgentControl() {
+        return null;
+    }
+
+    @Override
+    public void setAgentControl(IAgentControl agentControl) {
+    }
 
 }

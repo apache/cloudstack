@@ -100,7 +100,8 @@ public class DeploymentPlanningManagerImplTest {
     @Inject
     PlannerHostReservationDao _plannerHostReserveDao;
 
-    @Inject VirtualMachineProfileImpl vmProfile;
+    @Inject
+    VirtualMachineProfileImpl vmProfile;
 
     @Inject
     AffinityGroupVMMapDao _affinityGroupVMMapDao;
@@ -126,7 +127,6 @@ public class DeploymentPlanningManagerImplTest {
     private static long domainId = 5L;
 
     private static long dataCenterId = 1L;
-
 
     @BeforeClass
     public static void setUp() throws ConfigurationException {
@@ -160,26 +160,25 @@ public class DeploymentPlanningManagerImplTest {
 
     @Test
     public void dataCenterAvoidTest() throws InsufficientServerCapacityException, AffinityConflictException {
-        ServiceOfferingVO svcOffering = new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false,
-                "test dpm", false, false, null, false, VirtualMachine.Type.User, domainId, null, "FirstFitPlanner");
+        ServiceOfferingVO svcOffering = new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false, "test dpm", false, false, null, false,
+            VirtualMachine.Type.User, domainId, null, "FirstFitPlanner");
         Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
 
-        Mockito.when(avoids.shouldAvoid((DataCenterVO) Mockito.anyObject())).thenReturn(true);
+        Mockito.when(avoids.shouldAvoid((DataCenterVO)Mockito.anyObject())).thenReturn(true);
         DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids);
         assertNull("DataCenter is in avoid set, destination should be null! ", dest);
     }
 
     @Test
     public void plannerCannotHandleTest() throws InsufficientServerCapacityException, AffinityConflictException {
-        ServiceOfferingVO svcOffering = new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false,
-                "test dpm", false, false, null, false, VirtualMachine.Type.User, domainId, null,
-                "UserDispersingPlanner");
+        ServiceOfferingVO svcOffering = new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false, "test dpm", false, false, null, false,
+            VirtualMachine.Type.User, domainId, null, "UserDispersingPlanner");
         Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
-        Mockito.when(avoids.shouldAvoid((DataCenterVO) Mockito.anyObject())).thenReturn(false);
+        Mockito.when(avoids.shouldAvoid((DataCenterVO)Mockito.anyObject())).thenReturn(false);
 
         Mockito.when(_planner.canHandle(vmProfile, plan, avoids)).thenReturn(false);
         DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids);
@@ -188,22 +187,23 @@ public class DeploymentPlanningManagerImplTest {
 
     @Test
     public void emptyClusterListTest() throws InsufficientServerCapacityException, AffinityConflictException {
-        ServiceOfferingVO svcOffering = new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false,
-                "test dpm", false, false, null, false, VirtualMachine.Type.User, domainId, null, "FirstFitPlanner");
+        ServiceOfferingVO svcOffering = new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false, "test dpm", false, false, null, false,
+            VirtualMachine.Type.User, domainId, null, "FirstFitPlanner");
         Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
-        Mockito.when(avoids.shouldAvoid((DataCenterVO) Mockito.anyObject())).thenReturn(false);
+        Mockito.when(avoids.shouldAvoid((DataCenterVO)Mockito.anyObject())).thenReturn(false);
         Mockito.when(_planner.canHandle(vmProfile, plan, avoids)).thenReturn(true);
 
-        Mockito.when(((DeploymentClusterPlanner) _planner).orderClusters(vmProfile, plan, avoids)).thenReturn(null);
+        Mockito.when(((DeploymentClusterPlanner)_planner).orderClusters(vmProfile, plan, avoids)).thenReturn(null);
         DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids);
         assertNull("Planner cannot handle, destination should be null! ", dest);
     }
 
-
     @Configuration
-    @ComponentScan(basePackageClasses = { DeploymentPlanningManagerImpl.class }, includeFilters = { @Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM) }, useDefaultFilters = false)
+    @ComponentScan(basePackageClasses = {DeploymentPlanningManagerImpl.class},
+                   includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
+                   useDefaultFilters = false)
     public static class TestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         @Bean
@@ -345,7 +345,6 @@ public class DeploymentPlanningManagerImplTest {
         public MessageBus messageBus() {
             return Mockito.mock(MessageBus.class);
         }
-
 
         @Bean
         public UserVmDao userVMDao() {

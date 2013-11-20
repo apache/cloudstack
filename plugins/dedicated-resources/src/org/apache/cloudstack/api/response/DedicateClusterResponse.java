@@ -24,19 +24,24 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class DedicateClusterResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the ID of the dedicated resource")
+    @SerializedName("id")
+    @Param(description = "the ID of the dedicated resource")
     private String id;
 
-    @SerializedName("clusterid") @Param(description="the ID of the cluster")
+    @SerializedName("clusterid")
+    @Param(description = "the ID of the cluster")
     private String clusterId;
 
-    @SerializedName("clustername") @Param(description="the name of the cluster")
+    @SerializedName("clustername")
+    @Param(description = "the name of the cluster")
     private String clusterName;
 
-    @SerializedName("domainid") @Param(description="the domain ID of the cluster")
+    @SerializedName("domainid")
+    @Param(description = "the domain ID of the cluster")
     private String domainId;
 
-    @SerializedName("accountid") @Param(description="the Account ID of the cluster")
+    @SerializedName("accountid")
+    @Param(description = "the Account ID of the cluster")
     private String accountId;
 
     @SerializedName("affinitygroupid")

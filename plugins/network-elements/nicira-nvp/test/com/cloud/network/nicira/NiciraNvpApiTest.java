@@ -47,7 +47,7 @@ public class NiciraNvpApiTest {
     @Before
     public void setUp() {
         HttpClientParams hmp = mock(HttpClientParams.class);
-        when (client.getParams()).thenReturn(hmp);
+        when(client.getParams()).thenReturn(hmp);
         api = new NiciraNvpApi() {
             @Override
             protected HttpClient createHttpClient() {
@@ -63,61 +63,61 @@ public class NiciraNvpApiTest {
         api.setControllerAddress("localhost");
     }
 
-    @Test (expected=NiciraNvpApiException.class)
+    @Test(expected = NiciraNvpApiException.class)
     public void testExecuteLoginWithoutHostname() throws NiciraNvpApiException {
         api.setControllerAddress(null);
         api.login();
     }
 
-    @Test (expected=NiciraNvpApiException.class)
+    @Test(expected = NiciraNvpApiException.class)
     public void testExecuteLoginWithoutCredentials() throws NiciraNvpApiException {
         api.setAdminCredentials(null, null);
         api.login();
     }
 
-    @Test (expected=NiciraNvpApiException.class)
+    @Test(expected = NiciraNvpApiException.class)
     public void testExecuteUpdateObjectWithoutHostname() throws NiciraNvpApiException {
         api.setControllerAddress(null);
         api.executeUpdateObject(new String(), "/", Collections.<String, String> emptyMap());
     }
 
-    @Test (expected=NiciraNvpApiException.class)
+    @Test(expected = NiciraNvpApiException.class)
     public void testExecuteUpdateObjectWithoutCredentials() throws NiciraNvpApiException {
         api.setAdminCredentials(null, null);
         api.executeUpdateObject(new String(), "/", Collections.<String, String> emptyMap());
     }
 
-    @Test (expected=NiciraNvpApiException.class)
+    @Test(expected = NiciraNvpApiException.class)
     public void testExecuteCreateObjectWithoutHostname() throws NiciraNvpApiException {
         api.setControllerAddress(null);
         api.executeCreateObject(new String(), String.class, "/", Collections.<String, String> emptyMap());
     }
 
-    @Test (expected=NiciraNvpApiException.class)
+    @Test(expected = NiciraNvpApiException.class)
     public void testExecuteCreateObjectWithoutCredentials() throws NiciraNvpApiException {
         api.setAdminCredentials(null, null);
         api.executeCreateObject(new String(), String.class, "/", Collections.<String, String> emptyMap());
     }
 
-    @Test (expected=NiciraNvpApiException.class)
+    @Test(expected = NiciraNvpApiException.class)
     public void testExecuteDeleteObjectWithoutHostname() throws NiciraNvpApiException {
         api.setControllerAddress(null);
         api.executeDeleteObject("/");
     }
 
-    @Test (expected=NiciraNvpApiException.class)
+    @Test(expected = NiciraNvpApiException.class)
     public void testExecuteDeleteObjectWithoutCredentials() throws NiciraNvpApiException {
         api.setAdminCredentials(null, null);
         api.executeDeleteObject("/");
     }
 
-    @Test (expected=NiciraNvpApiException.class)
+    @Test(expected = NiciraNvpApiException.class)
     public void testExecuteRetrieveObjectWithoutHostname() throws NiciraNvpApiException {
         api.setControllerAddress(null);
         api.executeRetrieveObject(String.class, "/", Collections.<String, String> emptyMap());
     }
 
-    @Test (expected=NiciraNvpApiException.class)
+    @Test(expected = NiciraNvpApiException.class)
     public void testExecuteRetrieveObjectWithoutCredentials() throws NiciraNvpApiException {
         api.setAdminCredentials(null, null);
         api.executeDeleteObject("/");
@@ -135,7 +135,7 @@ public class NiciraNvpApiTest {
     /* Bit of a roundabout way to ensure that login is called after an un authorized result
      * It not possible to properly mock login()
      */
-    @Test (expected=NiciraNvpApiException.class)
+    @Test(expected = NiciraNvpApiException.class)
     public void executeMethodTestWithLogin() throws NiciraNvpApiException, HttpException, IOException {
         GetMethod gm = mock(GetMethod.class);
         when(client.executeMethod((HttpMethod)any())).thenThrow(new HttpException());
@@ -156,7 +156,7 @@ public class NiciraNvpApiTest {
 
     }
 
-    @Test (expected=NiciraNvpApiException.class)
+    @Test(expected = NiciraNvpApiException.class)
     public void testExecuteCreateObjectFailure() throws NiciraNvpApiException, IOException {
         LogicalSwitch ls = new LogicalSwitch();
         method = mock(PostMethod.class);
@@ -173,10 +173,10 @@ public class NiciraNvpApiTest {
         }
     }
 
-    @Test (expected=NiciraNvpApiException.class)
+    @Test(expected = NiciraNvpApiException.class)
     public void testExecuteCreateObjectException() throws NiciraNvpApiException, IOException {
         LogicalSwitch ls = new LogicalSwitch();
-        when(client.executeMethod((HttpMethod) any())).thenThrow(new HttpException());
+        when(client.executeMethod((HttpMethod)any())).thenThrow(new HttpException());
         method = mock(PostMethod.class);
         when(method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
         Header header = mock(Header.class);
@@ -200,7 +200,7 @@ public class NiciraNvpApiTest {
         verify(client, times(1)).executeMethod(method);
     }
 
-    @Test (expected=NiciraNvpApiException.class)
+    @Test(expected = NiciraNvpApiException.class)
     public void testExecuteUpdateObjectFailure() throws NiciraNvpApiException, IOException {
         LogicalSwitch ls = new LogicalSwitch();
         method = mock(PutMethod.class);
@@ -217,12 +217,12 @@ public class NiciraNvpApiTest {
         }
     }
 
-    @Test (expected=NiciraNvpApiException.class)
+    @Test(expected = NiciraNvpApiException.class)
     public void testExecuteUpdateObjectException() throws NiciraNvpApiException, IOException {
         LogicalSwitch ls = new LogicalSwitch();
         method = mock(PutMethod.class);
         when(method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        when(client.executeMethod((HttpMethod) any())).thenThrow(new IOException());
+        when(client.executeMethod((HttpMethod)any())).thenThrow(new IOException());
         try {
             api.executeUpdateObject(ls, "/", Collections.<String, String> emptyMap());
         } finally {
@@ -239,7 +239,7 @@ public class NiciraNvpApiTest {
         verify(client, times(1)).executeMethod(method);
     }
 
-    @Test (expected=NiciraNvpApiException.class)
+    @Test(expected = NiciraNvpApiException.class)
     public void testExecuteDeleteObjectFailure() throws NiciraNvpApiException, IOException {
         method = mock(DeleteMethod.class);
         when(method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -255,11 +255,11 @@ public class NiciraNvpApiTest {
         }
     }
 
-    @Test (expected=NiciraNvpApiException.class)
+    @Test(expected = NiciraNvpApiException.class)
     public void testExecuteDeleteObjectException() throws NiciraNvpApiException, IOException {
         method = mock(DeleteMethod.class);
         when(method.getStatusCode()).thenReturn(HttpStatus.SC_NO_CONTENT);
-        when(client.executeMethod((HttpMethod) any())).thenThrow(new HttpException());
+        when(client.executeMethod((HttpMethod)any())).thenThrow(new HttpException());
         try {
             api.executeDeleteObject("/");
         } finally {
@@ -277,7 +277,7 @@ public class NiciraNvpApiTest {
         verify(client, times(1)).executeMethod(method);
     }
 
-    @Test (expected=NiciraNvpApiException.class)
+    @Test(expected = NiciraNvpApiException.class)
     public void testExecuteRetrieveObjectFailure() throws NiciraNvpApiException, IOException {
         method = mock(GetMethod.class);
         when(method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -294,12 +294,12 @@ public class NiciraNvpApiTest {
         }
     }
 
-    @Test (expected=NiciraNvpApiException.class)
+    @Test(expected = NiciraNvpApiException.class)
     public void testExecuteRetrieveObjectException() throws NiciraNvpApiException, IOException {
         method = mock(GetMethod.class);
         when(method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
         when(method.getResponseBodyAsString()).thenReturn("{ \"uuid\" : \"aaaa\" }");
-        when(client.executeMethod((HttpMethod) any())).thenThrow(new HttpException());
+        when(client.executeMethod((HttpMethod)any())).thenThrow(new HttpException());
         try {
             api.executeRetrieveObject(LogicalSwitch.class, "/", Collections.<String, String> emptyMap());
         } finally {

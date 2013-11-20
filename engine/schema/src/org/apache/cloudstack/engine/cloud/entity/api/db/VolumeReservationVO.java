@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "volume_reservation")
-public class VolumeReservationVO implements InternalIdentity{
+public class VolumeReservationVO implements InternalIdentity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,10 +39,10 @@ public class VolumeReservationVO implements InternalIdentity{
     @Column(name = "vm_id")
     private long vmId;
 
-    @Column(name="volume_id")
+    @Column(name = "volume_id")
     private long volumeId;
 
-    @Column(name="pool_id")
+    @Column(name = "pool_id")
     private long poolId;
 
     /**
@@ -58,7 +58,6 @@ public class VolumeReservationVO implements InternalIdentity{
         this.poolId = poolId;
         this.vmReservationId = vmReservationId;
     }
-
 
     public long getId() {
         return id;
@@ -79,6 +78,5 @@ public class VolumeReservationVO implements InternalIdentity{
     public Long getPoolId() {
         return poolId;
     }
-
 
 }

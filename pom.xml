@@ -444,8 +444,20 @@
     </testResources>
     <outputDirectory>${basedir}/${cs.target.dir}/classes</outputDirectory>
     <testOutputDirectory>${basedir}/${cs.target.dir}/test-classes</testOutputDirectory>
+    <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>2.11</version>
+        </plugin>
+    </plugins>
     <pluginManagement>
       <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>2.11</version>
+        </plugin>
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
           <configuration>

@@ -75,7 +75,7 @@ public interface MockVmManager extends Manager {
 
     Answer getVncPort(GetVncPortCommand cmd);
 
-	Answer getVmStats(GetVmStatsCommand cmd);
+    Answer getVmStats(GetVmStatsCommand cmd);
 
     CheckSshAnswer checkSshCommand(CheckSshCommand cmd);
 

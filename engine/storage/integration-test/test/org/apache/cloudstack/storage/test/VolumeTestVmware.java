@@ -87,7 +87,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
 
-@ContextConfiguration(locations = { "classpath:/storageContext.xml" })
+@ContextConfiguration(locations = {"classpath:/storageContext.xml"})
 public class VolumeTestVmware extends CloudStackTestNGBase {
     @Inject
     ImageStoreDao imageStoreDao;
@@ -152,14 +152,13 @@ public class VolumeTestVmware extends CloudStackTestNGBase {
             imageStore = this.imageStoreDao.findByName(imageStoreName);
         } else {
             // create data center
-            DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,
-                    "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true, true, null, null);
+            DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null,
+                true, true, null, null);
             dc = dcDao.persist(dc);
             dcId = dc.getId();
             // create pod
 
-            HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), this.getHostGateway(),
-                    this.getHostCidr(), 8, "test");
+            HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), this.getHostGateway(), this.getHostCidr(), 8, "test");
             pod = podDao.persist(pod);
             podId = pod.getId();
             // create xen cluster
@@ -253,12 +252,9 @@ public class VolumeTestVmware extends CloudStackTestNGBase {
     protected void injectMockito() {
         List<HostVO> hosts = new ArrayList<HostVO>();
         hosts.add(this.host);
-        Mockito.when(
-                resourceMgr.listAllUpAndEnabledHosts((Type) Matchers.any(), Matchers.anyLong(), Matchers.anyLong(),
-                        Matchers.anyLong())).thenReturn(hosts);
+        Mockito.when(resourceMgr.listAllUpAndEnabledHosts((Type)Matchers.any(), Matchers.anyLong(), Matchers.anyLong(), Matchers.anyLong())).thenReturn(hosts);
 
-        RemoteHostEndPoint ep = RemoteHostEndPoint.getHypervisorHostEndPoint(this.host.getId(),
-                this.host.getPrivateIpAddress(), this.host.getPublicIpAddress());
+        RemoteHostEndPoint ep = RemoteHostEndPoint.getHypervisorHostEndPoint(this.host.getId(), this.host.getPrivateIpAddress(), this.host.getPublicIpAddress());
         Mockito.when(epSelector.select(Matchers.any(DataObject.class), Matchers.any(DataObject.class))).thenReturn(ep);
         Mockito.when(epSelector.select(Matchers.any(DataObject.class))).thenReturn(ep);
         Mockito.when(epSelector.select(Matchers.any(DataStore.class))).thenReturn(ep);
@@ -331,8 +327,8 @@ public class VolumeTestVmware extends CloudStackTestNGBase {
         primaryStore = this.dataStoreMgr.getPrimaryDataStore(primaryStoreId);
         VolumeVO volume = createVolume(image.getId(), primaryStore.getId());
         VolumeInfo volInfo = this.volFactory.getVolume(volume.getId());
-        AsyncCallFuture<VolumeApiResult> future = this.volumeService.createVolumeFromTemplateAsync(volInfo,
-                this.primaryStoreId, this.templateFactory.getTemplate(this.image.getId(), DataStoreRole.Image));
+        AsyncCallFuture<VolumeApiResult> future = this.volumeService.createVolumeFromTemplateAsync(volInfo, this.primaryStoreId,
+            this.templateFactory.getTemplate(this.image.getId(), DataStoreRole.Image));
         try {
             VolumeApiResult result = future.get();
 

@@ -34,10 +34,10 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshot.Event;
 import com.cloud.vm.snapshot.VMSnapshot.State;
 import com.cloud.vm.snapshot.VMSnapshotVO;
+
 @Component
-@Local(value = { VMSnapshotDao.class })
-public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long>
-        implements VMSnapshotDao {
+@Local(value = {VMSnapshotDao.class})
+public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long> implements VMSnapshotDao {
     private static final Logger s_logger = Logger.getLogger(VMSnapshotDaoImpl.class);
     private final SearchBuilder<VMSnapshotVO> SnapshotSearch;
     private final SearchBuilder<VMSnapshotVO> ExpungingSnapshotSearch;
@@ -59,24 +59,19 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long>
         AllFieldsSearch.and("display_name", AllFieldsSearch.entity().getDisplayName(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
-        
+
         SnapshotSearch = createSearchBuilder();
-        SnapshotSearch.and("vm_id", SnapshotSearch.entity().getVmId(),
-                SearchCriteria.Op.EQ);
+        SnapshotSearch.and("vm_id", SnapshotSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         SnapshotSearch.done();
 
         ExpungingSnapshotSearch = createSearchBuilder();
-        ExpungingSnapshotSearch.and("state", ExpungingSnapshotSearch.entity()
-                .getState(), SearchCriteria.Op.EQ);
-        ExpungingSnapshotSearch.and("removed", ExpungingSnapshotSearch.entity()
-                .getRemoved(), SearchCriteria.Op.NULL);
+        ExpungingSnapshotSearch.and("state", ExpungingSnapshotSearch.entity().getState(), SearchCriteria.Op.EQ);
+        ExpungingSnapshotSearch.and("removed", ExpungingSnapshotSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         ExpungingSnapshotSearch.done();
 
         SnapshotStatusSearch = createSearchBuilder();
-        SnapshotStatusSearch.and("vm_id", SnapshotStatusSearch.entity()
-                .getVmId(), SearchCriteria.Op.EQ);
-        SnapshotStatusSearch.and("state", SnapshotStatusSearch.entity()
-                .getState(), SearchCriteria.Op.IN);
+        SnapshotStatusSearch.and("vm_id", SnapshotStatusSearch.entity().getVmId(), SearchCriteria.Op.EQ);
+        SnapshotStatusSearch.and("state", SnapshotStatusSearch.entity().getState(), SearchCriteria.Op.IN);
         SnapshotStatusSearch.done();
     }
 
@@ -98,23 +93,23 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long>
     public List<VMSnapshotVO> listByInstanceId(Long vmId, State... status) {
         SearchCriteria<VMSnapshotVO> sc = SnapshotStatusSearch.create();
         sc.setParameters("vm_id", vmId);
-        sc.setParameters("state", (Object[]) status);
+        sc.setParameters("state", (Object[])status);
         return listBy(sc, null);
     }
 
-	@Override
-	public VMSnapshotVO findCurrentSnapshotByVmId(Long vmId) {
+    @Override
+    public VMSnapshotVO findCurrentSnapshotByVmId(Long vmId) {
         SearchCriteria<VMSnapshotVO> sc = AllFieldsSearch.create();
         sc.setParameters("vm_id", vmId);
         sc.setParameters("current", 1);
         return findOneBy(sc);
-	}
+    }
 
     @Override
     public List<VMSnapshotVO> listByParent(Long vmSnapshotId) {
         SearchCriteria<VMSnapshotVO> sc = AllFieldsSearch.create();
         sc.setParameters("parent", vmSnapshotId);
-        sc.setParameters("state", State.Ready );
+        sc.setParameters("state", State.Ready);
         return listBy(sc, null);
     }
 
@@ -122,35 +117,60 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long>
     public VMSnapshotVO findByName(Long vm_id, String name) {
         SearchCriteria<VMSnapshotVO> sc = AllFieldsSearch.create();
         sc.setParameters("vm_id", vm_id);
-        sc.setParameters("display_name", name );
+        sc.setParameters("display_name", name);
         return null;
     }
 
     @Override
     public boolean updateState(State currentState, Event event, State nextState, VMSnapshot vo, Object data) {
-        
+
         Long oldUpdated = vo.getUpdatedCount();
         Date oldUpdatedTime = vo.getUpdated();
-        
+
         SearchCriteria<VMSnapshotVO> sc = AllFieldsSearch.create();
         sc.setParameters("id", vo.getId());
         sc.setParameters("state", currentState);
         sc.setParameters("updatedCount", vo.getUpdatedCount());
-        
+
         vo.incrUpdatedCount();
-        
+
         UpdateBuilder builder = getUpdateBuilder(vo);
         builder.set(vo, "state", nextState);
         builder.set(vo, "updated", new Date());
-        
+
         int rows = update((VMSnapshotVO)vo, sc);
         if (rows == 0 && s_logger.isDebugEnabled()) {
-            VMSnapshotVO dbVol = findByIdIncludingRemoved(vo.getId()); 
+            VMSnapshotVO dbVol = findByIdIncludingRemoved(vo.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-                str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState()).append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=").append(dbVol.getUpdated());
-                str.append(": New Data={id=").append(vo.getId()).append("; state=").append(nextState).append("; event=").append(event).append("; updatecount=").append(vo.getUpdatedCount()).append("; updatedTime=").append(vo.getUpdated());
-                str.append(": stale Data={id=").append(vo.getId()).append("; state=").append(currentState).append("; event=").append(event).append("; updatecount=").append(oldUpdated).append("; updatedTime=").append(oldUpdatedTime);
+                str.append(": DB Data={id=")
+                    .append(dbVol.getId())
+                    .append("; state=")
+                    .append(dbVol.getState())
+                    .append("; updatecount=")
+                    .append(dbVol.getUpdatedCount())
+                    .append(";updatedTime=")
+                    .append(dbVol.getUpdated());
+                str.append(": New Data={id=")
+                    .append(vo.getId())
+                    .append("; state=")
+                    .append(nextState)
+                    .append("; event=")
+                    .append(event)
+                    .append("; updatecount=")
+                    .append(vo.getUpdatedCount())
+                    .append("; updatedTime=")
+                    .append(vo.getUpdated());
+                str.append(": stale Data={id=")
+                    .append(vo.getId())
+                    .append("; state=")
+                    .append(currentState)
+                    .append("; event=")
+                    .append(event)
+                    .append("; updatecount=")
+                    .append(oldUpdated)
+                    .append("; updatedTime=")
+                    .append(oldUpdatedTime);
             } else {
                 s_logger.debug("Unable to update VM snapshot: id=" + vo.getId() + ", as there is no such snapshot exists in the database anymore");
             }

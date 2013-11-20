@@ -24,10 +24,9 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.template.TemplateProp;
 
-
 public class StartupStorageCommand extends StartupCommand {
 
-	String parent;
+    String parent;
     Map<String, TemplateProp> templateInfo;
     long totalSize;
     StoragePoolInfo poolInfo;
@@ -49,62 +48,61 @@ public class StartupStorageCommand extends StartupCommand {
         this.fsType = fsType;
     }
 
-
     public StartupStorageCommand(String parent, StoragePoolType fsType, Map<String, TemplateProp> templateInfo, StoragePoolInfo poolInfo) {
-		super(Host.Type.Storage);
-		this.parent = parent;
-		this.templateInfo = templateInfo;
-		this.totalSize = poolInfo.capacityBytes;
-		this.poolInfo = poolInfo;
-		this.fsType = fsType;
-	}
+        super(Host.Type.Storage);
+        this.parent = parent;
+        this.templateInfo = templateInfo;
+        this.totalSize = poolInfo.capacityBytes;
+        this.poolInfo = poolInfo;
+        this.fsType = fsType;
+    }
 
-	public String getParent() {
+    public String getParent() {
         return parent;
     }
 
-	public void setParent(String parent) {
+    public void setParent(String parent) {
         this.parent = parent;
     }
 
     public void setNfsShare(String nfsShare) {
-	    this.nfsShare = nfsShare;
-	}
+        this.nfsShare = nfsShare;
+    }
 
-	public String getNfsShare() {
-	    return nfsShare;
-	}
+    public String getNfsShare() {
+        return nfsShare;
+    }
 
     public long getTotalSize() {
         return totalSize;
     }
 
-	public Map<String, TemplateProp> getTemplateInfo() {
-		return templateInfo;
-	}
+    public Map<String, TemplateProp> getTemplateInfo() {
+        return templateInfo;
+    }
 
-	public void setTemplateInfo(Map<String, TemplateProp> templateInfo) {
-		this.templateInfo = templateInfo;
-	}
+    public void setTemplateInfo(Map<String, TemplateProp> templateInfo) {
+        this.templateInfo = templateInfo;
+    }
 
-	public StoragePoolInfo getPoolInfo() {
-		return poolInfo;
-	}
+    public StoragePoolInfo getPoolInfo() {
+        return poolInfo;
+    }
 
-	public void setPoolInfo(StoragePoolInfo poolInfo) {
-		this.poolInfo = poolInfo;
-	}
+    public void setPoolInfo(StoragePoolInfo poolInfo) {
+        this.poolInfo = poolInfo;
+    }
 
-	public Storage.StorageResourceType getResourceType() {
-		return resourceType;
-	}
+    public Storage.StorageResourceType getResourceType() {
+        return resourceType;
+    }
 
-	public void setResourceType(Storage.StorageResourceType resourceType) {
-		this.resourceType = resourceType;
-	}
+    public void setResourceType(Storage.StorageResourceType resourceType) {
+        this.resourceType = resourceType;
+    }
 
-	/*For secondary storage*/
-	public Map<String, String> getHostDetails() {
-		return hostDetails;
-	}
+    /*For secondary storage*/
+    public Map<String, String> getHostDetails() {
+        return hostDetails;
+    }
 }

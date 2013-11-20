@@ -19,8 +19,7 @@ package com.cloud.agent.api;
 public class UpdateLogicalSwitchPortAnswer extends Answer {
     private String logicalSwitchPortUuid;
 
-    public UpdateLogicalSwitchPortAnswer(Command command, boolean success,
-            String details, String localSwitchPortUuid) {
+    public UpdateLogicalSwitchPortAnswer(Command command, boolean success, String details, String localSwitchPortUuid) {
         super(command, success, details);
         logicalSwitchPortUuid = localSwitchPortUuid;
     }

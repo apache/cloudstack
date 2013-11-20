@@ -38,13 +38,11 @@ public interface NetworkACLItem extends InternalIdentity {
     }
 
     enum TrafficType {
-        Ingress,
-        Egress
+        Ingress, Egress
     }
 
     enum Action {
-        Allow,
-        Deny
+        Allow, Deny
     }
 
     /**

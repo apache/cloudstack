@@ -62,8 +62,7 @@ public class MockLocalNfsSecondaryStorageResource extends NfsSecondaryStorageRes
             e.printStackTrace();
         }
 
-        createTemplateFromSnapshotXenScript = Script.findScript(getDefaultScriptsDir(),
-                "create_privatetemplate_from_snapshot_xen.sh");
+        createTemplateFromSnapshotXenScript = Script.findScript(getDefaultScriptsDir(), "create_privatetemplate_from_snapshot_xen.sh");
 
     }
 
@@ -77,6 +76,5 @@ public class MockLocalNfsSecondaryStorageResource extends NfsSecondaryStorageRes
         // return Answer.createUnsupportedCommandAnswer(cmd);
         return super.executeRequest(cmd);
     }
-
 
 }

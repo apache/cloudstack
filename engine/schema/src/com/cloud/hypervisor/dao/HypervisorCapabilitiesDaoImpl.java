@@ -28,21 +28,21 @@ import javax.ejb.Local;
 import java.util.List;
 
 @Component
-@Local(value=HypervisorCapabilitiesDao.class)
+@Local(value = HypervisorCapabilitiesDao.class)
 public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapabilitiesVO, Long> implements HypervisorCapabilitiesDao {
-    
+
     private static final Logger s_logger = Logger.getLogger(HypervisorCapabilitiesDaoImpl.class);
 
     protected final SearchBuilder<HypervisorCapabilitiesVO> HypervisorTypeSearch;
     protected final SearchBuilder<HypervisorCapabilitiesVO> HypervisorTypeAndVersionSearch;
 
     private static final String DEFAULT_VERSION = "default";
-    
+
     protected HypervisorCapabilitiesDaoImpl() {
         HypervisorTypeSearch = createSearchBuilder();
         HypervisorTypeSearch.and("hypervisorType", HypervisorTypeSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         HypervisorTypeSearch.done();
-        
+
         HypervisorTypeAndVersionSearch = createSearchBuilder();
         HypervisorTypeAndVersionSearch.and("hypervisorType", HypervisorTypeAndVersionSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         HypervisorTypeAndVersionSearch.and("hypervisorVersion", HypervisorTypeAndVersionSearch.entity().getHypervisorVersion(), SearchCriteria.Op.EQ);
@@ -58,22 +58,22 @@ public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapa
     }
 
     @Override
-    public List<HypervisorCapabilitiesVO> listAllByHypervisorType(HypervisorType hypervisorType){
+    public List<HypervisorCapabilitiesVO> listAllByHypervisorType(HypervisorType hypervisorType) {
         SearchCriteria<HypervisorCapabilitiesVO> sc = HypervisorTypeSearch.create();
         sc.setParameters("hypervisorType", hypervisorType);
         return search(sc, null);
     }
-    
+
     @Override
-    public HypervisorCapabilitiesVO findByHypervisorTypeAndVersion(HypervisorType hypervisorType, String hypervisorVersion){
+    public HypervisorCapabilitiesVO findByHypervisorTypeAndVersion(HypervisorType hypervisorType, String hypervisorVersion) {
         SearchCriteria<HypervisorCapabilitiesVO> sc = HypervisorTypeAndVersionSearch.create();
         sc.setParameters("hypervisorType", hypervisorType);
         sc.setParameters("hypervisorVersion", hypervisorVersion);
         return findOneBy(sc);
     }
-    
+
     @Override
-    public Long getMaxGuestsLimit(HypervisorType hypervisorType, String hypervisorVersion){
+    public Long getMaxGuestsLimit(HypervisorType hypervisorType, String hypervisorVersion) {
         Long defaultLimit = new Long(50);
         HypervisorCapabilitiesVO result = getCapabilities(hypervisorType, hypervisorVersion);
         if (result == null)
@@ -96,10 +96,9 @@ public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapa
         return result.getMaxHostsPerCluster();
     }
 
-	@Override
-	public Boolean isVmSnapshotEnabled(HypervisorType hypervisorType,
-			String hypervisorVersion) {
-		HypervisorCapabilitiesVO result = getCapabilities(hypervisorType, hypervisorVersion);
-		return result.getVmSnapshotEnabled();
-	}
+    @Override
+    public Boolean isVmSnapshotEnabled(HypervisorType hypervisorType, String hypervisorVersion) {
+        HypervisorCapabilitiesVO result = getCapabilities(hypervisorType, hypervisorVersion);
+        return result.getVmSnapshotEnabled();
+    }
 }

@@ -27,23 +27,23 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name=("global_load_balancer_lb_rule_map"))
+@Table(name = ("global_load_balancer_lb_rule_map"))
 public class GlobalLoadBalancerLbRuleMapVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="lb_rule_id")
+    @Column(name = "lb_rule_id")
     private long loadBalancerId;
 
-    @Column(name="gslb_rule_id")
+    @Column(name = "gslb_rule_id")
     private long gslbLoadBalancerId;
 
-    @Column(name="weight")
+    @Column(name = "weight")
     private long weight;
 
-    @Column(name="revoke")
+    @Column(name = "revoke")
     private boolean revoke = false;
 
     public GlobalLoadBalancerLbRuleMapVO() {

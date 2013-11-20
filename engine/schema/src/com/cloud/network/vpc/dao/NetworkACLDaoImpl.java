@@ -26,7 +26,7 @@ import javax.ejb.Local;
 @Component
 @Local(value = NetworkACLDao.class)
 @DB()
-public class NetworkACLDaoImpl extends GenericDaoBase<NetworkACLVO, Long> implements NetworkACLDao{
+public class NetworkACLDaoImpl extends GenericDaoBase<NetworkACLVO, Long> implements NetworkACLDao {
 
     protected NetworkACLDaoImpl() {
     }

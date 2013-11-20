@@ -31,8 +31,7 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = "findStoragePoolsForMigration", description="Lists storage pools available for migration of a volume.",
-    responseObject=StoragePoolResponse.class)
+@APICommand(name = "findStoragePoolsForMigration", description = "Lists storage pools available for migration of a volume.", responseObject = StoragePoolResponse.class)
 public class FindStoragePoolsForMigrationCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(FindStoragePoolsForMigrationCmd.class.getName());
 
@@ -42,8 +41,7 @@ public class FindStoragePoolsForMigrationCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = VolumeResponse.class, required=true,
-            description="the ID of the volume")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "the ID of the volume")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -69,8 +67,7 @@ public class FindStoragePoolsForMigrationCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        Pair<List<? extends StoragePool>, List<? extends StoragePool>> pools =
-                _mgr.listStoragePoolsForMigrationOfVolume(getId());
+        Pair<List<? extends StoragePool>, List<? extends StoragePool>> pools = _mgr.listStoragePoolsForMigrationOfVolume(getId());
         ListResponse<StoragePoolResponse> response = new ListResponse<StoragePoolResponse>();
         List<StoragePoolResponse> poolResponses = new ArrayList<StoragePoolResponse>();
 

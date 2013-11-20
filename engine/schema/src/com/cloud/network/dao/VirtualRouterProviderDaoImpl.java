@@ -30,10 +30,11 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value=VirtualRouterProviderDao.class) @DB()
+@Local(value = VirtualRouterProviderDao.class)
+@DB()
 public class VirtualRouterProviderDaoImpl extends GenericDaoBase<VirtualRouterProviderVO, Long> implements VirtualRouterProviderDao {
     final SearchBuilder<VirtualRouterProviderVO> AllFieldsSearch;
-    
+
     public VirtualRouterProviderDaoImpl() {
         super();
         AllFieldsSearch = createSearchBuilder();
@@ -52,7 +53,7 @@ public class VirtualRouterProviderDaoImpl extends GenericDaoBase<VirtualRouterPr
         sc.setParameters("type", type);
         return findOneBy(sc);
     }
-    
+
     @Override
     public List<VirtualRouterProviderVO> listByEnabledAndType(boolean enabled, Type type) {
         SearchCriteria<VirtualRouterProviderVO> sc = AllFieldsSearch.create();
@@ -60,7 +61,7 @@ public class VirtualRouterProviderDaoImpl extends GenericDaoBase<VirtualRouterPr
         sc.setParameters("type", type);
         return listBy(sc);
     }
-    
+
     @Override
     public VirtualRouterProviderVO findByIdAndEnabledAndType(long id, boolean enabled, Type type) {
         SearchCriteria<VirtualRouterProviderVO> sc = AllFieldsSearch.create();

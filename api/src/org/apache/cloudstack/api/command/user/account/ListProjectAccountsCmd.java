@@ -27,7 +27,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "listProjectAccounts", description="Lists project's accounts", responseObject=ProjectResponse.class, since="3.0.0")
+@APICommand(name = "listProjectAccounts", description = "Lists project's accounts", responseObject = ProjectResponse.class, since = "3.0.0")
 public class ListProjectAccountsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListProjectAccountsCmd.class.getName());
 
@@ -37,15 +37,15 @@ public class ListProjectAccountsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
-            required=true, description="id of the project")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "id of the project")
     private Long projectId;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="list accounts of the project by account name")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "list accounts of the project by account name")
     private String accountName;
 
-    @Parameter(name=ApiConstants.ROLE, type=CommandType.STRING, description="list accounts of the project by role")
+    @Parameter(name = ApiConstants.ROLE, type = CommandType.STRING, description = "list accounts of the project by role")
     private String role;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -54,16 +54,13 @@ public class ListProjectAccountsCmd extends BaseListCmd {
         return accountName;
     }
 
-
     public Long getProjectId() {
         return projectId;
     }
 
-
     public String getRole() {
         return role;
     }
-
 
     @Override
     public String getCommandName() {
@@ -72,18 +69,17 @@ public class ListProjectAccountsCmd extends BaseListCmd {
 
     @Override
     public long getEntityOwnerId() {
-       //TODO - return project entity ownerId
+        //TODO - return project entity ownerId
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute(){
+    public void execute() {
         ListResponse<ProjectAccountResponse> response = _queryService.listProjectAccounts(this);
         response.setResponseName(getCommandName());
 

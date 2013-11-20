@@ -24,6 +24,8 @@ import com.cloud.utils.db.GenericDao;
 
 public interface UsageVMInstanceDao extends GenericDao<UsageVMInstanceVO, Long> {
     public void update(UsageVMInstanceVO instance);
+
     public void delete(UsageVMInstanceVO instance);
+
     public List<UsageVMInstanceVO> getUsageRecords(long userId, Date startDate, Date endDate);
 }

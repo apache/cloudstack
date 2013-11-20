@@ -32,40 +32,40 @@ import javax.persistence.TemporalType;
 import com.cloud.utils.DateUtil;
 
 @Entity
-@Table(name="mshost_peer")
+@Table(name = "mshost_peer")
 public class ManagementServerHostPeerVO {
-    
+
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
-    
-    @Column(name="owner_mshost", updatable=true, nullable=false)
+
+    @Column(name = "owner_mshost", updatable = true, nullable = false)
     private long ownerMshost;
-    
-    @Column(name="peer_mshost", updatable=true, nullable=false)
+
+    @Column(name = "peer_mshost", updatable = true, nullable = false)
     private long peerMshost;
-    
-    @Column(name="peer_runid", updatable=true, nullable=false)
+
+    @Column(name = "peer_runid", updatable = true, nullable = false)
     private long peerRunid;
 
-    @Column(name="peer_state", updatable = true, nullable=false)
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "peer_state", updatable = true, nullable = false)
+    @Enumerated(value = EnumType.STRING)
     private ManagementServerHost.State peerState;
-    
+
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="last_update", updatable=true, nullable=true)
+    @Column(name = "last_update", updatable = true, nullable = true)
     private Date lastUpdateTime;
 
     public ManagementServerHostPeerVO() {
     }
-    
+
     public ManagementServerHostPeerVO(long ownerMshost, long peerMshost, long peerRunid, ManagementServerHost.State peerState) {
         this.ownerMshost = ownerMshost;
         this.peerMshost = peerMshost;
         this.peerRunid = peerRunid;
         this.peerState = peerState;
-        
+
         lastUpdateTime = DateUtil.currentGMTTime();
     }
 

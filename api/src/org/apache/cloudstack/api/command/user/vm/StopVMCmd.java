@@ -46,12 +46,13 @@ public class StopVMCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
 
     @ACL
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType=UserVmResponse.class,
-            required = true, description = "The ID of the virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
     private Long id;
 
-    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM " +
-            "(vm is marked as Stopped even when command fails to be send to the backend).  The caller knows the VM is stopped.")
+    @Parameter(name = ApiConstants.FORCED,
+               type = CommandType.BOOLEAN,
+               required = false,
+               description = "Force stop the VM " + "(vm is marked as Stopped even when command fails to be send to the backend).  The caller knows the VM is stopped.")
     private Boolean forced;
 
     // ///////////////////////////////////////////////////

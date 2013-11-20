@@ -24,63 +24,62 @@ import javax.persistence.*;
 import java.util.*;
 
 @Entity
-@Table(name="network_acl_item")
+@Table(name = "network_acl_item")
 public class NetworkACLItemVO implements NetworkACLItem {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     long id;
 
-    @Column(name="start_port", updatable=false)
+    @Column(name = "start_port", updatable = false)
     Integer sourcePortStart;
 
-    @Column(name="end_port", updatable=false)
+    @Column(name = "end_port", updatable = false)
     Integer sourcePortEnd;
 
-    @Column(name="protocol", updatable=false)
+    @Column(name = "protocol", updatable = false)
     String protocol = NetUtils.TCP_PROTO;
 
-    @Enumerated(value=EnumType.STRING)
-    @Column(name="state")
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "state")
     State state;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
 
-    @Column(name="acl_id")
+    @Column(name = "acl_id")
     long aclId;
 
-    @Column(name="icmp_code")
+    @Column(name = "icmp_code")
     Integer icmpCode;
 
-    @Column(name="icmp_type")
+    @Column(name = "icmp_type")
     Integer icmpType;
 
-    @Column(name="traffic_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "traffic_type")
+    @Enumerated(value = EnumType.STRING)
     TrafficType trafficType;
 
-    @Column(name="cidr")
+    @Column(name = "cidr")
     String sourceCidrs;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     String uuid;
 
-    @Column(name="number")
+    @Column(name = "number")
     int number;
 
-    @Column(name="action")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "action")
+    @Enumerated(value = EnumType.STRING)
     Action action;
 
     public NetworkACLItemVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public NetworkACLItemVO(Integer portStart, Integer portEnd, String protocol,
-                            long aclId, List<String> sourceCidrs, Integer icmpCode,
-                            Integer icmpType, TrafficType trafficType, Action action, int number) {
+    public NetworkACLItemVO(Integer portStart, Integer portEnd, String protocol, long aclId, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, TrafficType trafficType,
+            Action action, int number) {
         this.sourcePortStart = portStart;
         this.sourcePortEnd = portEnd;
         this.protocol = protocol;
@@ -96,28 +95,28 @@ public class NetworkACLItemVO implements NetworkACLItem {
     }
 
     public void setSourceCidrList(List<String> sourceCidrs) {
-        if(sourceCidrs == null){
+        if (sourceCidrs == null) {
             this.sourceCidrs = null;
         } else {
             StringBuilder sb = new StringBuilder();
-            for(String cidr : sourceCidrs){
-                if(sb.length() != 0){
+            for (String cidr : sourceCidrs) {
+                if (sb.length() != 0) {
                     sb.append(",");
                 }
                 sb.append(cidr);
             }
-            this.sourceCidrs=sb.toString();
+            this.sourceCidrs = sb.toString();
         }
     }
 
     @Override
     public List<String> getSourceCidrList() {
-        if(sourceCidrs == null || sourceCidrs.isEmpty()){
+        if (sourceCidrs == null || sourceCidrs.isEmpty()) {
             return null;
         } else {
             List<String> cidrList = new ArrayList<String>();
             String[] cidrs = sourceCidrs.split(",");
-            for(String cidr : cidrs){
+            for (String cidr : cidrs) {
                 cidrList.add(cidr);
             }
             return cidrList;
@@ -161,8 +160,6 @@ public class NetworkACLItemVO implements NetworkACLItem {
     public Date getCreated() {
         return created;
     }
-
-
 
     @Override
     public String toString() {

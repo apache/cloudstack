@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.vm.dao;
 
-
 import java.util.List;
 
 import javax.annotation.PostConstruct;
@@ -32,9 +31,8 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.vm.UserVmCloneSettingVO;
 import com.cloud.utils.db.DB;
 
-
 @Component
-@Local(value= { UserVmCloneSettingDao.class })
+@Local(value = {UserVmCloneSettingDao.class})
 @DB()
 public class UserVmCloneSettingDaoImpl extends GenericDaoBase<UserVmCloneSettingVO, Long> implements UserVmCloneSettingDao {
     public static final Logger s_logger = Logger.getLogger(UserVmCloneSettingDaoImpl.class);

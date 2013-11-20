@@ -23,7 +23,6 @@ import com.cloud.vm.VMInstanceVO;
 public interface VMSnapshotManager extends VMSnapshotService, Manager {
     public static final int VMSNAPSHOTMAX = 10;
 
-    
     /**
      * Delete all VM snapshots belonging to one VM
      * @param id, VM id

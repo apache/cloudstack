@@ -88,7 +88,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     ServiceOfferingDao _serviceOfferingDao;
 
     private boolean canHandle(DeployDestination dest, TrafficType trafficType) {
-        DataCenterVO dc = (DataCenterVO) dest.getDataCenter();
+        DataCenterVO dc = (DataCenterVO)dest.getDataCenter();
 
         if (dc.getDhcpProvider().equalsIgnoreCase(Provider.ExternalDhcpServer.getName())) {
             _dcDao.loadDetails(dc);
@@ -102,8 +102,8 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     }
 
     @Override
-    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException,
-            InsufficientCapacityException {
+    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException,
+        ConcurrentOperationException, InsufficientCapacityException {
         if (!canHandle(dest, offering.getTrafficType())) {
             return false;
         }
@@ -112,8 +112,8 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vmProfile, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
-            InsufficientCapacityException, ResourceUnavailableException {
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vmProfile, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         return true;
     }
 
@@ -150,8 +150,8 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
         return capabilities;
     }
 
-    private VmDataCommand generateVmDataCommand(String vmPrivateIpAddress,
-            String userData, String serviceOffering, String zoneName, String guestIpAddress, String vmName, String vmInstanceName, long vmId, String vmUuid, String publicKey) {
+    private VmDataCommand generateVmDataCommand(String vmPrivateIpAddress, String userData, String serviceOffering, String zoneName, String guestIpAddress, String vmName,
+        String vmInstanceName, long vmId, String vmUuid, String publicKey) {
         VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName, _networkMgr.getExecuteInSeqNtwkElmtCmd());
 
         cmd.addVmData("userdata", "user-data", userData);
@@ -163,7 +163,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
         cmd.addVmData("metadata", "public-hostname", guestIpAddress);
         if (vmUuid == null) {
             setVmInstanceId(vmInstanceName, vmId, cmd);
-        }  else {
+        } else {
             setVmInstanceId(vmUuid, cmd);
         }
         cmd.addVmData("metadata", "public-keys", publicKey);
@@ -171,16 +171,15 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
         return cmd;
     }
 
-        private void setVmInstanceId(String vmUuid, VmDataCommand cmd) {
-            cmd.addVmData("metadata", "instance-id", vmUuid);
-            cmd.addVmData("metadata", "vm-id", vmUuid);
-        }
+    private void setVmInstanceId(String vmUuid, VmDataCommand cmd) {
+        cmd.addVmData("metadata", "instance-id", vmUuid);
+        cmd.addVmData("metadata", "vm-id", vmUuid);
+    }
 
-        private void setVmInstanceId(String vmInstanceName, long vmId, VmDataCommand cmd) {
-            cmd.addVmData("metadata", "instance-id", vmInstanceName);
-            cmd.addVmData("metadata", "vm-id", String.valueOf(vmId));
-        }
-
+    private void setVmInstanceId(String vmInstanceName, long vmId, VmDataCommand cmd) {
+        cmd.addVmData("metadata", "instance-id", vmInstanceName);
+        cmd.addVmData("metadata", "vm-id", String.valueOf(vmId));
+    }
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
@@ -201,7 +200,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
 
     @Override
     public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (canHandle(dest, network.getTrafficType())) {
 
             if (vm.getType() != VirtualMachine.Type.User) {
@@ -224,9 +223,9 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
             String zoneName = _dcDao.findById(network.getDataCenterId()).getName();
 
             cmds.addCommand(
-                    "vmdata",
-                    generateVmDataCommand(nic.getIp4Address(), userData, serviceOffering, zoneName, nic.getIp4Address(), uservm.getHostName(),
-                            uservm.getInstanceName(), uservm.getId(), uservm.getUuid(), sshPublicKey));
+                "vmdata",
+                generateVmDataCommand(nic.getIp4Address(), userData, serviceOffering, zoneName, nic.getIp4Address(), uservm.getHostName(), uservm.getInstanceName(),
+                    uservm.getId(), uservm.getUuid(), sshPublicKey));
             try {
                 _agentManager.send(dest.getHost().getId(), cmds);
             } catch (OperationTimedoutException e) {

@@ -24,28 +24,27 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="multipart_meta")
-
+@Table(name = "multipart_meta")
 public class MultipartMetaVO {
-    
+
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="ID")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ID")
     private Long id;
-    
-    @Column(name="UploadID")
+
+    @Column(name = "UploadID")
     private long uploadID;
-    
-    @Column(name="Name")
+
+    @Column(name = "Name")
     private String name;
-    
-    @Column(name="Value")
+
+    @Column(name = "Value")
     private String value;
 
     public long getID() {
         return id;
     }
-    
+
     public long getUploadID() {
         return uploadID;
     }
@@ -69,7 +68,5 @@ public class MultipartMetaVO {
     public void setValue(String value) {
         this.value = value;
     }
-    
-    
 
 }

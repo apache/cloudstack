@@ -32,40 +32,44 @@ import org.apache.log4j.Logger;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listRemoteAccessVpns", description="Lists remote access vpns", responseObject=RemoteAccessVpnResponse.class)
+@APICommand(name = "listRemoteAccessVpns", description = "Lists remote access vpns", responseObject = RemoteAccessVpnResponse.class)
 public class ListRemoteAccessVpnsCmd extends BaseListProjectAndAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger (ListRemoteAccessVpnsCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListRemoteAccessVpnsCmd.class.getName());
 
     private static final String s_name = "listremoteaccessvpnsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.UUID, entityType=IPAddressResponse.class,
-            description="public ip address id of the vpn server")
+    @Parameter(name = ApiConstants.PUBLIC_IP_ID, type = CommandType.UUID, entityType = IPAddressResponse.class, description = "public ip address id of the vpn server")
     private Long publicIpId;
-    
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = RemoteAccessVpnResponse.class,
-            description="Lists remote access vpn rule with the specified ID", since="4.3")
+
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = RemoteAccessVpnResponse.class,
+               description = "Lists remote access vpn rule with the specified ID",
+               since = "4.3")
     private Long id;
-    
-    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class,
-            description="list remote access VPNs for ceratin network", since="4.3")
+
+    @Parameter(name = ApiConstants.NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = NetworkResponse.class,
+               description = "list remote access VPNs for ceratin network",
+               since = "4.3")
     private Long networkId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-
     public Long getPublicIpId() {
         return publicIpId;
     }
-    
+
     public Long getId() {
         return id;
     }
-    
+
     public Long getNetworkId() {
         return networkId;
     }
@@ -80,7 +84,7 @@ public class ListRemoteAccessVpnsCmd extends BaseListProjectAndAccountResourcesC
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends RemoteAccessVpn>, Integer> vpns = _ravService.searchForRemoteAccessVpns(this);
         ListResponse<RemoteAccessVpnResponse> response = new ListResponse<RemoteAccessVpnResponse>();
         List<RemoteAccessVpnResponse> vpnResponses = new ArrayList<RemoteAccessVpnResponse>();

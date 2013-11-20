@@ -64,11 +64,16 @@ import com.cloud.vm.dao.VMInstanceDao;
 @Component
 public class XenServerStorageMotionStrategy implements DataMotionStrategy {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageMotionStrategy.class);
-    @Inject AgentManager agentMgr;
-    @Inject VolumeDao volDao;
-    @Inject VolumeDataFactory volFactory;
-    @Inject PrimaryDataStoreDao storagePoolDao;
-    @Inject VMInstanceDao instanceDao;
+    @Inject
+    AgentManager agentMgr;
+    @Inject
+    VolumeDao volDao;
+    @Inject
+    VolumeDataFactory volFactory;
+    @Inject
+    PrimaryDataStoreDao storagePoolDao;
+    @Inject
+    VMInstanceDao instanceDao;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
@@ -77,8 +82,7 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
 
     @Override
     public StrategyPriority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
-        if (srcHost.getHypervisorType() == HypervisorType.XenServer &&
-                destHost.getHypervisorType() == HypervisorType.XenServer) {
+        if (srcHost.getHypervisorType() == HypervisorType.XenServer && destHost.getHypervisorType() == HypervisorType.XenServer) {
             return StrategyPriority.HYPERVISOR;
         }
 
@@ -86,8 +90,7 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
     }
 
     @Override
-    public Void copyAsync(DataObject srcData, DataObject destData,
-            AsyncCompletionCallback<CopyCommandResult> callback) {
+    public Void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
         CopyCommandResult result = new CopyCommandResult(null, null);
         result.setResult("Unsupported operation requested for copying data.");
         callback.complete(result);
@@ -96,8 +99,7 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
     }
 
     @Override
-    public Void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost,
-            AsyncCompletionCallback<CopyCommandResult> callback) {
+    public Void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
         Answer answer = null;
         String errMsg = null;
         try {
@@ -122,8 +124,8 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
         return null;
     }
 
-    private Answer migrateVmWithVolumesAcrossCluster(VMInstanceVO vm, VirtualMachineTO to, Host srcHost,
-            Host destHost, Map<VolumeInfo, DataStore> volumeToPool) throws AgentUnavailableException {
+    private Answer migrateVmWithVolumesAcrossCluster(VMInstanceVO vm, VirtualMachineTO to, Host srcHost, Host destHost, Map<VolumeInfo, DataStore> volumeToPool)
+        throws AgentUnavailableException {
 
         // Initiate migration of a virtual machine with it's volumes.
         try {
@@ -140,40 +142,33 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
             // 2. Send a migrate send command to the source host. This actually migrates the vm to the destination.
             // 3. Complete the process. Update the volume details.
             MigrateWithStorageReceiveCommand receiveCmd = new MigrateWithStorageReceiveCommand(to, volumeToFilerto);
-            MigrateWithStorageReceiveAnswer receiveAnswer = (MigrateWithStorageReceiveAnswer) agentMgr.send(
-                    destHost.getId(), receiveCmd);
+            MigrateWithStorageReceiveAnswer receiveAnswer = (MigrateWithStorageReceiveAnswer)agentMgr.send(destHost.getId(), receiveCmd);
             if (receiveAnswer == null) {
-                s_logger.error("Migration with storage of vm " + vm+ " to host " + destHost + " failed.");
+                s_logger.error("Migration with storage of vm " + vm + " to host " + destHost + " failed.");
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
             } else if (!receiveAnswer.getResult()) {
-                s_logger.error("Migration with storage of vm " + vm+ " failed. Details: " + receiveAnswer.getDetails());
-                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost +
-                        ". " + receiveAnswer.getDetails());
+                s_logger.error("Migration with storage of vm " + vm + " failed. Details: " + receiveAnswer.getDetails());
+                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost + ". " + receiveAnswer.getDetails());
             }
 
-            MigrateWithStorageSendCommand sendCmd = new MigrateWithStorageSendCommand(to, receiveAnswer.getVolumeToSr(),
-                    receiveAnswer.getNicToNetwork(), receiveAnswer.getToken());
-            MigrateWithStorageSendAnswer sendAnswer = (MigrateWithStorageSendAnswer) agentMgr.send(
-                    srcHost.getId(), sendCmd);
+            MigrateWithStorageSendCommand sendCmd = new MigrateWithStorageSendCommand(to, receiveAnswer.getVolumeToSr(), receiveAnswer.getNicToNetwork(), receiveAnswer.getToken());
+            MigrateWithStorageSendAnswer sendAnswer = (MigrateWithStorageSendAnswer)agentMgr.send(srcHost.getId(), sendCmd);
             if (sendAnswer == null) {
-                s_logger.error("Migration with storage of vm " + vm+ " to host " + destHost + " failed.");
+                s_logger.error("Migration with storage of vm " + vm + " to host " + destHost + " failed.");
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
             } else if (!sendAnswer.getResult()) {
-                s_logger.error("Migration with storage of vm " + vm+ " failed. Details: " + sendAnswer.getDetails());
-                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost +
-                        ". " + sendAnswer.getDetails());
+                s_logger.error("Migration with storage of vm " + vm + " failed. Details: " + sendAnswer.getDetails());
+                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost + ". " + sendAnswer.getDetails());
             }
 
             MigrateWithStorageCompleteCommand command = new MigrateWithStorageCompleteCommand(to);
-            MigrateWithStorageCompleteAnswer answer = (MigrateWithStorageCompleteAnswer) agentMgr.send(
-                    destHost.getId(), command);
+            MigrateWithStorageCompleteAnswer answer = (MigrateWithStorageCompleteAnswer)agentMgr.send(destHost.getId(), command);
             if (answer == null) {
                 s_logger.error("Migration with storage of vm " + vm + " failed.");
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
             } else if (!answer.getResult()) {
-                s_logger.error("Migration with storage of vm " + vm+ " failed. Details: " + answer.getDetails());
-                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost +
-                        ". " + answer.getDetails());
+                s_logger.error("Migration with storage of vm " + vm + " failed. Details: " + answer.getDetails());
+                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost + ". " + answer.getDetails());
             } else {
                 // Update the volume details after migration.
                 updateVolumePathsAfterMigration(volumeToPool, answer.getVolumeTos());
@@ -186,8 +181,8 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
         }
     }
 
-    private Answer migrateVmWithVolumesWithinCluster(VMInstanceVO vm, VirtualMachineTO to, Host srcHost,
-            Host destHost, Map<VolumeInfo, DataStore> volumeToPool) throws AgentUnavailableException {
+    private Answer migrateVmWithVolumesWithinCluster(VMInstanceVO vm, VirtualMachineTO to, Host srcHost, Host destHost, Map<VolumeInfo, DataStore> volumeToPool)
+        throws AgentUnavailableException {
 
         // Initiate migration of a virtual machine with it's volumes.
         try {
@@ -200,14 +195,13 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
             }
 
             MigrateWithStorageCommand command = new MigrateWithStorageCommand(to, volumeToFilerto);
-            MigrateWithStorageAnswer answer = (MigrateWithStorageAnswer) agentMgr.send(destHost.getId(), command);
+            MigrateWithStorageAnswer answer = (MigrateWithStorageAnswer)agentMgr.send(destHost.getId(), command);
             if (answer == null) {
                 s_logger.error("Migration with storage of vm " + vm + " failed.");
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
             } else if (!answer.getResult()) {
-                s_logger.error("Migration with storage of vm " + vm+ " failed. Details: " + answer.getDetails());
-                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost +
-                        ". " + answer.getDetails());
+                s_logger.error("Migration with storage of vm " + vm + " failed. Details: " + answer.getDetails());
+                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost + ". " + answer.getDetails());
             } else {
                 // Update the volume details after migration.
                 updateVolumePathsAfterMigration(volumeToPool, answer.getVolumeTos());

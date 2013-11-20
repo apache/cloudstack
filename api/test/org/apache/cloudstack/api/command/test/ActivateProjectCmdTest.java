@@ -54,15 +54,13 @@ public class ActivateProjectCmdTest extends TestCase {
     @Test
     public void testGetEntityOwnerIdForNullProject() {
         ProjectService projectService = Mockito.mock(ProjectService.class);
-        Mockito.when(projectService.getProject(Mockito.anyLong())).thenReturn(
-                null);
+        Mockito.when(projectService.getProject(Mockito.anyLong())).thenReturn(null);
         activateProjectCmd._projectService = projectService;
 
         try {
             activateProjectCmd.getEntityOwnerId();
         } catch (InvalidParameterValueException exception) {
-            Assert.assertEquals("Unable to find project by id 2",
-                    exception.getLocalizedMessage());
+            Assert.assertEquals("Unable to find project by id 2", exception.getLocalizedMessage());
         }
     }
 
@@ -73,11 +71,9 @@ public class ActivateProjectCmdTest extends TestCase {
         ProjectService projectService = Mockito.mock(ProjectService.class);
         Account account = Mockito.mock(Account.class);
         Mockito.when(account.getId()).thenReturn(2L);
-        Mockito.when(projectService.getProject(Mockito.anyLong())).thenReturn(
-                project);
+        Mockito.when(projectService.getProject(Mockito.anyLong())).thenReturn(project);
 
-        Mockito.when(projectService.getProjectOwner(Mockito.anyLong()))
-                .thenReturn(account);
+        Mockito.when(projectService.getProjectOwner(Mockito.anyLong())).thenReturn(account);
         activateProjectCmd._projectService = projectService;
 
         Assert.assertEquals(2L, activateProjectCmd.getEntityOwnerId());

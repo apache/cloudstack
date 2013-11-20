@@ -24,13 +24,16 @@ import com.google.gson.annotations.SerializedName;
 
 public class CloudIdentifierResponse extends BaseResponse {
 
-    @SerializedName(ApiConstants.USER_ID) @Param(description="the user ID for the cloud identifier")
+    @SerializedName(ApiConstants.USER_ID)
+    @Param(description = "the user ID for the cloud identifier")
     private String userId;
 
-    @SerializedName("cloudidentifier") @Param(description="the cloud identifier")
+    @SerializedName("cloudidentifier")
+    @Param(description = "the cloud identifier")
     private String cloudIdentifier;
 
-    @SerializedName("signature") @Param(description="the signed response for the cloud identifier")
+    @SerializedName("signature")
+    @Param(description = "the signed response for the cloud identifier")
     private String signature;
 
     public String getUserId() {

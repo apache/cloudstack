@@ -26,37 +26,37 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="pod_vlan_map")
+@Table(name = "pod_vlan_map")
 public class PodVlanMapVO implements InternalIdentity {
-	    
-	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(name="id")
-	private long id;
-	
-	@Column(name="pod_id")
-	private long podId;
-	
-	@Column(name="vlan_db_id")
-	private long vlanDbId;
-	
-	public PodVlanMapVO(long podId, long vlanDbId) {
-		this.podId = podId;
-		this.vlanDbId = vlanDbId;
-	}
-	
-	public PodVlanMapVO() {
-	}
-	
-	public long getId() {
-		return id;
-	}
-	
-	public long getPodId() {
-		return podId;
-	}
-	
-	public long getVlanDbId() {
-		return vlanDbId;
-	}
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private long id;
+
+    @Column(name = "pod_id")
+    private long podId;
+
+    @Column(name = "vlan_db_id")
+    private long vlanDbId;
+
+    public PodVlanMapVO(long podId, long vlanDbId) {
+        this.podId = podId;
+        this.vlanDbId = vlanDbId;
+    }
+
+    public PodVlanMapVO() {
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public long getPodId() {
+        return podId;
+    }
+
+    public long getVlanDbId() {
+        return vlanDbId;
+    }
 }

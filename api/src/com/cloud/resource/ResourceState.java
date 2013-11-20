@@ -22,25 +22,12 @@ import java.util.Set;
 import com.cloud.utils.fsm.StateMachine;
 
 public enum ResourceState {
-    Creating,
-    Enabled,
-    Disabled,
-    PrepareForMaintenance,
-    ErrorInMaintenance,
-    Maintenance,
-    Error;
+    Creating, Enabled, Disabled, PrepareForMaintenance, ErrorInMaintenance, Maintenance, Error;
 
     public enum Event {
-        InternalCreated("Resource is created"),
-        Enable("Admin enables"),
-        Disable("Admin disables"),
-        AdminAskMaintenace("Admin asks to enter maintenance"),
-        AdminCancelMaintenance("Admin asks to cancel maintenance"),
-        InternalEnterMaintenance("Resource enters maintenance"),
-        UpdatePassword("Admin updates password of host"),
-        UnableToMigrate("Management server migrates VM failed"),
-        Error("An internal error happened"),
-        DeleteHost("Admin delete a host"),
+        InternalCreated("Resource is created"), Enable("Admin enables"), Disable("Admin disables"), AdminAskMaintenace("Admin asks to enter maintenance"), AdminCancelMaintenance(
+                "Admin asks to cancel maintenance"), InternalEnterMaintenance("Resource enters maintenance"), UpdatePassword("Admin updates password of host"), UnableToMigrate(
+                "Management server migrates VM failed"), Error("An internal error happened"), DeleteHost("Admin delete a host"),
 
         /*
          * Below events don't cause resource state to change, they are merely

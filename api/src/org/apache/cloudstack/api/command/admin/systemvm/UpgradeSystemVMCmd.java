@@ -34,9 +34,10 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "changeServiceForSystemVm", responseObject=SystemVmResponse.class, description="Changes the service offering for a system vm (console proxy or secondary storage). " +
-                                                                                            "The system vm must be in a \"Stopped\" state for " +
-                                                                                            "this command to take effect.")
+@APICommand(name = "changeServiceForSystemVm",
+            responseObject = SystemVmResponse.class,
+            description = "Changes the service offering for a system vm (console proxy or secondary storage). " + "The system vm must be in a \"Stopped\" state for "
+                          + "this command to take effect.")
 public class UpgradeSystemVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeVMCmd.class.getName());
     private static final String s_name = "changeserviceforsystemvmresponse";
@@ -45,12 +46,14 @@ public class UpgradeSystemVMCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=SystemVmResponse.class,
-            required=true, description="The ID of the system vm")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SystemVmResponse.class, required = true, description = "The ID of the system vm")
     private Long id;
 
-    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType=ServiceOfferingResponse.class,
-            required=true, description="the service offering ID to apply to the system vm")
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
+               type = CommandType.UUID,
+               entityType = ServiceOfferingResponse.class,
+               required = true,
+               description = "the service offering ID to apply to the system vm")
     private Long serviceOfferingId;
 
     /////////////////////////////////////////////////////
@@ -85,8 +88,8 @@ public class UpgradeSystemVMCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Vm Id: "+getId());
+    public void execute() {
+        CallContext.current().setEventDetails("Vm Id: " + getId());
 
         ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
         if (serviceOffering == null) {

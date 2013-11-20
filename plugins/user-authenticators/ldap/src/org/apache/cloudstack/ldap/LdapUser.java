@@ -44,7 +44,7 @@ public class LdapUser implements Comparable<LdapUser> {
             return true;
         }
         if (other instanceof LdapUser) {
-            final LdapUser otherLdapUser = (LdapUser) other;
+            final LdapUser otherLdapUser = (LdapUser)other;
             return getUsername().equals(otherLdapUser.getUsername());
         }
         return false;

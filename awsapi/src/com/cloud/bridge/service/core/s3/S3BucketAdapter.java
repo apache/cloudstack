@@ -24,12 +24,19 @@ import javax.activation.DataHandler;
 import com.cloud.bridge.util.OrderedPair;
 
 public interface S3BucketAdapter {
-	void createContainer(String mountedRoot, String bucket);
-	void deleteContainer(String mountedRoot, String bucket);
-	String getBucketFolderDir(String mountedRoot, String bucket);
-	String saveObject(InputStream is, String mountedRoot, String bucket, String fileName);
-	DataHandler loadObject(String mountedRoot, String bucket, String fileName);
-	DataHandler loadObjectRange(String mountedRoot, String bucket, String fileName, long startPos, long endPos);
-	void deleteObject(String mountedRoot, String bucket, String fileName);
-	OrderedPair<String, Long> concatentateObjects(String mountedRoot, String destBucket, String fileName, String sourceBucket, S3MultipartPart[] parts, OutputStream os);
+    void createContainer(String mountedRoot, String bucket);
+
+    void deleteContainer(String mountedRoot, String bucket);
+
+    String getBucketFolderDir(String mountedRoot, String bucket);
+
+    String saveObject(InputStream is, String mountedRoot, String bucket, String fileName);
+
+    DataHandler loadObject(String mountedRoot, String bucket, String fileName);
+
+    DataHandler loadObjectRange(String mountedRoot, String bucket, String fileName, long startPos, long endPos);
+
+    void deleteObject(String mountedRoot, String bucket, String fileName);
+
+    OrderedPair<String, Long> concatentateObjects(String mountedRoot, String destBucket, String fileName, String sourceBucket, S3MultipartPart[] parts, OutputStream os);
 }

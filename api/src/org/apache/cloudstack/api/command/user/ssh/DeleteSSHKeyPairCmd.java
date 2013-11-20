@@ -29,7 +29,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteSSHKeyPair", description="Deletes a keypair by name", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteSSHKeyPair", description = "Deletes a keypair by name", responseObject = SuccessResponse.class)
 public class DeleteSSHKeyPairCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSSHKeyPairCmd.class.getName());
     private static final String s_name = "deletesshkeypairresponse";
@@ -38,18 +38,16 @@ public class DeleteSSHKeyPairCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="Name of the keypair")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the keypair")
     private String name;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the keypair. Must be used with the domainId parameter.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account associated with the keypair. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
-            description="the domain ID associated with the keypair")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the domain ID associated with the keypair")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
-            description="the project associated with keypair")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "the project associated with keypair")
     private Long projectId;
 
     /////////////////////////////////////////////////////

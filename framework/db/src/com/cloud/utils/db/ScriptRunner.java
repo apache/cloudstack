@@ -35,7 +35,7 @@ import org.apache.log4j.Logger;
  * Tool to run database scripts
  */
 public class ScriptRunner {
-    private static Logger s_logger = Logger.getLogger(ScriptRunner.class); 
+    private static Logger s_logger = Logger.getLogger(ScriptRunner.class);
 
     private static final String DEFAULT_DELIMITER = ";";
 
@@ -126,7 +126,7 @@ public class ScriptRunner {
                     // Do nothing
                 } else if (trimmedLine.length() < 1 || trimmedLine.startsWith("--")) {
                     // Do nothing
-                } else if (trimmedLine.length() < 1 || trimmedLine.startsWith("#")) { 
+                } else if (trimmedLine.length() < 1 || trimmedLine.startsWith("#")) {
                     // Do nothing  
                 } else if (!fullLineDelimiter && trimmedLine.endsWith(getDelimiter()) || fullLineDelimiter && trimmedLine.equals(getDelimiter())) {
                     command.append(line.substring(0, line.lastIndexOf(getDelimiter())));

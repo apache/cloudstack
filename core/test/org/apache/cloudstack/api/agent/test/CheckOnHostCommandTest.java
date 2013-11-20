@@ -43,7 +43,6 @@ public class CheckOnHostCommandTest {
             return 101L;
         };
 
-
         @Override
         public String getUuid() {
             return "101";
@@ -60,8 +59,7 @@ public class CheckOnHostCommandTest {
         public Date getCreated() {
             Date date = null;
             try {
-                date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
-                        .parse("01/01/1970 12:12:12");
+                date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss").parse("01/01/1970 12:12:12");
             } catch (ParseException e) {
                 e.printStackTrace();
             }
@@ -127,8 +125,7 @@ public class CheckOnHostCommandTest {
         public Date getDisconnectedOn() {
             Date date = null;
             try {
-                date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
-                        .parse("01/01/2012 12:12:12");
+                date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss").parse("01/01/2012 12:12:12");
             } catch (ParseException e) {
                 e.printStackTrace();
             }
@@ -158,8 +155,7 @@ public class CheckOnHostCommandTest {
         public Date getRemoved() {
             Date date = null;
             try {
-                date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
-                        .parse("02/01/2012 12:12:12");
+                date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss").parse("02/01/2012 12:12:12");
             } catch (ParseException e) {
                 e.printStackTrace();
             }
@@ -254,8 +250,7 @@ public class CheckOnHostCommandTest {
     @Test
     public void testGetCreated() {
         try {
-            Date date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
-                    .parse("01/01/1970 12:12:12");
+            Date date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss").parse("01/01/1970 12:12:12");
             Date d = host.getCreated();
             assertTrue(d.compareTo(date) == 0);
         } catch (ParseException e) {
@@ -350,8 +345,7 @@ public class CheckOnHostCommandTest {
     @Test
     public void testGetDisconnectedOn() {
         try {
-            Date date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
-                    .parse("01/01/2012 12:12:12");
+            Date date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss").parse("01/01/2012 12:12:12");
             Date d = host.getDisconnectedOn();
             assertTrue(d.compareTo(date) == 0);
         } catch (ParseException e) {
@@ -392,8 +386,7 @@ public class CheckOnHostCommandTest {
     @Test
     public void testGetRemoved() {
         try {
-            Date date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
-                    .parse("02/01/2012 12:12:12");
+            Date date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss").parse("02/01/2012 12:12:12");
             Date d = host.getRemoved();
             assertTrue(d.compareTo(date) == 0);
         } catch (ParseException e) {

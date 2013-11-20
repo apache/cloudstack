@@ -23,56 +23,55 @@ import javax.persistence.*;
 import java.util.UUID;
 
 @Entity
-@Table(name=("global_load_balancing_rules"))
+@Table(name = ("global_load_balancing_rules"))
 public class GlobalLoadBalancerRuleVO implements GlobalLoadBalancerRule {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     long id;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="description", length=4096)
+    @Column(name = "description", length = 4096)
     private String description;
 
-    @Column(name="algorithm")
+    @Column(name = "algorithm")
     private String algorithm;
 
-    @Column(name="persistence")
+    @Column(name = "persistence")
     private String persistence;
 
-    @Column(name="gslb_domain_name")
+    @Column(name = "gslb_domain_name")
     private String gslbDomain;
 
-    @Column(name="service_type")
+    @Column(name = "service_type")
     private String serviceType;
 
-    @Column(name="region_id")
+    @Column(name = "region_id")
     private int region;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     long accountId;
 
-    @Column(name="domain_id", updatable=false)
+    @Column(name = "domain_id", updatable = false)
     long domainId;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     String uuid;
 
-    @Enumerated(value=EnumType.STRING)
-    @Column(name="state")
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "state")
     GlobalLoadBalancerRule.State state;
 
     public GlobalLoadBalancerRuleVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public GlobalLoadBalancerRuleVO(String name, String description, String gslbDomain, String algorithm,
-                                    String persistence, String serviceType, int regionId, long accountId,
-                                    long domainId, State state) {
-        this.name =name;
+    public GlobalLoadBalancerRuleVO(String name, String description, String gslbDomain, String algorithm, String persistence, String serviceType, int regionId, long accountId,
+            long domainId, State state) {
+        this.name = name;
         this.description = description;
         this.region = regionId;
         this.algorithm = algorithm;
@@ -146,7 +145,7 @@ public class GlobalLoadBalancerRuleVO implements GlobalLoadBalancerRule {
     }
 
     public void setRegion(int region) {
-        this.region =region;
+        this.region = region;
     }
 
     @Override

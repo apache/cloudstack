@@ -29,16 +29,11 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 
-
 @Configuration
-@ComponentScan(basePackageClasses={
-        PrimaryDataStoreDaoImpl.class,
-        StoragePoolDetailsDaoImpl.class},
-        includeFilters={@Filter(value=StoragePoolDaoTestConfiguration.Library.class, type=FilterType.CUSTOM)},
-        useDefaultFilters=false
-        )
+@ComponentScan(basePackageClasses = {PrimaryDataStoreDaoImpl.class, StoragePoolDetailsDaoImpl.class},
+               includeFilters = {@Filter(value = StoragePoolDaoTestConfiguration.Library.class, type = FilterType.CUSTOM)},
+               useDefaultFilters = false)
 public class StoragePoolDaoTestConfiguration {
-
 
     public static class Library implements TypeFilter {
 

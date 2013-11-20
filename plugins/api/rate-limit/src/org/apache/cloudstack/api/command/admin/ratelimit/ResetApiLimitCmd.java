@@ -37,7 +37,7 @@ import com.cloud.user.Account;
 
 import javax.inject.Inject;
 
-@APICommand(name = "resetApiLimit", responseObject=ApiLimitResponse.class, description="Reset api count")
+@APICommand(name = "resetApiLimit", responseObject = ApiLimitResponse.class, description = "Reset api count")
 public class ResetApiLimitCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(ResetApiLimitCmd.class.getName());
 
@@ -54,29 +54,24 @@ public class ResetApiLimitCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @ACL
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.UUID, entityType=AccountResponse.class,
-            description="the ID of the acount whose limit to be reset")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.UUID, entityType = AccountResponse.class, description = "the ID of the acount whose limit to be reset")
     private Long accountId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-
     public Long getAccountId() {
         return accountId;
     }
-
 
     public void setAccountId(Long accountId) {
         this.accountId = accountId;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
 
     @Override
     public String getCommandName() {
@@ -94,9 +89,9 @@ public class ResetApiLimitCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean apiLimitEnabled = Boolean.parseBoolean(_configDao.getValue(Config.ApiLimitEnabled.key()));
-        if ( !apiLimitEnabled ){
+        if (!apiLimitEnabled) {
             throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "This api is only available when api.throttling.enabled = true.");
         }
         boolean result = _apiLimitService.resetApiLimit(this.accountId);

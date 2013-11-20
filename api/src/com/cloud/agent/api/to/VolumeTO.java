@@ -55,7 +55,8 @@ public class VolumeTO implements InternalIdentity {
         this.chainInfo = chainInfo;
     }
 
-    public VolumeTO(long id, Volume.Type type, StoragePoolType poolType, String poolUuid, String name, String mountPoint, String path, long size, String chainInfo, String guestOsType) {
+    public VolumeTO(long id, Volume.Type type, StoragePoolType poolType, String poolUuid, String name, String mountPoint, String path, long size, String chainInfo,
+            String guestOsType) {
         this.id = id;
         this.name = name;
         this.path = path;
@@ -126,16 +127,16 @@ public class VolumeTO implements InternalIdentity {
     public String getChainInfo() {
         return chainInfo;
     }
-    
+
     public void setChainInfo(String chainInfo) {
-    	this.chainInfo = chainInfo;
+        this.chainInfo = chainInfo;
     }
 
     public String getOsType() {
         return guestOsType;
     }
-    
-    public void setPath(String path){
+
+    public void setPath(String path) {
         this.path = path;
     }
 

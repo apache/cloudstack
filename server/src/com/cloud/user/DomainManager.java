@@ -36,9 +36,9 @@ public interface DomainManager extends DomainService {
     List<? extends Domain> findInactiveDomains();
 
     boolean deleteDomain(DomainVO domain, Boolean cleanup);
-    
+
     boolean deleteDomain(long domainId, Boolean cleanup);
-    
+
     /**
      * update an existing domain
      * 
@@ -46,5 +46,5 @@ public interface DomainManager extends DomainService {
      *            - the command containing domainId and new domainName
      * @return Domain object if the command succeeded
      */
-    Domain updateDomain(UpdateDomainCmd cmd);    
+    Domain updateDomain(UpdateDomainCmd cmd);
 }

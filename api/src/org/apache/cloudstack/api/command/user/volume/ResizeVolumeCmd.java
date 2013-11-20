@@ -37,8 +37,7 @@ import com.cloud.projects.Project;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-
-@APICommand(name="resizeVolume", description="Resizes a volume", responseObject=VolumeResponse.class)
+@APICommand(name = "resizeVolume", description = "Resizes a volume", responseObject = VolumeResponse.class)
 public class ResizeVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ResizeVolumeCmd.class.getName());
 
@@ -48,16 +47,16 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, entityType=VolumeResponse.class, type=CommandType.UUID, description="the ID of the disk volume")
+    @Parameter(name = ApiConstants.ID, entityType = VolumeResponse.class, type = CommandType.UUID, description = "the ID of the disk volume")
     private Long id;
 
-    @Parameter(name=ApiConstants.SIZE, type=CommandType.LONG, required=false, description="New volume size in G")
+    @Parameter(name = ApiConstants.SIZE, type = CommandType.LONG, required = false, description = "New volume size in G")
     private Long size;
 
-    @Parameter(name=ApiConstants.SHRINK_OK, type=CommandType.BOOLEAN, required=false, description="Verify OK to Shrink")
+    @Parameter(name = ApiConstants.SHRINK_OK, type = CommandType.BOOLEAN, required = false, description = "Verify OK to Shrink")
     private boolean shrinkOk;
 
-    @Parameter(name=ApiConstants.DISK_OFFERING_ID, entityType=DiskOfferingResponse.class, type=CommandType.UUID, required=false, description="new disk offering id")
+    @Parameter(name = ApiConstants.DISK_OFFERING_ID, entityType = DiskOfferingResponse.class, type = CommandType.UUID, required = false, description = "new disk offering id")
     private Long newDiskOfferingId;
 
     /////////////////////////////////////////////////////
@@ -80,7 +79,6 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
         return newDiskOfferingId;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -92,25 +90,25 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public ApiCommandJobType getInstanceType() {
-    	return ApiCommandJobType.Volume;
+        return ApiCommandJobType.Volume;
     }
 
     public static String getResultObjectName() {
         return "volume";
     }
 
-   @Override
+    @Override
     public long getEntityOwnerId() {
 
         Volume volume = _entityMgr.findById(Volume.class, getEntityId());
         if (volume == null) {
-                throw new InvalidParameterValueException("Unable to find volume by id=" + id);
+            throw new InvalidParameterValueException("Unable to find volume by id=" + id);
         }
 
         Account account = _accountService.getAccount(volume.getAccountId());
         //Can resize volumes for enabled projects/accounts only
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-                Project project = _projectService.findByProjectAccountId(volume.getAccountId());
+            Project project = _projectService.findByProjectAccountId(volume.getAccountId());
             if (project.getState() != Project.State.Active) {
                 throw new PermissionDeniedException("Can't add resources to  project id=" + project.getId() + " in state=" + project.getState() + " as it's no longer active");
             }
@@ -121,7 +119,6 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
         return volume.getAccountId();
     }
 
-
     @Override
     public String getEventType() {
         return EventTypes.EVENT_VOLUME_RESIZE;
@@ -129,14 +126,14 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Volume Id: " + getEntityId() + " to size " + getSize() + "G" ;
+        return "Volume Id: " + getEntityId() + " to size " + getSize() + "G";
     }
 
     @Override
-    public void execute() throws ResourceAllocationException{
+    public void execute() throws ResourceAllocationException {
         CallContext.current().setEventDetails("Volume Id: " + getEntityId() + " to size " + getSize() + "G");
-    	Volume volume = _volumeService.resizeVolume(this);
-    	if (volume != null) {
+        Volume volume = _volumeService.resizeVolume(this);
+        if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(volume);
             //FIXME - have to be moved to ApiResponseHelper
             response.setResponseName(getCommandName());

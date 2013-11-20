@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.offering.DiskOffering;
 
-@APICommand(name = "listDiskOfferings", description="Lists all available disk offerings.", responseObject=DiskOfferingResponse.class)
+@APICommand(name = "listDiskOfferings", description = "Lists all available disk offerings.", responseObject = DiskOfferingResponse.class)
 public class ListDiskOfferingsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDiskOfferingsCmd.class.getName());
 
@@ -41,15 +41,13 @@ public class ListDiskOfferingsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
-            description="the ID of the domain of the disk offering.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the ID of the domain of the disk offering.")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = DiskOfferingResponse.class,
-            description="ID of the disk offering")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "ID of the disk offering")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="name of the disk offering")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the disk offering")
     private String diskOfferingName;
 
     /////////////////////////////////////////////////////
@@ -78,7 +76,7 @@ public class ListDiskOfferingsCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
 
         ListResponse<DiskOfferingResponse> response = _queryService.searchForDiskOfferings(this);
         response.setResponseName(getCommandName());

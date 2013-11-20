@@ -31,7 +31,6 @@ import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
 
-
 public class ElementCollectionTest extends TestCase {
     static final Logger s_logger = Logger.getLogger(ElementCollectionTest.class);
     ArrayList<String> ar = null;

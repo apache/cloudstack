@@ -21,14 +21,12 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDetailVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDetailsDao;
 import org.springframework.stereotype.Component;
 
-
 @Component
-public class PrimaryDataStoreDetailsDaoImpl extends ResourceDetailsDaoBase<PrimaryDataStoreDetailVO> implements
-        PrimaryDataStoreDetailsDao {
+public class PrimaryDataStoreDetailsDaoImpl extends ResourceDetailsDaoBase<PrimaryDataStoreDetailVO> implements PrimaryDataStoreDetailsDao {
 
     @Override
     public void addDetail(long resourceId, String key, String value) {
         super.addDetail(new PrimaryDataStoreDetailVO(resourceId, key, value));
     }
-    
+
 }

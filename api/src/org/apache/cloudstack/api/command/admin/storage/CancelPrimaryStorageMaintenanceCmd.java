@@ -33,7 +33,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 
-@APICommand(name = "cancelStorageMaintenance", description="Cancels maintenance for primary storage", responseObject=StoragePoolResponse.class)
+@APICommand(name = "cancelStorageMaintenance", description = "Cancels maintenance for primary storage", responseObject = StoragePoolResponse.class)
 public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CancelPrimaryStorageMaintenanceCmd.class.getName());
 
@@ -43,10 +43,8 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = StoragePoolResponse.class,
-            required=true, description="the primary storage ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = true, description = "the primary storage ID")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -55,7 +53,6 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
     public Long getId() {
         return id;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -97,11 +94,11 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "canceling maintenance for primary storage pool: " + getId();
+        return "canceling maintenance for primary storage pool: " + getId();
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException{
+    public void execute() throws ResourceUnavailableException {
         StoragePool result = _storageService.cancelPrimaryStorageForMaintenance(this);
         if (result != null) {
             StoragePoolResponse response = _responseGenerator.createStoragePoolResponse(result);

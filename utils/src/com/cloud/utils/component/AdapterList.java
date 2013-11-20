@@ -19,16 +19,16 @@ package com.cloud.utils.component;
 import java.util.List;
 
 public class AdapterList<T extends Adapter> {
-	protected List<T> adapters;
+    protected List<T> adapters;
 
-	public AdapterList() {
-	}
-	
-	public List<T> getAdapters() {
-		return adapters;
-	}
+    public AdapterList() {
+    }
 
-	public void setAdapters(List<T> adapters) {
-		this.adapters = adapters;
-	}
+    public List<T> getAdapters() {
+        return adapters;
+    }
+
+    public void setAdapters(List<T> adapters) {
+        this.adapters = adapters;
+    }
 }

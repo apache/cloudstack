@@ -26,13 +26,11 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
-public class AffinityGroupDomainMapDaoImpl extends GenericDaoBase<AffinityGroupDomainMapVO, Long> implements
-        AffinityGroupDomainMapDao {
+public class AffinityGroupDomainMapDaoImpl extends GenericDaoBase<AffinityGroupDomainMapVO, Long> implements AffinityGroupDomainMapDao {
 
     private SearchBuilder<AffinityGroupDomainMapVO> ListByAffinityGroup;
 
     private SearchBuilder<AffinityGroupDomainMapVO> DomainsSearch;
-
 
     public AffinityGroupDomainMapDaoImpl() {
     }
@@ -40,8 +38,7 @@ public class AffinityGroupDomainMapDaoImpl extends GenericDaoBase<AffinityGroupD
     @PostConstruct
     protected void init() {
         ListByAffinityGroup = createSearchBuilder();
-        ListByAffinityGroup.and("affinityGroupId", ListByAffinityGroup.entity().getAffinityGroupId(),
-                SearchCriteria.Op.EQ);
+        ListByAffinityGroup.and("affinityGroupId", ListByAffinityGroup.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
         ListByAffinityGroup.done();
 
         DomainsSearch = createSearchBuilder();
@@ -59,7 +56,7 @@ public class AffinityGroupDomainMapDaoImpl extends GenericDaoBase<AffinityGroupD
     @Override
     public List<AffinityGroupDomainMapVO> listByDomain(Object... domainId) {
         SearchCriteria<AffinityGroupDomainMapVO> sc = DomainsSearch.create();
-        sc.setParameters("domainId", (Object[]) domainId);
+        sc.setParameters("domainId", (Object[])domainId);
 
         return listBy(sc);
     }

@@ -98,8 +98,7 @@ public class StoragePoolWorkVO implements InternalIdentity {
     @Column(name = "mgmt_server_id")
     private Long managementServerId;
 
-    public StoragePoolWorkVO(long vmId, long poolId, boolean stoppedForMaintenance, boolean startedAfterMaintenance,
-            long mgmtServerId) {
+    public StoragePoolWorkVO(long vmId, long poolId, boolean stoppedForMaintenance, boolean startedAfterMaintenance, long mgmtServerId) {
         super();
         this.vmId = vmId;
         this.poolId = poolId;

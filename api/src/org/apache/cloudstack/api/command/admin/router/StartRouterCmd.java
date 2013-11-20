@@ -37,18 +37,16 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.user.Account;
 
-@APICommand(name = "startRouter", responseObject=DomainRouterResponse.class, description="Starts a router.")
+@APICommand(name = "startRouter", responseObject = DomainRouterResponse.class, description = "Starts a router.")
 public class StartRouterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StartRouterCmd.class.getName());
     private static final String s_name = "startrouterresponse";
-
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=DomainRouterResponse.class,
-            required=true, description="the ID of the router")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "the ID of the router")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -89,7 +87,7 @@ public class StartRouterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "starting router: " + getId();
+        return "starting router: " + getId();
     }
 
     public ApiCommandJobType getInstanceType() {
@@ -101,8 +99,8 @@ public class StartRouterCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        CallContext.current().setEventDetails("Router Id: "+getId());
+    public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        CallContext.current().setEventDetails("Router Id: " + getId());
         VirtualRouter result = null;
         VirtualRouter router = _routerService.findRouter(getId());
         if (router == null || router.getRole() != Role.VIRTUAL_ROUTER) {
@@ -110,7 +108,7 @@ public class StartRouterCmd extends BaseAsyncCmd {
         } else {
             result = _routerService.startRouter(getId());
         }
-        if (result != null){
+        if (result != null) {
             DomainRouterResponse routerResponse = _responseGenerator.createDomainRouterResponse(result);
             routerResponse.setResponseName(getCommandName());
             this.setResponseObject(routerResponse);

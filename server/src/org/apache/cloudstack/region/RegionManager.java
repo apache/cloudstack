@@ -114,7 +114,7 @@ public interface RegionManager {
      * @param accountId
      * @return account object
      */
-    Account enableAccount(String accountName, Long domainId, Long accountId); 	
+    Account enableAccount(String accountName, Long domainId, Long accountId);
 
     /**
      * Deletes user by Id
@@ -154,7 +154,7 @@ public interface RegionManager {
      * @param userId
      *            - the userId
      * @return UserAccount object
-     */	
+     */
     UserAccount disableUser(Long id);
 
     /**

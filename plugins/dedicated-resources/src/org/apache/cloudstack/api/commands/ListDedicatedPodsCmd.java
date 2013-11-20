@@ -45,21 +45,19 @@ public class ListDedicatedPodsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDedicatedPodsCmd.class.getName());
 
     private static final String s_name = "listdedicatedpodsresponse";
-    @Inject DedicatedService dedicatedService;
+    @Inject
+    DedicatedService dedicatedService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class,
-            description="the ID of the pod")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "the ID of the pod")
     private Long podId;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            description="the ID of the domain associated with the pod")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the ID of the domain associated with the pod")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING,
-            description = "the name of the account associated with the pod. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the name of the account associated with the pod. Must be used with domainId.")
     private String accountName;
 
     @Parameter(name = ApiConstants.AFFINITY_GROUP_ID, type = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "list dedicated pods by affinity group")
@@ -73,11 +71,11 @@ public class ListDedicatedPodsCmd extends BaseListCmd {
         return podId;
     }
 
-    public Long getDomainId(){
+    public Long getDomainId() {
         return domainId;
     }
 
-    public String getAccountName(){
+    public String getAccountName() {
         return accountName;
     }
 
@@ -95,7 +93,7 @@ public class ListDedicatedPodsCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends DedicatedResourceVO>, Integer> result = dedicatedService.listDedicatedPods(this);
         ListResponse<DedicatePodResponse> response = new ListResponse<DedicatePodResponse>();
         List<DedicatePodResponse> Responses = new ArrayList<DedicatePodResponse>();

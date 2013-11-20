@@ -23,7 +23,8 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class HypervisorResponse extends BaseResponse {
-    @SerializedName(ApiConstants.NAME) @Param(description="Hypervisor name")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "Hypervisor name")
     private String name;
 
     public String getName() {

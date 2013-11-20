@@ -38,18 +38,18 @@ import com.cloud.dc.DedicatedResources;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "dedicateCluster", description= "Dedicate an existing cluster", responseObject = DedicateClusterResponse.class )
+@APICommand(name = "dedicateCluster", description = "Dedicate an existing cluster", responseObject = DedicateClusterResponse.class)
 public class DedicateClusterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DedicateClusterCmd.class.getName());
 
     private static final String s_name = "dedicateclusterresponse";
-    @Inject DedicatedService dedicatedService;
+    @Inject
+    DedicatedService dedicatedService;
 
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType=ClusterResponse.class,
-            required=true, description="the ID of the Cluster")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the ID of the Cluster")
     private Long clusterId;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class, required=true, description="the ID of the containing domain")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, required = true, description = "the ID of the containing domain")
     private Long domainId;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the name of the account which needs dedication. Must be used with domainId.")
@@ -95,7 +95,7 @@ public class DedicateClusterCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         List<? extends DedicatedResources> result = dedicatedService.dedicateCluster(getClusterId(), getDomainId(), getAccountName());
         ListResponse<DedicateClusterResponse> response = new ListResponse<DedicateClusterResponse>();
         List<DedicateClusterResponse> clusterResponseList = new ArrayList<DedicateClusterResponse>();

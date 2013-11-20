@@ -44,8 +44,7 @@ public interface IpAddress extends ControlledEntity, Identity, InternalIdentity 
     }
 
     enum Purpose {
-        StaticNat,
-        Lb
+        StaticNat, Lb
     }
 
     long getDataCenterId();

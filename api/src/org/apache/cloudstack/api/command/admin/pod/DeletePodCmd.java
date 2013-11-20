@@ -28,7 +28,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deletePod", description="Deletes a Pod.", responseObject=SuccessResponse.class)
+@APICommand(name = "deletePod", description = "Deletes a Pod.", responseObject = SuccessResponse.class)
 public class DeletePodCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePodCmd.class.getName());
 
@@ -38,8 +38,7 @@ public class DeletePodCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=PodResponse.class,
-            required=true, description="the ID of the Pod")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PodResponse.class, required = true, description = "the ID of the Pod")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -64,7 +63,7 @@ public class DeletePodCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = _configService.deletePod(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

@@ -29,7 +29,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "updateConfiguration", description="Updates a configuration.", responseObject=ConfigurationResponse.class)
+@APICommand(name = "updateConfiguration", description = "Updates a configuration.", responseObject = ConfigurationResponse.class)
 public class UpdateCfgCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateCfgCmd.class.getName());
     private static final String s_name = "updateconfigurationresponse";
@@ -38,22 +38,34 @@ public class UpdateCfgCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the configuration")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the configuration")
     private String cfgName;
 
-    @Parameter(name=ApiConstants.VALUE, type=CommandType.STRING, description="the value of the configuration", length=4095)
+    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, description = "the value of the configuration", length = 4095)
     private String value;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class, description="the ID of the Zone to update the parameter value for corresponding zone")
+    @Parameter(name = ApiConstants.ZONE_ID,
+               type = CommandType.UUID,
+               entityType = ZoneResponse.class,
+               description = "the ID of the Zone to update the parameter value for corresponding zone")
     private Long zone_id;
 
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType=ClusterResponse.class, description="the ID of the Cluster to update the parameter value for corresponding cluster")
+    @Parameter(name = ApiConstants.CLUSTER_ID,
+               type = CommandType.UUID,
+               entityType = ClusterResponse.class,
+               description = "the ID of the Cluster to update the parameter value for corresponding cluster")
     private Long cluster_id;
 
-    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.UUID, entityType=StoragePoolResponse.class, description="the ID of the Storage pool to update the parameter value for corresponding storage pool")
+    @Parameter(name = ApiConstants.STORAGE_ID,
+               type = CommandType.UUID,
+               entityType = StoragePoolResponse.class,
+               description = "the ID of the Storage pool to update the parameter value for corresponding storage pool")
     private Long storagepool_id;
 
-    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.UUID, entityType=AccountResponse.class, description="the ID of the Account to update the parameter value for corresponding account")
+    @Parameter(name = ApiConstants.ACCOUNT_ID,
+               type = CommandType.UUID,
+               entityType = AccountResponse.class,
+               description = "the ID of the Account to update the parameter value for corresponding account")
     private Long account_id;
 
     /////////////////////////////////////////////////////
@@ -99,21 +111,21 @@ public class UpdateCfgCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Configuration cfg = _configService.updateConfiguration(this);
         if (cfg != null) {
             ConfigurationResponse response = _responseGenerator.createConfigurationResponse(cfg);
             response.setResponseName(getCommandName());
-            if(getZoneId() != null) {
+            if (getZoneId() != null) {
                 response.setScope("zone");
             }
-            if(getClusterId() != null) {
+            if (getClusterId() != null) {
                 response.setScope("cluster");
             }
-            if(getStoragepoolId() != null) {
+            if (getStoragepoolId() != null) {
                 response.setScope("storagepool");
             }
-            if(getAccountId() != null) {
+            if (getAccountId() != null) {
                 response.setScope("account");
             }
             response.setValue(value);

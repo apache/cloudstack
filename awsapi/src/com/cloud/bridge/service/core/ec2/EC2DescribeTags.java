@@ -28,7 +28,7 @@ public class EC2DescribeTags {
         return tfs;
     }
 
-    public void setFilterSet( EC2TagsFilterSet param ) {
+    public void setFilterSet(EC2TagsFilterSet param) {
         tfs = param;
     }
 }

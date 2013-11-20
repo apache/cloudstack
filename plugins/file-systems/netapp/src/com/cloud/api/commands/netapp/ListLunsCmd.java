@@ -40,51 +40,49 @@ import com.cloud.netapp.NetappManager;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.ListLunsCmdResponse;
 
-
-@APICommand(name = "listLunsOnFiler", description="List LUN", responseObject = ListLunsCmdResponse.class)
-public class ListLunsCmd extends BaseCmd 
-{
-	public static final Logger s_logger = Logger.getLogger(ListLunsCmd.class.getName());
+@APICommand(name = "listLunsOnFiler", description = "List LUN", responseObject = ListLunsCmdResponse.class)
+public class ListLunsCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(ListLunsCmd.class.getName());
     private static final String s_name = "listlunresponse";
 
-    @Parameter(name=ApiConstants.POOL_NAME, type=CommandType.STRING, required = true, description="pool name.")
-	private String poolName;
+    @Parameter(name = ApiConstants.POOL_NAME, type = CommandType.STRING, required = true, description = "pool name.")
+    private String poolName;
 
-    @Inject NetappManager netappMgr;
-	@Override
-	public void execute() throws ResourceUnavailableException,
-			InsufficientCapacityException, ServerApiException,
-			ConcurrentOperationException, ResourceAllocationException {
-    	try {
-    		List<LunVO> lunList = netappMgr.listLunsOnFiler(poolName);
-    		ListResponse<ListLunsCmdResponse> listResponse = new ListResponse<ListLunsCmdResponse>();
-    		List<ListLunsCmdResponse> responses = new ArrayList<ListLunsCmdResponse>();
-    		for (LunVO lun : lunList) {
-    			ListLunsCmdResponse response = new ListLunsCmdResponse();
-    			response.setId(lun.getId());
-    			response.setIqn(lun.getTargetIqn());
-    			response.setName(lun.getLunName());
-    			response.setVolumeId(lun.getVolumeId());
-    			response.setObjectName("lun");
-    			responses.add(response);
-    		}
-    		listResponse.setResponses(responses);
-    		listResponse.setResponseName(getCommandName());
-    		this.setResponseObject(listResponse);
-    	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
-    	}		
-	}
+    @Inject
+    NetappManager netappMgr;
 
-	@Override
-	public String getCommandName() {
-		// TODO Auto-generated method stub
-		return s_name;
-	}
+    @Override
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+        try {
+            List<LunVO> lunList = netappMgr.listLunsOnFiler(poolName);
+            ListResponse<ListLunsCmdResponse> listResponse = new ListResponse<ListLunsCmdResponse>();
+            List<ListLunsCmdResponse> responses = new ArrayList<ListLunsCmdResponse>();
+            for (LunVO lun : lunList) {
+                ListLunsCmdResponse response = new ListLunsCmdResponse();
+                response.setId(lun.getId());
+                response.setIqn(lun.getTargetIqn());
+                response.setName(lun.getLunName());
+                response.setVolumeId(lun.getVolumeId());
+                response.setObjectName("lun");
+                responses.add(response);
+            }
+            listResponse.setResponses(responses);
+            listResponse.setResponseName(getCommandName());
+            this.setResponseObject(listResponse);
+        } catch (InvalidParameterValueException e) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
+        }
+    }
 
-	@Override
-	public long getEntityOwnerId() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public String getCommandName() {
+        // TODO Auto-generated method stub
+        return s_name;
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 }

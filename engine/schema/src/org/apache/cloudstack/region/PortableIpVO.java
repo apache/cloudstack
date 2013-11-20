@@ -25,55 +25,55 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="portable_ip_address")
-public class PortableIpVO  implements PortableIp  {
+@Table(name = "portable_ip_address")
+public class PortableIpVO implements PortableIp {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     Long id;
 
-    @Column(name="region_id")
+    @Column(name = "region_id")
     int regionId;
 
-    @Column(name="allocated")
-    @Temporal(value=TemporalType.TIMESTAMP)
+    @Column(name = "allocated")
+    @Temporal(value = TemporalType.TIMESTAMP)
     private Date allocatedTime;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private Long allocatedToAccountId = null;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private Long allocatedInDomainId = null;
 
-    @Column(name="state")
+    @Column(name = "state")
     private State state;
 
-    @Column(name="vlan")
+    @Column(name = "vlan")
     String vlan;
 
-    @Column(name="gateway")
+    @Column(name = "gateway")
     String gateway;
 
-    @Column(name="netmask")
+    @Column(name = "netmask")
     String netmask;
 
-    @Column(name="portable_ip_address")
+    @Column(name = "portable_ip_address")
     String address;
 
-    @Column(name="portable_ip_range_id")
+    @Column(name = "portable_ip_range_id")
     private long rangeId;
 
-    @Column(name="physical_network_id")
+    @Column(name = "physical_network_id")
     private Long physicalNetworkId;
 
-    @Column(name="data_center_id")
+    @Column(name = "data_center_id")
     private Long dataCenterId;
 
-    @Column(name="network_id")
+    @Column(name = "network_id")
     private Long networkId;
 
-    @Column(name="vpc_id")
+    @Column(name = "vpc_id")
     private Long vpcId;
 
     public PortableIpVO() {
@@ -81,7 +81,7 @@ public class PortableIpVO  implements PortableIp  {
     }
 
     public PortableIpVO(int regionId, Long rangeId, String vlan, String gateway, String netmask, String address) {
-        this.regionId =regionId;
+        this.regionId = regionId;
         this.vlan = vlan;
         this.gateway = gateway;
         this.netmask = netmask;
@@ -155,7 +155,7 @@ public class PortableIpVO  implements PortableIp  {
     }
 
     public void setAssociatedWithNetworkId(Long networkId) {
-        this.networkId =  networkId;
+        this.networkId = networkId;
     }
 
     @Override
@@ -164,7 +164,7 @@ public class PortableIpVO  implements PortableIp  {
     }
 
     public void setAssociatedWithVpcId(Long vpcId) {
-        this.vpcId =  vpcId;
+        this.vpcId = vpcId;
     }
 
     @Override

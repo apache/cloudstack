@@ -73,14 +73,13 @@ public class VolumeTest {
     @Before
     public void setUp() {
         // create data center
-        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,
-                "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true, true, null, null);
+        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true,
+            true, null, null);
         dc = dcDao.persist(dc);
         dcId = dc.getId();
         // create pod
 
-        HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), "192.168.56.1", "192.168.56.0/24", 8,
-                "test");
+        HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), "192.168.56.1", "192.168.56.0/24", 8, "test");
         pod = podDao.persist(pod);
         // create xen cluster
         ClusterVO cluster = new ClusterVO(dc.getId(), pod.getId(), "devcloud cluster");

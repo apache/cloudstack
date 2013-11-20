@@ -28,26 +28,26 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="ucs_blade")
-public class UcsBladeVO implements InternalIdentity, Identity  {
+@Table(name = "ucs_blade")
+public class UcsBladeVO implements InternalIdentity, Identity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="ucs_manager_id")
+    @Column(name = "ucs_manager_id")
     private long ucsManagerId;
 
-    @Column(name="host_id")
+    @Column(name = "host_id")
     private Long hostId;
 
-    @Column(name="dn")
+    @Column(name = "dn")
     private String dn;
 
-    @Column(name="profile_dn")
+    @Column(name = "profile_dn")
     private String profileDn;
 
     public long getId() {

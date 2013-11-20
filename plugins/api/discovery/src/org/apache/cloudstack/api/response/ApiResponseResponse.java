@@ -25,16 +25,20 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class ApiResponseResponse extends BaseResponse {
-    @SerializedName(ApiConstants.NAME) @Param(description="the name of the api response field")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the name of the api response field")
     private String name;
 
-    @SerializedName(ApiConstants.DESCRIPTION) @Param(description="description of the api response field")
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "description of the api response field")
     private String description;
 
-    @SerializedName(ApiConstants.TYPE) @Param(description="response field type")
+    @SerializedName(ApiConstants.TYPE)
+    @Param(description = "response field type")
     private String type;
 
-    @SerializedName(ApiConstants.RESPONSE)  @Param(description="api response fields")
+    @SerializedName(ApiConstants.RESPONSE)
+    @Param(description = "api response fields")
     private Set<ApiResponseResponse> apiResponse;
 
     public void setName(String name) {
@@ -50,7 +54,7 @@ public class ApiResponseResponse extends BaseResponse {
     }
 
     public void addApiResponse(ApiResponseResponse childApiResponse) {
-        if(this.apiResponse == null) {
+        if (this.apiResponse == null) {
             this.apiResponse = new HashSet<ApiResponseResponse>();
         }
         this.apiResponse.add(childApiResponse);

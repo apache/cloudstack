@@ -26,35 +26,34 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="external_cisco_asa1000v_devices")
+@Table(name = "external_cisco_asa1000v_devices")
 public class CiscoAsa1000vDeviceVO implements CiscoAsa1000vDevice {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="id")
+    @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="physical_network_id")
+    @Column(name = "physical_network_id")
     private long physicalNetworkId;
 
-    @Column(name="management_ip")
+    @Column(name = "management_ip")
     private String managementIp;
 
-    @Column(name="in_Port_profile")
+    @Column(name = "in_Port_profile")
     private String inPortProfile;
 
-    @Column(name="cluster_id")
+    @Column(name = "cluster_id")
     private long clusterId;
 
     public CiscoAsa1000vDeviceVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public CiscoAsa1000vDeviceVO(long physicalNetworkId,
-            String managementIp, String inPortProfile, long clusterId) {
+    public CiscoAsa1000vDeviceVO(long physicalNetworkId, String managementIp, String inPortProfile, long clusterId) {
         super();
         this.physicalNetworkId = physicalNetworkId;
         this.managementIp = managementIp;
@@ -64,32 +63,32 @@ public class CiscoAsa1000vDeviceVO implements CiscoAsa1000vDevice {
     }
 
     @Override
-	public long getId() {
+    public long getId() {
         return id;
     }
 
     @Override
-	public String getUuid() {
+    public String getUuid() {
         return uuid;
     }
 
     @Override
-	public void setUuid(String uuid) {
+    public void setUuid(String uuid) {
         this.uuid = uuid;
     }
 
     @Override
-	public long getPhysicalNetworkId() {
+    public long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
 
     @Override
-	public String getManagementIp() {
+    public String getManagementIp() {
         return managementIp;
     }
 
     @Override
-	public String getInPortProfile() {
+    public String getInPortProfile() {
         return inPortProfile;
     }
 

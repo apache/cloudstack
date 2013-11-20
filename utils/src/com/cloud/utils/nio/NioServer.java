@@ -28,17 +28,17 @@ import org.apache.log4j.Logger;
 
 public class NioServer extends NioConnection {
     private final static Logger s_logger = Logger.getLogger(NioServer.class);
-    
+
     protected InetSocketAddress _localAddr;
-    
+
     protected WeakHashMap<InetSocketAddress, Link> _links;
-    
+
     public NioServer(String name, int port, int workers, HandlerFactory factory) {
         super(name, port, workers, factory);
         _localAddr = null;
         _links = new WeakHashMap<InetSocketAddress, Link>(1024);
     }
-    
+
     @Override
     protected void init() throws IOException {
         _selector = SelectorProvider.provider().openSelector();
@@ -50,10 +50,10 @@ public class NioServer extends NioConnection {
         ssc.socket().bind(_localAddr);
 
         ssc.register(_selector, SelectionKey.OP_ACCEPT, null);
-        
+
         s_logger.info("NioConnection started and listening on " + _localAddr.toString());
     }
-    
+
     @Override
     protected void registerLink(InetSocketAddress addr, Link link) {
         _links.put(addr, link);
@@ -63,7 +63,7 @@ public class NioServer extends NioConnection {
     protected void unregisterLink(InetSocketAddress saddr) {
         _links.remove(saddr);
     }
-    
+
     /**
      * Sends the data to the address specified.  If address is not already
      * connected, this does nothing and returns null.  If address is already

@@ -18,6 +18,6 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-public enum  DataStoreCapabilities {
+public enum DataStoreCapabilities {
     VOLUME_SNAPSHOT_QUIESCEVM
 }

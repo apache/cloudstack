@@ -28,7 +28,7 @@ import java.util.UUID;
   */
 
 @Entity
-@Table(name="external_load_balancer_devices")
+@Table(name = "external_load_balancer_devices")
 public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity {
 
     @Id
@@ -36,7 +36,7 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
     @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
     @Column(name = "host_id")
@@ -44,34 +44,34 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
 
     @Column(name = "physical_network_id")
     private long physicalNetworkId;
-    
+
     @Column(name = "provider_name")
     private String providerName;
 
     @Column(name = "device_name")
     private String deviceName;
 
-    @Column(name="device_state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "device_state")
+    @Enumerated(value = EnumType.STRING)
     private LBDeviceState state;
 
     @Column(name = "allocation_state")
-    @Enumerated(value=EnumType.STRING)
+    @Enumerated(value = EnumType.STRING)
     private LBDeviceAllocationState allocationState;
 
-    @Column(name="is_managed")
+    @Column(name = "is_managed")
     private boolean isManagedDevice;
 
-    @Column(name="is_dedicated")
+    @Column(name = "is_dedicated")
     private boolean isDedicatedDevice;
 
-    @Column(name="is_gslb_provider")
+    @Column(name = "is_gslb_provider")
     private boolean gslbProvider;
 
-    @Column(name="gslb_site_publicip")
+    @Column(name = "gslb_site_publicip")
     private String gslbSitePublicIP;
 
-    @Column(name="gslb_site_privateip")
+    @Column(name = "gslb_site_privateip")
     private String gslbSitePrivateIP;
 
     @Column(name = "parent_host_id")
@@ -82,8 +82,7 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
 
     //keeping it enum for future possible states Maintenance, Shutdown
     public enum LBDeviceState {
-        Enabled,
-        Disabled
+        Enabled, Disabled
     }
 
     public enum LBDeviceAllocationState {
@@ -93,8 +92,7 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
         Provider   // This state is set only for device that can dynamically provision LB appliances
     }
 
-    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name,
-            long capacity, boolean dedicated, boolean gslbProvider) {
+    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name, long capacity, boolean dedicated, boolean gslbProvider) {
         this.physicalNetworkId = physicalNetworkId;
         this.providerName = provider_name;
         this.deviceName = device_name;
@@ -114,8 +112,8 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
         }
     }
 
-    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name,
-            long capacity, boolean dedicated, boolean managed, long parentHostId) {
+    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name, long capacity, boolean dedicated, boolean managed,
+            long parentHostId) {
         this(hostId, physicalNetworkId, provider_name, device_name, capacity, dedicated, false);
         this.isManagedDevice = managed;
         this.parentHostId = parentHostId;
@@ -167,7 +165,7 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
 
     public void setState(LBDeviceState state) {
         this.state = state;
-    }    
+    }
 
     public LBDeviceAllocationState getAllocationState() {
         return allocationState;
@@ -176,7 +174,7 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
     public void setAllocationState(LBDeviceAllocationState allocationState) {
         this.allocationState = allocationState;
     }
-    
+
     public boolean getIsManagedDevice() {
         return isManagedDevice;
     }

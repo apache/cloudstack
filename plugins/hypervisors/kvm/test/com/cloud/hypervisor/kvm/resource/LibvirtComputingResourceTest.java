@@ -55,6 +55,7 @@ public class LibvirtComputingResourceTest {
 
     String _hyperVisorType = "kvm";
     Random _random = new Random();
+
     /**
         This test tests if the Agent can handle a vmSpec coming
         from a <=4.1 management server.
@@ -218,7 +219,7 @@ public class LibvirtComputingResourceTest {
     public void testUUID() {
         String uuid = "1";
         LibvirtComputingResource lcr = new LibvirtComputingResource();
-        uuid =lcr.getUuid(uuid);
+        uuid = lcr.getUuid(uuid);
         Assert.assertTrue(!uuid.equals("1"));
 
         String oldUuid = UUID.randomUUID().toString();
@@ -226,9 +227,9 @@ public class LibvirtComputingResourceTest {
         uuid = lcr.getUuid(uuid);
         Assert.assertTrue(uuid.equals(oldUuid));
     }
-    
+
     private static final String VMNAME = "test";
-    
+
     @Test
     public void testGetVmStat() throws LibvirtException {
         Connect connect = Mockito.mock(Connect.class);
@@ -267,6 +268,7 @@ public class LibvirtComputingResourceTest {
 
             int rd_bytes = 0;
             int wr_bytes = 1024;
+
             @Override
             public DomainBlockStats answer(InvocationOnMock invocation) throws Throwable {
                 DomainBlockStats domainBlockStats = new DomainBlockStats();
@@ -284,7 +286,7 @@ public class LibvirtComputingResourceTest {
                 InterfaceDef interfaceDef = new InterfaceDef();
                 return Arrays.asList(interfaceDef);
             }
-    
+
             @Override
             public List<DiskDef> getDisks(Connect conn, String vmName) {
                 DiskDef diskDef = new DiskDef();

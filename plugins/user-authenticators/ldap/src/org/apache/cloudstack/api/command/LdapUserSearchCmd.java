@@ -36,8 +36,7 @@ import com.cloud.user.Account;
 @APICommand(name = "searchLdap", responseObject = LdapUserResponse.class, description = "Searches LDAP based on the username attribute", since = "4.2.0")
 public class LdapUserSearchCmd extends BaseListCmd {
 
-    public static final Logger s_logger = Logger
-                                          .getLogger(LdapUserSearchCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(LdapUserSearchCmd.class.getName());
     private static final String s_name = "ldapuserresponse";
     @Inject
     private LdapManager _ldapManager;
@@ -54,13 +53,11 @@ public class LdapUserSearchCmd extends BaseListCmd {
         _ldapManager = ldapManager;
     }
 
-    private List<LdapUserResponse> createLdapUserResponse(
-        final List<LdapUser> users) {
+    private List<LdapUserResponse> createLdapUserResponse(final List<LdapUser> users) {
         final List<LdapUserResponse> ldapUserResponses = new ArrayList<LdapUserResponse>();
         if (users != null) {
             for (final LdapUser user : users) {
-                final LdapUserResponse ldapUserResponse = _ldapManager
-                        .createLdapUserResponse(user);
+                final LdapUserResponse ldapUserResponse = _ldapManager.createLdapUserResponse(user);
                 ldapUserResponse.setObjectName("LdapUser");
                 ldapUserResponses.add(ldapUserResponse);
             }

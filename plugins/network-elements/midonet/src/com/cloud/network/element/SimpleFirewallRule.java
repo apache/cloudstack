@@ -25,10 +25,10 @@ import org.midonet.client.dto.DtoRule;
 import org.midonet.client.resource.*;
 import com.google.common.collect.*;
 
-
 import java.util.*;
 // Used for translation between MidoNet firewall rules and
 // CloudStack firewall rules
+
 public class SimpleFirewallRule {
 
     public List<String> sourceCidrs;
@@ -39,7 +39,7 @@ public class SimpleFirewallRule {
     public int icmpType = 0;
     public int icmpCode = 0;
 
-    private static BiMap<Integer,String> protocolNumberToString;
+    private static BiMap<Integer, String> protocolNumberToString;
     static {
         protocolNumberToString = HashBiMap.create();
         protocolNumberToString.put(1, "icmp");
@@ -48,12 +48,12 @@ public class SimpleFirewallRule {
         protocolNumberToString.put(0, "none");
     }
 
-    public SimpleFirewallRule(FirewallRuleTO rule){
+    public SimpleFirewallRule(FirewallRuleTO rule) {
         // Destination IP (confusingly called SourceIP in FirewallRule attributes)
         dstIp = rule.getSrcIp();
         protocol = rule.getProtocol();
 
-        if("icmp".equals(protocol)){
+        if ("icmp".equals(protocol)) {
             icmpType = rule.getIcmpType();
             icmpCode = rule.getIcmpCode();
         } else {
@@ -61,7 +61,7 @@ public class SimpleFirewallRule {
 
             // if port start and end are not set, they
             // should be 0,0, and that's already the case
-            if(portNumbers != null && portNumbers.length == 2){
+            if (portNumbers != null && portNumbers.length == 2) {
                 dstPortStart = portNumbers[0];
                 dstPortEnd = portNumbers[1];
             }
@@ -70,8 +70,7 @@ public class SimpleFirewallRule {
         sourceCidrs = rule.getSourceCidrList();
 
         // If no CIDRs specified, it is an "all sources" rule
-        if (sourceCidrs == null || sourceCidrs.isEmpty())
-        {
+        if (sourceCidrs == null || sourceCidrs.isEmpty()) {
             sourceCidrs = new ArrayList<String>();
             sourceCidrs.add("0.0.0.0/0");
         }
@@ -81,7 +80,7 @@ public class SimpleFirewallRule {
         dstIp = "null";
         protocol = rule.getProtocol();
 
-        if("icmp".equals(protocol)){
+        if ("icmp".equals(protocol)) {
             icmpType = rule.getIcmpType();
             icmpCode = rule.getIcmpCode();
         } else {
@@ -89,7 +88,7 @@ public class SimpleFirewallRule {
 
             // if port start and end are not set, they
             // should be 0,0, and that's already the case
-            if(portNumbers != null && portNumbers.length == 2){
+            if (portNumbers != null && portNumbers.length == 2) {
                 dstPortStart = portNumbers[0];
                 dstPortEnd = portNumbers[1];
             }
@@ -98,8 +97,7 @@ public class SimpleFirewallRule {
         sourceCidrs = rule.getSourceCidrList();
 
         // If no CIDRs specified, it is an "all sources" rule
-        if (sourceCidrs == null || sourceCidrs.isEmpty())
-        {
+        if (sourceCidrs == null || sourceCidrs.isEmpty()) {
             sourceCidrs = new ArrayList<String>();
             sourceCidrs.add("0.0.0.0/0");
         }
@@ -114,8 +112,7 @@ public class SimpleFirewallRule {
 
         // if port start and end are not set, they
         // should be 0,0, and that's already the case
-        if(srcPortNumbers != null && srcPortNumbers.length == 2 &&
-           dstPortNumbers != null && dstPortNumbers.length == 2){
+        if (srcPortNumbers != null && srcPortNumbers.length == 2 && dstPortNumbers != null && dstPortNumbers.length == 2) {
             dstPortStart = dstPortNumbers[0];
             dstPortEnd = srcPortNumbers[0];
         }
@@ -124,7 +121,7 @@ public class SimpleFirewallRule {
         sourceCidrs.add(rule.getDstIp());
     }
 
-    public SimpleFirewallRule(Rule rule){
+    public SimpleFirewallRule(Rule rule) {
 
         String sourceIP = rule.getNwSrcAddress();
         int sourceLength = rule.getNwSrcLength();
@@ -147,8 +144,8 @@ public class SimpleFirewallRule {
 
         dstIp = rule.getNwDstAddress();
 
-        if("icmp".equals(protocol)){
-            if(rule.getTpSrc() != null && rule.getTpDst() != null){
+        if ("icmp".equals(protocol)) {
+            if (rule.getTpSrc() != null && rule.getTpDst() != null) {
                 icmpType = rule.getTpSrc().start;
                 icmpCode = rule.getTpDst().start;
             } else {
@@ -173,16 +170,16 @@ public class SimpleFirewallRule {
         // cidr, protocol, dstIp, dstPortStart, dstPortEnd, icmpType, icmpCode);
     }
 
-    public static String protocolNumberToString(int protocolNumber){
+    public static String protocolNumberToString(int protocolNumber) {
         return protocolNumberToString.get(protocolNumber);
     }
 
-    public static int stringToProtocolNumber(String protoString){
+    public static int stringToProtocolNumber(String protoString) {
         return protocolNumberToString.inverse().get(protoString);
     }
 
-    public int getFieldOne(){
-        if(protocol.equals("icmp")){
+    public int getFieldOne() {
+        if (protocol.equals("icmp")) {
             return icmpType;
 
         } else {
@@ -190,8 +187,8 @@ public class SimpleFirewallRule {
         }
     }
 
-    public int getFieldTwo(){
-        if(protocol.equals("icmp")){
+    public int getFieldTwo() {
+        if (protocol.equals("icmp")) {
             return icmpCode;
         } else {
             return dstPortEnd;
@@ -203,7 +200,7 @@ public class SimpleFirewallRule {
 
         // Create a rule string per source CIDR, since each MidoNet
         // rule is for one CIDR
-        for(String sourceCidr : sourceCidrs){
+        for (String sourceCidr : sourceCidrs) {
 
             // Follows the rule String format defined in SetFirewallRulesCommand.java::generateFirewallRules()
             int field1 = getFieldOne();

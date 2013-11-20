@@ -37,8 +37,7 @@ import com.cloud.utils.db.GenericDao;
 @Table(name = "image_store")
 public class ImageStoreVO implements ImageStore {
     @Id
-    @TableGenerator(name = "image_store_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value",
-            pkColumnValue = "image_store_seq", allocationSize = 1)
+    @TableGenerator(name = "image_store_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "image_store_seq", allocationSize = 1)
     @Column(name = "id", nullable = false)
     private long id;
 

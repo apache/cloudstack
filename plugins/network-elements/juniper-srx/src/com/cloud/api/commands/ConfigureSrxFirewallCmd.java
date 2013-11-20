@@ -40,22 +40,25 @@ import com.cloud.network.dao.ExternalFirewallDeviceVO;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "configureSrxFirewall", responseObject=SrxFirewallResponse.class, description="Configures a SRX firewall device")
+@APICommand(name = "configureSrxFirewall", responseObject = SrxFirewallResponse.class, description = "Configures a SRX firewall device")
 public class ConfigureSrxFirewallCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(ConfigureSrxFirewallCmd.class.getName());
     private static final String s_name = "configuresrxfirewallresponse";
-    @Inject JuniperSRXFirewallElementService _srxFwService;
+    @Inject
+    JuniperSRXFirewallElementService _srxFwService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.FIREWALL_DEVICE_ID, type=CommandType.UUID, entityType = SrxFirewallResponse.class,
-            required=true, description="SRX firewall device ID")
+    @Parameter(name = ApiConstants.FIREWALL_DEVICE_ID, type = CommandType.UUID, entityType = SrxFirewallResponse.class, required = true, description = "SRX firewall device ID")
     private Long fwDeviceId;
 
-    @Parameter(name=ApiConstants.FIREWALL_DEVICE_CAPACITY, type=CommandType.LONG, required=false, description="capacity of the firewall device, Capacity will be interpreted as number of networks device can handle")
+    @Parameter(name = ApiConstants.FIREWALL_DEVICE_CAPACITY,
+               type = CommandType.LONG,
+               required = false,
+               description = "capacity of the firewall device, Capacity will be interpreted as number of networks device can handle")
     private Long capacity;
 
     /////////////////////////////////////////////////////
@@ -86,7 +89,7 @@ public class ConfigureSrxFirewallCmd extends BaseAsyncCmd {
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to configure SRX firewall device due to internal error.");
             }
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

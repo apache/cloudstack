@@ -34,37 +34,38 @@ import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 @Produces("application/json")
 public class VolumeRestService {
 
-    @PUT @Path("/vol/create")
-    public VolumeEntity create(
-            @QueryParam("xid") String xid,
-            @QueryParam("display-name") String displayName) {
+    @PUT
+    @Path("/vol/create")
+    public VolumeEntity create(@QueryParam("xid") String xid, @QueryParam("display-name") String displayName) {
         return null;
     }
 
-    @POST @Path("/vol/{volid}/deploy")
+    @POST
+    @Path("/vol/{volid}/deploy")
     public String deploy(@PathParam("volid") String volumeId) {
         return null;
     }
 
-    @GET @Path("/vols")
+    @GET
+    @Path("/vols")
     public List<VolumeEntity> listAll() {
         return null;
     }
 
-    @POST @Path("/vol/{volid}/attach-to")
-    public String attachTo(
-            @PathParam("volid") String volumeId,
-            @QueryParam("vmid") String vmId,
-            @QueryParam("device-order") short device) {
+    @POST
+    @Path("/vol/{volid}/attach-to")
+    public String attachTo(@PathParam("volid") String volumeId, @QueryParam("vmid") String vmId, @QueryParam("device-order") short device) {
         return null;
     }
 
-    @DELETE @Path("/vol/{volid}")
+    @DELETE
+    @Path("/vol/{volid}")
     public String delete(@PathParam("volid") String volumeId) {
         return null;
     }
 
-    @POST @Path("/vol/{volid}/detach")
+    @POST
+    @Path("/vol/{volid}/detach")
     public String detach(@QueryParam("volid") String volumeId) {
         return null;
     }

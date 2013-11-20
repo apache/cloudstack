@@ -28,7 +28,6 @@ import org.junit.Test;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-
 /**
  * Test fixture to do performance test for list command
  * Currently we commented out this test suite since it requires a real MS and Db running.
@@ -36,16 +35,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
  */
 public class ListPerfTest extends APITest {
 
-
-
     @Before
-    public void setup(){
+    public void setup() {
         // always login for each testcase
         login("admin", "password");
     }
 
     @Test
-    public void testListVM(){
+    public void testListVM() {
         // issue list VM calls
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("response", "json");
@@ -59,7 +56,7 @@ public class ListPerfTest extends APITest {
     }
 
     @Test
-    public void testListVMXML(){
+    public void testListVMXML() {
         // issue list VM calls
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("listAll", "true");
@@ -72,7 +69,7 @@ public class ListPerfTest extends APITest {
     }
 
     @Test
-    public void testListRouter(){
+    public void testListRouter() {
         // issue list VM calls
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("response", "json");
@@ -86,7 +83,7 @@ public class ListPerfTest extends APITest {
     }
 
     @Test
-    public void testListRouterXML(){
+    public void testListRouterXML() {
         // issue list VM calls
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("listAll", "true");
@@ -99,7 +96,7 @@ public class ListPerfTest extends APITest {
     }
 
     @Test
-    public void testListHosts(){
+    public void testListHosts() {
         // issue list Hosts calls
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("response", "json");
@@ -113,7 +110,7 @@ public class ListPerfTest extends APITest {
     }
 
     @Test
-    public void testListVolumes(){
+    public void testListVolumes() {
         // issue list Volumes calls
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("response", "json");
@@ -127,7 +124,7 @@ public class ListPerfTest extends APITest {
     }
 
     @Test
-    public void testListAccounts(){
+    public void testListAccounts() {
         // issue list Accounts calls
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("response", "json");
@@ -141,7 +138,7 @@ public class ListPerfTest extends APITest {
     }
 
     @Test
-    public void testListUsers(){
+    public void testListUsers() {
         // issue list Users calls
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("response", "json");
@@ -155,7 +152,7 @@ public class ListPerfTest extends APITest {
     }
 
     @Test
-    public void testListStoragePools(){
+    public void testListStoragePools() {
         // issue list Storage pool calls
         HashMap<String, String> params = new HashMap<String, String>();
         params.put("response", "json");

@@ -52,7 +52,8 @@ import com.cloud.vm.VirtualMachineProfile;
  * to provision volumes.
  */
 public interface VolumeOrchestrationService {
-    VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType) throws ConcurrentOperationException, StorageUnavailableException;
+    VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType) throws ConcurrentOperationException,
+        StorageUnavailableException;
 
     Volume allocateDuplicateVolume(Volume oldVol, Long templateId);
 

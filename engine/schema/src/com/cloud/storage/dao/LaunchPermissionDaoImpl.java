@@ -39,27 +39,23 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value = { LaunchPermissionDao.class })
+@Local(value = {LaunchPermissionDao.class})
 public class LaunchPermissionDaoImpl extends GenericDaoBase<LaunchPermissionVO, Long> implements LaunchPermissionDao {
     private static final Logger s_logger = Logger.getLogger(LaunchPermissionDaoImpl.class);
-    private static final String REMOVE_LAUNCH_PERMISSION = "DELETE FROM `cloud`.`launch_permission`"
-            + "  WHERE template_id = ? AND account_id = ?";
+    private static final String REMOVE_LAUNCH_PERMISSION = "DELETE FROM `cloud`.`launch_permission`" + "  WHERE template_id = ? AND account_id = ?";
 
     private static final String LIST_PERMITTED_TEMPLATES = "SELECT t.id, t.unique_name, t.name, t.public, t.format, t.type, t.hvm, t.bits, t.url, t.created, t.account_id, t.checksum, t.display_text, t.enable_password, t.guest_os_id, t.featured"
-            + "  FROM `cloud`.`vm_template` t INNER JOIN (SELECT lp.template_id as lptid"
-            + " FROM `cloud`.`launch_permission` lp"
-            + " WHERE lp.account_id = ?) joinlp"
-            + "  WHERE t.id = joinlp.lptid" + "  ORDER BY t.created DESC";
+                                                           + "  FROM `cloud`.`vm_template` t INNER JOIN (SELECT lp.template_id as lptid"
+                                                           + " FROM `cloud`.`launch_permission` lp"
+                                                           + " WHERE lp.account_id = ?) joinlp" + "  WHERE t.id = joinlp.lptid" + "  ORDER BY t.created DESC";
 
     private final SearchBuilder<LaunchPermissionVO> TemplateAndAccountSearch;
     private final SearchBuilder<LaunchPermissionVO> TemplateIdSearch;
 
     protected LaunchPermissionDaoImpl() {
         TemplateAndAccountSearch = createSearchBuilder();
-        TemplateAndAccountSearch.and("templateId", TemplateAndAccountSearch.entity().getTemplateId(),
-                SearchCriteria.Op.EQ);
-        TemplateAndAccountSearch.and("accountId", TemplateAndAccountSearch.entity().getAccountId(),
-                SearchCriteria.Op.EQ);
+        TemplateAndAccountSearch.and("templateId", TemplateAndAccountSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
+        TemplateAndAccountSearch.and("accountId", TemplateAndAccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         TemplateAndAccountSearch.done();
 
         TemplateIdSearch = createSearchBuilder();
@@ -143,9 +139,8 @@ public class LaunchPermissionDaoImpl extends GenericDaoBase<LaunchPermissionVO, 
                               // permitted templates as this for private
                               // templates only
                 }
-                VMTemplateVO template = new VMTemplateVO(id, uniqueName, name, format, isPublic, featured,
-                        TemplateType.valueOf(tmpltType), url, createdDate, requiresHVM, bits, templateAccountId,
-                        checksum, displayText, enablePassword, guestOSId, true, null);
+                VMTemplateVO template = new VMTemplateVO(id, uniqueName, name, format, isPublic, featured, TemplateType.valueOf(tmpltType), url, createdDate, requiresHVM, bits,
+                    templateAccountId, checksum, displayText, enablePassword, guestOSId, true, null);
                 permittedTemplates.add(template);
             }
         } catch (Exception e) {

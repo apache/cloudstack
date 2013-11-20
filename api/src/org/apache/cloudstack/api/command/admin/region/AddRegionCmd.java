@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "addRegion", description="Adds a Region", responseObject=RegionResponse.class)
+@APICommand(name = "addRegion", description = "Adds a Region", responseObject = RegionResponse.class)
 public class AddRegionCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddRegionCmd.class.getName());
 
@@ -40,17 +40,18 @@ public class AddRegionCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.INTEGER, required=true, description="Id of the Region")
+    @Parameter(name = ApiConstants.ID, type = CommandType.INTEGER, required = true, description = "Id of the Region")
     private Integer id;
-    
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="Name of the region")
+
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the region")
     private String regionName;
 
-    @Parameter(name=ApiConstants.END_POINT, type=CommandType.STRING, required=true, description="Region service endpoint")
+    @Parameter(name = ApiConstants.END_POINT, type = CommandType.STRING, required = true, description = "Region service endpoint")
     private String endPoint;
 
-    @Inject public RegionService _regionService;
-    
+    @Inject
+    public RegionService _regionService;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -58,7 +59,7 @@ public class AddRegionCmd extends BaseCmd {
     public Integer getId() {
         return id;
     }
-    
+
     public String getRegionName() {
         return regionName;
     }
@@ -75,17 +76,17 @@ public class AddRegionCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
-    public void execute(){
+    public void execute() {
         Region region = _regionService.addRegion(getId(), getRegionName(), getEndPoint());
         if (region != null) {
-        	RegionResponse response = _responseGenerator.createRegionResponse(region);
+            RegionResponse response = _responseGenerator.createRegionResponse(region);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {

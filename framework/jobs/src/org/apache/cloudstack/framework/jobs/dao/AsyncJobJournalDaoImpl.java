@@ -27,19 +27,19 @@ import com.cloud.utils.db.SearchCriteria.Op;
 
 public class AsyncJobJournalDaoImpl extends GenericDaoBase<AsyncJobJournalVO, Long> implements AsyncJobJournalDao {
 
-	private final SearchBuilder<AsyncJobJournalVO> JobJournalSearch;	
+    private final SearchBuilder<AsyncJobJournalVO> JobJournalSearch;
 
-	public AsyncJobJournalDaoImpl() {
-		JobJournalSearch = createSearchBuilder();
-		JobJournalSearch.and("jobId", JobJournalSearch.entity().getJobId(), Op.EQ);
-		JobJournalSearch.done();
-	}
-	
-	@Override
-	public List<AsyncJobJournalVO> getJobJournal(long jobId) {
-		SearchCriteria<AsyncJobJournalVO> sc = JobJournalSearch.create();
-		sc.setParameters("jobId", jobId);
-		
-		return this.listBy(sc);
-	}
+    public AsyncJobJournalDaoImpl() {
+        JobJournalSearch = createSearchBuilder();
+        JobJournalSearch.and("jobId", JobJournalSearch.entity().getJobId(), Op.EQ);
+        JobJournalSearch.done();
+    }
+
+    @Override
+    public List<AsyncJobJournalVO> getJobJournal(long jobId) {
+        SearchCriteria<AsyncJobJournalVO> sc = JobJournalSearch.create();
+        sc.setParameters("jobId", jobId);
+
+        return this.listBy(sc);
+    }
 }

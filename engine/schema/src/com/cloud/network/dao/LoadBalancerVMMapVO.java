@@ -26,17 +26,17 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name=("load_balancer_vm_map"))
+@Table(name = ("load_balancer_vm_map"))
 public class LoadBalancerVMMapVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="load_balancer_id")
+    @Column(name = "load_balancer_id")
     private long loadBalancerId;
 
-    @Column(name="instance_id")
+    @Column(name = "instance_id")
     private long instanceId;
 
     @Column(name = "revoke")

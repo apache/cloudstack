@@ -87,8 +87,8 @@ public class SnapshotVO implements Snapshot {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public SnapshotVO(long dcId, long accountId, long domainId, Long volumeId, Long diskOfferingId, String name,
-            short snapshotType, String typeDescription, long size, HypervisorType hypervisorType) {
+    public SnapshotVO(long dcId, long accountId, long domainId, Long volumeId, Long diskOfferingId, String name, short snapshotType, String typeDescription, long size,
+            HypervisorType hypervisorType) {
         this.dataCenterId = dcId;
         this.accountId = accountId;
         this.domainId = domainId;

@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
-
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.SslCertResponse;
 import com.cloud.network.lb.CertService;
@@ -33,7 +32,7 @@ import org.apache.log4j.Logger;
 import javax.inject.Inject;
 import java.util.List;
 
-@APICommand(name = "listSslCerts", description="Lists SSL certificates", responseObject=SslCertResponse.class)
+@APICommand(name = "listSslCerts", description = "Lists SSL certificates", responseObject = SslCertResponse.class)
 public class ListSslCertsCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSslCertCmd.class.getName());
 
@@ -46,15 +45,14 @@ public class ListSslCertsCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name= ApiConstants.CERTIFICATE_ID, type=CommandType.UUID, entityType = SslCertResponse.class, required=false, description="Id of SSL certificate")
+    @Parameter(name = ApiConstants.CERTIFICATE_ID, type = CommandType.UUID, entityType = SslCertResponse.class, required = false, description = "Id of SSL certificate")
     private Long certId;
 
-    @Parameter(name= ApiConstants.ACCOUNT_ID, type=CommandType.UUID, entityType = AccountResponse.class, required=false, description="Account Id")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, required = false, description = "Account Id")
     private Long accountId;
 
-    @Parameter(name= ApiConstants.LBID, type=CommandType.UUID, entityType = FirewallRuleResponse.class, required=false, description="Loadbalancer Rule Id")
+    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = false, description = "Loadbalancer Rule Id")
     private Long lbId;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -68,21 +66,19 @@ public class ListSslCertsCmd extends BaseCmd {
         return accountId;
     }
 
-    public Long getLbId(){
+    public Long getLbId() {
         return lbId;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute(){
-
+    public void execute() {
 
         try {
-            List<SslCertResponse> certResponseList =  _certService.listSslCerts(this);
+            List<SslCertResponse> certResponseList = _certService.listSslCerts(this);
             ListResponse<SslCertResponse> response = new ListResponse<SslCertResponse>();
 
             response.setResponses(certResponseList);

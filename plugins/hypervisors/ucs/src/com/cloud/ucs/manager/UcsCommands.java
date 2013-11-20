@@ -68,40 +68,37 @@ public class UcsCommands {
     }
 
     public static String associateProfileToBlade(String cookie, String profileDn, String bladeDn) {
-        XmlObject cmd = new XmlObject("configConfMos").putElement("cookie", cookie).putElement("inHierarchical", "true").putElement(
-                "inConfigs", new XmlObject("inConfigs").putElement(
-                        "pair", new XmlObject("pair").putElement("key", profileDn).putElement(
-                                "lsServer", new XmlObject("lsServer")
-                                .putElement("agentPolicyName", "")
-                                .putElement("biosProfileName", "")
-                                .putElement("bootPolicyName", "")
-                                .putElement("descr", "")
-                                .putElement("dn", profileDn)
-                                .putElement("dynamicConPolicyName", "")
-                                .putElement("extIPState", "none")
-                                .putElement("hostFwPolicyName", "")
-                                .putElement("identPoolName", "")
-                                .putElement("localDiskPolicyName", "")
-                                .putElement("maintPolicyName", "")
-                                .putElement("mgmtAccessPolicyName", "")
-                                .putElement("mgmtFwPolicyName", "")
-                                .putElement("powerPolicyName", "")
-                                .putElement("scrubPolicyName", "")
-                                .putElement("solPolicyName", "")
-                                .putElement("srcTemplName", "")
-                                .putElement("statsPolicyName", "default")
-                                .putElement("status", "")
-                                .putElement("usrLbl", "")
-                                .putElement("uuid", "")
-                                .putElement("vconProfileName", "")
-                                .putElement("lsBinding", new XmlObject("lsBinding")
-                                            .putElement("pnDn", bladeDn)
-                                            .putElement("restrictMigration", "no")
-                                            .putElement("rn", "pn")
-                                        )
-                                )
-                        )
-                );
+        XmlObject cmd = new XmlObject("configConfMos").putElement("cookie", cookie)
+            .putElement("inHierarchical", "true")
+            .putElement(
+                "inConfigs",
+                new XmlObject("inConfigs").putElement(
+                    "pair",
+                    new XmlObject("pair").putElement("key", profileDn).putElement(
+                        "lsServer",
+                        new XmlObject("lsServer").putElement("agentPolicyName", "")
+                            .putElement("biosProfileName", "")
+                            .putElement("bootPolicyName", "")
+                            .putElement("descr", "")
+                            .putElement("dn", profileDn)
+                            .putElement("dynamicConPolicyName", "")
+                            .putElement("extIPState", "none")
+                            .putElement("hostFwPolicyName", "")
+                            .putElement("identPoolName", "")
+                            .putElement("localDiskPolicyName", "")
+                            .putElement("maintPolicyName", "")
+                            .putElement("mgmtAccessPolicyName", "")
+                            .putElement("mgmtFwPolicyName", "")
+                            .putElement("powerPolicyName", "")
+                            .putElement("scrubPolicyName", "")
+                            .putElement("solPolicyName", "")
+                            .putElement("srcTemplName", "")
+                            .putElement("statsPolicyName", "default")
+                            .putElement("status", "")
+                            .putElement("usrLbl", "")
+                            .putElement("uuid", "")
+                            .putElement("vconProfileName", "")
+                            .putElement("lsBinding", new XmlObject("lsBinding").putElement("pnDn", bladeDn).putElement("restrictMigration", "no").putElement("rn", "pn")))));
 
         return cmd.dump();
     }

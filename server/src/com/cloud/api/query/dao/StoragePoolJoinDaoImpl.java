@@ -39,7 +39,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = { StoragePoolJoinDao.class })
+@Local(value = {StoragePoolJoinDao.class})
 public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Long> implements StoragePoolJoinDao {
     public static final Logger s_logger = Logger.getLogger(StoragePoolJoinDaoImpl.class);
 
@@ -144,8 +144,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
             poolResponse.setHypervisor(pool.getHypervisor().toString());
         }
 
-        short capacityType = pool.getScope() == ScopeType.HOST ? Capacity.CAPACITY_TYPE_LOCAL_STORAGE
-                : Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED;
+        short capacityType = pool.getScope() == ScopeType.HOST ? Capacity.CAPACITY_TYPE_LOCAL_STORAGE : Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED;
         long allocatedSize = ApiDBUtils.getStorageCapacitybyPool(pool.getId(), capacityType);
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);

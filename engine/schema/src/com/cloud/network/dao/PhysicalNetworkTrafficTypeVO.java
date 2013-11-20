@@ -38,15 +38,15 @@ public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType 
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
-    
-    @Column(name="uuid")
-    private String uuid;   
+
+    @Column(name = "uuid")
+    private String uuid;
 
     @Column(name = "physical_network_id")
     private long physicalNetworkId;
-    
-    @Column(name="traffic_type")
-    @Enumerated(value=EnumType.STRING)
+
+    @Column(name = "traffic_type")
+    @Enumerated(value = EnumType.STRING)
     TrafficType trafficType;
 
     @Column(name = "xen_network_label")
@@ -60,17 +60,18 @@ public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType 
 
     @Column(name = "simulator_network_label")
     private String simulatorNetworkLabel;
-    
+
     @Column(name = "hyperv_network_label")
     private String hypervNetworkLabel;
-    
+
     @Column(name = "vlan")
     private String vlan;
-    
+
     public PhysicalNetworkTrafficTypeVO() {
     }
 
-    public PhysicalNetworkTrafficTypeVO(long physicalNetworkId, TrafficType trafficType, String xenLabel, String kvmLabel, String vmwareLabel, String simulatorLabel, String vlan, String hypervLabel) {
+    public PhysicalNetworkTrafficTypeVO(long physicalNetworkId, TrafficType trafficType, String xenLabel, String kvmLabel, String vmwareLabel, String simulatorLabel, String vlan,
+            String hypervLabel) {
         this.physicalNetworkId = physicalNetworkId;
         this.trafficType = trafficType;
         this.xenNetworkLabel = xenLabel;
@@ -96,7 +97,7 @@ public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType 
     public TrafficType getTrafficType() {
         return trafficType;
     }
-    
+
     public void setXenNetworkLabel(String xenNetworkLabel) {
         this.xenNetworkLabel = xenNetworkLabel;
     }
@@ -118,20 +119,20 @@ public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType 
     public void setVmwareNetworkLabel(String vmwareNetworkLabel) {
         this.vmwareNetworkLabel = vmwareNetworkLabel;
     }
-    
+
     @Override
     public String getVmwareNetworkLabel() {
-    	return vmwareNetworkLabel;
+        return vmwareNetworkLabel;
     }
 
-	public void setSimulatorNetworkLabel(String simulatorNetworkLabel) {
-		this.simulatorNetworkLabel = simulatorNetworkLabel;
-	}
-	
-	@Override
-	public String getSimulatorNetworkLabel() {
-		return simulatorNetworkLabel;
-	}
+    public void setSimulatorNetworkLabel(String simulatorNetworkLabel) {
+        this.simulatorNetworkLabel = simulatorNetworkLabel;
+    }
+
+    @Override
+    public String getSimulatorNetworkLabel() {
+        return simulatorNetworkLabel;
+    }
 
     public void setVlan(String vlan) {
         this.vlan = vlan;
@@ -139,13 +140,13 @@ public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType 
 
     public String getVlan() {
         return vlan;
-    }  
-    
+    }
+
     @Override
     public String getUuid() {
         return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
@@ -154,6 +155,7 @@ public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType 
         this.hypervNetworkLabel = hypervNetworkLable;
 
     }
+
     @Override
     public String getHypervNetworkLabel() {
         return hypervNetworkLabel;

@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = "deleteGlobalLoadBalancerRule", description="Deletes a global load balancer rule.", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteGlobalLoadBalancerRule", description = "Deletes a global load balancer rule.", responseObject = SuccessResponse.class)
 public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteGlobalLoadBalancerRuleCmd.class.getName());
@@ -42,9 +42,12 @@ public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = GlobalLoadBalancerResponse.class, required=true, description="the ID of the global load balancer rule")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = GlobalLoadBalancerResponse.class,
+               required = true,
+               description = "the ID of the global load balancer rule")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -83,11 +86,11 @@ public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "deleting global load balancer rule: " + getGlobalLoadBalancerId();
+        return "deleting global load balancer rule: " + getGlobalLoadBalancerId();
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         CallContext.current().setEventDetails("Deleting global Load balancer rule Id: " + getGlobalLoadBalancerId());
         boolean result = _gslbService.deleteGlobalLoadBalancerRule(this);
         if (result) {

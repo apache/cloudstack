@@ -18,7 +18,6 @@ package com.cloud.network.dao;
 
 import junit.framework.TestCase;
 
-
 public class NetworkDaoTest extends TestCase {
     public void testTags() {
 //        NetworkDaoImpl dao = ComponentLocator.inject(NetworkDaoImpl.class);
@@ -52,7 +51,7 @@ public class NetworkDaoTest extends TestCase {
 //        
 //        dao.expunge(1001l);
     }
-    
+
     public void testListBy() {
 //        NetworkDaoImpl dao = ComponentLocator.inject(NetworkDaoImpl.class);
 //        

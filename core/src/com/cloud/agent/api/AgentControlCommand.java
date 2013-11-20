@@ -18,10 +18,10 @@ package com.cloud.agent.api;
 
 public class AgentControlCommand extends Command {
 
-	public AgentControlCommand() {
-	}
+    public AgentControlCommand() {
+    }
 
     public boolean executeInSequence() {
-    	return false;
+        return false;
     }
 }

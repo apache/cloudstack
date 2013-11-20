@@ -15,14 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 package com.cloud.network.ovs;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 
 public class OvsFetchInterfaceAnswer extends Answer {
-	String ip;
+    String ip;
     String netmask;
     String mac;
     String label;
@@ -32,8 +31,7 @@ public class OvsFetchInterfaceAnswer extends Answer {
         this.label = ((OvsFetchInterfaceCommand)cmd).getLabel();
     }
 
-    public OvsFetchInterfaceAnswer(Command cmd, boolean success,
-            String details, String ip, String netmask, String mac) {
+    public OvsFetchInterfaceAnswer(Command cmd, boolean success, String details, String ip, String netmask, String mac) {
         super(cmd, success, details);
         this.ip = ip;
         this.netmask = netmask;
@@ -54,6 +52,6 @@ public class OvsFetchInterfaceAnswer extends Answer {
     }
 
     public String getLabel() {
-    	return label;
+        return label;
     }
 }

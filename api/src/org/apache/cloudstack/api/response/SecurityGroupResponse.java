@@ -30,64 +30,70 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = SecurityGroup.class)
-public class SecurityGroupResponse extends BaseResponse implements ControlledViewEntityResponse{
+public class SecurityGroupResponse extends BaseResponse implements ControlledViewEntityResponse {
 
-    @SerializedName(ApiConstants.ID) @Param(description="the ID of the security group")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the ID of the security group")
     private String id;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="the name of the security group")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the name of the security group")
     private String name;
 
-    @SerializedName(ApiConstants.DESCRIPTION) @Param(description="the description of the security group")
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "the description of the security group")
     private String description;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account owning the security group")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account owning the security group")
     private String accountName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the group")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the group")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the group")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the group")
     private String projectName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the security group")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain ID of the security group")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the security group")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain name of the security group")
     private String domainName;
 
-    @SerializedName("ingressrule")  @Param(description="the list of ingress rules associated with the security group", responseObject = SecurityGroupRuleResponse.class)
+    @SerializedName("ingressrule")
+    @Param(description = "the list of ingress rules associated with the security group", responseObject = SecurityGroupRuleResponse.class)
     private Set<SecurityGroupRuleResponse> ingressRules;
 
-    @SerializedName("egressrule")  @Param(description="the list of egress rules associated with the security group", responseObject = SecurityGroupRuleResponse.class)
+    @SerializedName("egressrule")
+    @Param(description = "the list of egress rules associated with the security group", responseObject = SecurityGroupRuleResponse.class)
     private Set<SecurityGroupRuleResponse> egressRules;
 
-    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
+    @SerializedName(ApiConstants.TAGS)
+    @Param(description = "the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
     private Set<ResourceTagResponse> tags;
 
-    public SecurityGroupResponse(){
+    public SecurityGroupResponse() {
         this.ingressRules = new LinkedHashSet<SecurityGroupRuleResponse>();
         this.egressRules = new LinkedHashSet<SecurityGroupRuleResponse>();
         this.tags = new LinkedHashSet<ResourceTagResponse>();
     }
-
-
 
     @Override
     public String getObjectId() {
         return this.getId();
     }
 
-
-
     public String getId() {
         return id;
-     }
+    }
 
     public void setId(String id) {
         this.id = id;
     }
-
 
     public void setName(String name) {
         this.name = name;
@@ -114,7 +120,7 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledVie
         this.ingressRules = securityGroupRules;
     }
 
-    public void addSecurityGroupIngressRule(SecurityGroupRuleResponse rule){
+    public void addSecurityGroupIngressRule(SecurityGroupRuleResponse rule) {
         this.ingressRules.add(rule);
     }
 
@@ -122,7 +128,7 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledVie
         this.egressRules = securityGroupRules;
     }
 
-    public void addSecurityGroupEgressRule(SecurityGroupRuleResponse rule){
+    public void addSecurityGroupEgressRule(SecurityGroupRuleResponse rule) {
         this.egressRules.add(rule);
     }
 
@@ -142,7 +148,7 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledVie
             return false;
         if (getClass() != obj.getClass())
             return false;
-        SecurityGroupResponse other = (SecurityGroupResponse) obj;
+        SecurityGroupResponse other = (SecurityGroupResponse)obj;
         if (id == null) {
             if (other.id != null)
                 return false;
@@ -165,7 +171,7 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledVie
         this.tags = tags;
     }
 
-    public void addTag(ResourceTagResponse tag){
+    public void addTag(ResourceTagResponse tag) {
         this.tags.add(tag);
     }
 }

@@ -32,7 +32,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
 
-@APICommand(name = "prepareHostForMaintenance", description="Prepares a host for maintenance.", responseObject=HostResponse.class)
+@APICommand(name = "prepareHostForMaintenance", description = "Prepares a host for maintenance.", responseObject = HostResponse.class)
 public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(PrepareForMaintenanceCmd.class.getName());
 
@@ -42,8 +42,7 @@ public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = HostResponse.class,
-            required=true, description="the host ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "the host ID")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -84,7 +83,7 @@ public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "preparing host: " + getId() + " for maintenance";
+        return "preparing host: " + getId() + " for maintenance";
     }
 
     @Override
@@ -98,9 +97,9 @@ public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Host result = _resourceService.maintain(this);
-        if (result != null){
+        if (result != null) {
             HostResponse response = _responseGenerator.createHostResponse(result);
             response.setResponseName("host");
             this.setResponseObject(response);

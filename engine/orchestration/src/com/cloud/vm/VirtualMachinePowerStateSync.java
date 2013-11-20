@@ -22,11 +22,11 @@ import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.vm.VirtualMachine.PowerState;
 
 public interface VirtualMachinePowerStateSync {
-	
-	void resetHostSyncState(long hostId);
-	
-	void processHostVmStateReport(long hostId, Map<String, HostVmStateReportEntry> report);
-	
-	// to adapt legacy ping report
-	void processHostVmStatePingReport(long hostId, Map<String, PowerState> report);
+
+    void resetHostSyncState(long hostId);
+
+    void processHostVmStateReport(long hostId, Map<String, HostVmStateReportEntry> report);
+
+    // to adapt legacy ping report
+    void processHostVmStatePingReport(long hostId, Map<String, PowerState> report);
 }

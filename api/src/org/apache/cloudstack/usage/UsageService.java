@@ -38,7 +38,7 @@ public interface UsageService {
      *             system will use the current time.
      */
     boolean generateUsageRecords(GenerateUsageRecordsCmd cmd);
-    
+
     /**
      * Retrieves all Usage Records generated between the start and end date specified
      * 
@@ -61,6 +61,6 @@ public interface UsageService {
      */
     TimeZone getUsageTimezone();
 
-	List<UsageTypeResponse> listUsageTypes();
+    List<UsageTypeResponse> listUsageTypes();
 
 }

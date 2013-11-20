@@ -23,6 +23,7 @@ import com.cloud.agent.api.to.DataTO;
 
 public class IntroduceObjectCmd extends Command implements StorageSubSystemCommand {
     private DataTO dataTO;
+
     public IntroduceObjectCmd(DataTO dataTO) {
         this.dataTO = dataTO;
     }

@@ -59,7 +59,7 @@ public interface Domain extends OwnedBy, Identity, InternalIdentity {
     void setState(State state);
 
     String getNetworkDomain();
-    
+
     public String getUuid();
-    
+
 }

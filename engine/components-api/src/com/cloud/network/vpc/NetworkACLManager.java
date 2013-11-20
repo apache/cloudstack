@@ -22,8 +22,7 @@ import com.cloud.user.Account;
 
 import java.util.List;
 
-
-public interface NetworkACLManager{
+public interface NetworkACLManager {
 
     /**
      * Creates Network ACL for the specified VPC
@@ -78,9 +77,8 @@ public interface NetworkACLManager{
      * @param number
      * @return
      */
-    NetworkACLItem createNetworkACLItem(Integer sourcePortStart, Integer sourcePortEnd, String protocol,
-                                        List<String> sourceCidrList, Integer icmpCode, Integer icmpType,
-                                        NetworkACLItem.TrafficType trafficType, Long aclId, String action, Integer number);
+    NetworkACLItem createNetworkACLItem(Integer sourcePortStart, Integer sourcePortEnd, String protocol, List<String> sourceCidrList, Integer icmpCode, Integer icmpType,
+        NetworkACLItem.TrafficType trafficType, Long aclId, String action, Integer number);
 
     /**
      * Returns Network ACL Item with specified Id
@@ -136,9 +134,8 @@ public interface NetworkACLManager{
      * @return
      * @throws ResourceUnavailableException
      */
-    NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType,
-                                        String action, Integer number, Integer sourcePortStart, Integer sourcePortEnd,
-                                        Integer icmpCode, Integer icmpType) throws ResourceUnavailableException;
+    NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType, String action, Integer number,
+        Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType) throws ResourceUnavailableException;
 
     /**
      * Associates acl with a network and applies the ACLItems

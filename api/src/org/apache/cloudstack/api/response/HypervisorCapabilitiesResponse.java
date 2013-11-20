@@ -25,30 +25,38 @@ import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=HypervisorCapabilities.class)
+@EntityReference(value = HypervisorCapabilities.class)
 public class HypervisorCapabilitiesResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the ID of the hypervisor capabilities row")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the ID of the hypervisor capabilities row")
     private String id;
 
-    @SerializedName(ApiConstants.HYPERVISOR_VERSION) @Param(description="the hypervisor version")
+    @SerializedName(ApiConstants.HYPERVISOR_VERSION)
+    @Param(description = "the hypervisor version")
     private String hypervisorVersion;
 
-    @SerializedName(ApiConstants.HYPERVISOR) @Param(description="the hypervisor type")
+    @SerializedName(ApiConstants.HYPERVISOR)
+    @Param(description = "the hypervisor type")
     private HypervisorType hypervisor;
 
-    @SerializedName(ApiConstants.MAX_GUESTS_LIMIT) @Param(description="the maximum number of guest vms recommended for this hypervisor")
+    @SerializedName(ApiConstants.MAX_GUESTS_LIMIT)
+    @Param(description = "the maximum number of guest vms recommended for this hypervisor")
     private Long maxGuestsLimit;
 
-    @SerializedName(ApiConstants.SECURITY_GROUP_EANBLED) @Param(description="true if security group is supported")
+    @SerializedName(ApiConstants.SECURITY_GROUP_EANBLED)
+    @Param(description = "true if security group is supported")
     private boolean isSecurityGroupEnabled;
 
-    @SerializedName(ApiConstants.MAX_DATA_VOLUMES_LIMIT) @Param(description="the maximum number of Data Volumes that can be attached for this hypervisor")
+    @SerializedName(ApiConstants.MAX_DATA_VOLUMES_LIMIT)
+    @Param(description = "the maximum number of Data Volumes that can be attached for this hypervisor")
     private Integer maxDataVolumesLimit;
 
-    @SerializedName(ApiConstants.MAX_HOSTS_PER_CLUSTER) @Param(description="the maximum number of Hosts per cluster for this hypervisor")
+    @SerializedName(ApiConstants.MAX_HOSTS_PER_CLUSTER)
+    @Param(description = "the maximum number of Hosts per cluster for this hypervisor")
     private Integer maxHostsPerCluster;
 
-    @SerializedName(ApiConstants.STORAGE_MOTION_ENABLED) @Param(description="true if storage motion is supported")
+    @SerializedName(ApiConstants.STORAGE_MOTION_ENABLED)
+    @Param(description = "true if storage motion is supported")
     private boolean isStorageMotionSupported;
 
     public String getId() {
@@ -58,7 +66,6 @@ public class HypervisorCapabilitiesResponse extends BaseResponse {
     public void setId(String id) {
         this.id = id;
     }
-
 
     public String getHypervisorVersion() {
         return hypervisorVersion;

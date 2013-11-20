@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.log4j.Logger;
 
-
 @APICommand(name = "listAffinityGroups", description = "Lists affinity groups", responseObject = AffinityGroupResponse.class)
 public class ListAffinityGroupsCmd extends BaseListAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListAffinityGroupsCmd.class.getName());
@@ -60,7 +59,7 @@ public class ListAffinityGroupsCmd extends BaseListAccountResourcesCmd {
         return virtualMachineId;
     }
 
-    public Long getId(){
+    public Long getId() {
         return id;
     }
 
@@ -74,11 +73,10 @@ public class ListAffinityGroupsCmd extends BaseListAccountResourcesCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
 
-        ListResponse<AffinityGroupResponse> response = _queryService.listAffinityGroups(id, affinityGroupName,
-                affinityGroupType, virtualMachineId, this.getAccountName(), this.getDomainId(), this.isRecursive(),
-                this.listAll(), this.getStartIndex(), this.getPageSizeVal());
+        ListResponse<AffinityGroupResponse> response = _queryService.listAffinityGroups(id, affinityGroupName, affinityGroupType, virtualMachineId, this.getAccountName(),
+            this.getDomainId(), this.isRecursive(), this.listAll(), this.getStartIndex(), this.getPageSizeVal());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
 

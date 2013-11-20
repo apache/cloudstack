@@ -124,7 +124,6 @@ public class NetworkProfile implements Network {
         return id;
     }
 
-
     @Override
     public String getUuid() {
         return uuid;
@@ -267,13 +266,13 @@ public class NetworkProfile implements Network {
         trafficType = type;
     }
 
-	@Override
-	public String getIp6Gateway() {
-		return ip6Gateway;
-	}
+    @Override
+    public String getIp6Gateway() {
+        return ip6Gateway;
+    }
 
-	@Override
-	public String getIp6Cidr() {
-		return ip6Cidr;
-	}
+    @Override
+    public String getIp6Cidr() {
+        return ip6Cidr;
+    }
 }

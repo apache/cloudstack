@@ -28,11 +28,9 @@ import java.util.Map;
 
 public interface VifDriver {
 
-    public void configure(Map<String, Object> params)
-            throws ConfigurationException;
+    public void configure(Map<String, Object> params) throws ConfigurationException;
 
-    public LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType)
-            throws InternalErrorException, LibvirtException;
+    public LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType) throws InternalErrorException, LibvirtException;
 
     public void unplug(LibvirtVMDef.InterfaceDef iface);
 

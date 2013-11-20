@@ -33,7 +33,8 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
     public CreatePrivateTemplateFromVolumeCommand() {
     }
 
-    public CreatePrivateTemplateFromVolumeCommand(StoragePool pool, String secondaryStorageUrl, long templateId, long accountId, String userSpecifiedName, String uniqueName, String volumePath, String vmName, int wait) {
+    public CreatePrivateTemplateFromVolumeCommand(StoragePool pool, String secondaryStorageUrl, long templateId, long accountId, String userSpecifiedName, String uniqueName,
+            String volumePath, String vmName, int wait) {
         _secondaryStorageUrl = secondaryStorageUrl;
         _templateId = templateId;
         _accountId = accountId;

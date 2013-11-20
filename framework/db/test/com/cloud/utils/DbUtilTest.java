@@ -79,22 +79,17 @@ public class DbUtilTest {
     @Test
     public void getColumnName() throws SecurityException, NoSuchFieldException {
         // if no annotation, then the field name
-        Assert.assertEquals("noAnnotation", DbUtil.getColumnName(Testbean.class
-                .getDeclaredField("noAnnotation")));
+        Assert.assertEquals("noAnnotation", DbUtil.getColumnName(Testbean.class.getDeclaredField("noAnnotation")));
         // there is annotation with name, take the name
-        Assert.assertEquals("surprise", DbUtil.getColumnName(Testbean.class
-                .getDeclaredField("withAnnotationAndName")));
+        Assert.assertEquals("surprise", DbUtil.getColumnName(Testbean.class.getDeclaredField("withAnnotationAndName")));
     }
 
     @Test
     @Ignore
-    public void getColumnNameWithAnnotationButWithoutNameAttribute()
-            throws SecurityException, NoSuchFieldException {
+    public void getColumnNameWithAnnotationButWithoutNameAttribute() throws SecurityException, NoSuchFieldException {
         // there is annotation, but no name defined, fallback to field name
         // this does not work this way, it probably should
-        Assert.assertEquals("withAnnotation", DbUtil
-                .getColumnName(Testbean.class
-                        .getDeclaredField("withAnnotation")));
+        Assert.assertEquals("withAnnotation", DbUtil.getColumnName(Testbean.class.getDeclaredField("withAnnotation")));
 
     }
 
@@ -108,16 +103,11 @@ public class DbUtilTest {
 
     @Test
     public void isPersistable() throws SecurityException, NoSuchFieldException {
-        Assert.assertFalse(DbUtil.isPersistable(IsPersistableTestBean.class
-                .getDeclaredField("staticFinal")));
-        Assert.assertFalse(DbUtil.isPersistable(IsPersistableTestBean.class
-                .getDeclaredField("justFinal")));
-        Assert.assertFalse(DbUtil.isPersistable(IsPersistableTestBean.class
-                .getDeclaredField("transientField")));
-        Assert.assertFalse(DbUtil.isPersistable(IsPersistableTestBean.class
-                .getDeclaredField("strange")));
-        Assert.assertTrue(DbUtil.isPersistable(IsPersistableTestBean.class
-                .getDeclaredField("instanceField")));
+        Assert.assertFalse(DbUtil.isPersistable(IsPersistableTestBean.class.getDeclaredField("staticFinal")));
+        Assert.assertFalse(DbUtil.isPersistable(IsPersistableTestBean.class.getDeclaredField("justFinal")));
+        Assert.assertFalse(DbUtil.isPersistable(IsPersistableTestBean.class.getDeclaredField("transientField")));
+        Assert.assertFalse(DbUtil.isPersistable(IsPersistableTestBean.class.getDeclaredField("strange")));
+        Assert.assertTrue(DbUtil.isPersistable(IsPersistableTestBean.class.getDeclaredField("instanceField")));
     }
 
     class Bar {
@@ -132,26 +122,22 @@ public class DbUtilTest {
 
     @SuppressWarnings("unchecked")
     @Before
-    public void setup() throws SecurityException, NoSuchFieldException,
-            IllegalArgumentException, IllegalAccessException {
-        Field globalLocks = DbUtil.class
-                .getDeclaredField("s_connectionForGlobalLocks");
+    public void setup() throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+        Field globalLocks = DbUtil.class.getDeclaredField("s_connectionForGlobalLocks");
         globalLocks.setAccessible(true);
-        connectionMapBackup = (Map<String, Connection>) globalLocks.get(null);
+        connectionMapBackup = (Map<String, Connection>)globalLocks.get(null);
         connectionMap = new HashMap<String, Connection>();
         globalLocks.set(null, connectionMap);
 
         Field dsField = TransactionLegacy.class.getDeclaredField("s_ds");
         dsField.setAccessible(true);
-        backup = (DataSource) dsField.get(null);
+        backup = (DataSource)dsField.get(null);
         dsField.set(null, dataSource);
     }
 
     @After
-    public void cleanup() throws SecurityException, NoSuchFieldException,
-            IllegalArgumentException, IllegalAccessException {
-        Field globalLocks = DbUtil.class
-                .getDeclaredField("s_connectionForGlobalLocks");
+    public void cleanup() throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+        Field globalLocks = DbUtil.class.getDeclaredField("s_connectionForGlobalLocks");
         globalLocks.setAccessible(true);
         globalLocks.set(null, connectionMapBackup);
 
@@ -163,8 +149,7 @@ public class DbUtilTest {
     @Test
     public void getGlobalLock() throws SQLException {
         Mockito.when(dataSource.getConnection()).thenReturn(connection);
-        Mockito.when(connection.prepareStatement(Mockito.anyString()))
-                .thenReturn(preparedStatement);
+        Mockito.when(connection.prepareStatement(Mockito.anyString())).thenReturn(preparedStatement);
         Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
         Mockito.when(resultSet.first()).thenReturn(true);
         Mockito.when(resultSet.getInt(1)).thenReturn(1);
@@ -178,8 +163,7 @@ public class DbUtilTest {
     @Test
     public void getGlobalLockTimeout() throws SQLException {
         Mockito.when(dataSource.getConnection()).thenReturn(connection);
-        Mockito.when(connection.prepareStatement(Mockito.anyString()))
-                .thenReturn(preparedStatement);
+        Mockito.when(connection.prepareStatement(Mockito.anyString())).thenReturn(preparedStatement);
         Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
         Mockito.when(resultSet.first()).thenReturn(true);
         Mockito.when(resultSet.getInt(1)).thenReturn(0);
@@ -196,9 +180,9 @@ public class DbUtilTest {
 
     @Test
     public void closeNull() {
-        DbUtil.closeStatement((Statement) null);
-        DbUtil.closeConnection((Connection) null);
-        DbUtil.closeResultSet((ResultSet) null);
+        DbUtil.closeStatement((Statement)null);
+        DbUtil.closeConnection((Connection)null);
+        DbUtil.closeResultSet((ResultSet)null);
         // no exception should be thrown
     }
 
@@ -210,8 +194,7 @@ public class DbUtilTest {
 
     @Test
     public void closeConnectionFail() throws IOException, SQLException {
-        Mockito.doThrow(new SQLException("it is all right")).when(connection)
-                .close();
+        Mockito.doThrow(new SQLException("it is all right")).when(connection).close();
         DbUtil.closeConnection(connection);
         Mockito.verify(connection).close();
     }
@@ -224,8 +207,7 @@ public class DbUtilTest {
 
     @Test
     public void closeStatementFail() throws IOException, SQLException {
-        Mockito.doThrow(new SQLException("it is all right")).when(statement)
-                .close();
+        Mockito.doThrow(new SQLException("it is all right")).when(statement).close();
         DbUtil.closeStatement(statement);
         Mockito.verify(statement).close();
     }
@@ -238,8 +220,7 @@ public class DbUtilTest {
 
     @Test
     public void closeResultSetFail() throws IOException, SQLException {
-        Mockito.doThrow(new SQLException("it is all right")).when(resultSet)
-                .close();
+        Mockito.doThrow(new SQLException("it is all right")).when(resultSet).close();
         DbUtil.closeResultSet(resultSet);
         Mockito.verify(resultSet).close();
     }
@@ -247,15 +228,15 @@ public class DbUtilTest {
     @Test
     @Ignore
     //can not be performed since assertion embedded in this branch of execution
-    public void releaseGlobalLockNotexisting() throws SQLException {
+        public
+        void releaseGlobalLockNotexisting() throws SQLException {
         Assert.assertFalse(DbUtil.releaseGlobalLock("notexisting"));
         Mockito.verify(dataSource, Mockito.never()).getConnection();
     }
 
     @Test
     public void releaseGlobalLock() throws SQLException {
-        Mockito.when(connection.prepareStatement(Mockito.anyString()))
-                .thenReturn(preparedStatement);
+        Mockito.when(connection.prepareStatement(Mockito.anyString())).thenReturn(preparedStatement);
         Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
         Mockito.when(resultSet.first()).thenReturn(true);
         Mockito.when(resultSet.getInt(1)).thenReturn(1);

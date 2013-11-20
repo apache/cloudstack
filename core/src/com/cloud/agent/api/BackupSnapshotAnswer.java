@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.agent.api;
 
-
 public class BackupSnapshotAnswer extends Answer {
     private String backupSnapshotName;
     private boolean full;

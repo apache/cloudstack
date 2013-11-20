@@ -66,7 +66,7 @@ public class SnapshotPolicyVO implements SnapshotPolicy {
         this.volumeId = volumeId;
         this.schedule = schedule;
         this.timezone = timezone;
-        this.interval = (short) intvType.ordinal();
+        this.interval = (short)intvType.ordinal();
         this.maxSnaps = maxSnaps;
         this.active = true;
         this.uuid = UUID.randomUUID().toString();

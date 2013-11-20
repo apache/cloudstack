@@ -18,7 +18,6 @@ package com.cloud.network.rules;
 
 import java.util.List;
 
-
 public class StaticNatRuleImpl implements StaticNatRule {
     long id;
     String xid;
@@ -108,7 +107,6 @@ public class StaticNatRuleImpl implements StaticNatRule {
         return xid;
     }
 
-
     @Override
     public String getUuid() {
         return uuid;
@@ -134,10 +132,10 @@ public class StaticNatRuleImpl implements StaticNatRule {
         return null;
     }
 
-	@Override
-	public FirewallRuleType getType() {
-		return FirewallRuleType.User;
-	}
+    @Override
+    public FirewallRuleType getType() {
+        return FirewallRuleType.User;
+    }
 
     @Override
     public TrafficType getTrafficType() {

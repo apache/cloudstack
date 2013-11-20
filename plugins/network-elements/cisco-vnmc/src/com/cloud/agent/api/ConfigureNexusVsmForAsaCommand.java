@@ -32,8 +32,7 @@ public class ConfigureNexusVsmForAsaCommand extends Command {
     private String _vsmIp;
     private String _asaInPortProfile;
 
-    public ConfigureNexusVsmForAsaCommand(long vlanId, String ipAddress,
-            String vsmUsername, String vsmPassword, String vsmIp, String asaInPortProfile) {
+    public ConfigureNexusVsmForAsaCommand(long vlanId, String ipAddress, String vsmUsername, String vsmPassword, String vsmIp, String asaInPortProfile) {
         super();
         this._vlanId = vlanId;
         this._ipAddress = ipAddress;

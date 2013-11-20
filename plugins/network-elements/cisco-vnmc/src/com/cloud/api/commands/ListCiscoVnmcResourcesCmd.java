@@ -42,20 +42,21 @@ import com.cloud.network.cisco.CiscoVnmcControllerVO;
 import com.cloud.network.element.CiscoVnmcElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name="listCiscoVnmcResources", responseObject=CiscoVnmcResourceResponse.class, description="Lists Cisco VNMC controllers")
+@APICommand(name = "listCiscoVnmcResources", responseObject = CiscoVnmcResourceResponse.class, description = "Lists Cisco VNMC controllers")
 public class ListCiscoVnmcResourcesCmd extends BaseListCmd {
     private static final Logger s_logger = Logger.getLogger(ListCiscoVnmcResourcesCmd.class.getName());
     private static final String s_name = "listCiscoVnmcResources";
-    @Inject CiscoVnmcElementService _ciscoVnmcElementService;
+    @Inject
+    CiscoVnmcElementService _ciscoVnmcElementService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class, description="the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.RESOURCE_ID, type=CommandType.UUID,  entityType=CiscoVnmcResourceResponse.class, description="Cisco VNMC resource ID")
+    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.UUID, entityType = CiscoVnmcResourceResponse.class, description = "Cisco VNMC resource ID")
     private Long ciscoVnmcResourceId;
 
     /////////////////////////////////////////////////////
@@ -92,7 +93,7 @@ public class ListCiscoVnmcResourcesCmd extends BaseListCmd {
             response.setResponses(ciscoVnmcResourcesResponse);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
@@ -103,5 +104,5 @@ public class ListCiscoVnmcResourcesCmd extends BaseListCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
 }

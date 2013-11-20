@@ -44,25 +44,21 @@ public class ListAutoScaleVmGroupsCmd extends BaseListProjectAndAccountResources
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class,
-            description = "the ID of the autoscale vm group")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class, description = "the ID of the autoscale vm group")
     private Long id;
 
-    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class,
-            description = "the ID of the loadbalancer")
+    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, description = "the ID of the loadbalancer")
     private Long loadBalancerId;
 
-    @Parameter(name = ApiConstants.VMPROFILE_ID, type = CommandType.UUID, entityType = AutoScaleVmProfileResponse.class,
-            description = "the ID of the profile")
+    @Parameter(name = ApiConstants.VMPROFILE_ID, type = CommandType.UUID, entityType = AutoScaleVmProfileResponse.class, description = "the ID of the profile")
     private Long profileId;
 
-    @Parameter(name = ApiConstants.POLICY_ID, type = CommandType.UUID, entityType = AutoScalePolicyResponse.class,
-            description = "the ID of the policy")
+    @Parameter(name = ApiConstants.POLICY_ID, type = CommandType.UUID, entityType = AutoScalePolicyResponse.class, description = "the ID of the policy")
     private Long policyId;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
-            description = "the availability zone ID")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the availability zone ID")
     private Long zoneId;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -75,7 +71,6 @@ public class ListAutoScaleVmGroupsCmd extends BaseListProjectAndAccountResources
         return loadBalancerId;
     }
 
-
     public Long getProfileId() {
         return profileId;
     }
@@ -87,6 +82,7 @@ public class ListAutoScaleVmGroupsCmd extends BaseListProjectAndAccountResources
     public Long getZoneId() {
         return zoneId;
     }
+
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
@@ -98,7 +94,7 @@ public class ListAutoScaleVmGroupsCmd extends BaseListProjectAndAccountResources
 
     @Override
     public void execute() {
-        if(id != null && (loadBalancerId != null || profileId != null || policyId != null))
+        if (id != null && (loadBalancerId != null || profileId != null || policyId != null))
             throw new InvalidParameterValueException("When id is specified other parameters need not be specified");
 
         List<? extends AutoScaleVmGroup> autoScaleGroups = _autoScaleService.listAutoScaleVmGroups(this);

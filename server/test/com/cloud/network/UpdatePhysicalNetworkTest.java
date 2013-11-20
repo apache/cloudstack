@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network;
+
 import com.cloud.capacity.CapacityManagerImpl;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -39,7 +40,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-
 public class UpdatePhysicalNetworkTest {
     private PhysicalNetworkDao _physicalNetworkDao = mock(PhysicalNetworkDao.class);
     private DataCenterVnetDao _DatacenterVnetDao = mock(DataCenterVnetDao.class);
@@ -47,18 +47,18 @@ public class UpdatePhysicalNetworkTest {
     private DataCenterVO datacentervo = mock(DataCenterVO.class);
     private PhysicalNetworkVO physicalNetworkVO = mock(PhysicalNetworkVO.class);
     List<String> existingRange = new ArrayList<String>();
-    ArgumentCaptor<String> argumentCaptor =  ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
 
     public NetworkServiceImpl setUp() {
         NetworkServiceImpl networkService = new NetworkServiceImpl();
-        ((NetworkServiceImpl)networkService)._dcDao= _datacenterDao;
+        ((NetworkServiceImpl)networkService)._dcDao = _datacenterDao;
         networkService._physicalNetworkDao = _physicalNetworkDao;
         networkService._datacneter_vnet = _DatacenterVnetDao;
         return networkService;
     }
 
     @Test
-    public void updatePhysicalNetworkTest(){
+    public void updatePhysicalNetworkTest() {
         TransactionLegacy txn = TransactionLegacy.open("updatePhysicalNetworkTest");
         NetworkServiceImpl networkService = setUp();
         existingRange.add("524");

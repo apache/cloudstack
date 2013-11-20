@@ -21,9 +21,8 @@ import javax.ejb.Local;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.springframework.stereotype.Component;
 
-
 @Component
-@Local(value=NetworkDetailsDao.class)
+@Local(value = NetworkDetailsDao.class)
 public class NetworkDetailsDaoImpl extends ResourceDetailsDaoBase<NetworkDetailVO> implements NetworkDetailsDao {
 
     @Override

@@ -28,10 +28,9 @@ public class NatRuleTest {
 
     @Test
     public void testNatRuleEncoding() {
-        Gson gson = new GsonBuilder()
-        .registerTypeAdapter(NatRule.class, new com.cloud.network.nicira.NiciraNvpApi.NatRuleAdapter())
-        .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-        .create();
+        Gson gson = new GsonBuilder().registerTypeAdapter(NatRule.class, new com.cloud.network.nicira.NiciraNvpApi.NatRuleAdapter())
+            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+            .create();
 
         DestinationNatRule rn1 = new DestinationNatRule();
         rn1.setToDestinationIpAddress("10.10.10.10");

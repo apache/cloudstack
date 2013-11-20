@@ -32,26 +32,26 @@ import javax.persistence.Table;
  *
  */
 @Entity
-@Table(name="netscaler_pod_ref")
+@Table(name = "netscaler_pod_ref")
 public class NetScalerPodVO implements InternalIdentity {
- 
-    @Column(name="external_load_balancer_device_id")
+
+    @Column(name = "external_load_balancer_device_id")
     private long netscalerDeviceId;
 
     @Id
-    @Column(name="id")
+    @Column(name = "id")
     private long id;
 
-    @Column(name="pod_id")
+    @Column(name = "pod_id")
     private long podId;
 
     public NetScalerPodVO() {
-        
+
     }
 
     public NetScalerPodVO(long netscalerDeviceId, long podId) {
-    	this.netscalerDeviceId = netscalerDeviceId;
-    	this.podId = podId;
+        this.netscalerDeviceId = netscalerDeviceId;
+        this.podId = podId;
     }
 
     public long getId() {
@@ -63,6 +63,6 @@ public class NetScalerPodVO implements InternalIdentity {
     }
 
     public long getNetscalerDeviceId() {
-    	return netscalerDeviceId;
+        return netscalerDeviceId;
     }
 }

@@ -41,46 +41,47 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Local(value=HypervisorGuru.class)
+@Local(value = HypervisorGuru.class)
 public class BareMetalGuru extends HypervisorGuruBase implements HypervisorGuru {
-	private static final Logger s_logger = Logger.getLogger(BareMetalGuru.class);
-	@Inject GuestOSDao _guestOsDao;
-	@Inject HostDao _hostDao;
-	@Inject VMInstanceDao _vmDao;
-	
-	protected BareMetalGuru() {
-		super();
-	}
-	
-	@Override
-	public HypervisorType getHypervisorType() {
-		return HypervisorType.BareMetal;
-	}
+    private static final Logger s_logger = Logger.getLogger(BareMetalGuru.class);
+    @Inject
+    GuestOSDao _guestOsDao;
+    @Inject
+    HostDao _hostDao;
+    @Inject
+    VMInstanceDao _vmDao;
 
-	@Override
+    protected BareMetalGuru() {
+        super();
+    }
+
+    @Override
+    public HypervisorType getHypervisorType() {
+        return HypervisorType.BareMetal;
+    }
+
+    @Override
     public VirtualMachineTO implement(VirtualMachineProfile vm) {
-		VirtualMachineTO to = toVirtualMachineTO(vm);
+        VirtualMachineTO to = toVirtualMachineTO(vm);
 
-		VMInstanceVO vo = _vmDao.findById(vm.getId());
+        VMInstanceVO vo = _vmDao.findById(vm.getId());
         if (vo.getLastHostId() == null) {
             to.setBootArgs(BaremetalManager.DO_PXE);
         }
-        
+
         Map<String, String> details = new HashMap<String, String>();
         details.put("template", vm.getTemplate().getUrl());
         to.setDetails(details);
-        
-		// Determine the VM's OS description
-		GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine().getGuestOSId());
-		to.setOs(guestOS.getDisplayName());
 
-		return to;
-	}
-	
-	@Override
+        // Determine the VM's OS description
+        GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine().getGuestOSId());
+        to.setOs(guestOS.getDisplayName());
+
+        return to;
+    }
+
+    @Override
     public boolean trackVmHostChange() {
-    	return false;
+        return false;
     }
 }
-
-	

@@ -30,9 +30,10 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.uuididentity.dao.IdentityDao;
 
 @Component
-@Local(value = { IdentityService.class })
+@Local(value = {IdentityService.class})
 public class IdentityServiceImpl extends ManagerBase implements IdentityService {
-    @Inject	private IdentityDao _identityDao;
+    @Inject
+    private IdentityDao _identityDao;
 
     @Override
     public Long getIdentityId(String tableName, String identityString) {

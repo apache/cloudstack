@@ -64,7 +64,7 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
         capabilities.put(Service.UserData, null);
     }
 
-    private boolean canHandle(DeployDestination dest)  {
+    private boolean canHandle(DeployDestination dest) {
         if (dest.getDataCenter().getNetworkType() == NetworkType.Basic && dest.getHost().getHypervisorType() == HypervisorType.BareMetal) {
             return true;
         }
@@ -72,8 +72,8 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
     }
 
     @Override
-    public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest,
-            ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+    public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (!canHandle(dest)) {
             return false;
         }
@@ -82,7 +82,7 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
             return false;
         }
 
-        return pxeMgr.addUserData(nic, (VirtualMachineProfile) vm);
+        return pxeMgr.addUserData(nic, (VirtualMachineProfile)vm);
     }
 
     @Override
@@ -108,22 +108,21 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
     }
 
     @Override
-    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest,
-            ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -140,8 +139,7 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
     }
 
     @Override
-    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
-            ResourceUnavailableException {
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -152,10 +150,8 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
         return true;
     }
 
-
     @Override
-    public boolean saveUserData(Network network, NicProfile nic, VirtualMachineProfile vm)
-            throws ResourceUnavailableException {
+    public boolean saveUserData(Network network, NicProfile nic, VirtualMachineProfile vm) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }

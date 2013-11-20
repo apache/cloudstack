@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.agent.api;
 
-
 public class CreateVolumeFromSnapshotAnswer extends Answer {
     private String vdiUUID;
 

@@ -39,7 +39,7 @@ public interface HighAvailabilityDao extends GenericDao<HaWorkVO, Long> {
      * @return list of WorkVO or empty list.
      */
     List<HaWorkVO> findPreviousHA(long instanceId);
-    
+
     boolean delete(long instanceId, WorkType type);
 
     /**
@@ -49,11 +49,11 @@ public interface HighAvailabilityDao extends GenericDao<HaWorkVO, Long> {
      * @return list of WorkVO or empty list.
      */
     void cleanup(long time);
-    
+
     void deleteMigrationWorkItems(final long hostId, final WorkType type, final long serverId);
-    
+
     List<HaWorkVO> findTakenWorkItems(WorkType type);
-    
+
     /**
      * finds out if a work item has been scheduled for this work type but has not been taken yet.
      * 

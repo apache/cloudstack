@@ -30,28 +30,28 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="baremetal_dhcp_devices")
+@Table(name = "baremetal_dhcp_devices")
 public class BaremetalDhcpVO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
-    
-    @Column(name="uuid")
+
+    @Column(name = "uuid")
     private String uuid;
-    
+
     @Column(name = "host_id")
     private long hostId;
-    
+
     @Column(name = "pod_id")
     private long podId;
 
     @Column(name = "physical_network_id")
     private long physicalNetworkId;
-    
+
     @Column(name = "nsp_id")
-    private long networkServiceProviderId ;
-    
+    private long networkServiceProviderId;
+
     @Column(name = "device_type")
     private String deviceType;
 
@@ -91,7 +91,7 @@ public class BaremetalDhcpVO {
     public void setPhysicalNetworkId(long physicalNetworkId) {
         this.physicalNetworkId = physicalNetworkId;
     }
-    
+
     public String getDeviceType() {
         return deviceType;
     }

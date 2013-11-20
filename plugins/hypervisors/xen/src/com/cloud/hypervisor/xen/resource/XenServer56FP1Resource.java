@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 
-
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,7 +47,7 @@ import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
 
-@Local(value=ServerResource.class)
+@Local(value = ServerResource.class)
 public class XenServer56FP1Resource extends XenServer56Resource {
     private static final long mem_128m = 134217728L;
     private static final Logger s_logger = Logger.getLogger(XenServer56FP1Resource.class);
@@ -60,15 +58,15 @@ public class XenServer56FP1Resource extends XenServer56Resource {
 
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
-    	return CitrixHelper.getXenServer56FP1GuestOsType(stdType, bootFromCD);
+        return CitrixHelper.getXenServer56FP1GuestOsType(stdType, bootFromCD);
     }
 
     @Override
     protected List<File> getPatchFiles() {
         List<File> files = new ArrayList<File>();
         String patch = "scripts/vm/hypervisor/xenserver/xenserver56fp1/patch";
-        String patchfilePath = Script.findScript("" , patch);
-        if ( patchfilePath == null ) {
+        String patchfilePath = Script.findScript("", patch);
+        if (patchfilePath == null) {
             throw new CloudRuntimeException("Unable to find patch file " + patch);
         }
         File file = new File(patchfilePath);
@@ -76,13 +74,11 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         return files;
     }
 
-
     @Override
     protected FenceAnswer execute(FenceCommand cmd) {
         Connection conn = getConnection();
         try {
-            String result = callHostPluginPremium(conn, "check_heartbeat", "host", cmd.getHostGuid(), "interval",
-                    Integer.toString(_heartbeatInterval * 2));
+            String result = callHostPluginPremium(conn, "check_heartbeat", "host", cmd.getHostGuid(), "interval", Integer.toString(_heartbeatInterval * 2));
             if (!result.contains("> DEAD <")) {
                 s_logger.debug("Heart beat is still going so unable to fence");
                 return new FenceAnswer(cmd, false, "Heartbeat is still going on unable to fence");
@@ -92,9 +88,9 @@ public class XenServer56FP1Resource extends XenServer56Resource {
             for (VM vm : vms) {
                 Set<VDI> vdis = new HashSet<VDI>();
                 Set<VBD> vbds = vm.getVBDs(conn);
-                for( VBD vbd : vbds ) {
+                for (VBD vbd : vbds) {
                     VDI vdi = vbd.getVDI(conn);
-                    if( !isRefNull(vdi) ) {
+                    if (!isRefNull(vdi)) {
                         vdis.add(vdi);
                     }
                 }
@@ -124,34 +120,34 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         }
     }
 
-    public long getStaticMax(String os, boolean b, long dynamicMinRam, long dynamicMaxRam){
+    public long getStaticMax(String os, boolean b, long dynamicMinRam, long dynamicMaxRam) {
         long recommendedValue = CitrixHelper.getXenServer56FP1StaticMax(os, b);
-        if(recommendedValue == 0){
+        if (recommendedValue == 0) {
             s_logger.warn("No recommended value found for dynamic max, setting static max and dynamic max equal");
             return dynamicMaxRam;
         }
 
         long staticMax = Math.min(recommendedValue, 4l * dynamicMinRam);  // XS constraint for stability
-        if (dynamicMaxRam > staticMax){ // XS contraint that dynamic max <= static max
-            s_logger.warn("dynamixMax " + dynamicMaxRam + " cant be greater than static max " + staticMax + ", can lead to stability issues. Setting static max as much as dynamic max ");
+        if (dynamicMaxRam > staticMax) { // XS contraint that dynamic max <= static max
+            s_logger.warn("dynamixMax " + dynamicMaxRam + " cant be greater than static max " + staticMax +
+                          ", can lead to stability issues. Setting static max as much as dynamic max ");
             return dynamicMaxRam;
         }
         return staticMax;
     }
 
-    public long getStaticMin(String os, boolean b, long dynamicMinRam, long dynamicMaxRam){
+    public long getStaticMin(String os, boolean b, long dynamicMinRam, long dynamicMaxRam) {
         long recommendedValue = CitrixHelper.getXenServer56FP1StaticMin(os, b);
-        if(recommendedValue == 0){
+        if (recommendedValue == 0) {
             s_logger.warn("No recommended value found for dynamic min");
             return dynamicMinRam;
         }
 
-        if(dynamicMinRam < recommendedValue){   // XS contraint that dynamic min > static min
+        if (dynamicMinRam < recommendedValue) {   // XS contraint that dynamic min > static min
             s_logger.warn("Vm is set to dynamixMin " + dynamicMinRam + " less than the recommended static min " + recommendedValue + ", could lead to stability issues.");
         }
         return dynamicMinRam;
     }
-
 
     /**
      * When Dynamic Memory Control (DMC) is enabled -

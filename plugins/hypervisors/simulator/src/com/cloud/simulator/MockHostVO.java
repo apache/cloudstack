@@ -26,83 +26,79 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="mockhost")
-
+@Table(name = "mockhost")
 public class MockHostVO implements MockHost, InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="name", nullable=false)
+    @Column(name = "name", nullable = false)
     private String name = null;
 
-    @Column(name="private_ip_address", nullable=false)
+    @Column(name = "private_ip_address", nullable = false)
     private String privateIpAddress;
 
-    @Column(name="private_mac_address", nullable=false)
+    @Column(name = "private_mac_address", nullable = false)
     private String privateMacAddress;
 
-    @Column(name="private_netmask", nullable=false)
+    @Column(name = "private_netmask", nullable = false)
     private String privateNetmask;
 
-    @Column(name="public_netmask")
+    @Column(name = "public_netmask")
     private String publicNetmask;
 
-    @Column(name="public_ip_address")
+    @Column(name = "public_ip_address")
     private String publicIpAddress;
 
-    @Column(name="public_mac_address")
+    @Column(name = "public_mac_address")
     private String publicMacAddress;
 
-    @Column(name="storage_ip_address")
+    @Column(name = "storage_ip_address")
     private String storageIpAddress;
 
-    @Column(name="storage_mac_address")
+    @Column(name = "storage_mac_address")
     private String storageMacAddress;
 
-    @Column(name="storage_netmask")
+    @Column(name = "storage_netmask")
     private String storageNetMask;
 
-    @Column(name="guid")
+    @Column(name = "guid")
     private String guid;
 
-    @Column(name="version")
+    @Column(name = "version")
     private String version;
 
-    @Column(name="data_center_id", nullable=false)
+    @Column(name = "data_center_id", nullable = false)
     private long dataCenterId;
 
-    @Column(name="pod_id")
+    @Column(name = "pod_id")
     private Long podId;
 
-    @Column(name="cluster_id")
+    @Column(name = "cluster_id")
     private Long clusterId;
 
-    @Column(name="speed")
+    @Column(name = "speed")
     private long cpuSpeed;
 
-    @Column(name="cpus")
+    @Column(name = "cpus")
     private long cpuCount;
 
-    @Column(name="ram")
+    @Column(name = "ram")
     private long memorySize;
 
-    @Column(name="capabilities")
+    @Column(name = "capabilities")
     private String capabilities;
 
-    @Column(name="vm_id")
+    @Column(name = "vm_id")
     private long vmId;
 
-    @Column(name="resource")
+    @Column(name = "resource")
     private String resource;
-
-
 
     public MockHostVO() {
 
     }
-
 
     public long getVmId() {
         return vmId;

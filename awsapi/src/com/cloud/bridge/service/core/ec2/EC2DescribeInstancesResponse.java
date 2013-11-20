@@ -21,16 +21,16 @@ import java.util.List;
 
 public class EC2DescribeInstancesResponse {
 
-	private List<EC2Instance> instanceSet = new ArrayList<EC2Instance>();    
+    private List<EC2Instance> instanceSet = new ArrayList<EC2Instance>();
 
-	public EC2DescribeInstancesResponse() {
-	}
-	
-	public void addInstance( EC2Instance param ) {
-		instanceSet.add( param );
-	}
-	
-	public EC2Instance[] getInstanceSet() {
-		return instanceSet.toArray(new EC2Instance[0]);
-	}
+    public EC2DescribeInstancesResponse() {
+    }
+
+    public void addInstance(EC2Instance param) {
+        instanceSet.add(param);
+    }
+
+    public EC2Instance[] getInstanceSet() {
+        return instanceSet.toArray(new EC2Instance[0]);
+    }
 }

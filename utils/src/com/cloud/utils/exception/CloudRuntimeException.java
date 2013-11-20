@@ -36,7 +36,6 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
 
     protected int csErrorCode;
 
-
     public CloudRuntimeException(String message) {
         super(message);
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
@@ -52,10 +51,10 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
 
-    public void addProxyObject(ExceptionProxyObject obj){
+    public void addProxyObject(ExceptionProxyObject obj) {
         idList.add(obj);
     }
-    
+
     public void addProxyObject(String uuid) {
         idList.add(new ExceptionProxyObject(uuid, null));
     }

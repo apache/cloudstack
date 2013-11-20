@@ -69,11 +69,11 @@ public class ConnectedAgentAttache extends AgentAttache {
     @Override
     public boolean equals(Object obj) {
         try {
-            ConnectedAgentAttache that = (ConnectedAgentAttache) obj;
+            ConnectedAgentAttache that = (ConnectedAgentAttache)obj;
             return super.equals(obj) && _link == that._link && _link != null;
         } catch (ClassCastException e) {
             assert false : "Who's sending an " + obj.getClass().getSimpleName() + " to " + this.getClass().getSimpleName() + ".equals()? ";
-        return false;
+            return false;
         }
     }
 

@@ -39,11 +39,15 @@ import com.cloud.utils.db.TransactionLegacy;
 public class MultipartLoadDao {
     public static final Logger logger = Logger.getLogger(MultipartLoadDao.class);
 
-    @Inject MultipartMetaDao mpartMetaDao;
-    @Inject MultiPartPartsDao mpartPartsDao;
-    @Inject MultiPartUploadsDao mpartUploadDao;
+    @Inject
+    MultipartMetaDao mpartMetaDao;
+    @Inject
+    MultiPartPartsDao mpartPartsDao;
+    @Inject
+    MultiPartUploadsDao mpartUploadDao;
 
-    public MultipartLoadDao() {}
+    public MultipartLoadDao() {
+    }
 
     /**
      * If a multipart upload exists with the uploadId value then return the non-null creators
@@ -53,12 +57,9 @@ public class MultipartLoadDao {
      * @return creator of the multipart upload, and NameKey of upload
      */
 
-
-    public OrderedPair<String,String> multipartExits( int uploadId ) 
-            throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException
-            {
+    public OrderedPair<String, String> multipartExits(int uploadId) throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
         return mpartUploadDao.multipartExits(uploadId);
-            }
+    }
 
     /**
      * The multipart upload was either successfully completed or was aborted.   In either case, we need
@@ -68,7 +69,7 @@ public class MultipartLoadDao {
      * @param uploadId
      * 
      */
-    public void deleteUpload( int uploadId ) {
+    public void deleteUpload(int uploadId) {
         mpartUploadDao.deleteUpload(uploadId);
     }
 
@@ -78,7 +79,7 @@ public class MultipartLoadDao {
      * @param uploadId
      * @return the access key value defining the initiator
      */
-    public String getInitiator( int uploadId ) {
+    public String getInitiator(int uploadId) {
         return mpartUploadDao.getAtrributeValue("AccessKey", uploadId);
     }
 
@@ -93,14 +94,13 @@ public class MultipartLoadDao {
      * @return if positive its the uploadId to be returned to the client
      *
      */
-    public int initiateUpload( String accessKey, String bucketName, String key, String cannedAccess, S3MetaDataEntry[] meta ) {
+    public int initiateUpload(String accessKey, String bucketName, String key, String cannedAccess, S3MetaDataEntry[] meta) {
         int uploadId = -1;
         TransactionLegacy txn = null;
         try {
             txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
             Date tod = new Date();
-            MultiPartUploadsVO uploadVO = new MultiPartUploadsVO(accessKey,
-                    bucketName, key, cannedAccess, tod);
+            MultiPartUploadsVO uploadVO = new MultiPartUploadsVO(accessKey, bucketName, key, cannedAccess, tod);
             uploadVO = mpartUploadDao.persist(uploadVO);
 
             if (null != uploadVO) {
@@ -136,7 +136,7 @@ public class MultipartLoadDao {
      * @param size
      * @throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException
      */
-    public void savePart( int uploadId, int partNumber, String md5, String storedPath, int size ) {
+    public void savePart(int uploadId, int partNumber, String md5, String storedPath, int size) {
 
         try {
             MultiPartPartsVO partVO = null;
@@ -146,8 +146,7 @@ public class MultipartLoadDao {
             // existing entry?)
 
             if (null == partVO) {
-                MultiPartPartsVO part = new MultiPartPartsVO(uploadId,
-                        partNumber, md5, storedPath, size, new Date());
+                MultiPartPartsVO part = new MultiPartPartsVO(uploadId, partNumber, md5, storedPath, size, new Date());
                 mpartPartsDao.persist(part);
             } else {
                 partVO.setMd5(md5);
@@ -166,7 +165,7 @@ public class MultipartLoadDao {
      * @param uploadId
      * @return the value defined in the x-amz-acl header or null
      */
-    public String getCannedAccess( int uploadId ) {
+    public String getCannedAccess(int uploadId) {
         return mpartUploadDao.getAtrributeValue("x_amz_acl", uploadId);
     }
 
@@ -178,31 +177,30 @@ public class MultipartLoadDao {
      * @return an array of S3MetaDataEntry (will be null if no meta values exist)
      * @throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException
      */
-    public S3MetaDataEntry[] getMeta( int uploadId )
-            throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException
-            {
+    public S3MetaDataEntry[] getMeta(int uploadId) throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
         List<S3MetaDataEntry> metaList = new ArrayList<S3MetaDataEntry>();
         int count = 0;
-        List<MultipartMetaVO> metaVO; 
+        List<MultipartMetaVO> metaVO;
         try {
 
             metaVO = mpartMetaDao.getByUploadID(uploadId);
             for (MultipartMetaVO multipartMetaVO : metaVO) {
                 S3MetaDataEntry oneMeta = new S3MetaDataEntry();
-                oneMeta.setName(  multipartMetaVO.getName());
-                oneMeta.setValue( multipartMetaVO.getValue());
-                metaList.add( oneMeta );
+                oneMeta.setName(multipartMetaVO.getName());
+                oneMeta.setValue(multipartMetaVO.getValue());
+                metaList.add(oneMeta);
                 count++;
             }
 
-            if ( 0 == count )
+            if (0 == count)
                 return null;
-            else return metaList.toArray(new S3MetaDataEntry[0]);
+            else
+                return metaList.toArray(new S3MetaDataEntry[0]);
 
         } finally {
 
         }
-            }
+    }
 
     /** 
      * The result has to be ordered by key and if there is more than one identical key then all the 
@@ -216,17 +214,16 @@ public class MultipartLoadDao {
      * @return OrderedPair<S3MultipartUpload[], isTruncated>
      * @throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException
      */
-    public OrderedPair<S3MultipartUpload[],Boolean> getInitiatedUploads( String bucketName, int maxParts, String prefix, String keyMarker, String uploadIdMarker )
-            throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException
-            {
+    public OrderedPair<S3MultipartUpload[], Boolean> getInitiatedUploads(String bucketName, int maxParts, String prefix, String keyMarker, String uploadIdMarker)
+        throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
         S3MultipartUpload[] inProgress = new S3MultipartUpload[maxParts];
         boolean isTruncated = false;
         int i = 0;
         int pos = 1;
         List<MultiPartUploadsVO> uploadList;
         // -> SQL like condition requires the '%' as a wildcard marker
-        if (null != prefix) prefix = prefix + "%";
-
+        if (null != prefix)
+            prefix = prefix + "%";
 
         try {
             uploadList = mpartUploadDao.getInitiatedUploads(bucketName, maxParts, prefix, keyMarker, uploadIdMarker);
@@ -234,22 +231,21 @@ public class MultipartLoadDao {
                 Calendar tod = Calendar.getInstance();
                 tod.setTime(uploadsVO.getCreateTime());
                 inProgress[i] = new S3MultipartUpload();
-                inProgress[i].setId( uploadsVO.getId().intValue()); 
+                inProgress[i].setId(uploadsVO.getId().intValue());
                 inProgress[i].setAccessKey(uploadsVO.getAccessKey());
-                inProgress[i].setLastModified( tod );
-                inProgress[i].setBucketName( bucketName );
+                inProgress[i].setLastModified(tod);
+                inProgress[i].setBucketName(bucketName);
                 inProgress[i].setKey(uploadsVO.getNameKey());
                 i++;
             }
 
             if (i < maxParts)
-                inProgress = (S3MultipartUpload[]) resizeArray(inProgress, i);
-            return new OrderedPair<S3MultipartUpload[], Boolean>(inProgress,
-                    isTruncated);
-        }finally {
+                inProgress = (S3MultipartUpload[])resizeArray(inProgress, i);
+            return new OrderedPair<S3MultipartUpload[], Boolean>(inProgress, isTruncated);
+        } finally {
         }
 
-            }
+    }
 
     /**
      * Return info on a range of upload parts that have already been stored in disk.
@@ -262,9 +258,7 @@ public class MultipartLoadDao {
      * @return an array of S3MultipartPart objects
      * @throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException
      */
-    public S3MultipartPart[] getParts( int uploadId, int maxParts, int startAt ) 
-            throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException
-            {
+    public S3MultipartPart[] getParts(int uploadId, int maxParts, int startAt) throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
         S3MultipartPart[] parts = new S3MultipartPart[maxParts];
         int i = 0;
         List<MultiPartPartsVO> partsVO;
@@ -285,13 +279,14 @@ public class MultipartLoadDao {
                 i++;
             }
 
-            if (i < maxParts) parts = (S3MultipartPart[])resizeArray(parts,i);
+            if (i < maxParts)
+                parts = (S3MultipartPart[])resizeArray(parts, i);
             return parts;
 
         } finally {
 
         }
-            }
+    }
 
     /**
      * How many parts exist after the endMarker part number?
@@ -301,7 +296,7 @@ public class MultipartLoadDao {
      * @return number of parts with partNumber greater than endMarker
      * @throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException
      */
-    public int numParts( int uploadId, int endMarker ) {
+    public int numParts(int uploadId, int endMarker) {
         return mpartPartsDao.getnumParts(uploadId, endMarker);
     }
 
@@ -313,27 +308,26 @@ public class MultipartLoadDao {
      * @param meta - an array of meta data to be assocated with the uploadId value
      * 
      */
-    private void saveMultipartMeta( int uploadId, S3MetaDataEntry[] meta ) {
-        if (null == meta) return;
+    private void saveMultipartMeta(int uploadId, S3MetaDataEntry[] meta) {
+        if (null == meta)
+            return;
 
         TransactionLegacy txn = null;
         try {
             txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
-            for( int i=0; i < meta.length; i++ ) 
-            {
+            for (int i = 0; i < meta.length; i++) {
                 S3MetaDataEntry entry = meta[i];
                 MultipartMetaVO metaVO = new MultipartMetaVO();
                 metaVO.setUploadID(uploadId);
                 metaVO.setName(entry.getName());
                 metaVO.setValue(entry.getValue());
-                metaVO=mpartMetaDao.persist(metaVO);
+                metaVO = mpartMetaDao.persist(metaVO);
             }
             txn.commit();
         } finally {
             txn.close();
         }
     }
-
 
     /**
      * Reallocates an array with a new size, and copies the contents
@@ -343,15 +337,13 @@ public class MultipartLoadDao {
      * @param newSize   the new array size.
      * @return          A new array with the same contents.
      */
-    private static Object resizeArray(Object oldArray, int newSize) 
-    {
+    private static Object resizeArray(Object oldArray, int newSize) {
         int oldSize = java.lang.reflect.Array.getLength(oldArray);
         Class elementType = oldArray.getClass().getComponentType();
-        Object newArray = java.lang.reflect.Array.newInstance(
-                elementType,newSize);
-        int preserveLength = Math.min(oldSize,newSize);
+        Object newArray = java.lang.reflect.Array.newInstance(elementType, newSize);
+        int preserveLength = Math.min(oldSize, newSize);
         if (preserveLength > 0)
-            System.arraycopy (oldArray,0,newArray,0,preserveLength);
-        return newArray; 
+            System.arraycopy(oldArray, 0, newArray, 0, preserveLength);
+        return newArray;
     }
 }

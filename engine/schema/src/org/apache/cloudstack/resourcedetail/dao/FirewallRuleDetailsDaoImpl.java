@@ -22,9 +22,8 @@ import org.apache.cloudstack.resourcedetail.FirewallRuleDetailVO;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.springframework.stereotype.Component;
 
-
 @Component
-@Local (value={FirewallRuleDetailsDao.class})
+@Local(value = {FirewallRuleDetailsDao.class})
 public class FirewallRuleDetailsDaoImpl extends ResourceDetailsDaoBase<FirewallRuleDetailVO> implements FirewallRuleDetailsDao {
 
     @Override

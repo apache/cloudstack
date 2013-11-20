@@ -30,43 +30,47 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = "addNetscalerLoadBalancer", responseObject=NetscalerLoadBalancerResponse.class, description="Adds a netscaler load balancer device")
+@APICommand(name = "addNetscalerLoadBalancer", responseObject = NetscalerLoadBalancerResponse.class, description = "Adds a netscaler load balancer device")
 public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(AddNetscalerLoadBalancerCmd.class.getName());
     private static final String s_name = "addnetscalerloadbalancerresponse";
-    @Inject NetscalerLoadBalancerElementService _netsclarLbService;
+    @Inject
+    NetscalerLoadBalancerElementService _netsclarLbService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
-            required=true, description="the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = PhysicalNetworkResponse.class,
+               required = true,
+               description = "the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the netscaler load balancer appliance.")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "URL of the netscaler load balancer appliance.")
     private String url;
 
-    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="Credentials to reach netscaler load balancer device")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Credentials to reach netscaler load balancer device")
     private String username;
-    
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Credentials to reach netscaler load balancer device")
+
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "Credentials to reach netscaler load balancer device")
     private String password;
 
-    @Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE, type = CommandType.STRING, required = true, description = "Netscaler device type supports NetscalerMPXLoadBalancer, NetscalerVPXLoadBalancer, NetscalerSDXLoadBalancer")
+    @Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE,
+               type = CommandType.STRING,
+               required = true,
+               description = "Netscaler device type supports NetscalerMPXLoadBalancer, NetscalerVPXLoadBalancer, NetscalerSDXLoadBalancer")
     private String deviceType;
 
-    @Parameter(name = ApiConstants.GSLB_PROVIDER, type = CommandType.BOOLEAN, required = false,
-            description = "true if NetScaler device being added is for providing GSLB service")
-    private boolean  isGslbProvider;
+    @Parameter(name = ApiConstants.GSLB_PROVIDER, type = CommandType.BOOLEAN, required = false, description = "true if NetScaler device being added is for providing GSLB service")
+    private boolean isGslbProvider;
 
-    @Parameter(name = ApiConstants.GSLB_PROVIDER_PUBLIC_IP, type = CommandType.STRING, required = false,
-            description = "public IP of the site")
+    @Parameter(name = ApiConstants.GSLB_PROVIDER_PUBLIC_IP, type = CommandType.STRING, required = false, description = "public IP of the site")
     private String gslbSitePublicIp;
 
-    @Parameter(name = ApiConstants.GSLB_PROVIDER_PRIVATE_IP, type = CommandType.STRING, required = false,
-            description = "public IP of the site")
+    @Parameter(name = ApiConstants.GSLB_PROVIDER_PRIVATE_IP, type = CommandType.STRING, required = false, description = "public IP of the site")
     private String gslbSitePrivateIp;
 
     /////////////////////////////////////////////////////
@@ -121,7 +125,7 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add netscaler load balancer due to internal error.");
             }
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
@@ -137,7 +141,7 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     public String getEventType() {
         return EventTypes.EVENT_EXTERNAL_LB_DEVICE_ADD;
     }
- 
+
     @Override
     public String getCommandName() {
         return s_name;

@@ -26,10 +26,11 @@ import org.springframework.stereotype.Component;
 import javax.ejb.Local;
 
 @Component
-@Local(value={MockStoragePoolDao.class})
+@Local(value = {MockStoragePoolDao.class})
 public class MockStoragePoolDaoImpl extends GenericDaoBase<MockStoragePoolVO, Long> implements MockStoragePoolDao {
     protected final SearchBuilder<MockStoragePoolVO> uuidSearch;
     protected final SearchBuilder<MockStoragePoolVO> hostguidSearch;
+
     @Override
     public MockStoragePoolVO findByUuid(String uuid) {
         SearchCriteria<MockStoragePoolVO> sc = uuidSearch.create();

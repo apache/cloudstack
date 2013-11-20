@@ -69,7 +69,7 @@ import com.cloud.utils.db.EntityManager;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
-public class NetworkACLServiceTest extends TestCase{
+public class NetworkACLServiceTest extends TestCase {
     @Inject
     NetworkACLService _aclService;
 
@@ -90,50 +90,50 @@ public class NetworkACLServiceTest extends TestCase{
     private NetworkACLVO acl;
     private NetworkACLItemVO aclItem;
 
-    private static final Logger s_logger = Logger.getLogger( NetworkACLServiceTest.class);
+    private static final Logger s_logger = Logger.getLogger(NetworkACLServiceTest.class);
 
     @Override
     @Before
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
-        Account account = new AccountVO("testaccount", 1, "testdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "testdomain", (short)0, UUID.randomUUID().toString());
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
 
         CallContext.register(user, account);
 
-        createACLItemCmd = new CreateNetworkACLCmd(){
+        createACLItemCmd = new CreateNetworkACLCmd() {
             @Override
-            public Long getACLId(){
+            public Long getACLId() {
                 return 3L;
             }
 
             @Override
-            public Integer getNumber(){
+            public Integer getNumber() {
                 return 1;
             }
 
             @Override
-            public String getProtocol(){
+            public String getProtocol() {
                 return "TCP";
             }
         };
 
-        acl = new NetworkACLVO(){
+        acl = new NetworkACLVO() {
             @Override
-            public Long getVpcId(){
+            public Long getVpcId() {
                 return 1L;
             }
 
             @Override
-            public long getId(){
+            public long getId() {
                 return 1L;
             }
 
         };
 
-        aclItem = new NetworkACLItemVO(){
+        aclItem = new NetworkACLItemVO() {
             @Override
-            public long getAclId(){
+            public long getAclId() {
                 return 4L;
             }
         };
@@ -163,8 +163,9 @@ public class NetworkACLServiceTest extends TestCase{
     public void testCreateACLItem() throws Exception {
         Mockito.when(_entityMgr.findById(Mockito.eq(Vpc.class), Mockito.anyLong())).thenReturn(new VpcVO());
         Mockito.when(_networkAclMgr.getNetworkACL(Mockito.anyLong())).thenReturn(acl);
-        Mockito.when(_networkAclMgr.createNetworkACLItem(Mockito.anyInt(), Mockito.anyInt(), Mockito.anyString(), Mockito.anyList(), Mockito.anyInt(), Mockito.anyInt(),
-                Mockito.any(NetworkACLItem.TrafficType.class), Mockito.anyLong(),  Mockito.anyString(), Mockito.anyInt())).thenReturn(new NetworkACLItemVO());
+        Mockito.when(
+            _networkAclMgr.createNetworkACLItem(Mockito.anyInt(), Mockito.anyInt(), Mockito.anyString(), Mockito.anyList(), Mockito.anyInt(), Mockito.anyInt(),
+                Mockito.any(NetworkACLItem.TrafficType.class), Mockito.anyLong(), Mockito.anyString(), Mockito.anyInt())).thenReturn(new NetworkACLItemVO());
         Mockito.when(_networkACLItemDao.findByAclAndNumber(Mockito.anyLong(), Mockito.anyInt())).thenReturn(null);
         assertNotNull(_aclService.createNetworkACLItem(createACLItemCmd));
     }
@@ -185,10 +186,9 @@ public class NetworkACLServiceTest extends TestCase{
     }
 
     @Configuration
-    @ComponentScan(basePackageClasses={NetworkACLServiceImpl.class},
-            includeFilters={@ComponentScan.Filter(value=NetworkACLTestConfiguration.Library.class, type= FilterType.CUSTOM)},
-            useDefaultFilters=false)
-    public static class NetworkACLTestConfiguration extends SpringUtils.CloudStackTestConfiguration{
+    @ComponentScan(basePackageClasses = {NetworkACLServiceImpl.class}, includeFilters = {@ComponentScan.Filter(value = NetworkACLTestConfiguration.Library.class,
+                                                                                                               type = FilterType.CUSTOM)}, useDefaultFilters = false)
+    public static class NetworkACLTestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         @Bean
         public EntityManager entityManager() {
@@ -241,10 +241,9 @@ public class NetworkACLServiceTest extends TestCase{
         }
 
         @Bean
-        public VpcGatewayDao vpcGatewayDao () {
+        public VpcGatewayDao vpcGatewayDao() {
             return Mockito.mock(VpcGatewayDao.class);
         }
-
 
         public static class Library implements TypeFilter {
             @Override

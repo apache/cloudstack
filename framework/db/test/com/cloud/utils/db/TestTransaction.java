@@ -79,17 +79,17 @@ public class TestTransaction {
         } catch (RuntimeException e) {
             assertEquals("Panic!", e.getMessage());
         }
-        
+
         verify(conn).setAutoCommit(false);
         verify(conn, times(0)).commit();
         verify(conn, times(1)).rollback();
         verify(conn, times(1)).close();
     }
-    
+
     @Test
     public void testRollbackWithException() throws Exception {
         try {
-            Transaction.execute(new TransactionCallbackWithException<Object,FileNotFoundException>() {
+            Transaction.execute(new TransactionCallbackWithException<Object, FileNotFoundException>() {
                 @Override
                 public Object doInTransaction(TransactionStatus status) throws FileNotFoundException {
                     assertEquals(TransactionLegacy.CLOUD_DB, TransactionLegacy.currentTxn().getDatabaseId().shortValue());
@@ -101,13 +101,13 @@ public class TestTransaction {
         } catch (FileNotFoundException e) {
             assertEquals("Panic!", e.getMessage());
         }
-        
+
         verify(conn).setAutoCommit(false);
         verify(conn, times(0)).commit();
         verify(conn, times(1)).rollback();
         verify(conn, times(1)).close();
     }
-    
+
     @Test
     public void testWithExceptionNoReturn() throws Exception {
         final AtomicInteger i = new AtomicInteger(0);
@@ -117,14 +117,14 @@ public class TestTransaction {
                 i.incrementAndGet();
             }
         }));
-        
+
         assertEquals(1, i.get());
         verify(conn).setAutoCommit(false);
         verify(conn, times(1)).commit();
         verify(conn, times(0)).rollback();
         verify(conn, times(1)).close();
     }
-    
+
     @Test
     public void testOtherdatabaseRollback() throws Exception {
         after();
@@ -135,7 +135,7 @@ public class TestTransaction {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
                     assertEquals(TransactionLegacy.AWSAPI_DB, TransactionLegacy.currentTxn().getDatabaseId().shortValue());
-                    
+
                     throw new RuntimeException("Panic!");
                 }
             });
@@ -143,8 +143,7 @@ public class TestTransaction {
         } catch (RuntimeException e) {
             assertEquals("Panic!", e.getMessage());
         }
-        
-        
+
         verify(conn).setAutoCommit(false);
         verify(conn, times(0)).commit();
         verify(conn, times(1)).rollback();

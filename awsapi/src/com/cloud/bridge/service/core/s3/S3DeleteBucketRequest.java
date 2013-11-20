@@ -17,17 +17,17 @@
 package com.cloud.bridge.service.core.s3;
 
 public class S3DeleteBucketRequest extends S3Request {
-	protected String bucketName;
+    protected String bucketName;
 
-	public S3DeleteBucketRequest() {
-		super();
-	}
-	
-	public String getBucketName() {
-		return bucketName;
-	}
+    public S3DeleteBucketRequest() {
+        super();
+    }
 
-	public void setBucketName(String bucketName) {
-		this.bucketName = bucketName;
-	}
+    public String getBucketName() {
+        return bucketName;
+    }
+
+    public void setBucketName(String bucketName) {
+        this.bucketName = bucketName;
+    }
 }

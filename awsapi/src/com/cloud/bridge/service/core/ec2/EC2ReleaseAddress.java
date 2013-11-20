@@ -18,25 +18,25 @@
 package com.cloud.bridge.service.core.ec2;
 
 public class EC2ReleaseAddress {
-	
-	private String publicIp;
-	
-	public EC2ReleaseAddress() {
-		setPublicIp(null);
-	}
 
-	/**
-	 * @return the publicIp
-	 */
-	public String getPublicIp() {
-		return publicIp;
-	}
+    private String publicIp;
 
-	/**
-	 * @param publicIp the publicIp to set
-	 */
-	public void setPublicIp(String publicIp) {
-		this.publicIp = publicIp;
-	}
+    public EC2ReleaseAddress() {
+        setPublicIp(null);
+    }
+
+    /**
+     * @return the publicIp
+     */
+    public String getPublicIp() {
+        return publicIp;
+    }
+
+    /**
+     * @param publicIp the publicIp to set
+     */
+    public void setPublicIp(String publicIp) {
+        this.publicIp = publicIp;
+    }
 
 }

@@ -26,7 +26,6 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-
 @APICommand(name = "cleanVMReservations", description = "Cleanups VM reservations in the database.", responseObject = SuccessResponse.class)
 public class CleanVMReservationsCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CleanVMReservationsCmd.class.getName());
@@ -36,7 +35,6 @@ public class CleanVMReservationsCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -68,7 +66,7 @@ public class CleanVMReservationsCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         try {
             _mgr.cleanupVMReservations();
             SuccessResponse response = new SuccessResponse(getCommandName());

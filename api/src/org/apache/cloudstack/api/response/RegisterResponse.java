@@ -22,10 +22,12 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class RegisterResponse extends BaseResponse {
-    @SerializedName("apikey") @Param(description="the api key of the registered user")
+    @SerializedName("apikey")
+    @Param(description = "the api key of the registered user")
     private String apiKey;
 
-    @SerializedName("secretkey") @Param(description="the secret key of the registered user")
+    @SerializedName("secretkey")
+    @Param(description = "the secret key of the registered user")
     private String secretKey;
 
     public String getApiKey() {

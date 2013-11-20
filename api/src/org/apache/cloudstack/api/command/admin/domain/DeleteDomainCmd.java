@@ -35,7 +35,7 @@ import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteDomain", description="Deletes a specified domain", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteDomain", description = "Deletes a specified domain", responseObject = SuccessResponse.class)
 public class DeleteDomainCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteDomainCmd.class.getName());
     private static final String s_name = "deletedomainresponse";
@@ -44,14 +44,16 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            required=true, description="ID of domain to delete")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainResponse.class, required = true, description = "ID of domain to delete")
     private Long id;
 
-    @Parameter(name=ApiConstants.CLEANUP, type=CommandType.BOOLEAN, description="true if all domain resources (child domains, accounts) have to be cleaned up, false otherwise")
+    @Parameter(name = ApiConstants.CLEANUP,
+               type = CommandType.BOOLEAN,
+               description = "true if all domain resources (child domains, accounts) have to be cleaned up, false otherwise")
     private Boolean cleanup;
 
-    @Inject RegionService _regionService;
+    @Inject
+    RegionService _regionService;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -91,12 +93,12 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "deleting domain: " + getId();
+        return "deleting domain: " + getId();
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Domain Id: "+getId());
+    public void execute() {
+        CallContext.current().setEventDetails("Domain Id: " + getId());
         boolean result = _regionService.deleteDomain(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

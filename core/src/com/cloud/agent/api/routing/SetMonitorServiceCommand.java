@@ -43,7 +43,7 @@ public class SetMonitorServiceCommand extends NetworkElementCommand {
     public String getConfiguration() {
 
         StringBuilder sb = new StringBuilder();
-        for (MonitorServiceTO service: services) {
+        for (MonitorServiceTO service : services) {
             sb.append("[").append(service.getService()).append("]").append(":");
             sb.append("processname=").append(service.getProcessname()).append(":");
             sb.append("servicename=").append(service.getServiceName()).append(":");

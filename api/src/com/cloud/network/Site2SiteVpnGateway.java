@@ -24,6 +24,8 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface Site2SiteVpnGateway extends ControlledEntity, Identity, InternalIdentity {
     public long getAddrId();
+
     public long getVpcId();
+
     public Date getRemoved();
 }

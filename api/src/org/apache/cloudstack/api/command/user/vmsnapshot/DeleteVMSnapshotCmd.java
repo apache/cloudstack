@@ -33,14 +33,12 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.vm.snapshot.VMSnapshot;
 
-@APICommand(name="deleteVMSnapshot", description = "Deletes a vmsnapshot.", responseObject = SuccessResponse.class, since="4.2.0")
+@APICommand(name = "deleteVMSnapshot", description = "Deletes a vmsnapshot.", responseObject = SuccessResponse.class, since = "4.2.0")
 public class DeleteVMSnapshotCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger
-            .getLogger(DeleteVMSnapshotCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(DeleteVMSnapshotCmd.class.getName());
     private static final String s_name = "deletevmsnapshotresponse";
 
-    @Parameter(name=ApiConstants.VM_SNAPSHOT_ID, type=CommandType.UUID, entityType=VMSnapshotResponse.class,
-        required=true, description="The ID of the VM snapshot")
+    @Parameter(name = ApiConstants.VM_SNAPSHOT_ID, type = CommandType.UUID, entityType = VMSnapshotResponse.class, required = true, description = "The ID of the VM snapshot")
     private Long id;
 
     public Long getId() {

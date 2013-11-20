@@ -50,12 +50,11 @@ public class AlertsSyslogAppenderTest {
 
     @Test
     public void appendTest() {
-        String message = "alertType:: 14 // dataCenterId:: 0 // podId:: 0 // clusterId:: null // message:: Management" +
-            " server node 127.0.0.1 is up";
+        String message = "alertType:: 14 // dataCenterId:: 0 // podId:: 0 // clusterId:: null // message:: Management" + " server node 127.0.0.1 is up";
         _appender.parseMessage(message);
-        String createdMessage =  _appender.createSyslogMessage();
-        assertTrue(" message is not as expected ", createdMessage.contains("alertType:: managementNode" +
-            AlertsSyslogAppender.MESSAGE_DELIMITER_STRING + "message:: Management server node 127.0.0.1 is up"));
+        String createdMessage = _appender.createSyslogMessage();
+        assertTrue(" message is not as expected ",
+            createdMessage.contains("alertType:: managementNode" + AlertsSyslogAppender.MESSAGE_DELIMITER_STRING + "message:: Management server node 127.0.0.1 is up"));
         assertTrue("severity level not as expected ", createdMessage.contains("WARN"));
     }
 }

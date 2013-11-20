@@ -27,7 +27,7 @@ import org.apache.log4j.Logger;
 import com.cloud.event.EventTypes;
 import com.cloud.server.ResourceTag;
 
-@APICommand(name = "removeResourceDetail", description="Removes detail for the Resource.", responseObject=SuccessResponse.class)
+@APICommand(name = "removeResourceDetail", description = "Removes detail for the Resource.", responseObject = SuccessResponse.class)
 public class RemoveResourceDetailCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveResourceDetailCmd.class.getName());
     private static final String s_name = "removeresourcedetailresponse";
@@ -39,19 +39,17 @@ public class RemoveResourceDetailCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.KEY, type = CommandType.STRING, description = "Delete details matching key/value pairs")
     private String key;
 
-    @Parameter(name=ApiConstants.RESOURCE_TYPE, type=CommandType.STRING, required=true, description="Delete detail by resource type")
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, required = true, description = "Delete detail by resource type")
     private String resourceType;
 
-    @Parameter(name=ApiConstants.RESOURCE_ID, type=CommandType.STRING, required=true,
-            collectionType=CommandType.STRING, description="Delete details for resource id")
+    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, required = true, collectionType = CommandType.STRING, description = "Delete details for resource id")
     private String resourceId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-
-    public ResourceTag.ResourceObjectType getResourceType(){
+    public ResourceTag.ResourceObjectType getResourceType() {
         return _taggedResourceService.getResourceType(resourceType);
     }
 
@@ -76,7 +74,6 @@ public class RemoveResourceDetailCmd extends BaseAsyncCmd {
         return ApiCommandJobType.Volume;
     }
 
-
     @Override
     public long getEntityOwnerId() {
         //FIXME - validate the owner here
@@ -90,11 +87,11 @@ public class RemoveResourceDetailCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Removing detail to the volume ";
+        return "Removing detail to the volume ";
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         _resourceMetaDataService.deleteResourceMetaData(getResourceId(), getResourceType(), getKey());
         this.setResponseObject(new SuccessResponse(getCommandName()));
     }

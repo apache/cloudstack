@@ -100,7 +100,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
-@ContextConfiguration(locations = { "classpath:/storageContext.xml" })
+@ContextConfiguration(locations = {"classpath:/storageContext.xml"})
 public class SnapshotTest extends CloudStackTestNGBase {
     @Inject
     ImageStoreDao imageStoreDao;
@@ -177,14 +177,13 @@ public class SnapshotTest extends CloudStackTestNGBase {
             imageStore = this.imageStoreDao.findByName(imageStoreName);
         } else {
             // create data center
-            DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,
-                    "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true, true, null, null);
+            DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null,
+                true, true, null, null);
             dc = dcDao.persist(dc);
             dcId = dc.getId();
             // create pod
 
-            HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), this.getHostGateway(),
-                    this.getHostCidr(), 8, "test");
+            HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), this.getHostGateway(), this.getHostCidr(), 8, "test");
             pod = podDao.persist(pod);
             podId = pod.getId();
             // create xen cluster
@@ -272,18 +271,13 @@ public class SnapshotTest extends CloudStackTestNGBase {
     protected void injectMockito() {
         List<HostVO> hosts = new ArrayList<HostVO>();
         hosts.add(this.host);
-        Mockito.when(
-                resourceMgr.listAllUpAndEnabledHosts((Type) Matchers.any(), Matchers.anyLong(), Matchers.anyLong(),
-                        Matchers.anyLong())).thenReturn(hosts);
+        Mockito.when(resourceMgr.listAllUpAndEnabledHosts((Type)Matchers.any(), Matchers.anyLong(), Matchers.anyLong(), Matchers.anyLong())).thenReturn(hosts);
 
-        remoteEp = RemoteHostEndPoint.getHypervisorHostEndPoint(this.host.getId(), this.host.getPrivateIpAddress(),
-                this.host.getPublicIpAddress());
-        Mockito.when(epSelector.select(Matchers.any(DataObject.class), Matchers.any(DataObject.class))).thenReturn(
-                remoteEp);
+        remoteEp = RemoteHostEndPoint.getHypervisorHostEndPoint(this.host.getId(), this.host.getPrivateIpAddress(), this.host.getPublicIpAddress());
+        Mockito.when(epSelector.select(Matchers.any(DataObject.class), Matchers.any(DataObject.class))).thenReturn(remoteEp);
         Mockito.when(epSelector.select(Matchers.any(DataObject.class))).thenReturn(remoteEp);
         Mockito.when(epSelector.select(Matchers.any(DataStore.class))).thenReturn(remoteEp);
-        Mockito.when(hyGuruMgr.getGuruProcessedCommandTargetHost(Matchers.anyLong(), Matchers.any(Command.class)))
-        .thenReturn(this.host.getId());
+        Mockito.when(hyGuruMgr.getGuruProcessedCommandTargetHost(Matchers.anyLong(), Matchers.any(Command.class))).thenReturn(this.host.getId());
 
     }
 
@@ -341,9 +335,8 @@ public class SnapshotTest extends CloudStackTestNGBase {
 
     private SnapshotVO createSnapshotInDb(VolumeInfo volume) {
         Snapshot.Type snapshotType = Snapshot.Type.MANUAL;
-        SnapshotVO snapshotVO = new SnapshotVO(volume.getDataCenterId(), 2, 1, volume.getId(), 1L, UUID.randomUUID()
-                .toString(), (short) snapshotType.ordinal(), snapshotType.name(), volume.getSize(),
-                HypervisorType.XenServer);
+        SnapshotVO snapshotVO = new SnapshotVO(volume.getDataCenterId(), 2, 1, volume.getId(), 1L, UUID.randomUUID().toString(), (short)snapshotType.ordinal(),
+            snapshotType.name(), volume.getSize(), HypervisorType.XenServer);
         return this.snapshotDao.persist(snapshotVO);
     }
 
@@ -362,8 +355,8 @@ public class SnapshotTest extends CloudStackTestNGBase {
         primaryStore = this.dataStoreMgr.getPrimaryDataStore(primaryStoreId);
         VolumeVO volume = createVolume(image.getId(), primaryStore.getId());
         VolumeInfo volInfo = this.volFactory.getVolume(volume.getId());
-        AsyncCallFuture<VolumeApiResult> future = this.volumeService.createVolumeFromTemplateAsync(volInfo,
-                this.primaryStoreId, this.templateFactory.getTemplate(this.image.getId(), DataStoreRole.Image));
+        AsyncCallFuture<VolumeApiResult> future = this.volumeService.createVolumeFromTemplateAsync(volInfo, this.primaryStoreId,
+            this.templateFactory.getTemplate(this.image.getId(), DataStoreRole.Image));
 
         VolumeApiResult result;
         result = future.get();
@@ -371,8 +364,6 @@ public class SnapshotTest extends CloudStackTestNGBase {
         return result.getVolume();
 
     }
-
-
 
     private VMTemplateVO createTemplateInDb() {
         VMTemplateVO image = new VMTemplateVO();
@@ -403,7 +394,6 @@ public class SnapshotTest extends CloudStackTestNGBase {
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
         boolean result = false;
 
-
         SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.TAKE);
         if (snapshotStrategy != null) {
             snapshot = snapshotStrategy.takeSnapshot(snapshot);
@@ -425,7 +415,6 @@ public class SnapshotTest extends CloudStackTestNGBase {
         SnapshotVO snapshotVO = createSnapshotInDb(vol);
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
         SnapshotInfo newSnapshot = null;
-
 
         SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.TAKE);
         if (snapshotStrategy != null) {
@@ -479,7 +468,6 @@ public class SnapshotTest extends CloudStackTestNGBase {
         SnapshotVO snapshotVO = createSnapshotInDb(vol);
         SnapshotInfo snapshot = this.snapshotFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore());
         SnapshotInfo newSnapshot = null;
-
 
         SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.TAKE);
         if (snapshotStrategy != null) {

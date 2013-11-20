@@ -81,13 +81,9 @@ public class AddNetworkServiceProviderCmdTest extends TestCase {
         NetworkService networkService = Mockito.mock(NetworkService.class);
         addNetworkServiceProviderCmd._networkService = networkService;
 
-        PhysicalNetworkServiceProvider physicalNetworkServiceProvider = Mockito
-                .mock(PhysicalNetworkServiceProvider.class);
-        Mockito.when(
-                networkService.addProviderToPhysicalNetwork(Mockito.anyLong(),
-                        Mockito.anyString(), Mockito.anyLong(),
-                        Mockito.anyList())).thenReturn(
-                physicalNetworkServiceProvider);
+        PhysicalNetworkServiceProvider physicalNetworkServiceProvider = Mockito.mock(PhysicalNetworkServiceProvider.class);
+        Mockito.when(networkService.addProviderToPhysicalNetwork(Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyList())).thenReturn(
+            physicalNetworkServiceProvider);
 
         try {
             addNetworkServiceProviderCmd.create();
@@ -98,23 +94,17 @@ public class AddNetworkServiceProviderCmdTest extends TestCase {
     }
 
     @Test
-    public void testCreateProviderToPhysicalNetworkFailure()
-            throws ResourceAllocationException {
+    public void testCreateProviderToPhysicalNetworkFailure() throws ResourceAllocationException {
 
         NetworkService networkService = Mockito.mock(NetworkService.class);
         addNetworkServiceProviderCmd._networkService = networkService;
 
-        Mockito.when(
-                networkService.addProviderToPhysicalNetwork(Mockito.anyLong(),
-                        Mockito.anyString(), Mockito.anyLong(),
-                        Mockito.anyList())).thenReturn(null);
+        Mockito.when(networkService.addProviderToPhysicalNetwork(Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyList())).thenReturn(null);
 
         try {
             addNetworkServiceProviderCmd.create();
         } catch (ServerApiException exception) {
-            Assert.assertEquals(
-                    "Failed to add service provider entity to physical network",
-                    exception.getDescription());
+            Assert.assertEquals("Failed to add service provider entity to physical network", exception.getDescription());
         }
 
     }

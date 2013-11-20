@@ -32,7 +32,7 @@ import org.apache.cloudstack.context.CallContext;
 
 import org.apache.log4j.Logger;
 
-@APICommand(name = "replaceNetworkACLList", description="Replaces ACL associated with a Network or private gateway", responseObject=SuccessResponse.class)
+@APICommand(name = "replaceNetworkACLList", description = "Replaces ACL associated with a Network or private gateway", responseObject = SuccessResponse.class)
 public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReplaceNetworkACLListCmd.class.getName());
     private static final String s_name = "replacenetworkacllistresponse";
@@ -41,16 +41,13 @@ public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACL_ID, type=CommandType.UUID, entityType = NetworkACLResponse.class,
-            required=true, description="the ID of the network ACL")
+    @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, required = true, description = "the ID of the network ACL")
     private long aclId;
 
-    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class,
-            description="the ID of the network")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "the ID of the network")
     private Long networkId;
 
-    @Parameter(name=ApiConstants.GATEWAY_ID, type=CommandType.UUID, entityType = PrivateGatewayResponse.class,
-            description="the ID of the private gateway")
+    @Parameter(name = ApiConstants.GATEWAY_ID, type = CommandType.UUID, entityType = PrivateGatewayResponse.class, description = "the ID of the private gateway")
     private Long privateGatewayId;
 
     /////////////////////////////////////////////////////
@@ -61,7 +58,7 @@ public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
         return aclId;
     }
 
-    public Long getNetworkId(){
+    public Long getNetworkId() {
         return networkId;
     }
 
@@ -84,7 +81,7 @@ public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  ("Associating Network ACL id=" + aclId+ " with Network id="+ networkId);
+        return ("Associating Network ACL id=" + aclId + " with Network id=" + networkId);
     }
 
     @Override
@@ -119,4 +116,3 @@ public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
         }
     }
 }
-

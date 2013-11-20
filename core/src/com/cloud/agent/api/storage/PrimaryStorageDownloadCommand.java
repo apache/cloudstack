@@ -24,19 +24,19 @@ import com.cloud.storage.StoragePool;
  *
  */
 public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
-	String localPath;
-	String poolUuid;
-	long poolId;
+    String localPath;
+    String poolUuid;
+    long poolId;
 
     StorageFilerTO primaryPool;
 
-	String secondaryStorageUrl;
-	String primaryStorageUrl;
+    String secondaryStorageUrl;
+    String primaryStorageUrl;
 
     protected PrimaryStorageDownloadCommand() {
-        
-	}
-    
+
+    }
+
     public PrimaryStorageDownloadCommand(String url, StoragePool pool, int wait) {
         super(null, url, null, null);
         this.poolId = pool.getId();
@@ -64,29 +64,29 @@ public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
     public StorageFilerTO getPool() {
         return primaryPool;
     }
-    
+
     public void setLocalPath(String path) {
-    	this.localPath = path;
+        this.localPath = path;
     }
 
     public String getLocalPath() {
-    	return localPath;
+        return localPath;
     }
 
     public void setSecondaryStorageUrl(String url) {
-    	secondaryStorageUrl = url;
+        secondaryStorageUrl = url;
     }
 
     public String getSecondaryStorageUrl() {
-    	return secondaryStorageUrl;
+        return secondaryStorageUrl;
     }
 
     public void setPrimaryStorageUrl(String url) {
-    	primaryStorageUrl = url;
+        primaryStorageUrl = url;
     }
 
     public String getPrimaryStorageUrl() {
-    	return primaryStorageUrl;
+        return primaryStorageUrl;
     }
 
     @Override

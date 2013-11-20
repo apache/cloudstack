@@ -24,9 +24,7 @@ import java.util.regex.Pattern;
 import org.owasp.esapi.StringUtilities;
 
 public class StringUtils {
-    private static final char[] hexChar = {
-        '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'
-    };
+    private static final char[] hexChar = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
     public static String join(Iterable<? extends Object> iterable, String delim) {
         StringBuilder sb = new StringBuilder();
@@ -44,8 +42,7 @@ public class StringUtils {
         return sb.toString();
     }
 
-    public static String join(final String delimiter,
-            final Object... components) {
+    public static String join(final String delimiter, final Object... components) {
         return org.apache.commons.lang.StringUtils.join(components, delimiter);
     }
 
@@ -88,7 +85,6 @@ public class StringUtils {
         return tagsList;
     }
 
-
     /**
      * Converts a List of tags to a comma separated list
      * @param tags
@@ -114,7 +110,7 @@ public class StringUtils {
 
         sb.append(e.toString()).append("\n");
         StackTraceElement[] elemnents = e.getStackTrace();
-        for(StackTraceElement element : elemnents) {
+        for (StackTraceElement element : elemnents) {
             sb.append(element.getClassName()).append(".");
             sb.append(element.getMethodName()).append("(");
             sb.append(element.getFileName()).append(":");
@@ -135,8 +131,7 @@ public class StringUtils {
                 sb.append(hexChar[(c >> 8) & 0xF]);  // hex for the second group of 4-bits from the left
                 sb.append(hexChar[(c >> 4) & 0xF]);  // hex for the third group
                 sb.append(hexChar[c & 0xF]);         // hex for the last group, e.g., the right most 4-bits
-            }
-            else {
+            } else {
                 sb.append(c);
             }
         }
@@ -144,13 +139,13 @@ public class StringUtils {
     }
 
     public static String getMaskedPasswordForDisplay(String password) {
-        if(password == null || password.isEmpty()) {
+        if (password == null || password.isEmpty()) {
             return "*";
         }
 
         StringBuffer sb = new StringBuffer();
         sb.append(password.charAt(0));
-        for(int i = 1; i < password.length(); i++) {
+        for (int i = 1; i < password.length(); i++) {
             sb.append("*");
         }
 
@@ -164,7 +159,7 @@ public class StringUtils {
     private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"(password|accesskey|secretkey)\":\".*?\",?");
 
     // Responsible for stripping sensitive content from request and response strings
-    public static String cleanString(String stringToClean){
+    public static String cleanString(String stringToClean) {
         String cleanResult = "";
         if (stringToClean != null) {
             cleanResult = REGEX_PASSWORD_QUERYSTRING.matcher(stringToClean).replaceAll("");
@@ -188,6 +183,6 @@ public class StringUtils {
         }
         String searchable = text.substring(start, end);
         int found = searchable.lastIndexOf(separator);
-        return found > 0 ? found :  end - start;
+        return found > 0 ? found : end - start;
     }
 }

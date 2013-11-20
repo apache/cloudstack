@@ -35,5 +35,4 @@ public class PatchAttachment extends Attachment {
         this.peerPortUuid = peerPortUuid;
     }
 
-
 }

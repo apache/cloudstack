@@ -22,20 +22,18 @@ import java.net.Socket;
 
 import com.cloud.utils.NumbersUtil;
 
-
 public class EncryptionSecretKeySender {
-    public static void main(String args[]){
+    public static void main(String args[]) {
         try {
 
             // Create a socket to the host
             String hostname = "localhost";
             int port = 8097;
 
-            if(args.length == 2){
+            if (args.length == 2) {
                 hostname = args[0];
                 port = NumbersUtil.parseInt(args[1], port);
             }
-
 
             InetAddress addr = InetAddress.getByName(hostname);
             Socket socket = new Socket(addr, port);
@@ -43,7 +41,7 @@ public class EncryptionSecretKeySender {
             java.io.BufferedReader stdin = new java.io.BufferedReader(new java.io.InputStreamReader(System.in));
             String validationWord = "cloudnine";
             String validationInput = "";
-            while(!validationWord.equals(validationInput)){
+            while (!validationWord.equals(validationInput)) {
                 System.out.print("Enter Validation Word:");
                 validationInput = stdin.readLine();
                 System.out.println();
@@ -54,7 +52,7 @@ public class EncryptionSecretKeySender {
                 out.println(input);
             }
         } catch (Exception e) {
-            System.out.print("Exception while sending secret key "+e);
+            System.out.print("Exception while sending secret key " + e);
         }
     }
 }

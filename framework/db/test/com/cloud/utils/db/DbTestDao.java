@@ -33,8 +33,7 @@ public class DbTestDao extends GenericDaoBase<DbTestVO, Long> implements Generic
         PreparedStatement pstmt = null;
         try {
             txn.start();
-            pstmt = txn
-                    .prepareAutoCloseStatement("insert into cloud.test(fld_int, fld_long, fld_string) values(?, ?, ?)");
+            pstmt = txn.prepareAutoCloseStatement("insert into cloud.test(fld_int, fld_long, fld_string) values(?, ?, ?)");
             pstmt.setInt(1, fldInt);
             pstmt.setLong(2, fldLong);
             pstmt.setString(3, fldString);

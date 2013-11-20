@@ -32,7 +32,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = { ProjectInvitationDao.class })
+@Local(value = {ProjectInvitationDao.class})
 public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO, Long> implements ProjectInvitationDao {
     private static final Logger s_logger = Logger.getLogger(ProjectInvitationDaoImpl.class);
     protected final SearchBuilder<ProjectInvitationVO> AllFieldsSearch;
@@ -65,7 +65,7 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
         sc.setParameters("accountId", accountId);
         sc.setParameters("projectId", projectId);
         if (inviteState != null && inviteState.length > 0) {
-            sc.setParameters("state", (Object[]) inviteState);
+            sc.setParameters("state", (Object[])inviteState);
         }
 
         return findOneBy(sc);
@@ -132,7 +132,7 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
         sc.setParameters("email", email);
         sc.setParameters("projectId", projectId);
         if (inviteState != null && inviteState.length > 0) {
-            sc.setParameters("state", (Object[]) inviteState);
+            sc.setParameters("state", (Object[])inviteState);
         }
 
         return findOneBy(sc);
@@ -144,7 +144,7 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
         sc.setParameters("token", token);
         sc.setParameters("projectId", projectId);
         if (inviteState != null && inviteState.length > 0) {
-            sc.setParameters("state", (Object[]) inviteState);
+            sc.setParameters("state", (Object[])inviteState);
         }
 
         return findOneBy(sc);

@@ -38,7 +38,6 @@ public class ListResponse<T extends ResponseObject> extends BaseResponse {
         this.count = count;
     }
 
-
     public Integer getCount() {
         if (count != null) {
             return count;

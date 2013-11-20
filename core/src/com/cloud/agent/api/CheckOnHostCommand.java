@@ -25,7 +25,6 @@ public class CheckOnHostCommand extends Command {
     protected CheckOnHostCommand() {
     }
 
-
     public CheckOnHostCommand(Host host) {
         this.host = new HostTO(host);
         setWait(20);

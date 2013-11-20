@@ -42,7 +42,6 @@ import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.storage.StoragePool;
 
-
 @Component
 @Service("provisioningService")
 @Path("/provisioning")

@@ -34,7 +34,7 @@ public class Upgrade307to410 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "3.0.7", "4.1.0" };
+        return new String[] {"3.0.7", "4.1.0"};
     }
 
     @Override
@@ -54,25 +54,25 @@ public class Upgrade307to410 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to find db/schema-307to410.sql");
         }
 
-        return new File[] { new File(script) };
+        return new File[] {new File(script)};
     }
 
     @Override
     public void performDataMigration(Connection conn) {
         updateRegionEntries(conn);
     }
-    
+
     private void updateRegionEntries(Connection conn) {
         final Properties dbProps = DbProperties.getDbProperties();
         int region_id = 1;
         String regionId = dbProps.getProperty("region.id");
-        if(regionId != null){
+        if (regionId != null) {
             region_id = Integer.parseInt(regionId);
         }
         PreparedStatement pstmt = null;
         try {
             //Update regionId in region table
-            s_logger.debug("Updating region table with Id: "+region_id);
+            s_logger.debug("Updating region table with Id: " + region_id);
             pstmt = conn.prepareStatement("update `cloud`.`region` set id = ?");
             pstmt.setInt(1, region_id);
             pstmt.executeUpdate();
@@ -88,7 +88,6 @@ public class Upgrade307to410 implements DbUpgrade {
             }
         }
     }
-    
 
     @Override
     public File[] getCleanupScripts() {
@@ -97,6 +96,6 @@ public class Upgrade307to410 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to find db/schema-307to410-cleanup.sql");
         }
 
-        return new File[] { new File(script) };
+        return new File[] {new File(script)};
     }
 }

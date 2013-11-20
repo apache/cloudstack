@@ -23,18 +23,19 @@ import org.apache.cloudstack.api.InternalIdentity;
  *
  */
 public interface SecurityGroupWork {
-    
+
     public enum Step {
-        Scheduled,
-        Processing,
-        Done,
-        Error
+        Scheduled, Processing, Done, Error
     }
-    
+
     Long getInstanceId();
+
     Long getLogsequenceNumber();
+
     Step getStep();
+
     void setStep(Step step);
+
     public abstract void setLogsequenceNumber(Long logsequenceNumber);
-    
+
 }

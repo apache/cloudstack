@@ -25,18 +25,18 @@ public interface PortProfileDao extends GenericDao<PortProfileVO, Long> {
      * Return a Port Profile VO (db record) given its name.
      */
     PortProfileVO findByName(String portProfileName);
-    
+
     /*
      * Returns true if there already is any portprofile that trunks
      * vlan IDs in a specified range.
      */
     boolean doesVlanRangeClash(int lowVlanId, int highVlanId);
-    
+
     /*
      * Return a list of port profiles that have the specified access vlanID.
      */
     List<PortProfileVO> listByVlanId(int vlanId);
-    
+
     /**
      * Other candidate functions that could be helpful.
      * 

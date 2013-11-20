@@ -36,8 +36,9 @@ import javax.inject.Inject;
 
 import java.util.List;
 
-@APICommand(name = "removeFromGlobalLoadBalancerRule", description="Removes a load balancer rule association with" +
-        " global load balancer rule", responseObject=SuccessResponse.class)
+@APICommand(name = "removeFromGlobalLoadBalancerRule",
+            description = "Removes a load balancer rule association with" + " global load balancer rule",
+            responseObject = SuccessResponse.class)
 public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveFromGlobalLoadBalancerRuleCmd.class.getName());
 
@@ -47,13 +48,15 @@ public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = GlobalLoadBalancerResponse.class,
-            required=true, description="The ID of the load balancer rule")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GlobalLoadBalancerResponse.class, required = true, description = "The ID of the load balancer rule")
     private Long id;
 
-    @Parameter(name=ApiConstants.LOAD_BALANCER_RULE_LIST, type=CommandType.LIST, collectionType=CommandType.UUID,
-            entityType = FirewallRuleResponse.class, required=true, description="the list load balancer rules that "
-            + "will be assigned to gloabal load balacner rule")
+    @Parameter(name = ApiConstants.LOAD_BALANCER_RULE_LIST,
+               type = CommandType.LIST,
+               collectionType = CommandType.UUID,
+               entityType = FirewallRuleResponse.class,
+               required = true,
+               description = "the list load balancer rules that " + "will be assigned to gloabal load balacner rule")
     private List<Long> loadBalancerRulesIds;
 
     /////////////////////////////////////////////////////
@@ -67,6 +70,7 @@ public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     public List<Long> getLoadBalancerRulesIds() {
         return loadBalancerRulesIds;
     }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -95,14 +99,12 @@ public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "removing load balancer rules:" + StringUtils.join(getLoadBalancerRulesIds(), ",") +
-                " from global load balancer: " + getGlobalLoadBalancerRuleId();
+        return "removing load balancer rules:" + StringUtils.join(getLoadBalancerRulesIds(), ",") + " from global load balancer: " + getGlobalLoadBalancerRuleId();
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Global Load balancer rule Id: "+ getGlobalLoadBalancerRuleId()+ " VmIds: "
-                + StringUtils.join(getLoadBalancerRulesIds(), ","));
+    public void execute() {
+        CallContext.current().setEventDetails("Global Load balancer rule Id: " + getGlobalLoadBalancerRuleId() + " VmIds: " + StringUtils.join(getLoadBalancerRulesIds(), ","));
         boolean result = _gslbService.removeFromGlobalLoadBalancerRule(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -120,7 +122,7 @@ public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     @Override
     public Long getSyncObjId() {
         GlobalLoadBalancerRule gslb = _gslbService.findById(id);
-        if(gslb == null){
+        if (gslb == null) {
             throw new InvalidParameterValueException("Unable to find load balancer rule: " + id);
         }
         return gslb.getId();

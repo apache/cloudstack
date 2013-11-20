@@ -63,17 +63,20 @@ import java.util.List;
 import java.util.Set;
 
 @Local(value = {CertService.class})
-public class CertServiceImpl implements  CertService {
+public class CertServiceImpl implements CertService {
 
     private static final Logger s_logger = Logger.getLogger(CertServiceImpl.class);
 
-    @Inject AccountManager _accountMgr;
-    @Inject AccountDao _accountDao;
-    @Inject SslCertDao _sslCertDao;
-    @Inject LoadBalancerCertMapDao _lbCertDao;
-    @Inject EntityManager _entityMgr;
-
-
+    @Inject
+    AccountManager _accountMgr;
+    @Inject
+    AccountDao _accountDao;
+    @Inject
+    SslCertDao _sslCertDao;
+    @Inject
+    LoadBalancerCertMapDao _lbCertDao;
+    @Inject
+    EntityManager _entityMgr;
 
     public CertServiceImpl() {
         Security.addProvider(new BouncyCastleProvider());
@@ -88,7 +91,7 @@ public class CertServiceImpl implements  CertService {
             String cert = URLDecoder.decode(certCmd.getCert(), "UTF-8");
             String key = URLDecoder.decode(certCmd.getKey(), "UTF-8");
             String password = certCmd.getPassword();
-            String chain = certCmd.getChain() == null ? null: URLDecoder.decode(certCmd.getChain(), "UTF-8");
+            String chain = certCmd.getChain() == null ? null : URLDecoder.decode(certCmd.getChain(), "UTF-8");
 
             validate(cert, key, password, chain);
             s_logger.debug("Certificate Validation succeeded");
@@ -97,10 +100,8 @@ public class CertServiceImpl implements  CertService {
             Long accountId = CallContext.current().getCallingAccount().getId();
             Long domainId = CallContext.current().getCallingAccount().getDomainId();
 
-
             SslCertVO certVO = new SslCertVO(cert, key, password, chain, accountId, domainId, fingerPrint);
             _sslCertDao.persist(certVO);
-
 
             return createCertResponse(certVO, null);
 
@@ -128,10 +129,10 @@ public class CertServiceImpl implements  CertService {
 
         List<LoadBalancerCertMapVO> lbCertRule = _lbCertDao.listByCertId(certId);
 
-        if ( (lbCertRule != null) && (!lbCertRule.isEmpty()) ){
+        if ((lbCertRule != null) && (!lbCertRule.isEmpty())) {
             String lbUuids = "";
 
-            for( LoadBalancerCertMapVO rule : lbCertRule ){
+            for (LoadBalancerCertMapVO rule : lbCertRule) {
                 LoadBalancerVO lb = _entityMgr.findById(LoadBalancerVO.class, rule.getLbId());
                 lbUuids += " " + lb.getUuid();
             }
@@ -147,28 +148,26 @@ public class CertServiceImpl implements  CertService {
         CallContext ctx = CallContext.current();
         Account caller = ctx.getCallingAccount();
 
-        Long certId= listSslCertCmd.getCertId();
+        Long certId = listSslCertCmd.getCertId();
         Long accountId = listSslCertCmd.getAccountId();
         Long lbRuleId = listSslCertCmd.getLbId();
 
         List<SslCertResponse> certResponseList = new ArrayList<SslCertResponse>();
 
-        if (certId == null && accountId == null && lbRuleId == null ) {
+        if (certId == null && accountId == null && lbRuleId == null) {
             throw new InvalidParameterValueException("Invalid parameters either certificate ID or Account ID or Loadbalancer ID required");
         }
 
         List<LoadBalancerCertMapVO> certLbMap = null;
         SslCertVO certVO = null;
 
-
-        if(certId != null) {
+        if (certId != null) {
 
             certVO = _sslCertDao.findById(certId);
 
             if (certVO == null) {
                 throw new InvalidParameterValueException("Invalid certificate id: " + certId);
             }
-
 
             _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ListEntry, true, certVO);
 
@@ -178,10 +177,10 @@ public class CertServiceImpl implements  CertService {
             return certResponseList;
         }
 
-        if ( lbRuleId != null) {
+        if (lbRuleId != null) {
             LoadBalancer lb = _entityMgr.findById(LoadBalancerVO.class, lbRuleId);
 
-            if ( lb == null ){
+            if (lb == null) {
                 throw new InvalidParameterValueException("found no loadbalancer  wth id: " + lbRuleId);
             }
 
@@ -205,30 +204,28 @@ public class CertServiceImpl implements  CertService {
 
         //reached here look by accountId
         List<SslCertVO> certVOList = _sslCertDao.listByAccountId(accountId);
-        if ( certVOList == null || certVOList.isEmpty())
+        if (certVOList == null || certVOList.isEmpty())
             return certResponseList;
         _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ListEntry, true, certVOList.get(0));
 
-        for( SslCertVO cert : certVOList ){
-                   certLbMap = _lbCertDao.listByCertId(cert.getId());
-                   certResponseList.add(createCertResponse(cert, certLbMap));
+        for (SslCertVO cert : certVOList) {
+            certLbMap = _lbCertDao.listByCertId(cert.getId());
+            certResponseList.add(createCertResponse(cert, certLbMap));
         }
 
         return certResponseList;
     }
 
-
     private void validate(String _cert, String _key, String _password, String _chain) {
         Certificate cert;
         PrivateKey key;
-        List<Certificate> chain=null;
-
+        List<Certificate> chain = null;
 
         try {
             cert = parseCertificate(_cert);
             key = parsePrivateKey(_key, _password);
 
-            if ( _chain != null) {
+            if (_chain != null) {
                 chain = parseChain(_chain);
             }
 
@@ -236,10 +233,10 @@ public class CertServiceImpl implements  CertService {
             throw new IllegalArgumentException("Parsing certificate/key failed: " + e.getMessage(), e);
         }
 
-        validateCert(cert, _chain != null? true: false);
+        validateCert(cert, _chain != null ? true : false);
         validateKeys(cert.getPublicKey(), key);
 
-        if ( _chain != null )
+        if (_chain != null)
             validateChain(chain, cert);
     }
 
@@ -255,12 +252,12 @@ public class CertServiceImpl implements  CertService {
         response.setFingerprint(cert.getFingerPrint());
         response.setAccountName(account.getAccountName());
 
-        if ( cert.getChain() != null)
+        if (cert.getChain() != null)
             response.setCertchain(cert.getChain());
 
-        if ( lbCertMap != null && !lbCertMap.isEmpty()){
+        if (lbCertMap != null && !lbCertMap.isEmpty()) {
             List<String> lbIds = new ArrayList<String>();
-            for ( LoadBalancerCertMapVO mapVO : lbCertMap ) {
+            for (LoadBalancerCertMapVO mapVO : lbCertMap) {
                 LoadBalancer lb = _entityMgr.findById(LoadBalancerVO.class, mapVO.getLbId());
                 lbIds.add(lb.getUuid());
             }
@@ -272,7 +269,7 @@ public class CertServiceImpl implements  CertService {
 
     private void validateCert(Certificate cert, boolean chain_present) {
 
-        if ( !( cert instanceof X509Certificate))
+        if (!(cert instanceof X509Certificate))
             throw new IllegalArgumentException("Invalid certificate format. Expected X509 certificate");
 
         try {
@@ -281,7 +278,7 @@ public class CertServiceImpl implements  CertService {
             throw new IllegalArgumentException("Certificate expired or not valid", e);
         }
 
-        if( !chain_present ) {
+        if (!chain_present) {
             PublicKey pubKey = cert.getPublicKey();
             try {
                 cert.verify(pubKey);
@@ -297,7 +294,7 @@ public class CertServiceImpl implements  CertService {
             throw new IllegalArgumentException("Public and private key have different algorithms");
 
         // No encryption for DSA
-        if ( pubKey.getAlgorithm() != "RSA")
+        if (pubKey.getAlgorithm() != "RSA")
             return;
 
         try {
@@ -305,10 +302,10 @@ public class CertServiceImpl implements  CertService {
             String data = "ENCRYPT_DATA";
             SecureRandom random = new SecureRandom();
             Cipher cipher = Cipher.getInstance(pubKey.getAlgorithm());
-            cipher.init(Cipher.ENCRYPT_MODE,privKey,random);
+            cipher.init(Cipher.ENCRYPT_MODE, privKey, random);
             byte[] encryptedData = cipher.doFinal(data.getBytes());
 
-            cipher.init(Cipher.DECRYPT_MODE,pubKey,random);
+            cipher.init(Cipher.DECRYPT_MODE, pubKey, random);
             String decreptedData = new String(cipher.doFinal(encryptedData));
             if (!decreptedData.equals(data))
                 throw new IllegalArgumentException("Bad public-private key");
@@ -326,7 +323,6 @@ public class CertServiceImpl implements  CertService {
         }
     }
 
-
     private void validateChain(List<Certificate> chain, Certificate cert) {
 
         List<Certificate> certs = new ArrayList<Certificate>();
@@ -334,12 +330,11 @@ public class CertServiceImpl implements  CertService {
 
         Set<TrustAnchor> anchors = new HashSet<TrustAnchor>();
 
-
         certs.add(cert); // adding for self signed certs
         certs.addAll(chain);
 
-        for( Certificate c : certs) {
-            if ( !( c instanceof X509Certificate))
+        for (Certificate c : certs) {
+            if (!(c instanceof X509Certificate))
                 throw new IllegalArgumentException("Invalid chain format. Expected X509 certificate");
 
             X509Certificate xCert = (X509Certificate)c;
@@ -347,15 +342,14 @@ public class CertServiceImpl implements  CertService {
             Principal subject = xCert.getSubjectDN();
             Principal issuer = xCert.getIssuerDN();
 
-            if( issuer != null &&  subject.equals(issuer) ) {
+            if (issuer != null && subject.equals(issuer)) {
                 root.add(c);
-                anchors.add(new TrustAnchor(xCert,null));
+                anchors.add(new TrustAnchor(xCert, null));
             }
         }
 
-        if ( root.size() == 0 )
-            throw new IllegalArgumentException("No root certificates found for certificate chain",null);
-
+        if (root.size() == 0)
+            throw new IllegalArgumentException("No root certificates found for certificate chain", null);
 
         X509CertSelector target = new X509CertSelector();
         target.setCertificate((X509Certificate)cert);
@@ -381,41 +375,39 @@ public class CertServiceImpl implements  CertService {
 
         PasswordFinder pGet = null;
 
-        if( password != null )
-               pGet = new KeyPassword(password.toCharArray());
+        if (password != null)
+            pGet = new KeyPassword(password.toCharArray());
 
-          PEMReader privateKey = new PEMReader(new StringReader(key), pGet);
-          Object obj = null;
-          try {
-              obj = privateKey.readObject();
-          } finally {
-              IOUtils.closeQuietly(privateKey);
-          }
+        PEMReader privateKey = new PEMReader(new StringReader(key), pGet);
+        Object obj = null;
+        try {
+            obj = privateKey.readObject();
+        } finally {
+            IOUtils.closeQuietly(privateKey);
+        }
 
         try {
 
-            if ( obj instanceof KeyPair )
+            if (obj instanceof KeyPair)
                 return ((KeyPair)obj).getPrivate();
 
-            return (PrivateKey) obj;
+            return (PrivateKey)obj;
 
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new IOException("Invalid Key format or invalid password.", e);
         }
     }
 
-
     public Certificate parseCertificate(String cert) {
         PEMReader certPem = new PEMReader(new StringReader(cert));
         try {
-            return (Certificate) certPem.readObject();
+            return (Certificate)certPem.readObject();
         } catch (Exception e) {
             throw new InvalidParameterValueException("Invalid Certificate format. Expected X509 certificate");
         } finally {
             IOUtils.closeQuietly(certPem);
         }
     }
-
 
     public List<Certificate> parseChain(String chain) throws IOException {
 
@@ -424,22 +416,20 @@ public class CertServiceImpl implements  CertService {
 
         Certificate crt = null;
 
-        while ( ( crt = (Certificate) reader.readObject()) != null ) {
-            if ( crt instanceof X509Certificate) {
+        while ((crt = (Certificate)reader.readObject()) != null) {
+            if (crt instanceof X509Certificate) {
                 certs.add(crt);
             }
         }
-        if ( certs.size() == 0 )
+        if (certs.size() == 0)
             throw new IllegalArgumentException("Unable to decode certificate chain");
 
         return certs;
     }
 
-
     String generateFingerPrint(Certificate cert) {
 
-        final char[] HEX =
-                {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+        final char[] HEX = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
         StringBuilder buffer = new StringBuilder(60);
         try {
@@ -447,8 +437,8 @@ public class CertServiceImpl implements  CertService {
             MessageDigest md = MessageDigest.getInstance("SHA-1");
             byte[] data = md.digest(cert.getEncoded());
 
-            for ( int i = 0 ; i < data.length ; i++ ) {
-                if ( buffer.length() > 0 ) {
+            for (int i = 0; i < data.length; i++) {
+                if (buffer.length() > 0) {
                     buffer.append(":");
                 }
 
@@ -465,23 +455,21 @@ public class CertServiceImpl implements  CertService {
         return buffer.toString();
     }
 
-
     public static class KeyPassword implements PasswordFinder {
 
-        boolean password_requested=false;
-        char[]  password;
+        boolean password_requested = false;
+        char[] password;
 
-
-        KeyPassword(char[] word){
+        KeyPassword(char[] word) {
             this.password = word;
         }
 
         public char[] getPassword() {
-            password_requested=true;
+            password_requested = true;
             return password;
         }
 
-        public boolean getPasswordRequested(){
+        public boolean getPasswordRequested() {
             return password_requested;
         }
     }

@@ -24,36 +24,44 @@ import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.GuestVlan;
 
-@EntityReference(value=GuestVlan.class)
+@EntityReference(value = GuestVlan.class)
 @SuppressWarnings("unused")
 public class GuestVlanRangeResponse extends BaseResponse implements ControlledEntityResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the ID of the guest VLAN range")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the ID of the guest VLAN range")
     private String id;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account of the guest VLAN range")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account of the guest VLAN range")
     private String accountName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the guest VLAN range")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain ID of the guest VLAN range")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the guest VLAN range")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain name of the guest VLAN range")
     private String domainName;
 
-    @SerializedName(ApiConstants.GUEST_VLAN_RANGE) @Param(description="the guest VLAN range")
+    @SerializedName(ApiConstants.GUEST_VLAN_RANGE)
+    @Param(description = "the guest VLAN range")
     private String guestVlanRange;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the guest vlan range")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the guest vlan range")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the guest vlan range")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the guest vlan range")
     private String projectName;
 
-    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network of the guest vlan range")
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
+    @Param(description = "the physical network of the guest vlan range")
     private Long physicalNetworkId;
 
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the zone of the guest vlan range")
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "the zone of the guest vlan range")
     private Long zoneId;
-
 
     public void setId(String id) {
         this.id = id;

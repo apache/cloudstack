@@ -51,7 +51,6 @@ public interface VolumeApiService {
      */
     Volume createVolume(CreateVolumeCmd cmd);
 
-
     /**
      * Resizes the volume based on the given criteria
      *
@@ -71,7 +70,7 @@ public interface VolumeApiService {
      *
      * @return Volume object
      */
-    Volume uploadVolume(UploadVolumeCmd cmd)    throws ResourceAllocationException;
+    Volume uploadVolume(UploadVolumeCmd cmd) throws ResourceAllocationException;
 
     boolean deleteVolume(long volumeId, Account caller) throws ConcurrentOperationException;
 
@@ -79,11 +78,10 @@ public interface VolumeApiService {
 
     Volume detachVolumeFromVM(DetachVolumeCmd cmmd);
 
-	Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm)
-			throws ResourceAllocationException;
+    Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm) throws ResourceAllocationException;
 
-	Snapshot allocSnapshot(Long volumeId, Long policyId)
-            throws ResourceAllocationException;
+    Snapshot allocSnapshot(Long volumeId, Long policyId) throws ResourceAllocationException;
+
     Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume);
 
     /**

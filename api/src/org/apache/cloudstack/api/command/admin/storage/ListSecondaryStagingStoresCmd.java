@@ -44,19 +44,15 @@ public class ListSecondaryStagingStoresCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "the staging store provider")
     private String provider;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
- description = "the Zone ID for the staging store")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID for the staging store")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = ImageStoreResponse.class,
- description = "the ID of the staging store")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class, description = "the ID of the staging store")
     private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-
 
     public Long getZoneId() {
         return zoneId;
@@ -86,17 +82,13 @@ public class ListSecondaryStagingStoresCmd extends BaseListCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-
-
-
     @Override
     public String getCommandName() {
         return s_name;
     }
 
-
     @Override
-    public void execute(){
+    public void execute() {
         ListResponse<ImageStoreResponse> response = _queryService.searchForSecondaryStagingStores(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

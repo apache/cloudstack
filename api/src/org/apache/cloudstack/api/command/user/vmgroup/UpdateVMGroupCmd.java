@@ -28,8 +28,8 @@ import org.apache.log4j.Logger;
 import com.cloud.user.Account;
 import com.cloud.vm.InstanceGroup;
 
-@APICommand(name = "updateInstanceGroup", description="Updates a vm group", responseObject=InstanceGroupResponse.class)
-public class UpdateVMGroupCmd extends BaseCmd{
+@APICommand(name = "updateInstanceGroup", description = "Updates a vm group", responseObject = InstanceGroupResponse.class)
+public class UpdateVMGroupCmd extends BaseCmd {
 
     private static final String s_name = "updateinstancegroupresponse";
     public static final Logger s_logger = Logger.getLogger(UpdateVMGroupCmd.class.getName());
@@ -38,11 +38,10 @@ public class UpdateVMGroupCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=InstanceGroupResponse.class,
-            required=true, description="Instance group ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, required = true, description = "Instance group ID")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="new instance group name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "new instance group name")
     private String groupName;
 
     /////////////////////////////////////////////////////
@@ -77,9 +76,9 @@ public class UpdateVMGroupCmd extends BaseCmd{
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         InstanceGroup result = _mgr.updateVmGroup(this);
-        if (result != null){
+        if (result != null) {
             InstanceGroupResponse response = _responseGenerator.createInstanceGroupResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);

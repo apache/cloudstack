@@ -36,7 +36,7 @@ import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
-@APICommand(name = "migrateSystemVm", description="Attempts Migration of a system virtual machine to the host specified.", responseObject=SystemVmResponse.class)
+@APICommand(name = "migrateSystemVm", description = "Attempts Migration of a system virtual machine to the host specified.", responseObject = SystemVmResponse.class)
 public class MigrateSystemVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(MigrateSystemVMCmd.class.getName());
 
@@ -46,14 +46,11 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class,
-            required=true, description="destination Host ID to migrate VM to")
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "destination Host ID to migrate VM to")
     private Long hostId;
 
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=SystemVmResponse.class,
-            required=true, description="the ID of the virtual machine")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = SystemVmResponse.class, required = true, description = "the ID of the virtual machine")
     private Long virtualMachineId;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -66,7 +63,6 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
     public Long getVirtualMachineId() {
         return virtualMachineId;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -94,18 +90,18 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Attempting to migrate VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId();
+        return "Attempting to migrate VM Id: " + getVirtualMachineId() + " to host Id: " + getHostId();
     }
 
     @Override
-    public void execute(){
+    public void execute() {
 
         Host destinationHost = _resourceService.getHost(getHostId());
         if (destinationHost == null) {
             throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId());
         }
-        try{
-            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId());
+        try {
+            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: " + getHostId());
             //FIXME : Should not be calling UserVmService to migrate all types of VMs - need a generic VM layer
             VirtualMachine migratedVm = _userVmService.migrateVirtualMachine(getVirtualMachineId(), destinationHost);
             if (migratedVm != null) {

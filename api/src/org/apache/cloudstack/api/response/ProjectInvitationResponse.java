@@ -24,31 +24,39 @@ import com.cloud.projects.ProjectInvitation;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=ProjectInvitation.class)
+@EntityReference(value = ProjectInvitation.class)
 @SuppressWarnings("unused")
-public class ProjectInvitationResponse extends BaseResponse implements ControlledViewEntityResponse{
-    @SerializedName(ApiConstants.ID) @Param(description="the id of the invitation")
+public class ProjectInvitationResponse extends BaseResponse implements ControlledViewEntityResponse {
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the id of the invitation")
     private String id;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the id of the project")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the id of the project")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the name of the project")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the name of the project")
     private String projectName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id the project belongs to")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain id the project belongs to")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name where the project belongs to")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain name where the project belongs to")
     private String domainName;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account name of the project's owner")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account name of the project's owner")
     private String accountName;
 
-    @SerializedName(ApiConstants.EMAIL) @Param(description="the email the invitation was sent to")
+    @SerializedName(ApiConstants.EMAIL)
+    @Param(description = "the email the invitation was sent to")
     private String email;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="the invitation state")
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "the invitation state")
     private String invitationState;
 
     public void setId(String id) {

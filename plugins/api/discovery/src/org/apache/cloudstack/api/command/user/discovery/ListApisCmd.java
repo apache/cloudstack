@@ -33,7 +33,10 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.User;
 
-@APICommand(name = "listApis", responseObject = ApiDiscoveryResponse.class, description = "lists all available apis on the server, provided by the Api Discovery plugin", since = "4.1.0")
+@APICommand(name = "listApis",
+            responseObject = ApiDiscoveryResponse.class,
+            description = "lists all available apis on the server, provided by the Api Discovery plugin",
+            since = "4.1.0")
 public class ListApisCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListApisCmd.class.getName());
@@ -42,14 +45,14 @@ public class ListApisCmd extends BaseCmd {
     @Inject
     ApiDiscoveryService _apiDiscoveryService;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="API name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "API name")
     private String name;
 
     @Override
     public void execute() throws ServerApiException {
         if (_apiDiscoveryService != null) {
             User user = CallContext.current().getCallingUser();
-            ListResponse<ApiDiscoveryResponse> response = (ListResponse<ApiDiscoveryResponse>) _apiDiscoveryService.listApis(user, name);
+            ListResponse<ApiDiscoveryResponse> response = (ListResponse<ApiDiscoveryResponse>)_apiDiscoveryService.listApis(user, name);
             if (response == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Api Discovery plugin was unable to find an api by that name or process any apis");
             }

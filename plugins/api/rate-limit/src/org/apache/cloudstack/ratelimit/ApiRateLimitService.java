@@ -24,7 +24,7 @@ import com.cloud.utils.component.PluggableService;
  * Provide API rate limit service
  *
  */
-public interface ApiRateLimitService extends PluggableService{
+public interface ApiRateLimitService extends PluggableService {
 
     public ApiLimitResponse searchApiLimit(Account caller);
 

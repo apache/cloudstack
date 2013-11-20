@@ -27,7 +27,9 @@ import org.apache.log4j.Logger;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 
-@APICommand(name = "registerUserKeys", responseObject=RegisterResponse.class, description="This command allows a user to register for the developer API, returning a secret key and an API key. This request is made through the integration API port, so it is a privileged command and must be made on behalf of a user. It is up to the implementer just how the username and password are entered, and then how that translates to an integration API request. Both secret key and API key should be returned to the user")
+@APICommand(name = "registerUserKeys",
+            responseObject = RegisterResponse.class,
+            description = "This command allows a user to register for the developer API, returning a secret key and an API key. This request is made through the integration API port, so it is a privileged command and must be made on behalf of a user. It is up to the implementer just how the username and password are entered, and then how that translates to an integration API request. Both secret key and API key should be returned to the user")
 public class RegisterCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterCmd.class.getName());
 
@@ -37,8 +39,7 @@ public class RegisterCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserResponse.class,
-            required=true, description="User id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserResponse.class, required = true, description = "User id")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -68,7 +69,7 @@ public class RegisterCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         String[] keys = _accountService.createApiKeyAndSecretKey(this);
         RegisterResponse response = new RegisterResponse();
         response.setApiKey(keys[0]);

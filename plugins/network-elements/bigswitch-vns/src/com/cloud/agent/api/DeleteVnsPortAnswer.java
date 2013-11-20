@@ -18,8 +18,7 @@ package com.cloud.agent.api;
 
 public class DeleteVnsPortAnswer extends Answer {
 
-    public DeleteVnsPortAnswer(Command command, boolean success,
-            String details) {
+    public DeleteVnsPortAnswer(Command command, boolean success, String details) {
         super(command, success, details);
     }
 

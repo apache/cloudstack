@@ -28,25 +28,26 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={MHostMountDao.class})
+@Local(value = {MHostMountDao.class})
 public class MHostMountDaoImpl extends GenericDaoBase<MHostMountVO, Long> implements MHostMountDao {
-    	final SearchBuilder<MHostMountVO> SearchByMHostID = createSearchBuilder();
-	public MHostMountDaoImpl() {
-	}
-	
-	@Override
-	public MHostMountVO getHostMount(long mHostId, long sHostId) { 
-	    SearchByMHostID.and("MHostID", SearchByMHostID.entity().getmHostID(), SearchCriteria.Op.EQ);
-	    SearchByMHostID.and("SHostID", SearchByMHostID.entity().getsHostID(), SearchCriteria.Op.EQ);
-	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
-	    try {
-		txn.start();
-		SearchCriteria<MHostMountVO> sc = SearchByMHostID.create();
-		sc.setParameters("MHostID", mHostId);
-		sc.setParameters("SHostID", sHostId);
-		return findOneBy(sc);
-	    }finally {
-		txn.close();
-	    }
-	}
+    final SearchBuilder<MHostMountVO> SearchByMHostID = createSearchBuilder();
+
+    public MHostMountDaoImpl() {
+    }
+
+    @Override
+    public MHostMountVO getHostMount(long mHostId, long sHostId) {
+        SearchByMHostID.and("MHostID", SearchByMHostID.entity().getmHostID(), SearchCriteria.Op.EQ);
+        SearchByMHostID.and("SHostID", SearchByMHostID.entity().getsHostID(), SearchCriteria.Op.EQ);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
+        try {
+            txn.start();
+            SearchCriteria<MHostMountVO> sc = SearchByMHostID.create();
+            sc.setParameters("MHostID", mHostId);
+            sc.setParameters("SHostID", sHostId);
+            return findOneBy(sc);
+        } finally {
+            txn.close();
+        }
+    }
 }

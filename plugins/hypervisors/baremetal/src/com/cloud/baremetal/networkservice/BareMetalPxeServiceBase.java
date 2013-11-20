@@ -35,13 +35,18 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.dao.NicDao;
 
 public abstract class BareMetalPxeServiceBase extends ManagerBase implements BaremetalPxeService {
-	@Inject DataCenterDao _dcDao;
-	@Inject HostDao _hostDao;
-	@Inject AgentManager _agentMgr;
-	@Inject HostPodDao _podDao;
-	@Inject NicDao _nicDao;
-	
-	protected String getPxeServerGuid(String zoneId, String name, String ip) {
-		return zoneId + "-" + name + "-" + ip;
-	}
+    @Inject
+    DataCenterDao _dcDao;
+    @Inject
+    HostDao _hostDao;
+    @Inject
+    AgentManager _agentMgr;
+    @Inject
+    HostPodDao _podDao;
+    @Inject
+    NicDao _nicDao;
+
+    protected String getPxeServerGuid(String zoneId, String name, String ip) {
+        return zoneId + "-" + name + "-" + ip;
+    }
 }

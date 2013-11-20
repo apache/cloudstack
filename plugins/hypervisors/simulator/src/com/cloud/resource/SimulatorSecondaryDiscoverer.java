@@ -50,14 +50,17 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-
-@Local(value=Discoverer.class)
+@Local(value = Discoverer.class)
 public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer implements ResourceStateAdapter, Listener {
     private static final Logger s_logger = Logger.getLogger(SimulatorSecondaryDiscoverer.class);
-    @Inject MockStorageManager _mockStorageMgr = null;
-    @Inject AgentManager _agentMgr;
-    @Inject ResourceManager _resourceMgr;
-    @Inject SnapshotDao _snapshotDao;
+    @Inject
+    MockStorageManager _mockStorageMgr = null;
+    @Inject
+    AgentManager _agentMgr;
+    @Inject
+    ResourceManager _resourceMgr;
+    @Inject
+    SnapshotDao _snapshotDao;
     @Inject
     ImageStoreDao imageStoreDao;
     protected SecondaryStorageResource resource;
@@ -88,22 +91,18 @@ public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer imp
         return resources;
     }
 
-
     @Override
     public void postDiscovery(List<HostVO> hosts, long msId) {
 
     }
 
     @Override
-    public HostVO createHostVOForConnectedAgent(HostVO host,
-            StartupCommand[] cmd) {
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
         return null;
     }
 
     @Override
-    public HostVO createHostVOForDirectConnectAgent(HostVO host,
-            StartupCommand[] startup, ServerResource resource,
-            Map<String, String> details, List<String> hostTags) {
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details, List<String> hostTags) {
         //for detecting SSVM dispatch
         StartupCommand firstCmd = startup[0];
         if (!(firstCmd instanceof StartupSecondaryStorageCommand)) {
@@ -115,8 +114,7 @@ public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer imp
     }
 
     @Override
-    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced,
-            boolean isForceDeleteStorage) throws UnableDeleteHostException {
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
         // no need to handle, since secondary storage is no longer a host anymore.
         return null;
     }
@@ -153,14 +151,12 @@ public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer imp
     }
 
     @Override
-    public void processConnect(Host host, StartupCommand cmd,
-            boolean forRebalance) throws ConnectionException {
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
 
     }
 
     @Override
-    public AgentControlAnswer processControlCommand(long agentId,
-            AgentControlCommand cmd) {
+    public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
         return null;
     }
 

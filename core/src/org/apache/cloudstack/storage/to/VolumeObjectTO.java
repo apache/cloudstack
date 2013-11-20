@@ -98,8 +98,7 @@ public class VolumeObjectTO implements DataTO {
         return this.hypervisorType;
     }
 
-
-    public void setDataStore(DataStoreTO store){
+    public void setDataStore(DataStoreTO store) {
         this.dataStore = store;
     }
 
@@ -187,8 +186,7 @@ public class VolumeObjectTO implements DataTO {
 
     @Override
     public String toString() {
-        return new StringBuilder("volumeTO[uuid=").append(uuid).append("|path=").append(path)
-                .append("|datastore=").append(dataStore).append("]").toString();
+        return new StringBuilder("volumeTO[uuid=").append(uuid).append("|path=").append(path).append("|datastore=").append(dataStore).append("]").toString();
     }
 
     public void setBytesReadRate(Long bytesReadRate) {
@@ -230,6 +228,5 @@ public class VolumeObjectTO implements DataTO {
     public void setDeviceId(Long deviceId) {
         this.deviceId = deviceId;
     }
-
 
 }

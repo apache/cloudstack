@@ -33,8 +33,7 @@ public class LogicalSwitchPort {
         super();
     }
 
-    public LogicalSwitchPort(final String displayName, final List<NiciraNvpTag> tags,
-            final boolean adminStatusEnabled) {
+    public LogicalSwitchPort(final String displayName, final List<NiciraNvpTag> tags, final boolean adminStatusEnabled) {
         super();
         this.displayName = displayName;
         this.tags = tags;

@@ -33,23 +33,20 @@ import com.cloud.utils.fsm.StateObject;
  */
 public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, InternalIdentity, StateObject<VirtualMachine.State> {
 
-	public enum PowerState {
-	    PowerUnknown,
-	    PowerOn,
-	    PowerOff,
+    public enum PowerState {
+        PowerUnknown, PowerOn, PowerOff,
     }
 
     public enum State {
-        Starting(true, "VM is being started.  At this state, you should find host id filled which means it's being started on that host."),
-        Running(false, "VM is running.  host id has the host that it is running on."),
-        Stopping(true, "VM is being stopped.  host id has the host that it is being stopped on."),
-        Stopped(false, "VM is stopped.  host id should be null."),
-        Destroyed(false, "VM is marked for destroy."),
-        Expunging(true, "VM is being   expunged."),
-        Migrating(true, "VM is being migrated.  host id holds to from host"),
-        Error(false, "VM is in error"),
-        Unknown(false, "VM state is unknown."),
-        Shutdowned(false, "VM is shutdowned from inside");
+        Starting(true, "VM is being started.  At this state, you should find host id filled which means it's being started on that host."), Running(
+                false,
+                "VM is running.  host id has the host that it is running on."), Stopping(true, "VM is being stopped.  host id has the host that it is being stopped on."), Stopped(
+                false,
+                "VM is stopped.  host id should be null."), Destroyed(false, "VM is marked for destroy."), Expunging(true, "VM is being   expunged."), Migrating(
+                true,
+                "VM is being migrated.  host id holds to from host"), Error(false, "VM is in error"), Unknown(false, "VM state is unknown."), Shutdowned(
+                false,
+                "VM is shutdowned from inside");
 
         private final boolean _transitional;
         String _description;
@@ -117,7 +114,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
             s_fsm.addTransition(State.Expunging, VirtualMachine.Event.ExpungeOperation, State.Expunging);
             s_fsm.addTransition(State.Error, VirtualMachine.Event.DestroyRequested, State.Expunging);
             s_fsm.addTransition(State.Error, VirtualMachine.Event.ExpungeOperation, State.Expunging);
-            			
+
             s_fsm.addTransition(State.Stopping, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running);
             s_fsm.addTransition(State.Stopped, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running);
@@ -127,7 +124,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
             s_fsm.addTransition(State.Running, VirtualMachine.Event.FollowAgentPowerOffReport, State.Stopped);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.FollowAgentPowerOffReport, State.Stopped);
         }
-        
+
         public static boolean isVmStarted(State oldState, Event e, State newState) {
             if (oldState == State.Starting && newState == State.Running) {
                 return true;
@@ -194,20 +191,14 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
         AgentReportMigrated,
         RevertRequested,
         SnapshotRequested,
-        
+
         // added for new VMSync logic
         FollowAgentPowerOnReport,
-        FollowAgentPowerOffReport,        
+        FollowAgentPowerOffReport,
     };
 
     public enum Type {
-        User(false),
-        DomainRouter(true),
-        ConsoleProxy(true),
-        SecondaryStorageVm(true),
-        ElasticIpVm(true),
-        ElasticLoadBalancerVm(true),
-        InternalLoadBalancerVm(true),
+        User(false), DomainRouter(true), ConsoleProxy(true), SecondaryStorageVm(true), ElasticIpVm(true), ElasticLoadBalancerVm(true), InternalLoadBalancerVm(true),
 
         /*
          * UserBareMetal is only used for selecting VirtualMachineGuru, there is no
@@ -265,8 +256,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
      */
     long getTemplateId();
 
-
-
     /**
      * returns the guest OS ID
      * 
@@ -308,7 +297,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
     Date getCreated();
 
     long getServiceOfferingId();
-    
+
     Long getDiskOfferingId();
 
     Type getType();

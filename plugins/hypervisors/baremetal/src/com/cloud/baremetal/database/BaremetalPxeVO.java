@@ -28,31 +28,31 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="baremetal_pxe_devices")
+@Table(name = "baremetal_pxe_devices")
 public class BaremetalPxeVO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
-    
-    @Column(name="uuid")
+
+    @Column(name = "uuid")
     private String uuid;
-    
+
     @Column(name = "host_id")
     private long hostId;
-    
+
     @Column(name = "pod_id")
     private long podId;
 
     @Column(name = "physical_network_id")
     private long physicalNetworkId;
-    
+
     @Column(name = "nsp_id")
-    private long networkServiceProviderId ;
-    
+    private long networkServiceProviderId;
+
     @Column(name = "device_type")
     private String deviceType;
-    
+
     public long getId() {
         return id;
     }
@@ -60,7 +60,7 @@ public class BaremetalPxeVO {
     public BaremetalPxeVO() {
         uuid = UUID.randomUUID().toString();
     }
-    
+
     public void setId(long id) {
         this.id = id;
     }

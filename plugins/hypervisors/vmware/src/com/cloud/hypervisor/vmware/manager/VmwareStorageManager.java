@@ -28,14 +28,24 @@ import com.cloud.agent.api.storage.*;
 
 public interface VmwareStorageManager {
     Answer execute(VmwareHostService hostService, PrimaryStorageDownloadCommand cmd);
+
     Answer execute(VmwareHostService hostService, BackupSnapshotCommand cmd);
+
     Answer execute(VmwareHostService hostService, CreatePrivateTemplateFromVolumeCommand cmd);
+
     Answer execute(VmwareHostService hostService, CreatePrivateTemplateFromSnapshotCommand cmd);
+
     Answer execute(VmwareHostService hostService, CopyVolumeCommand cmd);
+
     Answer execute(VmwareHostService hostService, CreateVolumeFromSnapshotCommand cmd);
+
     Answer execute(VmwareHostService hostService, CreateVMSnapshotCommand cmd);
+
     Answer execute(VmwareHostService hostService, DeleteVMSnapshotCommand cmd);
+
     Answer execute(VmwareHostService hostService, RevertToVMSnapshotCommand cmd);
+
     boolean execute(VmwareHostService hostService, CreateEntityDownloadURLCommand cmd);
+
     public void createOva(String path, String name);
 }

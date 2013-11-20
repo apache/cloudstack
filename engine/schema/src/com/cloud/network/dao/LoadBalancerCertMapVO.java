@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.dao;
 
-
 import org.apache.cloudstack.api.InternalIdentity;
 
 import javax.persistence.Column;
@@ -25,27 +24,25 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import java.util.UUID;
 
-
 @Entity
-@Table(name="load_balancer_cert_map")
+@Table(name = "load_balancer_cert_map")
 public class LoadBalancerCertMapVO implements InternalIdentity {
 
     @Id
-    @Column(name="id")
+    @Column(name = "id")
     private Long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="load_balancer_id")
+    @Column(name = "load_balancer_id")
     private Long lbId;
 
-    @Column(name="certificate_id")
+    @Column(name = "certificate_id")
     private Long certId;
 
-    @Column(name="revoke")
+    @Column(name = "revoke")
     private boolean revoke = false;
-
 
     public LoadBalancerCertMapVO() {
         this.uuid = UUID.randomUUID().toString();

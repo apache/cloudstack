@@ -44,7 +44,6 @@ public class DeleteSnapshotsDirCommand extends Command {
         return store;
     }
 
-
     public String getDirectory() {
         return directory;
     }

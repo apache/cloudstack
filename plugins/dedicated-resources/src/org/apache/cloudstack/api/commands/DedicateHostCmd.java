@@ -42,17 +42,17 @@ import com.cloud.user.Account;
 public class DedicateHostCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DedicateHostCmd.class.getName());
     private static final String s_name = "dedicatehostresponse";
-    @Inject DedicatedService dedicatedService;
+    @Inject
+    DedicatedService dedicatedService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType = HostResponse.class,
-            required=true, description="the ID of the host to update")
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "the ID of the host to update")
     private Long hostId;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class, required=true, description="the ID of the containing domain")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, required = true, description = "the ID of the containing domain")
     private Long domainId;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the name of the account which needs dedication. Must be used with domainId.")
@@ -89,7 +89,7 @@ public class DedicateHostCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         List<? extends DedicatedResources> result = dedicatedService.dedicateHost(getHostId(), getDomainId(), getAccountName());
         ListResponse<DedicateHostResponse> response = new ListResponse<DedicateHostResponse>();
         List<DedicateHostResponse> hostResponseList = new ArrayList<DedicateHostResponse>();

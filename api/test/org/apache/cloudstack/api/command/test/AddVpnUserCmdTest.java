@@ -99,18 +99,14 @@ public class AddVpnUserCmdTest extends TestCase {
         AccountService accountService = Mockito.mock(AccountService.class);
 
         Account account = Mockito.mock(Account.class);
-        Mockito.when(accountService.getAccount(Mockito.anyLong())).thenReturn(
-                account);
+        Mockito.when(accountService.getAccount(Mockito.anyLong())).thenReturn(account);
 
         addVpnUserCmd._accountService = accountService;
 
-        RemoteAccessVpnService ravService = Mockito
-                .mock(RemoteAccessVpnService.class);
+        RemoteAccessVpnService ravService = Mockito.mock(RemoteAccessVpnService.class);
 
         VpnUser vpnUser = Mockito.mock(VpnUser.class);
-        Mockito.when(
-                ravService.addVpnUser(Mockito.anyLong(), Mockito.anyString(),
-                        Mockito.anyString())).thenReturn(vpnUser);
+        Mockito.when(ravService.addVpnUser(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString())).thenReturn(vpnUser);
 
         addVpnUserCmd._ravService = ravService;
 
@@ -123,24 +119,19 @@ public class AddVpnUserCmdTest extends TestCase {
 
         AccountService accountService = Mockito.mock(AccountService.class);
         Account account = Mockito.mock(Account.class);
-        Mockito.when(accountService.getAccount(Mockito.anyLong())).thenReturn(
-                account);
+        Mockito.when(accountService.getAccount(Mockito.anyLong())).thenReturn(account);
 
         addVpnUserCmd._accountService = accountService;
 
-        RemoteAccessVpnService ravService = Mockito
-                .mock(RemoteAccessVpnService.class);
-        Mockito.when(
-                ravService.addVpnUser(Mockito.anyLong(), Mockito.anyString(),
-                        Mockito.anyString())).thenReturn(null);
+        RemoteAccessVpnService ravService = Mockito.mock(RemoteAccessVpnService.class);
+        Mockito.when(ravService.addVpnUser(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString())).thenReturn(null);
 
         addVpnUserCmd._ravService = ravService;
 
         try {
             addVpnUserCmd.create();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to add vpn user",
-                    exception.getDescription());
+            Assert.assertEquals("Failed to add vpn user", exception.getDescription());
         }
 
     }

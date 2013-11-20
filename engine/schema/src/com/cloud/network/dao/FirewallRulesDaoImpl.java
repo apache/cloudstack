@@ -53,9 +53,12 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     protected final SearchBuilder<FirewallRuleVO> SystemRuleSearch;
     protected final GenericSearchBuilder<FirewallRuleVO, Long> RulesByIpCount;
 
-    @Inject protected FirewallRulesCidrsDao _firewallRulesCidrsDao;
-    @Inject ResourceTagDao _tagsDao;
-    @Inject IPAddressDao _ipDao;
+    @Inject
+    protected FirewallRulesCidrsDao _firewallRulesCidrsDao;
+    @Inject
+    ResourceTagDao _tagsDao;
+    @Inject
+    IPAddressDao _ipDao;
 
     protected FirewallRulesDaoImpl() {
         super();
@@ -178,7 +181,6 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 
         return listBy(sc);
     }
-
 
     @Override
     public boolean setStateToAdd(FirewallRuleVO rule) {

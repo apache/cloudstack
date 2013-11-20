@@ -33,14 +33,12 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.InstanceGroup;
 
-
 @Component
-@Local(value={InstanceGroupJoinDao.class})
+@Local(value = {InstanceGroupJoinDao.class})
 public class InstanceGroupJoinDaoImpl extends GenericDaoBase<InstanceGroupJoinVO, Long> implements InstanceGroupJoinDao {
     public static final Logger s_logger = Logger.getLogger(InstanceGroupJoinDaoImpl.class);
 
     private SearchBuilder<InstanceGroupJoinVO> vrIdSearch;
-
 
     protected InstanceGroupJoinDaoImpl() {
 
@@ -50,8 +48,6 @@ public class InstanceGroupJoinDaoImpl extends GenericDaoBase<InstanceGroupJoinVO
 
         this._count = "select count(distinct id) from instance_group_view WHERE ";
     }
-
-
 
     @Override
     public InstanceGroupResponse newInstanceGroupResponse(InstanceGroupJoinVO group) {
@@ -66,8 +62,6 @@ public class InstanceGroupJoinDaoImpl extends GenericDaoBase<InstanceGroupJoinVO
         return groupResponse;
     }
 
-
-
     @Override
     public InstanceGroupJoinVO newInstanceGroupView(InstanceGroup group) {
         SearchCriteria<InstanceGroupJoinVO> sc = vrIdSearch.create();
@@ -77,8 +71,5 @@ public class InstanceGroupJoinDaoImpl extends GenericDaoBase<InstanceGroupJoinVO
         return grps.get(0);
 
     }
-
-
-
 
 }

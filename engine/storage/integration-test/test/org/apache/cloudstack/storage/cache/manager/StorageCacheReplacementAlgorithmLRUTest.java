@@ -57,10 +57,12 @@ public class StorageCacheReplacementAlgorithmLRUTest {
     StorageCacheReplacementAlgorithmLRU cacheReplacementAlgorithm;
     @Inject
     DataStoreManager dataStoreManager;
+
     @Before
     public void setup() throws Exception {
         ComponentContext.initComponentsLifeCycle();
     }
+
     @Test
     public void testSelectObject() {
         cacheReplacementAlgorithm.setUnusedTimeInterval(1);
@@ -138,10 +140,9 @@ public class StorageCacheReplacementAlgorithmLRUTest {
             Assert.assertNotNull(cacheReplacementAlgorithm.chooseOneToBeReplaced(store));
 
         } catch (Exception e) {
-           Assert.fail();
+            Assert.fail();
         }
     }
-
 
     @Test
     public void testSelectObjectFailed() {
@@ -193,7 +194,6 @@ public class StorageCacheReplacementAlgorithmLRUTest {
             imageStoreVO.setUrl(UUID.randomUUID().toString());
             imageStoreVO = imageStoreDao.persist(imageStoreVO);
 
-
             Date date = DateUtil.now();
 
             TemplateDataStoreVO templateStoreVO1 = new TemplateDataStoreVO();
@@ -221,6 +221,5 @@ public class StorageCacheReplacementAlgorithmLRUTest {
             Assert.fail();
         }
     }
-
 
 }

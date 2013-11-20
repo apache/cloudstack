@@ -16,11 +16,11 @@
 // under the License.
 
 package com.cloud.event.dao;
+
 import java.util.Map;
 
 import com.cloud.event.UsageEventDetailsVO;
 import com.cloud.utils.db.GenericDao;
-
 
 public interface UsageEventDetailsDao extends GenericDao<UsageEventDetailsVO, Long> {
     Map<String, String> findDetails(long eventId);

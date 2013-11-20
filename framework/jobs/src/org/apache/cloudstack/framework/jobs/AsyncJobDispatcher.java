@@ -24,5 +24,5 @@ import com.cloud.utils.component.Adapter;
 //	2)	Confirming to general adapter pattern used across CloudStack
 //
 public interface AsyncJobDispatcher extends Adapter {
-	void runJob(AsyncJob job);
+    void runJob(AsyncJob job);
 }

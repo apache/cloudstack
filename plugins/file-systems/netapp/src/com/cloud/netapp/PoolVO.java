@@ -26,51 +26,51 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="netapp_pool")
+@Table(name = "netapp_pool")
 public class PoolVO implements InternalIdentity {
-	
-	public long getId() {
-		return id;
-	}
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    public long getId() {
+        return id;
+    }
 
-	public String getName() {
-		return name;
-	}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public String getAlgorithm() {
-		return algorithm;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public void setAlgorithm(String algorithm) {
-		this.algorithm = algorithm;
-	}
+    public String getAlgorithm() {
+        return algorithm;
+    }
 
-	@Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
+    }
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
-	
-	@Column(name="name")
+
+    @Column(name = "name")
     private String name;
 
-    @Column(name="algorithm")
-	private String algorithm;
+    @Column(name = "algorithm")
+    private String algorithm;
 
-	public PoolVO(){
-		
-	}
-	
-	public PoolVO(String name, String algorithm) {
-		this.name = name;
-		this.algorithm = algorithm;
-	}
+    public PoolVO() {
+
+    }
+
+    public PoolVO(String name, String algorithm) {
+        this.name = name;
+        this.algorithm = algorithm;
+    }
 
 }

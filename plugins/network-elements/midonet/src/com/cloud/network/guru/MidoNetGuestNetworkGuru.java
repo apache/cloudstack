@@ -49,28 +49,24 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
 
     public MidoNetGuestNetworkGuru() {
         super();
-        _isolationMethods = new PhysicalNetwork.IsolationMethod[] { PhysicalNetwork.IsolationMethod.MIDO };
+        _isolationMethods = new PhysicalNetwork.IsolationMethod[] {PhysicalNetwork.IsolationMethod.MIDO};
     }
 
     @Override
-    protected boolean canHandle(NetworkOffering offering, NetworkType networkType,
-                                PhysicalNetwork physicalNetwork) {
+    protected boolean canHandle(NetworkOffering offering, NetworkType networkType, PhysicalNetwork physicalNetwork) {
         // This guru handles only Guest Isolated network that supports Source nat service
-        if (networkType == NetworkType.Advanced
-                && isMyTrafficType(offering.getTrafficType())
-                && offering.getGuestType() == Network.GuestType.Isolated
-                && isMyIsolationMethod(physicalNetwork)) {
+        if (networkType == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) && offering.getGuestType() == Network.GuestType.Isolated &&
+            isMyIsolationMethod(physicalNetwork)) {
             return true;
         } else {
-            s_logger.trace("We only take care of Guest networks of type   " + Network.GuestType.Isolated + " in zone of type " + NetworkType.Advanced + " using isolation method MIDO.");
+            s_logger.trace("We only take care of Guest networks of type   " + Network.GuestType.Isolated + " in zone of type " + NetworkType.Advanced +
+                           " using isolation method MIDO.");
             return false;
         }
     }
 
-
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan,
-                          Network userSpecified, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
         s_logger.debug("design called");
         // Check if the isolation type of the related physical network is MIDO
         PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
@@ -80,7 +76,7 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
         }
 
         s_logger.debug("Physical isolation type is MIDO, asking GuestNetworkGuru to design this network");
-        NetworkVO networkObject = (NetworkVO) super.design(offering, plan, userSpecified, owner);
+        NetworkVO networkObject = (NetworkVO)super.design(offering, plan, userSpecified, owner);
         if (networkObject == null) {
             return null;
         }
@@ -91,9 +87,7 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public Network implement(Network network, NetworkOffering offering,
-                             DeployDestination dest, ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException {
+    public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
         assert (network.getState() == Network.State.Implementing) : "Why are we implementing " + network;
         s_logger.debug("implement called network: " + network.toString());
 
@@ -102,8 +96,8 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
         //get physical network id
         long physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
 
-        NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), Network.State.Allocated,
-                network.getDataCenterId(), physicalNetworkId);
+        NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(),
+            Network.State.Allocated, network.getDataCenterId(), physicalNetworkId);
 
         if (network.getGateway() != null) {
             implemented.setGateway(network.getGateway());
@@ -122,9 +116,7 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
             routerName = String.valueOf(network.getId());
         }
 
-        String broadcastUriStr = accountUUIDStr + "."
-                                 + String.valueOf(network.getId())
-                                 + ":" + routerName;
+        String broadcastUriStr = accountUUIDStr + "." + String.valueOf(network.getId()) + ":" + routerName;
 
         implemented.setBroadcastUri(Networks.BroadcastDomainType.Mido.toUri(broadcastUriStr));
         s_logger.debug("Broadcast URI set to " + broadcastUriStr);
@@ -133,20 +125,15 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public void reserve(NicProfile nic, Network network,
-                        VirtualMachineProfile vm,
-                        DeployDestination dest, ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException {
+    public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         s_logger.debug("reserve called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
 
         super.reserve(nic, network, vm, dest, context);
     }
 
     @Override
-    public boolean release(NicProfile nic,
-                           VirtualMachineProfile vm,
-                           String reservationId) {
+    public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
         s_logger.debug("release called with nic: " + nic.toString() + " vm: " + vm.toString());
         return super.release(nic, vm, reservationId);
     }

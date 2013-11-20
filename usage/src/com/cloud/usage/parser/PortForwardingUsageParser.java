@@ -40,19 +40,21 @@ import org.springframework.stereotype.Component;
 @Component
 public class PortForwardingUsageParser {
     public static final Logger s_logger = Logger.getLogger(PortForwardingUsageParser.class.getName());
-    
+
     private static UsageDao m_usageDao;
     private static UsagePortForwardingRuleDao m_usagePFRuleDao;
 
-    @Inject private UsageDao _usageDao;
-    @Inject private UsagePortForwardingRuleDao _usagePFRuleDao;
-    
+    @Inject
+    private UsageDao _usageDao;
+    @Inject
+    private UsagePortForwardingRuleDao _usagePFRuleDao;
+
     @PostConstruct
     void init() {
-    	m_usageDao = _usageDao;
-    	m_usagePFRuleDao = _usagePFRuleDao;
+        m_usageDao = _usageDao;
+        m_usagePFRuleDao = _usagePFRuleDao;
     }
-    
+
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Parsing all PortForwardingRule usage events for account: " + account.getId());
@@ -67,8 +69,8 @@ public class PortForwardingUsageParser {
         //     - look for an entry for accountId with end date null (currently running vm or owned IP)
         //     - look for an entry for accountId with start date before given range *and* end date after given range
         List<UsagePortForwardingRuleVO> usagePFs = m_usagePFRuleDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
-        
-        if(usagePFs.isEmpty()){
+
+        if (usagePFs.isEmpty()) {
             s_logger.debug("No port forwarding usage events for this period");
             return true;
         }
@@ -80,10 +82,10 @@ public class PortForwardingUsageParser {
         // loop through all the port forwarding rule, create a usage record for each
         for (UsagePortForwardingRuleVO usagePF : usagePFs) {
             long pfId = usagePF.getId();
-            String key = ""+pfId;
-            
+            String key = "" + pfId;
+
             pfMap.put(key, new PFInfo(pfId, usagePF.getZoneId()));
-            
+
             Date pfCreateDate = usagePF.getCreated();
             Date pfDeleteDate = usagePF.getDeleted();
 
@@ -98,7 +100,6 @@ public class PortForwardingUsageParser {
 
             long currentDuration = (pfDeleteDate.getTime() - pfCreateDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
 
-
             updatePFUsageData(usageMap, key, usagePF.getId(), currentDuration);
         }
 
@@ -109,7 +110,7 @@ public class PortForwardingUsageParser {
             // Only create a usage record if we have a runningTime of bigger than zero.
             if (useTime > 0L) {
                 PFInfo info = pfMap.get(pfIdKey);
-                createUsageRecord(UsageTypes.PORT_FORWARDING_RULE, useTime, startDate, endDate, account, info.getId(), info.getZoneId() );
+                createUsageRecord(UsageTypes.PORT_FORWARDING_RULE, useTime, startDate, endDate, account, info.getId(), info.getZoneId());
             }
         }
 
@@ -140,18 +141,19 @@ public class PortForwardingUsageParser {
         String usageDisplay = dFormat.format(usage);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating usage record for port forwarding rule: " + pfId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate + ", for account: " + account.getId());
+            s_logger.debug("Creating usage record for port forwarding rule: " + pfId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate +
+                           ", for account: " + account.getId());
         }
 
         // Create the usage record
-        String usageDesc = "Port Forwarding Rule: "+pfId+" usage time";
+        String usageDesc = "Port Forwarding Rule: " + pfId + " usage time";
 
         //ToDo: get zone id
-        UsageVO usageRecord = new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type,
-                new Double(usage), null, null, null, null, pfId, null, startDate, endDate);
+        UsageVO usageRecord = new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), null, null, null, null, pfId,
+            null, startDate, endDate);
         m_usageDao.persist(usageRecord);
     }
-    
+
     private static class PFInfo {
         private long id;
         private long zoneId;
@@ -160,9 +162,11 @@ public class PortForwardingUsageParser {
             this.id = id;
             this.zoneId = zoneId;
         }
+
         public long getZoneId() {
             return zoneId;
         }
+
         public long getId() {
             return id;
         }

@@ -44,8 +44,7 @@ public class StopInternalLBVMCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class,
-            required = true, description = "the ID of the internal lb vm")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "the ID of the internal lb vm")
     private Long id;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM. The caller knows the VM is stopped.")
@@ -104,15 +103,15 @@ public class StopInternalLBVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
-        CallContext.current().setEventDetails("Internal lb vm Id: "+getId());
+        CallContext.current().setEventDetails("Internal lb vm Id: " + getId());
         VirtualRouter result = null;
         VirtualRouter vm = _routerService.findRouter(getId());
         if (vm == null || vm.getRole() != Role.INTERNAL_LB_VM) {
             throw new InvalidParameterValueException("Can't find internal lb vm by id");
         } else {
             result = _internalLbSvc.stopInternalLbVm(getId(), isForced(), CallContext.current().getCallingAccount(), CallContext.current().getCallingUserId());
-        } 
-        
+        }
+
         if (result != null) {
             DomainRouterResponse response = _responseGenerator.createDomainRouterResponse(result);
             response.setResponseName(getCommandName());

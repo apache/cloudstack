@@ -81,8 +81,7 @@ import com.cloud.utils.script.Script;
  * server.
  * 
  */
-public class ConsoleProxyResource extends ServerResourceBase implements
-        ServerResource {
+public class ConsoleProxyResource extends ServerResourceBase implements ServerResource {
     static final Logger s_logger = Logger.getLogger(ConsoleProxyResource.class);
 
     private final Properties _properties = new Properties();
@@ -99,31 +98,30 @@ public class ConsoleProxyResource extends ServerResourceBase implements
     @Override
     public Answer executeRequest(final Command cmd) {
         if (cmd instanceof CheckConsoleProxyLoadCommand) {
-            return execute((CheckConsoleProxyLoadCommand) cmd);
+            return execute((CheckConsoleProxyLoadCommand)cmd);
         } else if (cmd instanceof WatchConsoleProxyLoadCommand) {
-            return execute((WatchConsoleProxyLoadCommand) cmd);
+            return execute((WatchConsoleProxyLoadCommand)cmd);
         } else if (cmd instanceof ReadyCommand) {
             s_logger.info("Receive ReadyCommand, response with ReadyAnswer");
-            return new ReadyAnswer((ReadyCommand) cmd);
+            return new ReadyAnswer((ReadyCommand)cmd);
         } else if (cmd instanceof CheckHealthCommand) {
-            return new CheckHealthAnswer((CheckHealthCommand) cmd, true);
+            return new CheckHealthAnswer((CheckHealthCommand)cmd, true);
         } else if (cmd instanceof StartConsoleProxyAgentHttpHandlerCommand) {
-            return execute((StartConsoleProxyAgentHttpHandlerCommand) cmd);
+            return execute((StartConsoleProxyAgentHttpHandlerCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
 
     private Answer execute(StartConsoleProxyAgentHttpHandlerCommand cmd) {
-    	s_logger.info("Invoke launchConsoleProxy() in responding to StartConsoleProxyAgentHttpHandlerCommand");
+        s_logger.info("Invoke launchConsoleProxy() in responding to StartConsoleProxyAgentHttpHandlerCommand");
         launchConsoleProxy(cmd.getKeystoreBits(), cmd.getKeystorePassword(), cmd.getEncryptorPassword());
         return new Answer(cmd);
     }
 
     private void disableRpFilter() {
         try {
-            FileWriter fstream = new FileWriter(
-                    "/proc/sys/net/ipv4/conf/eth2/rp_filter");
+            FileWriter fstream = new FileWriter("/proc/sys/net/ipv4/conf/eth2/rp_filter");
             BufferedWriter out = new BufferedWriter(fstream);
             out.write("0");
             out.close();
@@ -133,25 +131,18 @@ public class ConsoleProxyResource extends ServerResourceBase implements
     }
 
     protected Answer execute(final CheckConsoleProxyLoadCommand cmd) {
-        return executeProxyLoadScan(cmd, cmd.getProxyVmId(),
-                cmd.getProxyVmName(), cmd.getProxyManagementIp(),
-                cmd.getProxyCmdPort());
+        return executeProxyLoadScan(cmd, cmd.getProxyVmId(), cmd.getProxyVmName(), cmd.getProxyManagementIp(), cmd.getProxyCmdPort());
     }
 
     protected Answer execute(final WatchConsoleProxyLoadCommand cmd) {
-        return executeProxyLoadScan(cmd, cmd.getProxyVmId(),
-                cmd.getProxyVmName(), cmd.getProxyManagementIp(),
-                cmd.getProxyCmdPort());
+        return executeProxyLoadScan(cmd, cmd.getProxyVmId(), cmd.getProxyVmName(), cmd.getProxyManagementIp(), cmd.getProxyCmdPort());
     }
 
-    private Answer executeProxyLoadScan(final Command cmd,
-            final long proxyVmId, final String proxyVmName,
-            final String proxyManagementIp, final int cmdPort) {
+    private Answer executeProxyLoadScan(final Command cmd, final long proxyVmId, final String proxyVmName, final String proxyManagementIp, final int cmdPort) {
         String result = null;
 
         final StringBuffer sb = new StringBuffer();
-        sb.append("http://").append(proxyManagementIp).append(":" + cmdPort)
-                .append("/cmd/getstatus");
+        sb.append("http://").append(proxyManagementIp).append(":" + cmdPort).append("/cmd/getstatus");
 
         boolean success = true;
         try {
@@ -159,8 +150,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements
             final URLConnection conn = url.openConnection();
 
             final InputStream is = conn.getInputStream();
-            final BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(is));
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(is));
             final StringBuilder sb2 = new StringBuilder();
             String line = null;
             try {
@@ -173,19 +163,16 @@ public class ConsoleProxyResource extends ServerResourceBase implements
                 try {
                     is.close();
                 } catch (final IOException e) {
-                    s_logger.warn("Exception when closing , console proxy address : "
-                            + proxyManagementIp);
+                    s_logger.warn("Exception when closing , console proxy address : " + proxyManagementIp);
                     success = false;
                 }
             }
         } catch (final IOException e) {
-            s_logger.warn("Unable to open console proxy command port url, console proxy address : "
-                    + proxyManagementIp);
+            s_logger.warn("Unable to open console proxy command port url, console proxy address : " + proxyManagementIp);
             success = false;
         }
 
-        return new ConsoleProxyLoadAnswer(cmd, proxyVmId, proxyVmName, success,
-                result);
+        return new ConsoleProxyLoadAnswer(cmd, proxyVmId, proxyVmName, success, result);
     }
 
     @Override
@@ -206,7 +193,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements
         cmd.setProxyVmId(_proxyVmId);
         if (_pubIp != null)
             cmd.setPublicIpAddress(_pubIp);
-        return new StartupCommand[] { cmd };
+        return new StartupCommand[] {cmd};
     }
 
     @Override
@@ -219,18 +206,17 @@ public class ConsoleProxyResource extends ServerResourceBase implements
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params)
-            throws ConfigurationException {
-        _localgw = (String) params.get("localgw");
-        _eth1mask = (String) params.get("eth1mask");
-        _eth1ip = (String) params.get("eth1ip");
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        _localgw = (String)params.get("localgw");
+        _eth1mask = (String)params.get("eth1mask");
+        _eth1ip = (String)params.get("eth1ip");
         if (_eth1ip != null) {
             params.put("private.network.device", "eth1");
         } else {
             s_logger.info("eth1ip parameter has not been configured, assuming that we are not inside a system vm");
         }
 
-        String eth2ip = (String) params.get("eth2ip");
+        String eth2ip = (String)params.get("eth2ip");
         if (eth2ip != null) {
             params.put("public.network.device", "eth2");
         } else {
@@ -243,84 +229,69 @@ public class ConsoleProxyResource extends ServerResourceBase implements
             _properties.put(entry.getKey(), entry.getValue());
         }
 
-        String value = (String) params.get("premium");
+        String value = (String)params.get("premium");
         if (value != null && value.equals("premium"))
             _proxyPort = 443;
         else {
-            value = (String) params.get("consoleproxy.httpListenPort");
+            value = (String)params.get("consoleproxy.httpListenPort");
             _proxyPort = NumbersUtil.parseInt(value, 80);
         }
 
-        value = (String) params.get("proxy_vm");
+        value = (String)params.get("proxy_vm");
         _proxyVmId = NumbersUtil.parseLong(value, 0);
 
         if (_localgw != null) {
-            String mgmtHost = (String) params.get("host");
+            String mgmtHost = (String)params.get("host");
             addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
 
-            String internalDns1 = (String) params.get("internaldns1");
+            String internalDns1 = (String)params.get("internaldns1");
             if (internalDns1 == null) {
                 s_logger.warn("No DNS entry found during configuration of NfsSecondaryStorage");
             } else {
-                addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask,
-                        internalDns1);
+                addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns1);
             }
 
-            String internalDns2 = (String) params.get("internaldns2");
+            String internalDns2 = (String)params.get("internaldns2");
             if (internalDns2 != null) {
-                addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask,
-                        internalDns2);
+                addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns2);
             }
         }
 
-        _pubIp = (String) params.get("public.ip");
+        _pubIp = (String)params.get("public.ip");
 
-        value = (String) params.get("disable_rp_filter");
+        value = (String)params.get("disable_rp_filter");
         if (value != null && value.equalsIgnoreCase("true")) {
             disableRpFilter();
         }
 
         if (s_logger.isInfoEnabled())
-            s_logger.info("Receive proxyVmId in ConsoleProxyResource configuration as "
-                    + _proxyVmId);
+            s_logger.info("Receive proxyVmId in ConsoleProxyResource configuration as " + _proxyVmId);
 
         return true;
     }
 
-    private void addRouteToInternalIpOrCidr(String localgw, String eth1ip,
-            String eth1mask, String destIpOrCidr) {
-        s_logger.debug("addRouteToInternalIp: localgw=" + localgw + ", eth1ip="
-                + eth1ip + ", eth1mask=" + eth1mask + ",destIp=" + destIpOrCidr);
+    private void addRouteToInternalIpOrCidr(String localgw, String eth1ip, String eth1mask, String destIpOrCidr) {
+        s_logger.debug("addRouteToInternalIp: localgw=" + localgw + ", eth1ip=" + eth1ip + ", eth1mask=" + eth1mask + ",destIp=" + destIpOrCidr);
         if (destIpOrCidr == null) {
             s_logger.debug("addRouteToInternalIp: destIp is null");
             return;
         }
-        if (!NetUtils.isValidIp(destIpOrCidr)
-                && !NetUtils.isValidCIDR(destIpOrCidr)) {
-            s_logger.warn(" destIp is not a valid ip address or cidr destIp="
-                    + destIpOrCidr);
+        if (!NetUtils.isValidIp(destIpOrCidr) && !NetUtils.isValidCIDR(destIpOrCidr)) {
+            s_logger.warn(" destIp is not a valid ip address or cidr destIp=" + destIpOrCidr);
             return;
         }
         boolean inSameSubnet = false;
         if (NetUtils.isValidIp(destIpOrCidr)) {
             if (eth1ip != null && eth1mask != null) {
-                inSameSubnet = NetUtils.sameSubnet(eth1ip, destIpOrCidr,
-                        eth1mask);
+                inSameSubnet = NetUtils.sameSubnet(eth1ip, destIpOrCidr, eth1mask);
             } else {
-                s_logger.warn("addRouteToInternalIp: unable to determine same subnet: _eth1ip="
-                        + eth1ip
-                        + ", dest ip="
-                        + destIpOrCidr
-                        + ", _eth1mask="
-                        + eth1mask);
+                s_logger.warn("addRouteToInternalIp: unable to determine same subnet: _eth1ip=" + eth1ip + ", dest ip=" + destIpOrCidr + ", _eth1mask=" + eth1mask);
             }
         } else {
-            inSameSubnet = NetUtils.isNetworkAWithinNetworkB(destIpOrCidr,
-                    NetUtils.ipAndNetMaskToCidr(eth1ip, eth1mask));
+            inSameSubnet = NetUtils.isNetworkAWithinNetworkB(destIpOrCidr, NetUtils.ipAndNetMaskToCidr(eth1ip, eth1mask));
         }
         if (inSameSubnet) {
-            s_logger.debug("addRouteToInternalIp: dest ip " + destIpOrCidr
-                    + " is in the same subnet as eth1 ip " + eth1ip);
+            s_logger.debug("addRouteToInternalIp: dest ip " + destIpOrCidr + " is in the same subnet as eth1 ip " + eth1ip);
             return;
         }
         Script command = new Script("/bin/bash", s_logger);
@@ -332,11 +303,9 @@ public class ConsoleProxyResource extends ServerResourceBase implements
         command.add("ip route add " + destIpOrCidr + " via " + localgw);
         String result = command.execute();
         if (result != null) {
-            s_logger.warn("Error in configuring route to internal ip err="
-                    + result);
+            s_logger.warn("Error in configuring route to internal ip err=" + result);
         } else {
-            s_logger.debug("addRouteToInternalIp: added route to internal ip="
-                    + destIpOrCidr + " via " + localgw);
+            s_logger.debug("addRouteToInternalIp: added route to internal ip=" + destIpOrCidr + " via " + localgw);
         }
     }
 
@@ -354,17 +323,13 @@ public class ConsoleProxyResource extends ServerResourceBase implements
                     try {
                         Class<?> consoleProxyClazz = Class.forName("com.cloud.consoleproxy.ConsoleProxy");
                         try {
-                        	s_logger.info("Invoke setEncryptorPassword(), ecnryptorPassword: " + encryptorPassword);
-                            Method methodSetup = consoleProxyClazz.getMethod(
-                                    "setEncryptorPassword", String.class);
+                            s_logger.info("Invoke setEncryptorPassword(), ecnryptorPassword: " + encryptorPassword);
+                            Method methodSetup = consoleProxyClazz.getMethod("setEncryptorPassword", String.class);
                             methodSetup.invoke(null, encryptorPassword);
-                            
-                        	s_logger.info("Invoke startWithContext()");
-                            Method method = consoleProxyClazz.getMethod(
-                                    "startWithContext", Properties.class,
-                                    Object.class, byte[].class, String.class);
-                            method.invoke(null, _properties, resource, ksBits,
-                                    ksPassword);
+
+                            s_logger.info("Invoke startWithContext()");
+                            Method method = consoleProxyClazz.getMethod("startWithContext", Properties.class, Object.class, byte[].class, String.class);
+                            method.invoke(null, _properties, resource, ksBits, ksPassword);
                         } catch (SecurityException e) {
                             s_logger.error("Unable to launch console proxy due to SecurityException", e);
                             System.exit(ExitStatus.Error.value());
@@ -391,7 +356,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements
             _consoleProxyMain.start();
         } else {
             s_logger.info("com.cloud.consoleproxy.ConsoleProxy is already running");
-            
+
             try {
                 Class<?> consoleProxyClazz = Class.forName("com.cloud.consoleproxy.ConsoleProxy");
                 Method methodSetup = consoleProxyClazz.getMethod("setEncryptorPassword", String.class);
@@ -418,20 +383,18 @@ public class ConsoleProxyResource extends ServerResourceBase implements
         }
     }
 
-    public String authenticateConsoleAccess(String host, String port,
-        String vmId, String sid, String ticket, Boolean isReauthentication) {
-        
-        ConsoleAccessAuthenticationCommand cmd = new ConsoleAccessAuthenticationCommand(
-                host, port, vmId, sid, ticket);
+    public String authenticateConsoleAccess(String host, String port, String vmId, String sid, String ticket, Boolean isReauthentication) {
+
+        ConsoleAccessAuthenticationCommand cmd = new ConsoleAccessAuthenticationCommand(host, port, vmId, sid, ticket);
         cmd.setReauthenticating(isReauthentication);
-        
+
         ConsoleProxyAuthenticationResult result = new ConsoleProxyAuthenticationResult();
         result.setSuccess(false);
         result.setReauthentication(isReauthentication);
 
         try {
             AgentControlAnswer answer = getAgentControl().sendRequest(cmd, 10000);
-            
+
             if (answer != null) {
                 ConsoleAccessAuthenticationAnswer authAnswer = (ConsoleAccessAuthenticationAnswer)answer;
                 result.setSuccess(authAnswer.succeeded());
@@ -443,68 +406,60 @@ public class ConsoleProxyResource extends ServerResourceBase implements
                 s_logger.error("Authentication failed for vm: " + vmId + " with sid: " + sid);
             }
         } catch (AgentControlChannelException e) {
-            s_logger.error("Unable to send out console access authentication request due to "
-                + e.getMessage(), e);
+            s_logger.error("Unable to send out console access authentication request due to " + e.getMessage(), e);
         }
 
         return new Gson().toJson(result);
     }
 
     public void reportLoadInfo(String gsonLoadInfo) {
-        ConsoleProxyLoadReportCommand cmd = new ConsoleProxyLoadReportCommand(
-                _proxyVmId, gsonLoadInfo);
+        ConsoleProxyLoadReportCommand cmd = new ConsoleProxyLoadReportCommand(_proxyVmId, gsonLoadInfo);
         try {
             getAgentControl().postRequest(cmd);
 
             if (s_logger.isDebugEnabled())
-                s_logger.debug("Report proxy load info, proxy : " + _proxyVmId
-                        + ", load: " + gsonLoadInfo);
+                s_logger.debug("Report proxy load info, proxy : " + _proxyVmId + ", load: " + gsonLoadInfo);
         } catch (AgentControlChannelException e) {
-            s_logger.error(
-                    "Unable to send out load info due to " + e.getMessage(), e);
+            s_logger.error("Unable to send out load info due to " + e.getMessage(), e);
         }
     }
 
     public void ensureRoute(String address) {
         if (_localgw != null) {
             if (s_logger.isDebugEnabled())
-                s_logger.debug("Ensure route for " + address + " via "
-                        + _localgw);
+                s_logger.debug("Ensure route for " + address + " via " + _localgw);
 
             // this method won't be called in high frequency, serialize access
             // to script execution
             synchronized (this) {
                 try {
-                    addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask,
-                            address);
+                    addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, address);
                 } catch (Throwable e) {
-                    s_logger.warn(
-                            "Unexpected exception while adding internal route to "
-                                    + address, e);
+                    s_logger.warn("Unexpected exception while adding internal route to " + address, e);
                 }
             }
         }
     }
 
-	@Override
-	public void setName(String name) {
-	}
+    @Override
+    public void setName(String name) {
+    }
 
-	@Override
-	public void setConfigParams(Map<String, Object> params) {
-	}
+    @Override
+    public void setConfigParams(Map<String, Object> params) {
+    }
 
-	@Override
-	public Map<String, Object> getConfigParams() {
-		return new HashMap<String, Object>();
-	}
+    @Override
+    public Map<String, Object> getConfigParams() {
+        return new HashMap<String, Object>();
+    }
 
-	@Override
-	public int getRunLevel() {
-		return 0;
-	}
+    @Override
+    public int getRunLevel() {
+        return 0;
+    }
 
-	@Override
-	public void setRunLevel(int level) {
-	}
+    @Override
+    public void setRunLevel(int level) {
+    }
 }

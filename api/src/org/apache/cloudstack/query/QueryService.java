@@ -85,20 +85,20 @@ public interface QueryService {
 
     public ListResponse<AccountResponse> searchForAccounts(ListAccountsCmd cmd);
 
-    public ListResponse<AsyncJobResponse>  searchForAsyncJobs(ListAsyncJobsCmd cmd);
+    public ListResponse<AsyncJobResponse> searchForAsyncJobs(ListAsyncJobsCmd cmd);
 
-    public ListResponse<DiskOfferingResponse>  searchForDiskOfferings(ListDiskOfferingsCmd cmd);
+    public ListResponse<DiskOfferingResponse> searchForDiskOfferings(ListDiskOfferingsCmd cmd);
 
-    public ListResponse<ServiceOfferingResponse>  searchForServiceOfferings(ListServiceOfferingsCmd cmd);
+    public ListResponse<ServiceOfferingResponse> searchForServiceOfferings(ListServiceOfferingsCmd cmd);
 
-    public ListResponse<ZoneResponse>  listDataCenters(ListZonesByCmd cmd);
+    public ListResponse<ZoneResponse> listDataCenters(ListZonesByCmd cmd);
 
     public ListResponse<TemplateResponse> listTemplates(ListTemplatesCmd cmd);
 
     public ListResponse<TemplateResponse> listIsos(ListIsosCmd cmd);
-    public ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName,
-            String affinityGroupType, Long vmId, String accountName, Long domainId, boolean isRecursive,
-            boolean listAll, Long startIndex, Long pageSize);
+
+    public ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName, String affinityGroupType, Long vmId, String accountName,
+        Long domainId, boolean isRecursive, boolean listAll, Long startIndex, Long pageSize);
 
     public List<ResourceDetailResponse> listResourceDetails(ListResourceDetailsCmd cmd);
 

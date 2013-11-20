@@ -73,11 +73,9 @@ public class PerfManagerMO extends BaseMO {
         return xgc;
     }
 
-    public List<PerfMetricId> queryAvailablePerfMetric(ManagedObjectReference morEntity, Calendar beginTime,
-        Calendar endTime, Integer intervalId) throws Exception {
+    public List<PerfMetricId> queryAvailablePerfMetric(ManagedObjectReference morEntity, Calendar beginTime, Calendar endTime, Integer intervalId) throws Exception {
 
-        return _context.getService().queryAvailablePerfMetric(_mor, morEntity, calendarToXMLGregorianCalendar(beginTime),
-                calendarToXMLGregorianCalendar(endTime), intervalId);
+        return _context.getService().queryAvailablePerfMetric(_mor, morEntity, calendarToXMLGregorianCalendar(beginTime), calendarToXMLGregorianCalendar(endTime), intervalId);
     }
 
     public PerfCompositeMetric queryPerfComposite(PerfQuerySpec spec) throws Exception {
@@ -86,8 +84,8 @@ public class PerfManagerMO extends BaseMO {
 
     public List<PerfCounterInfo> queryPerfCounter(int[] counterId) throws Exception {
         List<Integer> counterArr = new ArrayList<Integer>();
-        if ( counterId != null){
-            for (int i = 0; i < counterId.length; i++ ){
+        if (counterId != null) {
+            for (int i = 0; i < counterId.length; i++) {
                 counterArr.add(counterId[i]);
             }
         }

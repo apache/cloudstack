@@ -27,7 +27,7 @@ import com.cloud.org.Grouping.AllocationState;
 public interface PodEntity extends DataCenterResourceEntity {
 
     List<Cluster> listClusters();
-    
+
     String getCidrAddress();
 
     int getCidrSize();

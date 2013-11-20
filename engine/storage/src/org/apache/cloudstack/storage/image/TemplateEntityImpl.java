@@ -44,7 +44,7 @@ public class TemplateEntityImpl implements TemplateEntity {
     }
 
     public ImageStoreInfo getImageDataStore() {
-        return (ImageStoreInfo) templateInfo.getDataStore();
+        return (ImageStoreInfo)templateInfo.getDataStore();
     }
 
     public long getImageDataStoreId() {

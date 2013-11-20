@@ -20,7 +20,6 @@ package org.apache.cloudstack.engine.datacenter.entity.api;
 
 import javax.ws.rs.GET;
 
-
 import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
 
@@ -41,9 +40,8 @@ public interface DataCenterResourceEntity extends CloudStackEntity, StateObject<
      *
      */
     public enum State {
-        Disabled("The resource is disabled so CloudStack should not use it.  This is the initial state of all resources added to CloudStack."),
-        Enabled("The resource is now enabled for CloudStack to use."),
-        Deactivated("The resource is deactivated so CloudStack should not use it for new resource needs.");
+        Disabled("The resource is disabled so CloudStack should not use it.  This is the initial state of all resources added to CloudStack."), Enabled(
+                "The resource is now enabled for CloudStack to use."), Deactivated("The resource is deactivated so CloudStack should not use it for new resource needs.");
 
         String _description;
 
@@ -52,10 +50,7 @@ public interface DataCenterResourceEntity extends CloudStackEntity, StateObject<
         }
 
         public enum Event {
-            EnableRequest,
-            DisableRequest,
-            DeactivateRequest,
-            ActivatedRequest
+            EnableRequest, DisableRequest, DeactivateRequest, ActivatedRequest
         }
 
         protected static final StateMachine2<State, Event, DataCenterResourceEntity> s_fsm = new StateMachine2<State, Event, DataCenterResourceEntity>();
@@ -71,7 +66,7 @@ public interface DataCenterResourceEntity extends CloudStackEntity, StateObject<
     /**
      * Prepare the resource to take new on new demands.
      */
-    @POST 
+    @POST
     boolean enable();
 
     /**
@@ -92,13 +87,11 @@ public interface DataCenterResourceEntity extends CloudStackEntity, StateObject<
     @POST
     boolean reactivate();
 
-
     @Override
     @GET
     State getState();
 
-    
     public void persist();
-    
+
     String getName();
 }

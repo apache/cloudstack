@@ -39,10 +39,8 @@ public class DeleteImageStoreCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class,
-            required = true, description = "the image store ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class, required = true, description = "the image store ID")
     private Long id;
-
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -51,7 +49,6 @@ public class DeleteImageStoreCmd extends BaseCmd {
     public Long getId() {
         return id;
     }
-
 
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////

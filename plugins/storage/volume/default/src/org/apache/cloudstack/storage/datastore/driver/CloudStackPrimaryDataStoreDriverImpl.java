@@ -98,6 +98,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     TemplateManager templateManager;
     @Inject
     TemplateDataFactory templateDataFactory;
+
     @Override
     public DataTO getTO(DataObject data) {
         return null;
@@ -116,11 +117,11 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         CreateObjectCommand cmd = new CreateObjectCommand(volume.getTO());
         EndPoint ep = epSelector.select(volume);
         Answer answer = null;
-        if ( ep == null ){
+        if (ep == null) {
             String errMsg = "No remote endpoint to send DeleteCommand, check if host or ssvm is down?";
             s_logger.error(errMsg);
             answer = new Answer(cmd, false, errMsg);
-        } else{
+        } else {
             answer = ep.sendMessage(cmd);
         }
         return answer;
@@ -138,7 +139,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         CreateCmdResult result = new CreateCmdResult(null, null);
         if (data.getType() == DataObjectType.VOLUME) {
             try {
-                answer = createVolume((VolumeInfo) data);
+                answer = createVolume((VolumeInfo)data);
                 if ((answer == null) || (!answer.getResult())) {
                     result.setSuccess(false);
                     if (answer != null) {
@@ -169,7 +170,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         CommandResult result = new CommandResult();
         try {
             EndPoint ep = epSelector.select(data);
-            if ( ep == null ){
+            if (ep == null) {
                 String errMsg = "No remote endpoint to send DeleteCommand, check if host or ssvm is down?";
                 s_logger.error(errMsg);
                 result.setResult(errMsg);
@@ -203,8 +204,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             } else if (srcdata.getType() == DataObjectType.TEMPLATE && destData.getType() == DataObjectType.VOLUME) {
                 //For CLVM, we need to pass template on secondary storage to hypervisor
                 String value = configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
-                int _primaryStorageDownloadWait = NumbersUtil.parseInt(value,
-                        Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
+                int _primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
                 StoragePoolVO storagePoolVO = primaryStoreDao.findById(store.getId());
                 DataStore imageStore = templateManager.getImageStore(storagePoolVO.getDataCenterId(), srcdata.getId());
                 DataObject srcData = templateDataFactory.getTemplate(srcdata.getId(), imageStore);
@@ -231,7 +231,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         DataStore store = destData.getDataStore();
         if (store.getRole() == DataStoreRole.Primary) {
             if ((srcData.getType() == DataObjectType.TEMPLATE && destData.getType() == DataObjectType.TEMPLATE) ||
-                    (srcData.getType() == DataObjectType.TEMPLATE && destData.getType() == DataObjectType.VOLUME)) {
+                (srcData.getType() == DataObjectType.TEMPLATE && destData.getType() == DataObjectType.VOLUME)) {
                 StoragePoolVO storagePoolVO = primaryStoreDao.findById(store.getId());
                 if (storagePoolVO != null && storagePoolVO.getPoolType() == Storage.StoragePoolType.CLVM) {
                     return true;
@@ -255,11 +255,11 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             CreateObjectCommand cmd = new CreateObjectCommand(snapshotTO);
             EndPoint ep = epSelector.select(snapshot);
             Answer answer = null;
-            if ( ep == null ){
+            if (ep == null) {
                 String errMsg = "No remote endpoint to send DeleteCommand, check if host or ssvm is down?";
                 s_logger.error(errMsg);
                 answer = new Answer(cmd, false, errMsg);
-            } else{
+            } else {
                 answer = ep.sendMessage(cmd);
             }
 
@@ -284,16 +284,15 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Override
     public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
-        VolumeObject vol = (VolumeObject) data;
-        StoragePool pool = (StoragePool) data.getDataStore();
-        ResizeVolumePayload resizeParameter = (ResizeVolumePayload) vol.getpayload();
+        VolumeObject vol = (VolumeObject)data;
+        StoragePool pool = (StoragePool)data.getDataStore();
+        ResizeVolumePayload resizeParameter = (ResizeVolumePayload)vol.getpayload();
 
-        ResizeVolumeCommand resizeCmd = new ResizeVolumeCommand(vol.getPath(), new StorageFilerTO(pool), vol.getSize(),
-                resizeParameter.newSize, resizeParameter.shrinkOk, resizeParameter.instanceName);
+        ResizeVolumeCommand resizeCmd = new ResizeVolumeCommand(vol.getPath(), new StorageFilerTO(pool), vol.getSize(), resizeParameter.newSize, resizeParameter.shrinkOk,
+            resizeParameter.instanceName);
         CreateCmdResult result = new CreateCmdResult(null, null);
         try {
-            ResizeVolumeAnswer answer = (ResizeVolumeAnswer) storageMgr.sendToPool(pool, resizeParameter.hosts,
-                    resizeCmd);
+            ResizeVolumeAnswer answer = (ResizeVolumeAnswer)storageMgr.sendToPool(pool, resizeParameter.hosts, resizeCmd);
             if (answer != null && answer.getResult()) {
                 long finalSize = answer.getNewSize();
                 s_logger.debug("Resize: volume started at size " + vol.getSize() + " and ended at size " + finalSize);

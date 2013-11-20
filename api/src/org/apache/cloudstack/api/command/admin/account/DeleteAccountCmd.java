@@ -36,7 +36,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 
-@APICommand(name = "deleteAccount", description="Deletes a account, and all users associated with this account", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteAccount", description = "Deletes a account, and all users associated with this account", responseObject = SuccessResponse.class)
 public class DeleteAccountCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteAccountCmd.class.getName());
     private static final String s_name = "deleteaccountresponse";
@@ -45,16 +45,15 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=AccountResponse.class,
-            required=true, description="Account id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AccountResponse.class, required = true, description = "Account id")
     private Long id;
 
-    @Inject RegionService _regionService;
+    @Inject
+    RegionService _regionService;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     public Long getId() {
         return id;
@@ -91,14 +90,15 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         User user = _responseGenerator.findUserById(getId());
-        return (user != null ? ("deleting User " + user.getUsername() + " (id: " + user.getId() + ") and accountId = " + user.getAccountId()) : "user delete, but this user does not exist in the system");
+        return (user != null ? ("deleting User " + user.getUsername() + " (id: " + user.getId() + ") and accountId = " + user.getAccountId())
+                : "user delete, but this user does not exist in the system");
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Account Id: "+getId());
+    public void execute() {
+        CallContext.current().setEventDetails("Account Id: " + getId());
 
-        boolean	result = _regionService.deleteUserAccount(this);
+        boolean result = _regionService.deleteUserAccount(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

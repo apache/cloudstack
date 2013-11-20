@@ -29,5 +29,6 @@ public interface Role {
     public static final short CHILD_DOMAIN_USER = 7;
 
     public long getId();
+
     public short getRoleType();
- }
+}

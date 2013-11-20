@@ -28,37 +28,45 @@ import com.cloud.storage.ImageStore;
 import com.cloud.storage.ScopeType;
 import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=ImageStore.class)
+@EntityReference(value = ImageStore.class)
 public class ImageStoreResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the ID of the image store")
+    @SerializedName("id")
+    @Param(description = "the ID of the image store")
     private String id;
 
-    @SerializedName("zoneid") @Param(description="the Zone ID of the image store")
+    @SerializedName("zoneid")
+    @Param(description = "the Zone ID of the image store")
     private String zoneId;
 
-    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name of the image store")
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "the Zone name of the image store")
     private String zoneName;
 
-    @SerializedName("name") @Param(description="the name of the image store")
+    @SerializedName("name")
+    @Param(description = "the name of the image store")
     private String name;
 
-    @SerializedName("url") @Param(description="the url of the image store")
+    @SerializedName("url")
+    @Param(description = "the url of the image store")
     private String url;
 
-    @SerializedName("protocol") @Param(description="the protocol of the image store")
+    @SerializedName("protocol")
+    @Param(description = "the protocol of the image store")
     private String protocol;
 
-    @SerializedName("providername") @Param(description="the provider name of the image store")
+    @SerializedName("providername")
+    @Param(description = "the provider name of the image store")
     private String providerName;
 
-    @SerializedName("scope") @Param(description="the scope of the image store")
+    @SerializedName("scope")
+    @Param(description = "the scope of the image store")
     private ScopeType scope;
 
-    @SerializedName("details") @Param(description="the details of the image store")
+    @SerializedName("details")
+    @Param(description = "the details of the image store")
     private Set<ImageStoreDetailResponse> details;
 
-
-    public ImageStoreResponse(){
+    public ImageStoreResponse() {
         this.details = new LinkedHashSet<ImageStoreDetailResponse>();
     }
 
@@ -123,7 +131,6 @@ public class ImageStoreResponse extends BaseResponse {
         this.scope = type;
     }
 
-
     public String getProtocol() {
         return protocol;
     }
@@ -140,10 +147,8 @@ public class ImageStoreResponse extends BaseResponse {
         this.details = details;
     }
 
-    public void addDetail(ImageStoreDetailResponse detail){
+    public void addDetail(ImageStoreDetailResponse detail) {
         this.details.add(detail);
     }
-
-
 
 }

@@ -37,7 +37,7 @@ import org.apache.cloudstack.api.InternalIdentity;
  */
 
 @Entity
-@Table(name="virtual_supervisor_module")
+@Table(name = "virtual_supervisor_module")
 public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice {
 
     // We need to know what properties a VSM has. Put them here.
@@ -47,7 +47,7 @@ public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice {
     @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private final String uuid;
 
     @Column(name = "host_id")
@@ -219,7 +219,6 @@ public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice {
     public void setVsmDeviceState(VSMDeviceState devState) {
         this.vsmDeviceState = devState;
     }
-
 
     // Constructors.
 

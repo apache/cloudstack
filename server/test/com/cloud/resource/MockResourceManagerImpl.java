@@ -87,8 +87,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#discoverCluster(com.cloud.api.commands.AddClusterCmd)
      */
     @Override
-    public List<? extends Cluster> discoverCluster(AddClusterCmd cmd) throws IllegalArgumentException,
-            DiscoveryException, ResourceInUseException {
+    public List<? extends Cluster> discoverCluster(AddClusterCmd cmd) throws IllegalArgumentException, DiscoveryException, ResourceInUseException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -106,8 +105,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#updateCluster(com.cloud.org.Cluster, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
      */
     @Override
-    public Cluster updateCluster(Cluster cluster, String clusterType, String hypervisor, String allocationState,
-                                 String managedstate) {
+    public Cluster updateCluster(Cluster cluster, String clusterType, String hypervisor, String allocationState, String managedstate) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -116,8 +114,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#discoverHosts(com.cloud.api.commands.AddHostCmd)
      */
     @Override
-    public List<? extends Host> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException,
-            InvalidParameterValueException {
+    public List<? extends Host> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -126,8 +123,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#discoverHosts(com.cloud.api.commands.AddSecondaryStorageCmd)
      */
     @Override
-    public List<? extends Host> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException,
-            DiscoveryException, InvalidParameterValueException {
+    public List<? extends Host> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -167,7 +163,6 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
         // TODO Auto-generated method stub
         return null;
     }
-
 
     /* (non-Javadoc)
      * @see com.cloud.resource.ResourceService#getSupportedHypervisorTypes(long, boolean, java.lang.Long)
@@ -218,8 +213,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#createHostAndAgent(java.lang.Long, com.cloud.resource.ServerResource, java.util.Map, boolean, java.util.List, boolean)
      */
     @Override
-    public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old,
-            List<String> hostTags, boolean forRebalance) {
+    public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, boolean forRebalance) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -255,8 +249,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#fillRoutingHostVO(com.cloud.host.HostVO, com.cloud.agent.api.StartupRoutingCommand, com.cloud.hypervisor.Hypervisor.HypervisorType, java.util.Map, java.util.List)
      */
     @Override
-    public HostVO fillRoutingHostVO(HostVO host, StartupRoutingCommand ssCmd, HypervisorType hyType,
-            Map<String, String> details, List<String> hostTags) {
+    public HostVO fillRoutingHostVO(HostVO host, StartupRoutingCommand ssCmd, HypervisorType hyType, Map<String, String> details, List<String> hostTags) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -265,8 +258,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#deleteRoutingHost(com.cloud.host.HostVO, boolean, boolean)
      */
     @Override
-    public void deleteRoutingHost(HostVO host, boolean isForced, boolean forceDestroyStorage)
-            throws UnableDeleteHostException {
+    public void deleteRoutingHost(HostVO host, boolean isForced, boolean forceDestroyStorage) throws UnableDeleteHostException {
         // TODO Auto-generated method stub
 
     }
@@ -541,12 +533,11 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
         return "MockResourceManagerImpl";
     }
 
-	@Override
-	public List<HostVO> listAllUpAndEnabledHostsInOneZoneByHypervisor(
-			HypervisorType type, long dcId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public List<HostVO> listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType type, long dcId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
     @Override
     public boolean releaseHostReservation(Long hostId) {

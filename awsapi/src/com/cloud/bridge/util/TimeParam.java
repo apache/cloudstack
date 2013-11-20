@@ -19,13 +19,13 @@ package com.cloud.bridge.util;
 import java.util.Date;
 
 public class TimeParam {
-	private Date timeValue;
-	
-	public TimeParam(Date timeValue) {
-		this.timeValue = timeValue;
-	}
-	
-	public Date timeValue() {
-		return timeValue;
-	}
+    private Date timeValue;
+
+    public TimeParam(Date timeValue) {
+        this.timeValue = timeValue;
+    }
+
+    public Date timeValue() {
+        return timeValue;
+    }
 }

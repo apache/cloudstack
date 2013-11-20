@@ -29,38 +29,36 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import org.apache.cloudstack.api.InternalIdentity;
 
-
 @Entity
-@Table(name="router_network_ref")
+@Table(name = "router_network_ref")
 public class RouterNetworkVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id;
-    
-    @Column(name="router_id")
+
+    @Column(name = "router_id")
     long routerId;
-    
-    @Column(name="network_id")
+
+    @Column(name = "network_id")
     long networkId;
-    
-    @Column(name="guest_type")
-    @Enumerated(value=EnumType.STRING)
+
+    @Column(name = "guest_type")
+    @Enumerated(value = EnumType.STRING)
     Network.GuestType guestType;
 
     protected RouterNetworkVO() {
     }
-    
+
     public RouterNetworkVO(long routerId, long networkId, GuestType guestType) {
         this.networkId = networkId;
         this.routerId = routerId;
         this.guestType = guestType;
     }
-    
-    
+
     public long getRouterId() {
         return routerId;
     }
-    
+
     public long getNetworkId() {
         return networkId;
     }

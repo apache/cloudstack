@@ -37,14 +37,12 @@ import com.cloud.user.Account;
 @APICommand(name = "revertSnapshot", description = "revert a volume snapshot.", responseObject = SnapshotResponse.class)
 public class RevertSnapshotCmd extends BaseAsyncCmd {
     private static final String s_name = "revertsnapshotresponse";
-    @Parameter(name= ApiConstants.ID, type= BaseCmd.CommandType.UUID, entityType = SnapshotResponse.class,
-            required=true, description="The ID of the snapshot")
+    @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID, entityType = SnapshotResponse.class, required = true, description = "The ID of the snapshot")
     private Long id;
 
     public Long getId() {
         return id;
     }
-
 
     @Override
     public String getCommandName() {
@@ -68,7 +66,7 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "revert snapshot: " + getId();
+        return "revert snapshot: " + getId();
     }
 
     @Override
@@ -82,8 +80,8 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Snapshot Id: "+getId());
+    public void execute() {
+        CallContext.current().setEventDetails("Snapshot Id: " + getId());
         boolean result = _snapshotService.revertSnapshot(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

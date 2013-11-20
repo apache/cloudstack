@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.engine.cloud.entity.api.db.dao;
 
-
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -31,7 +30,6 @@ import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.utils.Pair;
@@ -40,30 +38,30 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.NicProfile;
 
-
-
 @Component
-@Local(value = { VMEntityDao.class })
+@Local(value = {VMEntityDao.class})
 public class VMEntityDaoImpl extends GenericDaoBase<VMEntityVO, Long> implements VMEntityDao {
 
     public static final Logger s_logger = Logger.getLogger(VMEntityDaoImpl.class);
 
-    
-    @Inject protected VMReservationDao _vmReservationDao;
+    @Inject
+    protected VMReservationDao _vmReservationDao;
 
-    @Inject protected VMComputeTagDao _vmComputeTagDao;
-    
-    @Inject protected VMRootDiskTagDao _vmRootDiskTagsDao;
-    
-    @Inject protected VMNetworkMapDao _vmNetworkMapDao;
+    @Inject
+    protected VMComputeTagDao _vmComputeTagDao;
 
-    
+    @Inject
+    protected VMRootDiskTagDao _vmRootDiskTagsDao;
+
+    @Inject
+    protected VMNetworkMapDao _vmNetworkMapDao;
+
     @Inject
     protected NetworkDao _networkDao;
-    
+
     public VMEntityDaoImpl() {
     }
-    
+
     @PostConstruct
     protected void init() {
 
@@ -99,49 +97,48 @@ public class VMEntityDaoImpl extends GenericDaoBase<VMEntityVO, Long> implements
 
     private void loadVmNetworks(VMEntityVO dbVO) {
         List<Long> networksIds = _vmNetworkMapDao.getNetworks(dbVO.getId());
-        
+
         List<String> networks = new ArrayList<String>();
-        for(Long networkId : networksIds){
+        for (Long networkId : networksIds) {
             NetworkVO network = _networkDao.findById(networkId);
-            if(network != null){
+            if (network != null) {
                 networks.add(network.getUuid());
             }
         }
-        
+
         dbVO.setNetworkIds(networks);
-        
+
     }
 
     private void saveVmNetworks(VMEntityVO vm) {
         List<Long> networks = new ArrayList<Long>();
-        
+
         List<String> networksIds = vm.getNetworkIds();
-        
+
         if (networksIds == null || (networksIds != null && networksIds.isEmpty())) {
             return;
         }
 
-        
-        for(String uuid : networksIds){
+        for (String uuid : networksIds) {
             NetworkVO network = _networkDao.findByUuid(uuid);
-            if(network != null){
+            if (network != null) {
                 networks.add(network.getId());
             }
         }
         _vmNetworkMapDao.persist(vm.getId(), networks);
-        
+
     }
 
     private void loadRootDiskTags(VMEntityVO dbVO) {
         List<String> rootDiskTags = _vmRootDiskTagsDao.getRootDiskTags(dbVO.getId());
         dbVO.setRootDiskTags(rootDiskTags);
-        
+
     }
 
     private void loadComputeTags(VMEntityVO dbVO) {
         List<String> computeTags = _vmComputeTagDao.getComputeTags(dbVO.getId());
         dbVO.setComputeTags(computeTags);
-        
+
     }
 
     private void saveRootDiskTags(long vmId, List<String> rootDiskTags) {
@@ -149,7 +146,7 @@ public class VMEntityDaoImpl extends GenericDaoBase<VMEntityVO, Long> implements
             return;
         }
         _vmRootDiskTagsDao.persist(vmId, rootDiskTags);
-        
+
     }
 
     private void saveComputeTags(long vmId, List<String> computeTags) {
@@ -157,11 +154,11 @@ public class VMEntityDaoImpl extends GenericDaoBase<VMEntityVO, Long> implements
             return;
         }
 
-        _vmComputeTagDao.persist(vmId, computeTags);        
+        _vmComputeTagDao.persist(vmId, computeTags);
     }
 
     private void saveVmReservation(VMEntityVO vm) {
-        if(vm.getVmReservation() != null){
+        if (vm.getVmReservation() != null) {
             _vmReservationDao.persist(vm.getVmReservation());
         }
     }

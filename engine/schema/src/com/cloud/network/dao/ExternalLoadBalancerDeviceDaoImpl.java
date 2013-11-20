@@ -29,7 +29,8 @@ import javax.ejb.Local;
 import java.util.List;
 
 @Component
-@Local(value=ExternalLoadBalancerDeviceDao.class) @DB
+@Local(value = ExternalLoadBalancerDeviceDao.class)
+@DB
 public class ExternalLoadBalancerDeviceDaoImpl extends GenericDaoBase<ExternalLoadBalancerDeviceVO, Long> implements ExternalLoadBalancerDeviceDao {
     final SearchBuilder<ExternalLoadBalancerDeviceVO> physicalNetworkIdSearch;
     final SearchBuilder<ExternalLoadBalancerDeviceVO> physicalNetworkServiceProviderSearch;

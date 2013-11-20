@@ -18,8 +18,9 @@ package com.cloud.agent.api.routing;
 
 import com.cloud.agent.api.Answer;
 
-public class SetSourceNatAnswer extends Answer{
-    public SetSourceNatAnswer() {}
+public class SetSourceNatAnswer extends Answer {
+    public SetSourceNatAnswer() {
+    }
 
     public SetSourceNatAnswer(SetSourceNatCommand cmd, boolean success, String result) {
         super(cmd, success, result);

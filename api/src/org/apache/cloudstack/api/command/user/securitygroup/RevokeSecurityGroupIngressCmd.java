@@ -42,7 +42,7 @@ public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true, description = "The ID of the ingress rule", entityType=SecurityGroupRuleResponse.class)
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true, description = "The ID of the ingress rule", entityType = SecurityGroupRuleResponse.class)
     private Long id;
 
     // ///////////////////////////////////////////////////

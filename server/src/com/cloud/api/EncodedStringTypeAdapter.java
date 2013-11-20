@@ -26,7 +26,7 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-public class EncodedStringTypeAdapter implements JsonSerializer<String>{
+public class EncodedStringTypeAdapter implements JsonSerializer<String> {
     public static final Logger s_logger = Logger.getLogger(EncodedStringTypeAdapter.class.getName());
 
     @Override
@@ -46,5 +46,5 @@ public class EncodedStringTypeAdapter implements JsonSerializer<String>{
         }
         return value;
     }
-    
+
 }

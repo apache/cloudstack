@@ -27,8 +27,7 @@ import javax.naming.directory.InitialDirContext;
 import org.apache.log4j.Logger;
 
 public class LdapContextFactory {
-    private static final Logger s_logger = Logger
-                                           .getLogger(LdapContextFactory.class.getName());
+    private static final Logger s_logger = Logger.getLogger(LdapContextFactory.class.getName());
 
     @Inject
     private LdapConfiguration _ldapConfiguration;
@@ -44,30 +43,21 @@ public class LdapContextFactory {
         return createBindContext(null);
     }
 
-    public DirContext createBindContext(final String providerUrl)
-    throws NamingException {
+    public DirContext createBindContext(final String providerUrl) throws NamingException {
         final String bindPrincipal = _ldapConfiguration.getBindPrincipal();
         final String bindPassword = _ldapConfiguration.getBindPassword();
-        return createInitialDirContext(bindPrincipal, bindPassword,
-                                       providerUrl, true);
+        return createInitialDirContext(bindPrincipal, bindPassword, providerUrl, true);
     }
 
-    private DirContext createInitialDirContext(final String principal,
-            final String password, final boolean isSystemContext)
-    throws NamingException {
-        return createInitialDirContext(principal, password, null,
-                                       isSystemContext);
+    private DirContext createInitialDirContext(final String principal, final String password, final boolean isSystemContext) throws NamingException {
+        return createInitialDirContext(principal, password, null, isSystemContext);
     }
 
-    private DirContext createInitialDirContext(final String principal,
-            final String password, final String providerUrl,
-            final boolean isSystemContext) throws NamingException {
-        return new InitialDirContext(getEnvironment(principal, password,
-                                     providerUrl, isSystemContext));
+    private DirContext createInitialDirContext(final String principal, final String password, final String providerUrl, final boolean isSystemContext) throws NamingException {
+        return new InitialDirContext(getEnvironment(principal, password, providerUrl, isSystemContext));
     }
 
-    public DirContext createUserContext(final String principal,
-                                        final String password) throws NamingException {
+    public DirContext createUserContext(final String principal, final String password) throws NamingException {
         return createInitialDirContext(principal, password, false);
     }
 
@@ -77,19 +67,14 @@ public class LdapContextFactory {
         if (sslStatus) {
             s_logger.info("LDAP SSL enabled.");
             environment.put(Context.SECURITY_PROTOCOL, "ssl");
-            System.setProperty("javax.net.ssl.trustStore",
-                               _ldapConfiguration.getTrustStore());
-            System.setProperty("javax.net.ssl.trustStorePassword",
-                               _ldapConfiguration.getTrustStorePassword());
+            System.setProperty("javax.net.ssl.trustStore", _ldapConfiguration.getTrustStore());
+            System.setProperty("javax.net.ssl.trustStorePassword", _ldapConfiguration.getTrustStorePassword());
         }
     }
 
-    private Hashtable<String, String> getEnvironment(final String principal,
-            final String password, final String providerUrl,
-            final boolean isSystemContext) {
+    private Hashtable<String, String> getEnvironment(final String principal, final String password, final String providerUrl, final boolean isSystemContext) {
         final String factory = _ldapConfiguration.getFactory();
-        final String url = providerUrl == null ? _ldapConfiguration
-                           .getProviderUrl() : providerUrl;
+        final String url = providerUrl == null ? _ldapConfiguration.getProviderUrl() : providerUrl;
 
         final Hashtable<String, String> environment = new Hashtable<String, String>();
 
@@ -112,8 +97,7 @@ public class LdapContextFactory {
         return environment;
     }
 
-    private void setAuthentication(final Hashtable<String, String> environment,
-                                   final boolean isSystemContext) {
+    private void setAuthentication(final Hashtable<String, String> environment, final boolean isSystemContext) {
         final String authentication = _ldapConfiguration.getAuthentication();
 
         if ("none".equals(authentication) && !isSystemContext) {

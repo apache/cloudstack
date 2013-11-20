@@ -18,10 +18,8 @@
  */
 package org.apache.cloudstack.framework.ws.jackson;
 
-
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.Module;
-
 
 /**
  * This module extends SimpleModle so that our annotations can be processed.

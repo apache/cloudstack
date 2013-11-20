@@ -32,8 +32,7 @@ import com.cloud.utils.component.Manager;
  * ExternalLoadBalancerDeviceManager implementation. An implementation of device specific manager can override default behaviour if needed.
  */
 
-public interface ExternalLoadBalancerDeviceManager extends Manager{
-
+public interface ExternalLoadBalancerDeviceManager extends Manager {
 
     public static final int DEFAULT_LOAD_BALANCER_CAPACITY = 50;
 
@@ -47,9 +46,8 @@ public interface ExternalLoadBalancerDeviceManager extends Manager{
      * @param server resource that will handle the commands specific to this device 
      * @return Host object for the device added
      */
-    public ExternalLoadBalancerDeviceVO addExternalLoadBalancer(long physicalNetworkId, String url, String username,
-                String password, String deviceName, ServerResource resource, boolean gslbProvider,
-                String gslbSitePublicIp, String gslbSitePrivateIp);
+    public ExternalLoadBalancerDeviceVO addExternalLoadBalancer(long physicalNetworkId, String url, String username, String password, String deviceName, ServerResource resource,
+        boolean gslbProvider, String gslbSitePublicIp, String gslbSitePrivateIp);
 
     /**
      * deletes load balancer device added in to a physical network
@@ -99,9 +97,7 @@ public interface ExternalLoadBalancerDeviceManager extends Manager{
      * @throws ResourceUnavailableException
      * @throws InsufficientCapacityException
      */
-    public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException,
-            InsufficientCapacityException;
+    public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException, InsufficientCapacityException;
 
-    public List<LoadBalancerTO> getLBHealthChecks(Network network, List<LoadBalancingRule> rules)
-            throws ResourceUnavailableException;
+    public List<LoadBalancerTO> getLBHealthChecks(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException;
 }

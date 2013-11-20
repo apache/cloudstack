@@ -49,8 +49,8 @@ public class HostTransferMapVO implements InternalIdentity {
 
     @Column(name = "state")
     private HostTransferState state;
-    
-    @Column(name=GenericDao.CREATED_COLUMN)
+
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
     public HostTransferMapVO(long hostId, long initialOwner, long futureOwner) {
@@ -90,7 +90,7 @@ public class HostTransferMapVO implements InternalIdentity {
     public long getId() {
         return id;
     }
-    
+
     public Date getCreated() {
         return created;
     }

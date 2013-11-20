@@ -28,7 +28,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "releasePublicIpRange", description="Releases a Public IP range back to the system pool", responseObject=SuccessResponse.class)
+@APICommand(name = "releasePublicIpRange", description = "Releases a Public IP range back to the system pool", responseObject = SuccessResponse.class)
 public class ReleasePublicIpRangeCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ReleasePublicIpRangeCmd.class.getName());
 
@@ -38,8 +38,7 @@ public class ReleasePublicIpRangeCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = VlanIpRangeResponse.class,
-            required=true, description="the id of the Public IP range")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VlanIpRangeResponse.class, required = true, description = "the id of the Public IP range")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -65,7 +64,7 @@ public class ReleasePublicIpRangeCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = _configService.releasePublicIpRange(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

@@ -52,9 +52,8 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
-
 @Component
-@Local(value = { ResourceMetaDataService.class, ResourceMetaDataManager.class })
+@Local(value = {ResourceMetaDataService.class, ResourceMetaDataManager.class})
 public class ResourceMetaDataManagerImpl extends ManagerBase implements ResourceMetaDataService, ResourceMetaDataManager {
     public static final Logger s_logger = Logger.getLogger(ResourceMetaDataManagerImpl.class);
     @Inject
@@ -81,10 +80,8 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     UserIpAddressDetailsDao _userIpAddressDetailsDao;
     @Inject
     RemoteAccessVpnDetailsDao _vpnDetailsDao;
-    
-    private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> _daoMap= 
-            new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
-    
+
+    private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> _daoMap = new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -114,12 +111,11 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     public boolean stop() {
         return true;
     }
-    
 
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_DETAILS_CREATE, eventDescription = "creating resource meta data")
-    public boolean addResourceMetaData(final String resourceId, final ResourceObjectType resourceType, final Map<String, String> details){
+    public boolean addResourceMetaData(final String resourceId, final ResourceObjectType resourceType, final Map<String, String> details) {
         return Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
@@ -131,21 +127,20 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
                     }
 
                     DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
-                    newDetailDaoHelper.addDetail( _taggedResourceMgr.getResourceId(resourceId, resourceType), key, value);                    
+                    newDetailDaoHelper.addDetail(_taggedResourceMgr.getResourceId(resourceId, resourceType), key, value);
                 }
-                
+
                 return true;
             }
         });
     }
 
-
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_DETAILS_DELETE, eventDescription = "deleting resource meta data")
-    public boolean deleteResourceMetaData(String resourceId, ResourceObjectType resourceType, String key){
+    public boolean deleteResourceMetaData(String resourceId, ResourceObjectType resourceType, String key) {
         long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
-        
+
         DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
         newDetailDaoHelper.removeDetail(id, key);
 
@@ -155,7 +150,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     private class DetailDaoHelper {
         private ResourceObjectType resourceType;
         private ResourceDetailsDao<? super ResourceDetail> dao;
-        
+
         private DetailDaoHelper(ResourceObjectType resourceType) {
             if (!resourceType.resourceMetadataSupport()) {
                 throw new UnsupportedOperationException("ResourceType " + resourceType + " doesn't support metadata");
@@ -167,27 +162,27 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
             }
             this.dao = (ResourceDetailsDao)_daoMap.get(resourceType);
         }
-        
+
         private void removeDetail(long resourceId, String key) {
             dao.removeDetail(resourceId, key);
         }
-        
+
         private ResourceDetail getDetail(long resourceId, String key) {
             return dao.findDetail(resourceId, key);
         }
-        
+
         private void addDetail(long resourceId, String key, String value) {
             dao.addDetail(resourceId, key, value);
         }
-        
-        private Map<String, String> getDetailsMap(long resourceId, Boolean forDisplay) {            
+
+        private Map<String, String> getDetailsMap(long resourceId, Boolean forDisplay) {
             if (forDisplay == null) {
                 return dao.listDetailsKeyPairs(resourceId);
-            } else  {
+            } else {
                 return dao.listDetailsKeyPairs(resourceId, forDisplay);
             }
         }
-        
+
         private List<? extends ResourceDetail> getDetailsList(long resourceId, Boolean forDisplay) {
             if (forDisplay == null) {
                 return dao.listDetails(resourceId);
@@ -196,22 +191,22 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
             }
         }
     }
-    
+
     @Override
     public List<? extends ResourceDetail> getDetailsList(long resourceId, ResourceObjectType resourceType, Boolean forDisplay) {
         DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
-        return newDetailDaoHelper.getDetailsList(resourceId, forDisplay);  
+        return newDetailDaoHelper.getDetailsList(resourceId, forDisplay);
     }
-    
+
     @Override
     public ResourceDetail getDetail(long resourceId, ResourceObjectType resourceType, String key) {
         DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
         return newDetailDaoHelper.getDetail(resourceId, key);
     }
-    
-    @Override 
+
+    @Override
     public Map<String, String> getDetailsMap(long resourceId, ResourceObjectType resourceType, Boolean forDisplay) {
         DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
-        return newDetailDaoHelper.getDetailsMap(resourceId, forDisplay); 
+        return newDetailDaoHelper.getDetailsMap(resourceId, forDisplay);
     }
 }

@@ -33,14 +33,16 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations="classpath:/SampleManagementServerAppContext.xml")
+@ContextConfiguration(locations = "classpath:/SampleManagementServerAppContext.xml")
 public class AsyncSampleEventDrivenStyleCaller {
     private AsyncSampleCallee _ds;
     AsyncCallbackDriver _callbackDriver;
+
     @Before
     public void setup() {
         _ds = new AsyncSampleCallee();
     }
+
     @SuppressWarnings("unchecked")
     @Test
     public void MethodThatWillCallAsyncMethod() {
@@ -58,10 +60,11 @@ public class AsyncSampleEventDrivenStyleCaller {
             e.printStackTrace();
         }
     }
-    
+
     private class TestContext<T> extends AsyncRpcContext<T> {
         private boolean finished;
         private String result;
+
         /**
          * @param callback
          */
@@ -69,7 +72,7 @@ public class AsyncSampleEventDrivenStyleCaller {
             super(callback);
             this.finished = false;
         }
-        
+
         public void setResult(String result) {
             this.result = result;
             synchronized (this) {
@@ -77,7 +80,7 @@ public class AsyncSampleEventDrivenStyleCaller {
                 this.notify();
             }
         }
-        
+
         public String getResult() {
             synchronized (this) {
                 if (!this.finished) {
@@ -92,17 +95,17 @@ public class AsyncSampleEventDrivenStyleCaller {
                 return this.result;
             }
         }
-        
+
     }
+
     @Test
     public void installCallback() {
         TestContext<String> context = new TestContext<String>(null);
         AsyncCallbackDispatcher<AsyncSampleEventDrivenStyleCaller, Object> caller = AsyncCallbackDispatcher.create(this);
-        caller.setCallback(caller.getTarget().HandleVolumeCreateAsyncCallback(null, null))
-            .setContext(context);
+        caller.setCallback(caller.getTarget().HandleVolumeCreateAsyncCallback(null, null)).setContext(context);
         String test = "test";
-       _ds.createVolumeAsync(test, caller);
-       Assert.assertEquals(test, context.getResult());
+        _ds.createVolumeAsync(test, caller);
+        Assert.assertEquals(test, context.getResult());
     }
 
     protected Void HandleVolumeCreateAsyncCallback(AsyncCallbackDispatcher<AsyncSampleEventDrivenStyleCaller, String> callback, TestContext<String> context) {

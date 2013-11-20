@@ -20,7 +20,7 @@ import java.util.List;
 
 import com.cloud.utils.db.GenericDao;
 
-public interface  NetworkExternalLoadBalancerDao extends GenericDao<NetworkExternalLoadBalancerVO, Long> {
+public interface NetworkExternalLoadBalancerDao extends GenericDao<NetworkExternalLoadBalancerVO, Long> {
 
     /**
      * find the network to load balancer device mapping corresponding to a network

@@ -25,5 +25,5 @@ public interface VmRulesetLogDao extends GenericDao<VmRulesetLogVO, Long> {
     VmRulesetLogVO findByVmId(long vmId);
 
     int createOrUpdate(Set<Long> workItems);
-    
+
 }

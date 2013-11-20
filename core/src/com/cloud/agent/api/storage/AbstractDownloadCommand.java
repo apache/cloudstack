@@ -29,8 +29,8 @@ public abstract class AbstractDownloadCommand extends ssCommand {
     }
 
     protected AbstractDownloadCommand(String name, String url, ImageFormat format, Long accountId) {
-    	assert(url != null);
-    	url = url.replace('\\', '/');
+        assert (url != null);
+        url = url.replace('\\', '/');
 
         this.url = url;
         this.format = format;
@@ -40,7 +40,7 @@ public abstract class AbstractDownloadCommand extends ssCommand {
 
     protected AbstractDownloadCommand(AbstractDownloadCommand that) {
         super(that);
-        assert(that.url != null);
+        assert (that.url != null);
 
         this.url = that.url.replace('\\', '/');
         this.format = that.format;
@@ -69,10 +69,10 @@ public abstract class AbstractDownloadCommand extends ssCommand {
         return true;
     }
 
-	public void setUrl(String url) {
-		assert(url != null);
-		url = url.replace('\\', '/');
-		this.url = url;
-	}
+    public void setUrl(String url) {
+        assert (url != null);
+        url = url.replace('\\', '/');
+        this.url = url;
+    }
 
 }

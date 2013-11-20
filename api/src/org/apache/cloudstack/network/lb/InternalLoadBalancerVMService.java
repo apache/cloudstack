@@ -25,10 +25,9 @@ import com.cloud.user.Account;
 
 public interface InternalLoadBalancerVMService {
 
-    VirtualRouter startInternalLbVm(long internalLbVmId, Account caller, long callerUserId) 
-            throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    VirtualRouter startInternalLbVm(long internalLbVmId, Account caller, long callerUserId) throws StorageUnavailableException, InsufficientCapacityException,
+        ConcurrentOperationException, ResourceUnavailableException;
 
-    VirtualRouter stopInternalLbVm(long vmId, boolean forced, Account caller, long callerUserId)
-            throws ConcurrentOperationException, ResourceUnavailableException;
+    VirtualRouter stopInternalLbVm(long vmId, boolean forced, Account caller, long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException;
 
 }

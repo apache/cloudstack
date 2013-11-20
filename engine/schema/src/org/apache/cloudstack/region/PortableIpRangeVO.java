@@ -31,33 +31,33 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="portable_ip_range")
-public class PortableIpRangeVO implements PortableIpRange  {
+@Table(name = "portable_ip_range")
+public class PortableIpRangeVO implements PortableIpRange {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     Long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     String uuid;
 
-    @Column(name="region_id")
+    @Column(name = "region_id")
     int regionId;
 
-    @Column(name="vlan_id")
+    @Column(name = "vlan_id")
     String vlan;
 
-    @Column(name="gateway")
+    @Column(name = "gateway")
     String gateway;
 
-    @Column(name="netmask")
+    @Column(name = "netmask")
     String netmask;
 
-    @Column(name="start_ip")
+    @Column(name = "start_ip")
     String startIp;
 
-    @Column(name="end_ip")
+    @Column(name = "end_ip")
     String endIp;
 
     public PortableIpRangeVO() {
@@ -66,7 +66,7 @@ public class PortableIpRangeVO implements PortableIpRange  {
 
     public PortableIpRangeVO(int regionId, String vlan, String gateway, String netmask, String startIp, String endIp) {
         this.uuid = UUID.randomUUID().toString();
-        this.regionId =regionId;
+        this.regionId = regionId;
         this.vlan = vlan;
         this.gateway = gateway;
         this.netmask = netmask;
@@ -113,7 +113,7 @@ public class PortableIpRangeVO implements PortableIpRange  {
     }
 
     @Override
-    public  String getIpRange() {
+    public String getIpRange() {
         return startIp + "-" + endIp;
     }
 }

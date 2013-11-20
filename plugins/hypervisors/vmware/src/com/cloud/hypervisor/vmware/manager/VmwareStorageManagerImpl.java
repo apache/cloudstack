@@ -131,7 +131,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     private int _timeout;
 
     public VmwareStorageManagerImpl(VmwareStorageMount mountService) {
-        assert(mountService != null);
+        assert (mountService != null);
         _mountService = mountService;
     }
 
@@ -159,7 +159,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String templateName = installFullPath;   // should be a file ending .ova;
         try {
             if (templateName.endsWith(".ova")) {
-                if(new File(templateName).exists())  {
+                if (new File(templateName).exists()) {
                     s_logger.debug("OVA files exists. succeed. ");
                     return installPath;
                 } else {
@@ -167,7 +167,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                         ovafileName = getOVAFromMetafile(templateName + ".meta");
                         s_logger.debug("OVA file in meta file is " + ovafileName);
                         return ovafileName;
-                    }  else {
+                    } else {
                         String msg = "Unable to find ova meta or ova file to prepare template (vmware)";
                         s_logger.error(msg);
                         throw new Exception(msg);
@@ -204,7 +204,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String installFullPath = secondaryMountPoint + "/" + installPath;
 
         try {
-            if(new File(secondaryMountPoint + File.separator + volumePath).exists())  {
+            if (new File(secondaryMountPoint + File.separator + volumePath).exists()) {
                 s_logger.debug("ova already exists:" + volumePath);
                 return volumePath;
             } else {
@@ -268,16 +268,14 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             VirtualMachineMO templateMo = VmwareHelper.pickOneVmOnRunningHost(dcMo.findVmByNameAndLabel(templateUuidName), true);
 
             if (templateMo == null) {
-                if(s_logger.isInfoEnabled()) {
+                if (s_logger.isInfoEnabled()) {
                     s_logger.info("Template " + templateName + " is not setup yet, setup template from secondary storage with uuid name: " + templateUuidName);
                 }
                 ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getPoolUuid());
                 assert (morDs != null);
                 DatastoreMO primaryStorageDatastoreMo = new DatastoreMO(context, morDs);
 
-                copyTemplateFromSecondaryToPrimary(hyperHost,
-                        primaryStorageDatastoreMo, secondaryStorageUrl,
-                        mountPoint, templateName, templateUuidName);
+                copyTemplateFromSecondaryToPrimary(hyperHost, primaryStorageDatastoreMo, secondaryStorageUrl, mountPoint, templateName, templateUuidName);
             } else {
                 s_logger.info("Template " + templateName + " has already been setup, skip the template setup process in primary storage");
             }
@@ -303,11 +301,11 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String snapshotUuid = cmd.getSnapshotUuid(); // not null: Precondition.
         String prevSnapshotUuid = cmd.getPrevSnapshotUuid();
         String prevBackupUuid = cmd.getPrevBackupUuid();
-        VirtualMachineMO workerVm=null;
+        VirtualMachineMO workerVm = null;
         String workerVMName = null;
         String volumePath = cmd.getVolumePath();
         ManagedObjectReference morDs = null;
-        DatastoreMO dsMo=null;
+        DatastoreMO dsMo = null;
 
         // By default assume failure
         String details = null;
@@ -323,12 +321,12 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             try {
                 vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
                 if (vmMo == null) {
-                    if(s_logger.isDebugEnabled()) {
+                    if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Unable to find owner VM for BackupSnapshotCommand on host " + hyperHost.getHyperHostName() + ", will try within datacenter");
                     }
 
                     vmMo = hyperHost.findVmOnPeerHyperHost(cmd.getVmName());
-                    if(vmMo == null) {
+                    if (vmMo == null) {
                         dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
 
                         workerVMName = hostService.getWorkerName(context, cmd, 0);
@@ -341,7 +339,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
                         // attach volume to worker VM
                         String datastoreVolumePath = getVolumePathInDatastore(dsMo, volumePath + ".vmdk");
-                        vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs);
+                        vmMo.attachDisk(new String[] {datastoreVolumePath}, morDs);
                     }
                 }
 
@@ -349,8 +347,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                     throw new Exception("Failed to take snapshot " + cmd.getSnapshotName() + " on vm: " + cmd.getVmName());
                 }
 
-                snapshotBackupUuid = backupSnapshotToSecondaryStorage(vmMo, accountId, volumeId, cmd.getVolumePath(), snapshotUuid, secondaryStorageUrl, prevSnapshotUuid, prevBackupUuid,
-                        hostService.getWorkerName(context, cmd, 1));
+                snapshotBackupUuid = backupSnapshotToSecondaryStorage(vmMo, accountId, volumeId, cmd.getVolumePath(), snapshotUuid, secondaryStorageUrl, prevSnapshotUuid,
+                    prevBackupUuid, hostService.getWorkerName(context, cmd, 1));
 
                 success = (snapshotBackupUuid != null);
                 if (success) {
@@ -358,7 +356,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 }
 
             } finally {
-                if(vmMo != null){
+                if (vmMo != null) {
                     ManagedObjectReference snapshotMor = vmMo.getSnapshotMor(snapshotUuid);
                     if (snapshotMor != null) {
                         vmMo.removeSnapshot(snapshotUuid, false);
@@ -403,26 +401,22 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
             if (vmMo == null) {
-                if(s_logger.isDebugEnabled()) {
+                if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to find the owner VM for CreatePrivateTemplateFromVolumeCommand on host " + hyperHost.getHyperHostName() + ", try within datacenter");
                 }
                 vmMo = hyperHost.findVmOnPeerHyperHost(cmd.getVmName());
 
-                if(vmMo == null) {
+                if (vmMo == null) {
                     String msg = "Unable to find the owner VM for volume operation. vm: " + cmd.getVmName();
                     s_logger.error(msg);
                     throw new Exception(msg);
                 }
             }
 
-            Ternary<String, Long, Long> result = createTemplateFromVolume(vmMo,
-                    accountId, templateId, cmd.getUniqueName(),
-                    secondaryStoragePoolURL, volumePath,
-                    hostService.getWorkerName(context, cmd, 0));
+            Ternary<String, Long, Long> result = createTemplateFromVolume(vmMo, accountId, templateId, cmd.getUniqueName(), secondaryStoragePoolURL, volumePath,
+                hostService.getWorkerName(context, cmd, 0));
 
-            return new CreatePrivateTemplateAnswer(cmd, true, null,
-                    result.first(), result.third(), result.second(),
-                    cmd.getUniqueName(), ImageFormat.OVA);
+            return new CreatePrivateTemplateAnswer(cmd, true, null, result.first(), result.third(), result.second(), cmd.getUniqueName(), ImageFormat.OVA);
 
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
@@ -448,14 +442,9 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
         VmwareContext context = hostService.getServiceContext(cmd);
         try {
-            Ternary<String, Long, Long> result = createTemplateFromSnapshot(accountId,
-                    newTemplateId, uniqeName,
-                    secondaryStorageUrl, volumeId,
-                    backedUpSnapshotUuid);
+            Ternary<String, Long, Long> result = createTemplateFromSnapshot(accountId, newTemplateId, uniqeName, secondaryStorageUrl, volumeId, backedUpSnapshotUuid);
 
-            return new CreatePrivateTemplateAnswer(cmd, true, null,
-                    result.first(), result.third(), result.second(),
-                    uniqeName, ImageFormat.OVA);
+            return new CreatePrivateTemplateAnswer(cmd, true, null, result.first(), result.third(), result.second(), uniqeName, ImageFormat.OVA);
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
                 hostService.invalidateServiceContext(context);
@@ -481,29 +470,21 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             Pair<String, String> result;
             if (cmd.toSecondaryStorage()) {
-                result = copyVolumeToSecStorage(hostService,
-                        hyperHost, cmd, vmName, volumeId, cmd.getPool().getUuid(), volumePath,
-                        secondaryStorageURL,
-                        hostService.getWorkerName(context, cmd, 0));
+                result = copyVolumeToSecStorage(hostService, hyperHost, cmd, vmName, volumeId, cmd.getPool().getUuid(), volumePath, secondaryStorageURL,
+                    hostService.getWorkerName(context, cmd, 0));
             } else {
                 StorageFilerTO poolTO = cmd.getPool();
 
                 ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, poolTO.getUuid());
                 if (morDatastore == null) {
-                    morDatastore = hyperHost.mountDatastore(
-                            false,
-                            poolTO.getHost(), 0, poolTO.getPath(),
-                            poolTO.getUuid().replace("-", ""));
+                    morDatastore = hyperHost.mountDatastore(false, poolTO.getHost(), 0, poolTO.getPath(), poolTO.getUuid().replace("-", ""));
 
                     if (morDatastore == null) {
                         throw new Exception("Unable to mount storage pool on host. storeUrl: " + poolTO.getHost() + ":/" + poolTO.getPath());
                     }
                 }
 
-                result = copyVolumeFromSecStorage(
-                        hyperHost, volumeId,
-                        new DatastoreMO(context, morDatastore),
-                        secondaryStorageURL, volumePath);
+                result = copyVolumeFromSecStorage(hyperHost, volumeId, new DatastoreMO(context, morDatastore), secondaryStorageURL, volumePath);
                 deleteVolumeDirOnSecondaryStorage(volumeId, secondaryStorageURL);
             }
             return new CopyVolumeAnswer(cmd, true, null, result.first(), result.second());
@@ -534,8 +515,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         VmwareContext context = hostService.getServiceContext(cmd);
         try {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
-            ManagedObjectReference morPrimaryDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost,
-                    primaryStorageNameLabel);
+            ManagedObjectReference morPrimaryDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStorageNameLabel);
             if (morPrimaryDs == null) {
                 String msg = "Unable to find datastore: " + primaryStorageNameLabel;
                 s_logger.error(msg);
@@ -543,8 +523,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
 
             DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
-            details = createVolumeFromSnapshot(hyperHost, primaryDsMo,
-                    newVolumeName, accountId, volumeId, secondaryStorageUrl, backedUpSnapshotUuid);
+            details = createVolumeFromSnapshot(hyperHost, primaryDsMo, newVolumeName, accountId, volumeId, secondaryStorageUrl, backedUpSnapshotUuid);
             if (details == null) {
                 success = true;
             }
@@ -562,28 +541,26 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
     // templateName: name in secondary storage
     // templateUuid: will be used at hypervisor layer
-    private void copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl,
-            String templatePathAtSecondaryStorage, String templateName, String templateUuid) throws Exception {
+    private void copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl, String templatePathAtSecondaryStorage,
+        String templateName, String templateUuid) throws Exception {
 
-        s_logger.info("Executing copyTemplateFromSecondaryToPrimary. secondaryStorage: "
-                + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " + templatePathAtSecondaryStorage
-                + ", templateName: " + templateName);
+        s_logger.info("Executing copyTemplateFromSecondaryToPrimary. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " +
+                      templatePathAtSecondaryStorage + ", templateName: " + templateName);
 
         String secondaryMountPoint = _mountService.getMountPoint(secondaryStorageUrl);
         s_logger.info("Secondary storage mount point: " + secondaryMountPoint);
 
-        String srcOVAFileName = secondaryMountPoint + "/" +  templatePathAtSecondaryStorage +
-                templateName + "." + ImageFormat.OVA.getFileExtension();
+        String srcOVAFileName = secondaryMountPoint + "/" + templatePathAtSecondaryStorage + templateName + "." + ImageFormat.OVA.getFileExtension();
 
         String srcFileName = getOVFFilePath(srcOVAFileName);
-        if(srcFileName == null) {
+        if (srcFileName == null) {
             Script command = new Script("tar", 0, s_logger);
             command.add("--no-same-owner");
             command.add("-xf", srcOVAFileName);
-            command.setWorkDir(secondaryMountPoint + "/" +  templatePathAtSecondaryStorage);
+            command.setWorkDir(secondaryMountPoint + "/" + templatePathAtSecondaryStorage);
             s_logger.info("Executing command: " + command.toString());
             String result = command.execute();
-            if(result != null) {
+            if (result != null) {
                 String msg = "Unable to unpack snapshot OVA file at: " + srcOVAFileName;
                 s_logger.error(msg);
                 throw new Exception(msg);
@@ -591,7 +568,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         }
 
         srcFileName = getOVFFilePath(srcOVAFileName);
-        if(srcFileName == null) {
+        if (srcFileName == null) {
             String msg = "Unable to locate OVF file in template package directory: " + srcOVAFileName;
             s_logger.error(msg);
             throw new Exception(msg);
@@ -601,15 +578,14 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         hyperHost.importVmFromOVF(srcFileName, vmName, datastoreMo, "thin");
 
         VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
-        if(vmMo == null) {
-            String msg = "Failed to import OVA template. secondaryStorage: "
-                    + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " + templatePathAtSecondaryStorage
-                    + ", templateName: " + templateName + ", templateUuid: " + templateUuid;
+        if (vmMo == null) {
+            String msg = "Failed to import OVA template. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " + templatePathAtSecondaryStorage +
+                         ", templateName: " + templateName + ", templateUuid: " + templateUuid;
             s_logger.error(msg);
             throw new Exception(msg);
         }
 
-        if(vmMo.createSnapshot("cloud.template.base", "Base snapshot", false, false)) {
+        if (vmMo.createSnapshot("cloud.template.base", "Base snapshot", false, false)) {
             vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, templateUuid);
             vmMo.markAsTemplate();
         } else {
@@ -620,21 +596,20 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         }
     }
 
-    private Ternary<String, Long, Long> createTemplateFromVolume(VirtualMachineMO vmMo, long accountId, long templateId, String templateUniqueName,
-            String secStorageUrl, String volumePath, String workerVmName) throws Exception {
+    private Ternary<String, Long, Long> createTemplateFromVolume(VirtualMachineMO vmMo, long accountId, long templateId, String templateUniqueName, String secStorageUrl,
+        String volumePath, String workerVmName) throws Exception {
 
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
         String installPath = getTemplateRelativeDirInSecStorage(accountId, templateId);
         String installFullPath = secondaryMountPoint + "/" + installPath;
-        synchronized(installPath.intern()) {
+        synchronized (installPath.intern()) {
             Script command = new Script(false, "mkdir", _timeout, s_logger);
             command.add("-p");
             command.add(installFullPath);
 
             String result = command.execute();
-            if(result != null) {
-                String msg = "unable to prepare template directory: "
-                        + installPath + ", storage: " + secStorageUrl + ", error msg: " + result;
+            if (result != null) {
+                String msg = "unable to prepare template directory: " + installPath + ", storage: " + secStorageUrl + ", error msg: " + result;
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
@@ -643,23 +618,22 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         VirtualMachineMO clonedVm = null;
         try {
             Pair<VirtualDisk, String> volumeDeviceInfo = vmMo.getDiskDevice(volumePath, false);
-            if(volumeDeviceInfo == null) {
+            if (volumeDeviceInfo == null) {
                 String msg = "Unable to find related disk device for volume. volume path: " + volumePath;
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
 
-            if(!vmMo.createSnapshot(templateUniqueName, "Temporary snapshot for template creation", false, false)) {
+            if (!vmMo.createSnapshot(templateUniqueName, "Temporary snapshot for template creation", false, false)) {
                 String msg = "Unable to take snapshot for creating template from volume. volume path: " + volumePath;
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
 
             // 4 MB is the minimum requirement for VM memory in VMware
-            vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(),
-                    VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
+            vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
             clonedVm = vmMo.getRunningHost().findVmOnHyperHost(workerVmName);
-            if(clonedVm == null) {
+            if (clonedVm == null) {
                 String msg = "Unable to create dummy VM to export volume. volume path: " + volumePath;
                 s_logger.error(msg);
                 throw new Exception(msg);
@@ -678,7 +652,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             return new Ternary<String, Long, Long>(installPath + "/" + templateUniqueName + ".ova", physicalSize, virtualSize);
 
         } finally {
-            if(clonedVm != null) {
+            if (clonedVm != null) {
                 clonedVm.detachAllDisks();
                 clonedVm.destroy();
             }
@@ -687,8 +661,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         }
     }
 
-    private Ternary<String, Long, Long> createTemplateFromSnapshot(long accountId, long templateId, String templateUniqueName,
-            String secStorageUrl, long volumeId, String backedUpSnapshotUuid) throws Exception {
+    private Ternary<String, Long, Long> createTemplateFromSnapshot(long accountId, long templateId, String templateUniqueName, String secStorageUrl, long volumeId,
+        String backedUpSnapshotUuid) throws Exception {
 
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
         String installPath = getTemplateRelativeDirInSecStorage(accountId, templateId);
@@ -705,27 +679,26 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String backupSSUuid = backedUpSnapshotUuid.substring(0, backedUpSnapshotUuid.indexOf('/'));
         String snapshotFullVMDKName = snapshotRoot + "/" + backupSSUuid + "/";
 
-        synchronized(installPath.intern()) {
+        synchronized (installPath.intern()) {
             command = new Script(false, "mkdir", _timeout, s_logger);
             command.add("-p");
             command.add(installFullPath);
 
             result = command.execute();
-            if(result != null) {
-                String msg = "unable to prepare template directory: "
-                        + installPath + ", storage: " + secStorageUrl + ", error msg: " + result;
+            if (result != null) {
+                String msg = "unable to prepare template directory: " + installPath + ", storage: " + secStorageUrl + ", error msg: " + result;
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
         }
 
         try {
-            if(new File(snapshotFullOVAName).exists()) {
+            if (new File(snapshotFullOVAName).exists()) {
                 command = new Script(false, "cp", _timeout, s_logger);
                 command.add(snapshotFullOVAName);
                 command.add(installFullOVAName);
                 result = command.execute();
-                if(result != null) {
+                if (result != null) {
                     String msg = "unable to copy snapshot " + snapshotFullOVAName + " to " + installFullPath;
                     s_logger.error(msg);
                     throw new Exception(msg);
@@ -738,21 +711,20 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 command.setWorkDir(installFullPath);
                 s_logger.info("Executing command: " + command.toString());
                 result = command.execute();
-                if(result != null) {
-                    String msg = "unable to untar snapshot " + snapshotFullOVAName + " to "
-                            + installFullPath;
+                if (result != null) {
+                    String msg = "unable to untar snapshot " + snapshotFullOVAName + " to " + installFullPath;
                     s_logger.error(msg);
                     throw new Exception(msg);
                 }
 
             } else {  // there is no ova file, only ovf originally;
-                if(new File(snapshotFullOvfName).exists()) {
+                if (new File(snapshotFullOvfName).exists()) {
                     command = new Script(false, "cp", _timeout, s_logger);
                     command.add(snapshotFullOvfName);
                     //command.add(installFullOvfName);
                     command.add(installFullPath);
                     result = command.execute();
-                    if(result != null) {
+                    if (result != null) {
                         String msg = "unable to copy snapshot " + snapshotFullOvfName + " to " + installFullPath;
                         s_logger.error(msg);
                         throw new Exception(msg);
@@ -766,7 +738,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                     for (int i = 0; i < ssfiles.length; i++) {
                         String vmdkfile = ssfiles[i].getName();
                         s_logger.info("vmdk file name: " + vmdkfile);
-                        if(vmdkfile.toLowerCase().startsWith(backupSSUuid) && vmdkfile.toLowerCase().endsWith(".vmdk")) {
+                        if (vmdkfile.toLowerCase().startsWith(backupSSUuid) && vmdkfile.toLowerCase().endsWith(".vmdk")) {
                             snapshotFullVMDKName += vmdkfile;
                             templateVMDKName += vmdkfile;
                             break;
@@ -778,7 +750,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                         command.add(installFullPath);
                         result = command.execute();
                         s_logger.info("Copy VMDK file: " + snapshotFullVMDKName);
-                        if(result != null) {
+                        if (result != null) {
                             String msg = "unable to copy snapshot vmdk file " + snapshotFullVMDKName + " to " + installFullPath;
                             s_logger.error(msg);
                             throw new Exception(msg);
@@ -802,14 +774,13 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             postCreatePrivateTemplate(installFullPath, templateId, templateUniqueName, physicalSize, virtualSize);
             writeMetaOvaForTemplate(installFullPath, backedUpSnapshotUuid + ".ovf", templateVMDKName, templateUniqueName, physicalSize);
             return new Ternary<String, Long, Long>(installPath + "/" + templateUniqueName + ".ova", physicalSize, virtualSize);
-        } catch(Exception e) {
+        } catch (Exception e) {
             // TODO, clean up left over files
             throw e;
         }
     }
 
-    private void postCreatePrivateTemplate(String installFullPath, long templateId,
-            String templateName, long size, long virtualSize) throws Exception {
+    private void postCreatePrivateTemplate(String installFullPath, long templateId, String templateName, long size, long virtualSize) throws Exception {
 
         // TODO a bit ugly here
         BufferedWriter out = null;
@@ -843,19 +814,18 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             out.write("ova.size=" + size);
             out.newLine();
         } finally {
-            if(out != null) {
+            if (out != null) {
                 out.close();
             }
         }
     }
 
-    private void writeMetaOvaForTemplate(String installFullPath, String ovfFilename, String vmdkFilename,
-            String templateName, long diskSize) throws Exception {
+    private void writeMetaOvaForTemplate(String installFullPath, String ovfFilename, String vmdkFilename, String templateName, long diskSize) throws Exception {
 
         // TODO a bit ugly here
         BufferedWriter out = null;
         try {
-            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/" + templateName +".ova.meta")));
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(installFullPath + "/" + templateName + ".ova.meta")));
             out.write("ova.filename=" + templateName + ".ova");
             out.newLine();
             out.write("version=1.0");
@@ -869,46 +839,43 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             out.write("disk1.size=" + diskSize);
             out.newLine();
         } finally {
-            if(out != null) {
+            if (out != null) {
                 out.close();
             }
         }
     }
 
-    private String createVolumeFromSnapshot(VmwareHypervisorHost hyperHost, DatastoreMO primaryDsMo, String newVolumeName,
-            long accountId, long volumeId, String secStorageUrl, String snapshotBackupUuid) throws Exception {
+    private String createVolumeFromSnapshot(VmwareHypervisorHost hyperHost, DatastoreMO primaryDsMo, String newVolumeName, long accountId, long volumeId, String secStorageUrl,
+        String snapshotBackupUuid) throws Exception {
 
-        restoreVolumeFromSecStorage(hyperHost, primaryDsMo, newVolumeName,
-                secStorageUrl, getSnapshotRelativeDirInSecStorage(accountId, volumeId), snapshotBackupUuid);
+        restoreVolumeFromSecStorage(hyperHost, primaryDsMo, newVolumeName, secStorageUrl, getSnapshotRelativeDirInSecStorage(accountId, volumeId), snapshotBackupUuid);
         return null;
     }
 
-    private void restoreVolumeFromSecStorage(VmwareHypervisorHost hyperHost, DatastoreMO primaryDsMo, String newVolumeName,
-            String secStorageUrl, String secStorageDir, String backupName) throws Exception {
+    private void restoreVolumeFromSecStorage(VmwareHypervisorHost hyperHost, DatastoreMO primaryDsMo, String newVolumeName, String secStorageUrl, String secStorageDir,
+        String backupName) throws Exception {
 
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
-        String srcOVAFileName = secondaryMountPoint + "/" +  secStorageDir + "/"
-                + backupName + "." + ImageFormat.OVA.getFileExtension();
+        String srcOVAFileName = secondaryMountPoint + "/" + secStorageDir + "/" + backupName + "." + ImageFormat.OVA.getFileExtension();
         String snapshotDir = "";
-        if (backupName.contains("/")){
+        if (backupName.contains("/")) {
             snapshotDir = backupName.split("/")[0];
         }
 
         File ovafile = new File(srcOVAFileName);
-        String srcOVFFileName = secondaryMountPoint + "/" +  secStorageDir + "/"
-                + backupName + ".ovf";
+        String srcOVFFileName = secondaryMountPoint + "/" + secStorageDir + "/" + backupName + ".ovf";
         File ovfFile = new File(srcOVFFileName);
         // String srcFileName = getOVFFilePath(srcOVAFileName);
         if (!ovfFile.exists()) {
             srcOVFFileName = getOVFFilePath(srcOVAFileName);
-            if(srcOVFFileName == null && ovafile.exists() ) {  // volss: ova file exists; o/w can't do tar
+            if (srcOVFFileName == null && ovafile.exists()) {  // volss: ova file exists; o/w can't do tar
                 Script command = new Script("tar", 0, s_logger);
                 command.add("--no-same-owner");
                 command.add("-xf", srcOVAFileName);
-                command.setWorkDir(secondaryMountPoint + "/" +  secStorageDir + "/" + snapshotDir);
+                command.setWorkDir(secondaryMountPoint + "/" + secStorageDir + "/" + snapshotDir);
                 s_logger.info("Executing command: " + command.toString());
                 String result = command.execute();
-                if(result != null) {
+                if (result != null) {
                     String msg = "Unable to unpack snapshot OVA file at: " + srcOVAFileName;
                     s_logger.error(msg);
                     throw new Exception(msg);
@@ -921,7 +888,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             srcOVFFileName = getOVFFilePath(srcOVAFileName);
         }
-        if(srcOVFFileName == null) {
+        if (srcOVFFileName == null) {
             String msg = "Unable to locate OVF file in template package directory: " + srcOVAFileName;
             s_logger.error(msg);
             throw new Exception(msg);
@@ -931,43 +898,40 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         try {
             hyperHost.importVmFromOVF(srcOVFFileName, newVolumeName, primaryDsMo, "thin");
             clonedVm = hyperHost.findVmOnHyperHost(newVolumeName);
-            if(clonedVm == null) {
+            if (clonedVm == null) {
                 throw new Exception("Unable to create container VM for volume creation");
             }
 
             clonedVm.moveAllVmDiskFiles(primaryDsMo, "", false);
             clonedVm.detachAllDisks();
         } finally {
-            if(clonedVm != null) {
+            if (clonedVm != null) {
                 clonedVm.detachAllDisks();
                 clonedVm.destroy();
             }
         }
     }
 
-    private String backupSnapshotToSecondaryStorage(VirtualMachineMO vmMo, long accountId, long volumeId,
-            String volumePath, String snapshotUuid, String secStorageUrl,
-            String prevSnapshotUuid, String prevBackupUuid, String workerVmName) throws Exception {
+    private String backupSnapshotToSecondaryStorage(VirtualMachineMO vmMo, long accountId, long volumeId, String volumePath, String snapshotUuid, String secStorageUrl,
+        String prevSnapshotUuid, String prevBackupUuid, String workerVmName) throws Exception {
 
         String backupUuid = UUID.randomUUID().toString();
-        exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl,
-                getSnapshotRelativeDirInSecStorage(accountId, volumeId), backupUuid, workerVmName);
+        exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, getSnapshotRelativeDirInSecStorage(accountId, volumeId), backupUuid, workerVmName);
         return backupUuid + "/" + backupUuid;
     }
 
-    private void exportVolumeToSecondaryStroage(VirtualMachineMO vmMo, String volumePath,
-            String secStorageUrl, String secStorageDir, String exportName,
-            String workerVmName) throws Exception {
+    private void exportVolumeToSecondaryStroage(VirtualMachineMO vmMo, String volumePath, String secStorageUrl, String secStorageDir, String exportName, String workerVmName)
+        throws Exception {
 
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
-        String exportPath =  secondaryMountPoint + "/" + secStorageDir + "/" + exportName;
+        String exportPath = secondaryMountPoint + "/" + secStorageDir + "/" + exportName;
 
-        synchronized(exportPath.intern()) {
-            if(!new File(exportPath).exists()) {
+        synchronized (exportPath.intern()) {
+            if (!new File(exportPath).exists()) {
                 Script command = new Script(false, "mkdir", _timeout, s_logger);
                 command.add("-p");
                 command.add(exportPath);
-                if(command.execute() != null) {
+                if (command.execute() != null) {
                     throw new Exception("unable to prepare snapshot backup directory");
                 }
             }
@@ -977,17 +941,16 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         try {
 
             Pair<VirtualDisk, String> volumeDeviceInfo = vmMo.getDiskDevice(volumePath, false);
-            if(volumeDeviceInfo == null) {
+            if (volumeDeviceInfo == null) {
                 String msg = "Unable to find related disk device for volume. volume path: " + volumePath;
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
 
             // 4 MB is the minimum requirement for VM memory in VMware
-            vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(),
-                    VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
+            vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
             clonedVm = vmMo.getRunningHost().findVmOnHyperHost(workerVmName);
-            if(clonedVm == null) {
+            if (clonedVm == null) {
                 String msg = "Unable to create dummy VM to export volume. volume path: " + volumePath;
                 s_logger.error(msg);
                 throw new Exception(msg);
@@ -995,7 +958,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             clonedVm.exportVm(exportPath, exportName, false, false);  //Note: volss: not to create ova.
         } finally {
-            if(clonedVm != null) {
+            if (clonedVm != null) {
                 clonedVm.detachAllDisks();
                 clonedVm.destroy();
             }
@@ -1007,24 +970,24 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
         String snapshotMountRoot = secondaryMountPoint + "/" + getSnapshotRelativeDirInSecStorage(accountId, volumeId);
         File file = new File(snapshotMountRoot + "/" + backupUuid + ".ovf");
-        if(file.exists()) {
+        if (file.exists()) {
             File snapshotdir = new File(snapshotMountRoot);
             File[] ssfiles = snapshotdir.listFiles();
             // List<String> filenames = new ArrayList<String>();
             for (int i = 0; i < ssfiles.length; i++) {
                 String vmdkfile = ssfiles[i].getName();
-                if(vmdkfile.toLowerCase().startsWith(backupUuid) && vmdkfile.toLowerCase().endsWith(".vmdk")) {
+                if (vmdkfile.toLowerCase().startsWith(backupUuid) && vmdkfile.toLowerCase().endsWith(".vmdk")) {
                     // filenames.add(vmdkfile);
                     new File(vmdkfile).delete();
                 }
             }
-            if(file.delete()) {
+            if (file.delete()) {
                 return null;
             }
         } else {
             File file1 = new File(snapshotMountRoot + "/" + backupUuid + ".ova");
-            if(file1.exists()) {
-                if(file1.delete()) {
+            if (file1.exists()) {
+                if (file1.delete()) {
                     return null;
                 }
             } else {
@@ -1034,13 +997,12 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         return "Failed to delete snapshot backup file, backupUuid: " + backupUuid;
     }
 
-    private Pair<String, String> copyVolumeToSecStorage(VmwareHostService hostService, VmwareHypervisorHost hyperHost, CopyVolumeCommand cmd,
-            String vmName, long volumeId, String poolId, String volumePath,
-            String secStorageUrl, String workerVmName) throws Exception {
+    private Pair<String, String> copyVolumeToSecStorage(VmwareHostService hostService, VmwareHypervisorHost hyperHost, CopyVolumeCommand cmd, String vmName, long volumeId,
+        String poolId, String volumePath, String secStorageUrl, String workerVmName) throws Exception {
 
         String volumeFolder = String.valueOf(volumeId) + "/";
-        VirtualMachineMO workerVm=null;
-        VirtualMachineMO vmMo=null;
+        VirtualMachineMO workerVm = null;
+        VirtualMachineMO vmMo = null;
         String exportName = UUID.randomUUID().toString();
 
         try {
@@ -1066,14 +1028,13 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
                 //attach volume to worker VM
                 String datastoreVolumePath = getVolumePathInDatastore(dsMo, volumePath + ".vmdk");
-                workerVm.attachDisk(new String[] { datastoreVolumePath }, morDs);
+                workerVm.attachDisk(new String[] {datastoreVolumePath}, morDs);
                 vmMo = workerVm;
             }
 
             vmMo.createSnapshot(exportName, "Temporary snapshot for copy-volume command", false, false);
 
-            exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, "volumes/" + volumeFolder, exportName,
-                    hostService.getWorkerName(hyperHost.getContext(), cmd, 1));
+            exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, "volumes/" + volumeFolder, exportName, hostService.getWorkerName(hyperHost.getContext(), cmd, 1));
             return new Pair<String, String>(volumeFolder, exportName);
 
         } finally {
@@ -1095,11 +1056,11 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         return datastoreVolumePath;
     }
 
-    private Pair<String, String> copyVolumeFromSecStorage(VmwareHypervisorHost hyperHost, long volumeId,
-            DatastoreMO dsMo, String secStorageUrl, String exportName) throws Exception {
+    private Pair<String, String> copyVolumeFromSecStorage(VmwareHypervisorHost hyperHost, long volumeId, DatastoreMO dsMo, String secStorageUrl, String exportName)
+        throws Exception {
 
         String volumeFolder = String.valueOf(volumeId) + "/";
-        String newVolume    = UUID.randomUUID().toString().replaceAll("-", "");
+        String newVolume = UUID.randomUUID().toString().replaceAll("-", "");
         restoreVolumeFromSecStorage(hyperHost, dsMo, newVolume, secStorageUrl, "volumes/" + volumeFolder, exportName);
 
         return new Pair<String, String>(volumeFolder, newVolume);
@@ -1193,11 +1154,11 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
     private String getOVFFilePath(String srcOVAFileName) {
         File file = new File(srcOVAFileName);
-        assert(_storage != null);
+        assert (_storage != null);
         String[] files = _storage.listFiles(file.getParent());
-        if(files != null) {
-            for(String fileName : files) {
-                if(fileName.toLowerCase().endsWith(".ovf")) {
+        if (files != null) {
+            for (String fileName : files) {
+                if (fileName.toLowerCase().endsWith(".ovf")) {
                     File ovfFile = new File(fileName);
                     return file.getParent() + File.separator + ovfFile.getName();
                 }
@@ -1214,9 +1175,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         return "snapshots/" + accountId + "/" + volumeId;
     }
 
-    private long getVMSnapshotChainSize(VmwareContext context, VmwareHypervisorHost hyperHost,
-            String fileName, String poolUuid, String exceptFileName)
-                    throws Exception{
+    private long getVMSnapshotChainSize(VmwareContext context, VmwareHypervisorHost hyperHost, String fileName, String poolUuid, String exceptFileName) throws Exception {
         long size = 0;
         ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, poolUuid);
         DatastoreMO dsMo = new DatastoreMO(context, morDs);
@@ -1230,13 +1189,12 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         searchSpec.setDetails(fqf);
         searchSpec.setSearchCaseInsensitive(false);
         searchSpec.getMatchPattern().add(fileName);
-        ArrayList<HostDatastoreBrowserSearchResults> results = browserMo.
-                searchDatastoreSubFolders(datastorePath, searchSpec);
-        for(HostDatastoreBrowserSearchResults result : results){
+        ArrayList<HostDatastoreBrowserSearchResults> results = browserMo.searchDatastoreSubFolders(datastorePath, searchSpec);
+        for (HostDatastoreBrowserSearchResults result : results) {
             if (result != null) {
                 List<FileInfo> info = result.getFile();
                 for (FileInfo fi : info) {
-                    if(exceptFileName != null && fi.getPath().contains(exceptFileName)) {
+                    if (exceptFileName != null && fi.getPath().contains(exceptFileName)) {
                         continue;
                     } else {
                         size = size + fi.getFileSize();
@@ -1248,20 +1206,20 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     private String extractSnapshotBaseFileName(String input) {
-        if(input == null) {
+        if (input == null) {
             return null;
         }
-        String result  = input;
-        if (result.endsWith(".vmdk")){ // get rid of vmdk file extension
+        String result = input;
+        if (result.endsWith(".vmdk")) { // get rid of vmdk file extension
             result = result.substring(0, result.length() - (".vmdk").length());
         }
-        if(result.split("-").length == 1) {
+        if (result.split("-").length == 1) {
             return result;
         }
-        if(result.split("-").length > 2) {
+        if (result.split("-").length > 2) {
             return result.split("-")[0] + "-" + result.split("-")[1];
         }
-        if(result.split("-").length == 2) {
+        if (result.split("-").length == 2) {
             return result.split("-")[0];
         } else {
             return result;
@@ -1286,15 +1244,15 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             ManagedObjectReference taskmgr = context.getServiceContent().getTaskManager();
             List<ManagedObjectReference> tasks = (ArrayList<ManagedObjectReference>)context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
             for (ManagedObjectReference taskMor : tasks) {
-                TaskInfo info = (TaskInfo) (context.getVimClient().getDynamicProperty(taskMor, "info"));
-                if(info.getEntityName().equals(cmd.getVmName()) && info.getName().equalsIgnoreCase("CreateSnapshot_Task")){
+                TaskInfo info = (TaskInfo)(context.getVimClient().getDynamicProperty(taskMor, "info"));
+                if (info.getEntityName().equals(cmd.getVmName()) && info.getName().equalsIgnoreCase("CreateSnapshot_Task")) {
                     s_logger.debug("There is already a VM snapshot task running, wait for it");
                     context.getVimClient().waitForTask(taskMor);
                 }
             }
 
             vmMo = hyperHost.findVmOnHyperHost(vmName);
-            if(vmMo == null) {
+            if (vmMo == null) {
                 vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
             }
             if (vmMo == null) {
@@ -1302,19 +1260,18 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 s_logger.debug(msg);
                 return new CreateVMSnapshotAnswer(cmd, false, msg);
             } else {
-                if (vmMo.getSnapshotMor(vmSnapshotName) != null){
+                if (vmMo.getSnapshotMor(vmSnapshotName) != null) {
                     s_logger.debug("VM snapshot " + vmSnapshotName + " already exists");
-                }else if (!vmMo.createSnapshot(vmSnapshotName, vmSnapshotDesc, snapshotMemory, quiescevm)) {
-                    return new CreateVMSnapshotAnswer(cmd, false,
-                            "Unable to create snapshot due to esxi internal failed");
+                } else if (!vmMo.createSnapshot(vmSnapshotName, vmSnapshotDesc, snapshotMemory, quiescevm)) {
+                    return new CreateVMSnapshotAnswer(cmd, false, "Unable to create snapshot due to esxi internal failed");
                 }
                 // find VM disk file path after creating snapshot
                 VirtualDisk[] vdisks = vmMo.getAllDiskDevice();
-                for (int i = 0; i < vdisks.length; i ++){
+                for (int i = 0; i < vdisks.length; i++) {
                     List<Pair<String, ManagedObjectReference>> vmdkFiles = vmMo.getDiskDatastorePathChain(vdisks[i], false);
-                    for(Pair<String, ManagedObjectReference> fileItem : vmdkFiles) {
+                    for (Pair<String, ManagedObjectReference> fileItem : vmdkFiles) {
                         String vmdkName = fileItem.first().split(" ")[1];
-                        if (vmdkName.endsWith(".vmdk")){
+                        if (vmdkName.endsWith(".vmdk")) {
                             vmdkName = vmdkName.substring(0, vmdkName.length() - (".vmdk").length());
                         }
                         String baseName = extractSnapshotBaseFileName(vmdkName);
@@ -1326,12 +1283,11 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                     String newPath = mapNewDisk.get(baseName);
                     // get volume's chain size for this VM snapshot, exclude current volume vdisk
                     DataStoreTO store = volumeTO.getDataStore();
-                    long size = getVMSnapshotChainSize(context,hyperHost,baseName + "*.vmdk",
-                            store.getUuid(), newPath);
+                    long size = getVMSnapshotChainSize(context, hyperHost, baseName + "*.vmdk", store.getUuid(), newPath);
 
-                    if(volumeTO.getVolumeType()== Volume.Type.ROOT){
+                    if (volumeTO.getVolumeType() == Volume.Type.ROOT) {
                         // add memory snapshot size
-                        size = size + getVMSnapshotChainSize(context,hyperHost,cmd.getVmName()+"*.vmsn",store.getUuid(),null);
+                        size = size + getVMSnapshotChainSize(context, hyperHost, cmd.getVmName() + "*.vmsn", store.getUuid(), null);
                     }
 
                     volumeTO.setSize(size);
@@ -1363,7 +1319,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         try {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
             vmMo = hyperHost.findVmOnHyperHost(vmName);
-            if(vmMo == null) {
+            if (vmMo == null) {
                 vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
             }
             if (vmMo == null) {
@@ -1399,11 +1355,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                     String baseName = extractSnapshotBaseFileName(volumeTo.getPath());
                     String newPath = mapNewDisk.get(baseName);
                     DataStoreTO store = volumeTo.getDataStore();
-                    long size = getVMSnapshotChainSize(context,hyperHost,
-                            baseName + "*.vmdk", store.getUuid(), newPath);
-                    if(volumeTo.getVolumeType()== Volume.Type.ROOT){
+                    long size = getVMSnapshotChainSize(context, hyperHost, baseName + "*.vmdk", store.getUuid(), newPath);
+                    if (volumeTo.getVolumeType() == Volume.Type.ROOT) {
                         // add memory snapshot size
-                        size = size + getVMSnapshotChainSize(context,hyperHost,cmd.getVmName()+"*.vmsn",store.getUuid(),null);
+                        size = size + getVMSnapshotChainSize(context, hyperHost, cmd.getVmName() + "*.vmsn", store.getUuid(), null);
                     }
                     volumeTo.setSize(size);
                     volumeTo.setPath(newPath);
@@ -1434,16 +1389,16 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             ManagedObjectReference taskmgr = context.getServiceContent().getTaskManager();
             List<ManagedObjectReference> tasks = (ArrayList<ManagedObjectReference>)context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
             for (ManagedObjectReference taskMor : tasks) {
-                TaskInfo info = (TaskInfo) (context.getVimClient().getDynamicProperty(taskMor, "info"));
-                if(info.getEntityName().equals(cmd.getVmName()) && info.getName().equalsIgnoreCase("RevertToSnapshot_Task")){
+                TaskInfo info = (TaskInfo)(context.getVimClient().getDynamicProperty(taskMor, "info"));
+                if (info.getEntityName().equals(cmd.getVmName()) && info.getName().equalsIgnoreCase("RevertToSnapshot_Task")) {
                     s_logger.debug("There is already a VM snapshot task running, wait for it");
                     context.getVimClient().waitForTask(taskMor);
                 }
             }
 
-            HostMO hostMo = (HostMO) hyperHost;
+            HostMO hostMo = (HostMO)hyperHost;
             vmMo = hyperHost.findVmOnHyperHost(vmName);
-            if(vmMo == null) {
+            if (vmMo == null) {
                 vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
             }
             if (vmMo == null) {
@@ -1467,8 +1422,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                     // build a map<volumeName, vmdk>
                     for (int i = 0; i < vdisks.length; i++) {
                         @SuppressWarnings("deprecation")
-                        List<Pair<String, ManagedObjectReference>> vmdkFiles = vmMo.getDiskDatastorePathChain(
-                                vdisks[i], false);
+                        List<Pair<String, ManagedObjectReference>> vmdkFiles = vmMo.getDiskDatastorePathChain(vdisks[i], false);
                         for (Pair<String, ManagedObjectReference> fileItem : vmdkFiles) {
                             String vmdkName = fileItem.first().split(" ")[1];
                             if (vmdkName.endsWith(".vmdk")) {
@@ -1490,8 +1444,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                     }
                     return new RevertToVMSnapshotAnswer(cmd, listVolumeTo, vmState);
                 } else {
-                    return new RevertToVMSnapshotAnswer(cmd, false,
-                            "Error while reverting to snapshot due to execute in esxi");
+                    return new RevertToVMSnapshotAnswer(cmd, false, "Error while reverting to snapshot due to execute in esxi");
                 }
             }
         } catch (Exception e) {
@@ -1509,7 +1462,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     private String deleteDir(String dir) {
-        synchronized(dir.intern()) {
+        synchronized (dir.intern()) {
             Script command = new Script(false, "rm", _timeout, s_logger);
             command.add("-rf");
             command.add(dir);

@@ -26,18 +26,12 @@ public class ResizeVolumeCommand extends Command {
     private Long newSize;
     private Long currentSize;
     private boolean shrinkOk;
-    
+
     protected ResizeVolumeCommand() {
-        
+
     }
-    
-    public ResizeVolumeCommand(String path,
-                           StorageFilerTO pool,
-                           Long currentSize,
-                           Long newSize,
-                           boolean shrinkOk,
-                           String vmInstance) 
-    {
+
+    public ResizeVolumeCommand(String path, StorageFilerTO pool, Long currentSize, Long newSize, boolean shrinkOk, String vmInstance) {
         this.path = path;
         this.pool = pool;
         this.vmInstance = vmInstance;
@@ -47,7 +41,7 @@ public class ResizeVolumeCommand extends Command {
     }
 
     public String getPath() {
-    	return path;
+        return path;
     }
 
     public String getPoolUuid() {
@@ -57,7 +51,7 @@ public class ResizeVolumeCommand extends Command {
     public StorageFilerTO getPool() {
         return pool;
     }
-    
+
     public long getNewSize() {
         return newSize;
     }

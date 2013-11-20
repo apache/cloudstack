@@ -33,7 +33,7 @@ import org.apache.log4j.Logger;
 import com.cloud.storage.Snapshot;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listSnapshots", description="Lists all available snapshots for the account.", responseObject=SnapshotResponse.class)
+@APICommand(name = "listSnapshots", description = "Lists all available snapshots for the account.", responseObject = SnapshotResponse.class)
 public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListSnapshotsCmd.class.getName());
 
@@ -43,27 +43,24 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = SnapshotResponse.class,
-            description="lists snapshot by snapshot ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SnapshotResponse.class, description = "lists snapshot by snapshot ID")
     private Long id;
 
-    @Parameter(name=ApiConstants.INTERVAL_TYPE, type=CommandType.STRING, description="valid values are HOURLY, DAILY, WEEKLY, and MONTHLY.")
+    @Parameter(name = ApiConstants.INTERVAL_TYPE, type = CommandType.STRING, description = "valid values are HOURLY, DAILY, WEEKLY, and MONTHLY.")
     private String intervalType;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="lists snapshot by snapshot name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "lists snapshot by snapshot name")
     private String snapshotName;
 
-    @Parameter(name=ApiConstants.SNAPSHOT_TYPE, type=CommandType.STRING, description="valid values are MANUAL or RECURRING.")
+    @Parameter(name = ApiConstants.SNAPSHOT_TYPE, type = CommandType.STRING, description = "valid values are MANUAL or RECURRING.")
     private String snapshotType;
 
-    @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.UUID, entityType = VolumeResponse.class,
-            description="the ID of the disk volume")
+    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, description = "the ID of the disk volume")
     private Long volumeId;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "list snapshots by zone id")
     private Long zoneId;
 
-    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -90,7 +87,7 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
 
     public Long getZoneId() {
         return zoneId;
-    }    
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -106,7 +103,7 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends Snapshot>, Integer> result = _snapshotService.listSnapshots(this);
         ListResponse<SnapshotResponse> response = new ListResponse<SnapshotResponse>();
         List<SnapshotResponse> snapshotResponses = new ArrayList<SnapshotResponse>();

@@ -48,7 +48,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Component
 public class DataStoreProviderManagerImpl extends ManagerBase implements DataStoreProviderManager, Registry<DataStoreProvider> {
     private static final Logger s_logger = Logger.getLogger(DataStoreProviderManagerImpl.class);
-    
+
     List<DataStoreProvider> providers;
     protected Map<String, DataStoreProvider> providerMap = new ConcurrentHashMap<String, DataStoreProvider>();
     @Inject
@@ -106,14 +106,14 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 
-        if ( providers != null ) {
+        if (providers != null) {
             for (DataStoreProvider provider : providers) {
                 registerProvider(provider);
             }
         }
 
         providers = new CopyOnWriteArrayList<DataStoreProvider>(providers);
-        
+
         return true;
     }
 
@@ -122,8 +122,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
 
         String providerName = provider.getName();
         if (providerMap.get(providerName) != null) {
-            s_logger.debug("Did not register data store provider, provider name: " + providerName
-                    + " is not unique");
+            s_logger.debug("Did not register data store provider, provider name: " + providerName + " is not unique");
             return false;
         }
 
@@ -140,19 +139,17 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
 
             Set<DataStoreProviderType> types = provider.getTypes();
             if (types.contains(DataStoreProviderType.PRIMARY)) {
-                primaryDataStoreProviderMgr.registerDriver(provider.getName(),
-                        (PrimaryDataStoreDriver) provider.getDataStoreDriver());
+                primaryDataStoreProviderMgr.registerDriver(provider.getName(), (PrimaryDataStoreDriver)provider.getDataStoreDriver());
                 primaryDataStoreProviderMgr.registerHostListener(provider.getName(), provider.getHostListener());
             } else if (types.contains(DataStoreProviderType.IMAGE)) {
-                imageStoreProviderMgr.registerDriver(provider.getName(),
-                        (ImageStoreDriver) provider.getDataStoreDriver());
+                imageStoreProviderMgr.registerDriver(provider.getName(), (ImageStoreDriver)provider.getDataStoreDriver());
             }
         } catch (Exception e) {
             s_logger.debug("configure provider failed", e);
             providerMap.remove(providerName);
             return false;
         }
-        
+
         return true;
     }
 
@@ -189,11 +186,11 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
 
     @Override
     public boolean register(DataStoreProvider type) {
-        if ( registerProvider(type) ) {
+        if (registerProvider(type)) {
             providers.add(type);
             return true;
         }
-        
+
         return false;
     }
 
@@ -206,7 +203,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     public List<DataStoreProvider> getRegistered() {
         return Collections.unmodifiableList(providers);
     }
-    
+
     @Inject
     public void setProviders(List<DataStoreProvider> providers) {
         this.providers = providers;
@@ -223,5 +220,5 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     public List<DataStoreProvider> getProviders() {
         return providers;
     }
-    
+
 }

@@ -24,18 +24,20 @@ import com.cloud.network.VirtualRouterProvider;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=VirtualRouterProvider.class)
+@EntityReference(value = VirtualRouterProvider.class)
 @SuppressWarnings("unused")
 public class InternalLoadBalancerElementResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the id of the internal load balancer element")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the id of the internal load balancer element")
     private String id;
 
-    @SerializedName(ApiConstants.NSP_ID) @Param(description="the physical network service provider id of the element")
+    @SerializedName(ApiConstants.NSP_ID)
+    @Param(description = "the physical network service provider id of the element")
     private String nspId;
 
-    @SerializedName(ApiConstants.ENABLED) @Param(description="Enabled/Disabled the element")
+    @SerializedName(ApiConstants.ENABLED)
+    @Param(description = "Enabled/Disabled the element")
     private Boolean enabled;
-
 
     public void setId(String id) {
         this.id = id;

@@ -24,15 +24,19 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.baremetal.database.BaremetalPxeVO;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
-@EntityReference(value=BaremetalPxeVO.class)
+
+@EntityReference(value = BaremetalPxeVO.class)
 public class BaremetalPxePingResponse extends BaremetalPxeResponse {
-    @SerializedName(ApiConstants.PING_STORAGE_SERVER_IP) @Param(description="PING storage server ip")
+    @SerializedName(ApiConstants.PING_STORAGE_SERVER_IP)
+    @Param(description = "PING storage server ip")
     private String pingStorageServerIp;
-    
-    @SerializedName(ApiConstants.PING_DIR) @Param(description="Root directory on PING storage server")
+
+    @SerializedName(ApiConstants.PING_DIR)
+    @Param(description = "Root directory on PING storage server")
     private String pingDir;
-    
-    @SerializedName(ApiConstants.TFTP_DIR) @Param(description="Tftp root directory of PXE server")
+
+    @SerializedName(ApiConstants.TFTP_DIR)
+    @Param(description = "Tftp root directory of PXE server")
     private String tftpDir;
 
     public String getPingStorageServerIp() {

@@ -64,7 +64,7 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
 
     public LocalNfsSecondaryStorageResource() {
         this._dlMgr = new DownloadManagerImpl();
-        ((DownloadManagerImpl) _dlMgr).setThreadPool(Executors.newFixedThreadPool(10));
+        ((DownloadManagerImpl)_dlMgr).setThreadPool(Executors.newFixedThreadPool(10));
         _storage = new JavaStorageLayer();
         this._inSystemVM = false;
     }
@@ -75,7 +75,7 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
 
     @Override
     public Answer executeRequest(Command cmd) {
-         return super.executeRequest(cmd);
+        return super.executeRequest(cmd);
     }
 
     @Override
@@ -94,7 +94,7 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
     @Override
     protected void mount(String localRootPath, String remoteDevice, URI uri) {
         ensureLocalRootPathExists(localRootPath, uri);
-        
+
         if (mountExists(localRootPath, uri)) {
             return;
         }

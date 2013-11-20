@@ -30,7 +30,7 @@ public class VsmOkResponse extends VsmResponse {
         NodeList list = root.getElementsByTagName("nf:rpc-error");
         if (list.getLength() == 0) {
             // No rpc-error tag; means response was ok.
-            assert(root.getElementsByTagName("nf:ok").getLength() > 0);
+            assert (root.getElementsByTagName("nf:ok").getLength() > 0);
             _responseOk = true;
         } else {
             parseError(list.item(0));

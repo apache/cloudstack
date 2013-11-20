@@ -188,7 +188,7 @@ public class SecurityGroupResultObject implements ControlledEntity, InternalIden
 
                         securityGroupRuleData.setAllowedSecGroupAcct(allowedAccount.getAccountName());
                     } else if (netGroupRule.getAllowedSourceIpCidr() != null) {
-                    	securityGroupRuleData.setAllowedSourceIpCidr(netGroupRule.getAllowedSourceIpCidr());
+                        securityGroupRuleData.setAllowedSourceIpCidr(netGroupRule.getAllowedSourceIpCidr());
                     }
                     securityGroupRuleDataList.add(securityGroupRuleData);
                 }

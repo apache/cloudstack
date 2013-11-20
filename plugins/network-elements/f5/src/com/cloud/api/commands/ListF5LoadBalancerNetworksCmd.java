@@ -43,19 +43,23 @@ import com.cloud.network.Network;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listF5LoadBalancerNetworks", responseObject=NetworkResponse.class, description="lists network that are using a F5 load balancer device")
+@APICommand(name = "listF5LoadBalancerNetworks", responseObject = NetworkResponse.class, description = "lists network that are using a F5 load balancer device")
 public class ListF5LoadBalancerNetworksCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListF5LoadBalancerNetworksCmd.class.getName());
     private static final String s_name = "listf5loadbalancernetworksresponse";
-    @Inject F5ExternalLoadBalancerElementService _f5DeviceManagerService;
+    @Inject
+    F5ExternalLoadBalancerElementService _f5DeviceManagerService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_ID, type=CommandType.UUID, entityType = F5LoadBalancerResponse.class,
-            required = true, description="f5 load balancer device ID")
+    @Parameter(name = ApiConstants.LOAD_BALANCER_DEVICE_ID,
+               type = CommandType.UUID,
+               entityType = F5LoadBalancerResponse.class,
+               required = true,
+               description = "f5 load balancer device ID")
     private Long lbDeviceId;
 
     /////////////////////////////////////////////////////
@@ -73,7 +77,7 @@ public class ListF5LoadBalancerNetworksCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
-            List<? extends Network> networks  = _f5DeviceManagerService.listNetworks(this);
+            List<? extends Network> networks = _f5DeviceManagerService.listNetworks(this);
             ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();
             List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
 
@@ -87,7 +91,7 @@ public class ListF5LoadBalancerNetworksCmd extends BaseListCmd {
             response.setResponses(networkResponses);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

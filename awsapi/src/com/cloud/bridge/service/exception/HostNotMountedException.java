@@ -17,20 +17,20 @@
 package com.cloud.bridge.service.exception;
 
 public class HostNotMountedException extends RuntimeException {
-	private static final long serialVersionUID = 1798153102422117938L;
+    private static final long serialVersionUID = 1798153102422117938L;
 
-	public HostNotMountedException() {
-	}
-	
-	public HostNotMountedException(String message) {
-		super(message);
-	}
+    public HostNotMountedException() {
+    }
 
-	public HostNotMountedException(Throwable e) {
-		super(e);
-	}
-	
-	public HostNotMountedException(String message, Throwable e) {
-		super(message, e);
-	}
+    public HostNotMountedException(String message) {
+        super(message);
+    }
+
+    public HostNotMountedException(Throwable e) {
+        super(e);
+    }
+
+    public HostNotMountedException(String message, Throwable e) {
+        super(message, e);
+    }
 }

@@ -34,7 +34,7 @@ import org.apache.log4j.Logger;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 
-@APICommand(name = "deleteUser", description="Deletes a user for an account", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteUser", description = "Deletes a user for an account", responseObject = SuccessResponse.class)
 public class DeleteUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteUserCmd.class.getName());
 
@@ -43,10 +43,11 @@ public class DeleteUserCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserResponse.class, required=true, description="id of the user to be deleted")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserResponse.class, required = true, description = "id of the user to be deleted")
     private Long id;
 
-    @Inject RegionService _regionService;
+    @Inject
+    RegionService _regionService;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -76,8 +77,8 @@ public class DeleteUserCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("UserId: "+getId());
+    public void execute() {
+        CallContext.current().setEventDetails("UserId: " + getId());
         boolean result = _regionService.deleteUser(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

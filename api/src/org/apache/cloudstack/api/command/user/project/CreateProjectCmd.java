@@ -47,8 +47,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account who will be Admin for the project")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
-            description = "domain ID of the account owning a project")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning a project")
     private Long domainId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the project")
@@ -60,7 +59,6 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
-
 
     public String getAccountName() {
         if (accountName != null) {

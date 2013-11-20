@@ -136,72 +136,71 @@ import com.cloud.vm.VirtualMachine.State;
 import com.trilead.ssh2.SCPClient;
 
 public class OvmResourceBase implements ServerResource, HypervisorResource {
-	private static final Logger s_logger = Logger.getLogger(OvmResourceBase.class);
-	String _name;
-	Long _zoneId;
-	Long _podId;
-	Long _clusterId;
-	String _ip;
-	String _username;
-	String _password;
-	String _guid;
-	String _agentUserName = "oracle";
-	String _agentPassword;
-	Connection _conn;
+    private static final Logger s_logger = Logger.getLogger(OvmResourceBase.class);
+    String _name;
+    Long _zoneId;
+    Long _podId;
+    Long _clusterId;
+    String _ip;
+    String _username;
+    String _password;
+    String _guid;
+    String _agentUserName = "oracle";
+    String _agentPassword;
+    Connection _conn;
     String _privateNetworkName;
     String _publicNetworkName;
     String _guestNetworkName;
     boolean _canBridgeFirewall;
     static boolean _isHeartBeat = false;
     List<String> _bridges = null;
-	private final Map<String, Pair<Long, Long>> _vmNetworkStats= new ConcurrentHashMap<String, Pair<Long, Long>>();
-	private static String _ovsAgentPath = "/opt/ovs-agent-latest";
+    private final Map<String, Pair<Long, Long>> _vmNetworkStats = new ConcurrentHashMap<String, Pair<Long, Long>>();
+    private static String _ovsAgentPath = "/opt/ovs-agent-latest";
 
-	// TODO vmsync {
-	static HashMap<String, State> _stateMaps;
-	protected HashMap<String, State> _vms = new HashMap<String, State>(50);
-	static {
-		_stateMaps = new HashMap<String, State>();
-		_stateMaps.put("RUNNING", State.Running);
-		_stateMaps.put("DOWN", State.Stopped);
-		_stateMaps.put("ERROR", State.Error);
-		_stateMaps.put("SUSPEND", State.Stopped);
-	}
-	// TODO vmsync }
-	
-	static HashMap<String, PowerState> _powerStateMaps;
-	static {
-		_powerStateMaps = new HashMap<String, PowerState>();
-		_powerStateMaps.put("RUNNING", PowerState.PowerOn);
-		_powerStateMaps.put("DOWN", PowerState.PowerOff);
-		_powerStateMaps.put("ERROR", PowerState.PowerUnknown);
-		_powerStateMaps.put("SUSPEND", PowerState.PowerOff);
-	}
-	
-	@Override
-	public boolean configure(String name, Map<String, Object> params)
-			throws ConfigurationException {
-		_name = name;
-		
-		try {
-			_zoneId = Long.parseLong((String) params.get("zone"));
-			_podId = Long.parseLong((String) params.get("pod"));
-			_clusterId = Long.parseLong((String) params.get("cluster"));
-			_ip = (String) params.get("ip");
-			_username = (String) params.get("username");
-			_password = (String) params.get("password");
-			_guid = (String) params.get("guid");
-	        _privateNetworkName = (String) params.get("private.network.device");
-	        _publicNetworkName = (String) params.get("public.network.device");
-	        _guestNetworkName = (String)params.get("guest.network.device");
-	        _agentUserName = (String)params.get("agentusername");
-	        _agentPassword = (String)params.get("agentpassword");
-		} catch (Exception e) {
-			s_logger.debug("Configure " + _name + " failed", e);
-			throw new ConfigurationException("Configure " + _name + " failed, " + e.toString());
-		}
-		
-		if (_podId == null) {
+    // TODO vmsync {
+    static HashMap<String, State> _stateMaps;
+    protected HashMap<String, State> _vms = new HashMap<String, State>(50);
+    static {
+        _stateMaps = new HashMap<String, State>();
+        _stateMaps.put("RUNNING", State.Running);
+        _stateMaps.put("DOWN", State.Stopped);
+        _stateMaps.put("ERROR", State.Error);
+        _stateMaps.put("SUSPEND", State.Stopped);
+    }
+    // TODO vmsync }
+
+    static HashMap<String, PowerState> _powerStateMaps;
+    static {
+        _powerStateMaps = new HashMap<String, PowerState>();
+        _powerStateMaps.put("RUNNING", PowerState.PowerOn);
+        _powerStateMaps.put("DOWN", PowerState.PowerOff);
+        _powerStateMaps.put("ERROR", PowerState.PowerUnknown);
+        _powerStateMaps.put("SUSPEND", PowerState.PowerOff);
+    }
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        _name = name;
+
+        try {
+            _zoneId = Long.parseLong((String)params.get("zone"));
+            _podId = Long.parseLong((String)params.get("pod"));
+            _clusterId = Long.parseLong((String)params.get("cluster"));
+            _ip = (String)params.get("ip");
+            _username = (String)params.get("username");
+            _password = (String)params.get("password");
+            _guid = (String)params.get("guid");
+            _privateNetworkName = (String)params.get("private.network.device");
+            _publicNetworkName = (String)params.get("public.network.device");
+            _guestNetworkName = (String)params.get("guest.network.device");
+            _agentUserName = (String)params.get("agentusername");
+            _agentPassword = (String)params.get("agentpassword");
+        } catch (Exception e) {
+            s_logger.debug("Configure " + _name + " failed", e);
+            throw new ConfigurationException("Configure " + _name + " failed, " + e.toString());
+        }
+
+        if (_podId == null) {
             throw new ConfigurationException("Unable to get the pod");
         }
 
@@ -220,472 +219,468 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         if (_guid == null) {
             throw new ConfigurationException("Unable to get the guid");
         }
-        
+
         if (_agentUserName == null) {
-        	throw new ConfigurationException("Unable to get agent user name");
+            throw new ConfigurationException("Unable to get agent user name");
         }
-        
+
         if (_agentPassword == null) {
-        	throw new ConfigurationException("Unable to get agent password");
-        }                
-        
-		try {
-			setupServer();
-		} catch (Exception e) {
-			s_logger.debug("Setup server failed, ip " + _ip, e);
-			throw new ConfigurationException("Unable to setup server");
-		}
-		
+            throw new ConfigurationException("Unable to get agent password");
+        }
+
+        try {
+            setupServer();
+        } catch (Exception e) {
+            s_logger.debug("Setup server failed, ip " + _ip, e);
+            throw new ConfigurationException("Unable to setup server");
+        }
+
         _conn = new Connection(_ip, _agentUserName, _agentPassword);
         try {
-			OvmHost.registerAsMaster(_conn);
-			OvmHost.registerAsVmServer(_conn);
-			_bridges = OvmBridge.getAllBridges(_conn);
-		} catch (XmlRpcException e) {
-			s_logger.debug("Get bridges failed", e);
-			throw new ConfigurationException("Cannot get bridges on host " + _ip + "," + e.getMessage());
-		}
-		
-		if (_privateNetworkName != null && !_bridges.contains(_privateNetworkName)) {
-			throw new ConfigurationException("Cannot find bridge " + _privateNetworkName + " on host " + _ip + ", all bridges are:" + _bridges);
-		}
-		
-		if (_publicNetworkName != null && !_bridges.contains(_publicNetworkName)) {
-			throw new ConfigurationException("Cannot find bridge " + _publicNetworkName + " on host " + _ip + ", all bridges are:" + _bridges);
-		}
-		
-		if (_guestNetworkName != null && !_bridges.contains(_guestNetworkName)) {
-			throw new ConfigurationException("Cannot find bridge " + _guestNetworkName + " on host " + _ip + ", all bridges are:" + _bridges);
-		}
-        
-		/* set to false so each time ModifyStoragePoolCommand will re-setup heartbeat*/
-		_isHeartBeat = false;
-		
-		/*
-		try {
-			_canBridgeFirewall = canBridgeFirewall();
-		} catch (XmlRpcException e) {
-			s_logger.error("Failed to detect whether the host supports security groups.", e);
-			_canBridgeFirewall = false;
-		}
-		*/
-		
-		_canBridgeFirewall = false;
-		
-		s_logger.debug(_canBridgeFirewall ? "OVM host supports security groups." : "OVM host doesn't support security groups.");
-		
-		return true;
-	}
+            OvmHost.registerAsMaster(_conn);
+            OvmHost.registerAsVmServer(_conn);
+            _bridges = OvmBridge.getAllBridges(_conn);
+        } catch (XmlRpcException e) {
+            s_logger.debug("Get bridges failed", e);
+            throw new ConfigurationException("Cannot get bridges on host " + _ip + "," + e.getMessage());
+        }
 
-	@Override
-	public boolean start() {
-		return true;
-	}
+        if (_privateNetworkName != null && !_bridges.contains(_privateNetworkName)) {
+            throw new ConfigurationException("Cannot find bridge " + _privateNetworkName + " on host " + _ip + ", all bridges are:" + _bridges);
+        }
 
-	@Override
-	public boolean stop() {
-		return true;
-	}
+        if (_publicNetworkName != null && !_bridges.contains(_publicNetworkName)) {
+            throw new ConfigurationException("Cannot find bridge " + _publicNetworkName + " on host " + _ip + ", all bridges are:" + _bridges);
+        }
 
-	@Override
-	public String getName() {
-		return _name;
-	}
+        if (_guestNetworkName != null && !_bridges.contains(_guestNetworkName)) {
+            throw new ConfigurationException("Cannot find bridge " + _guestNetworkName + " on host " + _ip + ", all bridges are:" + _bridges);
+        }
 
-	@Override
-	public Type getType() {
-		return Type.Routing;
-	}
+        /* set to false so each time ModifyStoragePoolCommand will re-setup heartbeat*/
+        _isHeartBeat = false;
 
-	protected void fillHostInfo(StartupRoutingCommand cmd) {
-		try {
-			OvmHost.Details hostDetails = OvmHost.getDetails(_conn);
-			
-			cmd.setName(hostDetails.name);
-			cmd.setSpeed(hostDetails.cpuSpeed);
-			cmd.setCpus(hostDetails.cpuNum);
-			cmd.setMemory(hostDetails.freeMemory);
-			cmd.setDom0MinMemory(hostDetails.dom0Memory);
-			cmd.setGuid(_guid);
-			cmd.setDataCenter(_zoneId.toString());
-			cmd.setPod(_podId.toString());
-			cmd.setCluster(_clusterId.toString());
-			cmd.setVersion(OvmResourceBase.class.getPackage().getImplementationVersion());
-			cmd.setHypervisorType(HypervisorType.Ovm);
-			//TODO: introudce PIF
-			cmd.setPrivateIpAddress(_ip);
-			cmd.setStorageIpAddress(_ip);
-			cmd.setHostVmStateReport(getHostVmStateReport());
-			
-			String defaultBridge = OvmBridge.getBridgeByIp(_conn, _ip);
-			if (_publicNetworkName == null) {
-				_publicNetworkName = defaultBridge;
-			}
-			if (_privateNetworkName == null) {
-				_privateNetworkName = _publicNetworkName;
-			}
-			if (_guestNetworkName == null) {
-				_guestNetworkName = _privateNetworkName;
-			}
-			Map<String, String> d = cmd.getHostDetails();
-			d.put("public.network.device", _publicNetworkName);
-			d.put("private.network.device", _privateNetworkName);
-			d.put("guest.network.device", _guestNetworkName);
-			cmd.setHostDetails(d);
-			
-			s_logger.debug(String.format("Add a OVM host(%s)", hostDetails.toJson()));
-		} catch (XmlRpcException e) {
-			s_logger.debug("XML RPC Exception" + e.getMessage(), e);
-			throw new CloudRuntimeException("XML RPC Exception" + e.getMessage(), e);
-		}
-	}
-	
-	protected void setupServer() throws IOException {
-		com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_ip, 22);
+        /*
+        try {
+        	_canBridgeFirewall = canBridgeFirewall();
+        } catch (XmlRpcException e) {
+        	s_logger.error("Failed to detect whether the host supports security groups.", e);
+        	_canBridgeFirewall = false;
+        }
+        */
+
+        _canBridgeFirewall = false;
+
+        s_logger.debug(_canBridgeFirewall ? "OVM host supports security groups." : "OVM host doesn't support security groups.");
+
+        return true;
+    }
+
+    @Override
+    public boolean start() {
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return _name;
+    }
+
+    @Override
+    public Type getType() {
+        return Type.Routing;
+    }
+
+    protected void fillHostInfo(StartupRoutingCommand cmd) {
+        try {
+            OvmHost.Details hostDetails = OvmHost.getDetails(_conn);
+
+            cmd.setName(hostDetails.name);
+            cmd.setSpeed(hostDetails.cpuSpeed);
+            cmd.setCpus(hostDetails.cpuNum);
+            cmd.setMemory(hostDetails.freeMemory);
+            cmd.setDom0MinMemory(hostDetails.dom0Memory);
+            cmd.setGuid(_guid);
+            cmd.setDataCenter(_zoneId.toString());
+            cmd.setPod(_podId.toString());
+            cmd.setCluster(_clusterId.toString());
+            cmd.setVersion(OvmResourceBase.class.getPackage().getImplementationVersion());
+            cmd.setHypervisorType(HypervisorType.Ovm);
+            //TODO: introudce PIF
+            cmd.setPrivateIpAddress(_ip);
+            cmd.setStorageIpAddress(_ip);
+            cmd.setHostVmStateReport(getHostVmStateReport());
+
+            String defaultBridge = OvmBridge.getBridgeByIp(_conn, _ip);
+            if (_publicNetworkName == null) {
+                _publicNetworkName = defaultBridge;
+            }
+            if (_privateNetworkName == null) {
+                _privateNetworkName = _publicNetworkName;
+            }
+            if (_guestNetworkName == null) {
+                _guestNetworkName = _privateNetworkName;
+            }
+            Map<String, String> d = cmd.getHostDetails();
+            d.put("public.network.device", _publicNetworkName);
+            d.put("private.network.device", _privateNetworkName);
+            d.put("guest.network.device", _guestNetworkName);
+            cmd.setHostDetails(d);
+
+            s_logger.debug(String.format("Add a OVM host(%s)", hostDetails.toJson()));
+        } catch (XmlRpcException e) {
+            s_logger.debug("XML RPC Exception" + e.getMessage(), e);
+            throw new CloudRuntimeException("XML RPC Exception" + e.getMessage(), e);
+        }
+    }
+
+    protected void setupServer() throws IOException {
+        com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_ip, 22);
         sshConnection.connect(null, 60000, 60000);
         if (!sshConnection.authenticateWithPassword(_username, _password)) {
             throw new CloudRuntimeException("Unable to authenticate");
         }
         SCPClient scp = new SCPClient(sshConnection);
-        
+
         String configScriptName = "scripts/vm/hypervisor/ovm/configureOvm.sh";
-        String configScriptPath = Script.findScript("" , configScriptName);
+        String configScriptPath = Script.findScript("", configScriptName);
         if (configScriptPath == null) {
-        	throw new CloudRuntimeException("Unable to find " + configScriptName);
+            throw new CloudRuntimeException("Unable to find " + configScriptName);
         }
         scp.put(configScriptPath, "/usr/bin/", "0755");
-        
-		if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "sh /usr/bin/configureOvm.sh preSetup")) {
-			throw new CloudRuntimeException("Execute configureOvm.sh preSetup failed on " + _ip);
-		}
-		
+
+        if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "sh /usr/bin/configureOvm.sh preSetup")) {
+            throw new CloudRuntimeException("Execute configureOvm.sh preSetup failed on " + _ip);
+        }
+
         File tmp = new File(configScriptPath);
         File scriptDir = new File(tmp.getParent());
-        File [] scripts = scriptDir.listFiles();
-        for (int i=0; i<scripts.length; i++) {
-        	File script = scripts[i];
-        	if (script.getName().equals("configureOvm.sh")) {
-        		continue;
-        	}
-        	
+        File[] scripts = scriptDir.listFiles();
+        for (int i = 0; i < scripts.length; i++) {
+            File script = scripts[i];
+            if (script.getName().equals("configureOvm.sh")) {
+                continue;
+            }
+
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Copying " + script.getPath() + " to " + _ovsAgentPath + " on " + _ip + " with permission 0644");
             }
             scp.put(script.getPath(), _ovsAgentPath, "0644");
         }
-        
-		sshConnection = SSHCmdHelper.acquireAuthorizedConnection(_ip, _username, _password);
-		if (sshConnection == null) {
-			throw new CloudRuntimeException(
-					String.format("Cannot connect to ovm host(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, _password));
-		}
 
-		if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "sh /usr/bin/configureOvm.sh postSetup")) {
-			throw new CloudRuntimeException("Execute configureOvm.sh postSetup failed on " + _ip);
-		}
-        
-	}
-	
-	@Override
-	public StartupCommand[] initialize() {
-		try {
-			StartupRoutingCommand cmd = new StartupRoutingCommand();
-			fillHostInfo(cmd);
-	        Map<String, State> changes = null;
-	        synchronized (_vms) {
-	            _vms.clear();
-	            changes = sync();
-	        }
-			cmd.setStateChanges(changes);
-			cmd.setCaps("hvm");
-			return new StartupCommand[] {cmd};
-		} catch (Exception e) {
-			s_logger.debug("Ovm resource initializes failed", e);
-			return null;
-		}
-	}
-	
-	@Override
-	public PingCommand getCurrentStatus(long id) {
-		try {
-			OvmHost.ping(_conn);
-			HashMap<String, State> newStates = sync();
-			return new PingRoutingCommand(getType(), id, newStates, this.getHostVmStateReport());
-		} catch (XmlRpcException e) {
-			s_logger.debug("Check agent status failed", e);
-			return null;
-		}
-	}
+        sshConnection = SSHCmdHelper.acquireAuthorizedConnection(_ip, _username, _password);
+        if (sshConnection == null) {
+            throw new CloudRuntimeException(String.format("Cannot connect to ovm host(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, _password));
+        }
 
-	protected ReadyAnswer execute(ReadyCommand cmd) {
-		try {
-			OvmHost.Details d = OvmHost.getDetails(_conn);
-			//TODO: cleanup halted vm
-			if (d.masterIp.equalsIgnoreCase(_ip)) {
-				return new ReadyAnswer(cmd);
-			} else {
-				s_logger.debug("Master IP changes to " + d.masterIp + ", it should be " + _ip);
-				return new ReadyAnswer(cmd, "I am not the master server");
-			}
-		} catch (XmlRpcException e) {
-			s_logger.debug("XML RPC Exception" + e.getMessage(), e);
-			throw new CloudRuntimeException("XML RPC Exception" + e.getMessage(), e);
-		}
-		
-	}
-	
-	protected void createNfsSr(StorageFilerTO pool) throws XmlRpcException {
-		String mountPoint = String.format("%1$s:%2$s", pool.getHost(), pool.getPath());
-		OvmStoragePool.Details d = new OvmStoragePool.Details();
-		d.path = mountPoint;
-		d.type = OvmStoragePool.NFS;
-		d.uuid = pool.getUuid();
-		OvmStoragePool.create(_conn, d);
-		s_logger.debug(String.format("Created SR (mount point:%1$s)", mountPoint));
-	}
-	
-	protected void createOCFS2Sr(StorageFilerTO pool)  throws XmlRpcException {
+        if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "sh /usr/bin/configureOvm.sh postSetup")) {
+            throw new CloudRuntimeException("Execute configureOvm.sh postSetup failed on " + _ip);
+        }
+
+    }
+
+    @Override
+    public StartupCommand[] initialize() {
+        try {
+            StartupRoutingCommand cmd = new StartupRoutingCommand();
+            fillHostInfo(cmd);
+            Map<String, State> changes = null;
+            synchronized (_vms) {
+                _vms.clear();
+                changes = sync();
+            }
+            cmd.setStateChanges(changes);
+            cmd.setCaps("hvm");
+            return new StartupCommand[] {cmd};
+        } catch (Exception e) {
+            s_logger.debug("Ovm resource initializes failed", e);
+            return null;
+        }
+    }
+
+    @Override
+    public PingCommand getCurrentStatus(long id) {
+        try {
+            OvmHost.ping(_conn);
+            HashMap<String, State> newStates = sync();
+            return new PingRoutingCommand(getType(), id, newStates, this.getHostVmStateReport());
+        } catch (XmlRpcException e) {
+            s_logger.debug("Check agent status failed", e);
+            return null;
+        }
+    }
+
+    protected ReadyAnswer execute(ReadyCommand cmd) {
+        try {
+            OvmHost.Details d = OvmHost.getDetails(_conn);
+            //TODO: cleanup halted vm
+            if (d.masterIp.equalsIgnoreCase(_ip)) {
+                return new ReadyAnswer(cmd);
+            } else {
+                s_logger.debug("Master IP changes to " + d.masterIp + ", it should be " + _ip);
+                return new ReadyAnswer(cmd, "I am not the master server");
+            }
+        } catch (XmlRpcException e) {
+            s_logger.debug("XML RPC Exception" + e.getMessage(), e);
+            throw new CloudRuntimeException("XML RPC Exception" + e.getMessage(), e);
+        }
+
+    }
+
+    protected void createNfsSr(StorageFilerTO pool) throws XmlRpcException {
+        String mountPoint = String.format("%1$s:%2$s", pool.getHost(), pool.getPath());
+        OvmStoragePool.Details d = new OvmStoragePool.Details();
+        d.path = mountPoint;
+        d.type = OvmStoragePool.NFS;
+        d.uuid = pool.getUuid();
+        OvmStoragePool.create(_conn, d);
+        s_logger.debug(String.format("Created SR (mount point:%1$s)", mountPoint));
+    }
+
+    protected void createOCFS2Sr(StorageFilerTO pool) throws XmlRpcException {
         OvmStoragePool.Details d = new OvmStoragePool.Details();
         d.path = pool.getPath();
         d.type = OvmStoragePool.OCFS2;
         d.uuid = pool.getUuid();
         OvmStoragePool.create(_conn, d);
         s_logger.debug(String.format("Created SR (mount point:%1$s)", d.path));
-	}
-	
-	private void setupHeartBeat(String poolUuid) {
-		try {
-			if (!_isHeartBeat) {
-				OvmHost.setupHeartBeat(_conn, poolUuid, _ip);
-				_isHeartBeat = true;
-			}
-		} catch (Exception e) {
-			s_logger.debug("setup heart beat for " + _ip + " failed", e);
-			_isHeartBeat = false;
-		}
-	}
-	
-	protected Answer execute(ModifyStoragePoolCommand cmd) {
-		StorageFilerTO pool = cmd.getPool();
-		try {
-			if (pool.getType() == StoragePoolType.NetworkFilesystem) {
-				createNfsSr(pool);
-			} else if (pool.getType() == StoragePoolType.OCFS2) {
-			    createOCFS2Sr(pool);
-			} else {
-	            return new Answer(cmd, false, "The pool type: " + pool.getType().name() + " is not supported.");
-	        }
-			
-			setupHeartBeat(pool.getUuid());
-			OvmStoragePool.Details d = OvmStoragePool.getDetailsByUuid(_conn, pool.getUuid());
-			Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
-			ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, d.totalSpace, d.freeSpace, tInfo);
-			return answer;
-		} catch (Exception e) {
-			s_logger.debug("ModifyStoragePoolCommand failed", e);
-			return new Answer(cmd, false, e.getMessage());
-		}
-	}
-	
-	protected Answer execute(CreateStoragePoolCommand cmd) {
-		return new Answer(cmd, true, "success");
-	}
-	
-	protected PrimaryStorageDownloadAnswer execute(final PrimaryStorageDownloadCommand cmd) {
-		try {
-			URI uri = new URI(cmd.getUrl());
-			String secondaryStoragePath = uri.getHost() + ":" + uri.getPath();
-			Pair<String, Long> res = OvmStoragePool.downloadTemplate(_conn, cmd.getPoolUuid(), secondaryStoragePath); 
-			return new PrimaryStorageDownloadAnswer(res.first(), res.second());
-		} catch (Exception e) {
-			s_logger.debug("PrimaryStorageDownloadCommand failed", e);
-			return new PrimaryStorageDownloadAnswer(e.getMessage());
-		}
-	}
-	
-	protected CreateAnswer execute(CreateCommand cmd) {
-		StorageFilerTO primaryStorage = cmd.getPool();
-		DiskProfile disk = cmd.getDiskCharacteristics();
-		
-		try {
-			OvmVolume.Details vol = null;
-			if (cmd.getTemplateUrl() != null) {
-				vol = OvmVolume.createFromTemplate(_conn, primaryStorage.getUuid(),  cmd.getTemplateUrl());
-			} else {
-				vol = OvmVolume.createDataDsik(_conn, primaryStorage.getUuid(), Long.toString(disk.getSize()), disk.getType() == Volume.Type.ROOT);
-			}
-			
-			VolumeTO volume = new VolumeTO(cmd.getVolumeId(), disk.getType(),
-					primaryStorage.getType(), primaryStorage.getUuid(), primaryStorage.getPath(),
-					vol.name, vol.path, vol.size, null);
-			return new CreateAnswer(cmd, volume);
-		} catch (Exception e) {
-			s_logger.debug("CreateCommand failed", e);
-			return new CreateAnswer(cmd, e.getMessage());
-		}
-	}
-	
-	protected void applySpecToVm(OvmVm.Details vm, VirtualMachineTO spec) {
-		vm.name = spec.getName();
-		vm.memory = spec.getMinRam();
-		vm.cpuNum = spec.getCpus();
-		vm.uuid = UUID.nameUUIDFromBytes(spec.getName().getBytes()).toString();
-		if (spec.getBootloader() == BootloaderType.CD) {
-			vm.bootDev = OvmVm.CD;
-			vm.type = OvmVm.HVM;
-		} else {
-			vm.bootDev = OvmVm.HDD;
-			String osType = OvmHelper.getOvmGuestType(spec.getOs());
-			if (OvmHelper.ORACLE_LINUX.equals(osType)) {
-				vm.type = OvmVm.PV;
-			} else if (OvmHelper.WINDOWS.equals(osType) || OvmHelper.ORACLE_SOLARIS.equals(osType)) {
-				vm.type = OvmVm.HVM;
-			} else {
-				throw new CloudRuntimeException(spec.getOs() + " is not supported" + ",Oracle VM only supports Oracle Linux and Windows");
-			}
-		}
-	}
-	
-	protected void createVbds(OvmVm.Details vm, VirtualMachineTO spec) throws URISyntaxException {
-		for (DiskTO volume : spec.getDisks()) {
-			if (volume.getType() == Volume.Type.ROOT) {
-				VolumeObjectTO vol = (VolumeObjectTO)volume.getData();
-				OvmDisk.Details root = new OvmDisk.Details();
-				root.path = vol.getPath();
-				root.type = OvmDisk.WRITE;
-				root.isIso = false;
-				vm.rootDisk = root;
-			} else if (volume.getType() == Volume.Type.ISO) {
-				DataTO isoTO = volume.getData();
-				if (isoTO.getPath() != null) {
-					TemplateObjectTO template = (TemplateObjectTO)isoTO;
-					DataStoreTO store = template.getDataStore();
-					if (!(store instanceof NfsTO)) {
-						throw new CloudRuntimeException("unsupported protocol");
-					}
-					NfsTO nfsStore = (NfsTO)store;
-					String isoPath = nfsStore.getUrl() + File.separator + template.getPath();
-					OvmDisk.Details iso = new OvmDisk.Details();
-					URI path = new URI(isoPath);
-					iso.path = path.getHost() + ":" + path.getPath();
-					iso.type = OvmDisk.READ;
-					iso.isIso = true;
-					vm.disks.add(iso);
-				}
-			} else if (volume.getType() == Volume.Type.DATADISK){
-				
-				OvmDisk.Details data = new OvmDisk.Details();
-				data.path = volume.getData().getPath();
-				data.type = OvmDisk.SHAREDWRITE;
-				data.isIso = false;
-				vm.disks.add(data);
-			} else {
-				throw new CloudRuntimeException("Unknow volume type: " + volume.getType());
-			}
-		}
-	}
-	
-	private String createVlanBridge(String networkName, String vlanId) throws XmlRpcException {
-       	OvmBridge.Details brdetails = OvmBridge.getDetails(_conn, networkName);
-    	if (brdetails.attach.equalsIgnoreCase("null")) {
-    		throw new CloudRuntimeException("Bridge " + networkName + " has no PIF");
-    	}
-    	
-    	OvmVlan.Details vdetails = new OvmVlan.Details();
-    	vdetails.pif = brdetails.attach;
-    	vdetails.vid = Integer.parseInt(vlanId);
-    	brdetails.name = "vlan" + vlanId;
-    	brdetails.attach = "null";
-    	OvmBridge.createVlanBridge(_conn, brdetails, vdetails);
-    	return brdetails.name;
-	}
-	
-	
-	//TODO: complete all network support
-	protected String getNetwork(NicTO nic) throws XmlRpcException {
+    }
+
+    private void setupHeartBeat(String poolUuid) {
+        try {
+            if (!_isHeartBeat) {
+                OvmHost.setupHeartBeat(_conn, poolUuid, _ip);
+                _isHeartBeat = true;
+            }
+        } catch (Exception e) {
+            s_logger.debug("setup heart beat for " + _ip + " failed", e);
+            _isHeartBeat = false;
+        }
+    }
+
+    protected Answer execute(ModifyStoragePoolCommand cmd) {
+        StorageFilerTO pool = cmd.getPool();
+        try {
+            if (pool.getType() == StoragePoolType.NetworkFilesystem) {
+                createNfsSr(pool);
+            } else if (pool.getType() == StoragePoolType.OCFS2) {
+                createOCFS2Sr(pool);
+            } else {
+                return new Answer(cmd, false, "The pool type: " + pool.getType().name() + " is not supported.");
+            }
+
+            setupHeartBeat(pool.getUuid());
+            OvmStoragePool.Details d = OvmStoragePool.getDetailsByUuid(_conn, pool.getUuid());
+            Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
+            ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, d.totalSpace, d.freeSpace, tInfo);
+            return answer;
+        } catch (Exception e) {
+            s_logger.debug("ModifyStoragePoolCommand failed", e);
+            return new Answer(cmd, false, e.getMessage());
+        }
+    }
+
+    protected Answer execute(CreateStoragePoolCommand cmd) {
+        return new Answer(cmd, true, "success");
+    }
+
+    protected PrimaryStorageDownloadAnswer execute(final PrimaryStorageDownloadCommand cmd) {
+        try {
+            URI uri = new URI(cmd.getUrl());
+            String secondaryStoragePath = uri.getHost() + ":" + uri.getPath();
+            Pair<String, Long> res = OvmStoragePool.downloadTemplate(_conn, cmd.getPoolUuid(), secondaryStoragePath);
+            return new PrimaryStorageDownloadAnswer(res.first(), res.second());
+        } catch (Exception e) {
+            s_logger.debug("PrimaryStorageDownloadCommand failed", e);
+            return new PrimaryStorageDownloadAnswer(e.getMessage());
+        }
+    }
+
+    protected CreateAnswer execute(CreateCommand cmd) {
+        StorageFilerTO primaryStorage = cmd.getPool();
+        DiskProfile disk = cmd.getDiskCharacteristics();
+
+        try {
+            OvmVolume.Details vol = null;
+            if (cmd.getTemplateUrl() != null) {
+                vol = OvmVolume.createFromTemplate(_conn, primaryStorage.getUuid(), cmd.getTemplateUrl());
+            } else {
+                vol = OvmVolume.createDataDsik(_conn, primaryStorage.getUuid(), Long.toString(disk.getSize()), disk.getType() == Volume.Type.ROOT);
+            }
+
+            VolumeTO volume = new VolumeTO(cmd.getVolumeId(), disk.getType(), primaryStorage.getType(), primaryStorage.getUuid(), primaryStorage.getPath(), vol.name, vol.path,
+                vol.size, null);
+            return new CreateAnswer(cmd, volume);
+        } catch (Exception e) {
+            s_logger.debug("CreateCommand failed", e);
+            return new CreateAnswer(cmd, e.getMessage());
+        }
+    }
+
+    protected void applySpecToVm(OvmVm.Details vm, VirtualMachineTO spec) {
+        vm.name = spec.getName();
+        vm.memory = spec.getMinRam();
+        vm.cpuNum = spec.getCpus();
+        vm.uuid = UUID.nameUUIDFromBytes(spec.getName().getBytes()).toString();
+        if (spec.getBootloader() == BootloaderType.CD) {
+            vm.bootDev = OvmVm.CD;
+            vm.type = OvmVm.HVM;
+        } else {
+            vm.bootDev = OvmVm.HDD;
+            String osType = OvmHelper.getOvmGuestType(spec.getOs());
+            if (OvmHelper.ORACLE_LINUX.equals(osType)) {
+                vm.type = OvmVm.PV;
+            } else if (OvmHelper.WINDOWS.equals(osType) || OvmHelper.ORACLE_SOLARIS.equals(osType)) {
+                vm.type = OvmVm.HVM;
+            } else {
+                throw new CloudRuntimeException(spec.getOs() + " is not supported" + ",Oracle VM only supports Oracle Linux and Windows");
+            }
+        }
+    }
+
+    protected void createVbds(OvmVm.Details vm, VirtualMachineTO spec) throws URISyntaxException {
+        for (DiskTO volume : spec.getDisks()) {
+            if (volume.getType() == Volume.Type.ROOT) {
+                VolumeObjectTO vol = (VolumeObjectTO)volume.getData();
+                OvmDisk.Details root = new OvmDisk.Details();
+                root.path = vol.getPath();
+                root.type = OvmDisk.WRITE;
+                root.isIso = false;
+                vm.rootDisk = root;
+            } else if (volume.getType() == Volume.Type.ISO) {
+                DataTO isoTO = volume.getData();
+                if (isoTO.getPath() != null) {
+                    TemplateObjectTO template = (TemplateObjectTO)isoTO;
+                    DataStoreTO store = template.getDataStore();
+                    if (!(store instanceof NfsTO)) {
+                        throw new CloudRuntimeException("unsupported protocol");
+                    }
+                    NfsTO nfsStore = (NfsTO)store;
+                    String isoPath = nfsStore.getUrl() + File.separator + template.getPath();
+                    OvmDisk.Details iso = new OvmDisk.Details();
+                    URI path = new URI(isoPath);
+                    iso.path = path.getHost() + ":" + path.getPath();
+                    iso.type = OvmDisk.READ;
+                    iso.isIso = true;
+                    vm.disks.add(iso);
+                }
+            } else if (volume.getType() == Volume.Type.DATADISK) {
+
+                OvmDisk.Details data = new OvmDisk.Details();
+                data.path = volume.getData().getPath();
+                data.type = OvmDisk.SHAREDWRITE;
+                data.isIso = false;
+                vm.disks.add(data);
+            } else {
+                throw new CloudRuntimeException("Unknow volume type: " + volume.getType());
+            }
+        }
+    }
+
+    private String createVlanBridge(String networkName, String vlanId) throws XmlRpcException {
+        OvmBridge.Details brdetails = OvmBridge.getDetails(_conn, networkName);
+        if (brdetails.attach.equalsIgnoreCase("null")) {
+            throw new CloudRuntimeException("Bridge " + networkName + " has no PIF");
+        }
+
+        OvmVlan.Details vdetails = new OvmVlan.Details();
+        vdetails.pif = brdetails.attach;
+        vdetails.vid = Integer.parseInt(vlanId);
+        brdetails.name = "vlan" + vlanId;
+        brdetails.attach = "null";
+        OvmBridge.createVlanBridge(_conn, brdetails, vdetails);
+        return brdetails.name;
+    }
+
+    //TODO: complete all network support
+    protected String getNetwork(NicTO nic) throws XmlRpcException {
         String vlanId = null;
         String bridgeName = null;
         if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
             vlanId = BroadcastDomainType.getValue(nic.getBroadcastUri());
         }
-        
+
         if (nic.getType() == TrafficType.Guest) {
-            if (nic.getBroadcastType() == BroadcastDomainType.Vlan && !vlanId.equalsIgnoreCase("untagged")){
-            	bridgeName = createVlanBridge(_guestNetworkName, vlanId);
+            if (nic.getBroadcastType() == BroadcastDomainType.Vlan && !vlanId.equalsIgnoreCase("untagged")) {
+                bridgeName = createVlanBridge(_guestNetworkName, vlanId);
             } else {
-            	bridgeName = _guestNetworkName;
+                bridgeName = _guestNetworkName;
             }
         } else if (nic.getType() == TrafficType.Control) {
-        	throw new CloudRuntimeException("local link network is not supported");
+            throw new CloudRuntimeException("local link network is not supported");
         } else if (nic.getType() == TrafficType.Public) {
-        	throw new CloudRuntimeException("public network for system vm is not supported");
+            throw new CloudRuntimeException("public network for system vm is not supported");
         } else if (nic.getType() == TrafficType.Management) {
-        	bridgeName = _privateNetworkName;
+            bridgeName = _privateNetworkName;
         } else {
-        	throw new CloudRuntimeException("Unkonw network traffic type:" + nic.getType());
+            throw new CloudRuntimeException("Unkonw network traffic type:" + nic.getType());
         }
-        
+
         return bridgeName;
-	}
-	
-	protected OvmVif.Details createVif(NicTO nic) throws XmlRpcException {
-		OvmVif.Details vif = new OvmVif.Details();
-		vif.mac = nic.getMac();
-		vif.bridge = getNetwork(nic);
-		return vif;
-	}
-	
-	protected void createVifs(OvmVm.Details vm, VirtualMachineTO spec) throws CloudRuntimeException, XmlRpcException {
-		NicTO[] nics = spec.getNics();
-		List<OvmVif.Details> vifs = new ArrayList<OvmVif.Details>(nics.length);
-		for (NicTO nic : nics) {
-			OvmVif.Details vif = createVif(nic);
-			vifs.add(nic.getDeviceId(), vif);
-		}
-		vm.vifs.addAll(vifs);
-	}
-	
-	protected void startVm(OvmVm.Details vm) throws XmlRpcException {
-		OvmVm.create(_conn, vm);
-	}
-	
-	
-	private void cleanupNetwork(List<OvmVif.Details> vifs) throws XmlRpcException {
-		for (OvmVif.Details vif : vifs) {
-			if (vif.bridge.startsWith("vlan")) {
-				OvmBridge.deleteVlanBridge(_conn, vif.bridge);
-			}
-		}
-	}
-	
-	protected void cleanup(OvmVm.Details vm) {
-		try {
-			cleanupNetwork(vm.vifs);
-		} catch (XmlRpcException e) {
-			s_logger.debug("Clean up network for " + vm.name + " failed", e);
-		}
-		_vmNetworkStats.remove(vm.name);
-	}
-	
-	@Override
-	public synchronized StartAnswer execute(StartCommand cmd) {
-		VirtualMachineTO vmSpec = cmd.getVirtualMachine();
-		String vmName = vmSpec.getName();
-		State state = State.Stopped;
-		OvmVm.Details vmDetails = null;
-		try {
-			synchronized (_vms) {
-				_vms.put(vmName, State.Starting);
-			}
-			
-			vmDetails = new OvmVm.Details();
-			applySpecToVm(vmDetails, vmSpec);
-			createVbds(vmDetails, vmSpec);
-			createVifs(vmDetails, vmSpec);
-			startVm(vmDetails);
-			
-			// Add security group rules
-			NicTO[] nics = vmSpec.getNics();
+    }
+
+    protected OvmVif.Details createVif(NicTO nic) throws XmlRpcException {
+        OvmVif.Details vif = new OvmVif.Details();
+        vif.mac = nic.getMac();
+        vif.bridge = getNetwork(nic);
+        return vif;
+    }
+
+    protected void createVifs(OvmVm.Details vm, VirtualMachineTO spec) throws CloudRuntimeException, XmlRpcException {
+        NicTO[] nics = spec.getNics();
+        List<OvmVif.Details> vifs = new ArrayList<OvmVif.Details>(nics.length);
+        for (NicTO nic : nics) {
+            OvmVif.Details vif = createVif(nic);
+            vifs.add(nic.getDeviceId(), vif);
+        }
+        vm.vifs.addAll(vifs);
+    }
+
+    protected void startVm(OvmVm.Details vm) throws XmlRpcException {
+        OvmVm.create(_conn, vm);
+    }
+
+    private void cleanupNetwork(List<OvmVif.Details> vifs) throws XmlRpcException {
+        for (OvmVif.Details vif : vifs) {
+            if (vif.bridge.startsWith("vlan")) {
+                OvmBridge.deleteVlanBridge(_conn, vif.bridge);
+            }
+        }
+    }
+
+    protected void cleanup(OvmVm.Details vm) {
+        try {
+            cleanupNetwork(vm.vifs);
+        } catch (XmlRpcException e) {
+            s_logger.debug("Clean up network for " + vm.name + " failed", e);
+        }
+        _vmNetworkStats.remove(vm.name);
+    }
+
+    @Override
+    public synchronized StartAnswer execute(StartCommand cmd) {
+        VirtualMachineTO vmSpec = cmd.getVirtualMachine();
+        String vmName = vmSpec.getName();
+        State state = State.Stopped;
+        OvmVm.Details vmDetails = null;
+        try {
+            synchronized (_vms) {
+                _vms.put(vmName, State.Starting);
+            }
+
+            vmDetails = new OvmVm.Details();
+            applySpecToVm(vmDetails, vmSpec);
+            createVbds(vmDetails, vmSpec);
+            createVifs(vmDetails, vmSpec);
+            startVm(vmDetails);
+
+            // Add security group rules
+            NicTO[] nics = vmSpec.getNics();
             for (NicTO nic : nics) {
                 if (nic.isSecurityGroupEnabled()) {
                     if (vmSpec.getType().equals(VirtualMachine.Type.User)) {
@@ -720,8 +715,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             Double txBytes = Double.parseDouble(res.get("txBytes"));
             Double totalMemory = Double.parseDouble(res.get("totalMemory"));
             Double freeMemory = Double.parseDouble(res.get("freeMemory"));
-            HostStatsEntry hostStats = new HostStatsEntry(cmd.getHostId(), cpuUtil, rxBytes,
-                    txBytes, "host", totalMemory, freeMemory, 0, 0);
+            HostStatsEntry hostStats = new HostStatsEntry(cmd.getHostId(), cpuUtil, rxBytes, txBytes, "host", totalMemory, freeMemory, 0, 0);
             return new GetHostStatsAnswer(cmd, hostStats);
         } catch (Exception e) {
             s_logger.debug("Get host stats of " + cmd.getHostName() + " failed", e);
@@ -806,7 +800,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         }
         return state;
     }
-           
+
     protected HashMap<String, HostVmStateReportEntry> getHostVmStateReport() throws XmlRpcException {
         final HashMap<String, HostVmStateReportEntry> vmStates = new HashMap<String, HostVmStateReportEntry>();
         Map<String, String> vms = OvmHost.getAllVms(_conn);
@@ -816,7 +810,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         }
         return vmStates;
     }
-    
+
     protected HashMap<String, State> getAllVms() throws XmlRpcException {
         final HashMap<String, State> vmStates = new HashMap<String, State>();
         Map<String, String> vms = OvmHost.getAllVms(_conn);
@@ -843,8 +837,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
                 oldStates = new HashMap<String, State>(_vms.size());
                 oldStates.putAll(_vms);
 
-                for (final Map.Entry<String, State> entry : newStates
-                        .entrySet()) {
+                for (final Map.Entry<String, State> entry : newStates.entrySet()) {
                     final String vm = entry.getKey();
 
                     State newState = entry.getValue();
@@ -863,28 +856,24 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 
                     if (oldState == null) {
                         _vms.put(vm, newState);
-                        s_logger.debug("Detecting a new state but couldn't find a old state so adding it to the changes: "
-                                + vm);
+                        s_logger.debug("Detecting a new state but couldn't find a old state so adding it to the changes: " + vm);
                         changes.put(vm, newState);
                     } else if (oldState == State.Starting) {
                         if (newState == State.Running) {
                             _vms.put(vm, newState);
                         } else if (newState == State.Stopped) {
-                            s_logger.debug("Ignoring vm " + vm
-                                    + " because of a lag in starting the vm.");
+                            s_logger.debug("Ignoring vm " + vm + " because of a lag in starting the vm.");
                         }
                     } else if (oldState == State.Migrating) {
                         if (newState == State.Running) {
-                            s_logger.debug("Detected that an migrating VM is now running: "
-                                    + vm);
+                            s_logger.debug("Detected that an migrating VM is now running: " + vm);
                             _vms.put(vm, newState);
                         }
                     } else if (oldState == State.Stopping) {
                         if (newState == State.Stopped) {
                             _vms.put(vm, newState);
                         } else if (newState == State.Running) {
-                            s_logger.debug("Ignoring vm " + vm
-                                    + " because of a lag in stopping the vm. ");
+                            s_logger.debug("Ignoring vm " + vm + " because of a lag in stopping the vm. ");
                         }
                     } else if (oldState != newState) {
                         _vms.put(vm, newState);
@@ -1127,7 +1116,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             String vifDeviceName = vif.name;
             String bridgeName = vif.bridge;
             result = addNetworkRules(cmd.getVmName(), Long.toString(cmd.getVmId()), cmd.getGuestIp(), cmd.getSignature(), String.valueOf(cmd.getSeqNum()), cmd.getGuestMac(),
-                    cmd.stringifyRules(), vifDeviceName, bridgeName);
+                cmd.stringifyRules(), vifDeviceName, bridgeName);
         } catch (XmlRpcException e) {
             s_logger.error(e);
             result = false;
@@ -1137,8 +1126,8 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
             return new SecurityGroupRuleAnswer(cmd, false, "programming network rules failed");
         } else {
-            s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ":ingress num rules=" + cmd.getIngressRuleSet().length
-                    + ":egress num rules=" + cmd.getEgressRuleSet().length);
+            s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ":ingress num rules=" + cmd.getIngressRuleSet().length +
+                          ":egress num rules=" + cmd.getEgressRuleSet().length);
             return new SecurityGroupRuleAnswer(cmd);
         }
     }
@@ -1183,7 +1172,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
     }
 
     protected boolean addNetworkRules(String vmName, String vmId, String guestIp, String signature, String seqno, String vifMacAddress, String rules, String vifDeviceName,
-            String bridgeName) throws XmlRpcException {
+        String bridgeName) throws XmlRpcException {
         if (!_canBridgeFirewall) {
             return false;
         }
@@ -1264,7 +1253,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             String installPath = "template/tmpl/" + accountId + "/" + templateId;
             Map<String, String> res = OvmStoragePool.createTemplateFromVolume(_conn, secondaryStorageMountPath, installPath, volumePath, wait);
             return new CreatePrivateTemplateAnswer(cmd, true, null, res.get("installPath"), Long.valueOf(res.get("virtualSize")), Long.valueOf(res.get("physicalSize")),
-                    res.get("templateFileName"), ImageFormat.RAW);
+                res.get("templateFileName"), ImageFormat.RAW);
         } catch (Exception e) {
             s_logger.debug("Create template failed", e);
             return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage());
@@ -1314,20 +1303,17 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         String msg = "";
         for (PhysicalNetworkSetupInfo info : infoList) {
             if (!isNetworkSetupByName(info.getGuestNetworkName())) {
-                msg = "For Physical Network id:" + info.getPhysicalNetworkId() + ", Guest Network is not configured on the backend by name "
-                        + info.getGuestNetworkName();
+                msg = "For Physical Network id:" + info.getPhysicalNetworkId() + ", Guest Network is not configured on the backend by name " + info.getGuestNetworkName();
                 errorout = true;
                 break;
             }
             if (!isNetworkSetupByName(info.getPrivateNetworkName())) {
-                msg = "For Physical Network id:" + info.getPhysicalNetworkId() + ", Private Network is not configured on the backend by name "
-                        + info.getPrivateNetworkName();
+                msg = "For Physical Network id:" + info.getPhysicalNetworkId() + ", Private Network is not configured on the backend by name " + info.getPrivateNetworkName();
                 errorout = true;
                 break;
             }
             if (!isNetworkSetupByName(info.getPublicNetworkName())) {
-                msg = "For Physical Network id:" + info.getPhysicalNetworkId() + ", Public Network is not configured on the backend by name "
-                        + info.getPublicNetworkName();
+                msg = "For Physical Network id:" + info.getPhysicalNetworkId() + ", Public Network is not configured on the backend by name " + info.getPublicNetworkName();
                 errorout = true;
                 break;
             }

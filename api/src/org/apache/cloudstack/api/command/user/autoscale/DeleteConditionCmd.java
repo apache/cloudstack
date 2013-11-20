@@ -42,8 +42,7 @@ public class DeleteConditionCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ConditionResponse.class,
-            required= true, description = "the ID of the condition.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ConditionResponse.class, required = true, description = "the ID of the condition.")
     private Long id;
 
     // ///////////////////////////////////////////////////

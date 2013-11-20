@@ -28,24 +28,15 @@ import org.apache.cloudstack.api.InternalIdentity;
 public interface PhysicalNetwork extends Identity, InternalIdentity {
 
     public enum State {
-        Disabled,
-        Enabled;
+        Disabled, Enabled;
     }
 
     public enum IsolationMethod {
-        VLAN,
-        L3,
-        GRE,
-        STT,
-        VNS,
-        MIDO,
-        SSP,
-        VXLAN;
+        VLAN, L3, GRE, STT, VNS, MIDO, SSP, VXLAN;
     }
 
     public enum BroadcastDomainRange {
-        POD,
-        ZONE;
+        POD, ZONE;
     }
 
     BroadcastDomainRange getBroadcastDomainRange();
@@ -62,7 +53,7 @@ public interface PhysicalNetwork extends Identity, InternalIdentity {
 
     Long getDomainId();
 
-    List<Pair<Integer,Integer>> getVnet();
+    List<Pair<Integer, Integer>> getVnet();
 
     String getVnetString();
 

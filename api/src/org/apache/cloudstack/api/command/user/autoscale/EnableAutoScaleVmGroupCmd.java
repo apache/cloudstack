@@ -40,8 +40,7 @@ public class EnableAutoScaleVmGroupCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = AutoScaleVmGroupResponse.class,
-            required=true, description="the ID of the autoscale group")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class, required = true, description = "the ID of the autoscale group")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -90,7 +89,7 @@ public class EnableAutoScaleVmGroupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Enabling AutoScale Vm Group. Vm Group Id: "+getId();
+        return "Enabling AutoScale Vm Group. Vm Group Id: " + getId();
     }
 
     @Override

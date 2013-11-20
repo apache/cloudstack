@@ -116,7 +116,7 @@ public class NicVO implements Nic {
 
     @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
-    
+
     @Column(name = "uuid")
     String uuid = UUID.randomUUID().toString();
 
@@ -323,33 +323,33 @@ public class NicVO implements Nic {
     public VirtualMachine.Type getVmType() {
         return vmType;
     }
-    
+
     @Override
     public String getUuid() {
-    	return this.uuid;
+        return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
 
     @Override
-	public String getIp6Gateway() {
-		return ip6Gateway;
-	}
+    public String getIp6Gateway() {
+        return ip6Gateway;
+    }
 
-	public void setIp6Gateway(String ip6Gateway) {
-		this.ip6Gateway = ip6Gateway;
-	}
+    public void setIp6Gateway(String ip6Gateway) {
+        this.ip6Gateway = ip6Gateway;
+    }
 
     @Override
-	public String getIp6Cidr() {
-		return ip6Cidr;
-	}
+    public String getIp6Cidr() {
+        return ip6Cidr;
+    }
 
-	public void setIp6Cidr(String ip6Cidr) {
-		this.ip6Cidr = ip6Cidr;
-	}
+    public void setIp6Cidr(String ip6Cidr) {
+        this.ip6Cidr = ip6Cidr;
+    }
 
     public boolean getSecondaryIp() {
         return secondaryIp;

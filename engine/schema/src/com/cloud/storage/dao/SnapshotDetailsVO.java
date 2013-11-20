@@ -26,7 +26,7 @@ import javax.persistence.*;
 @Table(name = "snapshot_details")
 public class SnapshotDetailsVO implements ResourceDetail {
     @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
 

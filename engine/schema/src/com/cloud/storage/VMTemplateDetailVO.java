@@ -41,8 +41,8 @@ public class VMTemplateDetailVO implements ResourceDetail {
 
     @Column(name = "value", length = 1024)
     private String value;
-    
-    @Column(name="display")
+
+    @Column(name = "display")
     private boolean display;
 
     public VMTemplateDetailVO() {
@@ -73,7 +73,7 @@ public class VMTemplateDetailVO implements ResourceDetail {
     public String getValue() {
         return value;
     }
-    
+
     @Override
     public boolean isDisplay() {
         return display;

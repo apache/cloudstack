@@ -23,7 +23,7 @@ import com.cloud.network.Network;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpc.NetworkACLItem;
 
-public interface NetworkACLServiceProvider extends NetworkElement{
+public interface NetworkACLServiceProvider extends NetworkElement {
 
     /**
      * @param config

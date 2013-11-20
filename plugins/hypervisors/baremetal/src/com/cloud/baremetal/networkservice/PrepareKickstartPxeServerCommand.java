@@ -48,7 +48,7 @@ public class PrepareKickstartPxeServerCommand extends Command {
     public void setKernel(String kernel) {
         this.kernel = kernel;
     }
-    
+
     public String getInitrd() {
         return initrd;
     }

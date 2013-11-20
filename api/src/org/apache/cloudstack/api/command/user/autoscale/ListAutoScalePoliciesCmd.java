@@ -41,19 +41,16 @@ public class ListAutoScalePoliciesCmd extends BaseListAccountResourcesCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScalePolicyResponse.class,
-            description = "the ID of the autoscale policy")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScalePolicyResponse.class, description = "the ID of the autoscale policy")
     private Long id;
 
-    @Parameter(name = ApiConstants.CONDITION_ID, type = CommandType.UUID, entityType = ConditionResponse.class,
-            description = "the ID of the condition of the policy")
+    @Parameter(name = ApiConstants.CONDITION_ID, type = CommandType.UUID, entityType = ConditionResponse.class, description = "the ID of the condition of the policy")
     private Long conditionId;
 
     @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, description = "the action to be executed if all the conditions evaluate to true for the specified duration.")
     private String action;
 
-    @Parameter(name = ApiConstants.VMGROUP_ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class,
-            description = "the ID of the autoscale vm group")
+    @Parameter(name = ApiConstants.VMGROUP_ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class, description = "the ID of the autoscale vm group")
     private Long vmGroupId;
 
     // ///////////////////////////////////////////////////
@@ -75,6 +72,7 @@ public class ListAutoScalePoliciesCmd extends BaseListAccountResourcesCmd {
     public Long getVmGroupId() {
         return vmGroupId;
     }
+
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////

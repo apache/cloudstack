@@ -49,25 +49,25 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.server.ManagementService;
 import com.cloud.ucs.manager.UcsManager;
 import com.cloud.user.Account;
-@APICommand(name="listUcsManagers", description="List ucs manager", responseObject=UcsManagerResponse.class)
+
+@APICommand(name = "listUcsManagers", description = "List ucs manager", responseObject = UcsManagerResponse.class)
 public class ListUcsManagerCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListUcsManagerCmd.class);
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, description="the zone id", entityType=ZoneResponse.class)
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, description = "the zone id", entityType = ZoneResponse.class)
     private Long zoneId;
-    
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UcsManagerResponse.class,
-            description="the ID of the ucs manager")
+
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UcsManagerResponse.class, description = "the ID of the ucs manager")
     private Long id;
 
     @Inject
     private UcsManager mgr;
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-            ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
+        NetworkRuleConflictException {
         try {
-            ListResponse<UcsManagerResponse> response  = mgr.listUcsManager(this);
+            ListResponse<UcsManagerResponse> response = mgr.listUcsManager(this);
             response.setResponseName(getCommandName());
             response.setObjectName("ucsmanager");
             this.setResponseObject(response);
@@ -95,11 +95,11 @@ public class ListUcsManagerCmd extends BaseListCmd {
         this.zoneId = zoneId;
     }
 
-	public Long getId() {
-		return id;
-	}
+    public Long getId() {
+        return id;
+    }
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    public void setId(Long id) {
+        this.id = id;
+    }
 }

@@ -29,7 +29,6 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import org.apache.cloudstack.engine.entity.api.CloudStackEntity;
 
-
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AgentUnavailableException;
@@ -39,7 +38,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.vm.VirtualMachineProfile;
 
-
 /**
  * VirtualMachineEntity represents a Virtual Machine in Cloud Orchestration 
  * Platform.  
@@ -47,7 +45,7 @@ import com.cloud.vm.VirtualMachineProfile;
  */
 @Path("vm/{id}")
 @Produces({"application/json", "application/xml"})
-@XmlRootElement(name="vm")
+@XmlRootElement(name = "vm")
 public interface VirtualMachineEntity extends CloudStackEntity {
 
     /**

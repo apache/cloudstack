@@ -27,7 +27,7 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.fsm.StateDao;
 
-public interface NetworkDao extends GenericDao<NetworkVO, Long> , StateDao<State, Network.Event, Network> {
+public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State, Network.Event, Network> {
 
     List<NetworkVO> listByOwner(long ownerId);
 
@@ -59,7 +59,7 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> , StateDao<State
     List<NetworkVO> listBy(long accountId, long networkId);
 
     long countByZoneAndUri(long zoneId, String broadcastUri);
-    
+
     long countByZoneUriAndGuestType(long zoneId, String broadcastUri, GuestType guestType);
 
     List<NetworkVO> listByZone(long zoneId);
@@ -93,19 +93,19 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> , StateDao<State
     List<NetworkVO> listByZoneAndTrafficType(long zoneId, TrafficType trafficType);
 
     void setCheckForGc(long networkId);
-    
+
     int getNetworkCountByNetworkOffId(long networkOfferingId);
-    
+
     long countNetworksUserCanCreate(long ownerId);
 
     List<NetworkVO> listSourceNATEnabledNetworks(long accountId, long dataCenterId, GuestType type);
-    
+
     int getNetworkCountByVpcId(long vpcId);
-    
+
     List<NetworkVO> listByVpc(long vpcId);
-    
+
     NetworkVO getPrivateNetwork(String broadcastUri, String cidr, long accountId, long zoneId, Long networkOfferingId);
-    
+
     long countVpcNetworks(long vpcId);
 
     List<NetworkVO> listNetworksByAccount(long accountId, long zoneId, Network.GuestType type, boolean isSystem);

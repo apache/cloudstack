@@ -24,20 +24,20 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="network_asa1000v_map")
+@Table(name = "network_asa1000v_map")
 public class NetworkAsa1000vMapVO implements NetworkAsa1000vMap {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="id")
+    @Column(name = "id")
     private long id;
 
-    @Column(name="network_id")
+    @Column(name = "network_id")
     private long networkId;
 
-    @Column(name="asa1000v_id")
+    @Column(name = "asa1000v_id")
     private long asa1000vId;
-    
+
     public NetworkAsa1000vMapVO() {
     }
 
@@ -47,27 +47,27 @@ public class NetworkAsa1000vMapVO implements NetworkAsa1000vMap {
         this.asa1000vId = asa1000vId;
     }
 
-	@Override
-	public long getId() {
-		return id;
-	}
+    @Override
+    public long getId() {
+        return id;
+    }
 
-	@Override
-	public long getAsa1000vId() {
-		return asa1000vId;
-	}
+    @Override
+    public long getAsa1000vId() {
+        return asa1000vId;
+    }
 
-	public void setAsa1000vId(long asa1000vId) {
-		this.asa1000vId = asa1000vId;
-	}
+    public void setAsa1000vId(long asa1000vId) {
+        this.asa1000vId = asa1000vId;
+    }
 
-	@Override
-	public long getNetworkId() {
-		return networkId;
-	}
+    @Override
+    public long getNetworkId() {
+        return networkId;
+    }
 
-	public void setNetworkId(long networkId) {
-		this.networkId = networkId;
-	}
+    public void setNetworkId(long networkId) {
+        this.networkId = networkId;
+    }
 
 }

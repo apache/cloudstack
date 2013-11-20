@@ -34,7 +34,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 
-@APICommand(name = "disableStaticNat", description="Disables static rule for given ip address", responseObject=SuccessResponse.class)
+@APICommand(name = "disableStaticNat", description = "Disables static rule for given ip address", responseObject = SuccessResponse.class)
 public class DisableStaticNatCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePortForwardingRuleCmd.class.getName());
     private static final String s_name = "disablestaticnatresponse";
@@ -43,8 +43,11 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.UUID, entityType = IPAddressResponse.class,
-            required=true, description="the public IP address id for which static nat feature is being disableed")
+    @Parameter(name = ApiConstants.IP_ADDRESS_ID,
+               type = CommandType.UUID,
+               entityType = IPAddressResponse.class,
+               required = true,
+               description = "the public IP address id for which static nat feature is being disableed")
     private Long ipAddressId;
 
     /////////////////////////////////////////////////////
@@ -70,7 +73,7 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  ("Disabling static nat for ip id=" + ipAddressId);
+        return ("Disabling static nat for ip id=" + ipAddressId);
     }
 
     @Override
@@ -89,7 +92,6 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to disable static nat");
         }
     }
-
 
     @Override
     public String getSyncObjType() {

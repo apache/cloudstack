@@ -36,18 +36,16 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 
-@APICommand(name = "startInternalLoadBalancerVM", responseObject=DomainRouterResponse.class, description="Starts an existing internal lb vm.")
+@APICommand(name = "startInternalLoadBalancerVM", responseObject = DomainRouterResponse.class, description = "Starts an existing internal lb vm.")
 public class StartInternalLBVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StartInternalLBVMCmd.class.getName());
     private static final String s_name = "startinternallbvmresponse";
-
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=DomainRouterResponse.class,
-            required=true, description="the ID of the internal lb vm")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "the ID of the internal lb vm")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -78,7 +76,7 @@ public class StartInternalLBVMCmd extends BaseAsyncCmd {
             return router.getAccountId();
         } else {
             throw new InvalidParameterValueException("Unable to find internal lb vm by id");
-        } 
+        }
     }
 
     @Override
@@ -88,7 +86,7 @@ public class StartInternalLBVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "starting internal lb vm: " + getId();
+        return "starting internal lb vm: " + getId();
     }
 
     public ApiCommandJobType getInstanceType() {
@@ -100,8 +98,8 @@ public class StartInternalLBVMCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        CallContext.current().setEventDetails("Internal Lb Vm Id: "+getId());
+    public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        CallContext.current().setEventDetails("Internal Lb Vm Id: " + getId());
         VirtualRouter result = null;
         VirtualRouter router = _routerService.findRouter(getId());
         if (router == null || router.getRole() != Role.INTERNAL_LB_VM) {
@@ -109,8 +107,8 @@ public class StartInternalLBVMCmd extends BaseAsyncCmd {
         } else {
             result = _internalLbSvc.startInternalLbVm(getId(), CallContext.current().getCallingAccount(), CallContext.current().getCallingUserId());
         }
-        
-        if (result != null){
+
+        if (result != null) {
             DomainRouterResponse routerResponse = _responseGenerator.createDomainRouterResponse(result);
             routerResponse.setResponseName(getCommandName());
             this.setResponseObject(routerResponse);

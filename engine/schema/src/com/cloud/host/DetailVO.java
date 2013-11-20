@@ -26,25 +26,25 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="host_details")
+@Table(name = "host_details")
 public class DetailVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
-    
-    @Column(name="host_id")
+
+    @Column(name = "host_id")
     private long hostId;
-    
-    @Column(name="name")
+
+    @Column(name = "name")
     private String name;
-    
-    @Column(name="value")
+
+    @Column(name = "value")
     private String value;
-    
+
     protected DetailVO() {
     }
-    
+
     public DetailVO(long hostId, String name, String value) {
         this.hostId = hostId;
         this.name = name;

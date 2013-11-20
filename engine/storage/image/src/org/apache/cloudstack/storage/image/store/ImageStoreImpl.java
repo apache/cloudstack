@@ -64,15 +64,13 @@ public class ImageStoreImpl implements ImageStoreEntity {
         super();
     }
 
-    protected void configure(ImageStoreVO dataStoreVO, ImageStoreDriver imageDataStoreDriver,
-            ImageStoreProvider provider) {
+    protected void configure(ImageStoreVO dataStoreVO, ImageStoreDriver imageDataStoreDriver, ImageStoreProvider provider) {
         this.driver = imageDataStoreDriver;
         this.imageDataStoreVO = dataStoreVO;
         this.provider = provider;
     }
 
-    public static ImageStoreEntity getDataStore(ImageStoreVO dataStoreVO, ImageStoreDriver imageDataStoreDriver,
-            ImageStoreProvider provider) {
+    public static ImageStoreEntity getDataStore(ImageStoreVO dataStoreVO, ImageStoreDriver imageDataStoreDriver, ImageStoreProvider provider) {
         ImageStoreImpl instance = ComponentContext.inject(ImageStoreImpl.class);
         instance.configure(dataStoreVO, imageDataStoreDriver, provider);
         return instance;
@@ -203,6 +201,5 @@ public class ImageStoreImpl implements ImageStoreEntity {
     public String createEntityExtractUrl(String installPath, ImageFormat format, DataObject dataObject) {
         return driver.createEntityExtractUrl(this, installPath, format, dataObject);
     }
-
 
 }

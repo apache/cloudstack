@@ -33,18 +33,18 @@ import com.cloud.host.Host;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
 
-@APICommand(name = "listExternalLoadBalancers", description="Lists F5 external load balancer appliances added in a zone.", responseObject = HostResponse.class)
-@Deprecated // API supported for backward compatibility.
+@APICommand(name = "listExternalLoadBalancers", description = "Lists F5 external load balancer appliances added in a zone.", responseObject = HostResponse.class)
+@Deprecated
+// API supported for backward compatibility.
 public class ListExternalLoadBalancersCmd extends BaseListCmd {
-	public static final Logger s_logger = Logger.getLogger(ListExternalLoadBalancersCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListExternalLoadBalancersCmd.class.getName());
     private static final String s_name = "listexternalloadbalancersresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            description="zone Id")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "zone Id")
     private long zoneId;
 
     /////////////////////////////////////////////////////
@@ -68,15 +68,15 @@ public class ListExternalLoadBalancersCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
-    	List<? extends Host> externalLoadBalancers = _f5DeviceManagerService.listExternalLoadBalancers(this);
+    public void execute() {
+        List<? extends Host> externalLoadBalancers = _f5DeviceManagerService.listExternalLoadBalancers(this);
         ListResponse<ExternalLoadBalancerResponse> listResponse = new ListResponse<ExternalLoadBalancerResponse>();
         List<ExternalLoadBalancerResponse> responses = new ArrayList<ExternalLoadBalancerResponse>();
         for (Host externalLoadBalancer : externalLoadBalancers) {
-        	ExternalLoadBalancerResponse response = _f5DeviceManagerService.createExternalLoadBalancerResponse(externalLoadBalancer);
-        	response.setObjectName("externalloadbalancer");
-        	response.setResponseName(getCommandName());
-        	responses.add(response);
+            ExternalLoadBalancerResponse response = _f5DeviceManagerService.createExternalLoadBalancerResponse(externalLoadBalancer);
+            response.setObjectName("externalloadbalancer");
+            response.setResponseName(getCommandName());
+            responses.add(response);
         }
 
         listResponse.setResponses(responses);

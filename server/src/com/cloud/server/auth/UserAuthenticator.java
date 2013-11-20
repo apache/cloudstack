@@ -25,19 +25,19 @@ import com.cloud.utils.component.Adapter;
  * 
  */
 public interface UserAuthenticator extends Adapter {
-	
-	/**
-	 * 
-	 * @param username
-	 * @param password
-	 * @param domainId
-	 * @return true if the user has been successfully authenticated, false otherwise
-	 */
-	public boolean authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters);
-	
-	/**
-	 * @param password
-	 * @return the encoded password
-	 */
-	public String encode(String password);
+
+    /**
+     * 
+     * @param username
+     * @param password
+     * @param domainId
+     * @return true if the user has been successfully authenticated, false otherwise
+     */
+    public boolean authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters);
+
+    /**
+     * @param password
+     * @return the encoded password
+     */
+    public String encode(String password);
 }

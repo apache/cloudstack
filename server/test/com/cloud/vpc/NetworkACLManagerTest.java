@@ -71,7 +71,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
-public class NetworkACLManagerTest extends TestCase{
+public class NetworkACLManagerTest extends TestCase {
     @Inject
     NetworkACLManager _aclMgr;
 
@@ -97,13 +97,13 @@ public class NetworkACLManagerTest extends TestCase{
     private NetworkACLVO acl;
     private NetworkACLItemVO aclItem;
 
-    private static final Logger s_logger = Logger.getLogger( NetworkACLManagerTest.class);
+    private static final Logger s_logger = Logger.getLogger(NetworkACLManagerTest.class);
 
     @Override
     @Before
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
-        Account account = new AccountVO("testaccount", 1, "testdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "testdomain", (short)0, UUID.randomUUID().toString());
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
 
         CallContext.register(user, account);
@@ -154,10 +154,9 @@ public class NetworkACLManagerTest extends TestCase{
     }
 
     @Configuration
-    @ComponentScan(basePackageClasses={NetworkACLManagerImpl.class},
-            includeFilters={@ComponentScan.Filter(value=NetworkACLTestConfiguration.Library.class, type= FilterType.CUSTOM)},
-            useDefaultFilters=false)
-    public static class NetworkACLTestConfiguration extends SpringUtils.CloudStackTestConfiguration{
+    @ComponentScan(basePackageClasses = {NetworkACLManagerImpl.class}, includeFilters = {@ComponentScan.Filter(value = NetworkACLTestConfiguration.Library.class,
+                                                                                                               type = FilterType.CUSTOM)}, useDefaultFilters = false)
+    public static class NetworkACLTestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         @Bean
         public AccountManager accountManager() {
@@ -215,7 +214,7 @@ public class NetworkACLManagerTest extends TestCase{
         }
 
         @Bean
-        public VpcGatewayDao vpcGatewayDao () {
+        public VpcGatewayDao vpcGatewayDao() {
             return Mockito.mock(VpcGatewayDao.class);
         }
 

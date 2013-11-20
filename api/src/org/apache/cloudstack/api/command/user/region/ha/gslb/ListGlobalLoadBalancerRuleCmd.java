@@ -78,7 +78,7 @@ public class ListGlobalLoadBalancerRuleCmd extends BaseListTaggedResourcesCmd {
         ListResponse<GlobalLoadBalancerResponse> gslbRuleResponse = new ListResponse<GlobalLoadBalancerResponse>();
         List<GlobalLoadBalancerResponse> gslbResponses = new ArrayList<GlobalLoadBalancerResponse>();
         if (globalLoadBalancers != null) {
-            for (GlobalLoadBalancerRule gslbRule: globalLoadBalancers) {
+            for (GlobalLoadBalancerRule gslbRule : globalLoadBalancers) {
                 GlobalLoadBalancerResponse gslbResponse = _responseGenerator.createGlobalLoadBalancerResponse(gslbRule);
                 gslbResponse.setObjectName("globalloadbalancerrule");
                 gslbResponses.add(gslbResponse);

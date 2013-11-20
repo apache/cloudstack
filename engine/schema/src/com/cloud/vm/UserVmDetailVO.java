@@ -26,56 +26,57 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
-@Table(name="user_vm_details")
+@Table(name = "user_vm_details")
 public class UserVmDetailVO implements ResourceDetail {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
-    
-    @Column(name="vm_id")
+
+    @Column(name = "vm_id")
     private long resourceId;
-    
-    @Column(name="name")
+
+    @Column(name = "name")
     private String name;
-    
-    @Column(name="value", length=1024)
+
+    @Column(name = "value", length = 1024)
     private String value;
-    
-    @Column(name="display")
+
+    @Column(name = "display")
     private boolean display;
-    
-    public UserVmDetailVO() {}
-    
+
+    public UserVmDetailVO() {
+    }
+
     public UserVmDetailVO(long vmId, String name, String value) {
-    	this.resourceId = vmId;
-    	this.name = name;
-    	this.value = value;
+        this.resourceId = vmId;
+        this.name = name;
+        this.value = value;
     }
 
     @Override
-	public long getId() {
-		return id;
-	}
+    public long getId() {
+        return id;
+    }
 
-	@Override
-	public String getName() {
-		return name;
-	}
+    @Override
+    public String getName() {
+        return name;
+    }
 
-	@Override
-	public String getValue() {
-		return value;
-	}
+    @Override
+    public String getValue() {
+        return value;
+    }
 
     @Override
     public long getResourceId() {
         return resourceId;
     }
-    
+
     @Override
     public boolean isDisplay() {
         return display;
     }
-	
+
 }

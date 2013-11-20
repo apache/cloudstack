@@ -30,12 +30,11 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachine.Type;
 
-
 /*
  * Data Access Object for vm_instance table
  */
 public interface VMEntityDao extends GenericDao<VMEntityVO, Long> {
-  
+
     void loadVmReservation(VMEntityVO vm);
-    
+
 }

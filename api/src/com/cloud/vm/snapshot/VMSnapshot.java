@@ -26,7 +26,7 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;
 
-public interface VMSnapshot extends ControlledEntity, Identity, InternalIdentity,StateObject<VMSnapshot.State> {
+public interface VMSnapshot extends ControlledEntity, Identity, InternalIdentity, StateObject<VMSnapshot.State> {
 
     enum State {
         Allocated("The VM snapshot is allocated but has not been created yet."),
@@ -34,8 +34,8 @@ public interface VMSnapshot extends ControlledEntity, Identity, InternalIdentity
         Ready("The VM snapshot is ready to be used."),
         Reverting("The VM snapshot is being used to revert"),
         Expunging("The volume is being expunging"),
-        Removed("The volume is destroyed, and can't be recovered."),        
-        Error ("The volume is in error state, and can't be recovered");            
+        Removed("The volume is destroyed, and can't be recovered."),
+        Error("The volume is in error state, and can't be recovered");
 
         String _description;
 
@@ -56,28 +56,24 @@ public interface VMSnapshot extends ControlledEntity, Identity, InternalIdentity
             s_fsm.addTransition(Allocated, Event.CreateRequested, Creating);
             s_fsm.addTransition(Creating, Event.OperationSucceeded, Ready);
             s_fsm.addTransition(Creating, Event.OperationFailed, Error);
-            s_fsm.addTransition(Ready, Event.RevertRequested, Reverting);            
+            s_fsm.addTransition(Ready, Event.RevertRequested, Reverting);
             s_fsm.addTransition(Reverting, Event.OperationSucceeded, Ready);
             s_fsm.addTransition(Reverting, Event.OperationFailed, Ready);
             s_fsm.addTransition(Ready, Event.ExpungeRequested, Expunging);
-            s_fsm.addTransition(Error, Event.ExpungeRequested, Expunging);  
-            s_fsm.addTransition(Expunging, Event.ExpungeRequested, Expunging);  
-            s_fsm.addTransition(Expunging, Event.OperationSucceeded, Removed);  
+            s_fsm.addTransition(Error, Event.ExpungeRequested, Expunging);
+            s_fsm.addTransition(Expunging, Event.ExpungeRequested, Expunging);
+            s_fsm.addTransition(Expunging, Event.OperationSucceeded, Removed);
         }
     }
-    
-    enum Type{
+
+    enum Type {
         Disk, DiskAndMemory
     }
-    
+
     enum Event {
-        CreateRequested,
-        OperationFailed,
-        OperationSucceeded,
-        RevertRequested,
-        ExpungeRequested,
+        CreateRequested, OperationFailed, OperationSucceeded, RevertRequested, ExpungeRequested,
     }
-    
+
     long getId();
 
     public String getName();
@@ -93,18 +89,18 @@ public interface VMSnapshot extends ControlledEntity, Identity, InternalIdentity
     public String getDisplayName();
 
     public Long getParent();
-    
+
     public Boolean getCurrent();
-    
+
     public Type getType();
-    
+
     public long getUpdatedCount();
 
     public void incrUpdatedCount();
 
     public Date getUpdated();
-    
+
     public Date getRemoved();
-    
+
     public long getAccountId();
 }

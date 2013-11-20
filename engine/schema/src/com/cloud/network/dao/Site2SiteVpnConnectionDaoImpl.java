@@ -31,12 +31,14 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={Site2SiteVpnConnectionDao.class})
+@Local(value = {Site2SiteVpnConnectionDao.class})
 public class Site2SiteVpnConnectionDaoImpl extends GenericDaoBase<Site2SiteVpnConnectionVO, Long> implements Site2SiteVpnConnectionDao {
     private static final Logger s_logger = Logger.getLogger(Site2SiteVpnConnectionDaoImpl.class);
 
-    @Inject protected IPAddressDao _addrDao;
-    @Inject protected Site2SiteVpnGatewayDao _vpnGatewayDao;
+    @Inject
+    protected IPAddressDao _addrDao;
+    @Inject
+    protected Site2SiteVpnGatewayDao _vpnGatewayDao;
 
     private SearchBuilder<Site2SiteVpnConnectionVO> AllFieldsSearch;
     private SearchBuilder<Site2SiteVpnConnectionVO> VpcSearch;

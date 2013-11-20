@@ -48,7 +48,6 @@ public interface VpcService {
      */
     public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, String networkDomain) throws ResourceAllocationException;
 
-
     /**
      * Deletes a VPC
      * 
@@ -60,7 +59,6 @@ public interface VpcService {
      */
     public boolean deleteVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException;
 
-
     /**
      * Updates VPC with new name/displayText
      * 
@@ -70,7 +68,6 @@ public interface VpcService {
      * @return
      */
     public Vpc updateVpc(long vpcId, String vpcName, String displayText);
-
 
     /**
      * Lists VPC(s) based on the parameters passed to the method call
@@ -121,7 +118,6 @@ public interface VpcService {
      */
     boolean shutdownVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException;
 
-
     /**
      * Restarts the VPC. VPC gets shutdown and started as a part of it
      * 
@@ -158,8 +154,8 @@ public interface VpcService {
      * @throws ConcurrentOperationException
      * @throws ResourceAllocationException
      */
-    public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress, String gateway, String netmask, long gatewayOwnerId, Long networkOfferingId,
-        Boolean isSoruceNat, Long aclId) throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
+    public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress, String gateway, String netmask, long gatewayOwnerId,
+        Long networkOfferingId, Boolean isSoruceNat, Long aclId) throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
 
     /**
      * Applies VPC private gateway on the backend, so it becomes functional
@@ -172,7 +168,6 @@ public interface VpcService {
      */
     public PrivateGateway applyVpcPrivateGateway(long gatewayId, boolean destroyOnFailure) throws ConcurrentOperationException, ResourceUnavailableException;
 
-
     /**
      * Deletes VPC private gateway
      * 
@@ -183,7 +178,6 @@ public interface VpcService {
      */
     boolean deleteVpcPrivateGateway(long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException;
 
-
     /**
      * Returns the list of Private gateways existing in the VPC
      * 
@@ -192,7 +186,6 @@ public interface VpcService {
      */
     public Pair<List<PrivateGateway>, Integer> listPrivateGateway(ListPrivateGatewaysCmd listPrivateGatewaysCmd);
 
-
     /**
      * Returns Static Route found by Id
      * 
@@ -200,7 +193,6 @@ public interface VpcService {
      * @return
      */
     StaticRoute getStaticRoute(long routeId);
-
 
     /**
      * Applies existing Static Routes to the VPC elements
@@ -211,7 +203,6 @@ public interface VpcService {
      */
     public boolean applyStaticRoutes(long vpcId) throws ResourceUnavailableException;
 
-
     /**
      * Deletes static route from the backend and the database
      * 
@@ -220,7 +211,6 @@ public interface VpcService {
      * @throws ResourceUnavailableException
      */
     public boolean revokeStaticRoute(long routeId) throws ResourceUnavailableException;
-
 
     /**
      * Persists static route entry in the Database
@@ -231,7 +221,6 @@ public interface VpcService {
      */
     public StaticRoute createStaticRoute(long gatewayId, String cidr) throws NetworkRuleConflictException;
 
-
     /**
      * Lists static routes based on parameters passed to the call
      * 
@@ -239,7 +228,6 @@ public interface VpcService {
      * @return
      */
     public Pair<List<? extends StaticRoute>, Integer> listStaticRoutes(ListStaticRoutesCmd cmd);
-
 
     /**
      * Associates IP address from the Public network, to the VPC

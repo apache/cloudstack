@@ -21,25 +21,24 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-
 @Entity
-@Table(name="region")
-public class RegionVO implements Region{
+@Table(name = "region")
+public class RegionVO implements Region {
 
     @Id
-    @Column(name="id")
+    @Column(name = "id")
     private int id;
-    
-    @Column(name="name")
+
+    @Column(name = "name")
     private String name;
 
-    @Column(name="end_point")
+    @Column(name = "end_point")
     private String endPoint;
 
-    @Column(name="gslb_service_enabled")
+    @Column(name = "gslb_service_enabled")
     private boolean gslbEnabled;
 
-    @Column(name="portableip_service_enabled")
+    @Column(name = "portableip_service_enabled")
     private boolean portableipEnabled;
 
     public boolean getGslbEnabled() {
@@ -52,33 +51,33 @@ public class RegionVO implements Region{
 
     public RegionVO() {
     }
-    
+
     public RegionVO(int id, String name, String endPoint) {
-    	this.id = id;
-    	this.name = name;
-    	this.endPoint = endPoint;
+        this.id = id;
+        this.name = name;
+        this.endPoint = endPoint;
         this.gslbEnabled = true;
     }
 
-	public int getId() {
-		return id;
-	}
+    public int getId() {
+        return id;
+    }
 
-	public String getName() {
-		return name;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public String getEndPoint() {
-		return endPoint;
-	}
+    public String getEndPoint() {
+        return endPoint;
+    }
 
-	public void setEndPoint(String endPoint) {
-		this.endPoint = endPoint;
-	}
+    public void setEndPoint(String endPoint) {
+        this.endPoint = endPoint;
+    }
 
     @Override
     public boolean checkIfServiceEnabled(Service service) {
@@ -87,7 +86,7 @@ public class RegionVO implements Region{
         } else if (Service.PortableIp.equals(service)) {
             return portableipEnabled;
         } else {
-             assert false: "Unknown Region level Service";
+            assert false : "Unknown Region level Service";
             return false;
         }
     }
@@ -99,7 +98,7 @@ public class RegionVO implements Region{
         } else if (Service.PortableIp.equals(service)) {
             this.portableipEnabled = true;
         } else {
-            assert false: "Unknown Region level Service";
+            assert false : "Unknown Region level Service";
             return;
         }
     }

@@ -35,7 +35,6 @@ public interface DomainService {
 
     Domain getDomainByName(String name, long parentId);
 
-
     /**
      * Return whether a domain is a child domain of a given domain.
      *
@@ -44,11 +43,9 @@ public interface DomainService {
      */
     boolean isChildDomain(Long parentId, Long childId);
 
-    Pair<List<? extends Domain>, Integer> searchForDomains(ListDomainsCmd cmd)
-            throws PermissionDeniedException;
+    Pair<List<? extends Domain>, Integer> searchForDomains(ListDomainsCmd cmd) throws PermissionDeniedException;
 
-    Pair<List<? extends Domain>, Integer> searchForDomainChildren(ListDomainChildrenCmd cmd)
-            throws PermissionDeniedException;
+    Pair<List<? extends Domain>, Integer> searchForDomainChildren(ListDomainChildrenCmd cmd) throws PermissionDeniedException;
 
     /**
      * find the domain by its path

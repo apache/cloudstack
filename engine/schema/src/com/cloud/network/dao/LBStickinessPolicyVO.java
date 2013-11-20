@@ -60,22 +60,23 @@ public class LBStickinessPolicyVO implements StickinessPolicy {
 
     @Column(name = "uuid")
     private String uuid;
-    
+
     @Column(name = "revoke")
     private boolean revoke = false;
+
     protected LBStickinessPolicyVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
-/*  get the params in Map format and converts in to string format and stores in DB
- *  paramsInDB represent the string stored in database :
- *  Format :  param1=value1&param2=value2&param3=value3& 
- *  Example for App cookie method:  "name=cookapp&length=12&holdtime=3h" . Here 3 parameters name,length and holdtime with corresponding values.
- *  getParams function is used to get in List<Pair<string,String>> Format.
- *           - API response use Map format
- *           - In database plain String with DB_PARM_DELIMITER 
- *           - rest of the code uses List<Pair<string,String>> 
- */
+    /*  get the params in Map format and converts in to string format and stores in DB
+     *  paramsInDB represent the string stored in database :
+     *  Format :  param1=value1&param2=value2&param3=value3& 
+     *  Example for App cookie method:  "name=cookapp&length=12&holdtime=3h" . Here 3 parameters name,length and holdtime with corresponding values.
+     *  getParams function is used to get in List<Pair<string,String>> Format.
+     *           - API response use Map format
+     *           - In database plain String with DB_PARM_DELIMITER 
+     *           - rest of the code uses List<Pair<string,String>> 
+     */
     public LBStickinessPolicyVO(long loadBalancerId, String name, String methodName, Map paramList, String description) {
         this.loadBalancerId = loadBalancerId;
         this.name = name;
@@ -84,13 +85,13 @@ public class LBStickinessPolicyVO implements StickinessPolicy {
 
         if (paramList != null) {
             Iterator<HashMap<String, String>> iter = paramList.values().iterator();
-            while (iter.hasNext())  {
-                HashMap<String, String>  paramKVpair =  iter.next();
+            while (iter.hasNext()) {
+                HashMap<String, String> paramKVpair = iter.next();
                 String paramName = paramKVpair.get("name");
-                String paramValue =  paramKVpair.get("value");
+                String paramValue = paramKVpair.get("value");
                 sb.append(paramName + "=" + paramValue + "&");
             }
-        } 
+        }
         paramsInDB = sb.toString();
         this.description = description;
         this.uuid = UUID.randomUUID().toString();
@@ -99,13 +100,13 @@ public class LBStickinessPolicyVO implements StickinessPolicy {
     public List<Pair<String, String>> getParams() {
         List<Pair<String, String>> paramsList = new ArrayList<Pair<String, String>>();
         String[] params = paramsInDB.split("[=&]");
- 
+
         for (int i = 0; i < (params.length - 1); i = i + 2) {
             paramsList.add(new Pair<String, String>(params[i], params[i + 1]));
         }
         return paramsList;
     }
-    
+
     public long getId() {
         return id;
     }
@@ -125,7 +126,7 @@ public class LBStickinessPolicyVO implements StickinessPolicy {
     public String getMethodName() {
         return methodName;
     }
-    
+
     public boolean isRevoke() {
         return revoke;
     }
@@ -133,12 +134,12 @@ public class LBStickinessPolicyVO implements StickinessPolicy {
     public void setRevoke(boolean revoke) {
         this.revoke = revoke;
     }
-    
+
     @Override
     public String getUuid() {
         return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }

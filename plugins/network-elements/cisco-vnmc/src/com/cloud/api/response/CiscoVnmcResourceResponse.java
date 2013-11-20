@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.api.response;
 
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -31,19 +30,19 @@ public class CiscoVnmcResourceResponse extends BaseResponse {
     public static final String RESOURCE_NAME = "resourcename";
 
     @SerializedName(ApiConstants.RESOURCE_ID)
-    @Parameter(description="resource id of the Cisco VNMC controller")
+    @Parameter(description = "resource id of the Cisco VNMC controller")
     private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
-    @Parameter(description="the physical network to which this VNMC belongs to", entityType = PhysicalNetworkResponse.class)
+    @Parameter(description = "the physical network to which this VNMC belongs to", entityType = PhysicalNetworkResponse.class)
     private Long physicalNetworkId;
 
     @SerializedName(ApiConstants.PROVIDER)
-    @Parameter(description="name of the provider")
+    @Parameter(description = "name of the provider")
     private String providerName;
 
     @SerializedName(RESOURCE_NAME)
-    @Parameter(description="Cisco VNMC resource name")
+    @Parameter(description = "Cisco VNMC resource name")
     private String resourceName;
 
     public String getId() {

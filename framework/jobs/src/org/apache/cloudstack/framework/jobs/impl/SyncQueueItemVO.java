@@ -18,7 +18,6 @@ package org.apache.cloudstack.framework.jobs.impl;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
-
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -31,36 +30,36 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 @Entity
-@Table(name="sync_queue_item")
+@Table(name = "sync_queue_item")
 public class SyncQueueItemVO implements SyncQueueItem, InternalIdentity {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id = null;
-    
-    @Column(name="queue_id")
+
+    @Column(name = "queue_id")
     private Long queueId;
-    
-    @Column(name="content_type")
+
+    @Column(name = "content_type")
     private String contentType;
-    
-    @Column(name="content_id")
+
+    @Column(name = "content_id")
     private Long contentId;
-    
-    @Column(name="queue_proc_msid")
+
+    @Column(name = "queue_proc_msid")
     private Long lastProcessMsid;
 
-    @Column(name="queue_proc_number")
+    @Column(name = "queue_proc_number")
     private Long lastProcessNumber;
-    
-    @Column(name="queue_proc_time")
+
+    @Column(name = "queue_proc_time")
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastProcessTime;
-    
-    @Column(name="created")
+
+    @Column(name = "created")
     private Date created;
-    
+
     public long getId() {
         return id;
     }
@@ -86,7 +85,7 @@ public class SyncQueueItemVO implements SyncQueueItem, InternalIdentity {
     public void setContentType(String contentType) {
         this.contentType = contentType;
     }
-    
+
     @Override
     public Long getContentId() {
         return contentId;
@@ -133,11 +132,11 @@ public class SyncQueueItemVO implements SyncQueueItem, InternalIdentity {
         return sb.toString();
     }
 
-       public Date getLastProcessTime() {
-            return lastProcessTime;
-        }
+    public Date getLastProcessTime() {
+        return lastProcessTime;
+    }
 
-        public void setLastProcessTime(Date lastProcessTime) {
-            this.lastProcessTime = lastProcessTime;
-        }
+    public void setLastProcessTime(Date lastProcessTime) {
+        this.lastProcessTime = lastProcessTime;
+    }
 }

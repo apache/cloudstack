@@ -48,8 +48,7 @@ public interface StoragePoolAllocator extends Adapter {
      * @return List<StoragePool> List of storage pools that are suitable for the
      *         VM
      **/
-    List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile,
-            DeploymentPlan plan, ExcludeList avoid, int returnUpTo);
+    List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo);
 
     static int RETURN_UPTO_ALL = -1;
 }

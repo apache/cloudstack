@@ -32,8 +32,7 @@ import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
-
-public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplianceManager, VpcVirtualNetworkApplianceService{
+public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplianceManager, VpcVirtualNetworkApplianceService {
 
     /**
      * @param vpc
@@ -45,9 +44,8 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc, DeployDestination dest, Account owner, Map<Param, Object> params)
-            throws InsufficientCapacityException, ConcurrentOperationException,
-            ResourceUnavailableException;
+    List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc, DeployDestination dest, Account owner, Map<Param, Object> params) throws InsufficientCapacityException,
+        ConcurrentOperationException, ResourceUnavailableException;
 
     /**
      *
@@ -59,7 +57,7 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
      * @throws ResourceUnavailableException
      */
     boolean applyNetworkACLs(Network network, List<? extends NetworkACLItem> rules, List<? extends VirtualRouter> routers, boolean privateGateway)
-            throws ResourceUnavailableException;
+        throws ResourceUnavailableException;
 
     /**
      * @param gateway
@@ -102,7 +100,7 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
      * @throws ResourceUnavailableException
      */
     boolean stopSite2SiteVpn(Site2SiteVpnConnection conn, VirtualRouter router) throws ResourceUnavailableException;
-    
+
     /**
      * @param vpcId
      * @return
@@ -115,8 +113,7 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
      * @return
      * @throws ResourceUnavailableException
      */
-	boolean startRemoteAccessVpn(RemoteAccessVpn vpn, VirtualRouter router)
-			throws ResourceUnavailableException;
+    boolean startRemoteAccessVpn(RemoteAccessVpn vpn, VirtualRouter router) throws ResourceUnavailableException;
 
     /**
      * @param vpn 
@@ -124,8 +121,7 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
      * @return
      * @throws ResourceUnavailableException
      */
-	boolean stopRemoteAccessVpn(RemoteAccessVpn vpn, VirtualRouter router)
-			throws ResourceUnavailableException;
+    boolean stopRemoteAccessVpn(RemoteAccessVpn vpn, VirtualRouter router) throws ResourceUnavailableException;
 
     /**
      * @param vpn 
@@ -134,5 +130,5 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
      * @return
      * @throws ResourceUnavailableException
      */
-	String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users, VirtualRouter router) throws ResourceUnavailableException;
+    String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users, VirtualRouter router) throws ResourceUnavailableException;
 }

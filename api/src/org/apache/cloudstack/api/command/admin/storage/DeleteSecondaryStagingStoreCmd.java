@@ -38,10 +38,8 @@ public class DeleteSecondaryStagingStoreCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class,
-            required = true, description = "the staging store ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class, required = true, description = "the staging store ID")
     private Long id;
-
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -50,7 +48,6 @@ public class DeleteSecondaryStagingStoreCmd extends BaseCmd {
     public Long getId() {
         return id;
     }
-
 
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////

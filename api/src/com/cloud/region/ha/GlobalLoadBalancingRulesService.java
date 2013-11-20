@@ -33,8 +33,7 @@ public interface GlobalLoadBalancingRulesService {
 
     GlobalLoadBalancerRule updateGlobalLoadBalancerRule(UpdateGlobalLoadBalancerRuleCmd updateGslbCmd);
 
-    boolean revokeAllGslbRulesForAccount(com.cloud.user.Account caller, long accountId)
-            throws com.cloud.exception.ResourceUnavailableException;
+    boolean revokeAllGslbRulesForAccount(com.cloud.user.Account caller, long accountId) throws com.cloud.exception.ResourceUnavailableException;
 
     /*
      * methods for managing sites participating in global load balancing
@@ -42,7 +41,6 @@ public interface GlobalLoadBalancingRulesService {
     boolean assignToGlobalLoadBalancerRule(AssignToGlobalLoadBalancerRuleCmd assignToGslbCmd);
 
     boolean removeFromGlobalLoadBalancerRule(RemoveFromGlobalLoadBalancerRuleCmd removeFromGslbCmd);
-
 
     GlobalLoadBalancerRule findById(long gslbRuleId);
 

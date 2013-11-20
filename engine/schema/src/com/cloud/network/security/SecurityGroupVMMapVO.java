@@ -31,9 +31,9 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("security_group_vm_map"))
-@SecondaryTables({ @SecondaryTable(name = "nics", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "instance_id", referencedColumnName = "instance_id") }),
-        @SecondaryTable(name = "vm_instance", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "instance_id", referencedColumnName = "id") }),
-        @SecondaryTable(name = "security_group", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "security_group_id", referencedColumnName = "id") }) })
+@SecondaryTables({@SecondaryTable(name = "nics", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "instance_id", referencedColumnName = "instance_id")}),
+        @SecondaryTable(name = "vm_instance", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "instance_id", referencedColumnName = "id")}),
+        @SecondaryTable(name = "security_group", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "security_group_id", referencedColumnName = "id")})})
 public class SecurityGroupVMMapVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

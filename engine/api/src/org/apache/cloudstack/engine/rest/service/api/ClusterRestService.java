@@ -36,47 +36,51 @@ public class ClusterRestService {
 //    @Inject
     ProvisioningService _provisioningService;
 
-    @GET @Path("/clusters")
+    @GET
+    @Path("/clusters")
     public List<ClusterEntity> listAll() {
         return null;
     }
 
-
-    @GET @Path("/cluster/{clusterid}")
+    @GET
+    @Path("/cluster/{clusterid}")
     public ClusterEntity get(@PathParam("clusterid") String clusterId) {
         return null;
     }
 
-    @POST @Path("/cluster/{clusterid}/enable")
+    @POST
+    @Path("/cluster/{clusterid}/enable")
     public String enable(@PathParam("clusterid") String clusterId) {
         return null;
     }
 
-    @POST @Path("/cluster/{clusterid}/disable")
+    @POST
+    @Path("/cluster/{clusterid}/disable")
     public String disable(@PathParam("clusterid") String clusterId) {
         return null;
     }
 
-    @POST @Path("/cluster/{clusterid}/deactivate")
+    @POST
+    @Path("/cluster/{clusterid}/deactivate")
     public String deactivate(@PathParam("clusterid") String clusterId) {
         return null;
     }
 
-    @POST @Path("/cluster/{clusterid}/reactivate")
+    @POST
+    @Path("/cluster/{clusterid}/reactivate")
     public String reactivate(@PathParam("clusterid") String clusterId) {
         return null;
     }
 
-    @PUT @Path("/cluster/create")
-    public ClusterEntity create(
-            @QueryParam("xid") String xid,
-            @QueryParam("display-name") String displayName) {
+    @PUT
+    @Path("/cluster/create")
+    public ClusterEntity create(@QueryParam("xid") String xid, @QueryParam("display-name") String displayName) {
         return null;
     }
 
-    @PUT @Path("/cluster/{clusterid}/update")
-    public ClusterEntity update(
-            @QueryParam("display-name") String displayName) {
+    @PUT
+    @Path("/cluster/{clusterid}/update")
+    public ClusterEntity update(@QueryParam("display-name") String displayName) {
         return null;
     }
 }

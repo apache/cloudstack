@@ -25,5 +25,5 @@ import com.cloud.utils.component.Manager;
 public interface NetworkUsageManager extends Manager {
 
     List<IPAddressVO> listAllocatedDirectIps(long zoneId);
-		
+
 }

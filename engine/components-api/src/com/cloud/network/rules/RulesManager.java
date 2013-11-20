@@ -44,7 +44,8 @@ public interface RulesManager extends RulesService {
 
     boolean revokePortForwardingRulesForVm(long vmId);
 
-    FirewallRule[] reservePorts(IpAddress ip, String protocol, FirewallRule.Purpose purpose, boolean openFirewall, Account caller, int... ports) throws NetworkRuleConflictException;
+    FirewallRule[] reservePorts(IpAddress ip, String protocol, FirewallRule.Purpose purpose, boolean openFirewall, Account caller, int... ports)
+        throws NetworkRuleConflictException;
 
     boolean applyStaticNatsForNetwork(long networkId, boolean continueOnError, Account caller);
 

@@ -20,28 +20,28 @@ package org.apache.cloudstack.framework.sampleserver;
 
 import org.apache.cloudstack.framework.serializer.OnwireName;
 
-@OnwireName(name="SampleStoragePrepareCommand")
+@OnwireName(name = "SampleStoragePrepareCommand")
 public class SampleStoragePrepareCommand {
 
-	String storagePool;
-	String volumeId;
-	
-	public SampleStoragePrepareCommand() {
-	}
-	
-	public String getStoragePool() {
-		return storagePool;
-	}
+    String storagePool;
+    String volumeId;
 
-	public void setStoragePool(String storagePool) {
-		this.storagePool = storagePool;
-	}
+    public SampleStoragePrepareCommand() {
+    }
 
-	public String getVolumeId() {
-		return volumeId;
-	}
+    public String getStoragePool() {
+        return storagePool;
+    }
 
-	public void setVolumeId(String volumeId) {
-		this.volumeId = volumeId;
-	}
+    public void setStoragePool(String storagePool) {
+        this.storagePool = storagePool;
+    }
+
+    public String getVolumeId() {
+        return volumeId;
+    }
+
+    public void setVolumeId(String volumeId) {
+        this.volumeId = volumeId;
+    }
 }

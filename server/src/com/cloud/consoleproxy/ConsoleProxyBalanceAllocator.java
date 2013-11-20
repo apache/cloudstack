@@ -29,7 +29,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.ConsoleProxy;
 
-@Local(value={ConsoleProxyAllocator.class})
+@Local(value = {ConsoleProxyAllocator.class})
 public class ConsoleProxyBalanceAllocator extends AdapterBase implements ConsoleProxyAllocator {
 
     private final Random _rand = new Random(System.currentTimeMillis());

@@ -37,217 +37,217 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="template_view")
+@Table(name = "template_view")
 public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Id
-    @Column(name="id")
+    @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="unique_name")
+    @Column(name = "unique_name")
     private String uniqueName;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="format")
+    @Column(name = "format")
     private Storage.ImageFormat format;
 
-    @Column(name="public")
+    @Column(name = "public")
     private boolean publicTemplate = true;
 
-    @Column(name="featured")
+    @Column(name = "featured")
     private boolean featured;
 
-    @Column(name="type")
+    @Column(name = "type")
     private Storage.TemplateType templateType;
 
-    @Column(name="url")
+    @Column(name = "url")
     private String url = null;
 
-    @Column(name="hvm")
+    @Column(name = "hvm")
     private boolean requiresHvm;
 
-    @Column(name="bits")
+    @Column(name = "bits")
     private int bits;
 
-    @Temporal(value=TemporalType.TIMESTAMP)
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Temporal(value = TemporalType.TIMESTAMP)
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created = null;
 
-    @Temporal(value=TemporalType.TIMESTAMP)
-    @Column(name="created_on_store")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    @Column(name = "created_on_store")
     private Date createdOnStore = null;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     @Temporal(TemporalType.TIMESTAMP)
     private Date removed;
 
-    @Column(name="checksum")
+    @Column(name = "checksum")
     private String checksum;
 
-    @Column(name="display_text", length=4096)
+    @Column(name = "display_text", length = 4096)
     private String displayText;
 
-    @Column(name="enable_password")
+    @Column(name = "enable_password")
     private boolean enablePassword;
 
-    @Column(name="dynamically_scalable")
+    @Column(name = "dynamically_scalable")
     private boolean dynamicallyScalable;
 
-    @Column(name="guest_os_id")
+    @Column(name = "guest_os_id")
     private long guestOSId;
 
-    @Column(name="guest_os_uuid")
+    @Column(name = "guest_os_uuid")
     private String guestOSUuid;
 
-    @Column(name="guest_os_name")
+    @Column(name = "guest_os_name")
     private String guestOSName;
 
-    @Column(name="bootable")
+    @Column(name = "bootable")
     private boolean bootable = true;
 
-    @Column(name="prepopulate")
+    @Column(name = "prepopulate")
     private boolean prepopulate = false;
 
-    @Column(name="cross_zones")
+    @Column(name = "cross_zones")
     private boolean crossZones = false;
 
-    @Column(name="hypervisor_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "hypervisor_type")
+    @Enumerated(value = EnumType.STRING)
     private HypervisorType hypervisorType;
 
-    @Column(name="extractable")
+    @Column(name = "extractable")
     private boolean extractable = true;
 
-    @Column(name="source_template_id")
+    @Column(name = "source_template_id")
     private Long sourceTemplateId;
 
-    @Column(name="source_template_uuid")
+    @Column(name = "source_template_uuid")
     private String sourceTemplateUuid;
 
-    @Column(name="template_tag")
+    @Column(name = "template_tag")
     private String templateTag;
 
-    @Column(name="sort_key")
+    @Column(name = "sort_key")
     private int sortKey;
 
-    @Column(name="enable_sshkey")
+    @Column(name = "enable_sshkey")
     private boolean enableSshKey;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="account_uuid")
+    @Column(name = "account_uuid")
     private String accountUuid;
 
-    @Column(name="account_name")
+    @Column(name = "account_name")
     private String accountName = null;
 
-    @Column(name="account_type")
+    @Column(name = "account_type")
     private short accountType;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name="domain_uuid")
+    @Column(name = "domain_uuid")
     private String domainUuid;
 
-    @Column(name="domain_name")
+    @Column(name = "domain_name")
     private String domainName = null;
 
-    @Column(name="domain_path")
+    @Column(name = "domain_path")
     private String domainPath = null;
 
-    @Column(name="project_id")
+    @Column(name = "project_id")
     private long projectId;
 
-    @Column(name="project_uuid")
+    @Column(name = "project_uuid")
     private String projectUuid;
 
-    @Column(name="project_name")
+    @Column(name = "project_name")
     private String projectName;
 
-    @Column(name="data_center_id")
+    @Column(name = "data_center_id")
     private long dataCenterId;
 
-    @Column(name="data_center_uuid")
+    @Column(name = "data_center_uuid")
     private String dataCenterUuid;
 
-    @Column(name="data_center_name")
+    @Column(name = "data_center_name")
     private String dataCenterName;
 
-    @Column(name="store_scope")
+    @Column(name = "store_scope")
     @Enumerated(value = EnumType.STRING)
     private ScopeType dataStoreScope;
 
-    @Column(name="store_id")
+    @Column(name = "store_id")
     private Long dataStoreId; // this can be null for baremetal templates
 
-    @Column (name="download_state")
+    @Column(name = "download_state")
     @Enumerated(EnumType.STRING)
     private Status downloadState;
 
-    @Column (name="download_pct")
+    @Column(name = "download_pct")
     private int downloadPercent;
 
-    @Column (name="error_str")
+    @Column(name = "error_str")
     private String errorString;
 
-    @Column (name="size")
+    @Column(name = "size")
     private long size;
 
-    @Column(name="destroyed")
+    @Column(name = "destroyed")
     boolean destroyed = false;
 
-    @Column(name="lp_account_id")
+    @Column(name = "lp_account_id")
     private Long sharedAccountId;
 
-    @Column(name="detail_name")
+    @Column(name = "detail_name")
     private String detailName;
 
-    @Column(name="detail_value")
+    @Column(name = "detail_value")
     private String detailValue;
 
-    @Column(name="tag_id")
+    @Column(name = "tag_id")
     private long tagId;
 
-    @Column(name="tag_uuid")
+    @Column(name = "tag_uuid")
     private String tagUuid;
 
-    @Column(name="tag_key")
+    @Column(name = "tag_key")
     private String tagKey;
 
-    @Column(name="tag_value")
+    @Column(name = "tag_value")
     private String tagValue;
 
-    @Column(name="tag_domain_id")
+    @Column(name = "tag_domain_id")
     private long tagDomainId;
 
-    @Column(name="tag_account_id")
+    @Column(name = "tag_account_id")
     private long tagAccountId;
 
-    @Column(name="tag_resource_id")
+    @Column(name = "tag_resource_id")
     private long tagResourceId;
 
-    @Column(name="tag_resource_uuid")
+    @Column(name = "tag_resource_uuid")
     private String tagResourceUuid;
 
-    @Column(name="tag_resource_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "tag_resource_type")
+    @Enumerated(value = EnumType.STRING)
     private ResourceObjectType tagResourceType;
 
-    @Column(name="tag_customer")
+    @Column(name = "tag_customer")
     private String tagCustomer;
 
     @Column(name = "state")
     @Enumerated(EnumType.STRING)
     ObjectInDataStoreStateMachine.State state;
 
-    @Column(name="temp_zone_pair")
+    @Column(name = "temp_zone_pair")
     private String tempZonePair; // represent a distinct (templateId, data_center_id) pair
 
     public TemplateJoinVO() {

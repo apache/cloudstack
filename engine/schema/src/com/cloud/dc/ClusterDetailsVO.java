@@ -26,26 +26,26 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="cluster_details")
+@Table(name = "cluster_details")
 public class ClusterDetailsVO implements InternalIdentity {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
-    
-    @Column(name="cluster_id")
+
+    @Column(name = "cluster_id")
     private long clusterId;
-    
-    @Column(name="name")
+
+    @Column(name = "name")
     private String name;
-    
-    @Column(name="value")
+
+    @Column(name = "value")
     private String value;
-    
+
     protected ClusterDetailsVO() {
     }
-    
+
     public ClusterDetailsVO(long clusterId, String name, String value) {
         this.clusterId = clusterId;
         this.name = name;

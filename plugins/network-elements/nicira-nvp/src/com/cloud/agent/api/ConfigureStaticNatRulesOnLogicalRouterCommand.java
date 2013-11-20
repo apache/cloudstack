@@ -28,8 +28,7 @@ public class ConfigureStaticNatRulesOnLogicalRouterCommand extends Command {
     private String logicalRouterUuid;
     private List<StaticNatRuleTO> rules;
 
-    public ConfigureStaticNatRulesOnLogicalRouterCommand(
-            final String logicalRouterUuid, final List<StaticNatRuleTO> rules) {
+    public ConfigureStaticNatRulesOnLogicalRouterCommand(final String logicalRouterUuid, final List<StaticNatRuleTO> rules) {
         super();
         this.logicalRouterUuid = logicalRouterUuid;
         this.rules = rules;

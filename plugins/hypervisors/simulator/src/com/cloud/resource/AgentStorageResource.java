@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.resource;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,7 +39,6 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.vm.SecondaryStorageVm;
 
-
 public class AgentStorageResource extends AgentResourceBase implements SecondaryStorageResource {
     private static final Logger s_logger = Logger.getLogger(AgentStorageResource.class);
 
@@ -60,7 +60,7 @@ public class AgentStorageResource extends AgentResourceBase implements Secondary
         } else {
             return _simMgr.simulate(cmd, hostGuid);
         }
-	}
+    }
 
     @Override
     public PingCommand getCurrentStatus(long id) {
@@ -72,14 +72,14 @@ public class AgentStorageResource extends AgentResourceBase implements Secondary
 
     @Override
     public Type getType() {
-	if(SecondaryStorageVm.Role.templateProcessor.toString().equals(_role))
-		return Host.Type.SecondaryStorage;
-	return Host.Type.SecondaryStorageCmdExecutor;
+        if (SecondaryStorageVm.Role.templateProcessor.toString().equals(_role))
+            return Host.Type.SecondaryStorage;
+        return Host.Type.SecondaryStorageCmdExecutor;
     }
 
     @Override
     public StartupCommand[] initialize() {
-	StartupSecondaryStorageCommand cmd = new StartupSecondaryStorageCommand();
+        StartupSecondaryStorageCommand cmd = new StartupSecondaryStorageCommand();
 
         cmd.setPrivateIpAddress(agentHost.getPrivateIpAddress());
         cmd.setPrivateNetmask(agentHost.getPrivateNetMask());
@@ -95,7 +95,7 @@ public class AgentStorageResource extends AgentResourceBase implements Secondary
         cmd.setDataCenter(String.valueOf(agentHost.getDataCenterId()));
         cmd.setPod(String.valueOf(agentHost.getPodId()));
         cmd.setGuid(agentHost.getGuid());
-        return new StartupCommand[] { cmd };
+        return new StartupCommand[] {cmd};
     }
 
     @Override

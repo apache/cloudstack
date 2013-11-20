@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.dao;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -25,13 +26,13 @@ import javax.inject.Inject;
 import java.util.List;
 
 @Local(value = {LoadBalancerCertMapDao.class})
-public class  LoadBalancerCertMapDaoImpl extends GenericDaoBase<LoadBalancerCertMapVO, Long> implements LoadBalancerCertMapDao {
+public class LoadBalancerCertMapDaoImpl extends GenericDaoBase<LoadBalancerCertMapVO, Long> implements LoadBalancerCertMapDao {
 
     private final SearchBuilder<LoadBalancerCertMapVO> listByCertId;
     private final SearchBuilder<LoadBalancerCertMapVO> findByLbRuleId;
 
-
-    @Inject  SslCertDao _sslCertDao;
+    @Inject
+    SslCertDao _sslCertDao;
 
     public LoadBalancerCertMapDaoImpl() {
 
@@ -45,7 +46,7 @@ public class  LoadBalancerCertMapDaoImpl extends GenericDaoBase<LoadBalancerCert
 
     }
 
-   @Override
+    @Override
     public List<LoadBalancerCertMapVO> listByCertId(Long certId) {
         SearchCriteria<LoadBalancerCertMapVO> sc = listByCertId.create();
         sc.setParameters("certificateId", certId);
@@ -65,7 +66,7 @@ public class  LoadBalancerCertMapDaoImpl extends GenericDaoBase<LoadBalancerCert
         SearchBuilder<LoadBalancerCertMapVO> listByAccountId;
         SearchBuilder<SslCertVO> certsForAccount;
 
-        listByAccountId =  createSearchBuilder();
+        listByAccountId = createSearchBuilder();
         certsForAccount = _sslCertDao.createSearchBuilder();
         certsForAccount.and("accountId", certsForAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
         listByAccountId.join("certsForAccount", certsForAccount, certsForAccount.entity().getId(), listByAccountId.entity().getLbId(), JoinBuilder.JoinType.INNER);
@@ -75,5 +76,5 @@ public class  LoadBalancerCertMapDaoImpl extends GenericDaoBase<LoadBalancerCert
         SearchCriteria<LoadBalancerCertMapVO> sc = listByAccountId.create();
         sc.setParameters("accountId", accountId);
         return listBy(sc);
-     }
+    }
 }

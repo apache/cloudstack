@@ -24,6 +24,6 @@ import com.cloud.utils.component.AdapterBase;
  * Use this UserAuthenticator if users are already authenticated outside
  * 
  */
-@Local(value={UserAuthenticator.class})
+@Local(value = {UserAuthenticator.class})
 public abstract class DefaultUserAuthenticator extends AdapterBase implements UserAuthenticator {
 }

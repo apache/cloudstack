@@ -34,7 +34,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@APICommand(name = "createStorageNetworkIpRange", description="Creates a Storage network IP range.", responseObject=StorageNetworkIpRangeResponse.class, since="3.0.0")
+@APICommand(name = "createStorageNetworkIpRange", description = "Creates a Storage network IP range.", responseObject = StorageNetworkIpRangeResponse.class, since = "3.0.0")
 public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateStorageNetworkIpRangeCmd.class);
 
@@ -43,23 +43,24 @@ public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class,
-            required=true, description="UUID of pod where the ip range belongs to")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, required = true, description = "UUID of pod where the ip range belongs to")
     private Long podId;
 
-    @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, required=true, description="the beginning IP address")
+    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, required = true, description = "the beginning IP address")
     private String startIp;
 
-    @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address")
+    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, description = "the ending IP address")
     private String endIp;
 
-    @Parameter(name = ApiConstants.VLAN, type = CommandType.INTEGER, description = "Optional. The vlan the ip range sits on, default to Null when it is not specificed which means you network is not on any Vlan. This is mainly for Vmware as other hypervisors can directly reterive bridge from pyhsical network traffic type table")
+    @Parameter(name = ApiConstants.VLAN,
+               type = CommandType.INTEGER,
+               description = "Optional. The vlan the ip range sits on, default to Null when it is not specificed which means you network is not on any Vlan. This is mainly for Vmware as other hypervisors can directly reterive bridge from pyhsical network traffic type table")
     private Integer vlan;
 
-    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, required=true, description="the netmask for storage network")
+    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, required = true, description = "the netmask for storage network")
     private String netmask;
 
-    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, required=true, description="the gateway for storage network")
+    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, required = true, description = "the gateway for storage network")
     private String gateway;
 
     /////////////////////////////////////////////////////
@@ -101,8 +102,7 @@ public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-            ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
             StorageNetworkIpRange result = _storageNetworkService.createIpRange(this);
             StorageNetworkIpRangeResponse response = _responseGenerator.createStorageNetworkIpRangeResponse(result);

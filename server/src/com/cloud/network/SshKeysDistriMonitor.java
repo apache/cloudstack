@@ -37,85 +37,78 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
-
 public class SshKeysDistriMonitor implements Listener {
-	  private static final Logger s_logger = Logger.getLogger(SshKeysDistriMonitor.class);
-	  	AgentManager _agentMgr;
-		private final HostDao _hostDao;
-		private ConfigurationDao _configDao;
-	    public SshKeysDistriMonitor(AgentManager mgr, HostDao host, ConfigurationDao config) {
-	    	this._agentMgr = mgr;
-	    	_hostDao = host;
-	    	_configDao = config;
-	    }
-	    
-	    
-	    @Override
-	    public boolean isRecurring() {
-	        return false;
-	    }
-	    
-	    @Override
-	    public synchronized boolean processAnswers(long agentId, long seq, Answer[] resp) {
-	        return true;
-	    }
-	    
-	    @Override
-	    public synchronized boolean processDisconnect(long agentId, Status state) {
-	    	if(s_logger.isTraceEnabled())
-	    		s_logger.trace("Agent disconnected, agent id: " + agentId + ", state: " + state + ". Will notify waiters");
-	    	
-	    
-	        return true;
-	    }
-	    
-	    @Override
-	    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
-	    	if (cmd instanceof StartupRoutingCommand) {
-	    		if (((StartupRoutingCommand) cmd).getHypervisorType() == HypervisorType.KVM ||
-                    ((StartupRoutingCommand) cmd).getHypervisorType() == HypervisorType.XenServer ||
-                    ((StartupRoutingCommand) cmd).getHypervisorType() == HypervisorType.LXC) {
-	    			/*TODO: Get the private/public keys here*/
-	    			
-	    			String pubKey = _configDao.getValue("ssh.publickey");
-	    			String prvKey = _configDao.getValue("ssh.privatekey");
-	    			
-	    			try {
-	    				ModifySshKeysCommand cmds = new ModifySshKeysCommand(pubKey, prvKey);
-		    			Commands c = new Commands(cmds);
-	    				_agentMgr.send(host.getId(), c, this);
-	    			} catch (AgentUnavailableException e) {
-	    				s_logger.debug("Failed to send keys to agent: " + host.getId());
-	    			}
-	    		}
-	    	}
-	    }
+    private static final Logger s_logger = Logger.getLogger(SshKeysDistriMonitor.class);
+    AgentManager _agentMgr;
+    private final HostDao _hostDao;
+    private ConfigurationDao _configDao;
 
-		@Override
-		public int getTimeout() {
-			// TODO Auto-generated method stub
-			return -1;
-		}
+    public SshKeysDistriMonitor(AgentManager mgr, HostDao host, ConfigurationDao config) {
+        this._agentMgr = mgr;
+        _hostDao = host;
+        _configDao = config;
+    }
 
+    @Override
+    public boolean isRecurring() {
+        return false;
+    }
 
-		@Override
-		public boolean processCommands(long agentId, long seq, Command[] commands) {
-			// TODO Auto-generated method stub
-			return false;
-		}
+    @Override
+    public synchronized boolean processAnswers(long agentId, long seq, Answer[] resp) {
+        return true;
+    }
 
+    @Override
+    public synchronized boolean processDisconnect(long agentId, Status state) {
+        if (s_logger.isTraceEnabled())
+            s_logger.trace("Agent disconnected, agent id: " + agentId + ", state: " + state + ". Will notify waiters");
 
-		@Override
-		public AgentControlAnswer processControlCommand(long agentId,
-				AgentControlCommand cmd) {
-			// TODO Auto-generated method stub
-			return null;
-		}
+        return true;
+    }
 
+    @Override
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+        if (cmd instanceof StartupRoutingCommand) {
+            if (((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.KVM || ((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.XenServer ||
+                ((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.LXC) {
+                /*TODO: Get the private/public keys here*/
 
-		@Override
-		public boolean processTimeout(long agentId, long seq) {
-			// TODO Auto-generated method stub
-			return false;
-		}
+                String pubKey = _configDao.getValue("ssh.publickey");
+                String prvKey = _configDao.getValue("ssh.privatekey");
+
+                try {
+                    ModifySshKeysCommand cmds = new ModifySshKeysCommand(pubKey, prvKey);
+                    Commands c = new Commands(cmds);
+                    _agentMgr.send(host.getId(), c, this);
+                } catch (AgentUnavailableException e) {
+                    s_logger.debug("Failed to send keys to agent: " + host.getId());
+                }
+            }
+        }
+    }
+
+    @Override
+    public int getTimeout() {
+        // TODO Auto-generated method stub
+        return -1;
+    }
+
+    @Override
+    public boolean processCommands(long agentId, long seq, Command[] commands) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean processTimeout(long agentId, long seq) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 }

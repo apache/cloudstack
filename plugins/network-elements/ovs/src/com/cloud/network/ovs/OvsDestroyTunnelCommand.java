@@ -19,29 +19,29 @@ package com.cloud.network.ovs;
 import com.cloud.agent.api.Command;
 
 public class OvsDestroyTunnelCommand extends Command {
-    
-	Long networkId;
-	Integer key;
+
+    Long networkId;
+    Integer key;
     String inPortName;
-    
+
     public OvsDestroyTunnelCommand(Long networkId, Integer key, String inPortName) {
         this.networkId = networkId;
         this.inPortName = inPortName;
         this.key = key;
     }
-    
+
     public Long getNetworkId() {
         return networkId;
     }
-    
+
     public String getInPortName() {
         return inPortName;
     }
-    
+
     public Integer getKey() {
-    	return key;
+        return key;
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return true;

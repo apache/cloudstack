@@ -59,8 +59,8 @@ public interface IpAddressManager {
      * @return
      * @throws InsufficientAddressCapacityException
      */
-    PublicIp
-        assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException;
+    PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem)
+        throws InsufficientAddressCapacityException;
 
     /**
      * Do all of the work of releasing public ip addresses. Note that if this method fails, there can be side effects.
@@ -89,9 +89,7 @@ public interface IpAddressManager {
      * @throws
      */
     boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network guestNetwork) throws InsufficientCapacityException,
-        ConcurrentOperationException,
-        ResourceUnavailableException,
-        ResourceAllocationException;
+        ConcurrentOperationException, ResourceUnavailableException, ResourceAllocationException;
 
     boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
 
@@ -107,9 +105,8 @@ public interface IpAddressManager {
 
     boolean handleSystemIpRelease(IpAddress ip);
 
-    void
-        allocateDirectIp(NicProfile nic, DataCenter dc, VirtualMachineProfile vm, Network network, String requestedIpv4, String requestedIpv6) throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException;
+    void allocateDirectIp(NicProfile nic, DataCenter dc, VirtualMachineProfile vm, Network network, String requestedIpv4, String requestedIpv6)
+        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
 
     /**
      * @param owner
@@ -125,33 +122,24 @@ public interface IpAddressManager {
      * @param networkId
      * @param releaseOnFailure TODO
      */
-    IPAddressVO associateIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException,
-        ResourceUnavailableException,
-        InsufficientAddressCapacityException,
-        ConcurrentOperationException;
+    IPAddressVO associateIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException, ResourceUnavailableException,
+        InsufficientAddressCapacityException, ConcurrentOperationException;
 
-    IpAddress allocatePortableIp(Account ipOwner, Account caller, long dcId, Long networkId, Long vpcID) throws ConcurrentOperationException,
-        ResourceAllocationException,
+    IpAddress allocatePortableIp(Account ipOwner, Account caller, long dcId, Long networkId, Long vpcID) throws ConcurrentOperationException, ResourceAllocationException,
         InsufficientAddressCapacityException;
 
     boolean releasePortableIpAddress(long addrId);
 
-    IPAddressVO associatePortableIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException,
-        ResourceUnavailableException,
-        InsufficientAddressCapacityException,
-        ConcurrentOperationException;
+    IPAddressVO associatePortableIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException, ResourceUnavailableException,
+        InsufficientAddressCapacityException, ConcurrentOperationException;
 
-    IPAddressVO disassociatePortableIPToGuestNetwork(long ipAddrId, long networkId) throws ResourceAllocationException,
-        ResourceUnavailableException,
-        InsufficientAddressCapacityException,
-        ConcurrentOperationException;
+    IPAddressVO disassociatePortableIPToGuestNetwork(long ipAddrId, long networkId) throws ResourceAllocationException, ResourceUnavailableException,
+        InsufficientAddressCapacityException, ConcurrentOperationException;
 
     boolean isPortableIpTransferableFromNetwork(long ipAddrId, long networkId);
 
-    void transferPortableIP(long ipAddrId, long currentNetworkId, long newNetworkId) throws ResourceAllocationException,
-        ResourceUnavailableException,
-        InsufficientAddressCapacityException,
-        ConcurrentOperationException;;
+    void transferPortableIP(long ipAddrId, long currentNetworkId, long newNetworkId) throws ResourceAllocationException, ResourceUnavailableException,
+        InsufficientAddressCapacityException, ConcurrentOperationException;;
 
     /**
      * @param addr
@@ -171,12 +159,11 @@ public interface IpAddressManager {
     PublicIp assignDedicateIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId, boolean isSourceNat) throws ConcurrentOperationException,
         InsufficientAddressCapacityException;
 
-    IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId, DataCenter zone) throws ConcurrentOperationException,
-        ResourceAllocationException,
+    IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId, DataCenter zone) throws ConcurrentOperationException, ResourceAllocationException,
         InsufficientAddressCapacityException;
 
-    PublicIp
-        assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException;
+    PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem)
+        throws InsufficientAddressCapacityException;
 
     int getRuleCountForIp(Long addressId, FirewallRule.Purpose purpose, FirewallRule.State state);
 

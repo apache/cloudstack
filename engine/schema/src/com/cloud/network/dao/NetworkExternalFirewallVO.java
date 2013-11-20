@@ -34,14 +34,14 @@ import org.apache.cloudstack.api.InternalIdentity;
   */
 
 @Entity
-@Table(name="network_external_firewall_device_map")
+@Table(name = "network_external_firewall_device_map")
 public class NetworkExternalFirewallVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
     @Column(name = "network_id")
@@ -50,10 +50,10 @@ public class NetworkExternalFirewallVO implements InternalIdentity {
     @Column(name = "external_firewall_device_id")
     private long externalFirewallDeviceId;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
 
     public NetworkExternalFirewallVO(long networkId, long externalFirewallDeviceId) {

@@ -23,8 +23,6 @@ import com.cloud.utils.db.SearchCriteria;
 import javax.ejb.Local;
 import java.util.List;
 
-
-
 @Local(value = {SslCertDao.class})
 public class SslCertDaoImpl extends GenericDaoBase<SslCertVO, Long> implements SslCertDao {
 
@@ -42,6 +40,5 @@ public class SslCertDaoImpl extends GenericDaoBase<SslCertVO, Long> implements S
         sc.setParameters("accountId", accountId);
         return listBy(sc);
     }
-
 
 }

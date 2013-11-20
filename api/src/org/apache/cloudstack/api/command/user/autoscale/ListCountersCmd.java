@@ -40,8 +40,7 @@ public class ListCountersCmd extends BaseListCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = CounterResponse.class,
-            description = "ID of the Counter.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = CounterResponse.class, description = "ID of the Counter.")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name of the counter.")

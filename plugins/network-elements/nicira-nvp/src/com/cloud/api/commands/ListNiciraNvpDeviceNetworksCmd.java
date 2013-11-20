@@ -41,7 +41,7 @@ import com.cloud.network.Network;
 import com.cloud.network.element.NiciraNvpElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listNiciraNvpDeviceNetworks", responseObject=NetworkResponse.class, description="lists network that are using a nicira nvp device")
+@APICommand(name = "listNiciraNvpDeviceNetworks", responseObject = NetworkResponse.class, description = "lists network that are using a nicira nvp device")
 public class ListNiciraNvpDeviceNetworksCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListNiciraNvpDeviceNetworksCmd.class.getName());
@@ -53,8 +53,7 @@ public class ListNiciraNvpDeviceNetworksCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.NICIRA_NVP_DEVICE_ID, type=CommandType.UUID, entityType = NiciraNvpDeviceResponse.class,
-            required = true, description="nicira nvp device ID")
+    @Parameter(name = ApiConstants.NICIRA_NVP_DEVICE_ID, type = CommandType.UUID, entityType = NiciraNvpDeviceResponse.class, required = true, description = "nicira nvp device ID")
     private Long niciraNvpDeviceId;
 
     /////////////////////////////////////////////////////
@@ -72,7 +71,7 @@ public class ListNiciraNvpDeviceNetworksCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
-            List<? extends Network> networks  = niciraNvpElementService.listNiciraNvpDeviceNetworks(this);
+            List<? extends Network> networks = niciraNvpElementService.listNiciraNvpDeviceNetworks(this);
             ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();
             List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
 
@@ -86,7 +85,7 @@ public class ListNiciraNvpDeviceNetworksCmd extends BaseListCmd {
             response.setResponses(networkResponses);
             response.setResponseName(getCommandName());
             setResponseObject(response);
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

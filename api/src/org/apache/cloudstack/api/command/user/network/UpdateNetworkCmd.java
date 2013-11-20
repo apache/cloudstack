@@ -37,7 +37,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 
-@APICommand(name = "updateNetwork", description="Updates a network", responseObject=NetworkResponse.class)
+@APICommand(name = "updateNetwork", description = "Updates a network", responseObject = NetworkResponse.class)
 public class UpdateNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkCmd.class.getName());
 
@@ -46,30 +46,28 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = NetworkResponse.class,
-            required=true, description="the ID of the network")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "the ID of the network")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the new name for the network")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the new name for the network")
     private String name;
 
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the new display text for the network")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the new display text for the network")
     private String displayText;
 
-    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
+    @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "network domain")
     private String networkDomain;
 
-    @Parameter(name=ApiConstants.CHANGE_CIDR, type=CommandType.BOOLEAN, description="Force update even if cidr type is different")
+    @Parameter(name = ApiConstants.CHANGE_CIDR, type = CommandType.BOOLEAN, description = "Force update even if cidr type is different")
     private Boolean changeCidr;
 
-    @Parameter(name=ApiConstants.NETWORK_OFFERING_ID, type=CommandType.UUID, entityType = NetworkOfferingResponse.class,
-            description="network offering ID")
+    @Parameter(name = ApiConstants.NETWORK_OFFERING_ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, description = "network offering ID")
     private Long networkOfferingId;
 
-    @Parameter(name=ApiConstants.GUEST_VM_CIDR, type=CommandType.STRING, description="CIDR for Guest VMs,Cloudstack allocates IPs to Guest VMs only from this CIDR")
+    @Parameter(name = ApiConstants.GUEST_VM_CIDR, type = CommandType.STRING, description = "CIDR for Guest VMs,Cloudstack allocates IPs to Guest VMs only from this CIDR")
     private String guestVmCidr;
 
-    @Parameter(name=ApiConstants.DISPLAY_NETWORK, type=CommandType.BOOLEAN, description="an optional field, whether to the display the network to the end user or not.")
+    @Parameter(name = ApiConstants.DISPLAY_NETWORK, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the network to the end user or not.")
     private Boolean displayNetwork;
 
     /////////////////////////////////////////////////////
@@ -110,6 +108,7 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     public Boolean getDisplayNetwork() {
         return displayNetwork;
     }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -130,7 +129,7 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws InsufficientCapacityException, ConcurrentOperationException{
+    public void execute() throws InsufficientCapacityException, ConcurrentOperationException {
         User callerUser = _accountService.getActiveUser(CallContext.current().getCallingUserId());
         Account callerAccount = _accountService.getActiveAccountById(callerUser.getAccountId());
         Network network = _networkService.getNetwork(id);
@@ -138,9 +137,8 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
             throw new InvalidParameterValueException("Couldn't find network by id");
         }
 
-        Network result = _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount,
-                    callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr(), getGuestVmCidr(), getDisplayNetwork());
-        
+        Network result = _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount, callerUser, getNetworkDomain(), getNetworkOfferingId(),
+            getChangeCidr(), getGuestVmCidr(), getDisplayNetwork());
 
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);
@@ -169,7 +167,7 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
                 eventMsg.append(". Original network offering id: " + oldOff.getUuid() + ", new network offering id: " + newOff.getUuid());
             }
         }
-            
+
         return eventMsg.toString();
     }
 

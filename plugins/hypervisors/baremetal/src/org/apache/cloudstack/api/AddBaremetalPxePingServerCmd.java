@@ -24,22 +24,22 @@ import org.apache.cloudstack.api.Parameter;
 
 import com.cloud.baremetal.networkservice.BaremetalPxePingResponse;
 
-@APICommand(name="addBaremetalPxePingServer", description="add a baremetal ping pxe server", responseObject = BaremetalPxePingResponse.class)
+@APICommand(name = "addBaremetalPxePingServer", description = "add a baremetal ping pxe server", responseObject = BaremetalPxePingResponse.class)
 public class AddBaremetalPxePingServerCmd extends AddBaremetalPxeCmd {
 
-    @Parameter(name=ApiConstants.PING_STORAGE_SERVER_IP, type=CommandType.STRING, required = true, description="PING storage server ip")
+    @Parameter(name = ApiConstants.PING_STORAGE_SERVER_IP, type = CommandType.STRING, required = true, description = "PING storage server ip")
     private String pingStorageServerIp;
-    
-    @Parameter(name=ApiConstants.PING_DIR, type=CommandType.STRING, required = true, description="Root directory on PING storage server")
+
+    @Parameter(name = ApiConstants.PING_DIR, type = CommandType.STRING, required = true, description = "Root directory on PING storage server")
     private String pingDir;
-    
-    @Parameter(name=ApiConstants.TFTP_DIR, type=CommandType.STRING, required = true, description="Tftp root directory of PXE server")
+
+    @Parameter(name = ApiConstants.TFTP_DIR, type = CommandType.STRING, required = true, description = "Tftp root directory of PXE server")
     private String tftpDir;
-    
-    @Parameter(name=ApiConstants.PING_CIFS_USERNAME, type=CommandType.STRING, description="Username of PING storage server")
+
+    @Parameter(name = ApiConstants.PING_CIFS_USERNAME, type = CommandType.STRING, description = "Username of PING storage server")
     private String pingStorageServerUserName;
-    
-    @Parameter(name=ApiConstants.PING_CIFS_PASSWORD, type=CommandType.STRING, description="Password of PING storage server")
+
+    @Parameter(name = ApiConstants.PING_CIFS_PASSWORD, type = CommandType.STRING, description = "Password of PING storage server")
     private String pingStorageServerPassword;
 
     public String getPingStorageServerIp() {

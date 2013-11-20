@@ -26,29 +26,28 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-
 @Entity
-@Table(name="dedicated_resources")
-public class DedicatedResourceVO implements DedicatedResources{
+@Table(name = "dedicated_resources")
+public class DedicatedResourceVO implements DedicatedResources {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="id")
+    @Column(name = "id")
     long id;
 
-    @Column(name="data_center_id")
+    @Column(name = "data_center_id")
     Long dataCenterId;
 
-    @Column(name="pod_id")
+    @Column(name = "pod_id")
     Long podId;
 
-    @Column(name="cluster_id")
+    @Column(name = "cluster_id")
     Long clusterId;
 
-    @Column(name="host_id")
+    @Column(name = "host_id")
     Long hostId;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     String uuid;
 
     @Column(name = "domain_id")
@@ -64,8 +63,7 @@ public class DedicatedResourceVO implements DedicatedResources{
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public DedicatedResourceVO(Long dataCenterId, Long podId, Long clusterId, Long hostId, Long domainId,
-            Long accountId, long affinityGroupId) {
+    public DedicatedResourceVO(Long dataCenterId, Long podId, Long clusterId, Long hostId, Long domainId, Long accountId, long affinityGroupId) {
         this.dataCenterId = dataCenterId;
         this.podId = podId;
         this.clusterId = clusterId;
@@ -147,7 +145,7 @@ public class DedicatedResourceVO implements DedicatedResources{
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof DedicatedResourceVO) {
-            return ((DedicatedResourceVO) obj).getId() == this.getId();
+            return ((DedicatedResourceVO)obj).getId() == this.getId();
         } else {
             return false;
         }

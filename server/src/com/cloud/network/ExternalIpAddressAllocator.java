@@ -37,16 +37,18 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Local(value=IpAddrAllocator.class)
-public class ExternalIpAddressAllocator extends AdapterBase implements IpAddrAllocator{
+@Local(value = IpAddrAllocator.class)
+public class ExternalIpAddressAllocator extends AdapterBase implements IpAddrAllocator {
     private static final Logger s_logger = Logger.getLogger(ExternalIpAddressAllocator.class);
     String _name;
-    @Inject ConfigurationDao _configDao = null;
-    @Inject IPAddressDao _ipAddressDao = null;
-    @Inject VlanDao _vlanDao;
+    @Inject
+    ConfigurationDao _configDao = null;
+    @Inject
+    IPAddressDao _ipAddressDao = null;
+    @Inject
+    VlanDao _vlanDao;
     private boolean _isExternalIpAllocatorEnabled = false;
     private String _externalIpAllocatorUrl = null;
-
 
     @Override
     public IpAddr getPrivateIpAddress(String macAddr, long dcId, long podId) {

@@ -35,11 +35,9 @@ public class ListDeploymentPlannersCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -51,7 +49,7 @@ public class ListDeploymentPlannersCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         List<String> planners = _mgr.listDeploymentPlanners();
         ListResponse<DeploymentPlannersResponse> response = new ListResponse<DeploymentPlannersResponse>();
         List<DeploymentPlannersResponse> plannerResponses = new ArrayList<DeploymentPlannersResponse>();

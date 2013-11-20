@@ -61,7 +61,7 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
             _params = new HashMap<Param, Object>();
         }
         if (vm != null)
-        	_type = vm.getType();
+            _type = vm.getType();
     }
 
     public VirtualMachineProfileImpl(VirtualMachine vm) {
@@ -97,7 +97,7 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
 
     @Override
     public void setBootLoaderType(BootloaderType bootLoader) {
-    	_bootloader = bootLoader;
+        _bootloader = bootLoader;
     }
 
     @Override
@@ -130,7 +130,7 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
 
     @Override
     public String getUuid() {
-	return _vm.getUuid();
+        return _vm.getUuid();
     }
 
     public void setNics(List<NicProfile> nics) {
@@ -222,19 +222,19 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
         return _vm.getInstanceName();
     }
 
-	@Override
-	public BootloaderType getBootLoaderType() {
-		return _bootloader;
-	}
+    @Override
+    public BootloaderType getBootLoaderType() {
+        return _bootloader;
+    }
 
-	@Override
-	public Map<Param, Object> getParameters() {
-	    return _params;
-	}
+    @Override
+    public Map<Param, Object> getParameters() {
+        return _params;
+    }
 
-	public void setServiceOffering(ServiceOfferingVO offering) {
-		_offering = offering;
-	}
+    public void setServiceOffering(ServiceOfferingVO offering) {
+        _offering = offering;
+    }
 
     public void setCpuOvercommitRatio(Float cpuOvercommitRatio) {
         this.cpuOvercommitRatio = cpuOvercommitRatio;
@@ -248,7 +248,7 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
 
     @Override
     public Float getCpuOvercommitRatio() {
-        return  cpuOvercommitRatio;
+        return cpuOvercommitRatio;
     }
 
     @Override

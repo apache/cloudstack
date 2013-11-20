@@ -37,7 +37,6 @@ public class AffinityGroupTypeResponse extends BaseResponse {
     @Param(description = "the type of the affinity group")
     private String type;
 
-
     public AffinityGroupTypeResponse() {
     }
 

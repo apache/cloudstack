@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.router;
 
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -44,7 +43,7 @@ import org.apache.cloudstack.context.CallContext;
 import java.util.List;
 import java.util.logging.Logger;
 
-@APICommand(name = "upgradeRouterTemplate", description="Upgrades router to use newer template", responseObject=BaseResponse.class)
+@APICommand(name = "upgradeRouterTemplate", description = "Upgrades router to use newer template", responseObject = BaseResponse.class)
 public class UpgradeRouterTemplateCmd extends org.apache.cloudstack.api.BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeRouterTemplateCmd.class.getName());
     private static final String s_name = "upgraderoutertemplateresponse";
@@ -53,28 +52,22 @@ public class UpgradeRouterTemplateCmd extends org.apache.cloudstack.api.BaseCmd 
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name= ApiConstants.ID, type=CommandType.UUID, entityType = DomainRouterResponse.class,
-            description="upgrades router with the specified Id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, description = "upgrades router with the specified Id")
     private Long id;
 
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType= ClusterResponse.class,
-            description="upgrades all routers within the specified cluster")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "upgrades all routers within the specified cluster")
     private Long clusterId;
 
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class,
-            description="upgrades all routers within the specified pod")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "upgrades all routers within the specified pod")
     private Long podId;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
-            description="upgrades all routers within the specified zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "upgrades all routers within the specified zone")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.UUID, entityType = AccountResponse.class,
-            description="upgrades all routers owned by the specified account")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "upgrades all routers owned by the specified account")
     private Long accountId;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            description="upgrades all routers owned by the specified domain")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "upgrades all routers owned by the specified domain")
     private Long domainId;
 
     /////////////////////////////////////////////////////
@@ -105,7 +98,6 @@ public class UpgradeRouterTemplateCmd extends org.apache.cloudstack.api.BaseCmd 
         return domainId;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -132,7 +124,7 @@ public class UpgradeRouterTemplateCmd extends org.apache.cloudstack.api.BaseCmd 
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         CallContext.current().setEventDetails("Upgrading router template");
         List<Long> result = _routerService.upgradeRouterTemplate(this);
-        if (result != null){
+        if (result != null) {
             ListResponse<UpgradeRouterTemplateResponse> response = _responseGenerator.createUpgradeRouterTemplateResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);

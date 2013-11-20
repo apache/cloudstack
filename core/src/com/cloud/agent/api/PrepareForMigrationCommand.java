@@ -25,11 +25,11 @@ public class PrepareForMigrationCommand extends Command {
     }
 
     public PrepareForMigrationCommand(VirtualMachineTO vm) {
-    	this.vm = vm;
+        this.vm = vm;
     }
 
     public VirtualMachineTO getVirtualMachine() {
-    	return vm;
+        return vm;
     }
 
     @Override

@@ -75,12 +75,18 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 public class VmwareStorageMotionStrategyTest {
 
-    @Inject VmwareStorageMotionStrategy strategy = new VmwareStorageMotionStrategy();
-    @Inject AgentManager agentMgr;
-    @Inject VolumeDao volDao;
-    @Inject VolumeDataFactory volFactory;
-    @Inject PrimaryDataStoreDao storagePoolDao;
-    @Inject VMInstanceDao instanceDao;
+    @Inject
+    VmwareStorageMotionStrategy strategy = new VmwareStorageMotionStrategy();
+    @Inject
+    AgentManager agentMgr;
+    @Inject
+    VolumeDao volDao;
+    @Inject
+    VolumeDataFactory volFactory;
+    @Inject
+    PrimaryDataStoreDao storagePoolDao;
+    @Inject
+    VMInstanceDao instanceDao;
 
     CopyCommandResult result;
 
@@ -214,27 +220,26 @@ public class VmwareStorageMotionStrategyTest {
     private class MockContext<T> extends AsyncRpcContext<T> {
         final Map<VolumeInfo, DataStore> volumeToPool;
         final AsyncCallFuture<CommandResult> future;
+
         /**
          * @param callback
          */
-        public MockContext(AsyncCompletionCallback<T> callback, AsyncCallFuture<CommandResult> future,
-                Map<VolumeInfo, DataStore> volumeToPool) {
+        public MockContext(AsyncCompletionCallback<T> callback, AsyncCallFuture<CommandResult> future, Map<VolumeInfo, DataStore> volumeToPool) {
             super(callback);
             this.volumeToPool = volumeToPool;
             this.future = future;
         }
     }
 
-    protected Void mockCallBack(AsyncCallbackDispatcher<VmwareStorageMotionStrategyTest,
-            CopyCommandResult> callback, MockContext<CommandResult> context) {
+    protected Void mockCallBack(AsyncCallbackDispatcher<VmwareStorageMotionStrategyTest, CopyCommandResult> callback, MockContext<CommandResult> context) {
         this.result = callback.getResult();
         return null;
     }
 
     @Configuration
-    @ComponentScan(basePackageClasses = { VmwareStorageMotionStrategy.class },
-    includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
-    useDefaultFilters = false)
+    @ComponentScan(basePackageClasses = {VmwareStorageMotionStrategy.class},
+                   includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
+                   useDefaultFilters = false)
     public static class TestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         @Bean

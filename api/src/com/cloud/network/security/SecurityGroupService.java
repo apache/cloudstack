@@ -37,15 +37,16 @@ public interface SecurityGroupService {
      * @return the created security group if successful, null otherwise
      */
     public SecurityGroup createSecurityGroup(CreateSecurityGroupCmd command) throws PermissionDeniedException, InvalidParameterValueException;
+
     boolean revokeSecurityGroupIngress(RevokeSecurityGroupIngressCmd cmd);
+
     boolean revokeSecurityGroupEgress(RevokeSecurityGroupEgressCmd cmd);
 
     boolean deleteSecurityGroup(DeleteSecurityGroupCmd cmd) throws ResourceInUseException;
 
-
     public List<? extends SecurityRule> authorizeSecurityGroupIngress(AuthorizeSecurityGroupIngressCmd cmd);
 
     public List<? extends SecurityRule> authorizeSecurityGroupEgress(AuthorizeSecurityGroupEgressCmd cmd);
-    public boolean securityGroupRulesForVmSecIp(Long nicId, Long networkId,
-            String secondaryIp, boolean ruleAction);
+
+    public boolean securityGroupRulesForVmSecIp(Long nicId, Long networkId, String secondaryIp, boolean ruleAction);
 }

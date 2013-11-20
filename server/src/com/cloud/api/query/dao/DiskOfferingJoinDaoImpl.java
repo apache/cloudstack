@@ -34,15 +34,14 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={DiskOfferingJoinDao.class})
+@Local(value = {DiskOfferingJoinDao.class})
 public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, Long> implements DiskOfferingJoinDao {
     public static final Logger s_logger = Logger.getLogger(DiskOfferingJoinDaoImpl.class);
-
 
     private final SearchBuilder<DiskOfferingJoinVO> dofIdSearch;
     private final Attribute _typeAttr;
 
-     protected DiskOfferingJoinDaoImpl() {
+    protected DiskOfferingJoinDaoImpl() {
 
         dofIdSearch = createSearchBuilder();
         dofIdSearch.and("id", dofIdSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -52,8 +51,6 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
 
         _count = "select count(distinct id) from disk_offering_view WHERE ";
     }
-
-
 
     @Override
     public DiskOfferingResponse newDiskOfferingResponse(DiskOfferingJoinVO offering) {
@@ -83,7 +80,6 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
 
         return diskOfferingResponse;
     }
-
 
     @Override
     public DiskOfferingJoinVO newDiskOfferingView(DiskOffering offering) {

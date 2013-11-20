@@ -46,9 +46,9 @@ public class LdapUserManager {
         final String lastname = LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getLastnameAttribute());
         final String principal = result.getNameInNamespace();
 
-        String domain = principal.replace("cn="+LdapUtils.getAttributeValue(attributes,_ldapConfiguration.getCommonNameAttribute())+",", "");
-        domain = domain.replace(","+_ldapConfiguration.getBaseDn(), "");
-        domain = domain.replace("ou=","");
+        String domain = principal.replace("cn=" + LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getCommonNameAttribute()) + ",", "");
+        domain = domain.replace("," + _ldapConfiguration.getBaseDn(), "");
+        domain = domain.replace("ou=", "");
 
         return new LdapUser(username, email, firstname, lastname, principal, domain);
     }
@@ -149,7 +149,7 @@ public class LdapUserManager {
 
             while (values.hasMoreElements()) {
                 String userdn = String.valueOf(values.nextElement());
-                users.add(getUserForDn(userdn,context));
+                users.add(getUserForDn(userdn, context));
             }
         }
 
@@ -163,7 +163,7 @@ public class LdapUserManager {
         controls.setSearchScope(_ldapConfiguration.getScope());
         controls.setReturningAttributes(_ldapConfiguration.getReturnAttributes());
 
-        NamingEnumeration<SearchResult> result = context.search(userdn, "(objectClass="+_ldapConfiguration.getUserObject()+")", controls);
+        NamingEnumeration<SearchResult> result = context.search(userdn, "(objectClass=" + _ldapConfiguration.getUserObject() + ")", controls);
         if (result.hasMoreElements()) {
             return createUser(result.nextElement());
         } else {

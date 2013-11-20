@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "lockAccount", description="Locks an account", responseObject=AccountResponse.class)
+@APICommand(name = "lockAccount", description = "Locks an account", responseObject = AccountResponse.class)
 public class LockAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(LockAccountCmd.class.getName());
 
@@ -36,11 +36,14 @@ public class LockAccountCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="Locks the specified account.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "Locks the specified account.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            required=true, description="Locks the specified account on this domain.")
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               entityType = DomainResponse.class,
+               required = true,
+               description = "Locks the specified account on this domain.")
     private Long domainId;
 
     /////////////////////////////////////////////////////
@@ -75,7 +78,7 @@ public class LockAccountCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
 //        Account result = null;
         //result = _accountService.lockAccount(this);
 //        if (result != null){

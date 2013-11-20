@@ -23,7 +23,8 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.serializer.Param;
 import com.cloud.ucs.database.UcsBladeVO;
 import com.google.gson.annotations.SerializedName;
-@EntityReference(value=UcsBladeVO.class)
+
+@EntityReference(value = UcsBladeVO.class)
 public class UcsBladeResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "ucs blade id")

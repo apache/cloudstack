@@ -82,7 +82,7 @@ public class ConfigDepotAdminTest extends TestCase {
         dynamicIntCV.setValue("100");
         ConfigurationVO staticIntCV = new ConfigurationVO("UnitTestComponent", StaticIntCK);
         dynamicIntCV.setValue("200");
-        
+
         when(_configurable.getConfigComponentName()).thenReturn("UnitTestComponent");
         when(_configurable.getConfigKeys()).thenReturn(new ConfigKey<?>[] {DynamicIntCK, StaticIntCK});
         when(_configDao.findById(StaticIntCK.key())).thenReturn(null);

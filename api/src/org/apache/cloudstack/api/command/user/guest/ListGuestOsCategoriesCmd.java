@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listOsCategories", description="Lists all supported OS categories for this cloud.", responseObject=GuestOSCategoryResponse.class)
+@APICommand(name = "listOsCategories", description = "Lists all supported OS categories for this cloud.", responseObject = GuestOSCategoryResponse.class)
 public class ListGuestOsCategoriesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListIsosCmd.class.getName());
 
@@ -41,13 +41,11 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = GuestOSCategoryResponse.class,
-            description="list Os category by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestOSCategoryResponse.class, description = "list Os category by id")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list os category by name", since="3.0.1")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list os category by name", since = "3.0.1")
     private String name;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -65,14 +63,13 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-
     @Override
     public String getCommandName() {
         return s_name;
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends GuestOsCategory>, Integer> result = _mgr.listGuestOSCategoriesByCriteria(this);
         ListResponse<GuestOSCategoryResponse> response = new ListResponse<GuestOSCategoryResponse>();
         List<GuestOSCategoryResponse> osCatResponses = new ArrayList<GuestOSCategoryResponse>();

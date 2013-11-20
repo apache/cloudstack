@@ -27,7 +27,7 @@ import javax.ejb.Local;
 import java.util.List;
 
 @Component
-@Local(value={GlobalLoadBalancerLbRuleMapDao.class})
+@Local(value = {GlobalLoadBalancerLbRuleMapDao.class})
 @DB()
 public class GlobalLoadBalancerLbRuleMapDaoImpl extends GenericDaoBase<GlobalLoadBalancerLbRuleMapVO, Long> implements GlobalLoadBalancerLbRuleMapDao {
 

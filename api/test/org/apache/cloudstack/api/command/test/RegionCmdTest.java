@@ -42,7 +42,7 @@ public class RegionCmdTest extends TestCase {
     @Before
     public void setUp() {
 
-    	addRegionCmd = new AddRegionCmd() {
+        addRegionCmd = new AddRegionCmd() {
 
             @Override
             public Integer getId() {
@@ -63,19 +63,16 @@ public class RegionCmdTest extends TestCase {
         RegionService regionService = Mockito.mock(RegionService.class);
 
         Region region = Mockito.mock(Region.class);
-        Mockito.when(
-        		regionService.addRegion(Mockito.anyInt(), Mockito.anyString(), Mockito.anyString()))
-        		.thenReturn(region);
+        Mockito.when(regionService.addRegion(Mockito.anyInt(), Mockito.anyString(), Mockito.anyString())).thenReturn(region);
 
         addRegionCmd._regionService = regionService;
         responseGenerator = Mockito.mock(ResponseGenerator.class);
-        
+
         RegionResponse regionResponse = Mockito.mock(RegionResponse.class);
 
-        Mockito.when(responseGenerator.createRegionResponse(region)).thenReturn(
-        		regionResponse);
-        
-        addRegionCmd._responseGenerator = responseGenerator;                
+        Mockito.when(responseGenerator.createRegionResponse(region)).thenReturn(regionResponse);
+
+        addRegionCmd._responseGenerator = responseGenerator;
         addRegionCmd.execute();
 
     }
@@ -86,19 +83,16 @@ public class RegionCmdTest extends TestCase {
         RegionService regionService = Mockito.mock(RegionService.class);
 
         Region region = Mockito.mock(Region.class);
-        Mockito.when(
-        		regionService.addRegion(Mockito.anyInt(), Mockito.anyString(), Mockito.anyString()))
-        		.thenReturn(null);
+        Mockito.when(regionService.addRegion(Mockito.anyInt(), Mockito.anyString(), Mockito.anyString())).thenReturn(null);
 
         addRegionCmd._regionService = regionService;
 
         try {
-        	addRegionCmd.execute();
+            addRegionCmd.execute();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to add Region",
-                    exception.getDescription());
+            Assert.assertEquals("Failed to add Region", exception.getDescription());
         }
 
-    }    
+    }
 
 }

@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateIsoPermissions", description="Updates iso permissions", responseObject=SuccessResponse.class)
+@APICommand(name = "updateIsoPermissions", description = "Updates iso permissions", responseObject = SuccessResponse.class)
 public class UpdateIsoPermissionsCmd extends BaseUpdateTemplateOrIsoPermissionsCmd {
     protected String getResponseName() {
         return "updateisopermissionsresponse";

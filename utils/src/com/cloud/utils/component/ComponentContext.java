@@ -63,7 +63,7 @@ public class ComponentContext implements ApplicationContextAware {
     }
 
     public static void initComponentsLifeCycle() {
-        if ( ! s_initializeBeans )
+        if (!s_initializeBeans)
             return;
 
         AutowireCapableBeanFactory beanFactory = s_appContext.getAutowireCapableBeanFactory();

@@ -61,8 +61,7 @@ import org.apache.commons.logging.LogFactory;
  * </p>
  */
 
-public class EasyX509TrustManager implements X509TrustManager
-{
+public class EasyX509TrustManager implements X509TrustManager {
     private X509TrustManager standardTrustManager = null;
 
     /** Log object for this class. */

@@ -30,7 +30,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value=ExternalFirewallDeviceDao.class) @DB
+@Local(value = ExternalFirewallDeviceDao.class)
+@DB
 public class ExternalFirewallDeviceDaoImpl extends GenericDaoBase<ExternalFirewallDeviceVO, Long> implements ExternalFirewallDeviceDao {
     final SearchBuilder<ExternalFirewallDeviceVO> physicalNetworkServiceProviderSearch;
     final SearchBuilder<ExternalFirewallDeviceVO> physicalNetworkIdSearch;
@@ -60,20 +61,20 @@ public class ExternalFirewallDeviceDaoImpl extends GenericDaoBase<ExternalFirewa
         deviceStatusSearch.done();
     }
 
-	@Override
-	public List<ExternalFirewallDeviceVO> listByPhysicalNetwork(long physicalNetworkId) {
+    @Override
+    public List<ExternalFirewallDeviceVO> listByPhysicalNetwork(long physicalNetworkId) {
         SearchCriteria<ExternalFirewallDeviceVO> sc = physicalNetworkIdSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
         return search(sc, null);
-	}
+    }
 
-	@Override
-	public List<ExternalFirewallDeviceVO> listByPhysicalNetworkAndProvider(long physicalNetworkId, String providerName) {
+    @Override
+    public List<ExternalFirewallDeviceVO> listByPhysicalNetworkAndProvider(long physicalNetworkId, String providerName) {
         SearchCriteria<ExternalFirewallDeviceVO> sc = physicalNetworkServiceProviderSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
         sc.setParameters("networkServiceProviderName", providerName);
         return search(sc, null);
-	}
+    }
 
     @Override
     public List<ExternalFirewallDeviceVO> listByProviderAndDeviceAllocationState(long physicalNetworkId, String providerName, FirewallDeviceAllocationState allocationState) {

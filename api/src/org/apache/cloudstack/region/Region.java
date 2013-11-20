@@ -22,15 +22,15 @@ import java.util.List;
 /**
  *
  */
-public interface Region  {
-    
+public interface Region {
+
     public int getId();
 
-	public String getName();
+    public String getName();
 
-	public void setName(String name);
+    public void setName(String name);
 
-	public String getEndPoint();
+    public String getEndPoint();
 
     public boolean checkIfServiceEnabled(Service service);
 
@@ -48,7 +48,7 @@ public interface Region  {
         public static final Service Gslb = new Service("Gslb");
         public static final Service PortableIp = new Service("PortableIp");
 
-        public Service(String name ) {
+        public Service(String name) {
             this.name = name;
             regionServices.add(this);
         }

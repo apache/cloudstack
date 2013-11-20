@@ -28,7 +28,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteVlanIpRange", description="Creates a VLAN IP range.", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteVlanIpRange", description = "Creates a VLAN IP range.", responseObject = SuccessResponse.class)
 public class DeleteVlanIpRangeCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVlanIpRangeCmd.class.getName());
 
@@ -38,8 +38,7 @@ public class DeleteVlanIpRangeCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = VlanIpRangeResponse.class,
-            required=true, description="the id of the VLAN IP range")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VlanIpRangeResponse.class, required = true, description = "the id of the VLAN IP range")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -65,7 +64,7 @@ public class DeleteVlanIpRangeCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = _configService.deleteVlanIpRange(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

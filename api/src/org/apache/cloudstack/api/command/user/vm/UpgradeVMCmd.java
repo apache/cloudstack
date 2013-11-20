@@ -34,9 +34,9 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "changeServiceForVirtualMachine", responseObject=UserVmResponse.class, description="Changes the service offering for a virtual machine. " +
-                                            "The virtual machine must be in a \"Stopped\" state for " +
-                                            "this command to take effect.")
+@APICommand(name = "changeServiceForVirtualMachine", responseObject = UserVmResponse.class, description = "Changes the service offering for a virtual machine. "
+                                                                                                          + "The virtual machine must be in a \"Stopped\" state for "
+                                                                                                          + "this command to take effect.")
 public class UpgradeVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeVMCmd.class.getName());
     private static final String s_name = "changeserviceforvirtualmachineresponse";
@@ -45,12 +45,14 @@ public class UpgradeVMCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="The ID of the virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
     private Long id;
 
-    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType=ServiceOfferingResponse.class,
-            required=true, description="the service offering ID to apply to the virtual machine")
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
+               type = CommandType.UUID,
+               entityType = ServiceOfferingResponse.class,
+               required = true,
+               description = "the service offering ID to apply to the virtual machine")
     private Long serviceOfferingId;
 
     /////////////////////////////////////////////////////
@@ -89,8 +91,8 @@ public class UpgradeVMCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() throws ResourceAllocationException{
-        CallContext.current().setEventDetails("Vm Id: "+getId());
+    public void execute() throws ResourceAllocationException {
+        CallContext.current().setEventDetails("Vm Id: " + getId());
 
         ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
         if (serviceOffering == null) {
@@ -98,7 +100,7 @@ public class UpgradeVMCmd extends BaseCmd {
         }
 
         UserVm result = _userVmService.upgradeVirtualMachine(this);
-        if (result != null){
+        if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
             response.setResponseName(getCommandName());
             setResponseObject(response);

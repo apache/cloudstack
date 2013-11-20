@@ -33,15 +33,13 @@ public abstract class VifDriverBase implements VifDriver {
     protected Map<String, String> _bridges;
 
     @Override
-    public void configure(Map<String, Object> params)
-            throws ConfigurationException {
-        _libvirtComputingResource = (LibvirtComputingResource) params.get("libvirt.computing.resource");
-        _bridges = (Map<String, String>) params.get("libvirt.host.bridges");
-        _pifs = (Map<String, String>) params.get("libvirt.host.pifs");
+    public void configure(Map<String, Object> params) throws ConfigurationException {
+        _libvirtComputingResource = (LibvirtComputingResource)params.get("libvirt.computing.resource");
+        _bridges = (Map<String, String>)params.get("libvirt.host.bridges");
+        _pifs = (Map<String, String>)params.get("libvirt.host.pifs");
     }
 
-    public abstract LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType) throws InternalErrorException,
-                                                                                         LibvirtException;
+    public abstract LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType) throws InternalErrorException, LibvirtException;
 
     public abstract void unplug(LibvirtVMDef.InterfaceDef iface);
 

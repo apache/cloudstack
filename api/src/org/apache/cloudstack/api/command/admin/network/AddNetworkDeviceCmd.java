@@ -38,7 +38,9 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "addNetworkDevice", description="Adds a network device of one of the following types: ExternalDhcp, ExternalFirewall, ExternalLoadBalancer, PxeServer", responseObject = NetworkDeviceResponse.class)
+@APICommand(name = "addNetworkDevice",
+            description = "Adds a network device of one of the following types: ExternalDhcp, ExternalFirewall, ExternalLoadBalancer, PxeServer",
+            responseObject = NetworkDeviceResponse.class)
 public class AddNetworkDeviceCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddNetworkDeviceCmd.class);
     private static final String s_name = "addnetworkdeviceresponse";
@@ -47,14 +49,15 @@ public class AddNetworkDeviceCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-
-    @Inject ExternalNetworkDeviceManager nwDeviceMgr;
-    @Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE, type = CommandType.STRING, description = "Network device type, now supports ExternalDhcp, PxeServer, NetscalerMPXLoadBalancer, NetscalerVPXLoadBalancer, NetscalerSDXLoadBalancer, F5BigIpLoadBalancer, JuniperSRXFirewall, PaloAltoFirewall")
+    @Inject
+    ExternalNetworkDeviceManager nwDeviceMgr;
+    @Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE,
+               type = CommandType.STRING,
+               description = "Network device type, now supports ExternalDhcp, PxeServer, NetscalerMPXLoadBalancer, NetscalerVPXLoadBalancer, NetscalerSDXLoadBalancer, F5BigIpLoadBalancer, JuniperSRXFirewall, PaloAltoFirewall")
     private String type;
 
     @Parameter(name = ApiConstants.NETWORK_DEVICE_PARAMETER_LIST, type = CommandType.MAP, description = "parameters for network device")
     private Map paramList;
-
 
     public String getDeviceType() {
         return type;
@@ -65,8 +68,7 @@ public class AddNetworkDeviceCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-    ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
             Host device = nwDeviceMgr.addNetworkDevice(this);
             NetworkDeviceResponse response = nwDeviceMgr.getApiResponse(device);

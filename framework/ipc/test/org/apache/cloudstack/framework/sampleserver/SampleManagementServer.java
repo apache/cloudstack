@@ -20,12 +20,12 @@ package org.apache.cloudstack.framework.sampleserver;
 
 public class SampleManagementServer {
 
-	public void mainLoop() {
-		while(true) {
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-			}
-		}
-	}
+    public void mainLoop() {
+        while (true) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+            }
+        }
+    }
 }

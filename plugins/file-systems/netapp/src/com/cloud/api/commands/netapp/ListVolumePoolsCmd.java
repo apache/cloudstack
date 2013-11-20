@@ -38,49 +38,47 @@ import com.cloud.netapp.PoolVO;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.ListVolumePoolsCmdResponse;
 
-
-@APICommand(name = "listPools", description="List Pool", responseObject = ListVolumePoolsCmdResponse.class)
+@APICommand(name = "listPools", description = "List Pool", responseObject = ListVolumePoolsCmdResponse.class)
 public class ListVolumePoolsCmd extends BaseCmd {
-	public static final Logger s_logger = Logger.getLogger(ListVolumePoolsCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListVolumePoolsCmd.class.getName());
     private static final String s_name = "listpoolresponse";
 
-    @Inject NetappManager netappMgr;
+    @Inject
+    NetappManager netappMgr;
 
-	@Override
-	public void execute() throws ResourceUnavailableException,
-			InsufficientCapacityException, ServerApiException,
-			ConcurrentOperationException, ResourceAllocationException {
-    	try {
-    		List<PoolVO> poolList = netappMgr.listPools();
-    		ListResponse<ListVolumePoolsCmdResponse> listResponse = new ListResponse<ListVolumePoolsCmdResponse>();
-    		List<ListVolumePoolsCmdResponse> responses = new ArrayList<ListVolumePoolsCmdResponse>();
-    		for (PoolVO pool : poolList) {
-    			ListVolumePoolsCmdResponse response = new ListVolumePoolsCmdResponse();
-    			response.setId(pool.getId());
-    			response.setName(pool.getName());
-    			response.setAlgorithm(pool.getAlgorithm());
-    			response.setObjectName("pool");
-    			responses.add(response);
-    		}
-    		listResponse.setResponses(responses);
-    		listResponse.setResponseName(getCommandName());
-    		this.setResponseObject(listResponse);
-    	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
-    	}		
-		
-	}
+    @Override
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+        try {
+            List<PoolVO> poolList = netappMgr.listPools();
+            ListResponse<ListVolumePoolsCmdResponse> listResponse = new ListResponse<ListVolumePoolsCmdResponse>();
+            List<ListVolumePoolsCmdResponse> responses = new ArrayList<ListVolumePoolsCmdResponse>();
+            for (PoolVO pool : poolList) {
+                ListVolumePoolsCmdResponse response = new ListVolumePoolsCmdResponse();
+                response.setId(pool.getId());
+                response.setName(pool.getName());
+                response.setAlgorithm(pool.getAlgorithm());
+                response.setObjectName("pool");
+                responses.add(response);
+            }
+            listResponse.setResponses(responses);
+            listResponse.setResponseName(getCommandName());
+            this.setResponseObject(listResponse);
+        } catch (InvalidParameterValueException e) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
+        }
 
-	@Override
-	public String getCommandName() {
-		// TODO Auto-generated method stub
-		return s_name;
-	}
+    }
 
-	@Override
-	public long getEntityOwnerId() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public String getCommandName() {
+        // TODO Auto-generated method stub
+        return s_name;
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
 }

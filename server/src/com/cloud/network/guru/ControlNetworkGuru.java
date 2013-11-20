@@ -54,12 +54,15 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value={NetworkGuru.class})
+@Local(value = {NetworkGuru.class})
 public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGuru {
     private static final Logger s_logger = Logger.getLogger(ControlNetworkGuru.class);
-    @Inject DataCenterDao _dcDao;
-    @Inject ConfigurationDao _configDao;
-    @Inject NetworkModel _networkMgr;
+    @Inject
+    DataCenterDao _dcDao;
+    @Inject
+    ConfigurationDao _configDao;
+    @Inject
+    NetworkModel _networkMgr;
     String _cidr;
     String _gateway;
 
@@ -95,7 +98,8 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
             return null;
         }
 
-        NetworkVO config = new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.LinkLocal, offering.getId(), Network.State.Setup, plan.getDataCenterId(), plan.getPhysicalNetworkId());
+        NetworkVO config = new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.LinkLocal, offering.getId(), Network.State.Setup, plan.getDataCenterId(),
+            plan.getPhysicalNetworkId());
         config.setCidr(_cidr);
         config.setGateway(_gateway);
 
@@ -107,10 +111,9 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     }
 
     @Override
-    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
-    InsufficientAddressCapacityException {
+    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
 
-        if(vm.getHypervisorType() == HypervisorType.VMware && !isRouterVm(vm)) {
+        if (vm.getHypervisorType() == HypervisorType.VMware && !isRouterVm(vm)) {
             NicProfile nicProf = new NicProfile(Nic.ReservationStrategy.Create, null, null, null, null);
             String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
             nicProf.setMacAddress(mac);
@@ -129,14 +132,14 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     }
 
     @Override
-    public void reserve(NicProfile nic, Network config, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
-    InsufficientAddressCapacityException {
+    public void reserve(NicProfile nic, Network config, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         assert nic.getTrafficType() == TrafficType.Control;
 
         // we have to get management/private ip for the control nic for vmware/hyperv due ssh issues.
-         HypervisorType hType = dest.getHost().getHypervisorType(); 
-        if ( ( (hType == HypervisorType.VMware) || (hType == HypervisorType.Hyperv) )&& isRouterVm(vm)) {
-            if(dest.getDataCenter().getNetworkType() != NetworkType.Basic) {
+        HypervisorType hType = dest.getHost().getHypervisorType();
+        if (((hType == HypervisorType.VMware) || (hType == HypervisorType.Hyperv)) && isRouterVm(vm)) {
+            if (dest.getDataCenter().getNetworkType() != NetworkType.Basic) {
                 super.reserve(nic, config, vm, dest, context);
 
                 String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
@@ -172,7 +175,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         if (vm.getHypervisorType() == HypervisorType.VMware && isRouterVm(vm)) {
             long dcId = vm.getVirtualMachine().getDataCenterId();
             DataCenterVO dcVo = _dcDao.findById(dcId);
-            if(dcVo.getNetworkType() != NetworkType.Basic) {
+            if (dcVo.getNetworkType() != NetworkType.Basic) {
                 super.release(nic, vm, reservationId);
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Released nic: " + nic);

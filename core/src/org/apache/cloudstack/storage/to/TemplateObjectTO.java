@@ -90,7 +90,7 @@ public class TemplateObjectTO implements DataTO {
         return id;
     }
 
-    public void setId(long id){
+    public void setId(long id) {
         this.id = id;
     }
 
@@ -122,7 +122,6 @@ public class TemplateObjectTO implements DataTO {
         this.displayText = desc;
     }
 
-
     @Override
     public DataObjectType getObjectType() {
         return DataObjectType.TEMPLATE;
@@ -138,7 +137,7 @@ public class TemplateObjectTO implements DataTO {
         return this.hypervisorType;
     }
 
-    public void setDataStore(DataStoreTO store){
+    public void setDataStore(DataStoreTO store) {
         this.imageDataStore = store;
     }
 
@@ -211,7 +210,6 @@ public class TemplateObjectTO implements DataTO {
 
     @Override
     public String toString() {
-        return new StringBuilder("TemplateTO[id=").append(id).append("|origUrl=").append(origUrl)
-                .append("|name").append(name).append("]").toString();
+        return new StringBuilder("TemplateTO[id=").append(id).append("|origUrl=").append(origUrl).append("|name").append(name).append("]").toString();
     }
 }

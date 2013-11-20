@@ -31,55 +31,54 @@ import com.cloud.bridge.service.exception.UnsupportedException;
  * canonicalUserID
  */
 public class S3Grant {
-	private int grantee;			// SAcl.GRANTEE_USER etc
-	private int permission;			// SAcl.PERMISSION_READ etc
-	private String canonicalUserID;
-	
-	public S3Grant() {
-	}
+    private int grantee;			// SAcl.GRANTEE_USER etc
+    private int permission;			// SAcl.PERMISSION_READ etc
+    private String canonicalUserID;
 
-	public int getGrantee() {
-		return grantee;
-	}
+    public S3Grant() {
+    }
 
-	public void setGrantee(int grantee) {
-		this.grantee = grantee;
-	}
+    public int getGrantee() {
+        return grantee;
+    }
 
-	public int getPermission() {
-		return permission;
-	}
+    public void setGrantee(int grantee) {
+        this.grantee = grantee;
+    }
 
-	public void setPermission(int permission) {
-		this.permission = permission;
-	}
+    public int getPermission() {
+        return permission;
+    }
 
-	public String getCanonicalUserID() {
-		return canonicalUserID;
-	}
+    public void setPermission(int permission) {
+        this.permission = permission;
+    }
 
-	public void setCanonicalUserID(String canonicalUserID) {
-		this.canonicalUserID = canonicalUserID;
-	}
-	
-	/* Return an array of S3Grants holding the permissions of grantees by grantee type and their canonicalUserIds.
-	 * Used by S3 engine to get ACL policy requests for buckets and objects.
-	 */
-	public static S3Grant[] toGrants(List<SAclVO> grants) {
-		if(grants != null) 
-		{
-			S3Grant[] entries = new S3Grant[grants.size()];
-			int i = 0;
-			for(SAclVO acl: grants) {
-				entries[i] = new S3Grant();
-				entries[i].setGrantee(acl.getGranteeType());
-				entries[i].setCanonicalUserID(acl.getGranteeCanonicalId());
-				entries[i].setPermission(acl.getPermission());
-				i++;
-			}
-			return entries;
-		}
-		return null;
-	}
-		
+    public String getCanonicalUserID() {
+        return canonicalUserID;
+    }
+
+    public void setCanonicalUserID(String canonicalUserID) {
+        this.canonicalUserID = canonicalUserID;
+    }
+
+    /* Return an array of S3Grants holding the permissions of grantees by grantee type and their canonicalUserIds.
+     * Used by S3 engine to get ACL policy requests for buckets and objects.
+     */
+    public static S3Grant[] toGrants(List<SAclVO> grants) {
+        if (grants != null) {
+            S3Grant[] entries = new S3Grant[grants.size()];
+            int i = 0;
+            for (SAclVO acl : grants) {
+                entries[i] = new S3Grant();
+                entries[i].setGrantee(acl.getGranteeType());
+                entries[i].setCanonicalUserID(acl.getGranteeCanonicalId());
+                entries[i].setPermission(acl.getPermission());
+                i++;
+            }
+            return entries;
+        }
+        return null;
+    }
+
 }

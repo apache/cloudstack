@@ -244,32 +244,32 @@ public class VncClient {
         int authType = is.readInt();
 
         switch (authType) {
-        case RfbConstants.CONNECTION_FAILED: {
-            // Server forbids to connect. Read reason and throw exception
+            case RfbConstants.CONNECTION_FAILED: {
+                // Server forbids to connect. Read reason and throw exception
 
-            int length = is.readInt();
-            byte[] buf = new byte[length];
-            is.readFully(buf);
-            String reason = new String(buf, RfbConstants.CHARSET);
+                int length = is.readInt();
+                byte[] buf = new byte[length];
+                is.readFully(buf);
+                String reason = new String(buf, RfbConstants.CHARSET);
 
-            s_logger.error("Authentication to VNC server is failed. Reason: " + reason);
-            throw new RuntimeException("Authentication to VNC server is failed. Reason: " + reason);
-        }
+                s_logger.error("Authentication to VNC server is failed. Reason: " + reason);
+                throw new RuntimeException("Authentication to VNC server is failed. Reason: " + reason);
+            }
 
-        case RfbConstants.NO_AUTH: {
-            // Client can connect without authorization. Nothing to do.
-            break;
-        }
+            case RfbConstants.NO_AUTH: {
+                // Client can connect without authorization. Nothing to do.
+                break;
+            }
 
-        case RfbConstants.VNC_AUTH: {
-            s_logger.info("VNC server requires password authentication");
-            doVncAuth(password);
-            break;
-        }
+            case RfbConstants.VNC_AUTH: {
+                s_logger.info("VNC server requires password authentication");
+                doVncAuth(password);
+                break;
+            }
 
-        default:
-            s_logger.error("Unsupported VNC protocol authorization scheme, scheme code: " + authType + ".");
-            throw new RuntimeException("Unsupported VNC protocol authorization scheme, scheme code: " + authType + ".");
+            default:
+                s_logger.error("Unsupported VNC protocol authorization scheme, scheme code: " + authType + ".");
+                throw new RuntimeException("Unsupported VNC protocol authorization scheme, scheme code: " + authType + ".");
         }
     }
 
@@ -299,22 +299,22 @@ public class VncClient {
         int authResult = is.readInt();
 
         switch (authResult) {
-        case RfbConstants.VNC_AUTH_OK: {
-            // Nothing to do
-            break;
-        }
+            case RfbConstants.VNC_AUTH_OK: {
+                // Nothing to do
+                break;
+            }
 
-        case RfbConstants.VNC_AUTH_TOO_MANY:
-            s_logger.error("Connection to VNC server failed: too many wrong attempts.");
-            throw new RuntimeException("Connection to VNC server failed: too many wrong attempts.");
+            case RfbConstants.VNC_AUTH_TOO_MANY:
+                s_logger.error("Connection to VNC server failed: too many wrong attempts.");
+                throw new RuntimeException("Connection to VNC server failed: too many wrong attempts.");
 
-        case RfbConstants.VNC_AUTH_FAILED:
-            s_logger.error("Connection to VNC server failed: wrong password.");
-            throw new RuntimeException("Connection to VNC server failed: wrong password.");
+            case RfbConstants.VNC_AUTH_FAILED:
+                s_logger.error("Connection to VNC server failed: wrong password.");
+                throw new RuntimeException("Connection to VNC server failed: wrong password.");
 
-        default:
-            s_logger.error("Connection to VNC server failed, reason code: " + authResult);
-            throw new RuntimeException("Connection to VNC server failed, reason code: " + authResult);
+            default:
+                s_logger.error("Connection to VNC server failed, reason code: " + authResult);
+                throw new RuntimeException("Connection to VNC server failed, reason code: " + authResult);
         }
     }
 
@@ -329,7 +329,7 @@ public class VncClient {
      */
     public byte[] encodePassword(byte[] challenge, String password) throws Exception {
         // VNC password consist of up to eight ASCII characters.
-        byte[] key = { 0, 0, 0, 0, 0, 0, 0, 0 }; // Padding
+        byte[] key = {0, 0, 0, 0, 0, 0, 0, 0}; // Padding
         byte[] passwordAsciiBytes = password.getBytes(RfbConstants.CHARSET);
         System.arraycopy(passwordAsciiBytes, 0, key, 0, Math.min(password.length(), 8));
 
@@ -369,7 +369,7 @@ public class VncClient {
         int b6_3 = (b & 0x20) >>> 3;
         int b7_2 = (b & 0x40) >>> 5;
         int b8_1 = (b & 0x80) >>> 7;
-        byte c = (byte) (b1_8 | b2_7 | b3_6 | b4_5 | b5_4 | b6_3 | b7_2 | b8_1);
+        byte c = (byte)(b1_8 | b2_7 | b3_6 | b4_5 | b5_4 | b6_3 | b7_2 | b8_1);
         return c;
     }
 

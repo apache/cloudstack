@@ -16,11 +16,10 @@
 // under the License.
 package com.cloud.network.vpc;
 
-
 public class PrivateGatewayProfile implements PrivateGateway {
     VpcGateway vpcGateway;
     long physicalNetworkId;
-    
+
     /**
      * @param vpcGateway
      * @param physicalNetworkId TODO

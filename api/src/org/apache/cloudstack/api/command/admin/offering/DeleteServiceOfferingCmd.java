@@ -28,8 +28,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteServiceOffering", description="Deletes a service offering.", responseObject=SuccessResponse.class)
-public class DeleteServiceOfferingCmd extends BaseCmd{
+@APICommand(name = "deleteServiceOffering", description = "Deletes a service offering.", responseObject = SuccessResponse.class)
+public class DeleteServiceOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteServiceOfferingCmd.class.getName());
     private static final String s_name = "deleteserviceofferingresponse";
 
@@ -37,10 +37,8 @@ public class DeleteServiceOfferingCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ServiceOfferingResponse.class,
-            required=true, description="the ID of the service offering")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, required = true, description = "the ID of the service offering")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -49,7 +47,6 @@ public class DeleteServiceOfferingCmd extends BaseCmd{
     public Long getId() {
         return id;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -66,7 +63,7 @@ public class DeleteServiceOfferingCmd extends BaseCmd{
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = _configService.deleteServiceOffering(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

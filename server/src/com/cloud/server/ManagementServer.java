@@ -28,21 +28,21 @@ import com.cloud.vm.VirtualMachine;
 
 /**
  */
-public interface ManagementServer extends ManagementService, PluggableService  {
-    
+public interface ManagementServer extends ManagementService, PluggableService {
+
     /**
      * returns the instance id of this management server.
      * 
      * @return id of the management server
      */
     long getId();
-    
+
     /**
      * Fetches the version of cloud stack
     */
     @Override
     String getVersion();
-    
+
     /**
      * Retrieves a host by id
      * 
@@ -52,7 +52,7 @@ public interface ManagementServer extends ManagementService, PluggableService  {
     HostVO getHostBy(long hostId);
 
     String getConsoleAccessUrlRoot(long vmId);
-    
+
     GuestOSVO getGuestOs(Long guestOsId);
 
     /**
@@ -68,8 +68,11 @@ public interface ManagementServer extends ManagementService, PluggableService  {
     Pair<List<StoragePoolVO>, Integer> searchForStoragePools(Criteria c);
 
     String getHashKey();
+
     String getEncryptionKey();
+
     String getEncryptionIV();
+
     void resetEncryptionKeyIV();
 
 }

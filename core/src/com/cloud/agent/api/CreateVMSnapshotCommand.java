@@ -27,11 +27,10 @@ public class CreateVMSnapshotCommand extends VMSnapshotBaseCommand {
 
     public CreateVMSnapshotCommand(String vmName, VMSnapshotTO snapshot, List<VolumeObjectTO> volumeTOs, String guestOSType, VirtualMachine.State vmState) {
         super(vmName, snapshot, volumeTOs, guestOSType);
-        this.vmState  = vmState;
+        this.vmState = vmState;
     }
 
     private VirtualMachine.State vmState;
-   
 
     public VirtualMachine.State getVmState() {
         return vmState;
@@ -40,5 +39,5 @@ public class CreateVMSnapshotCommand extends VMSnapshotBaseCommand {
     public void setVmState(VirtualMachine.State vmState) {
         this.vmState = vmState;
     }
-    
+
 }

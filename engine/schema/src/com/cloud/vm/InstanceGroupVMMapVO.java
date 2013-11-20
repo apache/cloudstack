@@ -29,27 +29,23 @@ import javax.persistence.SecondaryTables;
 import javax.persistence.Table;
 
 @Entity
-@Table(name=("instance_group_vm_map"))
-@SecondaryTables({
-@SecondaryTable(name="user_vm",
-        pkJoinColumns={@PrimaryKeyJoinColumn(name="instance_id", referencedColumnName="id")}),      
-@SecondaryTable(name="instance_group", 
-		pkJoinColumns={@PrimaryKeyJoinColumn(name="group_id", referencedColumnName="id")})
-		})
+@Table(name = ("instance_group_vm_map"))
+@SecondaryTables({@SecondaryTable(name = "user_vm", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "instance_id", referencedColumnName = "id")}),
+        @SecondaryTable(name = "instance_group", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "group_id", referencedColumnName = "id")})})
 public class InstanceGroupVMMapVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(name="group_id")
+    @Column(name = "group_id")
     private long groupId;
 
-    @Column(name="instance_id")
+    @Column(name = "instance_id")
     private long instanceId;
-    
 
-    public InstanceGroupVMMapVO() { }
+    public InstanceGroupVMMapVO() {
+    }
 
     public InstanceGroupVMMapVO(long groupId, long instanceId) {
         this.groupId = groupId;

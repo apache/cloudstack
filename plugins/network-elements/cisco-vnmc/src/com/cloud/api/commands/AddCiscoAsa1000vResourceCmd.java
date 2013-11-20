@@ -40,26 +40,34 @@ import com.cloud.network.cisco.CiscoAsa1000vDevice;
 import com.cloud.network.element.CiscoAsa1000vService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name="addCiscoAsa1000vResource", responseObject=CiscoAsa1000vResourceResponse.class, description="Adds a Cisco Asa 1000v appliance")
+@APICommand(name = "addCiscoAsa1000vResource", responseObject = CiscoAsa1000vResourceResponse.class, description = "Adds a Cisco Asa 1000v appliance")
 public class AddCiscoAsa1000vResourceCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(AddCiscoAsa1000vResourceCmd.class.getName());
     private static final String s_name = "addCiscoAsa1000vResource";
-    @Inject CiscoAsa1000vService _ciscoAsa1000vService;
+    @Inject
+    CiscoAsa1000vService _ciscoAsa1000vService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class, required=true, description="the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = PhysicalNetworkResponse.class,
+               required = true,
+               description = "the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.HOST_NAME, type=CommandType.STRING, required = true, description="Hostname or ip address of the Cisco ASA 1000v appliance.")
+    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, required = true, description = "Hostname or ip address of the Cisco ASA 1000v appliance.")
     private String host;
 
-    @Parameter(name=ApiConstants.ASA_INSIDE_PORT_PROFILE, type=CommandType.STRING, required = true, description="Nexus port profile associated with inside interface of ASA 1000v")
+    @Parameter(name = ApiConstants.ASA_INSIDE_PORT_PROFILE,
+               type = CommandType.STRING,
+               required = true,
+               description = "Nexus port profile associated with inside interface of ASA 1000v")
     private String inPortProfile;
 
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType = ClusterResponse.class, required=true, description="the Cluster ID")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the Cluster ID")
     private Long clusterId;
 
     /////////////////////////////////////////////////////
@@ -98,7 +106,7 @@ public class AddCiscoAsa1000vResourceCmd extends BaseCmd {
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Cisco ASA 1000v appliance due to internal error.");
             }
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

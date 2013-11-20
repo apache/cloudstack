@@ -33,8 +33,7 @@ import com.cloud.vm.NicSecondaryIp;
 @Table(name = "nic_secondary_ips")
 public class NicSecondaryIpVO implements NicSecondaryIp {
 
-    public NicSecondaryIpVO(Long nicId, String ipaddr, Long vmId,
-            Long accountId, Long domainId, Long networkId) {
+    public NicSecondaryIpVO(Long nicId, String ipaddr, Long vmId, Long accountId, Long domainId, Long networkId) {
         this.nicId = nicId;
         this.vmId = vmId;
         this.ip4Address = ipaddr;
@@ -54,10 +53,10 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
     @Column(name = "nicId")
     long nicId;
 
-    @Column(name="domain_id", updatable=false)
+    @Column(name = "domain_id", updatable = false)
     long domainId;
 
-    @Column(name="account_id", updatable=false)
+    @Column(name = "account_id", updatable = false)
     private Long accountId;
 
     @Column(name = "ip4_address")

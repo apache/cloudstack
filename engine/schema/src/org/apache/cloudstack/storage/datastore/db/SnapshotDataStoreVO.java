@@ -162,7 +162,7 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof SnapshotDataStoreVO) {
-            SnapshotDataStoreVO other = (SnapshotDataStoreVO) obj;
+            SnapshotDataStoreVO other = (SnapshotDataStoreVO)obj;
             return (snapshotId == other.getSnapshotId() && dataStoreId == other.getDataStoreId());
         }
         return false;
@@ -197,8 +197,7 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     @Override
     public String toString() {
-        return new StringBuilder("SnapshotDataStore[").append(id).append("-").append(snapshotId).append("-")
-                .append(dataStoreId).append(installPath).append("]").toString();
+        return new StringBuilder("SnapshotDataStore[").append(id).append("-").append(snapshotId).append("-").append(dataStoreId).append(installPath).append("]").toString();
     }
 
     public long getUpdatedCount() {

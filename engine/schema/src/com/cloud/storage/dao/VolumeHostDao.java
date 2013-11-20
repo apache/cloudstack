@@ -25,8 +25,7 @@ import com.cloud.storage.VolumeHostVO;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
-public interface VolumeHostDao extends GenericDao<VolumeHostVO, Long>,
-        StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
+public interface VolumeHostDao extends GenericDao<VolumeHostVO, Long>, StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
 
     VolumeHostVO findByHostVolume(long hostId, long volumeId);
 

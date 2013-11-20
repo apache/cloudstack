@@ -43,31 +43,37 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-@APICommand(name="addBaremetalDhcp", description="adds a baremetal dhcp server", responseObject = BaremetalDhcpResponse.class)
+
+@APICommand(name = "addBaremetalDhcp", description = "adds a baremetal dhcp server", responseObject = BaremetalDhcpResponse.class)
 public class AddBaremetalDhcpCmd extends BaseAsyncCmd {
     private static final String s_name = "addbaremetaldhcpresponse";
     public static final Logger s_logger = Logger.getLogger(AddBaremetalDhcpCmd.class);
-    
-    @Inject BaremetalDhcpManager mgr;
-    
+
+    @Inject
+    BaremetalDhcpManager mgr;
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType=PhysicalNetworkResponse.class, required=true, description="the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = PhysicalNetworkResponse.class,
+               required = true,
+               description = "the Physical Network ID")
     private Long physicalNetworkId;
-    
-    @Parameter(name=ApiConstants.DHCP_SERVER_TYPE, type=CommandType.STRING, required = true, description="Type of dhcp device")
+
+    @Parameter(name = ApiConstants.DHCP_SERVER_TYPE, type = CommandType.STRING, required = true, description = "Type of dhcp device")
     private String dhcpType;
-    
-    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the external dhcp appliance.")
+
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "URL of the external dhcp appliance.")
     private String url;
 
-    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="Credentials to reach external dhcp device")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Credentials to reach external dhcp device")
     private String username;
-    
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Credentials to reach external dhcp device")
+
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "Credentials to reach external dhcp device")
     private String password;
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_BAREMETAL_DHCP_SERVER_ADD;
@@ -79,8 +85,8 @@ public class AddBaremetalDhcpCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-            ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
+        NetworkRuleConflictException {
         try {
             BaremetalDhcpVO vo = mgr.addDchpServer(this);
             BaremetalDhcpResponse response = mgr.generateApiResponse(vo);

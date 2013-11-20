@@ -112,10 +112,7 @@ public class EasySSLProtocolSocketFactory implements SecureProtocolSocketFactory
     private static SSLContext createEasySSLContext() {
         try {
             SSLContext context = SSLContext.getInstance("SSL");
-            context.init(
-              null, 
-              new TrustManager[] {new EasyX509TrustManager(null)}, 
-              null);
+            context.init(null, new TrustManager[] {new EasyX509TrustManager(null)}, null);
             return context;
         } catch (Exception e) {
             LOG.error(e.getMessage(), e);
@@ -133,19 +130,9 @@ public class EasySSLProtocolSocketFactory implements SecureProtocolSocketFactory
     /**
      * @see SecureProtocolSocketFactory#createSocket(java.lang.String,int,java.net.InetAddress,int)
      */
-    public Socket createSocket(
-        String host,
-        int port,
-        InetAddress clientHost,
-        int clientPort)
-        throws IOException, UnknownHostException {
+    public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort) throws IOException, UnknownHostException {
 
-        return getSSLContext().getSocketFactory().createSocket(
-            host,
-            port,
-            clientHost,
-            clientPort
-        );
+        return getSSLContext().getSocketFactory().createSocket(host, port, clientHost, clientPort);
     }
 
     /**
@@ -169,13 +156,8 @@ public class EasySSLProtocolSocketFactory implements SecureProtocolSocketFactory
      * @throws UnknownHostException if the IP address of the host cannot be
      * determined
      */
-    public Socket createSocket(
-        final String host,
-        final int port,
-        final InetAddress localAddress,
-        final int localPort,
-        final HttpConnectionParams params
-    ) throws IOException, UnknownHostException, ConnectTimeoutException {
+    public Socket createSocket(final String host, final int port, final InetAddress localAddress, final int localPort, final HttpConnectionParams params) throws IOException,
+        UnknownHostException, ConnectTimeoutException {
         if (params == null) {
             throw new IllegalArgumentException("Parameters may not be null");
         }
@@ -196,29 +178,15 @@ public class EasySSLProtocolSocketFactory implements SecureProtocolSocketFactory
     /**
      * @see SecureProtocolSocketFactory#createSocket(java.lang.String,int)
      */
-    public Socket createSocket(String host, int port)
-        throws IOException, UnknownHostException {
-        return getSSLContext().getSocketFactory().createSocket(
-            host,
-            port
-        );
+    public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
+        return getSSLContext().getSocketFactory().createSocket(host, port);
     }
 
     /**
      * @see SecureProtocolSocketFactory#createSocket(java.net.Socket,java.lang.String,int,boolean)
      */
-    public Socket createSocket(
-        Socket socket,
-        String host,
-        int port,
-        boolean autoClose)
-        throws IOException, UnknownHostException {
-        return getSSLContext().getSocketFactory().createSocket(
-            socket,
-            host,
-            port,
-            autoClose
-        );
+    public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
+        return getSSLContext().getSocketFactory().createSocket(socket, host, port, autoClose);
     }
 
     public boolean equals(Object obj) {

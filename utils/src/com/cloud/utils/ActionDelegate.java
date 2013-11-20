@@ -16,6 +16,6 @@
 // under the License.
 package com.cloud.utils;
 
-public interface ActionDelegate <T> {
-	void action(T param);
+public interface ActionDelegate<T> {
+    void action(T param);
 }

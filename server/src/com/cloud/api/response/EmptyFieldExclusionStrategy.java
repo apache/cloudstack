@@ -28,7 +28,7 @@ public class EmptyFieldExclusionStrategy implements ExclusionStrategy {
     @Override
     public boolean shouldSkipField(FieldAttributes fieldAttributes) {
         if (fieldAttributes.getAnnotation(Param.class) != null) {
-                return true;
+            return true;
         }
         return false;
     }

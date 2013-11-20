@@ -26,11 +26,11 @@ public class DhcpTO {
         this.routerIp = routerIp;
         this.startIpOfSubnet = StartIpOfSubnet;
         this.gateway = gateway;
-        this.netmask =netmask;
+        this.netmask = netmask;
 
     }
 
-    public void setRouterIp(String routerIp){
+    public void setRouterIp(String routerIp) {
         this.routerIp = routerIp;
     }
 
@@ -39,10 +39,10 @@ public class DhcpTO {
     }
 
     public void setNetmask(String netmask) {
-        this.netmask = netmask ;
+        this.netmask = netmask;
     }
 
-    public void setStartIpOfSubnet( String ipOfSubNet) {
+    public void setStartIpOfSubnet(String ipOfSubNet) {
         startIpOfSubnet = ipOfSubNet;
     }
 
@@ -57,6 +57,7 @@ public class DhcpTO {
     public String getNetmask() {
         return netmask;
     }
+
     public String getStartIpOfSubnet() {
         return startIpOfSubnet;
     }

@@ -20,7 +20,7 @@ package com.cloud.network.vpc;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface NetworkACL extends InternalIdentity{
+public interface NetworkACL extends InternalIdentity {
     public static final long DEFAULT_DENY = 1;
     public static final long DEFAULT_ALLOW = 2;
 

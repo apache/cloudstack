@@ -73,8 +73,6 @@ public interface ProjectService {
 
     boolean deleteAccountFromProject(long projectId, String accountName);
 
-
-
     boolean updateInvitation(long projectId, String accountName, String token, boolean accept);
 
     Project activateProject(long projectId);

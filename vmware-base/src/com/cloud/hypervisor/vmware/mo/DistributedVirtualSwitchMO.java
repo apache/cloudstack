@@ -60,7 +60,7 @@ public class DistributedVirtualSwitchMO extends BaseMO {
 
     public TaskInfo updateVMWareDVSwitchGetTask(ManagedObjectReference dvSwitchMor, VMwareDVSConfigSpec dvsSpec) throws Exception {
         ManagedObjectReference task = _context.getService().reconfigureDvsTask(dvSwitchMor, dvsSpec);
-        TaskInfo info = (TaskInfo) (_context.getVimClient().getDynamicProperty(task, "info"));
+        TaskInfo info = (TaskInfo)(_context.getVimClient().getDynamicProperty(task, "info"));
         boolean waitvalue = _context.getVimClient().waitForTask(task);
         return info;
     }

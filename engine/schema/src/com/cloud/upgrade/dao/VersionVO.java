@@ -32,60 +32,59 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 @Entity
-@Table(name="version")
+@Table(name = "version")
 public class VersionVO implements InternalIdentity {
     public enum Step {
-        Upgrade,
-        Complete
+        Upgrade, Complete
     };
-    
+
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     long id;
-    
-    @Column(name="version")
+
+    @Column(name = "version")
     String version;
-    
+
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="updated")
+    @Column(name = "updated")
     Date updated;
-    
-    @Enumerated(value=EnumType.STRING)
-    @Column(name="step")
+
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "step")
     Step step;
-    
+
     public VersionVO(String version) {
-        this.version = version; 
+        this.version = version;
         this.updated = new Date();
         this.step = Step.Upgrade;
     }
-    
+
     protected VersionVO() {
     }
-    
+
     public long getId() {
         return id;
     }
-    
+
     public String getVersion() {
         return version;
     }
-    
+
     public Date getUpdated() {
         return updated;
     }
-    
+
     public void setUpdated(Date updated) {
         this.updated = updated;
     }
-    
+
     public Step getStep() {
         return step;
     }
-    
+
     public void setStep(Step step) {
         this.step = step;
     }
-    
+
 }

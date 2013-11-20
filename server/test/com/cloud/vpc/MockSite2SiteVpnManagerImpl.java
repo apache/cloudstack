@@ -49,7 +49,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.DomainRouterVO;
 
 @Component
-@Local(value = { Site2SiteVpnManager.class, Site2SiteVpnService.class } )
+@Local(value = {Site2SiteVpnManager.class, Site2SiteVpnService.class})
 public class MockSite2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpnManager, Site2SiteVpnService {
 
     /* (non-Javadoc)

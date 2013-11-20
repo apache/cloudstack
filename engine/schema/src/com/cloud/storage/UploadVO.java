@@ -123,8 +123,7 @@ public class UploadVO implements Upload {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public UploadVO(long hostId, long typeId, Date lastUpdated, Status uploadState, Type type, String uploadUrl,
-            Mode mode) {
+    public UploadVO(long hostId, long typeId, Date lastUpdated, Status uploadState, Type type, String uploadUrl, Mode mode) {
         super();
         this.dataStoreId = hostId;
         this.typeId = typeId;
@@ -136,8 +135,7 @@ public class UploadVO implements Upload {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public UploadVO(long hostId, long typeId, Date lastUpdated, Status uploadState, int uploadPercent, Type type,
-            Mode mode) {
+    public UploadVO(long hostId, long typeId, Date lastUpdated, Status uploadState, int uploadPercent, Type type, Mode mode) {
         super();
         this.dataStoreId = hostId;
         this.typeId = typeId;
@@ -178,9 +176,8 @@ public class UploadVO implements Upload {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof UploadVO) {
-            UploadVO other = (UploadVO) obj;
-            return (this.typeId == other.getTypeId() && this.dataStoreId == other.getDataStoreId() && this.type == other
-                    .getType());
+            UploadVO other = (UploadVO)obj;
+            return (this.typeId == other.getTypeId() && this.dataStoreId == other.getDataStoreId() && this.type == other.getType());
         }
         return false;
     }

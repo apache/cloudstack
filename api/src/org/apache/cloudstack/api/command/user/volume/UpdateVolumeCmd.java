@@ -32,7 +32,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.Volume;
 
-@APICommand(name = "updateVolume", description="Updates the volume.", responseObject=VolumeResponse.class)
+@APICommand(name = "updateVolume", description = "Updates the volume.", responseObject = VolumeResponse.class)
 public class UpdateVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVolumeCmd.class.getName());
     private static final String s_name = "updatevolumeresponse";
@@ -41,20 +41,23 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class, description="the ID of the disk volume")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, description = "the ID of the disk volume")
     private Long id;
 
-    @Parameter(name=ApiConstants.PATH, type=CommandType.STRING, description="The path of the volume")
+    @Parameter(name = ApiConstants.PATH, type = CommandType.STRING, description = "The path of the volume")
     private String path;
-    
-    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.UUID, entityType=StoragePoolResponse.class,
-            description="Destination storage pool UUID for the volume", since="4.3")
+
+    @Parameter(name = ApiConstants.STORAGE_ID,
+               type = CommandType.UUID,
+               entityType = StoragePoolResponse.class,
+               description = "Destination storage pool UUID for the volume",
+               since = "4.3")
     private Long storageId;
-    
-    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="The state of the volume", since="4.3")
+
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "The state of the volume", since = "4.3")
     private String state;
 
-    @Parameter(name=ApiConstants.DISPLAY_VOLUME, type=CommandType.BOOLEAN, description="an optional field, whether to the display the volume to the end user or not.")
+    @Parameter(name = ApiConstants.DISPLAY_VOLUME, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the volume to the end user or not.")
     private Boolean displayVolume;
 
     /////////////////////////////////////////////////////
@@ -68,7 +71,7 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
     public Long getId() {
         return id;
     }
-    
+
     public Long getStorageId() {
         return storageId;
     }
@@ -117,12 +120,12 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
         StringBuilder desc = new StringBuilder("Updating volume: ");
         desc.append(getId()).append(" with");
         if (getPath() != null) {
-            desc.append(" path " + getPath());            
+            desc.append(" path " + getPath());
         }
         if (getStorageId() != null) {
             desc.append(", storage id " + getStorageId());
         }
-        
+
         if (getState() != null) {
             desc.append(", state " + getState());
         }
@@ -130,8 +133,8 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Volume Id: "+getId());
+    public void execute() {
+        CallContext.current().setEventDetails("Volume Id: " + getId());
         Volume result = _volumeService.updateVolume(getId(), getPath(), getState(), getStorageId(), getDisplayVolume());
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(result);

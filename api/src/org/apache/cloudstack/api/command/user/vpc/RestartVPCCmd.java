@@ -33,8 +33,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
-@APICommand(name = "restartVPC", description="Restarts a VPC", responseObject=VpcResponse.class)
-public class RestartVPCCmd extends BaseAsyncCmd{
+@APICommand(name = "restartVPC", description = "Restarts a VPC", responseObject = VpcResponse.class)
+public class RestartVPCCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RestartVPCCmd.class.getName());
     private static final String _name = "restartvpcresponse";
 
@@ -42,10 +42,8 @@ public class RestartVPCCmd extends BaseAsyncCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VpcResponse.class, required=true,
-            description="the id of the VPC")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcResponse.class, required = true, description = "the id of the VPC")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -54,7 +52,6 @@ public class RestartVPCCmd extends BaseAsyncCmd{
     public Long getId() {
         return id;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -75,7 +72,7 @@ public class RestartVPCCmd extends BaseAsyncCmd{
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         try {
             boolean result = _vpcService.restartVpc(getId());
             if (result) {

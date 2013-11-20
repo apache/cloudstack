@@ -23,7 +23,6 @@ public class CheckVirtualMachineAnswer extends Answer {
     Integer vncPort;
     State state;
 
-
     protected CheckVirtualMachineAnswer() {
     }
 
@@ -40,7 +39,6 @@ public class CheckVirtualMachineAnswer extends Answer {
     public CheckVirtualMachineAnswer(CheckVirtualMachineCommand cmd, String detail) {
         super(cmd, false, detail);
     }
-
 
     public Integer getVncPort() {
         return vncPort;

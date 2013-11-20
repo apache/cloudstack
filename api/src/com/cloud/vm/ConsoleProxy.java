@@ -22,6 +22,6 @@ package com.cloud.vm;
  */
 public interface ConsoleProxy extends SystemVm {
     public int getActiveSession();
+
     public byte[] getSessionDetails();
 }
-

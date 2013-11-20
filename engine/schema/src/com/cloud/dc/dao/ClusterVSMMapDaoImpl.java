@@ -29,20 +29,20 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value=ClusterVSMMapDao.class)
+@Local(value = ClusterVSMMapDao.class)
 @DB
 public class ClusterVSMMapDaoImpl extends GenericDaoBase<ClusterVSMMapVO, Long> implements ClusterVSMMapDao {
 
     final SearchBuilder<ClusterVSMMapVO> ClusterSearch;
     final SearchBuilder<ClusterVSMMapVO> VsmSearch;
-    
+
     public ClusterVSMMapDaoImpl() {
         //super();
-        
+
         ClusterSearch = createSearchBuilder();
         ClusterSearch.and("clusterId", ClusterSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
         ClusterSearch.done();
-        
+
         VsmSearch = createSearchBuilder();
         VsmSearch.and("vsmId", VsmSearch.entity().getVsmId(), SearchCriteria.Op.EQ);
         VsmSearch.done();
@@ -50,41 +50,41 @@ public class ClusterVSMMapDaoImpl extends GenericDaoBase<ClusterVSMMapVO, Long> 
 
     @Override
     public boolean removeByVsmId(long vsmId) {
-    	SearchCriteria<ClusterVSMMapVO> sc = VsmSearch.create();
-    	sc.setParameters("vsmId", vsmId);
-    	this.remove(sc);
-    	return true;
+        SearchCriteria<ClusterVSMMapVO> sc = VsmSearch.create();
+        sc.setParameters("vsmId", vsmId);
+        this.remove(sc);
+        return true;
     }
-    
+
     @Override
     public boolean removeByClusterId(long clusterId) {
-    	SearchCriteria<ClusterVSMMapVO> sc = ClusterSearch.create();
-    	sc.setParameters("clusterId", clusterId);
-    	this.remove(sc);
-    	return true;
+        SearchCriteria<ClusterVSMMapVO> sc = ClusterSearch.create();
+        sc.setParameters("clusterId", clusterId);
+        this.remove(sc);
+        return true;
     }
-    
+
     @Override
     public ClusterVSMMapVO findByClusterId(long clusterId) {
         SearchCriteria<ClusterVSMMapVO> sc = ClusterSearch.create();
-        sc.setParameters("clusterId", clusterId);        
+        sc.setParameters("clusterId", clusterId);
         return findOneBy(sc);
     }
 
     @Override
     public List<ClusterVSMMapVO> listByVSMId(long vsmId) {
-    	SearchCriteria<ClusterVSMMapVO> sc = VsmSearch.create();
-    	sc.setParameters("vsmId", vsmId);
-    	return listBy(sc);
+        SearchCriteria<ClusterVSMMapVO> sc = VsmSearch.create();
+        sc.setParameters("vsmId", vsmId);
+        return listBy(sc);
     }
-    
+
     public boolean remove(Long id) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         ClusterVSMMapVO cluster = createForUpdate();
         //cluster.setClusterId(null);
         //cluster.setVsmId(null);
-        
+
         update(id, cluster);
 
         boolean result = super.remove(id);

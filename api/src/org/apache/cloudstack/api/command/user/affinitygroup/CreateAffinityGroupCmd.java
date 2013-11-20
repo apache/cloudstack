@@ -56,9 +56,11 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the affinity group")
     private String affinityGroupName;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "Type of the affinity group from the available affinity/anti-affinity group types")
+    @Parameter(name = ApiConstants.TYPE,
+               type = CommandType.STRING,
+               required = true,
+               description = "Type of the affinity group from the available affinity/anti-affinity group types")
     private String affinityGroupType;
-
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -122,15 +124,13 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create affinity group:"
-                    + affinityGroupName);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create affinity group:" + affinityGroupName);
         }
     }
 
     @Override
     public void create() throws ResourceAllocationException {
-        AffinityGroup result = _affinityGroupService.createAffinityGroup(accountName, domainId, affinityGroupName,
-                affinityGroupType, description);
+        AffinityGroup result = _affinityGroupService.createAffinityGroup(accountName, domainId, affinityGroupName, affinityGroupType, description);
         if (result != null) {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());

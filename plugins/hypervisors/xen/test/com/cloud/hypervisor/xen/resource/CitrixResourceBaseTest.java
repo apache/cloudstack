@@ -38,20 +38,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Iterator;
 
-
-
-
 public class CitrixResourceBaseTest {
 
-    @Spy CitrixResourceBase _resource = new CitrixResourceBase() {
+    @Spy
+    CitrixResourceBase _resource = new CitrixResourceBase() {
 
         @Override
         public ScaleVmAnswer execute(ScaleVmCommand cmd) {
             return super.execute(cmd);
         }
+
         public String callHostPlugin(Connection conn, String plugin, String cmd, String... params) {
             return "Success";
         }
+
         @Override
         protected void scaleVM(Connection conn, VM vm, VirtualMachineTO vmSpec, Host host) throws Types.XenAPIException, XmlRpcException {
             _host.speed = 500;
@@ -63,15 +63,21 @@ public class CitrixResourceBaseTest {
             return true;
         }
     };
-    @Mock XsHost _host;
-    @Mock Host host;
-    @Mock ScaleVmCommand cmd;
-    @Mock VirtualMachineTO vmSpec;
-    @Mock Connection conn;
-    @Mock VM vm;
+    @Mock
+    XsHost _host;
+    @Mock
+    Host host;
+    @Mock
+    ScaleVmCommand cmd;
+    @Mock
+    VirtualMachineTO vmSpec;
+    @Mock
+    Connection conn;
+    @Mock
+    VM vm;
 
     @Before
-    public void setup(){
+    public void setup() {
 
         MockitoAnnotations.initMocks(this);
 
@@ -80,17 +86,13 @@ public class CitrixResourceBaseTest {
 
     }
 
-
     // Expecting XmlRpcException while trying to get the record of vm using connection
     @Test(expected = XmlRpcException.class)
-    public void testScaleVMF1()  throws
-            Types.BadServerResponse,
-            Types.XenAPIException,
-            XmlRpcException {
+    public void testScaleVMF1() throws Types.BadServerResponse, Types.XenAPIException, XmlRpcException {
         doReturn(conn).when(_resource).getConnection();
-        Set<VM> vms = (Set<VM> )mock(Set.class);
+        Set<VM> vms = (Set<VM>)mock(Set.class);
 
-        Iterator iter =  mock(Iterator.class);
+        Iterator iter = mock(Iterator.class);
         doReturn(iter).when(vms).iterator();
         when(iter.hasNext()).thenReturn(true).thenReturn(false);
         doReturn(vm).when(iter).next();

@@ -39,24 +39,24 @@ public class RouterNetworkDaoImpl extends GenericDaoBase<RouterNetworkVO, Long> 
         RouterNetworksSearch.selectFields(RouterNetworksSearch.entity().getNetworkId());
         RouterNetworksSearch.and("routerId", RouterNetworksSearch.entity().getRouterId(), Op.EQ);
         RouterNetworksSearch.done();
-        
+
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("routerId", AllFieldsSearch.entity().getRouterId(), Op.EQ);
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
         AllFieldsSearch.done();
     }
-    
+
     public List<Long> getRouterNetworks(long routerId) {
         SearchCriteria<Long> sc = RouterNetworksSearch.create();
         sc.setParameters("routerId", routerId);
         return customSearch(sc, null);
     }
-    
-    public RouterNetworkVO findByRouterAndNetwork (long routerId, long networkId) {
+
+    public RouterNetworkVO findByRouterAndNetwork(long routerId, long networkId) {
         SearchCriteria<RouterNetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("routerId", routerId);
         sc.setParameters("networkId", networkId);
         return findOneBy(sc);
     }
-    
+
 }

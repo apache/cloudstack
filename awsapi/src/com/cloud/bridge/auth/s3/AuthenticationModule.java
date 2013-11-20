@@ -27,34 +27,28 @@ import org.apache.neethi.Assertion;
 import org.apache.neethi.Policy;
 
 public class AuthenticationModule implements Module {
-     protected final static Logger logger = Logger.getLogger(AuthenticationModule.class);
+    protected final static Logger logger = Logger.getLogger(AuthenticationModule.class);
 
-	 public void init(ConfigurationContext configContext, AxisModule module) throws AxisFault
-	 {
-         logger.debug( "init entry S3 AuthenticationModule" );
- 	 }
-	 
-	 public String[] getPolicyNamespaces() 
-	 {
-     	 return null;	
-	 }
-	 
-	 public void engageNotify(AxisDescription axisDescription) throws AxisFault
-	 {
-		 //logger.info( "engageNotify entry S3AuthenticationModule" );
-	 }
+    public void init(ConfigurationContext configContext, AxisModule module) throws AxisFault {
+        logger.debug("init entry S3 AuthenticationModule");
+    }
 
-	 public boolean canSupportAssertion(Assertion assertion)
-	 {
-		 return true;
-	 }
-	 
-	 public void applyPolicy(Policy policy, AxisDescription axisDescription) throws AxisFault
-	 {
-	 }
+    public String[] getPolicyNamespaces() {
+        return null;
+    }
 
-     public void shutdown(ConfigurationContext configurationContext) throws AxisFault
-     {
-		 //logger.info( "shutdown entry S3AuthenticationModule" );
-     }
+    public void engageNotify(AxisDescription axisDescription) throws AxisFault {
+        //logger.info( "engageNotify entry S3AuthenticationModule" );
+    }
+
+    public boolean canSupportAssertion(Assertion assertion) {
+        return true;
+    }
+
+    public void applyPolicy(Policy policy, AxisDescription axisDescription) throws AxisFault {
+    }
+
+    public void shutdown(ConfigurationContext configurationContext) throws AxisFault {
+        //logger.info( "shutdown entry S3AuthenticationModule" );
+    }
 }

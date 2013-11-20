@@ -73,7 +73,7 @@ public class SolidfirePrimaryDataStoreProvider implements PrimaryDataStoreProvid
 
     @Override
     public Set<DataStoreProviderType> getTypes() {
-        Set<DataStoreProviderType> types =  new HashSet<DataStoreProviderType>();
+        Set<DataStoreProviderType> types = new HashSet<DataStoreProviderType>();
 
         types.add(DataStoreProviderType.PRIMARY);
 

@@ -60,7 +60,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.download.DownloadMonitorImpl;
 import com.cloud.utils.component.ComponentContext;
 
-@ContextConfiguration(locations = { "classpath:/storageContext.xml" })
+@ContextConfiguration(locations = {"classpath:/storageContext.xml"})
 public class S3TemplateTest extends CloudStackTestNGBase {
     @Inject
     DataCenterDao dcDao;
@@ -91,8 +91,8 @@ public class S3TemplateTest extends CloudStackTestNGBase {
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
         // create data center
-        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,
-                "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true, true, null, null);
+        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true,
+            true, null, null);
         dc = dcDao.persist(dc);
         dcId = dc.getId();
 

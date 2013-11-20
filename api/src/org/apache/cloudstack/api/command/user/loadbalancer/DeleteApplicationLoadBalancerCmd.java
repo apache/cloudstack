@@ -33,7 +33,7 @@ import org.apache.log4j.Logger;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 
-@APICommand(name = "deleteLoadBalancer", description="Deletes a load balancer", responseObject=SuccessResponse.class, since="4.2.0")
+@APICommand(name = "deleteLoadBalancer", description = "Deletes a load balancer", responseObject = SuccessResponse.class, since = "4.2.0")
 public class DeleteApplicationLoadBalancerCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteApplicationLoadBalancerCmd.class.getName());
     private static final String s_name = "deleteloadbalancerresponse";
@@ -41,10 +41,8 @@ public class DeleteApplicationLoadBalancerCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = FirewallRuleResponse.class,
-            required=true, description="the ID of the Load Balancer")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the Load Balancer")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -80,11 +78,11 @@ public class DeleteApplicationLoadBalancerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "deleting load balancer: " + getId();
+        return "deleting load balancer: " + getId();
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         CallContext.current().setEventDetails("Load balancer Id: " + getId());
         boolean result = _appLbService.deleteApplicationLoadBalancer(getId());
 
@@ -104,7 +102,7 @@ public class DeleteApplicationLoadBalancerCmd extends BaseAsyncCmd {
     @Override
     public Long getSyncObjId() {
         ApplicationLoadBalancerRule lb = _appLbService.getApplicationLoadBalancer(id);
-        if(lb == null){
+        if (lb == null) {
             throw new InvalidParameterValueException("Unable to find load balancer by id ");
         }
         return lb.getNetworkId();

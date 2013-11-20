@@ -58,11 +58,9 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
         this.storageManager = storageManager;
     }
 
-    public VmwareStorageSubsystemCommandHandler(StorageProcessor processor
-                                               ) {
+    public VmwareStorageSubsystemCommandHandler(StorageProcessor processor) {
         super(processor);
     }
-
 
     @Override
     protected Answer execute(CopyCommand cmd) {
@@ -72,8 +70,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
         DataStoreTO destDataStore = destData.getDataStore();
         //if copied between s3 and nfs cache, go to resource
         boolean needDelegation = false;
-        if (destDataStore instanceof NfsTO
-                && destDataStore.getRole() == DataStoreRole.ImageCache) {
+        if (destDataStore instanceof NfsTO && destDataStore.getRole() == DataStoreRole.ImageCache) {
             if (srcDataStore instanceof S3TO || srcDataStore instanceof SwiftTO) {
                 needDelegation = true;
             }
@@ -110,7 +107,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                 } catch (Exception e) {
                     s_logger.debug("Failed to clean up staging area:", e);
                 }
-                return result;                
+                return result;
             }
             needDelegation = true;
         }

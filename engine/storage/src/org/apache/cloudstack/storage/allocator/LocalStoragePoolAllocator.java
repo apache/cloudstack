@@ -66,8 +66,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
     ConfigurationDao _configDao;
 
     @Override
-    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile,
-            DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
         s_logger.debug("LocalStoragePoolAllocator trying to find storage pool to fit the vm");
 
         if (!dskCh.useLocalStorage()) {
@@ -82,7 +81,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
             for (StoragePoolHostVO hostPool : hostPools) {
                 StoragePoolVO pool = _storagePoolDao.findById(hostPool.getPoolId());
                 if (pool != null && pool.isLocal()) {
-                    StoragePool storagePool = (StoragePool) this.dataStoreMgr.getPrimaryDataStore(pool.getId());
+                    StoragePool storagePool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
                     if (filter(avoid, storagePool, dskCh, plan)) {
                         s_logger.debug("Found suitable local storage pool " + pool.getId() + ", adding to list");
                         suitablePools.add(storagePool);
@@ -100,13 +99,12 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 // zone wide primary storage deployment
                 return null;
             }
-            List<StoragePoolVO> availablePools = _storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(),
-                    plan.getPodId(), plan.getClusterId(), dskCh.getTags());
+            List<StoragePoolVO> availablePools = _storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), dskCh.getTags());
             for (StoragePoolVO pool : availablePools) {
                 if (suitablePools.size() == returnUpTo) {
                     break;
                 }
-                StoragePool storagePool = (StoragePool) this.dataStoreMgr.getPrimaryDataStore(pool.getId());
+                StoragePool storagePool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
                 if (filter(avoid, storagePool, dskCh, plan)) {
                     suitablePools.add(storagePool);
                 } else {
@@ -116,8 +114,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
 
             // add remaining pools in cluster, that did not match tags, to avoid
             // set
-            List<StoragePoolVO> allPools = _storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(),
-                    plan.getPodId(), plan.getClusterId(), null);
+            List<StoragePoolVO> allPools = _storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), null);
             allPools.removeAll(availablePools);
             for (StoragePoolVO pool : allPools) {
                 avoid.addPool(pool.getId());
@@ -136,7 +133,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
         super.configure(name, params);
 
         _storageOverprovisioningFactor = new BigDecimal(1);
-        _extraBytesPerVolume = NumbersUtil.parseLong((String) params.get("extra.bytes.per.volume"), 50 * 1024L * 1024L);
+        _extraBytesPerVolume = NumbersUtil.parseLong((String)params.get("extra.bytes.per.volume"), 50 * 1024L * 1024L);
 
         return true;
     }

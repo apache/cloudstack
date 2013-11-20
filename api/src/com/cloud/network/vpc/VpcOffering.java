@@ -21,8 +21,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface VpcOffering extends InternalIdentity, Identity {
     public enum State {
-        Disabled,
-        Enabled
+        Disabled, Enabled
     }
 
     public static final String defaultVPCOfferingName = "Default VPC offering";
@@ -34,12 +33,10 @@ public interface VpcOffering extends InternalIdentity, Identity {
      */
     String getName();
 
-    
     /**
      * @return VPC offering display text
      */
     String getDisplayText();
-    
 
     /**
      * 

@@ -38,17 +38,18 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.CiscoVnmcElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name="deleteCiscoVnmcResource", responseObject=SuccessResponse.class, description="Deletes a Cisco Vnmc controller")
+@APICommand(name = "deleteCiscoVnmcResource", responseObject = SuccessResponse.class, description = "Deletes a Cisco Vnmc controller")
 public class DeleteCiscoVnmcResourceCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(DeleteCiscoVnmcResourceCmd.class.getName());
     private static final String s_name = "deleteCiscoVnmcResource";
-    @Inject CiscoVnmcElementService _ciscoVnmcElementService;
+    @Inject
+    CiscoVnmcElementService _ciscoVnmcElementService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.RESOURCE_ID, type=CommandType.UUID, required=true, entityType=CiscoVnmcResourceResponse.class, description="Cisco Vnmc resource ID")
+    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.UUID, required = true, entityType = CiscoVnmcResourceResponse.class, description = "Cisco Vnmc resource ID")
     private Long ciscoVnmcResourceId;
 
     /////////////////////////////////////////////////////
@@ -74,7 +75,7 @@ public class DeleteCiscoVnmcResourceCmd extends BaseCmd {
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Cisco Vnmc resource.");
             }
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

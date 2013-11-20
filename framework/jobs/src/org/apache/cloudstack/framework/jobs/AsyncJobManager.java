@@ -25,31 +25,33 @@ import com.cloud.utils.Predicate;
 import com.cloud.utils.component.Manager;
 
 public interface AsyncJobManager extends Manager {
-    
-	public static final String JOB_POOL_THREAD_PREFIX = "Job-Executor";
+
+    public static final String JOB_POOL_THREAD_PREFIX = "Job-Executor";
 
     AsyncJobVO getAsyncJob(long jobId);
-	
-	List<? extends AsyncJob> findInstancePendingAsyncJobs(String instanceType, Long accountId);
-	
-	long submitAsyncJob(AsyncJob job);
-	long submitAsyncJob(AsyncJob job, String syncObjType, long syncObjId);
+
+    List<? extends AsyncJob> findInstancePendingAsyncJobs(String instanceType, Long accountId);
+
+    long submitAsyncJob(AsyncJob job);
+
+    long submitAsyncJob(AsyncJob job, String syncObjType, long syncObjId);
 
     void completeAsyncJob(long jobId, JobInfo.Status jobStatus, int resultCode, String result);
 
     void updateAsyncJobStatus(long jobId, int processStatus, String resultObject);
+
     void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId);
-    void logJobJournal(long jobId, AsyncJob.JournalType journalType, String
-    	journalText, String journalObjJson);
-    
-	/**
-	 * A running thread inside management server can have a 1:1 linked pseudo job.
-	 * This is to help make some legacy code work without too dramatic changes.
-	 * 
-	 * All pseudo jobs should be expunged upon management start event
-	 *
-	 * @return pseudo job for the thread
-	 */
+
+    void logJobJournal(long jobId, AsyncJob.JournalType journalType, String journalText, String journalObjJson);
+
+    /**
+     * A running thread inside management server can have a 1:1 linked pseudo job.
+     * This is to help make some legacy code work without too dramatic changes.
+     * 
+     * All pseudo jobs should be expunged upon management start event
+     *
+     * @return pseudo job for the thread
+     */
     AsyncJob getPseudoJob(long accountId, long userId);
 
     /**
@@ -63,9 +65,9 @@ public interface AsyncJobManager extends Manager {
      * 
      * @param jobId upper job that is going to wait the completion of a down-level job
      * @param joinJobId down-level job
-	 */
-	void joinJob(long jobId, long joinJobId);
-	
+     */
+    void joinJob(long jobId, long joinJobId);
+
     /**
      * Used by upper level job to wait for completion of a down-level job (usually VmWork jobs)
      * in asynchronous way, it will cause upper job to cease current execution, upper job will be
@@ -79,9 +81,9 @@ public interface AsyncJobManager extends Manager {
      * @param wakeupIntervalInMilliSeconds
      * @param timeoutInMilliSeconds
      */
-    void joinJob(long jobId, long joinJobId, String wakeupHandler, String wakupDispatcher,
-    		String[] wakeupTopicsOnMessageBus, long wakeupIntervalInMilliSeconds, long timeoutInMilliSeconds);
-    
+    void joinJob(long jobId, long joinJobId, String wakeupHandler, String wakupDispatcher, String[] wakeupTopicsOnMessageBus, long wakeupIntervalInMilliSeconds,
+        long timeoutInMilliSeconds);
+
     /**
      * Dis-join two related jobs
      * 
@@ -89,7 +91,7 @@ public interface AsyncJobManager extends Manager {
      * @param joinedJobId
      */
     void disjoinJob(long jobId, long joinedJobId);
-    
+
     /**
      * Used by down-level job to notify its completion to upper level jobs
      * 
@@ -102,10 +104,11 @@ public interface AsyncJobManager extends Manager {
      * 					object-stream based serialization instead of GSON
      */
     void completeJoin(long joinJobId, JobInfo.Status joinStatus, String joinResult);
-   
+
     void releaseSyncSource();
+
     void syncAsyncJobExecution(AsyncJob job, String syncObjType, long syncObjId, long queueSizeLimit);
-    
+
     /**
      * This method will be deprecated after all code has been migrated to fully-asynchronous mode
      * that uses async-feature of joinJob/disjoinJob
@@ -117,8 +120,7 @@ public interface AsyncJobManager extends Manager {
      * @return true, predicate condition is satisfied
      * 			false, wait is timed out
      */
-    boolean waitAndCheck(AsyncJob job, String[] wakupTopicsOnMessageBus, long checkIntervalInMilliSeconds,
-    	long timeoutInMiliseconds, Predicate predicate);
+    boolean waitAndCheck(AsyncJob job, String[] wakupTopicsOnMessageBus, long checkIntervalInMilliSeconds, long timeoutInMiliseconds, Predicate predicate);
 
     AsyncJob queryJob(long jobId, boolean updatePollTime);
 

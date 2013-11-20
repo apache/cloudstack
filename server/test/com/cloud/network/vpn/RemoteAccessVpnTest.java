@@ -23,7 +23,6 @@ import org.junit.Test;
 public class RemoteAccessVpnTest {
     private final static Logger s_logger = Logger.getLogger(RemoteAccessVpnTest.class);
 
-
 //	private static void addDaos(MockComponentLocator locator) {
 //		locator.addDao("AccountDao", AccountDaoImpl.class);
 //		locator.addDao("VpnUserDao", VpnUserDaoImpl.class);
@@ -57,9 +56,8 @@ public class RemoteAccessVpnTest {
     public void tearDown() throws Exception {
     }
 
-
     @Test
-    public void testInjected() throws Exception  {
+    public void testInjected() throws Exception {
 //		List<Pair<String, Class<? extends RemoteAccessVPNServiceProvider>>> list = 
 //				new ArrayList<Pair<String, Class<? extends RemoteAccessVPNServiceProvider>>>();
 //		list.add(new Pair<String, Class<? extends RemoteAccessVPNServiceProvider>>("RemoteAccessVPNServiceProvider", MockRemoteAccessVPNServiceProvider.class));
@@ -74,6 +72,5 @@ public class RemoteAccessVpnTest {
 //		int numProviders = vpnMgr.getRemoteAccessVPNServiceProviders().size();
 //		Assert.assertTrue(numProviders > 0);
     }
-
 
 }

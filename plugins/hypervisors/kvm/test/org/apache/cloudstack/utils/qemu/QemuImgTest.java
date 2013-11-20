@@ -173,7 +173,7 @@ public class QemuImgTest {
     }
 
     @Test(expected = QemuImgException.class)
-    public void testCreateAndResizeFail() throws QemuImgException  {
+    public void testCreateAndResizeFail() throws QemuImgException {
         String filename = "/tmp/" + UUID.randomUUID() + ".qcow2";
 
         long startSize = 20480;

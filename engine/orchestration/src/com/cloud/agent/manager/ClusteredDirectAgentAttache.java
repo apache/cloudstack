@@ -46,7 +46,7 @@ public class ClusteredDirectAgentAttache extends DirectAgentAttache implements R
         }
 
         if (req instanceof Response) {
-            super.process(((Response) req).getAnswers());
+            super.process(((Response)req).getAnswers());
         } else {
             super.send(req);
         }
@@ -65,5 +65,5 @@ public class ClusteredDirectAgentAttache extends DirectAgentAttache implements R
             return super.processAnswers(seq, response);
         }
     }
-    
+
 }

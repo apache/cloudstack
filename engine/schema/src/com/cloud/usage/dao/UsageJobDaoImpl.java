@@ -34,7 +34,7 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value={UsageJobDao.class})
+@Local(value = {UsageJobDao.class})
 public class UsageJobDaoImpl extends GenericDaoBase<UsageJobVO, Long> implements UsageJobDao {
     private static final Logger s_logger = Logger.getLogger(UsageJobDaoImpl.class.getName());
 

@@ -32,7 +32,7 @@ import org.apache.log4j.Logger;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listPortForwardingRules", description="Lists all port forwarding rules for an IP address.", responseObject=FirewallRuleResponse.class)
+@APICommand(name = "listPortForwardingRules", description = "Lists all port forwarding rules for an IP address.", responseObject = FirewallRuleResponse.class)
 public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPortForwardingRulesCmd.class.getName());
 
@@ -42,16 +42,20 @@ public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = FirewallRuleResponse.class,
-            description="Lists rule with the specified ID.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, description = "Lists rule with the specified ID.")
     private Long id;
 
-    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.UUID, entityType = IPAddressResponse.class,
-            description="the id of IP address of the port forwarding services")
+    @Parameter(name = ApiConstants.IP_ADDRESS_ID,
+               type = CommandType.UUID,
+               entityType = IPAddressResponse.class,
+               description = "the id of IP address of the port forwarding services")
     private Long ipAddressId;
-    
-    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class,
-            description="list port forwarding rules for ceratin network", since="4.3")
+
+    @Parameter(name = ApiConstants.NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = NetworkResponse.class,
+               description = "list port forwarding rules for ceratin network",
+               since = "4.3")
     private Long networkId;
 
     /////////////////////////////////////////////////////
@@ -65,7 +69,7 @@ public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
     public Long getId() {
         return id;
     }
-    
+
     public Long getNetworkId() {
         return networkId;
     }
@@ -80,7 +84,7 @@ public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends PortForwardingRule>, Integer> result = _rulesService.listPortForwardingRules(this);
         ListResponse<FirewallRuleResponse> response = new ListResponse<FirewallRuleResponse>();
         List<FirewallRuleResponse> fwResponses = new ArrayList<FirewallRuleResponse>();

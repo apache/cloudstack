@@ -29,35 +29,34 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-
 @Entity
-@Table(name="private_ip_address")
+@Table(name = "private_ip_address")
 public class PrivateIpVO implements InternalIdentity {
-    
+
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     long id;
-    
-    @Column(name="ip_address", updatable=false, nullable=false)
+
+    @Column(name = "ip_address", updatable = false, nullable = false)
     String ipAddress;
-    
-    @Column(name="mac_address")
+
+    @Column(name = "mac_address")
     private long macAddress;
-    
-    @Column(name="taken")
-    @Temporal(value=TemporalType.TIMESTAMP)
+
+    @Column(name = "taken")
+    @Temporal(value = TemporalType.TIMESTAMP)
     private Date takenAt;
-    
-    @Column(name="network_id", updatable=false, nullable=false)
+
+    @Column(name = "network_id", updatable = false, nullable = false)
     private long networkId;
-    
-    @Column(name="vpc_id")
+
+    @Column(name = "vpc_id")
     private Long vpcId;
 
-    @Column(name="source_nat")
+    @Column(name = "source_nat")
     private boolean sourceNat;
-    
+
     public PrivateIpVO() {
     }
 
@@ -68,15 +67,15 @@ public class PrivateIpVO implements InternalIdentity {
         this.vpcId = vpcId;
         this.sourceNat = sourceNat;
     }
-    
+
     public void setTakenAt(Date takenDate) {
         this.takenAt = takenDate;
     }
-    
+
     public String getIpAddress() {
         return ipAddress;
     }
-   
+
     public long getNetworkId() {
         return networkId;
     }
@@ -92,10 +91,11 @@ public class PrivateIpVO implements InternalIdentity {
     public long getMacAddress() {
         return macAddress;
     }
-    
+
     public Long getVpcId() {
         return vpcId;
     }
+
     public boolean getSourceNat() {
         return sourceNat;
     }

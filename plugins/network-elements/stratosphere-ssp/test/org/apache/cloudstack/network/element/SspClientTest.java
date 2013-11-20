@@ -41,7 +41,7 @@ public class SspClientTest {
     String apiUrl = "http://a.example.jp/";
     String username = "foo";
     String password = "bar";
-    SspClient sspClient = new SspClient(apiUrl, username, password){
+    SspClient sspClient = new SspClient(apiUrl, username, password) {
         {
             client = _client;
             postMethod = _postMethod;
@@ -51,7 +51,7 @@ public class SspClientTest {
     };
 
     @SuppressWarnings("deprecation")
-    private URI getUri() throws Exception{
+    private URI getUri() throws Exception {
         return new URI(apiUrl);
     }
 
@@ -71,10 +71,7 @@ public class SspClientTest {
 
         when(_postMethod.getURI()).thenReturn(getUri());
         when(_postMethod.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
-        when(_postMethod.getResponseBodyAsString()).thenReturn(
-                "{\"uuid\":\""+tenant_net_uuid+
-                "\",\"name\":\""+networkName+
-                "\",\"tenant_uuid\":\""+uuid+"\"}");
+        when(_postMethod.getResponseBodyAsString()).thenReturn("{\"uuid\":\"" + tenant_net_uuid + "\",\"name\":\"" + networkName + "\",\"tenant_uuid\":\"" + uuid + "\"}");
         SspClient.TenantNetwork tnet = sspClient.createTenantNetwork(uuid, networkName);
         assertEquals(tnet.name, networkName);
         assertEquals(tnet.uuid, tenant_net_uuid);

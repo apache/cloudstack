@@ -25,16 +25,16 @@ import org.apache.log4j.Logger;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 
-
-@Local(value={UserAuthenticator.class})
+@Local(value = {UserAuthenticator.class})
 public class PlainTextUserAuthenticator extends DefaultUserAuthenticator {
-	public static final Logger s_logger = Logger.getLogger(PlainTextUserAuthenticator.class);
-	
-	@Inject private UserAccountDao _userAccountDao;
-	
-	@Override
-	public boolean authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters ) {
-		if (s_logger.isDebugEnabled()) {
+    public static final Logger s_logger = Logger.getLogger(PlainTextUserAuthenticator.class);
+
+    @Inject
+    private UserAccountDao _userAccountDao;
+
+    @Override
+    public boolean authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
+        if (s_logger.isDebugEnabled()) {
             s_logger.debug("Retrieving user: " + username);
         }
 
@@ -43,17 +43,17 @@ public class PlainTextUserAuthenticator extends DefaultUserAuthenticator {
             s_logger.debug("Unable to find user with " + username + " in domain " + domainId);
             return false;
         }
-        
+
         if (!user.getPassword().equals(password)) {
             s_logger.debug("Password does not match");
             return false;
         }
-		return true;
-	}
+        return true;
+    }
 
-	@Override
-	public String encode(String password) {
-		// Plaintext so no encoding at all
-		return password; 
-	}
+    @Override
+    public String encode(String password) {
+        // Plaintext so no encoding at all
+        return password;
+    }
 }

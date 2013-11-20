@@ -58,7 +58,6 @@ public class AffinityGroupVMMapVO implements InternalIdentity {
         return affinityGroupId;
     }
 
-
     public long getInstanceId() {
         return instanceId;
     }

@@ -27,15 +27,26 @@ import com.cloud.utils.db.GenericDao;
  */
 public interface ServiceOfferingDao extends GenericDao<ServiceOfferingVO, Long> {
     ServiceOfferingVO findByName(String name);
+
     ServiceOfferingVO persistSystemServiceOffering(ServiceOfferingVO vo);
-	List<ServiceOfferingVO> findPublicServiceOfferings();
-	List<ServiceOfferingVO> findServiceOfferingByDomainId(Long domainId);
+
+    List<ServiceOfferingVO> findPublicServiceOfferings();
+
+    List<ServiceOfferingVO> findServiceOfferingByDomainId(Long domainId);
+
     List<ServiceOfferingVO> findSystemOffering(Long domainId, Boolean isSystem, String vm_type);
+
     ServiceOfferingVO persistDeafultServiceOffering(ServiceOfferingVO offering);
+
     void loadDetails(ServiceOfferingVO serviceOffering);
+
     void saveDetails(ServiceOfferingVO serviceOffering);
+
     ServiceOfferingVO findById(Long vmId, long serviceOfferingId);
+
     ServiceOfferingVO findByIdIncludingRemoved(Long vmId, long serviceOfferingId);
-     boolean isDynamic(long serviceOfferingId);
+
+    boolean isDynamic(long serviceOfferingId);
+
     ServiceOfferingVO getcomputeOffering(long serviceOfferingId, Integer cpuCores, Integer cpuSpeed, Integer memory);
 }

@@ -26,7 +26,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.utils.component.Adapter;
 
-public interface IpDeployer extends Adapter{
+public interface IpDeployer extends Adapter {
     /**
      * Modify ip addresses on this network
      * Depending on the State of the ip addresses the element should take

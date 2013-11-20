@@ -314,7 +314,8 @@ public class ApplicationLoadBalancerTest extends TestCase {
     }
 
     @Configuration
-    @ComponentScan(basePackageClasses = {NetUtils.class, ApplicationLoadBalancerManagerImpl.class}, includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)}, useDefaultFilters = false)
+    @ComponentScan(basePackageClasses = {NetUtils.class, ApplicationLoadBalancerManagerImpl.class}, includeFilters = {@Filter(value = TestConfiguration.Library.class,
+                                                                                                                              type = FilterType.CUSTOM)}, useDefaultFilters = false)
     public static class TestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         @Bean
@@ -336,7 +337,6 @@ public class ApplicationLoadBalancerTest extends TestCase {
         public AccountManager accountManager() {
             return Mockito.mock(AccountManager.class);
         }
-
 
         @Bean
         public LoadBalancingRulesManager loadBalancingRulesManager() {

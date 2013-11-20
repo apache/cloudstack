@@ -34,7 +34,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteLoadBalancerRule", description="Deletes a load balancer rule.", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteLoadBalancerRule", description = "Deletes a load balancer rule.", responseObject = SuccessResponse.class)
 public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteLoadBalancerRuleCmd.class.getName());
     private static final String s_name = "deleteloadbalancerruleresponse";
@@ -42,10 +42,8 @@ public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = FirewallRuleResponse.class,
-            required=true, description="the ID of the load balancer rule")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the load balancer rule")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -81,12 +79,12 @@ public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "deleting load balancer: " + getId();
+        return "deleting load balancer: " + getId();
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Load balancer Id: "+getId());
+    public void execute() {
+        CallContext.current().setEventDetails("Load balancer Id: " + getId());
         boolean result = _firewallService.revokeRelatedFirewallRule(id, true);
         result = result && _lbService.deleteLoadBalancerRule(id, true);
 
@@ -106,7 +104,7 @@ public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
     @Override
     public Long getSyncObjId() {
         LoadBalancer lb = _lbService.findById(id);
-        if(lb == null){
+        if (lb == null) {
             throw new InvalidParameterValueException("Unable to find load balancer rule: " + id);
         }
         return lb.getNetworkId();

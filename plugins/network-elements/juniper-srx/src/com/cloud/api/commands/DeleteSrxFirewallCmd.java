@@ -40,18 +40,18 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteSrxFirewall", responseObject=SuccessResponse.class, description=" delete a SRX firewall device")
+@APICommand(name = "deleteSrxFirewall", responseObject = SuccessResponse.class, description = " delete a SRX firewall device")
 public class DeleteSrxFirewallCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSrxFirewallCmd.class.getName());
     private static final String s_name = "deletesrxfirewallresponse";
-    @Inject JuniperSRXFirewallElementService _srxElementService;
+    @Inject
+    JuniperSRXFirewallElementService _srxElementService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.FIREWALL_DEVICE_ID, type=CommandType.UUID, entityType = SrxFirewallResponse.class,
-            required=true, description="srx firewall device ID")
+    @Parameter(name = ApiConstants.FIREWALL_DEVICE_ID, type = CommandType.UUID, entityType = SrxFirewallResponse.class, required = true, description = "srx firewall device ID")
     private Long fwDeviceId;
 
     /////////////////////////////////////////////////////
@@ -77,7 +77,7 @@ public class DeleteSrxFirewallCmd extends BaseAsyncCmd {
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete SRX firewall device");
             }
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

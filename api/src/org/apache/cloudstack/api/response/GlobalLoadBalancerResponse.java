@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.EntityReference;
 
 import java.util.List;
 
-@EntityReference(value= GlobalLoadBalancerRule.class)
+@EntityReference(value = GlobalLoadBalancerRule.class)
 public class GlobalLoadBalancerResponse extends BaseResponse implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
@@ -64,10 +64,12 @@ public class GlobalLoadBalancerResponse extends BaseResponse implements Controll
     @Param(description = "the account of the load balancer rule")
     private String accountName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the load balancer")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the load balancer")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the load balancer")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the load balancer")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
@@ -79,7 +81,7 @@ public class GlobalLoadBalancerResponse extends BaseResponse implements Controll
     private String domainName;
 
     @SerializedName(ApiConstants.LOAD_BALANCER_RULE)
-    @Param(description="List of load balancer rules that are part of GSLB rule", responseObject = LoadBalancerResponse.class)
+    @Param(description = "List of load balancer rules that are part of GSLB rule", responseObject = LoadBalancerResponse.class)
     private List<LoadBalancerResponse> siteLoadBalancers;
 
     public void setRegionIdId(Integer regionId) {

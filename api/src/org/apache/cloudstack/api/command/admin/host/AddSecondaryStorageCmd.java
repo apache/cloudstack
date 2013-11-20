@@ -31,7 +31,7 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.ImageStore;
 import com.cloud.user.Account;
 
-@APICommand(name = "addSecondaryStorage", description="Adds secondary storage.", responseObject=ImageStoreResponse.class)
+@APICommand(name = "addSecondaryStorage", description = "Adds secondary storage.", responseObject = ImageStoreResponse.class)
 public class AddSecondaryStorageCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddSecondaryStorageCmd.class.getName());
     private static final String s_name = "addsecondarystorageresponse";
@@ -40,14 +40,11 @@ public class AddSecondaryStorageCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=true, description="the URL for the secondary storage")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "the URL for the secondary storage")
     protected String url;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
-            description="the Zone ID for the secondary storage")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID for the secondary storage")
     protected Long zoneId;
-
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -60,7 +57,6 @@ public class AddSecondaryStorageCmd extends BaseCmd {
     public Long getZoneId() {
         return zoneId;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -77,20 +73,20 @@ public class AddSecondaryStorageCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         AddImageStoreCmd cmd = new AddImageStoreCmd();
         cmd.setUrl(this.getUrl());
         cmd.setZoneId(this.getZoneId());
         cmd.setProviderName("NFS");
 
-        try{
+        try {
             ImageStore result = _storageService.discoverImageStore(cmd);
             ImageStoreResponse storeResponse = null;
-            if (result != null ) {
-                    storeResponse = _responseGenerator.createImageStoreResponse(result);
-                    storeResponse.setResponseName(getCommandName());
-                    storeResponse.setObjectName("secondarystorage");
-                    this.setResponseObject(storeResponse);
+            if (result != null) {
+                storeResponse = _responseGenerator.createImageStoreResponse(result);
+                storeResponse.setResponseName(getCommandName());
+                storeResponse.setObjectName("secondarystorage");
+                this.setResponseObject(storeResponse);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add secondary storage");
             }

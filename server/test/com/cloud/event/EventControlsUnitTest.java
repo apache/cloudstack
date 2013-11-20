@@ -42,12 +42,15 @@ import com.cloud.server.ManagementServerImpl;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 
-public class EventControlsUnitTest extends TestCase{
+public class EventControlsUnitTest extends TestCase {
     private static final Logger s_logger = Logger.getLogger(EventControlsUnitTest.class);
 
-    @Spy ManagementServerImpl _mgmtServer = new ManagementServerImpl();
-    @Mock AccountManager _accountMgr;
-    @Mock EventDao _eventDao;
+    @Spy
+    ManagementServerImpl _mgmtServer = new ManagementServerImpl();
+    @Mock
+    AccountManager _accountMgr;
+    @Mock
+    EventDao _eventDao;
     List<EventVO> _events = null;
 
     @Override
@@ -75,7 +78,7 @@ public class EventControlsUnitTest extends TestCase{
     protected void archiveEvents() {
         // archive alerts
         doNothing().when(_eventDao).archiveEvents(_events);
-        }
+    }
 
     protected void deleteEvents() {
         // delete alerts

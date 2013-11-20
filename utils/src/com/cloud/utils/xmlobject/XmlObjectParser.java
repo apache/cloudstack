@@ -49,7 +49,7 @@ public class XmlObjectParser {
             //System.out.println(String.format("startElement: namespaceURI:%s, localName:%s, qName:%s", namespaceURI, localName, qName));
             currentValue = null;
             XmlObject obj = new XmlObject();
-            for (int i=0; i<atts.getLength(); i++) {
+            for (int i = 0; i < atts.getLength(); i++) {
                 obj.putElement(atts.getQName(i), atts.getValue(i));
             }
             obj.setTag(qName);

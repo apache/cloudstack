@@ -26,20 +26,21 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name=("inline_load_balancer_nic_map"))
+@Table(name = ("inline_load_balancer_nic_map"))
 public class InlineLoadBalancerNicMapVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="public_ip_address")
+    @Column(name = "public_ip_address")
     private String publicIpAddress;
 
-    @Column(name="nic_id")
+    @Column(name = "nic_id")
     private long nicId;
 
-    public InlineLoadBalancerNicMapVO() { }
+    public InlineLoadBalancerNicMapVO() {
+    }
 
     public InlineLoadBalancerNicMapVO(String publicIpAddress, long nicId) {
         this.publicIpAddress = publicIpAddress;
@@ -51,10 +52,10 @@ public class InlineLoadBalancerNicMapVO implements InternalIdentity {
     }
 
     public String getPublicIpAddress() {
-    	return publicIpAddress;
+        return publicIpAddress;
     }
 
     public long getNicId() {
-    	return nicId;
+        return nicId;
     }
 }

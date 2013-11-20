@@ -22,7 +22,6 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-
 import com.cloud.api.query.vo.UserAccountJoinVO;
 
 import org.apache.cloudstack.api.response.UserResponse;
@@ -34,17 +33,14 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-
 @Component
-@Local(value={UserAccountJoinDao.class})
+@Local(value = {UserAccountJoinDao.class})
 public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Long> implements UserAccountJoinDao {
     public static final Logger s_logger = Logger.getLogger(UserAccountJoinDaoImpl.class);
-
 
     private SearchBuilder<UserAccountJoinVO> vrIdSearch;
 
     private SearchBuilder<UserAccountJoinVO> vrAcctIdSearch;
-
 
     protected UserAccountJoinDaoImpl() {
 
@@ -56,11 +52,8 @@ public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Lo
         vrAcctIdSearch.and("accountId", vrAcctIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         vrAcctIdSearch.done();
 
-
         this._count = "select count(distinct id) from user_view WHERE ";
     }
-
-
 
     @Override
     public UserResponse newUserResponse(UserAccountJoinVO usr) {
@@ -93,7 +86,6 @@ public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Lo
         return userResponse;
     }
 
-
     @Override
     public UserAccountJoinVO newUserView(User usr) {
         SearchCriteria<UserAccountJoinVO> sc = vrIdSearch.create();
@@ -102,9 +94,6 @@ public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Lo
         assert users != null && users.size() == 1 : "No user found for user id " + usr.getId();
         return users.get(0);
     }
-
-
-
 
     @Override
     public UserAccountJoinVO newUserView(UserAccount usr) {
@@ -115,15 +104,11 @@ public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Lo
         return users.get(0);
     }
 
-
     @Override
     public List<UserAccountJoinVO> searchByAccountId(Long accountId) {
         SearchCriteria<UserAccountJoinVO> sc = vrAcctIdSearch.create();
         sc.setParameters("accountId", accountId);
         return searchIncludingRemoved(sc, null, null, false);
     }
-
-
-
 
 }

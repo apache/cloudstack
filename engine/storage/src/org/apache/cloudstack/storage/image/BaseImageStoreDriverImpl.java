@@ -111,11 +111,9 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     }
 
     @Override
-    public void
-    createAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
+    public void createAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
         CreateContext<CreateCmdResult> context = new CreateContext<CreateCmdResult>(callback, data);
-        AsyncCallbackDispatcher<BaseImageStoreDriverImpl, DownloadAnswer> caller = AsyncCallbackDispatcher
-                .create(this);
+        AsyncCallbackDispatcher<BaseImageStoreDriverImpl, DownloadAnswer> caller = AsyncCallbackDispatcher.create(this);
         caller.setContext(context);
         if (data.getType() == DataObjectType.TEMPLATE) {
             caller.setCallback(caller.getTarget().createTemplateAsyncCallback(null, null));
@@ -132,8 +130,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         }
     }
 
-    protected Void createTemplateAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback,
-            CreateContext<CreateCmdResult> context) {
+    protected Void createTemplateAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback, CreateContext<CreateCmdResult> context) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Performing image store createTemplate async callback");
         }
@@ -168,9 +165,8 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
         AsyncCompletionCallback<CreateCmdResult> caller = context.getParentCallback();
 
-        if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR
-                || answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED
-                || answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
+        if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR || answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED ||
+            answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
             CreateCmdResult result = new CreateCmdResult(null, null);
             result.setSuccess(false);
             result.setResult(answer.getErrorString());
@@ -188,8 +184,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         return null;
     }
 
-    protected Void createVolumeAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback,
-            CreateContext<CreateCmdResult> context) {
+    protected Void createVolumeAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback, CreateContext<CreateCmdResult> context) {
         DownloadAnswer answer = callback.getResult();
         DataObject obj = context.data;
         DataStore store = obj.getDataStore();
@@ -221,9 +216,8 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
         AsyncCompletionCallback<CreateCmdResult> caller = context.getParentCallback();
 
-        if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR
-                || answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED
-                || answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
+        if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR || answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED ||
+            answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
             CreateCmdResult result = new CreateCmdResult(null, null);
             result.setSuccess(false);
             result.setResult(answer.getErrorString());

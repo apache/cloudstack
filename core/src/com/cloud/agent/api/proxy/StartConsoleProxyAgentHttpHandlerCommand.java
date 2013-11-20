@@ -22,47 +22,47 @@ import com.cloud.agent.api.LogLevel.Log4jLevel;
 
 public class StartConsoleProxyAgentHttpHandlerCommand extends Command {
     @LogLevel(Log4jLevel.Off)
-	private byte[] keystoreBits;
+    private byte[] keystoreBits;
     @LogLevel(Log4jLevel.Off)
-	private String keystorePassword;
+    private String keystorePassword;
     @LogLevel(Log4jLevel.Off)
-	private String encryptorPassword;
+    private String encryptorPassword;
 
-	public StartConsoleProxyAgentHttpHandlerCommand() {
-		super();
-	}
+    public StartConsoleProxyAgentHttpHandlerCommand() {
+        super();
+    }
 
-	public StartConsoleProxyAgentHttpHandlerCommand(byte[] ksBits, String ksPassword) {
-		this.keystoreBits = ksBits;
-		this.keystorePassword = ksPassword;
-	}
+    public StartConsoleProxyAgentHttpHandlerCommand(byte[] ksBits, String ksPassword) {
+        this.keystoreBits = ksBits;
+        this.keystorePassword = ksPassword;
+    }
 
-	@Override
-	public boolean executeInSequence() {
-		return true;
-	}
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 
-	public byte[] getKeystoreBits() {
-		return keystoreBits;
-	}
+    public byte[] getKeystoreBits() {
+        return keystoreBits;
+    }
 
-	public void setKeystoreBits(byte[] keystoreBits) {
-		this.keystoreBits = keystoreBits;
-	}
+    public void setKeystoreBits(byte[] keystoreBits) {
+        this.keystoreBits = keystoreBits;
+    }
 
-	public String getKeystorePassword() {
-		return keystorePassword;
-	}
+    public String getKeystorePassword() {
+        return keystorePassword;
+    }
 
-	public void setKeystorePassword(String keystorePassword) {
-		this.keystorePassword = keystorePassword;
-	}
+    public void setKeystorePassword(String keystorePassword) {
+        this.keystorePassword = keystorePassword;
+    }
 
-	public String getEncryptorPassword() {
-		return encryptorPassword;
-	}
+    public String getEncryptorPassword() {
+        return encryptorPassword;
+    }
 
-	public void setEncryptorPassword(String encryptorPassword) {
-		this.encryptorPassword = encryptorPassword;
-	}
+    public void setEncryptorPassword(String encryptorPassword) {
+        this.encryptorPassword = encryptorPassword;
+    }
 }

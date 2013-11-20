@@ -33,9 +33,9 @@ public class StartupVMMAgentCommand extends Command {
     String managementServerIP;
     String port;
     String version;
-    
+
     public StartupVMMAgentCommand() {
-    	
+
     }
 
     public StartupVMMAgentCommand(long dataCenter, Long pod, String clusterName, String guid, String managementServerIP, String port, String version) {
@@ -50,29 +50,29 @@ public class StartupVMMAgentCommand extends Command {
     }
 
     public long getDataCenter() {
-    	return dataCenter;
+        return dataCenter;
     }
- 
+
     public Long getPod() {
-    	return pod;
+        return pod;
     }
 
     public String getClusterName() {
-    	return clusterName;
+        return clusterName;
     }
-    
+
     public String getGuid() {
-    	return guid;
+        return guid;
     }
 
     public String getManagementServerIP() {
-    	return managementServerIP;
+        return managementServerIP;
     }
 
     public String getport() {
-    	return port;
+        return port;
     }
-    
+
     public void setVersion(String version) {
         this.version = version;
     }

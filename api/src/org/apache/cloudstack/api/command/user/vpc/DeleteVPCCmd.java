@@ -32,8 +32,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteVPC", description="Deletes a VPC", responseObject=SuccessResponse.class)
-public class DeleteVPCCmd extends BaseAsyncCmd{
+@APICommand(name = "deleteVPC", description = "Deletes a VPC", responseObject = SuccessResponse.class)
+public class DeleteVPCCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVPCCmd.class.getName());
     private static final String s_name = "deletevpcresponse";
 
@@ -41,8 +41,7 @@ public class DeleteVPCCmd extends BaseAsyncCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = VpcResponse.class,
-            required=true, description="the ID of the VPC")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcResponse.class, required = true, description = "the ID of the VPC")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -77,7 +76,7 @@ public class DeleteVPCCmd extends BaseAsyncCmd{
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete VPC");
             }
-        }catch (ResourceUnavailableException ex) {
+        } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException ex) {

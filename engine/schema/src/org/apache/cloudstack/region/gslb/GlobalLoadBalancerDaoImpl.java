@@ -26,7 +26,7 @@ import javax.ejb.Local;
 import java.util.List;
 
 @Component
-@Local(value={GlobalLoadBalancerRuleDao.class})
+@Local(value = {GlobalLoadBalancerRuleDao.class})
 public class GlobalLoadBalancerDaoImpl extends GenericDaoBase<GlobalLoadBalancerRuleVO, Long> implements GlobalLoadBalancerRuleDao {
 
     private final SearchBuilder<GlobalLoadBalancerRuleVO> listByDomainSearch;

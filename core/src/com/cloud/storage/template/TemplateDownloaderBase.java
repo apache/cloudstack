@@ -25,10 +25,10 @@ import com.cloud.storage.StorageLayer;
 
 public abstract class TemplateDownloaderBase extends ManagedContextRunnable implements TemplateDownloader {
     private static final Logger s_logger = Logger.getLogger(TemplateDownloaderBase.class);
-    
+
     protected String _downloadUrl;
     protected String _toFile;
-    protected TemplateDownloader.Status _status= TemplateDownloader.Status.NOT_STARTED;
+    protected TemplateDownloader.Status _status = TemplateDownloader.Status.NOT_STARTED;
     protected String _errorString = " ";
     protected long _remoteSize = 0;
     protected long _downloadTime = 0;
@@ -40,15 +40,15 @@ public abstract class TemplateDownloaderBase extends ManagedContextRunnable impl
     protected StorageLayer _storage;
     protected boolean _inited = false;
     private long MAX_TEMPLATE_SIZE_IN_BYTES;
-    
+
     public TemplateDownloaderBase(StorageLayer storage, String downloadUrl, String toDir, long maxTemplateSizeInBytes, DownloadCompleteCallback callback) {
-    	_storage = storage;
+        _storage = storage;
         _downloadUrl = downloadUrl;
         _toDir = toDir;
         _callback = callback;
         _inited = true;
-        
-        this.MAX_TEMPLATE_SIZE_IN_BYTES  = maxTemplateSizeInBytes;
+
+        this.MAX_TEMPLATE_SIZE_IN_BYTES = maxTemplateSizeInBytes;
     }
 
     @Override
@@ -61,14 +61,14 @@ public abstract class TemplateDownloaderBase extends ManagedContextRunnable impl
         File file = new File(_toFile);
         return file.getAbsolutePath();
     }
-    
+
     @Override
     public int getDownloadPercent() {
         if (_remoteSize == 0) {
             return 0;
         }
-        
-        return (int)(100.0*_totalBytes/_remoteSize);
+
+        return (int)(100.0 * _totalBytes / _remoteSize);
     }
 
     @Override
@@ -99,18 +99,18 @@ public abstract class TemplateDownloaderBase extends ManagedContextRunnable impl
     @Override
     public boolean stopDownload() {
         switch (getStatus()) {
-        case IN_PROGRESS:
-        case UNKNOWN:
-        case NOT_STARTED:
-        case RECOVERABLE_ERROR:
-        case UNRECOVERABLE_ERROR:
-        case ABORTED:
-            _status = TemplateDownloader.Status.ABORTED;
-            break;
-        case DOWNLOAD_FINISHED:
-            break;
-        default:
-            break;
+            case IN_PROGRESS:
+            case UNKNOWN:
+            case NOT_STARTED:
+            case RECOVERABLE_ERROR:
+            case UNRECOVERABLE_ERROR:
+            case ABORTED:
+                _status = TemplateDownloader.Status.ABORTED;
+                break;
+            case DOWNLOAD_FINISHED:
+                break;
+            default:
+                break;
         }
         File f = new File(_toFile);
         if (f.exists()) {
@@ -118,11 +118,11 @@ public abstract class TemplateDownloaderBase extends ManagedContextRunnable impl
         }
         return true;
     }
-    
-    public long getMaxTemplateSizeInBytes() { 
-		return this.MAX_TEMPLATE_SIZE_IN_BYTES;
-	}
-    
+
+    public long getMaxTemplateSizeInBytes() {
+        return this.MAX_TEMPLATE_SIZE_IN_BYTES;
+    }
+
     @Override
     protected void runInContext() {
         try {
@@ -134,14 +134,14 @@ public abstract class TemplateDownloaderBase extends ManagedContextRunnable impl
         }
     }
 
-	@Override
-	public void setResume(boolean resume) {
-		_resume = resume;
-		
-	}
+    @Override
+    public void setResume(boolean resume) {
+        _resume = resume;
 
-	@Override
-	public boolean isInited() {
-		return _inited;
-	}
+    }
+
+    @Override
+    public boolean isInited() {
+        return _inited;
+    }
 }

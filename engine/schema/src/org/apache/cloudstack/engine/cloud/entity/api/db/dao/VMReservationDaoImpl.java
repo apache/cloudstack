@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.engine.cloud.entity.api.db.dao;
 
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,12 +37,13 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = { VMReservationDao.class })
+@Local(value = {VMReservationDao.class})
 public class VMReservationDaoImpl extends GenericDaoBase<VMReservationVO, Long> implements VMReservationDao {
 
     protected SearchBuilder<VMReservationVO> VmIdSearch;
 
-    @Inject protected VolumeReservationDao _volumeReservationDao;
+    @Inject
+    protected VolumeReservationDao _volumeReservationDao;
 
     public VMReservationDaoImpl() {
     }
@@ -63,14 +63,13 @@ public class VMReservationDaoImpl extends GenericDaoBase<VMReservationVO, Long> 
         return vmRes;
     }
 
-
     @Override
-    public void loadVolumeReservation(VMReservationVO reservation){
-        if(reservation != null){
+    public void loadVolumeReservation(VMReservationVO reservation) {
+        if (reservation != null) {
             List<VolumeReservationVO> volumeResList = _volumeReservationDao.listVolumeReservation(reservation.getId());
-            Map<Long, Long> volumeReservationMap = new HashMap<Long,Long>();
+            Map<Long, Long> volumeReservationMap = new HashMap<Long, Long>();
 
-            for(VolumeReservationVO res : volumeResList){
+            for (VolumeReservationVO res : volumeResList) {
                 volumeReservationMap.put(res.getVolumeId(), res.getPoolId());
             }
             reservation.setVolumeReservation(volumeReservationMap);
@@ -94,9 +93,10 @@ public class VMReservationDaoImpl extends GenericDaoBase<VMReservationVO, Long> 
     }
 
     private void saveVolumeReservation(VMReservationVO reservation) {
-        if(reservation.getVolumeReservation() != null){
-            for(Long volumeId : reservation.getVolumeReservation().keySet()){
-                VolumeReservationVO volumeReservation = new VolumeReservationVO(reservation.getVmId(), volumeId, reservation.getVolumeReservation().get(volumeId), reservation.getId());
+        if (reservation.getVolumeReservation() != null) {
+            for (Long volumeId : reservation.getVolumeReservation().keySet()) {
+                VolumeReservationVO volumeReservation = new VolumeReservationVO(reservation.getVmId(), volumeId, reservation.getVolumeReservation().get(volumeId),
+                    reservation.getId());
                 _volumeReservationDao.persist(volumeReservation);
             }
         }

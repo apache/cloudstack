@@ -29,11 +29,10 @@ import com.cloud.host.Host.Type;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value={HostAllocator.class})
+@Local(value = {HostAllocator.class})
 public class FirstFitRoutingAllocator extends FirstFitAllocator {
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type,
-			ExcludeList avoid, int returnUpTo) {
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo) {
         try {
             NDC.push("FirstFitRoutingAllocator");
             if (type != Host.Type.Routing) {

@@ -26,8 +26,7 @@ import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.log4j.Logger;
 
-
-@APICommand(name = "listSecurityGroups", description="Lists security groups", responseObject=SecurityGroupResponse.class)
+@APICommand(name = "listSecurityGroups", description = "Lists security groups", responseObject = SecurityGroupResponse.class)
 public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListSecurityGroupsCmd.class.getName());
 
@@ -37,13 +36,13 @@ public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.SECURITY_GROUP_NAME, type=CommandType.STRING, description="lists security groups by name")
+    @Parameter(name = ApiConstants.SECURITY_GROUP_NAME, type = CommandType.STRING, description = "lists security groups by name")
     private String securityGroupName;
 
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, description="lists security groups by virtual machine id", entityType=UserVmResponse.class)
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, description = "lists security groups by virtual machine id", entityType = UserVmResponse.class)
     private Long virtualMachineId;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, description="list the security group by the id provided", entityType=SecurityGroupResponse.class)
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, description = "list the security group by the id provided", entityType = SecurityGroupResponse.class)
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -57,7 +56,7 @@ public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
         return virtualMachineId;
     }
 
-    public Long getId(){
+    public Long getId() {
         return id;
     }
 
@@ -71,7 +70,7 @@ public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         ListResponse<SecurityGroupResponse> response = _queryService.searchForSecurityGroups(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

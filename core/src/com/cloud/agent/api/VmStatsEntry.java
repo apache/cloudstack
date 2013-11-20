@@ -20,62 +20,59 @@ import com.cloud.vm.VmStats;
 
 public class VmStatsEntry implements VmStats {
 
-	double cpuUtilization;
-	double networkReadKBs;
-	double networkWriteKBs;
+    double cpuUtilization;
+    double networkReadKBs;
+    double networkWriteKBs;
     double diskReadIOs;
     double diskWriteIOs;
     double diskReadKBs;
     double diskWriteKBs;
-	int numCPUs;
-	String entityType;
+    int numCPUs;
+    String entityType;
 
     public VmStatsEntry() {
     }
 
-    public VmStatsEntry(double cpuUtilization, double networkReadKBs, double networkWriteKBs, int numCPUs, String entityType)
-    {
+    public VmStatsEntry(double cpuUtilization, double networkReadKBs, double networkWriteKBs, int numCPUs, String entityType) {
         this.cpuUtilization = cpuUtilization;
         this.networkReadKBs = networkReadKBs;
         this.networkWriteKBs = networkWriteKBs;
         this.numCPUs = numCPUs;
         this.entityType = entityType;
     }
-    
-    public VmStatsEntry(double cpuUtilization, double networkReadKBs, double networkWriteKBs, 
-            double diskReadKBs, double diskWriteKBs, int numCPUs, String entityType) 
-    {
+
+    public VmStatsEntry(double cpuUtilization, double networkReadKBs, double networkWriteKBs, double diskReadKBs, double diskWriteKBs, int numCPUs, String entityType) {
         this.cpuUtilization = cpuUtilization;
         this.networkReadKBs = networkReadKBs;
         this.networkWriteKBs = networkWriteKBs;
         this.diskReadKBs = diskReadKBs;
-        this.diskWriteKBs = diskWriteKBs;        
+        this.diskWriteKBs = diskWriteKBs;
         this.numCPUs = numCPUs;
         this.entityType = entityType;
     }
 
     public double getCPUUtilization() {
-    	return cpuUtilization;
+        return cpuUtilization;
     }
 
     public void setCPUUtilization(double cpuUtilization) {
-    	this.cpuUtilization = cpuUtilization;
+        this.cpuUtilization = cpuUtilization;
     }
 
     public double getNetworkReadKBs() {
-    	return networkReadKBs;
+        return networkReadKBs;
     }
 
     public void setNetworkReadKBs(double networkReadKBs) {
-    	this.networkReadKBs = networkReadKBs;
+        this.networkReadKBs = networkReadKBs;
     }
 
     public double getNetworkWriteKBs() {
-    	return networkWriteKBs;
+        return networkWriteKBs;
     }
 
     public void setNetworkWriteKBs(double networkWriteKBs) {
-    	this.networkWriteKBs = networkWriteKBs;
+        this.networkWriteKBs = networkWriteKBs;
     }
 
     public double getDiskReadIOs() {
@@ -111,20 +108,19 @@ public class VmStatsEntry implements VmStats {
     }
 
     public int getNumCPUs() {
-    	return numCPUs;
+        return numCPUs;
     }
 
     public void setNumCPUs(int numCPUs) {
-    	this.numCPUs = numCPUs;
+        this.numCPUs = numCPUs;
     }
 
-    public String getEntityType(){
-    	return this.entityType;
+    public String getEntityType() {
+        return this.entityType;
     }
 
-    public void setEntityType(String entityType){
-    	this.entityType = entityType;
+    public void setEntityType(String entityType) {
+        this.entityType = entityType;
     }
-
 
 }

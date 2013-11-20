@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.storage.test;
 
-
 import com.cloud.storage.snapshot.SnapshotScheduler;
 import com.cloud.storage.snapshot.SnapshotSchedulerImpl;
 import com.cloud.user.DomainManager;
@@ -36,7 +35,7 @@ import org.springframework.context.annotation.Bean;
 import java.util.HashSet;
 import java.util.Set;
 
-public class FakeDriverTestConfiguration extends ChildTestConfiguration{
+public class FakeDriverTestConfiguration extends ChildTestConfiguration {
     @Bean
     public CloudStackPrimaryDataStoreProviderImpl dataStoreProvider() {
         CloudStackPrimaryDataStoreProviderImpl provider = Mockito.mock(CloudStackPrimaryDataStoreProviderImpl.class);
@@ -66,4 +65,3 @@ public class FakeDriverTestConfiguration extends ChildTestConfiguration{
         return ComponentContext.inject(DefaultEndPointSelector.class);
     }
 }
-

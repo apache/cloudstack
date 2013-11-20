@@ -26,10 +26,12 @@ import com.cloud.host.Status;
 
 public interface AgentHook {
     void onLoadReport(ConsoleProxyLoadReportCommand cmd);
+
     AgentControlAnswer onConsoleAccessAuthentication(ConsoleAccessAuthenticationCommand cmd);
 
     void onAgentConnect(Host host, StartupCommand cmd);
 
     public void onAgentDisconnect(long agentId, Status state);
-	public void startAgentHttpHandlerInVM(StartupProxyCommand startupCmd);
+
+    public void startAgentHttpHandlerInVM(StartupProxyCommand startupCmd);
 }

@@ -32,9 +32,9 @@ import java.util.List;
 @Component
 @Local(value = VpcGatewayDao.class)
 @DB()
-public class VpcGatewayDaoImpl extends GenericDaoBase<VpcGatewayVO, Long> implements VpcGatewayDao{
+public class VpcGatewayDaoImpl extends GenericDaoBase<VpcGatewayVO, Long> implements VpcGatewayDao {
     protected final SearchBuilder<VpcGatewayVO> AllFieldsSearch;
-    
+
     protected VpcGatewayDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("vpcId", AllFieldsSearch.entity().getVpcId(), SearchCriteria.Op.EQ);
@@ -45,7 +45,6 @@ public class VpcGatewayDaoImpl extends GenericDaoBase<VpcGatewayVO, Long> implem
         AllFieldsSearch.done();
     }
 
-
     @Override
     public VpcGatewayVO getPrivateGatewayForVpc(long vpcId) {
         SearchCriteria<VpcGatewayVO> sc = AllFieldsSearch.create();
@@ -55,9 +54,8 @@ public class VpcGatewayDaoImpl extends GenericDaoBase<VpcGatewayVO, Long> implem
         return findOneBy(sc);
     }
 
-
     @Override
-    public Long getNetworkAclIdForPrivateIp (long vpcId, long networkId, String ipaddr) {
+    public Long getNetworkAclIdForPrivateIp(long vpcId, long networkId, String ipaddr) {
         SearchCriteria<VpcGatewayVO> sc = AllFieldsSearch.create();
         sc.setParameters("vpcId", vpcId);
         sc.setParameters("networkid", networkId);

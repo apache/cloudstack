@@ -25,7 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "queryAsyncJobResult", description="Retrieves the current status of asynchronous job.", responseObject=AsyncJobResponse.class)
+@APICommand(name = "queryAsyncJobResult", description = "Retrieves the current status of asynchronous job.", responseObject = AsyncJobResponse.class)
 public class QueryAsyncJobResultCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(QueryAsyncJobResultCmd.class.getName());
 
@@ -35,8 +35,7 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.JOB_ID, type=CommandType.UUID, entityType=AsyncJobResponse.class,
-            required=true, description="the ID of the asychronous job")
+    @Parameter(name = ApiConstants.JOB_ID, type = CommandType.UUID, entityType = AsyncJobResponse.class, required = true, description = "the ID of the asychronous job")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -62,7 +61,7 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         AsyncJobResponse response = _responseGenerator.queryJobResult(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

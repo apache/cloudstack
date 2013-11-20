@@ -56,29 +56,24 @@ public class AddSecondaryStorageCmdTest extends TestCase {
 
         ImageStore store = Mockito.mock(ImageStore.class);
 
-        Mockito.when(resourceService.discoverImageStore(addImageStoreCmd))
-                .thenReturn(store);
+        Mockito.when(resourceService.discoverImageStore(addImageStoreCmd)).thenReturn(store);
 
-        ResponseGenerator responseGenerator = Mockito
-                .mock(ResponseGenerator.class);
+        ResponseGenerator responseGenerator = Mockito.mock(ResponseGenerator.class);
         addImageStoreCmd._responseGenerator = responseGenerator;
 
         ImageStoreResponse responseHost = new ImageStoreResponse();
         responseHost.setName("Test");
 
-        Mockito.when(responseGenerator.createImageStoreResponse(store)).thenReturn(
-                responseHost);
+        Mockito.when(responseGenerator.createImageStoreResponse(store)).thenReturn(responseHost);
 
         addImageStoreCmd.execute();
 
         Mockito.verify(responseGenerator).createImageStoreResponse(store);
 
-        ImageStoreResponse actualResponse = (ImageStoreResponse) addImageStoreCmd
-                .getResponseObject();
+        ImageStoreResponse actualResponse = (ImageStoreResponse)addImageStoreCmd.getResponseObject();
 
         Assert.assertEquals(responseHost, actualResponse);
-        Assert.assertEquals("addimagestoreresponse",
-                actualResponse.getResponseName());
+        Assert.assertEquals("addimagestoreresponse", actualResponse.getResponseName());
 
     }
 
@@ -88,14 +83,12 @@ public class AddSecondaryStorageCmdTest extends TestCase {
         StorageService resourceService = Mockito.mock(StorageService.class);
         addImageStoreCmd._storageService = resourceService;
 
-        Mockito.when(resourceService.discoverImageStore(addImageStoreCmd))
-                .thenReturn(null);
+        Mockito.when(resourceService.discoverImageStore(addImageStoreCmd)).thenReturn(null);
 
         try {
             addImageStoreCmd.execute();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to add secondary storage",
-                    exception.getDescription());
+            Assert.assertEquals("Failed to add secondary storage", exception.getDescription());
         }
 
     }

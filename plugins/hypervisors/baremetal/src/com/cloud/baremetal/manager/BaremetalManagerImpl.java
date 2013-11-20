@@ -50,68 +50,67 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = {BaremetalManager.class})
-public class BaremetalManagerImpl extends ManagerBase implements BaremetalManager,  StateListener<State, VirtualMachine.Event, VirtualMachine> {
-	private static final Logger s_logger = Logger.getLogger(BaremetalManagerImpl.class);
-	
-	@Inject
-	protected HostDao _hostDao;
-	
-	@Override
-	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-		VirtualMachine.State.getStateMachine().registerListener(this);
-		return true;
-	}
+public class BaremetalManagerImpl extends ManagerBase implements BaremetalManager, StateListener<State, VirtualMachine.Event, VirtualMachine> {
+    private static final Logger s_logger = Logger.getLogger(BaremetalManagerImpl.class);
 
-	@Override
-	public boolean start() {
-		return true;
-	}
+    @Inject
+    protected HostDao _hostDao;
 
-	@Override
-	public boolean stop() {
-		return true;
-	}
-
-	@Override
-	public String getName() {
-		return "Baremetal Manager";
-	}
-
-	@Override
-    public boolean preStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
-	    return false;
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        VirtualMachine.State.getStateMachine().registerListener(this);
+        return true;
     }
 
-	@Override
+    @Override
+    public boolean start() {
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return "Baremetal Manager";
+    }
+
+    @Override
+    public boolean preStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
+        return false;
+    }
+
+    @Override
     public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
-		if (newState != State.Starting && newState != State.Error && newState != State.Expunging) {
-			return true;
-		}
-		
-		if (vo.getHypervisorType() != HypervisorType.BareMetal) {
-		    return true;
-		}
-		
-		HostVO host = _hostDao.findById(vo.getHostId());
-		if (host == null) {
-			s_logger.debug("Skip oldState " + oldState + " to " + "newState " + newState + " transimtion");
-			return true;
-		}
-		_hostDao.loadDetails(host);
-		
-		if (newState == State.Starting) {
-			host.setDetail("vmName", vo.getInstanceName());
-			s_logger.debug("Add vmName " + host.getDetail("vmName") + " to host " + host.getId() + " details");
-		} else {
-			if (host.getDetail("vmName") != null && host.getDetail("vmName").equalsIgnoreCase(vo.getInstanceName())) {
-				s_logger.debug("Remove vmName " + host.getDetail("vmName") + " from host " + host.getId() + " details");
-				host.getDetails().remove("vmName");
-			}
-		}
-		_hostDao.saveDetails(host);
-		
-		
-		return true;
+        if (newState != State.Starting && newState != State.Error && newState != State.Expunging) {
+            return true;
+        }
+
+        if (vo.getHypervisorType() != HypervisorType.BareMetal) {
+            return true;
+        }
+
+        HostVO host = _hostDao.findById(vo.getHostId());
+        if (host == null) {
+            s_logger.debug("Skip oldState " + oldState + " to " + "newState " + newState + " transimtion");
+            return true;
+        }
+        _hostDao.loadDetails(host);
+
+        if (newState == State.Starting) {
+            host.setDetail("vmName", vo.getInstanceName());
+            s_logger.debug("Add vmName " + host.getDetail("vmName") + " to host " + host.getId() + " details");
+        } else {
+            if (host.getDetail("vmName") != null && host.getDetail("vmName").equalsIgnoreCase(vo.getInstanceName())) {
+                s_logger.debug("Remove vmName " + host.getDetail("vmName") + " from host " + host.getId() + " details");
+                host.getDetails().remove("vmName");
+            }
+        }
+        _hostDao.saveDetails(host);
+
+        return true;
     }
 
     @Override

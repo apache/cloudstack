@@ -42,27 +42,31 @@ import com.cloud.network.dao.ExternalFirewallDeviceVO;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "addSrxFirewall", responseObject=SrxFirewallResponse.class, description="Adds a SRX firewall device")
+@APICommand(name = "addSrxFirewall", responseObject = SrxFirewallResponse.class, description = "Adds a SRX firewall device")
 public class AddSrxFirewallCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddSrxFirewallCmd.class.getName());
     private static final String s_name = "addsrxfirewallresponse";
-    @Inject JuniperSRXFirewallElementService _srxFwService;
+    @Inject
+    JuniperSRXFirewallElementService _srxFwService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
-            required=true, description="the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = PhysicalNetworkResponse.class,
+               required = true,
+               description = "the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the SRX appliance.")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "URL of the SRX appliance.")
     private String url;
 
-    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="Credentials to reach SRX firewall device")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Credentials to reach SRX firewall device")
     private String username;
-    
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Credentials to reach SRX firewall device")
+
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "Credentials to reach SRX firewall device")
     private String password;
 
     @Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE, type = CommandType.STRING, required = true, description = "supports only JuniperSRXFirewall")
@@ -108,7 +112,7 @@ public class AddSrxFirewallCmd extends BaseAsyncCmd {
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add SRX firewall due to internal error.");
             }
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
@@ -124,7 +128,7 @@ public class AddSrxFirewallCmd extends BaseAsyncCmd {
     public String getEventType() {
         return EventTypes.EVENT_EXTERNAL_FIREWALL_DEVICE_ADD;
     }
- 
+
     @Override
     public String getCommandName() {
         return s_name;

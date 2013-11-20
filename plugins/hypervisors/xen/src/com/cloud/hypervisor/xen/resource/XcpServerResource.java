@@ -35,7 +35,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-@Local(value=ServerResource.class)
+@Local(value = ServerResource.class)
 public class XcpServerResource extends CitrixResourceBase {
     private final static Logger s_logger = Logger.getLogger(XcpServerResource.class);
     private static final long mem_32m = 33554432L;
@@ -48,7 +48,7 @@ public class XcpServerResource extends CitrixResourceBase {
     @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof NetworkUsageCommand) {
-            return execute((NetworkUsageCommand) cmd);
+            return execute((NetworkUsageCommand)cmd);
         } else {
             return super.executeRequest(cmd);
         }
@@ -75,7 +75,7 @@ public class XcpServerResource extends CitrixResourceBase {
     protected NetworkUsageAnswer execute(NetworkUsageCommand cmd) {
         try {
             Connection conn = getConnection();
-            if(cmd.getOption()!=null && cmd.getOption().equals("create") ){
+            if (cmd.getOption() != null && cmd.getOption().equals("create")) {
                 String result = networkUsage(conn, cmd.getPrivateIP(), "create", null);
                 NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
                 return answer;
@@ -142,9 +142,8 @@ public class XcpServerResource extends CitrixResourceBase {
     protected void setMemory(Connection conn, VM vm, long minMemsize, long maxMemsize) throws XmlRpcException, XenAPIException {
         //setMemoryLimits(staticMin, staticMax, dynamicMin, dynamicMax)
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Memory Limits for VM [" + vm.getNameLabel(conn) +
-                    "[staticMin:" + mem_32m + ", staticMax:" + maxMemsize
-                    + ", dynamicMin: " + minMemsize + ", dynamicMax:" + maxMemsize+"]]");
+            s_logger.debug("Memory Limits for VM [" + vm.getNameLabel(conn) + "[staticMin:" + mem_32m + ", staticMax:" + maxMemsize + ", dynamicMin: " + minMemsize +
+                           ", dynamicMax:" + maxMemsize + "]]");
         }
         vm.setMemoryLimits(conn, mem_32m, maxMemsize, minMemsize, maxMemsize);
     }

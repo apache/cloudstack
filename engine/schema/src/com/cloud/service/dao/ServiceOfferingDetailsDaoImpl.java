@@ -24,13 +24,12 @@ import org.springframework.stereotype.Component;
 import com.cloud.service.ServiceOfferingDetailsVO;
 
 @Component
-@Local(value=ServiceOfferingDetailsDao.class)
-public class ServiceOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<ServiceOfferingDetailsVO>
-        implements ServiceOfferingDetailsDao {
+@Local(value = ServiceOfferingDetailsDao.class)
+public class ServiceOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<ServiceOfferingDetailsVO> implements ServiceOfferingDetailsDao {
 
     @Override
     public void addDetail(long resourceId, String key, String value) {
         super.addDetail(new ServiceOfferingDetailsVO(resourceId, key, value));
     }
-    
+
 }

@@ -117,8 +117,7 @@ public class PrimaryDataStoreHelper {
         pool.setCapacityBytes(existingInfo.getCapacityBytes());
         pool.setStatus(StoragePoolStatus.Up);
         this.dataStoreDao.update(pool.getId(), pool);
-        this.storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE,
-                pool.getUsedBytes());
+        this.storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, pool.getUsedBytes());
         return dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
     }
 

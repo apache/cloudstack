@@ -89,8 +89,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
     }
 
     @Override
-    public void createAsync(DataObject data, DataStore store, AsyncCompletionCallback<CreateCmdResult> callback,
-            boolean noCopy) {
+    public void createAsync(DataObject data, DataStore store, AsyncCompletionCallback<CreateCmdResult> callback, boolean noCopy) {
         DataObjectInStore obj = objectInDataStoreMgr.findObject(data, store);
         DataObject objInStore = null;
         boolean freshNewTemplate = false;
@@ -166,8 +165,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
         return;
     }
 
-    protected Void createAsynCallback(AsyncCallbackDispatcher<DataObjectManagerImpl, CreateCmdResult> callback,
-            CreateContext<CreateCmdResult> context) {
+    protected Void createAsynCallback(AsyncCallbackDispatcher<DataObjectManagerImpl, CreateCmdResult> callback, CreateContext<CreateCmdResult> context) {
         CreateCmdResult result = callback.getResult();
         DataObject objInStrore = context.objInStrore;
         CreateCmdResult upResult = new CreateCmdResult(null, null);
@@ -249,8 +247,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
         motionSrv.copyAsync(srcData, destData, caller);
     }
 
-    protected Void copyCallback(AsyncCallbackDispatcher<DataObjectManagerImpl, CopyCommandResult> callback,
-            CopyContext<CreateCmdResult> context) {
+    protected Void copyCallback(AsyncCallbackDispatcher<DataObjectManagerImpl, CopyCommandResult> callback, CopyContext<CreateCmdResult> context) {
         CopyCommandResult result = callback.getResult();
         DataObject destObj = context.destObj;
 
@@ -325,8 +322,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
         return;
     }
 
-    protected Void deleteAsynCallback(AsyncCallbackDispatcher<DataObjectManagerImpl, CommandResult> callback,
-            DeleteContext<CommandResult> context) {
+    protected Void deleteAsynCallback(AsyncCallbackDispatcher<DataObjectManagerImpl, CommandResult> callback, DeleteContext<CommandResult> context) {
         DataObject destObj = context.obj;
 
         CommandResult res = callback.getResult();

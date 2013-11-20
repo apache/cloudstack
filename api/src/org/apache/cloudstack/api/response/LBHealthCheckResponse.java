@@ -26,12 +26,11 @@ import org.apache.cloudstack.api.EntityReference;
 import java.util.List;
 import java.util.UUID;
 
-@EntityReference(value=HealthCheckPolicy.class)
+@EntityReference(value = HealthCheckPolicy.class)
 public class LBHealthCheckResponse extends BaseResponse {
-@SerializedName("lbruleid")
+    @SerializedName("lbruleid")
     @Param(description = "the LB rule ID")
     private String lbRuleId;
-
 
     @SerializedName("account")
     @Param(description = "the account of the HealthCheck policy")

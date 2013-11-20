@@ -60,8 +60,8 @@ public class DirectAgentAttache extends AgentAttache {
             future.cancel(false);
         }
 
-        synchronized(this) {
-            if( _resource != null ) {
+        synchronized (this) {
+            if (_resource != null) {
                 _resource.disconnected();
                 _resource = null;
             }
@@ -108,7 +108,7 @@ public class DirectAgentAttache extends AgentAttache {
         if (answers != null && answers[0] instanceof StartupAnswer) {
             StartupAnswer startup = (StartupAnswer)answers[0];
             int interval = startup.getPingInterval();
-            s_logger.info("StartupAnswer received " + startup.getHostId() + " Interval = " + interval );
+            s_logger.info("StartupAnswer received " + startup.getHostId() + " Interval = " + interval);
             _futures.add(_agentMgr.getDirectAgentPool().scheduleAtFixedRate(new PingTask(), interval, interval, TimeUnit.SECONDS));
         }
     }
@@ -155,7 +155,7 @@ public class DirectAgentAttache extends AgentAttache {
                         s_logger.trace("SeqA " + _id + "-" + seq + ": " + new Request(_id, -1, cmd, false).toString());
                     }
 
-                    _mgr.handleCommands(DirectAgentAttache.this, seq, new Command[]{cmd});
+                    _mgr.handleCommands(DirectAgentAttache.this, seq, new Command[] {cmd});
                 } else {
                     s_logger.debug("Unable to send ping because agent is disconnected " + _id + "(" + _name + ")");
                 }
@@ -166,7 +166,6 @@ public class DirectAgentAttache extends AgentAttache {
             }
         }
     }
-
 
     protected class Task extends ManagedContextRunnable {
         Request _req;
@@ -214,7 +213,7 @@ public class DirectAgentAttache extends AgentAttache {
                     try {
                         if (resource != null) {
                             answer = resource.executeRequest(cmds[i]);
-                            if(answer == null) {
+                            if (answer == null) {
                                 s_logger.warn("Resource returned null answer!");
                                 answer = new Answer(cmds[i], false, "Resource returned null answer");
                             }

@@ -43,19 +43,19 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public interface BaremetalDhcpManager extends Manager, PluggableService {
     public static enum BaremetalDhcpType {
-        DNSMASQ,
-        DHCPD,
+        DNSMASQ, DHCPD,
     }
-	
-	boolean addVirtualMachineIntoNetwork(Network network, NicProfile nic, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException;
-	
-	BaremetalDhcpVO addDchpServer(AddBaremetalDhcpCmd cmd);
-	
-	BaremetalDhcpResponse generateApiResponse(BaremetalDhcpVO vo);
-	
-	List<BaremetalDhcpResponse> listBaremetalDhcps(ListBaremetalDhcpCmd cmd);
-	
-	public static final String BAREMETAL_DHCP_SERVICE_CAPABITLITY = "BaremetalDhcp";
-	public static final String BAREMETAL_DHCP_SERVICE_PROPERTIES = "baremetaldhcp_commands.properties";
-	public static final Provider BAREMETAL_DHCP_SERVICE_PROVIDER = new Provider("BaremetalDhcpProvider", true);
+
+    boolean addVirtualMachineIntoNetwork(Network network, NicProfile nic, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context)
+        throws ResourceUnavailableException;
+
+    BaremetalDhcpVO addDchpServer(AddBaremetalDhcpCmd cmd);
+
+    BaremetalDhcpResponse generateApiResponse(BaremetalDhcpVO vo);
+
+    List<BaremetalDhcpResponse> listBaremetalDhcps(ListBaremetalDhcpCmd cmd);
+
+    public static final String BAREMETAL_DHCP_SERVICE_CAPABITLITY = "BaremetalDhcp";
+    public static final String BAREMETAL_DHCP_SERVICE_PROPERTIES = "baremetaldhcp_commands.properties";
+    public static final Provider BAREMETAL_DHCP_SERVICE_PROVIDER = new Provider("BaremetalDhcpProvider", true);
 }

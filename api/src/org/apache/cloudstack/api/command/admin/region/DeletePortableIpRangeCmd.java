@@ -30,7 +30,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deletePortableIpRange", description="deletes a range of portable public IP's associated with a region", responseObject=SuccessResponse.class)
+@APICommand(name = "deletePortableIpRange", description = "deletes a range of portable public IP's associated with a region", responseObject = SuccessResponse.class)
 public class DeletePortableIpRangeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePortableIpRangeCmd.class.getName());
 
@@ -39,7 +39,7 @@ public class DeletePortableIpRangeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, required=true, entityType = PortableIpRangeResponse.class, description="Id of the portable ip range")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true, entityType = PortableIpRangeResponse.class, description = "Id of the portable ip range")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -65,7 +65,7 @@ public class DeletePortableIpRangeCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = _configService.deletePortableIpRange(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

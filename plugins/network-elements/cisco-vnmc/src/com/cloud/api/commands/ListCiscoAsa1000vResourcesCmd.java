@@ -42,24 +42,26 @@ import com.cloud.network.cisco.CiscoAsa1000vDeviceVO;
 import com.cloud.network.element.CiscoAsa1000vService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name="listCiscoAsa1000vResources", responseObject=CiscoAsa1000vResourceResponse.class, description="Lists Cisco ASA 1000v appliances")
+@APICommand(name = "listCiscoAsa1000vResources", responseObject = CiscoAsa1000vResourceResponse.class, description = "Lists Cisco ASA 1000v appliances")
 public class ListCiscoAsa1000vResourcesCmd extends BaseListCmd {
     private static final Logger s_logger = Logger.getLogger(ListCiscoAsa1000vResourcesCmd.class.getName());
     private static final String s_name = "listCiscoAsa1000vResources";
-    @Inject CiscoAsa1000vService _ciscoAsa1000vService;
+    @Inject
+    CiscoAsa1000vService _ciscoAsa1000vService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class, description="the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.RESOURCE_ID, type=CommandType.UUID, entityType=CiscoAsa1000vResourceResponse.class, description="Cisco ASA 1000v resource ID")
+    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.UUID, entityType = CiscoAsa1000vResourceResponse.class, description = "Cisco ASA 1000v resource ID")
     private Long ciscoAsa1000vResourceId;
 
-    @Parameter(name=ApiConstants.HOST_NAME, type=CommandType.STRING, description="Hostname or ip address of the Cisco ASA 1000v appliance.")
+    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, description = "Hostname or ip address of the Cisco ASA 1000v appliance.")
     private String host;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -75,6 +77,7 @@ public class ListCiscoAsa1000vResourcesCmd extends BaseListCmd {
     public String getManagementIp() {
         return host;
     }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -97,7 +100,7 @@ public class ListCiscoAsa1000vResourcesCmd extends BaseListCmd {
             response.setResponses(ciscoAsa1000vResourcesResponse);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

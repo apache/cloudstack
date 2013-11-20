@@ -25,7 +25,7 @@ import com.cloud.utils.db.GenericDao;
 
 public interface LunDao extends GenericDao<LunVO, Long> {
 
-	List<LunVO> listLunsByVolId(Long volId);
+    List<LunVO> listLunsByVolId(Long volId);
 
-	LunVO findByName(String name);
+    LunVO findByName(String name);
 }

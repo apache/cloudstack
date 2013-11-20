@@ -33,7 +33,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@APICommand(name = "dedicatePublicIpRange", description="Dedicates a Public IP range to an account", responseObject=VlanIpRangeResponse.class)
+@APICommand(name = "dedicatePublicIpRange", description = "Dedicates a Public IP range to an account", responseObject = VlanIpRangeResponse.class)
 public class DedicatePublicIpRangeCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DedicatePublicIpRangeCmd.class.getName());
 
@@ -43,20 +43,16 @@ public class DedicatePublicIpRangeCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = VlanIpRangeResponse.class,
-            required=true, description="the id of the VLAN IP range")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VlanIpRangeResponse.class, required = true, description = "the id of the VLAN IP range")
     private Long id;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true,
-            description="account who will own the VLAN")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "account who will own the VLAN")
     private String accountName;
 
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
-            description="project who will own the VLAN")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "project who will own the VLAN")
     private Long projectId;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
-            required=true, description="domain ID of the account owning a VLAN")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, required = true, description = "domain ID of the account owning a VLAN")
     private Long domainId;
 
     /////////////////////////////////////////////////////

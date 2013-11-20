@@ -34,7 +34,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 
-@APICommand(name = "enableStorageMaintenance", description="Puts storage pool into maintenance state", responseObject=StoragePoolResponse.class)
+@APICommand(name = "enableStorageMaintenance", description = "Puts storage pool into maintenance state", responseObject = StoragePoolResponse.class)
 public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(PreparePrimaryStorageForMaintenanceCmd.class.getName());
     private static final String s_name = "prepareprimarystorageformaintenanceresponse";
@@ -43,8 +43,7 @@ public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = StoragePoolResponse.class,
-            required=true, description="Primary storage ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = true, description = "Primary storage ID")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -95,13 +94,13 @@ public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "preparing storage pool: " + getId() + " for maintenance";
+        return "preparing storage pool: " + getId() + " for maintenance";
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException{
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException {
         StoragePool result = _storageService.preparePrimaryStorageForMaintenance(getId());
-        if (result != null){
+        if (result != null) {
             StoragePoolResponse response = _responseGenerator.createStoragePoolResponse(result);
             response.setResponseName("storagepool");
             this.setResponseObject(response);

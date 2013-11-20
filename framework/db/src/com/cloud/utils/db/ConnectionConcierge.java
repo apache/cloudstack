@@ -194,7 +194,7 @@ public class ConnectionConcierge {
             if (_executor != null) {
                 try {
                     _executor.shutdown();
-                } catch(Exception e) {
+                } catch (Exception e) {
                     s_logger.error("Unable to shutdown executor", e);
                 }
             }

@@ -51,24 +51,25 @@ public interface CapacityManager {
     public boolean releaseVmCapacity(VirtualMachine vm, boolean moveFromReserved, boolean moveToReservered, Long hostId);
 
     void allocateVmCapacity(VirtualMachine vm, boolean fromLastHost);
-    
+
     /**
      * @param hostId Id of the host to check capacity
      * @param cpu required CPU
      * @param ram required RAM
      * @param cpuOverprovisioningFactor factor to apply to the actual host cpu
      */
-    boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOverprovisioningFactor, float memoryOvercommitRatio, boolean considerReservedCapacity);
+    boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOverprovisioningFactor, float memoryOvercommitRatio,
+        boolean considerReservedCapacity);
 
-	void updateCapacityForHost(Host host);
-    
-	/**
+    void updateCapacityForHost(Host host);
+
+    /**
      * @param pool storage pool
      * @param templateForVmCreation template that will be used for vm creation
      * @return total allocated capacity for the storage pool
      */
     long getAllocatedPoolCapacity(StoragePoolVO pool, VMTemplateVO templateForVmCreation);
-    
+
     /**
      * Check if specified host's running VM count has reach hypervisor limit
      * @param host the host to be checked

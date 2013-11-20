@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
 @Table(name = "storage_pool_details")
-public class PrimaryDataStoreDetailVO implements ResourceDetail{
+public class PrimaryDataStoreDetailVO implements ResourceDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -41,8 +41,8 @@ public class PrimaryDataStoreDetailVO implements ResourceDetail{
 
     @Column(name = "value")
     String value;
-    
-    @Column(name="display")
+
+    @Column(name = "display")
     private boolean display;
 
     public PrimaryDataStoreDetailVO(long poolId, String name, String value) {
@@ -50,7 +50,7 @@ public class PrimaryDataStoreDetailVO implements ResourceDetail{
         this.name = name;
         this.value = value;
     }
-    
+
     protected PrimaryDataStoreDetailVO() {
     }
 
@@ -73,7 +73,7 @@ public class PrimaryDataStoreDetailVO implements ResourceDetail{
     public String getValue() {
         return value;
     }
-    
+
     @Override
     public boolean isDisplay() {
         return display;

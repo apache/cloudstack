@@ -25,10 +25,10 @@ public class StatusResponse extends BaseResponse {
     private Boolean status;
 
     public Boolean getStatus() {
-       return status;
+        return status;
     }
 
-   public void setStatus(Boolean status) {
-       this.status = status;
-   }
+    public void setStatus(Boolean status) {
+        this.status = status;
+    }
 }

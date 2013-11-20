@@ -33,7 +33,7 @@ import java.util.Map;
 
 @Local(value = NetworkDao.class)
 @DB()
-public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements NetworkDao{
+public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements NetworkDao {
 
     /* (non-Javadoc)
      * @see com.cloud.network.dao.NetworkDao#listByOwner(long)
@@ -149,7 +149,7 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     @Override
     public void changeActiveNicsBy(long networkId, int nicsCount) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -176,7 +176,7 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     @Override
     public void clearCheckForGc(long networkId) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -194,7 +194,7 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     @Override
     public void addDomainToNetwork(long networkId, long domainId, Boolean subdomainAccess) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -248,7 +248,7 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     @Override
     public void persistNetworkServiceProviders(long networkId, Map<String, String> serviceProviderMap) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -275,7 +275,7 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     @Override
     public void setCheckForGc(long networkId) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -367,7 +367,6 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
         return null;
     }
 
-    
     @Override
     public int getNonSystemNetworkCountByVpcId(long vpcId) {
         return 0;

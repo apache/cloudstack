@@ -31,8 +31,7 @@ public interface StoragePoolJoinDao extends GenericDao<StoragePoolJoinVO, Long> 
 
     StoragePoolResponse newStoragePoolForMigrationResponse(StoragePoolJoinVO host);
 
-    StoragePoolResponse setStoragePoolForMigrationResponse(StoragePoolResponse response,
-            StoragePoolJoinVO host);
+    StoragePoolResponse setStoragePoolForMigrationResponse(StoragePoolResponse response, StoragePoolJoinVO host);
 
     List<StoragePoolJoinVO> newStoragePoolView(StoragePool group);
 

@@ -20,7 +20,8 @@ public class TransportZoneBinding {
     private String zoneUuid;
     private String transportType;
 
-    public TransportZoneBinding() {}
+    public TransportZoneBinding() {
+    }
 
     public TransportZoneBinding(String zoneUuid, String transportType) {
         this.zoneUuid = zoneUuid;

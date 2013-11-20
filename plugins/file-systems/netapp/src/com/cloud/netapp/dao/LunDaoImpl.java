@@ -32,15 +32,15 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={LunDao.class})
+@Local(value = {LunDao.class})
 public class LunDaoImpl extends GenericDaoBase<LunVO, Long> implements LunDao {
     private static final Logger s_logger = Logger.getLogger(PoolDaoImpl.class);
-		
-    protected final SearchBuilder<LunVO> LunSearch;    
-    protected final SearchBuilder<LunVO> LunNameSearch;    
-    	    
-	protected LunDaoImpl() {
-        
+
+    protected final SearchBuilder<LunVO> LunSearch;
+    protected final SearchBuilder<LunVO> LunNameSearch;
+
+    protected LunDaoImpl() {
+
         LunSearch = createSearchBuilder();
         LunSearch.and("volumeId", LunSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         LunSearch.done();
@@ -48,22 +48,21 @@ public class LunDaoImpl extends GenericDaoBase<LunVO, Long> implements LunDao {
         LunNameSearch = createSearchBuilder();
         LunNameSearch.and("name", LunNameSearch.entity().getLunName(), SearchCriteria.Op.EQ);
         LunNameSearch.done();
-        
-	}
 
-	@Override
+    }
+
+    @Override
     public List<LunVO> listLunsByVolId(Long volId) {
-		Filter searchFilter = new Filter(LunVO.class, "id", Boolean.TRUE, Long.valueOf(0), Long.valueOf(10000));
-		
+        Filter searchFilter = new Filter(LunVO.class, "id", Boolean.TRUE, Long.valueOf(0), Long.valueOf(10000));
+
         SearchCriteria sc = LunSearch.create();
         sc.setParameters("volumeId", volId);
-        List<LunVO> lunList = listBy(sc,searchFilter);
-        
+        List<LunVO> lunList = listBy(sc, searchFilter);
+
         return lunList;
     }
 
-
-	@Override
+    @Override
     public LunVO findByName(String name) {
         SearchCriteria sc = LunNameSearch.create();
         sc.setParameters("name", name);

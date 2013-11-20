@@ -42,8 +42,7 @@ public class ReleaseHostReservationCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=HostResponse.class,
-            required=true, description="the host ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "the host ID")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -94,7 +93,7 @@ public class ReleaseHostReservationCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = _resourceService.releaseHostReservation(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

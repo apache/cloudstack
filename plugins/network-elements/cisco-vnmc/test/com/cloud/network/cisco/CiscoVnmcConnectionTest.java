@@ -27,7 +27,6 @@ import org.junit.Test;
 import com.cloud.network.cisco.CiscoVnmcConnectionImpl;
 import com.cloud.utils.exception.ExecutionException;
 
-
 @Ignore("Requires actual VNMC to connect to")
 public class CiscoVnmcConnectionTest {
     static CiscoVnmcConnectionImpl connection;
@@ -46,7 +45,6 @@ public class CiscoVnmcConnectionTest {
         }
     }
 
-    
     @Test
     public void testLogin() {
         //fail("Not yet implemented");
@@ -59,7 +57,6 @@ public class CiscoVnmcConnectionTest {
         }
     }
 
-    
     @Test
     public void testCreateTenant() {
         //fail("Not yet implemented");
@@ -110,8 +107,7 @@ public class CiscoVnmcConnectionTest {
     @Test
     public void testCreateTenantVDCEdgeDeviceRoute() {
         try {
-            boolean response = connection.createTenantVDCEdgeStaticRoute(tenantName,
-                    "10.223.136.1", "0.0.0.0", "0.0.0.0");
+            boolean response = connection.createTenantVDCEdgeStaticRoute(tenantName, "10.223.136.1", "0.0.0.0", "0.0.0.0");
             assertTrue(response);
         } catch (ExecutionException e) {
             // TODO Auto-generated catch block
@@ -144,8 +140,7 @@ public class CiscoVnmcConnectionTest {
     @Test
     public void testCreateTenantVDCEdgeDhcpPolicy() {
         try {
-            boolean response = connection.createTenantVDCEdgeDhcpPolicy(tenantName,
-                    "10.1.1.2", "10.1.1.254", "255.255.255.0","4.4.4.4", tenantName+ ".net");
+            boolean response = connection.createTenantVDCEdgeDhcpPolicy(tenantName, "10.1.1.2", "10.1.1.254", "255.255.255.0", "4.4.4.4", tenantName + ".net");
             assertTrue(response);
         } catch (ExecutionException e) {
             // TODO Auto-generated catch block
@@ -215,8 +210,7 @@ public class CiscoVnmcConnectionTest {
     @Test
     public void testCreateEdgeFirewall() {
         try {
-            boolean response = connection.createEdgeFirewall(tenantName,
-                    "44.44.44.44", "192.168.1.1", "255.255.255.0", "255.255.255.192");
+            boolean response = connection.createEdgeFirewall(tenantName, "44.44.44.44", "192.168.1.1", "255.255.255.0", "255.255.255.192");
             assertTrue(response);
         } catch (ExecutionException e) {
             e.printStackTrace();
@@ -227,7 +221,7 @@ public class CiscoVnmcConnectionTest {
     public void testListUnassocAsa1000v() {
         try {
             Map<String, String> response = connection.listUnAssocAsa1000v();
-            assertTrue(response.size() >=0);
+            assertTrue(response.size() >= 0);
             fwDns = response;
         } catch (ExecutionException e) {
             // TODO Auto-generated catch block

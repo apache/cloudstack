@@ -32,7 +32,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "rebootSystemVm", description="Reboots a system VM.", responseObject=SystemVmResponse.class)
+@APICommand(name = "rebootSystemVm", description = "Reboots a system VM.", responseObject = SystemVmResponse.class)
 public class RebootSystemVmCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RebootSystemVmCmd.class.getName());
 
@@ -42,8 +42,7 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=SystemVmResponse.class,
-            required=true, description="The ID of the system virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SystemVmResponse.class, required = true, description = "The ID of the system virtual machine")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -76,17 +75,16 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
     @Override
     public String getEventType() {
         VirtualMachine.Type type = _mgr.findSystemVMTypeById(getId());
-        if(type == VirtualMachine.Type.ConsoleProxy){
+        if (type == VirtualMachine.Type.ConsoleProxy) {
             return EventTypes.EVENT_PROXY_REBOOT;
-        }
-        else{
+        } else {
             return EventTypes.EVENT_SSVM_REBOOT;
         }
     }
 
     @Override
     public String getEventDescription() {
-        return  "rebooting system vm: " + getId();
+        return "rebooting system vm: " + getId();
     }
 
     public ApiCommandJobType getInstanceType() {
@@ -98,8 +96,8 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Vm Id: "+getId());
+    public void execute() {
+        CallContext.current().setEventDetails("Vm Id: " + getId());
         VirtualMachine result = _mgr.rebootSystemVM(this);
         if (result != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(result);

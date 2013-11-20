@@ -31,39 +31,38 @@ import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="project_account")
+@Table(name = "project_account")
 @SuppressWarnings("unused")
 public class ProjectAccountVO implements ProjectAccount, InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
-    
-    @Column(name="project_id")
+
+    @Column(name = "project_id")
     private long projectId;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private long accountId;
-    
-    @Column(name="account_role")
-    @Enumerated(value=EnumType.STRING)
+
+    @Column(name = "account_role")
+    @Enumerated(value = EnumType.STRING)
     private Role accountRole = Role.Regular;
-    
-    @Column(name="project_account_id")
+
+    @Column(name = "project_account_id")
     long projectAccountId;
-    
-    @Column(name=GenericDao.CREATED_COLUMN)
+
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    
-    protected ProjectAccountVO(){
+    protected ProjectAccountVO() {
     }
-    
+
     public ProjectAccountVO(Project project, long accountId, Role accountRole) {
-       this.accountId = accountId;
-       this.accountRole = accountRole;
-       this.projectId = project.getId();
-       this.projectAccountId = project.getProjectAccountId();
+        this.accountId = accountId;
+        this.accountRole = accountRole;
+        this.projectId = project.getId();
+        this.projectAccountId = project.getProjectAccountId();
     }
 
     public long getId() {
@@ -84,7 +83,7 @@ public class ProjectAccountVO implements ProjectAccount, InternalIdentity {
     public Role getAccountRole() {
         return accountRole;
     }
-    
+
     @Override
     public long getProjectAccountId() {
         return projectAccountId;

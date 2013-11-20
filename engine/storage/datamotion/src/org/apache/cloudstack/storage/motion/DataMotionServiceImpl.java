@@ -62,17 +62,15 @@ public class DataMotionServiceImpl implements DataMotionService {
 
         DataMotionStrategy strategy = storageStrategyFactory.getDataMotionStrategy(srcData, destData);
         if (strategy == null) {
-            throw new CloudRuntimeException("Can't find strategy to move data. "+
-                    "Source: "+srcData.getType().name()+" '"+srcData.getUuid()+
-                    ", Destination: "+destData.getType().name()+" '"+destData.getUuid()+"'");
+            throw new CloudRuntimeException("Can't find strategy to move data. " + "Source: " + srcData.getType().name() + " '" + srcData.getUuid() + ", Destination: " +
+                                            destData.getType().name() + " '" + destData.getUuid() + "'");
         }
 
         strategy.copyAsync(srcData, destData, callback);
     }
 
     @Override
-    public void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost,
-            AsyncCompletionCallback<CopyCommandResult> callback) {
+    public void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
 
         DataMotionStrategy strategy = storageStrategyFactory.getDataMotionStrategy(volumeMap, srcHost, destHost);
         if (strategy == null) {
@@ -81,9 +79,8 @@ public class DataMotionServiceImpl implements DataMotionService {
                 volumeIds.add(volumeInfo.getUuid());
             }
 
-            throw new CloudRuntimeException("Can't find strategy to move data. "+
-                    "Source Host: "+srcHost.getName()+", Destination Host: "+destHost.getName()+
-                    ", Volume UUIDs: "+StringUtils.join(volumeIds, ","));
+            throw new CloudRuntimeException("Can't find strategy to move data. " + "Source Host: " + srcHost.getName() + ", Destination Host: " + destHost.getName() +
+                                            ", Volume UUIDs: " + StringUtils.join(volumeIds, ","));
         }
 
         strategy.copyAsync(volumeMap, vmTo, srcHost, destHost, callback);

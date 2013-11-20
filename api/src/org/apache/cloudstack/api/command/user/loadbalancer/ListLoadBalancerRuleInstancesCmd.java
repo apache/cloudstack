@@ -32,9 +32,11 @@ import org.apache.log4j.Logger;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listLoadBalancerRuleInstances", description="List all virtual machine instances that are assigned to a load balancer rule.", responseObject=UserVmResponse.class)
+@APICommand(name = "listLoadBalancerRuleInstances",
+            description = "List all virtual machine instances that are assigned to a load balancer rule.",
+            responseObject = UserVmResponse.class)
 public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger (ListLoadBalancerRuleInstancesCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListLoadBalancerRuleInstancesCmd.class.getName());
 
     private static final String s_name = "listloadbalancerruleinstancesresponse";
 
@@ -42,11 +44,12 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.APPLIED, type=CommandType.BOOLEAN, description="true if listing all virtual machines currently applied to the load balancer rule; default is true")
+    @Parameter(name = ApiConstants.APPLIED,
+               type = CommandType.BOOLEAN,
+               description = "true if listing all virtual machines currently applied to the load balancer rule; default is true")
     private Boolean applied;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = FirewallRuleResponse.class,
-            required=true, description="the ID of the load balancer rule")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the load balancer rule")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -71,17 +74,17 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
-        Pair<List<? extends UserVm>, List<String>> vmServiceMap =  _lbService.listLoadBalancerInstances(this);
+    public void execute() {
+        Pair<List<? extends UserVm>, List<String>> vmServiceMap = _lbService.listLoadBalancerInstances(this);
         List<? extends UserVm> result = vmServiceMap.first();
-        List<String> serviceStates  = vmServiceMap.second();
+        List<String> serviceStates = vmServiceMap.second();
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
         List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
         if (result != null) {
             vmResponses = _responseGenerator.createUserVmResponse("loadbalancerruleinstance", result.toArray(new UserVm[result.size()]));
         }
 
-        for (int i=0;i<result.size(); i++) {
+        for (int i = 0; i < result.size(); i++) {
             vmResponses.get(i).setServiceState(serviceStates.get(i));
         }
         response.setResponses(vmResponses);

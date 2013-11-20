@@ -23,11 +23,11 @@ import com.cloud.user.UserStatisticsVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface ExternalPublicIpStatisticsDao extends GenericDao<ExternalPublicIpStatisticsVO, Long> {
-	
-	ExternalPublicIpStatisticsVO lock(long accountId, long zoneId, String publicIpAddress);
 
-    ExternalPublicIpStatisticsVO findBy(long accountId, long zoneId, String publicIpAddress);    
-	
-	List<ExternalPublicIpStatisticsVO> listBy(long accountId, long zoneId);
-	
+    ExternalPublicIpStatisticsVO lock(long accountId, long zoneId, String publicIpAddress);
+
+    ExternalPublicIpStatisticsVO findBy(long accountId, long zoneId, String publicIpAddress);
+
+    List<ExternalPublicIpStatisticsVO> listBy(long accountId, long zoneId);
+
 }

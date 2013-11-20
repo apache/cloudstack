@@ -22,14 +22,14 @@ import static org.junit.Assert.assertEquals;
 public class NiciraTagTest {
     @Test
     public void testCreateTag() {
-        NiciraNvpTag tag = new NiciraNvpTag("scope","tag");
+        NiciraNvpTag tag = new NiciraNvpTag("scope", "tag");
         assertEquals("scope part set", "scope", tag.getScope());
         assertEquals("tag part set", "tag", tag.getTag());
     }
 
     @Test
     public void testCreateLongTag() {
-        NiciraNvpTag tag = new NiciraNvpTag("scope","verylongtagthatshouldattheminimumexceedthefortycharacterlenght");
+        NiciraNvpTag tag = new NiciraNvpTag("scope", "verylongtagthatshouldattheminimumexceedthefortycharacterlenght");
         assertEquals("scope part set", "scope", tag.getScope());
         assertEquals("tag part set", "verylongtagthatshouldattheminimumexceedt", tag.getTag());
     }

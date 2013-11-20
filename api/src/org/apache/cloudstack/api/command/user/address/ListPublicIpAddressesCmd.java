@@ -36,7 +36,7 @@ import org.apache.log4j.Logger;
 import com.cloud.network.IpAddress;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listPublicIpAddresses", description="Lists all public ip addresses", responseObject=IPAddressResponse.class)
+@APICommand(name = "listPublicIpAddresses", description = "Lists all public ip addresses", responseObject = IPAddressResponse.class)
 public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPublicIpAddressesCmd.class.getName());
 
@@ -46,46 +46,46 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ALLOCATED_ONLY, type=CommandType.BOOLEAN, description="limits search results to allocated public IP addresses")
+    @Parameter(name = ApiConstants.ALLOCATED_ONLY, type = CommandType.BOOLEAN, description = "limits search results to allocated public IP addresses")
     private Boolean allocatedOnly;
 
-    @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="the virtual network for the IP address")
+    @Parameter(name = ApiConstants.FOR_VIRTUAL_NETWORK, type = CommandType.BOOLEAN, description = "the virtual network for the IP address")
     private Boolean forVirtualNetwork;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = IPAddressResponse.class,
-            description="lists ip address by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IPAddressResponse.class, description = "lists ip address by id")
     private Long id;
 
-    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="lists the specified IP address")
+    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "lists the specified IP address")
     private String ipAddress;
 
-    @Parameter(name=ApiConstants.VLAN_ID, type=CommandType.UUID, entityType = VlanIpRangeResponse.class,
-            description="lists all public IP addresses by VLAN ID")
+    @Parameter(name = ApiConstants.VLAN_ID, type = CommandType.UUID, entityType = VlanIpRangeResponse.class, description = "lists all public IP addresses by VLAN ID")
     private Long vlanId;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            description="lists all public IP addresses by Zone ID")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "lists all public IP addresses by Zone ID")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.FOR_LOAD_BALANCING, type=CommandType.BOOLEAN, description="list only ips used for load balancing")
+    @Parameter(name = ApiConstants.FOR_LOAD_BALANCING, type = CommandType.BOOLEAN, description = "list only ips used for load balancing")
     private Boolean forLoadBalancing;
 
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
-            description="lists all public IP addresses by physical network id")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = PhysicalNetworkResponse.class,
+               description = "lists all public IP addresses by physical network id")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.ASSOCIATED_NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class,
-            description="lists all public IP addresses associated to the network specified")
+    @Parameter(name = ApiConstants.ASSOCIATED_NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = NetworkResponse.class,
+               description = "lists all public IP addresses associated to the network specified")
     private Long associatedNetworkId;
 
-    @Parameter(name=ApiConstants.IS_SOURCE_NAT, type=CommandType.BOOLEAN, description="list only source nat ip addresses")
+    @Parameter(name = ApiConstants.IS_SOURCE_NAT, type = CommandType.BOOLEAN, description = "list only source nat ip addresses")
     private Boolean isSourceNat;
 
-    @Parameter(name=ApiConstants.IS_STATIC_NAT, type=CommandType.BOOLEAN, description="list only static nat ip addresses")
+    @Parameter(name = ApiConstants.IS_STATIC_NAT, type = CommandType.BOOLEAN, description = "list only static nat ip addresses")
     private Boolean isStaticNat;
 
-    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.UUID, entityType = VpcResponse.class,
-            description="List ips belonging to the VPC")
+    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "List ips belonging to the VPC")
     private Long vpcId;
 
     /////////////////////////////////////////////////////
@@ -144,7 +144,7 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends IpAddress>, Integer> result = _mgr.searchForIPAddresses(this);
         ListResponse<IPAddressResponse> response = new ListResponse<IPAddressResponse>();
         List<IPAddressResponse> ipAddrResponses = new ArrayList<IPAddressResponse>();
@@ -162,7 +162,6 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.IpAddress;
     }
-
 
     public Boolean isForLoadBalancing() {
         return forLoadBalancing;

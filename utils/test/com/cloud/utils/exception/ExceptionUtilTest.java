@@ -37,11 +37,11 @@ public class ExceptionUtilTest {
         }
 
         ExceptionUtil.rethrow(fnfe, ClassNotFoundException.class);
-        
+
         try {
             ExceptionUtil.rethrow(fnfe, FileNotFoundException.class);
             fail();
-        } catch ( FileNotFoundException e ) {
+        } catch (FileNotFoundException e) {
         }
     }
 

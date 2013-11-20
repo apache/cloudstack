@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.element;
 
-
 import java.util.List;
 
 import com.cloud.deploy.DeployDestination;
@@ -30,14 +29,14 @@ import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.vm.ReservationContext;
 
-public interface VpcProvider extends NetworkElement{
+public interface VpcProvider extends NetworkElement {
     /**
      * Start vpc element as specified
      * @param vpc fully specified vpc configuration.
      * @throws InsufficientNetworkCapacityException TODO
      */
-    boolean implementVpc(Vpc vpc, DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    boolean implementVpc(Vpc vpc, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
+        InsufficientCapacityException;
 
     /**
      * @param vpc

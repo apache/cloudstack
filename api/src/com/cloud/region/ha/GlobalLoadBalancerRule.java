@@ -27,24 +27,21 @@ public interface GlobalLoadBalancerRule extends Identity, InternalIdentity, Cont
 
     enum Algorithm {
 
-        RoundRobin,
-        LeastConn,
-        Proximity;
+        RoundRobin, LeastConn, Proximity;
 
         public static boolean isValidAlgorithm(String algorithm) {
-            if (RoundRobin.name().equalsIgnoreCase(algorithm) ||
-                    LeastConn.name().equalsIgnoreCase(algorithm) ||
-                    Proximity.name().equalsIgnoreCase(algorithm)) {
+            if (RoundRobin.name().equalsIgnoreCase(algorithm) || LeastConn.name().equalsIgnoreCase(algorithm) || Proximity.name().equalsIgnoreCase(algorithm)) {
                 return true;
             }
             return false;
         }
     }
+
     enum Persistence {
 
         sourceip;
 
-        public static  boolean isValidPersistence(String persistence) {
+        public static boolean isValidPersistence(String persistence) {
             if (sourceip.name().equalsIgnoreCase(persistence)) {
                 return true;
             }
@@ -53,20 +50,17 @@ public interface GlobalLoadBalancerRule extends Identity, InternalIdentity, Cont
     }
 
     enum ServiceType {
-        tcp,
-        udp;
-        public static  boolean isValidServiceType(String serviceType) {
+        tcp, udp;
+        public static boolean isValidServiceType(String serviceType) {
             if (tcp.name().equalsIgnoreCase(serviceType) || udp.name().equalsIgnoreCase(serviceType)) {
                 return true;
             }
             return false;
         }
     }
+
     enum State {
-        Staged,
-        Add,
-        Active,
-        Revoke
+        Staged, Add, Active, Revoke
     }
 
     public String getName();

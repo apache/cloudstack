@@ -30,77 +30,79 @@ import com.cloud.bridge.service.core.s3.S3PolicyCondition.ConditionKeys;
  */
 public class S3PolicyContext {
 
-	private HttpServletRequest request = null;;
-	private String bucketName = null;
-	private String keyName = null;
-	private PolicyActions requestedAction;
-	private Map<ConditionKeys,String> evalParams = new HashMap<ConditionKeys,String>();
+    private HttpServletRequest request = null;;
+    private String bucketName = null;
+    private String keyName = null;
+    private PolicyActions requestedAction;
+    private Map<ConditionKeys, String> evalParams = new HashMap<ConditionKeys, String>();
 
-	public S3PolicyContext(PolicyActions requestedAction, String bucketName) {
-		this.requestedAction = requestedAction;
-		this.bucketName = bucketName;
-	}
-	
-	public HttpServletRequest getHttp() {
-		return request;
-	}
-	
-	public void setHttp(HttpServletRequest request) {
-		this.request = request;
-	}
-	
-	public String getRemoveAddr() {
-        if ( null == request ) 
-         	 return null;
-        else return request.getRemoteAddr();
-	}
-	
-	public boolean getIsHTTPSecure() {
-	    if ( null == request )
-	    	 return false;
-	    else return request.isSecure();
-	}
-	
-	public String getBucketName() {
-		return bucketName;
-	}
-	
-	public void setBucketName(String bucketName) {
-		this.bucketName = bucketName;
-	}
+    public S3PolicyContext(PolicyActions requestedAction, String bucketName) {
+        this.requestedAction = requestedAction;
+        this.bucketName = bucketName;
+    }
 
-	public String getKeyName() {
-		return keyName;
-	}
-	
-	public void setKeyName(String keyName) {
-		this.keyName = keyName;
-	}
-	
-	public PolicyActions getRequestedAction() {
-		return requestedAction;
-	}
-	
-	public void setRequestedAction(PolicyActions action) {
-		this.requestedAction = action;
-	}
-	
-	public String getEvalParam(ConditionKeys key) 
-	{	
-		String param = null;
-		
-	         if (ConditionKeys.UserAgent == key) {
-	        	 if (null != request) param = request.getHeader( "User-Agent" );
-	         }
-     	else if (ConditionKeys.Referer == key) {
-     		     if (null != request) param = request.getHeader( "Referer" );
-     	}
-     	else param = evalParams.get(key);
-	         
-	    return param;
-	}
-	
-	public void setEvalParam(ConditionKeys key, String value) {
-		evalParams.put(key, value);
-	}
+    public HttpServletRequest getHttp() {
+        return request;
+    }
+
+    public void setHttp(HttpServletRequest request) {
+        this.request = request;
+    }
+
+    public String getRemoveAddr() {
+        if (null == request)
+            return null;
+        else
+            return request.getRemoteAddr();
+    }
+
+    public boolean getIsHTTPSecure() {
+        if (null == request)
+            return false;
+        else
+            return request.isSecure();
+    }
+
+    public String getBucketName() {
+        return bucketName;
+    }
+
+    public void setBucketName(String bucketName) {
+        this.bucketName = bucketName;
+    }
+
+    public String getKeyName() {
+        return keyName;
+    }
+
+    public void setKeyName(String keyName) {
+        this.keyName = keyName;
+    }
+
+    public PolicyActions getRequestedAction() {
+        return requestedAction;
+    }
+
+    public void setRequestedAction(PolicyActions action) {
+        this.requestedAction = action;
+    }
+
+    public String getEvalParam(ConditionKeys key) {
+        String param = null;
+
+        if (ConditionKeys.UserAgent == key) {
+            if (null != request)
+                param = request.getHeader("User-Agent");
+        } else if (ConditionKeys.Referer == key) {
+            if (null != request)
+                param = request.getHeader("Referer");
+        } else
+            param = evalParams.get(key);
+
+        return param;
+    }
+
+    public void setEvalParam(ConditionKeys key, String value) {
+        evalParams.put(key, value);
+    }
 }

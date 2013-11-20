@@ -42,24 +42,22 @@ import com.cloud.utils.Pair;
 
 @APICommand(name = "listDedicatedClusters", description = "Lists dedicated clusters.", responseObject = DedicateClusterResponse.class)
 public class ListDedicatedClustersCmd extends BaseListCmd {
-	public static final Logger s_logger = Logger.getLogger(ListDedicatedClustersCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListDedicatedClustersCmd.class.getName());
 
     private static final String s_name = "listdedicatedclustersresponse";
-    @Inject DedicatedService dedicatedService;
+    @Inject
+    DedicatedService dedicatedService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType=ClusterResponse.class,
-            description="the ID of the cluster")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "the ID of the cluster")
     private Long clusterId;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            description="the ID of the domain associated with the cluster")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the ID of the domain associated with the cluster")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING,
-            description = "the name of the account associated with the cluster. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the name of the account associated with the cluster. Must be used with domainId.")
     private String accountName;
 
     @Parameter(name = ApiConstants.AFFINITY_GROUP_ID, type = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "list dedicated clusters by affinity group")
@@ -73,11 +71,11 @@ public class ListDedicatedClustersCmd extends BaseListCmd {
         return clusterId;
     }
 
-    public Long getDomainId(){
+    public Long getDomainId() {
         return domainId;
     }
 
-    public String getAccountName(){
+    public String getAccountName() {
         return accountName;
     }
 
@@ -95,7 +93,7 @@ public class ListDedicatedClustersCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends DedicatedResourceVO>, Integer> result = dedicatedService.listDedicatedClusters(this);
         ListResponse<DedicateClusterResponse> response = new ListResponse<DedicateClusterResponse>();
         List<DedicateClusterResponse> Responses = new ArrayList<DedicateClusterResponse>();

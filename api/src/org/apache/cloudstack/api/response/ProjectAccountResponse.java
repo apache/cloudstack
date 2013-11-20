@@ -26,7 +26,7 @@ import com.cloud.projects.ProjectAccount;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=ProjectAccount.class)
+@EntityReference(value = ProjectAccount.class)
 @SuppressWarnings("unused")
 public class ProjectAccountResponse extends BaseResponse implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.PROJECT_ID)

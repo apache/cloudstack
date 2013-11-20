@@ -23,6 +23,7 @@ public interface NicSecondaryIpDao extends GenericDao<NicSecondaryIpVO, Long> {
     List<NicSecondaryIpVO> listByVmId(long instanceId);
 
     List<String> listSecondaryIpAddressInNetwork(long networkConfigId);
+
     List<NicSecondaryIpVO> listByNetworkId(long networkId);
 
     NicSecondaryIpVO findByInstanceIdAndNetworkId(long networkId, long instanceId);
@@ -46,8 +47,7 @@ public interface NicSecondaryIpDao extends GenericDao<NicSecondaryIpVO, Long> {
 
     NicSecondaryIpVO findByIp4AddressAndNicId(String ip4Address, long nicId);
 
-    NicSecondaryIpVO findByIp4AddressAndNetworkIdAndInstanceId(long networkId,
-            Long vmId, String vmIp);
+    NicSecondaryIpVO findByIp4AddressAndNetworkIdAndInstanceId(long networkId, Long vmId, String vmIp);
 
     List<String> getSecondaryIpAddressesForNic(long nicId);
 }

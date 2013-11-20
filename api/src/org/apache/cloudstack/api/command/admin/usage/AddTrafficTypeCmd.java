@@ -34,7 +34,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.user.Account;
 
-@APICommand(name = "addTrafficType", description="Adds traffic type to a physical network", responseObject=TrafficTypeResponse.class, since="3.0.0")
+@APICommand(name = "addTrafficType", description = "Adds traffic type to a physical network", responseObject = TrafficTypeResponse.class, since = "3.0.0")
 public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AddTrafficTypeCmd.class.getName());
 
@@ -44,32 +44,42 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
-            required=true, description="the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = PhysicalNetworkResponse.class,
+               required = true,
+               description = "the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, required=true, description="the trafficType to be added to the physical network")
+    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, required = true, description = "the trafficType to be added to the physical network")
     private String trafficType;
 
-    @Parameter(name=ApiConstants.XEN_NETWORK_LABEL, type=CommandType.STRING, description="The network name label of the physical device dedicated to this traffic on a XenServer host")
+    @Parameter(name = ApiConstants.XEN_NETWORK_LABEL,
+               type = CommandType.STRING,
+               description = "The network name label of the physical device dedicated to this traffic on a XenServer host")
     private String xenLabel;
 
-    @Parameter(name=ApiConstants.KVM_NETWORK_LABEL, type=CommandType.STRING, description="The network name label of the physical device dedicated to this traffic on a KVM host")
+    @Parameter(name = ApiConstants.KVM_NETWORK_LABEL,
+               type = CommandType.STRING,
+               description = "The network name label of the physical device dedicated to this traffic on a KVM host")
     private String kvmLabel;
 
-    @Parameter(name=ApiConstants.VMWARE_NETWORK_LABEL, type=CommandType.STRING, description="The network name label of the physical device dedicated to this traffic on a VMware host")
+    @Parameter(name = ApiConstants.VMWARE_NETWORK_LABEL,
+               type = CommandType.STRING,
+               description = "The network name label of the physical device dedicated to this traffic on a VMware host")
     private String vmwareLabel;
 
-    @Parameter(name=ApiConstants.HYPERV_NETWORK_LABEL, type=CommandType.STRING, description="The network name label of the physical device dedicated to this traffic on a Hyperv host")
+    @Parameter(name = ApiConstants.HYPERV_NETWORK_LABEL,
+               type = CommandType.STRING,
+               description = "The network name label of the physical device dedicated to this traffic on a Hyperv host")
     private String hypervLabel;
 
-    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="The VLAN id to be used for Management traffic by VMware host")
+    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "The VLAN id to be used for Management traffic by VMware host")
     private String vlan;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;
@@ -123,21 +133,22 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("TrafficType Id: "+getEntityId());
+    public void execute() {
+        CallContext.current().setEventDetails("TrafficType Id: " + getEntityId());
         PhysicalNetworkTrafficType result = _networkService.getPhysicalNetworkTrafficType(getEntityId());
         if (result != null) {
             TrafficTypeResponse response = _responseGenerator.createTrafficTypeResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
-        }else {
+        } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add traffic type to physical network");
         }
     }
 
     @Override
     public void create() throws ResourceAllocationException {
-        PhysicalNetworkTrafficType result = _networkService.addTrafficTypeToPhysicalNetwork(getPhysicalNetworkId(), getTrafficType(), getXenLabel(), getKvmLabel(), getVmwareLabel(), getSimulatorLabel(), getVlan(), getHypervLabel());
+        PhysicalNetworkTrafficType result = _networkService.addTrafficTypeToPhysicalNetwork(getPhysicalNetworkId(), getTrafficType(), getXenLabel(), getKvmLabel(),
+            getVmwareLabel(), getSimulatorLabel(), getVlan(), getHypervLabel());
         if (result != null) {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
@@ -153,7 +164,7 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Adding physical network traffic type: " + getEntityId();
+        return "Adding physical network traffic type: " + getEntityId();
     }
 
     @Override

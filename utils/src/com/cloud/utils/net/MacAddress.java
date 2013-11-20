@@ -59,13 +59,8 @@ public class MacAddress {
     public String toString(String separator) {
         StringBuilder buff = new StringBuilder();
         Formatter formatter = new Formatter(buff);
-        formatter.format("%02x%s%02x%s%02x%s%02x%s%02x%s%02x",
-                _addr >> 40 & 0xff, separator,
-                _addr >> 32 & 0xff, separator,
-                _addr >> 24 & 0xff, separator,
-                _addr >> 16 & 0xff, separator,
-                _addr >> 8 & 0xff, separator,
-                _addr & 0xff);
+        formatter.format("%02x%s%02x%s%02x%s%02x%s%02x%s%02x", _addr >> 40 & 0xff, separator, _addr >> 32 & 0xff, separator, _addr >> 24 & 0xff, separator, _addr >> 16 & 0xff,
+            separator, _addr >> 8 & 0xff, separator, _addr & 0xff);
         return buff.toString();
 
         /*
@@ -98,18 +93,17 @@ public class MacAddress {
             String osname = System.getProperty("os.name");
 
             if (osname.startsWith("Windows")) {
-                p = Runtime.getRuntime().exec(new String[] { "ipconfig", "/all"}, null);
+                p = Runtime.getRuntime().exec(new String[] {"ipconfig", "/all"}, null);
             } else if (osname.startsWith("Solaris") || osname.startsWith("SunOS")) {
                 // Solaris code must appear before the generic code
-                String hostName = MacAddress.getFirstLineOfCommand(new String[] { "uname",
-                "-n"});
+                String hostName = MacAddress.getFirstLineOfCommand(new String[] {"uname", "-n"});
                 if (hostName != null) {
-                    p = Runtime.getRuntime().exec(new String[] { "/usr/sbin/arp", hostName}, null);
+                    p = Runtime.getRuntime().exec(new String[] {"/usr/sbin/arp", hostName}, null);
                 }
             } else if (new File("/usr/sbin/lanscan").exists()) {
-                p = Runtime.getRuntime().exec(new String[] { "/usr/sbin/lanscan"}, null);
+                p = Runtime.getRuntime().exec(new String[] {"/usr/sbin/lanscan"}, null);
             } else if (new File("/sbin/ifconfig").exists()) {
-                p = Runtime.getRuntime().exec(new String[] { "/sbin/ifconfig", "-a"}, null);
+                p = Runtime.getRuntime().exec(new String[] {"/sbin/ifconfig", "-a"}, null);
             }
 
             if (p != null) {
@@ -160,7 +154,7 @@ public class MacAddress {
                 clockSeqAndNode |= (local[2] << 8) & 0xFF00;
                 clockSeqAndNode |= local[3] & 0xFF;
             } catch (UnknownHostException ex) {
-                clockSeqAndNode |= (long) (Math.random() * 0x7FFFFFFF);
+                clockSeqAndNode |= (long)(Math.random() * 0x7FFFFFFF);
             }
         }
 
@@ -235,7 +229,8 @@ public class MacAddress {
 
         lastIndex = in.lastIndexOf(':');
 
-        if (lastIndex > in.length() - 2) return null;
+        if (lastIndex > in.length() - 2)
+            return null;
 
         end = Math.min(in.length(), lastIndex + 3);
 
@@ -282,8 +277,7 @@ public class MacAddress {
                 out <<= 4;
                 ++shifts;
                 out |= c - 48;
-            }
-            else if ((c > 96) && (c < 103)) {
+            } else if ((c > 96) && (c < 103)) {
                 ++shifts;
                 out <<= 4;
                 out |= c - 87;
@@ -312,8 +306,7 @@ public class MacAddress {
                 out <<= 4;
                 ++shifts;
                 out |= c - 48;
-            }
-            else if ((c > 96) && (c < 103)) {
+            } else if ((c > 96) && (c < 103)) {
                 ++shifts;
                 out <<= 4;
                 out |= c - 87;
@@ -342,8 +335,7 @@ public class MacAddress {
                 out <<= 4;
                 ++shifts;
                 out |= c - 48;
-            }
-            else if ((c > 96) && (c < 103)) {
+            } else if ((c > 96) && (c < 103)) {
                 ++shifts;
                 out <<= 4;
                 out |= c - 87;
@@ -372,8 +364,7 @@ public class MacAddress {
                 out <<= 4;
                 ++shifts;
                 out |= c - 48;
-            }
-            else if ((c > 96) && (c < 103)) {
+            } else if ((c > 96) && (c < 103)) {
                 ++shifts;
                 out <<= 4;
                 out |= c - 87;

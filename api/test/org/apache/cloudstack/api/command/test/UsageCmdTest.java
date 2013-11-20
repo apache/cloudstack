@@ -61,8 +61,7 @@ public class UsageCmdTest extends TestCase {
 
         Pair<List<? extends Usage>, Integer> usageRecords = new Pair<List<? extends Usage>, Integer>(new ArrayList<Usage>(), new Integer(0));
 
-        Mockito.when(usageService.getUsageRecords(getUsageRecordsCmd)).thenReturn(
-                usageRecords);
+        Mockito.when(usageService.getUsageRecords(getUsageRecordsCmd)).thenReturn(usageRecords);
 
         getUsageRecordsCmd._usageService = usageService;
         getUsageRecordsCmd.execute();

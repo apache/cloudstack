@@ -27,8 +27,7 @@ public class CreateVolumeFromVMSnapshotAnswer extends Answer {
         return volumeTo;
     }
 
-    public CreateVolumeFromVMSnapshotAnswer(
-            CreateVolumeFromVMSnapshotCommand cmd, VolumeTO volumeTo) {
+    public CreateVolumeFromVMSnapshotAnswer(CreateVolumeFromVMSnapshotCommand cmd, VolumeTO volumeTo) {
         super(cmd, true, "");
         this.volumeTo = volumeTo;
     }
@@ -41,14 +40,12 @@ public class CreateVolumeFromVMSnapshotAnswer extends Answer {
 
     }
 
-    public CreateVolumeFromVMSnapshotAnswer(
-            CreateVolumeFromVMSnapshotCommand cmd, String path) {
+    public CreateVolumeFromVMSnapshotAnswer(CreateVolumeFromVMSnapshotCommand cmd, String path) {
         super(cmd, true, "");
         this.path = path;
     }
 
-    public CreateVolumeFromVMSnapshotAnswer(
-            CreateVolumeFromVMSnapshotCommand cmd, boolean result, String string) {
+    public CreateVolumeFromVMSnapshotAnswer(CreateVolumeFromVMSnapshotCommand cmd, boolean result, String string) {
         super(cmd, result, string);
     }
 }

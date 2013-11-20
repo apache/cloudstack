@@ -29,13 +29,14 @@ import javax.ejb.Local;
 import java.util.List;
 
 @Component
-@Local(value={MockVolumeDao.class})
+@Local(value = {MockVolumeDao.class})
 public class MockVolumeDaoImpl extends GenericDaoBase<MockVolumeVO, Long> implements MockVolumeDao {
     protected final SearchBuilder<MockVolumeVO> idTypeSearch;
     protected final SearchBuilder<MockVolumeVO> pathTypeSearch;
     protected final SearchBuilder<MockVolumeVO> namePoolSearch;
     protected final SearchBuilder<MockVolumeVO> nameSearch;
     protected final GenericSearchBuilder<MockVolumeVO, Long> totalSearch;
+
     @Override
     public List<MockVolumeVO> findByStorageIdAndType(long id, MockVolumeType type) {
         SearchCriteria<MockVolumeVO> sc = idTypeSearch.create();
@@ -54,9 +55,9 @@ public class MockVolumeDaoImpl extends GenericDaoBase<MockVolumeVO, Long> implem
 
     @Override
     public MockVolumeVO findByStoragePathAndType(String path) {
-       SearchCriteria<MockVolumeVO> sc = pathTypeSearch.create();
-       sc.setParameters("path", "%" + path + "%");
-       return findOneBy(sc);
+        SearchCriteria<MockVolumeVO> sc = pathTypeSearch.create();
+        sc.setParameters("path", "%" + path + "%");
+        return findOneBy(sc);
     }
 
     @Override

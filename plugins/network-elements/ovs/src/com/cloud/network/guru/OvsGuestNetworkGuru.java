@@ -43,31 +43,27 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.vm.ReservationContext;
 
-@Local(value=NetworkGuru.class)
+@Local(value = NetworkGuru.class)
 public class OvsGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(OvsGuestNetworkGuru.class);
 
-    @Inject OvsTunnelManager _ovsTunnelMgr;
+    @Inject
+    OvsTunnelManager _ovsTunnelMgr;
 
     OvsGuestNetworkGuru() {
         super();
-        _isolationMethods = new IsolationMethod[] { IsolationMethod.GRE, IsolationMethod.L3, IsolationMethod.VLAN };
+        _isolationMethods = new IsolationMethod[] {IsolationMethod.GRE, IsolationMethod.L3, IsolationMethod.VLAN};
     }
 
     @Override
-    protected boolean canHandle(NetworkOffering offering,
-            final NetworkType networkType, final PhysicalNetwork physicalNetwork) {
+    protected boolean canHandle(NetworkOffering offering, final NetworkType networkType, final PhysicalNetwork physicalNetwork) {
         // This guru handles only Guest Isolated network that supports Source
         // nat service
-        if (networkType == NetworkType.Advanced
-                && isMyTrafficType(offering.getTrafficType())
-                && offering.getGuestType() == Network.GuestType.Isolated
-                && isMyIsolationMethod(physicalNetwork)) {
+        if (networkType == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) && offering.getGuestType() == Network.GuestType.Isolated &&
+            isMyIsolationMethod(physicalNetwork)) {
             return true;
         } else {
-            s_logger.trace("We only take care of Guest networks of type   "
-                    + GuestType.Isolated + " in zone of type "
-                    + NetworkType.Advanced);
+            s_logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
             return false;
         }
     }
@@ -79,7 +75,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
             return null;
         }
 
-        NetworkVO config = (NetworkVO) super.design(offering, plan, userSpecified, owner);
+        NetworkVO config = (NetworkVO)super.design(offering, plan, userSpecified, owner);
         if (config == null) {
             return null;
         }
@@ -90,15 +86,15 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    protected void allocateVnet(Network network, NetworkVO implemented, long dcId,
-            long physicalNetworkId, String reservationId) throws InsufficientVirtualNetworkCapcityException {
+    protected void allocateVnet(Network network, NetworkVO implemented, long dcId, long physicalNetworkId, String reservationId) throws InsufficientVirtualNetworkCapcityException {
         if (network.getBroadcastUri() == null) {
             String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), reservationId, UseSystemGuestVlans.valueIn(network.getAccountId()));
             if (vnet == null) {
                 throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a part of network " + network + " implement ", DataCenter.class, dcId);
             }
             implemented.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(vnet));
-            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + network.getId(), 0);
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN,
+                "Assigned Zone Vlan: " + vnet + " Network Id: " + network.getId(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
         }

@@ -21,7 +21,8 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class BaremetalTemplateResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the template ID")
+    @SerializedName("id")
+    @Param(description = "the template ID")
     private String id;
 
     public String getId() {

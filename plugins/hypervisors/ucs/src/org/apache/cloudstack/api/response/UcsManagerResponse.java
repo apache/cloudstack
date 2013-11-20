@@ -25,18 +25,23 @@ import org.apache.cloudstack.api.BaseResponse;
 import com.cloud.serializer.Param;
 import com.cloud.ucs.database.UcsManagerVO;
 import com.google.gson.annotations.SerializedName;
-@EntityReference(value=UcsManagerVO.class)
+
+@EntityReference(value = UcsManagerVO.class)
 public class UcsManagerResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the ID of the ucs manager")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the ID of the ucs manager")
     private String id;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="the name of ucs manager")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the name of ucs manager")
     private String name;
 
-    @SerializedName(ApiConstants.URL) @Param(description="the url of ucs manager")
+    @SerializedName(ApiConstants.URL)
+    @Param(description = "the url of ucs manager")
     private String url;
 
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the zone ID of ucs manager")
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "the zone ID of ucs manager")
     private String zoneId;
 
     public String getName() {

@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.bridge.persist.dao;
+
 import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
@@ -28,28 +29,28 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={MHostDao.class})
-public class MHostDaoImpl extends GenericDaoBase<MHostVO, Long> implements MHostDao{
-	final SearchBuilder<MHostVO> NameSearch= createSearchBuilder();
+@Local(value = {MHostDao.class})
+public class MHostDaoImpl extends GenericDaoBase<MHostVO, Long> implements MHostDao {
+    final SearchBuilder<MHostVO> NameSearch = createSearchBuilder();
 
-	public MHostDaoImpl() {
-	}
-	
-	@DB
-	@Override
-	public MHostVO getByHostKey(String hostKey) {
-	    NameSearch.and("MHostKey", NameSearch.entity().getHostKey(), SearchCriteria.Op.EQ);
-	    TransactionLegacy txn = TransactionLegacy.open("cloudbridge", TransactionLegacy.AWSAPI_DB, true);
-	    try {
-		txn.start();
-		SearchCriteria<MHostVO> sc = NameSearch.create();
-		sc.setParameters("MHostKey", hostKey);
-		return findOneBy(sc);
+    public MHostDaoImpl() {
+    }
+
+    @DB
+    @Override
+    public MHostVO getByHostKey(String hostKey) {
+        NameSearch.and("MHostKey", NameSearch.entity().getHostKey(), SearchCriteria.Op.EQ);
+        TransactionLegacy txn = TransactionLegacy.open("cloudbridge", TransactionLegacy.AWSAPI_DB, true);
+        try {
+            txn.start();
+            SearchCriteria<MHostVO> sc = NameSearch.create();
+            sc.setParameters("MHostKey", hostKey);
+            return findOneBy(sc);
         } finally {
             txn.commit();
             txn.close();
         }
-	}
+    }
 
     @Override
     public void updateHeartBeat(MHostVO mhost) {
@@ -58,7 +59,7 @@ public class MHostDaoImpl extends GenericDaoBase<MHostVO, Long> implements MHost
             txn.start();
             update(mhost.getId(), mhost);
             txn.commit();
-        }finally {
+        } finally {
             txn.close();
         }
     }

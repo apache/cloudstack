@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-@Local(value={UsageEventDetailsDao.class})
+@Local(value = {UsageEventDetailsDao.class})
 public class UsageEventDetailsDaoImpl extends GenericDaoBase<UsageEventDetailsVO, Long> implements UsageEventDetailsDao {
     public static final Logger s_logger = Logger.getLogger(UsageEventDetailsDaoImpl.class.getName());
 
@@ -39,7 +39,7 @@ public class UsageEventDetailsDaoImpl extends GenericDaoBase<UsageEventDetailsVO
 
     public UsageEventDetailsDaoImpl() {
 
-        EventDetailsSearch =createSearchBuilder();
+        EventDetailsSearch = createSearchBuilder();
         EventDetailsSearch.and("eventId", EventDetailsSearch.entity().getUsageEventId(), SearchCriteria.Op.EQ);
         EventDetailsSearch.done();
 
@@ -47,7 +47,6 @@ public class UsageEventDetailsDaoImpl extends GenericDaoBase<UsageEventDetailsVO
         DetailSearch.and("eventId", DetailSearch.entity().getUsageEventId(), SearchCriteria.Op.EQ);
         DetailSearch.and("key", DetailSearch.entity().getKey(), SearchCriteria.Op.EQ);
         DetailSearch.done();
-
 
     }
 
@@ -99,6 +98,5 @@ public class UsageEventDetailsDaoImpl extends GenericDaoBase<UsageEventDetailsVO
         }
         txn.commit();
     }
-
 
 }

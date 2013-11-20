@@ -21,9 +21,9 @@ import java.sql.Connection;
 
 public interface DbUpgrade {
     String[] getUpgradableVersionRange();
-    
+
     String getUpgradedVersion();
-    
+
     boolean supportsRollingUpgrade();
 
     /**
@@ -31,12 +31,12 @@ public interface DbUpgrade {
      * data migration step.
      */
     File[] getPrepareScripts();
-    
+
     /**
      * Performs the actual data migration.
      */
     void performDataMigration(Connection conn);
-    
+
     /**
      * 
      * @return

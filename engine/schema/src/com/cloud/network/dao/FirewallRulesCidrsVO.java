@@ -26,20 +26,21 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name=("firewall_rules_cidrs"))
+@Table(name = ("firewall_rules_cidrs"))
 public class FirewallRulesCidrsVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(name="firewall_rule_id")
+    @Column(name = "firewall_rule_id")
     private long firewallRuleId;
 
-    @Column(name="source_cidr")
+    @Column(name = "source_cidr")
     private String sourceCidrList;
 
-    public FirewallRulesCidrsVO() { }
+    public FirewallRulesCidrsVO() {
+    }
 
     public FirewallRulesCidrsVO(long firewallRuleId, String sourceCidrList) {
         this.firewallRuleId = firewallRuleId;
@@ -61,5 +62,5 @@ public class FirewallRulesCidrsVO implements InternalIdentity {
     public String getSourceCidrList() {
         return sourceCidrList;
     }
-    
+
 }

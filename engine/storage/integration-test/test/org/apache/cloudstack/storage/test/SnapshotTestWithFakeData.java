@@ -97,8 +97,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = { "classpath:/fakeDriverTestContext.xml" })
-public class SnapshotTestWithFakeData  {
+@ContextConfiguration(locations = {"classpath:/fakeDriverTestContext.xml"})
+public class SnapshotTestWithFakeData {
     @Inject
     SnapshotService snapshotService;
     @Inject
@@ -146,14 +146,13 @@ public class SnapshotTestWithFakeData  {
     public void setUp() {
         // create data center
 
-        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,
-                "10.0.0.1/24", null, null, DataCenter.NetworkType.Basic, null, null, true, true, null, null);
+        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, DataCenter.NetworkType.Basic, null,
+            null, true, true, null, null);
         dc = dcDao.persist(dc);
         dcId = dc.getId();
         // create pod
 
-        HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), "10.223.0.1",
-                "10.233.2.2/25", 8, "test");
+        HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), "10.223.0.1", "10.233.2.2/25", 8, "test");
         pod = podDao.persist(pod);
         podId = pod.getId();
         // create xen cluster
@@ -188,7 +187,7 @@ public class SnapshotTestWithFakeData  {
         when(accountManager.getSystemAccount()).thenReturn(account);
         when(accountManager.getSystemUser()).thenReturn(user);
 
-        if(Merovingian2.getLockMaster() == null) {
+        if (Merovingian2.getLockMaster() == null) {
             _lockMaster = Merovingian2.createLockMaster(1234);
         } else {
             _lockMaster = Merovingian2.getLockMaster();
@@ -201,19 +200,18 @@ public class SnapshotTestWithFakeData  {
     public void tearDown() throws Exception {
         _lockMaster.cleanupThisServer();
     }
+
     private SnapshotVO createSnapshotInDb() {
         Snapshot.Type snapshotType = Snapshot.Type.RECURRING;
-        SnapshotVO snapshotVO = new SnapshotVO(dcId, 2, 1, 1L, 1L, UUID.randomUUID()
-                .toString(), (short) snapshotType.ordinal(), snapshotType.name(), 100,
-                Hypervisor.HypervisorType.XenServer);
+        SnapshotVO snapshotVO = new SnapshotVO(dcId, 2, 1, 1L, 1L, UUID.randomUUID().toString(), (short)snapshotType.ordinal(), snapshotType.name(), 100,
+            Hypervisor.HypervisorType.XenServer);
         return this.snapshotDao.persist(snapshotVO);
     }
 
     private SnapshotVO createSnapshotInDb(Long volumeId) {
         Snapshot.Type snapshotType = Snapshot.Type.DAILY;
-        SnapshotVO snapshotVO = new SnapshotVO(dcId, 2, 1, volumeId, 1L, UUID.randomUUID()
-                .toString(), (short) snapshotType.ordinal(), snapshotType.name(), 100,
-                Hypervisor.HypervisorType.XenServer);
+        SnapshotVO snapshotVO = new SnapshotVO(dcId, 2, 1, volumeId, 1L, UUID.randomUUID().toString(), (short)snapshotType.ordinal(), snapshotType.name(), 100,
+            Hypervisor.HypervisorType.XenServer);
         return this.snapshotDao.persist(snapshotVO);
     }
 
@@ -228,6 +226,7 @@ public class SnapshotTestWithFakeData  {
         volumeInfo.stateTransit(Volume.Event.OperationSucceeded);
         return volumeInfo;
     }
+
     private DataStore createDataStore() throws URISyntaxException {
         StoragePoolVO pool = new StoragePoolVO();
         pool.setClusterId(clusterId);
@@ -247,6 +246,7 @@ public class SnapshotTestWithFakeData  {
         DataStore store = this.dataStoreManager.getPrimaryDataStore(pool.getId());
         return store;
     }
+
     //@Test
     public void testTakeSnapshot() throws URISyntaxException {
         SnapshotVO snapshotVO = createSnapshotInDb();
@@ -317,13 +317,12 @@ public class SnapshotTestWithFakeData  {
         vol = volumeInfo;
         // final SnapshotPolicyVO policyVO = createSnapshotPolicy(vol.getId());
 
-
         ExecutorService pool = Executors.newFixedThreadPool(2);
         boolean result = false;
         List<Future<Boolean>> future = new ArrayList<Future<Boolean>>();
-        for(int i = 0; i < 12; i++) {
+        for (int i = 0; i < 12; i++) {
             final int cnt = i;
-            Future<Boolean> task =  pool.submit(new Callable<Boolean>() {
+            Future<Boolean> task = pool.submit(new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
                     boolean r = true;

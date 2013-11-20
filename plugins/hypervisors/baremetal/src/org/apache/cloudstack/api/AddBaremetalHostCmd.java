@@ -25,17 +25,18 @@ import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.api.response.HostResponse;
 
 import com.cloud.baremetal.manager.BareMetalDiscoverer;
-@APICommand(name="addBaremetalHost", description="add a baremetal host", responseObject = HostResponse.class)
+
+@APICommand(name = "addBaremetalHost", description = "add a baremetal host", responseObject = HostResponse.class)
 public class AddBaremetalHostCmd extends AddHostCmd {
 
-    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="ip address intentionally allocated to this host after provisioning")
+    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "ip address intentionally allocated to this host after provisioning")
     private String vmIpAddress;
 
     public AddBaremetalHostCmd() {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         this.getFullUrlParams().put(ApiConstants.BAREMETAL_DISCOVER_NAME, BareMetalDiscoverer.class.getName());
         super.execute();
     }

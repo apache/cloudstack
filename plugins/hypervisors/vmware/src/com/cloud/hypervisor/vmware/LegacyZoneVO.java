@@ -31,7 +31,7 @@ import com.cloud.utils.NumbersUtil;
 */
 
 @Entity
-@Table(name="legacy_zones")
+@Table(name = "legacy_zones")
 public class LegacyZoneVO implements LegacyZone {
 
     @Id

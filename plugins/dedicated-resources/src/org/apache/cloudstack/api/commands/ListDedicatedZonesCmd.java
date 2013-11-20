@@ -45,21 +45,19 @@ public class ListDedicatedZonesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDedicatedZonesCmd.class.getName());
 
     private static final String s_name = "listdedicatedzonesresponse";
-    @Inject DedicatedService _dedicatedservice;
+    @Inject
+    DedicatedService _dedicatedservice;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
-            description="the ID of the Zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of the Zone")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            description="the ID of the domain associated with the zone")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the ID of the domain associated with the zone")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING,
-            description = "the name of the account associated with the zone. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the name of the account associated with the zone. Must be used with domainId.")
     private String accountName;
 
     @Parameter(name = ApiConstants.AFFINITY_GROUP_ID, type = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "list dedicated zones by affinity group")
@@ -73,11 +71,11 @@ public class ListDedicatedZonesCmd extends BaseListCmd {
         return zoneId;
     }
 
-    public Long getDomainId(){
+    public Long getDomainId() {
         return domainId;
     }
 
-    public String getAccountName(){
+    public String getAccountName() {
         return accountName;
     }
 
@@ -95,7 +93,7 @@ public class ListDedicatedZonesCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends DedicatedResourceVO>, Integer> result = _dedicatedservice.listDedicatedZones(this);
         ListResponse<DedicateZoneResponse> response = new ListResponse<DedicateZoneResponse>();
         List<DedicateZoneResponse> Responses = new ArrayList<DedicateZoneResponse>();

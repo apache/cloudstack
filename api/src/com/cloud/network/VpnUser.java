@@ -22,9 +22,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface VpnUser extends ControlledEntity, InternalIdentity, Identity {
     enum State {
-        Add,
-        Revoke,
-        Active
+        Add, Revoke, Active
     }
 
     String getUsername();

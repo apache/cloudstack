@@ -34,7 +34,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import java.util.List;
 
-@Local(value=Investigator.class)
+@Local(value = Investigator.class)
 public class KVMInvestigator extends AdapterBase implements Investigator {
     private final static Logger s_logger = Logger.getLogger(KVMInvestigator.class);
     @Inject
@@ -43,6 +43,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
     AgentManager _agentMgr;
     @Inject
     ResourceManager _resourceMgr;
+
     @Override
     public Boolean isVmAlive(com.cloud.vm.VirtualMachine vm, Host host) {
         Status status = isAgentAlive(host);

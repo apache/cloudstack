@@ -18,79 +18,77 @@ package com.cloud.info;
 
 public class ConsoleProxyInfo {
 
-	private boolean sslEnabled;
-	private String proxyAddress;
-	private int proxyPort;
-	private String proxyImageUrl;
-	private int proxyUrlPort = 8000;
+    private boolean sslEnabled;
+    private String proxyAddress;
+    private int proxyPort;
+    private String proxyImageUrl;
+    private int proxyUrlPort = 8000;
 
-	public ConsoleProxyInfo(int proxyUrlPort) {
-		this.proxyUrlPort = proxyUrlPort;
-	}
-	
-	public ConsoleProxyInfo(boolean sslEnabled, String proxyIpAddress, int port, int proxyUrlPort, String consoleProxyUrlDomain) {
-		this.sslEnabled = sslEnabled;
-		
-		if(sslEnabled) {
-			StringBuffer sb = new StringBuffer(proxyIpAddress);
-			for(int i = 0; i < sb.length(); i++)
-				if(sb.charAt(i) == '.')
-					sb.setCharAt(i, '-');
-			if(consoleProxyUrlDomain!=null && consoleProxyUrlDomain.length()>0)
-			{
-				sb.append(".");
-				sb.append(consoleProxyUrlDomain);
-			}
-			else
-				sb.append(".realhostip.com");
-			
-			proxyAddress = sb.toString();
-			proxyPort = port;
-			this.proxyUrlPort = proxyUrlPort;
-			
-			proxyImageUrl = "https://" + proxyAddress;
-			if(proxyUrlPort != 443)
-				proxyImageUrl += ":" + this.proxyUrlPort;
-		} else {
-			proxyAddress = proxyIpAddress;
-			proxyPort = port;
-			this.proxyUrlPort = proxyUrlPort;
-			
-			proxyImageUrl = "http://" + proxyAddress;
-			if(proxyUrlPort != 80)
-				proxyImageUrl += ":" + proxyUrlPort;
-		}
-	}
-	
-	public String getProxyAddress() {
-		return proxyAddress;
-	}
-	
-	public void setProxyAddress(String proxyAddress) {
-		this.proxyAddress = proxyAddress;
-	}
-	
-	public int getProxyPort() {
-		return proxyPort;
-	}
-	
-	public void setProxyPort(int proxyPort) {
-		this.proxyPort = proxyPort;
-	}
-	
-	public String getProxyImageUrl() {
-		return proxyImageUrl;
-	}
-	
-	public void setProxyImageUrl(String proxyImageUrl) {
-		this.proxyImageUrl = proxyImageUrl;
-	}
-	
-	public boolean isSslEnabled() {
-		return sslEnabled;
-	}
+    public ConsoleProxyInfo(int proxyUrlPort) {
+        this.proxyUrlPort = proxyUrlPort;
+    }
 
-	public void setSslEnabled(boolean sslEnabled) {
-		this.sslEnabled = sslEnabled;
-	}
+    public ConsoleProxyInfo(boolean sslEnabled, String proxyIpAddress, int port, int proxyUrlPort, String consoleProxyUrlDomain) {
+        this.sslEnabled = sslEnabled;
+
+        if (sslEnabled) {
+            StringBuffer sb = new StringBuffer(proxyIpAddress);
+            for (int i = 0; i < sb.length(); i++)
+                if (sb.charAt(i) == '.')
+                    sb.setCharAt(i, '-');
+            if (consoleProxyUrlDomain != null && consoleProxyUrlDomain.length() > 0) {
+                sb.append(".");
+                sb.append(consoleProxyUrlDomain);
+            } else
+                sb.append(".realhostip.com");
+
+            proxyAddress = sb.toString();
+            proxyPort = port;
+            this.proxyUrlPort = proxyUrlPort;
+
+            proxyImageUrl = "https://" + proxyAddress;
+            if (proxyUrlPort != 443)
+                proxyImageUrl += ":" + this.proxyUrlPort;
+        } else {
+            proxyAddress = proxyIpAddress;
+            proxyPort = port;
+            this.proxyUrlPort = proxyUrlPort;
+
+            proxyImageUrl = "http://" + proxyAddress;
+            if (proxyUrlPort != 80)
+                proxyImageUrl += ":" + proxyUrlPort;
+        }
+    }
+
+    public String getProxyAddress() {
+        return proxyAddress;
+    }
+
+    public void setProxyAddress(String proxyAddress) {
+        this.proxyAddress = proxyAddress;
+    }
+
+    public int getProxyPort() {
+        return proxyPort;
+    }
+
+    public void setProxyPort(int proxyPort) {
+        this.proxyPort = proxyPort;
+    }
+
+    public String getProxyImageUrl() {
+        return proxyImageUrl;
+    }
+
+    public void setProxyImageUrl(String proxyImageUrl) {
+        this.proxyImageUrl = proxyImageUrl;
+    }
+
+    public boolean isSslEnabled() {
+        return sslEnabled;
+    }
+
+    public void setSslEnabled(boolean sslEnabled) {
+        this.sslEnabled = sslEnabled;
+    }
 }

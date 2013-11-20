@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.utils.db;
 
-
 /**
  * SearchBuilder is meant as a static query construct.  Often times in DAO code,
  * we write static sql that just assumes the database table does not change.
@@ -55,7 +54,7 @@ package com.cloud.utils.db;
  * @param <T> VO object.
  */
 public class SearchBuilder<T> extends GenericSearchBuilder<T, T> {
-    
+
     public SearchBuilder(Class<T> entityType) {
         super(entityType, entityType);
     }

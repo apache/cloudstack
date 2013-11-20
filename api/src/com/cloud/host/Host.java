@@ -25,7 +25,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.fsm.StateObject;
 
-
 /**
  *  Host represents one particular host server.
  */
@@ -49,6 +48,7 @@ public interface Host extends StateObject<Status>, Identity, InternalIdentity {
         LocalSecondaryStorage(false),
         L2Networking(false);
         boolean _virtual;
+
         private Type(boolean virtual) {
             _virtual = virtual;
         }
@@ -155,26 +155,32 @@ public interface Host extends StateObject<Status>, Identity, InternalIdentity {
      * @return disconnection date
      */
     Date getDisconnectedOn();
+
     /**
      * @return version
      */
     String getVersion();
+
     /*
      * @return total size
      */
     long getTotalSize();
+
     /*
      * @return capabilities
      */
     String getCapabilities();
+
     /*
      * @return last pinged time
      */
     long getLastPinged();
+
     /*
      * @return management server id
      */
     Long getManagementServerId();
+
     /*
      *@return removal date
      */

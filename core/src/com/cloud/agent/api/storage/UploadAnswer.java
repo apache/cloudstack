@@ -24,63 +24,64 @@ import com.cloud.storage.Upload;
 
 public class UploadAnswer extends Answer {
 
+    private String jobId;
+    private int uploadPct;
+    private String errorString;
+    private Upload.Status uploadStatus;
+    private String uploadPath;
+    private String installPath;
+    public Long templateSize = 0L;
 
-	private String jobId;
-	private int uploadPct;
-	private String errorString;
-	private Upload.Status uploadStatus;
-	private String uploadPath;
-	private String installPath;
-	public Long templateSize = 0L;
+    public int getUploadPct() {
+        return uploadPct;
+    }
 
-	public int getUploadPct() {
-		return uploadPct;
-	}
-	public String getErrorString() {
-		return errorString;
-	}
+    public String getErrorString() {
+        return errorString;
+    }
 
-	public String getUploadStatusString() {
-		return uploadStatus.toString();
-	}
+    public String getUploadStatusString() {
+        return uploadStatus.toString();
+    }
 
-	public Upload.Status getUploadStatus() {
-		return uploadStatus;
-	}
+    public Upload.Status getUploadStatus() {
+        return uploadStatus;
+    }
 
-	public String getUploadPath() {
-		return uploadPath;
-	}
-	protected UploadAnswer() {
+    public String getUploadPath() {
+        return uploadPath;
+    }
 
-	}
+    protected UploadAnswer() {
 
-	public void setErrorString(String errorString) {
+    }
+
+    public void setErrorString(String errorString) {
         this.errorString = errorString;
     }
+
     public String getJobId() {
-		return jobId;
-	}
-	public void setJobId(String jobId) {
-		this.jobId = jobId;
-	}
+        return jobId;
+    }
 
-	public UploadAnswer(String jobId, int uploadPct, String errorString,
-			Upload.Status uploadStatus, String fileSystemPath, String installPath, long templateSize) {
-		super();
-		this.jobId = jobId;
-		this.uploadPct = uploadPct;
-		this.errorString = errorString;
-		this.details = errorString;
-		this.uploadStatus = uploadStatus;
-		this.uploadPath = fileSystemPath;
-		this.installPath = fixPath(installPath);
-		this.templateSize = templateSize;
-	}
+    public void setJobId(String jobId) {
+        this.jobId = jobId;
+    }
 
-   public UploadAnswer(String jobId, int uploadPct, Command command,
-		   Upload.Status uploadStatus, String fileSystemPath, String installPath) {
-	    super(command);
+    public UploadAnswer(String jobId, int uploadPct, String errorString, Upload.Status uploadStatus, String fileSystemPath, String installPath, long templateSize) {
+        super();
+        this.jobId = jobId;
+        this.uploadPct = uploadPct;
+        this.errorString = errorString;
+        this.details = errorString;
+        this.uploadStatus = uploadStatus;
+        this.uploadPath = fileSystemPath;
+        this.installPath = fixPath(installPath);
+        this.templateSize = templateSize;
+    }
+
+    public UploadAnswer(String jobId, int uploadPct, Command command, Upload.Status uploadStatus, String fileSystemPath, String installPath) {
+        super(command);
         this.jobId = jobId;
         this.uploadPct = uploadPct;
         this.uploadStatus = uploadStatus;
@@ -88,36 +89,37 @@ public class UploadAnswer extends Answer {
         this.installPath = installPath;
     }
 
-	private static String fixPath(String path){
-		if (path == null) {
+    private static String fixPath(String path) {
+        if (path == null) {
             return path;
         }
-		if (path.startsWith(File.separator)) {
-			path=path.substring(File.separator.length());
-		}
-		if (path.endsWith(File.separator)) {
-			path=path.substring(0, path.length()-File.separator.length());
-		}
-		return path;
-	}
+        if (path.startsWith(File.separator)) {
+            path = path.substring(File.separator.length());
+        }
+        if (path.endsWith(File.separator)) {
+            path = path.substring(0, path.length() - File.separator.length());
+        }
+        return path;
+    }
 
-	public void setUploadStatus(Upload.Status uploadStatus) {
-		this.uploadStatus = uploadStatus;
-	}
+    public void setUploadStatus(Upload.Status uploadStatus) {
+        this.uploadStatus = uploadStatus;
+    }
 
-	public String getInstallPath() {
-		return installPath;
-	}
-	public void setInstallPath(String installPath) {
-		this.installPath = fixPath(installPath);
-	}
+    public String getInstallPath() {
+        return installPath;
+    }
 
-	public void setTemplateSize(long templateSize) {
-		this.templateSize = templateSize;
-	}
+    public void setInstallPath(String installPath) {
+        this.installPath = fixPath(installPath);
+    }
 
-	public Long getTemplateSize() {
-		return templateSize;
-	}
+    public void setTemplateSize(long templateSize) {
+        this.templateSize = templateSize;
+    }
+
+    public Long getTemplateSize() {
+        return templateSize;
+    }
 
 }

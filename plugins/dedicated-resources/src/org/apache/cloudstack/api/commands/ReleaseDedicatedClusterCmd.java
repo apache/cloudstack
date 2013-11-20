@@ -37,14 +37,14 @@ public class ReleaseDedicatedClusterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReleaseDedicatedClusterCmd.class.getName());
 
     private static final String s_name = "releasededicatedclusterresponse";
-    @Inject DedicatedService dedicatedService;
+    @Inject
+    DedicatedService dedicatedService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType=ClusterResponse.class,
-            required=true, description="the ID of the Cluster")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the ID of the Cluster")
     private Long clusterId;
 
     /////////////////////////////////////////////////////
@@ -69,7 +69,7 @@ public class ReleaseDedicatedClusterCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = dedicatedService.releaseDedicatedResource(null, null, getClusterId(), null);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

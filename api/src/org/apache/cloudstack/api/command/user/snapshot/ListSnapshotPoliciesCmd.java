@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listSnapshotPolicies", description="Lists snapshot policies.", responseObject=SnapshotPolicyResponse.class)
+@APICommand(name = "listSnapshotPolicies", description = "Lists snapshot policies.", responseObject = SnapshotPolicyResponse.class)
 public class ListSnapshotPoliciesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSnapshotPoliciesCmd.class.getName());
 
@@ -41,8 +41,7 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.UUID, entityType = VolumeResponse.class,
-            required=true, description="the ID of the disk volume")
+    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "the ID of the disk volume")
     private Long volumeId;
 
     /////////////////////////////////////////////////////
@@ -63,7 +62,7 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends SnapshotPolicy>, Integer> result = _snapshotService.listPoliciesforVolume(this);
         ListResponse<SnapshotPolicyResponse> response = new ListResponse<SnapshotPolicyResponse>();
         List<SnapshotPolicyResponse> policyResponses = new ArrayList<SnapshotPolicyResponse>();

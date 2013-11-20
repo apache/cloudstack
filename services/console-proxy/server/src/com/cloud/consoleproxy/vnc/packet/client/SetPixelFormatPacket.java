@@ -28,8 +28,8 @@ public class SetPixelFormatPacket implements ClientPacket {
 
     private final VncScreenDescription screen;
 
-    public SetPixelFormatPacket(VncScreenDescription screen, int bitsPerPixel, int depth, int bigEndianFlag, int trueColorFlag, int redMax, int greenMax, int blueMax, int redShift, int greenShift,
-            int blueShift) {
+    public SetPixelFormatPacket(VncScreenDescription screen, int bitsPerPixel, int depth, int bigEndianFlag, int trueColorFlag, int redMax, int greenMax, int blueMax,
+            int redShift, int greenShift, int blueShift) {
         this.screen = screen;
         this.bitsPerPixel = bitsPerPixel;
         this.depth = depth;

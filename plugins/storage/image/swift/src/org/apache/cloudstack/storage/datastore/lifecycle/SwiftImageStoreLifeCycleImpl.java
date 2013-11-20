@@ -57,14 +57,14 @@ public class SwiftImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
 
-        Long dcId = (Long) dsInfos.get("zoneId");
-        String url = (String) dsInfos.get("url");
-        String name = (String) dsInfos.get("name");
-        ScopeType scope = (ScopeType) dsInfos.get("scope");
-        String providerName = (String) dsInfos.get("providerName");
-        DataStoreRole role = (DataStoreRole) dsInfos.get("role");
+        Long dcId = (Long)dsInfos.get("zoneId");
+        String url = (String)dsInfos.get("url");
+        String name = (String)dsInfos.get("name");
+        ScopeType scope = (ScopeType)dsInfos.get("scope");
+        String providerName = (String)dsInfos.get("providerName");
+        DataStoreRole role = (DataStoreRole)dsInfos.get("role");
 
-        Map<String, String> details = (Map<String, String>) dsInfos.get("details");
+        Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
         s_logger.info("Trying to add a swift store at " + url + " in data center " + dcId);
 
@@ -95,7 +95,6 @@ public class SwiftImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
     public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo) {
         return false;
     }
-
 
     @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType) {

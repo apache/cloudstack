@@ -38,6 +38,6 @@ public interface ProjectAccountDao extends GenericDao<ProjectAccountVO, Long> {
     List<Long> listAdministratedProjectIds(long adminAccountId);
 
     Long countByAccountIdAndRole(long accountId, ProjectAccount.Role role);
-    
+
     void removeAccountFromProjects(long accountId);
 }

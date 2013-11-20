@@ -50,7 +50,7 @@ public class CloudStackImageStoreDriverImpl extends BaseImageStoreDriverImpl {
 
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
-        ImageStoreImpl nfsStore = (ImageStoreImpl) store;
+        ImageStoreImpl nfsStore = (ImageStoreImpl)store;
         NfsTO nfsTO = new NfsTO();
         nfsTO.setRole(store.getRole());
         nfsTO.setUrl(nfsStore.getUri());
@@ -64,7 +64,7 @@ public class CloudStackImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         // Create Symlink at ssvm
         String path = installPath;
         String uuid = UUID.randomUUID().toString() + "." + format.getFileExtension();
-        CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity) store).getMountPoint(), path, uuid, dataObject.getTO());
+        CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)store).getMountPoint(), path, uuid, dataObject.getTO());
         Answer ans = null;
         if (ep == null) {
             String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
@@ -82,13 +82,13 @@ public class CloudStackImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         return generateCopyUrl(ep.getPublicAddr(), uuid);
     }
 
-    private String generateCopyUrl(String ipAddress, String uuid){
+    private String generateCopyUrl(String ipAddress, String uuid) {
 
         String hostname = ipAddress;
         String scheme = "http";
         boolean _sslCopy = false;
         String sslCfg = _configDao.getValue(Config.SecStorageEncryptCopy.toString());
-        if ( sslCfg != null ){
+        if (sslCfg != null) {
             _sslCopy = Boolean.parseBoolean(sslCfg);
         }
         if (_sslCopy) {

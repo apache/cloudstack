@@ -58,12 +58,20 @@ public class DiskProfile {
     }
 
     public DiskProfile(Volume vol, DiskOffering offering, HypervisorType hyperType) {
-        this(vol.getId(), vol.getVolumeType(), vol.getName(), offering.getId(), vol.getSize(), offering.getTagsArray(), offering.getUseLocalStorage(), offering.isCustomized(), null);
+        this(vol.getId(),
+            vol.getVolumeType(),
+            vol.getName(),
+            offering.getId(),
+            vol.getSize(),
+            offering.getTagsArray(),
+            offering.getUseLocalStorage(),
+            offering.isCustomized(),
+            null);
         this.hyperType = hyperType;
     }
-    
+
     public DiskProfile(DiskProfile dp) {
-    	
+
     }
 
     /**
@@ -146,17 +154,17 @@ public class DiskProfile {
     public HypervisorType getHypervisorType() {
         return this.hyperType;
     }
-    
+
     public void setPath(String path) {
-    	this.path = path;
+        this.path = path;
     }
-    
+
     public String getPath() {
-    	return this.path;
+        return this.path;
     }
-    
+
     public void setSize(long size) {
-    	this.size = size;
+        this.size = size;
     }
 
     public void setBytesReadRate(Long bytesReadRate) {

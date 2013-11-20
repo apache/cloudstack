@@ -201,15 +201,14 @@ public class NiciraNvpElementTest {
 
         assertTrue(element.applyIps(network, ipAddresses, services));
 
-        verify(agentManager, atLeast(1)).easySend(eq(NETWORK_ID),
-                argThat(new ArgumentMatcher<ConfigurePublicIpsOnLogicalRouterCommand>() {
-                    @Override
-                    public boolean matches(Object argument) {
-                        ConfigurePublicIpsOnLogicalRouterCommand command = (ConfigurePublicIpsOnLogicalRouterCommand) argument;
-                        if (command.getPublicCidrs().size() == 1)
-                            return true;
-                        return false;
-                    }
-                }));
+        verify(agentManager, atLeast(1)).easySend(eq(NETWORK_ID), argThat(new ArgumentMatcher<ConfigurePublicIpsOnLogicalRouterCommand>() {
+            @Override
+            public boolean matches(Object argument) {
+                ConfigurePublicIpsOnLogicalRouterCommand command = (ConfigurePublicIpsOnLogicalRouterCommand)argument;
+                if (command.getPublicCidrs().size() == 1)
+                    return true;
+                return false;
+            }
+        }));
     }
 }

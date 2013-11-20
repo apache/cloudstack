@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
-
 import com.cloud.network.lb.CertService;
 import org.apache.cloudstack.api.response.SslCertResponse;
 import com.cloud.exception.*;
@@ -28,7 +27,7 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = "deleteSslCert", description="Delete a certificate to cloudstack", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteSslCert", description = "Delete a certificate to cloudstack", responseObject = SuccessResponse.class)
 public class DeleteSslCertCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSslCertCmd.class.getName());
 
@@ -41,9 +40,8 @@ public class DeleteSslCertCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name= ApiConstants.ID, type=CommandType.UUID, entityType = SslCertResponse.class, required=true, description="Id of SSL certificate")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SslCertResponse.class, required = true, description = "Id of SSL certificate")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -58,7 +56,8 @@ public class DeleteSslCertCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
+        NetworkRuleConflictException {
         try {
             _certService.deleteSslCert(this);
             SuccessResponse rsp = new SuccessResponse();

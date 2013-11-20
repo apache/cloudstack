@@ -34,7 +34,7 @@ import com.cloud.user.Account;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = "listPortableIpRanges", description="list portable IP ranges", responseObject=PortableIpRangeResponse.class)
+@APICommand(name = "listPortableIpRanges", description = "list portable IP ranges", responseObject = PortableIpRangeResponse.class)
 public class ListPortableIpRangesCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListPortableIpRangesCmd.class.getName());
@@ -45,10 +45,10 @@ public class ListPortableIpRangesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.REGION_ID, type=CommandType.INTEGER, required=false, description="Id of a Region")
+    @Parameter(name = ApiConstants.REGION_ID, type = CommandType.INTEGER, required = false, description = "Id of a Region")
     private Integer regionId;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, required=false, entityType = PortableIpRangeResponse.class, description="Id of the portable ip range")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = false, entityType = PortableIpRangeResponse.class, description = "Id of the portable ip range")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -78,7 +78,7 @@ public class ListPortableIpRangesCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         ListResponse<PortableIpRangeResponse> response = new ListResponse<PortableIpRangeResponse>();
         List<PortableIpRangeResponse> responses = new ArrayList<PortableIpRangeResponse>();
 
@@ -90,8 +90,8 @@ public class ListPortableIpRangesCmd extends BaseListCmd {
                 List<? extends PortableIp> portableIps = _configService.listPortableIps(range.getId());
                 if (portableIps != null && !portableIps.isEmpty()) {
                     List<PortableIpResponse> portableIpResponses = new ArrayList<PortableIpResponse>();
-                    for (PortableIp portableIP: portableIps) {
-                        PortableIpResponse portableIpresponse =  _responseGenerator.createPortableIPResponse(portableIP);
+                    for (PortableIp portableIP : portableIps) {
+                        PortableIpResponse portableIpresponse = _responseGenerator.createPortableIPResponse(portableIP);
                         portableIpResponses.add(portableIpresponse);
                     }
                     rangeResponse.setPortableIpResponses(portableIpResponses);

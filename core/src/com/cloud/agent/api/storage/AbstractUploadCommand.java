@@ -18,8 +18,7 @@ package com.cloud.agent.api.storage;
 
 import com.cloud.storage.Storage.ImageFormat;
 
-public class AbstractUploadCommand  extends StorageCommand{
-
+public class AbstractUploadCommand extends StorageCommand {
 
     private String url;
     private ImageFormat format;
@@ -61,8 +60,8 @@ public class AbstractUploadCommand  extends StorageCommand{
         return true;
     }
 
-	public void setUrl(String url) {
-		this.url = url;
-	}
+    public void setUrl(String url) {
+        this.url = url;
+    }
 
 }

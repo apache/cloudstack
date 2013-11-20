@@ -28,7 +28,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 
 @Component
-@Local(value={LoadBalancerVMMapDao.class})
+@Local(value = {LoadBalancerVMMapDao.class})
 public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO, Long> implements LoadBalancerVMMapDao {
 
     @Override
@@ -75,7 +75,7 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
 
         return listBy(sc);
     }
-    
+
     @Override
     public LoadBalancerVMMapVO findByLoadBalancerIdAndVmId(long loadBalancerId, long instanceId) {
         SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();

@@ -36,18 +36,19 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "restoreVirtualMachine", description="Restore a VM to original template/ISO or new template/ISO", responseObject=UserVmResponse.class, since="3.0.0")
+@APICommand(name = "restoreVirtualMachine", description = "Restore a VM to original template/ISO or new template/ISO", responseObject = UserVmResponse.class, since = "3.0.0")
 public class RestoreVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RestoreVMCmd.class);
     private static final String s_name = "restorevmresponse";
 
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="Virtual Machine ID")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "Virtual Machine ID")
     private Long vmId;
 
-    @Parameter(name=ApiConstants.TEMPLATE_ID, type=CommandType.UUID, entityType = TemplateResponse.class, description="an optional template Id to restore vm from the new template. This can be an ISO id in case of restore vm deployed using ISO")
+    @Parameter(name = ApiConstants.TEMPLATE_ID,
+               type = CommandType.UUID,
+               entityType = TemplateResponse.class,
+               description = "an optional template Id to restore vm from the new template. This can be an ISO id in case of restore vm deployed using ISO")
     private Long templateId;
-
 
     @Override
     public String getEventType() {
@@ -60,8 +61,7 @@ public class RestoreVMCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-            ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         UserVm result;
         CallContext.current().setEventDetails("Vm Id: " + getVmId());
         result = _userVmService.restoreVM(this);
@@ -83,7 +83,7 @@ public class RestoreVMCmd extends BaseAsyncCmd {
     public long getEntityOwnerId() {
         UserVm vm = _responseGenerator.findUserVmById(getVmId());
         if (vm == null) {
-             return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
+            return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
         }
         return vm.getAccountId();
     }

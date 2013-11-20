@@ -25,9 +25,10 @@ import org.springframework.stereotype.Component;
 import javax.ejb.Local;
 
 @Component
-@Local(value={MockSecStorageDao.class})
+@Local(value = {MockSecStorageDao.class})
 public class MockSecStorageDaoImpl extends GenericDaoBase<MockSecStorageVO, Long> implements MockSecStorageDao {
     protected final SearchBuilder<MockSecStorageVO> urlSearch;
+
     @Override
     public MockSecStorageVO findByUrl(String url) {
         SearchCriteria<MockSecStorageVO> sc = urlSearch.create();

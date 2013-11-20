@@ -38,28 +38,32 @@ import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "addF5LoadBalancer", responseObject=F5LoadBalancerResponse.class, description="Adds a F5 BigIP load balancer device")
+@APICommand(name = "addF5LoadBalancer", responseObject = F5LoadBalancerResponse.class, description = "Adds a F5 BigIP load balancer device")
 public class AddF5LoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(AddF5LoadBalancerCmd.class.getName());
     private static final String s_name = "addf5bigiploadbalancerresponse";
-    @Inject F5ExternalLoadBalancerElementService _f5DeviceManagerService;
+    @Inject
+    F5ExternalLoadBalancerElementService _f5DeviceManagerService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
-            required=true, description="the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = PhysicalNetworkResponse.class,
+               required = true,
+               description = "the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the F5 load balancer appliance.")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "URL of the F5 load balancer appliance.")
     private String url;
 
-    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="Credentials to reach F5 BigIP load balancer device")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Credentials to reach F5 BigIP load balancer device")
     private String username;
-    
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Credentials to reach F5 BigIP load balancer device")
+
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "Credentials to reach F5 BigIP load balancer device")
     private String password;
 
     @Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE, type = CommandType.STRING, required = true, description = "supports only F5BigIpLoadBalancer")
@@ -105,7 +109,7 @@ public class AddF5LoadBalancerCmd extends BaseAsyncCmd {
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add F5 Big IP load balancer due to internal error.");
             }
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
@@ -121,7 +125,7 @@ public class AddF5LoadBalancerCmd extends BaseAsyncCmd {
     public String getEventType() {
         return EventTypes.EVENT_EXTERNAL_LB_DEVICE_ADD;
     }
- 
+
     @Override
     public String getCommandName() {
         return s_name;

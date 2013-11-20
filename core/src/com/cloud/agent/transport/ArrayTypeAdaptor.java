@@ -35,7 +35,7 @@ import com.google.gson.JsonSerializer;
 
 public class ArrayTypeAdaptor<T> implements JsonDeserializer<T[]>, JsonSerializer<T[]> {
 
-    protected Gson              _gson = null;
+    protected Gson _gson = null;
 
     public ArrayTypeAdaptor() {
     }
@@ -58,8 +58,7 @@ public class ArrayTypeAdaptor<T> implements JsonDeserializer<T[]>, JsonSerialize
 
     @Override
     @SuppressWarnings("unchecked")
-    public T[] deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-    throws JsonParseException {
+    public T[] deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
         JsonArray array = json.getAsJsonArray();
         Iterator<JsonElement> it = array.iterator();
         ArrayList<T> cmds = new ArrayList<T>();

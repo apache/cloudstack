@@ -26,13 +26,11 @@ public class DeleteVMSnapshotAnswer extends Answer {
     public DeleteVMSnapshotAnswer() {
     }
 
-    public DeleteVMSnapshotAnswer(DeleteVMSnapshotCommand cmd, boolean result,
-            String message) {
+    public DeleteVMSnapshotAnswer(DeleteVMSnapshotCommand cmd, boolean result, String message) {
         super(cmd, result, message);
     }
 
-    public DeleteVMSnapshotAnswer(DeleteVMSnapshotCommand cmd,
-            List<VolumeObjectTO> volumeTOs) {
+    public DeleteVMSnapshotAnswer(DeleteVMSnapshotCommand cmd, List<VolumeObjectTO> volumeTOs) {
         super(cmd, true, "");
         this.volumeTOs = volumeTOs;
     }
@@ -45,5 +43,4 @@ public class DeleteVMSnapshotAnswer extends Answer {
         this.volumeTOs = volumeTOs;
     }
 
- 
 }

@@ -40,8 +40,7 @@ import com.cloud.utils.db.GenericDao;
 @Table(name = "storage_pool")
 public class StoragePoolVO implements StoragePool {
     @Id
-    @TableGenerator(name = "storage_pool_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value",
-            pkColumnValue = "storage_pool_seq", allocationSize = 1)
+    @TableGenerator(name = "storage_pool_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "storage_pool_seq", allocationSize = 1)
     @Column(name = "id", updatable = false, nullable = false)
     private long id;
 
@@ -125,8 +124,8 @@ public class StoragePoolVO implements StoragePool {
         this.status = StoragePoolStatus.Initial;
     }
 
-    public StoragePoolVO(long poolId, String name, String uuid, StoragePoolType type, long dataCenterId, Long podId,
-            long availableBytes, long capacityBytes, String hostAddress, int port, String hostPath) {
+    public StoragePoolVO(long poolId, String name, String uuid, StoragePoolType type, long dataCenterId, Long podId, long availableBytes, long capacityBytes, String hostAddress,
+            int port, String hostPath) {
         this.name = name;
         this.id = poolId;
         this.uuid = uuid;
@@ -142,8 +141,7 @@ public class StoragePoolVO implements StoragePool {
     }
 
     public StoragePoolVO(StoragePoolVO that) {
-        this(that.id, that.name, that.uuid, that.poolType, that.dataCenterId, that.podId, that.usedBytes,
-                that.capacityBytes, that.hostAddress, that.port, that.path);
+        this(that.id, that.name, that.uuid, that.poolType, that.dataCenterId, that.podId, that.usedBytes, that.capacityBytes, that.hostAddress, that.port, that.path);
     }
 
     public StoragePoolVO(StoragePoolType type, String hostAddress, int port, String path) {
@@ -212,11 +210,11 @@ public class StoragePoolVO implements StoragePool {
     }
 
     public void setManaged(boolean managed) {
-    	this.managed = managed;
+        this.managed = managed;
     }
 
     public boolean isManaged() {
-    	return managed;
+        return managed;
     }
 
     public void setCapacityIops(Long capacityIops) {
@@ -316,7 +314,7 @@ public class StoragePoolVO implements StoragePool {
         if (!(obj instanceof StoragePoolVO) || obj == null) {
             return false;
         }
-        StoragePoolVO that = (StoragePoolVO) obj;
+        StoragePoolVO that = (StoragePoolVO)obj;
         return this.id == that.id;
     }
 

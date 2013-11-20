@@ -38,22 +38,22 @@ import com.cloud.dc.DedicatedResources;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "dedicatePod", description ="Dedicates a Pod.", responseObject = DedicatePodResponse.class)
+@APICommand(name = "dedicatePod", description = "Dedicates a Pod.", responseObject = DedicatePodResponse.class)
 public class DedicatePodCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DedicatePodCmd.class.getName());
 
     private static final String s_name = "dedicatepodresponse";
-    @Inject public DedicatedService dedicatedService;
+    @Inject
+    public DedicatedService dedicatedService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class,
-            required=true, description="the ID of the Pod")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, required = true, description = "the ID of the Pod")
     private Long podId;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class, required=true, description="the ID of the containing domain")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, required = true, description = "the ID of the containing domain")
     private Long domainId;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the name of the account which needs dedication. Must be used with domainId.")
@@ -62,7 +62,6 @@ public class DedicatePodCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     public Long getPodId() {
         return podId;
@@ -91,7 +90,7 @@ public class DedicatePodCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         List<? extends DedicatedResources> result = dedicatedService.dedicatePod(getPodId(), getDomainId(), getAccountName());
         ListResponse<DedicatePodResponse> response = new ListResponse<DedicatePodResponse>();
         List<DedicatePodResponse> podResponseList = new ArrayList<DedicatePodResponse>();

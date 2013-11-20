@@ -30,7 +30,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "getCloudIdentifier", description="Retrieves a cloud identifier.", responseObject=CloudIdentifierResponse.class)
+@APICommand(name = "getCloudIdentifier", description = "Retrieves a cloud identifier.", responseObject = CloudIdentifierResponse.class)
 public class GetCloudIdentifierCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GetCloudIdentifierCmd.class.getName());
     private static final String s_name = "getcloudidentifierresponse";
@@ -39,8 +39,7 @@ public class GetCloudIdentifierCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.USER_ID, type=CommandType.UUID, entityType = UserResponse.class,
-            required=true, description="the user ID for the cloud identifier")
+    @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, required = true, description = "the user ID for the cloud identifier")
     private Long userid;
 
     /////////////////////////////////////////////////////
@@ -65,7 +64,7 @@ public class GetCloudIdentifierCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         ArrayList<String> result = _mgr.getCloudIdentifierResponse(userid);
         CloudIdentifierResponse response = new CloudIdentifierResponse();
         if (result != null) {

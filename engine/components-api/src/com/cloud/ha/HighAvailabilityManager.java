@@ -37,15 +37,7 @@ public interface HighAvailabilityManager extends Manager {
     }
 
     enum Step {
-        Scheduled,
-        Investigating,
-        Fencing,
-        Stopping,
-        Restarting,
-        Migrating,
-        Cancelled,
-        Done,
-        Error,
+        Scheduled, Investigating, Fencing, Stopping, Restarting, Migrating, Cancelled, Done, Error,
     }
 
     /**
@@ -71,9 +63,9 @@ public interface HighAvailabilityManager extends Manager {
     void scheduleRestart(VMInstanceVO vm, boolean investigate);
 
     void cancelDestroy(VMInstanceVO vm, Long hostId);
-    
+
     void scheduleDestroy(VMInstanceVO vm, long hostId);
-    
+
     /**
      * Schedule restarts for all vms running on the host.
      * @param host host.
@@ -88,7 +80,7 @@ public interface HighAvailabilityManager extends Manager {
      * @return true if schedule worked.
      */
     boolean scheduleMigration(VMInstanceVO vm);
-    
+
     List<VMInstanceVO> findTakenMigrationWork();
 
     /**

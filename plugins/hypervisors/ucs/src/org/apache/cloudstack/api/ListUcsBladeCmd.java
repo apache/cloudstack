@@ -38,14 +38,14 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.ucs.manager.UcsManager;
 import com.cloud.user.Account;
 
-@APICommand(name="listUcsBlades", description="List ucs blades", responseObject=UcsBladeResponse.class)
+@APICommand(name = "listUcsBlades", description = "List ucs blades", responseObject = UcsBladeResponse.class)
 public class ListUcsBladeCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListUcsBladeCmd.class);
 
     @Inject
     private UcsManager mgr;
 
-    @Parameter(name=ApiConstants.UCS_MANAGER_ID, type=CommandType.UUID, description="ucs manager id", entityType=UcsManagerResponse.class, required=true)
+    @Parameter(name = ApiConstants.UCS_MANAGER_ID, type = CommandType.UUID, description = "ucs manager id", entityType = UcsManagerResponse.class, required = true)
     private Long ucsManagerId;
 
     public UcsManager getMgr() {
@@ -65,8 +65,8 @@ public class ListUcsBladeCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-            ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
+        NetworkRuleConflictException {
         try {
             ListResponse<UcsBladeResponse> response = mgr.listUcsBlades(this);
             response.setResponseName(getCommandName());

@@ -33,30 +33,30 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-
-@APICommand(name = "configureSimulator", description="configure simulator", responseObject=SuccessResponse.class)
+@APICommand(name = "configureSimulator", description = "configure simulator", responseObject = SuccessResponse.class)
 public class ConfigureSimulatorCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ConfigureSimulatorCmd.class.getName());
     private static final String s_name = "configuresimulatorresponse";
 
-    @Inject SimulatorManager _simMgr;
+    @Inject
+    SimulatorManager _simMgr;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="configure range: in a zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.LONG, description = "configure range: in a zone")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="configure range: in a pod")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.LONG, description = "configure range: in a pod")
     private Long podId;
 
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, description="configure range: in a cluster")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.LONG, description = "configure range: in a cluster")
     private Long clusterId;
 
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="configure range: in a host")
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.LONG, description = "configure range: in a host")
     private Long hostId;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="which command needs to be configured")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "which command needs to be configured")
     private String command;
 
-    @Parameter(name=ApiConstants.VALUE, type=CommandType.STRING, required=true, description="configuration options for this command, which is seperated by ;")
+    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, required = true, description = "configuration options for this command, which is seperated by ;")
     private String values;
 
     @Override
@@ -79,6 +79,5 @@ public class ConfigureSimulatorCmd extends BaseCmd {
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-
 
 }

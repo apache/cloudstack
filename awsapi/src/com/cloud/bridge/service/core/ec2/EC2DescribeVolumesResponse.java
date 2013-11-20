@@ -21,20 +21,20 @@ import java.util.List;
 
 public class EC2DescribeVolumesResponse {
 
-	private List<EC2Volume> volumeSet = new ArrayList<EC2Volume>();    
+    private List<EC2Volume> volumeSet = new ArrayList<EC2Volume>();
 
-	public EC2DescribeVolumesResponse() {
-	}
-	
-	public void reset() {
-		volumeSet.clear();
-	}
-	
-	public void addVolume( EC2Volume param ) {
-		volumeSet.add( param );
-	}
-	
-	public EC2Volume[] getVolumeSet() {
-		return volumeSet.toArray(new EC2Volume[0]);
-	}
+    public EC2DescribeVolumesResponse() {
+    }
+
+    public void reset() {
+        volumeSet.clear();
+    }
+
+    public void addVolume(EC2Volume param) {
+        volumeSet.add(param);
+    }
+
+    public EC2Volume[] getVolumeSet() {
+        return volumeSet.toArray(new EC2Volume[0]);
+    }
 }

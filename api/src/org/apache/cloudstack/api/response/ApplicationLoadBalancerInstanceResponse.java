@@ -29,21 +29,23 @@ import com.google.gson.annotations.SerializedName;
  */
 
 @SuppressWarnings("unused")
-public class ApplicationLoadBalancerInstanceResponse extends BaseResponse{
-    
-    @SerializedName(ApiConstants.ID) @Param(description = "the instance ID")
+public class ApplicationLoadBalancerInstanceResponse extends BaseResponse {
+
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the instance ID")
     private String id;
-    
-    @SerializedName(ApiConstants.NAME) @Param(description = "the name of the instance")
+
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the name of the instance")
     private String name;
-    
-    @SerializedName(ApiConstants.STATE) @Param(description="the state of the instance")
+
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "the state of the instance")
     private String state;
-    
+
     @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description="the ip address of the instance")
+    @Param(description = "the ip address of the instance")
     private String ipAddress;
-    
 
     public void setId(String id) {
         this.id = id;

@@ -25,9 +25,10 @@ import com.cloud.baremetal.database.BaremetalPxeVO;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=BaremetalPxeVO.class)
+@EntityReference(value = BaremetalPxeVO.class)
 public class BaremetalPxeKickStartResponse extends BaremetalPxeResponse {
-    @SerializedName(ApiConstants.TFTP_DIR) @Param(description="Tftp root directory of PXE server")
+    @SerializedName(ApiConstants.TFTP_DIR)
+    @Param(description = "Tftp root directory of PXE server")
     private String tftpDir;
 
     public String getTftpDir() {

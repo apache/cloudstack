@@ -55,8 +55,8 @@ public class ApiDiscoveryTest {
         testApiAsync = false;
         testUser = new UserVO();
 
-        _discoveryService._apiAccessCheckers =  (List<APIChecker>) mock(List.class);
-        _discoveryService._services = (List<PluggableService>) mock(List.class);
+        _discoveryService._apiAccessCheckers = (List<APIChecker>)mock(List.class);
+        _discoveryService._services = (List<PluggableService>)mock(List.class);
 
         when(_apiChecker.checkAccess(any(User.class), anyString())).thenReturn(true);
         when(_pluggableService.getCommands()).thenReturn(new ArrayList<Class<?>>());
@@ -71,7 +71,7 @@ public class ApiDiscoveryTest {
 
     @Test
     public void verifyListSingleApi() throws Exception {
-        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>) _discoveryService.listApis(testUser, testApiName);
+        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)_discoveryService.listApis(testUser, testApiName);
         ApiDiscoveryResponse response = responses.getResponses().get(0);
         assertTrue("No. of response items should be one", responses.getCount() == 1);
         assertEquals("Error in api name", testApiName, response.getName());
@@ -82,9 +82,9 @@ public class ApiDiscoveryTest {
 
     @Test
     public void verifyListApis() throws Exception {
-        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>) _discoveryService.listApis(testUser, null);
+        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)_discoveryService.listApis(testUser, null);
         assertTrue("No. of response items > 1", responses.getCount() == 1);
-        for (ApiDiscoveryResponse response: responses.getResponses()) {
+        for (ApiDiscoveryResponse response : responses.getResponses()) {
             assertFalse("API name is empty", response.getName().isEmpty());
             assertFalse("API description is empty", response.getDescription().isEmpty());
         }

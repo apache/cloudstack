@@ -135,6 +135,4 @@ public class LoginResponse extends BaseResponse {
         this.type = type;
     }
 
-
-
 }

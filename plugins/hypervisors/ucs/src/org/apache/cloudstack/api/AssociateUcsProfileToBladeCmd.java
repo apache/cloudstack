@@ -37,23 +37,24 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.ucs.manager.UcsManager;
 import com.cloud.user.Account;
-@APICommand(name="associateUcsProfileToBlade", description="associate a profile to a blade", responseObject=UcsBladeResponse.class)
+
+@APICommand(name = "associateUcsProfileToBlade", description = "associate a profile to a blade", responseObject = UcsBladeResponse.class)
 public class AssociateUcsProfileToBladeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AssociateUcsProfileToBladeCmd.class);
 
     @Inject
     private UcsManager mgr;
 
-    @Parameter(name=ApiConstants.UCS_MANAGER_ID, type=CommandType.UUID, description="ucs manager id", entityType=UcsManagerResponse.class, required=true)
+    @Parameter(name = ApiConstants.UCS_MANAGER_ID, type = CommandType.UUID, description = "ucs manager id", entityType = UcsManagerResponse.class, required = true)
     private Long ucsManagerId;
-    @Parameter(name=ApiConstants.UCS_PROFILE_DN, type=CommandType.STRING, description="profile dn", required=true)
+    @Parameter(name = ApiConstants.UCS_PROFILE_DN, type = CommandType.STRING, description = "profile dn", required = true)
     private String profileDn;
-    @Parameter(name=ApiConstants.UCS_BLADE_ID, type=CommandType.UUID, entityType=UcsBladeResponse.class, description="blade id", required=true)
+    @Parameter(name = ApiConstants.UCS_BLADE_ID, type = CommandType.UUID, entityType = UcsBladeResponse.class, description = "blade id", required = true)
     private Long bladeId;
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-            ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
+        NetworkRuleConflictException {
         try {
             UcsBladeResponse rsp = mgr.associateProfileToBlade(this);
             rsp.setResponseName(getCommandName());

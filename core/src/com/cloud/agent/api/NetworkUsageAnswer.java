@@ -20,8 +20,8 @@ import com.cloud.agent.api.LogLevel.Log4jLevel;
 
 @LogLevel(Log4jLevel.Debug)
 public class NetworkUsageAnswer extends Answer {
-	String routerName;
-	Long bytesSent;
+    String routerName;
+    Long bytesSent;
     Long bytesReceived;
 
     protected NetworkUsageAnswer() {
@@ -37,7 +37,6 @@ public class NetworkUsageAnswer extends Answer {
     public NetworkUsageAnswer(Command command, Exception e) {
         super(command, e);
     }
-
 
     public void setBytesReceived(Long bytesReceived) {
         this.bytesReceived = bytesReceived;
@@ -55,7 +54,7 @@ public class NetworkUsageAnswer extends Answer {
         return bytesSent;
     }
 
-	public String getRouterName() {
-		return routerName;
-	}
+    public String getRouterName() {
+        return routerName;
+    }
 }

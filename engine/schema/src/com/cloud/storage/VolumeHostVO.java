@@ -192,9 +192,8 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
         this.state = ObjectInDataStoreStateMachine.State.Allocated;
     }
 
-    public VolumeHostVO(long hostId, long volumeId, long zoneId, Date lastUpdated, int downloadPercent,
-            Status downloadState, String localDownloadPath, String errorString, String jobId, String installPath,
-            String downloadUrl, String checksum, ImageFormat format) {
+    public VolumeHostVO(long hostId, long volumeId, long zoneId, Date lastUpdated, int downloadPercent, Status downloadState, String localDownloadPath, String errorString,
+            String jobId, String installPath, String downloadUrl, String checksum, ImageFormat format) {
         // super();
         this.hostId = hostId;
         this.volumeId = volumeId;
@@ -241,7 +240,7 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
 
     public boolean equals(Object obj) {
         if (obj instanceof VolumeHostVO) {
-            VolumeHostVO other = (VolumeHostVO) obj;
+            VolumeHostVO other = (VolumeHostVO)obj;
             return (this.volumeId == other.getVolumeId() && this.hostId == other.getHostId());
         }
         return false;
@@ -298,8 +297,7 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
     }
 
     public String toString() {
-        return new StringBuilder("VolumeHost[").append(id).append("-").append(volumeId).append("-").append(hostId)
-                .append(installPath).append("]").toString();
+        return new StringBuilder("VolumeHost[").append(id).append("-").append(volumeId).append("-").append(hostId).append(installPath).append("]").toString();
     }
 
     public long getUpdatedCount() {

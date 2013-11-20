@@ -36,57 +36,55 @@ import com.cloud.netapp.NetappVolumeVO;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.ListVolumesOnFilerCmdResponse;
 
-
-@APICommand(name = "listVolumesOnFiler", description="List Volumes", responseObject = ListVolumesOnFilerCmdResponse.class)
+@APICommand(name = "listVolumesOnFiler", description = "List Volumes", responseObject = ListVolumesOnFilerCmdResponse.class)
 public class ListVolumesOnFilerCmd extends BaseCmd {
-	public static final Logger s_logger = Logger.getLogger(ListVolumesOnFilerCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListVolumesOnFilerCmd.class.getName());
     private static final String s_name = "listvolumesresponse";
-    
-    @Parameter(name=ApiConstants.POOL_NAME, type=CommandType.STRING, required = true, description="pool name.")
-	private String poolName;
-    
-    @Inject NetappManager netappMgr;
 
-	@Override
-	public void execute() throws ResourceUnavailableException,
-			InsufficientCapacityException, ServerApiException,
-			ConcurrentOperationException, ResourceAllocationException {
-    	try {
-    		List<NetappVolumeVO> volumes = netappMgr.listVolumesOnFiler(poolName);
-    		ListResponse<ListVolumesOnFilerCmdResponse> listResponse = new ListResponse<ListVolumesOnFilerCmdResponse>();
-    		List<ListVolumesOnFilerCmdResponse> responses = new ArrayList<ListVolumesOnFilerCmdResponse>();
-    		for (NetappVolumeVO volume : volumes) {
-    			ListVolumesOnFilerCmdResponse response = new ListVolumesOnFilerCmdResponse();
-    			response.setId(volume.getId());
-    			response.setIpAddress(volume.getIpAddress());
-    			response.setPoolName(volume.getPoolName());
-    			response.setAggrName(volume.getAggregateName());
-    			response.setVolumeName(volume.getVolumeName());
-    			response.setSnapshotPolicy(volume.getSnapshotPolicy());
-    			response.setSnapshotReservation(volume.getSnapshotReservation());
-    			response.setVolumeSize(volume.getVolumeSize());
-    			response.setObjectName("volume");
-    			responses.add(response);
-    		}
-    		listResponse.setResponses(responses);
-    		listResponse.setResponseName(getCommandName());
-    		this.setResponseObject(listResponse);
-    	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
-    	}
-		
-	}
+    @Parameter(name = ApiConstants.POOL_NAME, type = CommandType.STRING, required = true, description = "pool name.")
+    private String poolName;
 
-	@Override
-	public String getCommandName() {
-		// TODO Auto-generated method stub
-		return s_name;
-	}
+    @Inject
+    NetappManager netappMgr;
 
-	@Override
-	public long getEntityOwnerId() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+        try {
+            List<NetappVolumeVO> volumes = netappMgr.listVolumesOnFiler(poolName);
+            ListResponse<ListVolumesOnFilerCmdResponse> listResponse = new ListResponse<ListVolumesOnFilerCmdResponse>();
+            List<ListVolumesOnFilerCmdResponse> responses = new ArrayList<ListVolumesOnFilerCmdResponse>();
+            for (NetappVolumeVO volume : volumes) {
+                ListVolumesOnFilerCmdResponse response = new ListVolumesOnFilerCmdResponse();
+                response.setId(volume.getId());
+                response.setIpAddress(volume.getIpAddress());
+                response.setPoolName(volume.getPoolName());
+                response.setAggrName(volume.getAggregateName());
+                response.setVolumeName(volume.getVolumeName());
+                response.setSnapshotPolicy(volume.getSnapshotPolicy());
+                response.setSnapshotReservation(volume.getSnapshotReservation());
+                response.setVolumeSize(volume.getVolumeSize());
+                response.setObjectName("volume");
+                responses.add(response);
+            }
+            listResponse.setResponses(responses);
+            listResponse.setResponseName(getCommandName());
+            this.setResponseObject(listResponse);
+        } catch (InvalidParameterValueException e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
+        }
+
+    }
+
+    @Override
+    public String getCommandName() {
+        // TODO Auto-generated method stub
+        return s_name;
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
 }

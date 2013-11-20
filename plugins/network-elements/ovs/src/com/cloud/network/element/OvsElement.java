@@ -46,8 +46,7 @@ public class OvsElement extends AdapterBase implements NetworkElement {
     OvsTunnelManager _ovsTunnelMgr;
 
     @Override
-    public boolean destroy(Network network, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         return true;
     }
 
@@ -62,20 +61,15 @@ public class OvsElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public boolean implement(Network network, NetworkOffering offering,
-            DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
+    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException, InsufficientCapacityException {
         //Consider actually implementing the network here
-    	return true;
+        return true;
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nic,
-            VirtualMachineProfile vm,
-            DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException, InsufficientCapacityException {
         if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vswitch) {
             return true;
         }
@@ -91,10 +85,7 @@ public class OvsElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public boolean release(Network network, NicProfile nic,
-            VirtualMachineProfile vm,
-            ReservationContext context) throws ConcurrentOperationException,
-            ResourceUnavailableException {
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vswitch) {
             return true;
         }
@@ -108,19 +99,17 @@ public class OvsElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public boolean shutdown(Network network, ReservationContext context, boolean cleanup)
-            throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
         return true;
     }
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
-    	return true;
+        return true;
     }
 
     @Override
-    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         return true;
     }
 

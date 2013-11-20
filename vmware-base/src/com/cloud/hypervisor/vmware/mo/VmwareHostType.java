@@ -17,5 +17,5 @@
 package com.cloud.hypervisor.vmware.mo;
 
 public enum VmwareHostType {
-	ESXi, ESX
+    ESXi, ESX
 }

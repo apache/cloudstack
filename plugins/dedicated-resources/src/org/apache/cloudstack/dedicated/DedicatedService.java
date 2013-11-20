@@ -35,8 +35,7 @@ public interface DedicatedService extends PluggableService {
 
     DedicatePodResponse createDedicatePodResponse(DedicatedResources resource);
 
-    DedicateClusterResponse createDedicateClusterResponse(
-            DedicatedResources resource);
+    DedicateClusterResponse createDedicateClusterResponse(DedicatedResources resource);
 
     DedicateHostResponse createDedicateHostResponse(DedicatedResources resource);
 

@@ -28,24 +28,23 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={CloudStackAccountDao.class})
+@Local(value = {CloudStackAccountDao.class})
 public class CloudStackAccountDaoImpl extends GenericDaoBase<CloudStackAccountVO, String> implements CloudStackAccountDao {
-    
+
     @Override
     public String getDefaultZoneId(String accountId) {
-        
+
         SearchBuilder<CloudStackAccountVO> SearchByUUID = createSearchBuilder();
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         try {
             txn.start();
-            SearchByUUID.and("uuid", SearchByUUID.entity().getUuid(),
-                    SearchCriteria.Op.EQ);
+            SearchByUUID.and("uuid", SearchByUUID.entity().getUuid(), SearchCriteria.Op.EQ);
             SearchByUUID.done();
             SearchCriteria<CloudStackAccountVO> sc = SearchByUUID.create();
             sc.setParameters("uuid", accountId);
             CloudStackAccountVO account = findOneBy(sc);
-            if (null != account) 
-                if(null != account.getDefaultZoneId())
+            if (null != account)
+                if (null != account.getDefaultZoneId())
                     return Long.toString(account.getDefaultZoneId());
             return null;
         } finally {
@@ -54,6 +53,5 @@ public class CloudStackAccountDaoImpl extends GenericDaoBase<CloudStackAccountVO
         }
 
     }
-    
 
 }

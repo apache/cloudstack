@@ -41,8 +41,7 @@ public class DeleteAutoScaleVmProfileCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmProfileResponse.class,
-            required = true, description = "the ID of the autoscale profile")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmProfileResponse.class, required = true, description = "the ID of the autoscale profile")
     private Long id;
 
     // ///////////////////////////////////////////////////

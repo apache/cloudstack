@@ -35,9 +35,8 @@ public class ListS3sCmd extends BaseListCmd {
     private static final String COMMAND_NAME = "lists3sresponse";
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException,
-            ServerApiException, ConcurrentOperationException, ResourceAllocationException,
-            NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
+        NetworkRuleConflictException {
 
         ListImageStoresCmd cmd = new ListImageStoresCmd();
         cmd.setProvider("S3");

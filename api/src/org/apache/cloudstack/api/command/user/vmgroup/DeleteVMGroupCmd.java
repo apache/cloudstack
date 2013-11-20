@@ -29,8 +29,8 @@ import org.apache.log4j.Logger;
 import com.cloud.user.Account;
 import com.cloud.vm.InstanceGroup;
 
-@APICommand(name = "deleteInstanceGroup", description="Deletes a vm group", responseObject=SuccessResponse.class)
-public class DeleteVMGroupCmd extends BaseCmd{
+@APICommand(name = "deleteInstanceGroup", description = "Deletes a vm group", responseObject = SuccessResponse.class)
+public class DeleteVMGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVMGroupCmd.class.getName());
     private static final String s_name = "deleteinstancegroupresponse";
 
@@ -38,8 +38,7 @@ public class DeleteVMGroupCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=InstanceGroupResponse.class,
-            required=true, description="the ID of the instance group")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, required = true, description = "the ID of the instance group")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -70,7 +69,7 @@ public class DeleteVMGroupCmd extends BaseCmd{
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = _userVmService.deleteVmGroup(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

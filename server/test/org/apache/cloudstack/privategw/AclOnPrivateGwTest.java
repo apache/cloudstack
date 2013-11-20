@@ -73,10 +73,10 @@ public class AclOnPrivateGwTest {
     public void setUp() throws ConfigurationException {
 
         createPrivateGwCmd = new CreatePrivateGatewayCmd() {
-        @Override
-        public Long getEntityId () {
-            return 2L;
-        }
+            @Override
+            public Long getEntityId() {
+                return 2L;
+            }
         };
 
     }
@@ -84,7 +84,7 @@ public class AclOnPrivateGwTest {
     @Test
     public void testExecuteSuccess() {
 
-        VpcService _vpcService  = Mockito.mock(VpcService.class);
+        VpcService _vpcService = Mockito.mock(VpcService.class);
 
         try {
             _vpcService.applyVpcPrivateGateway(Mockito.anyLong(), Mockito.anyBoolean());
@@ -98,7 +98,7 @@ public class AclOnPrivateGwTest {
 
     @Test
     public void testExecuteFail() {
-        VpcService vpcService= Mockito.mock(VpcService.class);
+        VpcService vpcService = Mockito.mock(VpcService.class);
         createPrivateGwCmd._vpcService = vpcService;
 
         try {
@@ -112,8 +112,7 @@ public class AclOnPrivateGwTest {
         try {
             createPrivateGwCmd.execute();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to create private gateway",
-                    exception.getDescription());
+            Assert.assertEquals("Failed to create private gateway", exception.getDescription());
         } catch (ResourceAllocationException e) {
             e.printStackTrace();
         } catch (InsufficientCapacityException e) {
@@ -124,159 +123,147 @@ public class AclOnPrivateGwTest {
             e.printStackTrace();
         }
 
-
     }
 
     @Configuration
-    @ComponentScan(basePackageClasses = {VpcManagerImpl.class}, includeFilters = {@ComponentScan.Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)}, useDefaultFilters = false)
+    @ComponentScan(basePackageClasses = {VpcManagerImpl.class},
+                   includeFilters = {@ComponentScan.Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
+                   useDefaultFilters = false)
     public static class TestConfiguration extends SpringUtils.CloudStackTestConfiguration {
         @Bean
-        public VpcOfferingDao   vpcOfferingDao() {
+        public VpcOfferingDao vpcOfferingDao() {
             return Mockito.mock(VpcOfferingDao.class);
         }
 
         @Bean
-        public VpcOfferingServiceMapDao vpcOfferingServiceMapDao () {
+        public VpcOfferingServiceMapDao vpcOfferingServiceMapDao() {
             return Mockito.mock(VpcOfferingServiceMapDao.class);
         }
 
         @Bean
-        public VpcDao vpcDao () {
+        public VpcDao vpcDao() {
             return Mockito.mock(VpcDao.class);
         }
 
         @Bean
-        public ConfigurationDao configurationDao () {
+        public ConfigurationDao configurationDao() {
             return Mockito.mock(ConfigurationDao.class);
         }
 
         @Bean
-        public ConfigurationManager configurationManager () {
+        public ConfigurationManager configurationManager() {
             return Mockito.mock(ConfigurationManager.class);
         }
 
-
         @Bean
-        public AccountManager accountManager () {
+        public AccountManager accountManager() {
             return Mockito.mock(AccountManager.class);
         }
 
-
         @Bean
-        public NetworkDao networkDao () {
+        public NetworkDao networkDao() {
             return Mockito.mock(NetworkDao.class);
         }
 
         @Bean
-        public NetworkOrchestrationService networkManager () {
+        public NetworkOrchestrationService networkManager() {
             return Mockito.mock(NetworkOrchestrationService.class);
         }
 
-
         @Bean
-        public NetworkModel networkModel () {
+        public NetworkModel networkModel() {
             return Mockito.mock(NetworkModel.class);
         }
 
-
         @Bean
-        public NetworkService networkService () {
+        public NetworkService networkService() {
             return Mockito.mock(NetworkService.class);
         }
 
         @Bean
-        public IPAddressDao iPAddressDao () {
+        public IPAddressDao iPAddressDao() {
             return Mockito.mock(IPAddressDao.class);
         }
 
         @Bean
-        public DomainRouterDao domainRouterDao () {
+        public DomainRouterDao domainRouterDao() {
             return Mockito.mock(DomainRouterDao.class);
         }
 
-
         @Bean
-        public VpcGatewayDao vpcGatewayDao () {
+        public VpcGatewayDao vpcGatewayDao() {
             return Mockito.mock(VpcGatewayDao.class);
         }
 
-
         @Bean
-        public PrivateIpDao privateIpDao () {
+        public PrivateIpDao privateIpDao() {
             return Mockito.mock(PrivateIpDao.class);
         }
 
-
         @Bean
-        public StaticRouteDao staticRouteDao () {
+        public StaticRouteDao staticRouteDao() {
             return Mockito.mock(StaticRouteDao.class);
         }
 
-
         @Bean
-        public NetworkOfferingServiceMapDao networkOfferingServiceMapDao () {
+        public NetworkOfferingServiceMapDao networkOfferingServiceMapDao() {
             return Mockito.mock(NetworkOfferingServiceMapDao.class);
         }
 
-
         @Bean
-        public PhysicalNetworkDao physicalNetworkDao () {
+        public PhysicalNetworkDao physicalNetworkDao() {
             return Mockito.mock(PhysicalNetworkDao.class);
         }
 
-
         @Bean
-        public ResourceTagDao resourceTagDao () {
+        public ResourceTagDao resourceTagDao() {
             return Mockito.mock(ResourceTagDao.class);
         }
 
         @Bean
-        public FirewallRulesDao firewallRulesDao () {
+        public FirewallRulesDao firewallRulesDao() {
             return Mockito.mock(FirewallRulesDao.class);
         }
 
         @Bean
-        public Site2SiteVpnGatewayDao site2SiteVpnGatewayDao () {
+        public Site2SiteVpnGatewayDao site2SiteVpnGatewayDao() {
             return Mockito.mock(Site2SiteVpnGatewayDao.class);
         }
 
-
         @Bean
-        public Site2SiteVpnManager site2SiteVpnManager () {
+        public Site2SiteVpnManager site2SiteVpnManager() {
             return Mockito.mock(Site2SiteVpnManager.class);
         }
 
         @Bean
-        public VlanDao vlanDao () {
+        public VlanDao vlanDao() {
             return Mockito.mock(VlanDao.class);
         }
 
         @Bean
-        public ResourceLimitService resourceLimitService () {
+        public ResourceLimitService resourceLimitService() {
             return Mockito.mock(ResourceLimitService.class);
         }
 
         @Bean
-        public VpcServiceMapDao vpcServiceMapDao () {
+        public VpcServiceMapDao vpcServiceMapDao() {
             return Mockito.mock(VpcServiceMapDao.class);
         }
 
         @Bean
-        public DataCenterDao dataCenterDao () {
+        public DataCenterDao dataCenterDao() {
             return Mockito.mock(DataCenterDao.class);
         }
 
-
         @Bean
-        public ConfigurationServer configurationServer () {
+        public ConfigurationServer configurationServer() {
             return Mockito.mock(ConfigurationServer.class);
         }
 
         @Bean
-        public NetworkACLDao networkACLDao () {
+        public NetworkACLDao networkACLDao() {
             return Mockito.mock(NetworkACLDao.class);
         }
-
 
         public static class Library implements TypeFilter {
 

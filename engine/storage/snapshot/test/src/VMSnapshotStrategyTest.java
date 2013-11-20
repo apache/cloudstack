@@ -76,19 +76,20 @@ public class VMSnapshotStrategyTest extends TestCase {
     VMSnapshotStrategy vmSnapshotStrategy;
     @Inject
     VMSnapshotHelper vmSnapshotHelper;
-    @Inject UserVmDao userVmDao;
+    @Inject
+    UserVmDao userVmDao;
     @Inject
     GuestOSDao guestOSDao;
     @Inject
     AgentManager agentMgr;
     @Inject
     VMSnapshotDao vmSnapshotDao;
+
     @Override
     @Before
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
     }
-
 
     @Test
     public void testCreateVMSnapshot() throws AgentUnavailableException, OperationTimedoutException {
@@ -199,9 +200,10 @@ public class VMSnapshotStrategyTest extends TestCase {
         assertTrue(result);
     }
 
-
     @Configuration
-    @ComponentScan(basePackageClasses = {NetUtils.class, DefaultVMSnapshotStrategy.class}, includeFilters = {@ComponentScan.Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)}, useDefaultFilters = false)
+    @ComponentScan(basePackageClasses = {NetUtils.class, DefaultVMSnapshotStrategy.class},
+                   includeFilters = {@ComponentScan.Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
+                   useDefaultFilters = false)
     public static class TestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         public static class Library implements TypeFilter {

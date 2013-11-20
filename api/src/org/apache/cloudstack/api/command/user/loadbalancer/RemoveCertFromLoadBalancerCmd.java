@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.*;
 import com.cloud.network.rules.LoadBalancer;
@@ -26,22 +25,19 @@ import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
-
 @APICommand(name = "removeCertFromLoadBalancer", description = "Removes a certificate from a Load Balancer Rule", responseObject = SuccessResponse.class)
-public class RemoveCertFromLoadBalancerCmd extends BaseAsyncCmd{
+public class RemoveCertFromLoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(RemoveCertFromLoadBalancerCmd.class.getName());
 
     private static final String s_name = "removeCertFromLoadBalancer";
 
-
-    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class,
-            required = true, description = "the ID of the load balancer rule")
+    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the load balancer rule")
     Long lbRuleId;
 
-
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
+        NetworkRuleConflictException {
         boolean result = _lbService.removeCertFromLoadBalancer(getLbRuleId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -66,7 +62,6 @@ public class RemoveCertFromLoadBalancerCmd extends BaseAsyncCmd{
         return "Removing a certificate from a loadbalancer with ID " + getLbRuleId();
     }
 
-
     @Override
     public long getEntityOwnerId() {
         LoadBalancer lb = _entityMgr.findById(LoadBalancer.class, getLbRuleId());
@@ -76,7 +71,7 @@ public class RemoveCertFromLoadBalancerCmd extends BaseAsyncCmd{
         return lb.getAccountId();
     }
 
-    public Long getLbRuleId(){
+    public Long getLbRuleId() {
         return this.lbRuleId;
     }
 }

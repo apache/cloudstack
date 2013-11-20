@@ -29,84 +29,107 @@ import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = ServiceOffering.class)
 public class ServiceOfferingResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the id of the service offering")
+    @SerializedName("id")
+    @Param(description = "the id of the service offering")
     private String id;
 
-    @SerializedName("name") @Param(description="the name of the service offering")
+    @SerializedName("name")
+    @Param(description = "the name of the service offering")
     private String name;
 
-    @SerializedName("displaytext") @Param(description="an alternate display text of the service offering.")
+    @SerializedName("displaytext")
+    @Param(description = "an alternate display text of the service offering.")
     private String displayText;
 
-    @SerializedName("cpunumber") @Param(description="the number of CPU")
+    @SerializedName("cpunumber")
+    @Param(description = "the number of CPU")
     private int cpuNumber;
 
-    @SerializedName("cpuspeed") @Param(description="the clock rate CPU speed in Mhz")
+    @SerializedName("cpuspeed")
+    @Param(description = "the clock rate CPU speed in Mhz")
     private int cpuSpeed;
 
-    @SerializedName("memory") @Param(description="the memory in MB")
+    @SerializedName("memory")
+    @Param(description = "the memory in MB")
     private int memory;
 
-    @SerializedName("created") @Param(description="the date this service offering was created")
+    @SerializedName("created")
+    @Param(description = "the date this service offering was created")
     private Date created;
 
-    @SerializedName("storagetype") @Param(description="the storage type for this service offering")
+    @SerializedName("storagetype")
+    @Param(description = "the storage type for this service offering")
     private String storageType;
 
-    @SerializedName("offerha") @Param(description="the ha support in the service offering")
+    @SerializedName("offerha")
+    @Param(description = "the ha support in the service offering")
     private Boolean offerHa;
 
-    @SerializedName("limitcpuuse") @Param(description="restrict the CPU usage to committed service offering")
+    @SerializedName("limitcpuuse")
+    @Param(description = "restrict the CPU usage to committed service offering")
     private Boolean limitCpuUse;
 
-    @SerializedName("isvolatile") @Param(description="true if the vm needs to be volatile, i.e., on every reboot of vm from API root disk is discarded and creates a new root disk")
+    @SerializedName("isvolatile")
+    @Param(description = "true if the vm needs to be volatile, i.e., on every reboot of vm from API root disk is discarded and creates a new root disk")
     private Boolean isVolatile;
 
-    @SerializedName("tags") @Param(description="the tags for the service offering")
+    @SerializedName("tags")
+    @Param(description = "the tags for the service offering")
     private String tags;
 
-    @SerializedName("domainid") @Param(description="the domain id of the service offering")
+    @SerializedName("domainid")
+    @Param(description = "the domain id of the service offering")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="Domain name for the offering")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "Domain name for the offering")
     private String domain;
 
-    @SerializedName(ApiConstants.HOST_TAGS) @Param(description="the host tag for the service offering")
+    @SerializedName(ApiConstants.HOST_TAGS)
+    @Param(description = "the host tag for the service offering")
     private String hostTag;
 
-    @SerializedName(ApiConstants.IS_SYSTEM_OFFERING) @Param(description="is this a system vm offering")
+    @SerializedName(ApiConstants.IS_SYSTEM_OFFERING)
+    @Param(description = "is this a system vm offering")
     private Boolean isSystem;
 
-    @SerializedName(ApiConstants.IS_DEFAULT_USE) @Param(description="is this a  default system vm offering")
+    @SerializedName(ApiConstants.IS_DEFAULT_USE)
+    @Param(description = "is this a  default system vm offering")
     private Boolean defaultUse;
 
-    @SerializedName(ApiConstants.SYSTEM_VM_TYPE) @Param(description="is this a the systemvm type for system vm offering")
+    @SerializedName(ApiConstants.SYSTEM_VM_TYPE)
+    @Param(description = "is this a the systemvm type for system vm offering")
     private String vm_type;
 
-    @SerializedName(ApiConstants.NETWORKRATE) @Param(description="data transfer rate in megabits per second allowed.")
+    @SerializedName(ApiConstants.NETWORKRATE)
+    @Param(description = "data transfer rate in megabits per second allowed.")
     private Integer networkRate;
 
-    @SerializedName("diskBytesReadRate") @Param(description="bytes read rate of the service offering")
+    @SerializedName("diskBytesReadRate")
+    @Param(description = "bytes read rate of the service offering")
     private Long bytesReadRate;
 
-    @SerializedName("diskBytesWriteRate") @Param(description="bytes write rate of the service offering")
+    @SerializedName("diskBytesWriteRate")
+    @Param(description = "bytes write rate of the service offering")
     private Long bytesWriteRate;
 
-    @SerializedName("diskIopsReadRate") @Param(description="io requests read rate of the service offering")
+    @SerializedName("diskIopsReadRate")
+    @Param(description = "io requests read rate of the service offering")
     private Long iopsReadRate;
 
-    @SerializedName("diskIopsWriteRate") @Param(description="io requests write rate of the service offering")
+    @SerializedName("diskIopsWriteRate")
+    @Param(description = "io requests write rate of the service offering")
     private Long iopsWriteRate;
 
-    @SerializedName(ApiConstants.DEPLOYMENT_PLANNER) @Param(description="deployment strategy used to deploy VM.")
+    @SerializedName(ApiConstants.DEPLOYMENT_PLANNER)
+    @Param(description = "deployment strategy used to deploy VM.")
     private String deploymentPlanner;
 
     @SerializedName(ApiConstants.SERVICE_OFFERING_DETAILS)
     @Param(description = "additional key/value details tied with this service offering", since = "4.2.0")
     private Map<String, String> details;
-    
-    
-    public ServiceOfferingResponse(){
+
+    public ServiceOfferingResponse() {
     }
 
     public String getId() {
@@ -133,7 +156,6 @@ public class ServiceOfferingResponse extends BaseResponse {
         this.isSystem = isSystem;
     }
 
-
     public Boolean getDefaultUse() {
         return defaultUse;
     }
@@ -142,7 +164,6 @@ public class ServiceOfferingResponse extends BaseResponse {
         this.defaultUse = defaultUse;
     }
 
-
     public String getSystemVmType() {
         return vm_type;
     }
@@ -150,7 +171,6 @@ public class ServiceOfferingResponse extends BaseResponse {
     public void setSystemVmType(String vmtype) {
         vm_type = vmtype;
     }
-
 
     public String getDisplayText() {
         return displayText;

@@ -43,7 +43,7 @@ public class Upgrade40to41 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "4.0.0", "4.1.0" };
+        return new String[] {"4.0.0", "4.1.0"};
     }
 
     @Override
@@ -63,7 +63,7 @@ public class Upgrade40to41 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to find db/schema-40to410.sql");
         }
 
-        return new File[] { new File(script) };
+        return new File[] {new File(script)};
     }
 
     @Override
@@ -79,20 +79,20 @@ public class Upgrade40to41 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to find db/schema-40to410-cleanup.sql");
         }
 
-        return new File[] { new File(script) };
+        return new File[] {new File(script)};
     }
 
     private void updateRegionEntries(Connection conn) {
         final Properties dbProps = DbProperties.getDbProperties();
         int region_id = 1;
         String regionId = dbProps.getProperty("region.id");
-        if(regionId != null){
+        if (regionId != null) {
             region_id = Integer.parseInt(regionId);
         }
         PreparedStatement pstmt = null;
         try {
             //Update regionId in region table
-            s_logger.debug("Updating region table with Id: "+region_id);
+            s_logger.debug("Updating region table with Id: " + region_id);
             pstmt = conn.prepareStatement("update `cloud`.`region` set id = ?");
             pstmt.setInt(1, region_id);
             pstmt.executeUpdate();
@@ -123,15 +123,15 @@ public class Upgrade40to41 implements DbUpgrade {
             pstmt = conn.prepareStatement("select network_id FROM `cloud`.`ntwk_service_map` where service='Firewall' and provider='VirtualRouter' ");
             rs = pstmt.executeQuery();
             while (rs.next()) {
-                    long netId = rs.getLong(1);
-                    //When upgraded from 2.2.14 to 3.0.6 guest_type is updated to Isolated in the 2214to30 clean up sql. clean up executes
-                    //after this. So checking for Isolated OR Virtual
-                    pstmt = conn.prepareStatement("select account_id, domain_id FROM `cloud`.`networks` where (guest_type='Isolated' OR guest_type='Virtual') and traffic_type='Guest' and vpc_id is NULL and (state='implemented' OR state='Shutdown') and id=? ");
-                    pstmt.setLong(1, netId);
-                    s_logger.debug("Getting account_id, domain_id from networks table: " + pstmt);
-                    rsNw = pstmt.executeQuery();
+                long netId = rs.getLong(1);
+                //When upgraded from 2.2.14 to 3.0.6 guest_type is updated to Isolated in the 2214to30 clean up sql. clean up executes
+                //after this. So checking for Isolated OR Virtual
+                pstmt = conn.prepareStatement("select account_id, domain_id FROM `cloud`.`networks` where (guest_type='Isolated' OR guest_type='Virtual') and traffic_type='Guest' and vpc_id is NULL and (state='implemented' OR state='Shutdown') and id=? ");
+                pstmt.setLong(1, netId);
+                s_logger.debug("Getting account_id, domain_id from networks table: " + pstmt);
+                rsNw = pstmt.executeQuery();
 
-                    if(rsNw.next()) {
+                if (rsNw.next()) {
                     long accountId = rsNw.getLong(1);
                     long domainId = rsNw.getLong(2);
 
@@ -151,7 +151,7 @@ public class Upgrade40to41 implements DbUpgrade {
                     rsId = pstmt.executeQuery();
 
                     long firewallRuleId;
-                    if(rsId.next()) {
+                    if (rsId.next()) {
                         firewallRuleId = rsId.getLong(1);
                         pstmt = conn.prepareStatement("insert into firewall_rules_cidrs (firewall_rule_id,source_cidr) values (?, '0.0.0.0/0')");
                         pstmt.setLong(1, firewallRuleId);

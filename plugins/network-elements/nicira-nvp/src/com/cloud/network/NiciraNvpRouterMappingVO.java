@@ -26,18 +26,18 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="nicira_nvp_router_map")
+@Table(name = "nicira_nvp_router_map")
 public class NiciraNvpRouterMappingVO implements InternalIdentity {
     //FIXME the ddl for this table should be in one of the upgrade scripts
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="id")
+    @Column(name = "id")
     private long id;
 
-    @Column(name="logicalrouter_uuid")
+    @Column(name = "logicalrouter_uuid")
     private String logicalRouterUuid;
 
-    @Column(name="network_id")
+    @Column(name = "network_id")
     private long networkId;
 
     public NiciraNvpRouterMappingVO() {

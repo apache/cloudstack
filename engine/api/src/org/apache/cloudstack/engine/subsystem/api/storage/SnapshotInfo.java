@@ -28,6 +28,7 @@ public interface SnapshotInfo extends DataObject, Snapshot {
     VolumeInfo getBaseVolume();
 
     void addPayload(Object data);
+
     Object getPayload();
 
     Long getDataCenterId();

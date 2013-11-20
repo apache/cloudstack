@@ -23,32 +23,27 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 
 public enum Status {
-	Creating(true, false, false),
-    Connecting(true, false, false),
-    Up(true, false, false),
-    Down(true, true, true),
-    Disconnected(true, true, true),
-    Alert(true, true, true),
-    Removed(true, false, true),
-    Error(true, false, true),
-    Rebalancing(true, false, true);
+    Creating(true, false, false), Connecting(true, false, false), Up(true, false, false), Down(true, true, true), Disconnected(true, true, true), Alert(true, true, true), Removed(
+            true,
+            false,
+            true), Error(true, false, true), Rebalancing(true, false, true);
 
     private final boolean updateManagementServer;
     private final boolean checkManagementServer;
     private final boolean lostConnection;
 
     private Status(boolean updateConnection, boolean checkManagementServer, boolean lostConnection) {
-    	this.updateManagementServer = updateConnection;
-    	this.checkManagementServer = checkManagementServer;
-    	this.lostConnection = lostConnection;
+        this.updateManagementServer = updateConnection;
+        this.checkManagementServer = checkManagementServer;
+        this.lostConnection = lostConnection;
     }
 
     public boolean updateManagementServer() {
-    	return updateManagementServer;
+        return updateManagementServer;
     }
 
     public boolean checkManagementServer() {
-    	return checkManagementServer;
+        return checkManagementServer;
     }
 
     public boolean lostConnection() {
@@ -74,8 +69,9 @@ public enum Status {
 
         private final boolean isUserRequest;
         private final String comment;
+
         private Event(boolean isUserRequest, String comment) {
-        	this.isUserRequest = isUserRequest;
+            this.isUserRequest = isUserRequest;
             this.comment = comment;
         }
 
@@ -84,7 +80,7 @@ public enum Status {
         }
 
         public boolean isUserRequest() {
-        	return isUserRequest;
+            return isUserRequest;
         }
     }
 

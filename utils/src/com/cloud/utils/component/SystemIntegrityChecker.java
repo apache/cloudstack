@@ -22,6 +22,6 @@ package com.cloud.utils.component;
  */
 public interface SystemIntegrityChecker {
     public static final String Name = "system-integrity-checker";
-    
+
     void check();
 }

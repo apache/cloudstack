@@ -30,9 +30,7 @@ public class CreateLogicalEdgeFirewallCommand extends Command {
     private String _internalSubnet;
     private List<String> _publicGateways;
 
-    public CreateLogicalEdgeFirewallCommand(long vlanId,
-            String publicIp, String internalIp,
-            String publicSubnet, String internalSubnet) {
+    public CreateLogicalEdgeFirewallCommand(long vlanId, String publicIp, String internalIp, String publicSubnet, String internalSubnet) {
         super();
         this._vlanId = vlanId;
         this._publicIp = publicIp;

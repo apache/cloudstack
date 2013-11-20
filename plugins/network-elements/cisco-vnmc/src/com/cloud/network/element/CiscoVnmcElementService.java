@@ -32,8 +32,7 @@ public interface CiscoVnmcElementService extends PluggableService {
 
     public CiscoVnmcController addCiscoVnmcResource(AddCiscoVnmcResourceCmd cmd);
 
-    public CiscoVnmcResourceResponse createCiscoVnmcResourceResponse(
-            CiscoVnmcController CiscoVnmcResourceVO);
+    public CiscoVnmcResourceResponse createCiscoVnmcResourceResponse(CiscoVnmcController CiscoVnmcResourceVO);
 
     boolean deleteCiscoVnmcResource(DeleteCiscoVnmcResourceCmd cmd);
 

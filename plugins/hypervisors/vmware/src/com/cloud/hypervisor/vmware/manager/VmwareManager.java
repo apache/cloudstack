@@ -34,16 +34,19 @@ public interface VmwareManager {
     String composeWorkerName();
 
     String getSystemVMIsoFileNameOnDatastore();
+
     String getSystemVMDefaultNicAdapterType();
 
     void prepareSecondaryStorageStore(String strStorageUrl);
 
     void setupResourceStartupParams(Map<String, Object> params);
-    List<ManagedObjectReference> addHostToPodCluster(VmwareContext serviceContext, long dcId, Long podId, Long clusterId,
-            String hostInventoryPath) throws Exception;
 
-    String getManagementPortGroupByHost(HostMO hostMo) throws Exception; 
+    List<ManagedObjectReference> addHostToPodCluster(VmwareContext serviceContext, long dcId, Long podId, Long clusterId, String hostInventoryPath) throws Exception;
+
+    String getManagementPortGroupByHost(HostMO hostMo) throws Exception;
+
     String getServiceConsolePortGroupName();
+
     String getManagementPortGroupName();
 
     String getSecondaryStorageStoreUrl(long dcId);
@@ -51,7 +54,9 @@ public interface VmwareManager {
     File getSystemVMKeyFile();
 
     VmwareStorageManager getStorageManager();
+
     void gcLeftOverVMs(VmwareContext context);
+
     boolean needRecycle(String workerTag);
 
     Pair<Integer, Integer> getAddiionalVncPortRange();
@@ -59,6 +64,7 @@ public interface VmwareManager {
     int getRouterExtraPublicNics();
 
     boolean beginExclusiveOperation(int timeOutSeconds);
+
     void endExclusiveOperation();
 
     boolean getFullCloneFlag();
@@ -66,7 +72,7 @@ public interface VmwareManager {
     Map<String, String> getNexusVSMCredentialsByClusterId(Long clusterId);
 
     String getPrivateVSwitchName(long dcId, HypervisorType hypervisorType);
-    
+
     public String getRootDiskController();
 
     public int getVcenterSessionTimeout();

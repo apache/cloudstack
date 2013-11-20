@@ -39,78 +39,81 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 
-@Local(value=FenceBuilder.class)
+@Local(value = FenceBuilder.class)
 public class KVMFencer extends AdapterBase implements FenceBuilder {
-	private static final Logger s_logger = Logger.getLogger(KVMFencer.class);
+    private static final Logger s_logger = Logger.getLogger(KVMFencer.class);
 
-	@Inject HostDao _hostDao;
-	@Inject AgentManager _agentMgr;
-	@Inject ResourceManager _resourceMgr;
-	@Override
-	public boolean configure(String name, Map<String, Object> params)
-			throws ConfigurationException {
-		// TODO Auto-generated method stub
-		 return true;
-	}
+    @Inject
+    HostDao _hostDao;
+    @Inject
+    AgentManager _agentMgr;
+    @Inject
+    ResourceManager _resourceMgr;
 
-	@Override
-	public boolean start() {
-		// TODO Auto-generated method stub
-		return true;
-	}
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        // TODO Auto-generated method stub
+        return true;
+    }
 
-	@Override
-	public boolean stop() {
-		// TODO Auto-generated method stub
-		return true;
-	}
+    @Override
+    public boolean start() {
+        // TODO Auto-generated method stub
+        return true;
+    }
 
-	  public KVMFencer() {
-	        super();
-	    }
+    @Override
+    public boolean stop() {
+        // TODO Auto-generated method stub
+        return true;
+    }
 
-	@Override
+    public KVMFencer() {
+        super();
+    }
+
+    @Override
     public Boolean fenceOff(VirtualMachine vm, Host host) {
-		if (host.getHypervisorType() != HypervisorType.KVM) {
-			s_logger.debug("Don't know how to fence non kvm hosts " + host.getHypervisorType());
-			return null;
-		}
+        if (host.getHypervisorType() != HypervisorType.KVM) {
+            s_logger.debug("Don't know how to fence non kvm hosts " + host.getHypervisorType());
+            return null;
+        }
 
-		List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(host.getClusterId());
-		FenceCommand fence = new FenceCommand(vm, host);
+        List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(host.getClusterId());
+        FenceCommand fence = new FenceCommand(vm, host);
 
-		for (HostVO h : hosts) {
-			if (h.getHypervisorType() == HypervisorType.KVM) {
-				if( h.getStatus() != Status.Up ) {
-					continue;
-				}
-				if( h.getId() == host.getId() ) {
-					continue;
-				}
-				FenceAnswer answer;
-				try {
-					answer = (FenceAnswer)_agentMgr.send(h.getId(), fence);
-				} catch (AgentUnavailableException e) {
-					if (s_logger.isDebugEnabled()) {
-						s_logger.debug("Moving on to the next host because " + h.toString() + " is unavailable");
-					}
-					continue;
-				} catch (OperationTimedoutException e) {
-					if (s_logger.isDebugEnabled()) {
-						s_logger.debug("Moving on to the next host because " + h.toString() + " is unavailable");
-					}
-					continue;
-				}
-				if (answer != null && answer.getResult()) {
-					return true;
-				}
-			}
-		}
+        for (HostVO h : hosts) {
+            if (h.getHypervisorType() == HypervisorType.KVM) {
+                if (h.getStatus() != Status.Up) {
+                    continue;
+                }
+                if (h.getId() == host.getId()) {
+                    continue;
+                }
+                FenceAnswer answer;
+                try {
+                    answer = (FenceAnswer)_agentMgr.send(h.getId(), fence);
+                } catch (AgentUnavailableException e) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Moving on to the next host because " + h.toString() + " is unavailable");
+                    }
+                    continue;
+                } catch (OperationTimedoutException e) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Moving on to the next host because " + h.toString() + " is unavailable");
+                    }
+                    continue;
+                }
+                if (answer != null && answer.getResult()) {
+                    return true;
+                }
+            }
+        }
 
-		if (s_logger.isDebugEnabled()) {
-			s_logger.debug("Unable to fence off " + vm.toString() + " on " + host.toString());
-		}
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Unable to fence off " + vm.toString() + " on " + host.toString());
+        }
 
-		return false;
-	}
+        return false;
+    }
 }

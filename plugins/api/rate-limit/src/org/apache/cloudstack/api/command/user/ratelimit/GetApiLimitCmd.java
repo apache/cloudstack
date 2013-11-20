@@ -51,7 +51,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 import javax.inject.Inject;
 
-@APICommand(name = "getApiLimit", responseObject=ApiLimitResponse.class, description="Get API limit count for the caller")
+@APICommand(name = "getApiLimit", responseObject = ApiLimitResponse.class, description = "Get API limit count for the caller")
 public class GetApiLimitCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(GetApiLimitCmd.class.getName());
 
@@ -83,9 +83,9 @@ public class GetApiLimitCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean apiLimitEnabled = Boolean.parseBoolean(_configDao.getValue(Config.ApiLimitEnabled.key()));
-        if ( !apiLimitEnabled ){
+        if (!apiLimitEnabled) {
             throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "This api is only available when api.throttling.enabled = true.");
         }
         Account caller = CallContext.current().getCallingAccount();
@@ -95,5 +95,3 @@ public class GetApiLimitCmd extends BaseCmd {
         this.setResponseObject(response);
     }
 }
-
-

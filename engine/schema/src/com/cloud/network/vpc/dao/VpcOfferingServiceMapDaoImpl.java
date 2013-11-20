@@ -34,12 +34,11 @@ import com.cloud.utils.db.SearchCriteria.Func;
 @Component
 @Local(value = VpcOfferingServiceMapDao.class)
 @DB()
-public class VpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOfferingServiceMapVO, Long> implements VpcOfferingServiceMapDao{
+public class VpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOfferingServiceMapVO, Long> implements VpcOfferingServiceMapDao {
     final SearchBuilder<VpcOfferingServiceMapVO> AllFieldsSearch;
     final SearchBuilder<VpcOfferingServiceMapVO> MultipleServicesSearch;
     final GenericSearchBuilder<VpcOfferingServiceMapVO, String> ServicesSearch;
 
-    
     protected VpcOfferingServiceMapDaoImpl() {
         super();
         AllFieldsSearch = createSearchBuilder();
@@ -47,47 +46,45 @@ public class VpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOfferingServ
         AllFieldsSearch.and("service", AllFieldsSearch.entity().getService(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("provider", AllFieldsSearch.entity().getProvider(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
-        
-        
+
         MultipleServicesSearch = createSearchBuilder();
         MultipleServicesSearch.and("vpcOffId", MultipleServicesSearch.entity().getVpcOfferingId(), SearchCriteria.Op.EQ);
         MultipleServicesSearch.and("service", MultipleServicesSearch.entity().getService(), SearchCriteria.Op.IN);
         MultipleServicesSearch.and("provider", MultipleServicesSearch.entity().getProvider(), SearchCriteria.Op.EQ);
         MultipleServicesSearch.done();
-        
+
         ServicesSearch = createSearchBuilder(String.class);
         ServicesSearch.and("offeringId", ServicesSearch.entity().getVpcOfferingId(), SearchCriteria.Op.EQ);
         ServicesSearch.select(null, Func.DISTINCT, ServicesSearch.entity().getService());
         ServicesSearch.done();
     }
-    
+
     @Override
     public List<VpcOfferingServiceMapVO> listByVpcOffId(long vpcOffId) {
         SearchCriteria<VpcOfferingServiceMapVO> sc = AllFieldsSearch.create();
         sc.setParameters("vpcOffId", vpcOffId);
         return listBy(sc);
     }
-    
-    
+
     @Override
     public boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services) {
         SearchCriteria<VpcOfferingServiceMapVO> sc = MultipleServicesSearch.create();
         sc.setParameters("vpcOffId", networkOfferingId);
-        
+
         if (services != null) {
             String[] servicesStr = new String[services.length];
-            
+
             int i = 0;
             for (Service service : services) {
                 servicesStr[i] = service.getName();
                 i++;
             }
-            
+
             sc.setParameters("service", (Object[])servicesStr);
         }
-        
+
         List<VpcOfferingServiceMapVO> offeringServices = listBy(sc);
-        
+
         if (services != null) {
             if (offeringServices.size() == services.length) {
                 return true;
@@ -95,17 +92,17 @@ public class VpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOfferingServ
         } else if (!offeringServices.isEmpty()) {
             return true;
         }
-        
+
         return false;
     }
 
     @Override
     public List<String> listServicesForVpcOffering(long offId) {
-        SearchCriteria<String> sc = ServicesSearch.create();;
+        SearchCriteria<String> sc = ServicesSearch.create();
+        ;
         sc.setParameters("offeringId", offId);
         return customSearch(sc, null);
     }
-
 
     @Override
     public VpcOfferingServiceMapVO findByServiceProviderAndOfferingId(String service, String provider, long vpcOfferingId) {
@@ -113,7 +110,7 @@ public class VpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOfferingServ
         sc.setParameters("vpcOffId", vpcOfferingId);
         sc.setParameters("service", service);
         sc.setParameters("provider", provider);
-        
+
         return findOneBy(sc);
     }
 }

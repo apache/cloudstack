@@ -24,6 +24,7 @@ import java.util.List;
 public interface MonitoringServiceDao extends GenericDao<MonitoringServiceVO, Long> {
 
     List<MonitoringServiceVO> listAllServices();
+
     List<MonitoringServiceVO> listDefaultServices(boolean isDefault);
 
     MonitoringServiceVO getServiceByName(String service);

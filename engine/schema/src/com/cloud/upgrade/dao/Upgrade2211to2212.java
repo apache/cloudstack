@@ -36,7 +36,7 @@ public class Upgrade2211to2212 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "2.2.11", "2.2.11"};
+        return new String[] {"2.2.11", "2.2.11"};
     }
 
     @Override
@@ -55,8 +55,8 @@ public class Upgrade2211to2212 implements DbUpgrade {
         if (script == null) {
             throw new CloudRuntimeException("Unable to find db/schema-2211to2212.sql");
         }
-        
-        return new File[] { new File(script) };
+
+        return new File[] {new File(script)};
     }
 
     @Override
@@ -68,12 +68,11 @@ public class Upgrade2211to2212 implements DbUpgrade {
     public File[] getCleanupScripts() {
         return null;
     }
-    
-    
+
     private void createResourceCount(Connection conn) {
         s_logger.debug("Creating missing resource_count records as a part of 2.2.11-2.2.12 upgrade");
         try {
-            
+
             //Get all non removed accounts
             List<Long> accounts = new ArrayList<Long>();
             PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM account");
@@ -82,21 +81,20 @@ public class Upgrade2211to2212 implements DbUpgrade {
                 accounts.add(rs.getLong(1));
             }
             rs.close();
-            
-            
+
             //get all non removed domains
             List<Long> domains = new ArrayList<Long>();
             pstmt = conn.prepareStatement("SELECT id FROM domain");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 domains.add(rs.getLong(1));
-            }           
+            }
             rs.close();
 
             //2.2.12 resource types
             String[] resourceTypes = {"user_vm", "public_ip", "volume", "snapshot", "template"};
-            
-            for (Long accountId : accounts) {  
+
+            for (Long accountId : accounts) {
                 for (String resourceType : resourceTypes) {
                     pstmt = conn.prepareStatement("SELECT * FROM resource_count WHERE type=? and account_id=?");
                     pstmt.setString(1, resourceType);
@@ -113,9 +111,9 @@ public class Upgrade2211to2212 implements DbUpgrade {
                 }
                 pstmt.close();
             }
-            
-            for (Long domainId : domains) {  
-            	for (String resourceType : resourceTypes) {
+
+            for (Long domainId : domains) {
+                for (String resourceType : resourceTypes) {
                     pstmt = conn.prepareStatement("SELECT * FROM resource_count WHERE type=? and domain_id=?");
                     pstmt.setString(1, resourceType);
                     pstmt.setLong(2, domainId);
@@ -135,5 +133,5 @@ public class Upgrade2211to2212 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to create default security groups for existing accounts due to", e);
         }
     }
- 
+
 }

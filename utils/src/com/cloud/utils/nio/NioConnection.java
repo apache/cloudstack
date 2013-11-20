@@ -48,7 +48,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
  */
 public abstract class NioConnection implements Runnable {
     private static final Logger s_logger = Logger.getLogger(NioConnection.class);;
-    
+
     protected Selector _selector;
     protected Thread _thread;
     protected boolean _isRunning;
@@ -58,7 +58,7 @@ public abstract class NioConnection implements Runnable {
     protected HandlerFactory _factory;
     protected String _name;
     protected ExecutorService _executor;
-    
+
     public NioConnection(String name, int port, int workers, HandlerFactory factory) {
         _name = name;
         _isRunning = false;
@@ -71,12 +71,12 @@ public abstract class NioConnection implements Runnable {
 
     public void start() {
         _todos = new ArrayList<ChangeRequest>();
-        
+
         _thread = new Thread(this, _name + "-Selector");
         _isRunning = true;
         _thread.start();
         // Wait until we got init() done
-        synchronized(_thread) {
+        synchronized (_thread) {
             try {
                 _thread.wait();
             } catch (InterruptedException e) {
@@ -86,40 +86,40 @@ public abstract class NioConnection implements Runnable {
     }
 
     public void stop() {
-    	_executor.shutdown();
+        _executor.shutdown();
         _isRunning = false;
         if (_thread != null) {
             _thread.interrupt();
         }
     }
-    
+
     public boolean isRunning() {
         return _thread.isAlive();
     }
-    
+
     public boolean isStartup() {
-    	return _isStartup;
+        return _isStartup;
     }
-    
+
     @Override
     public void run() {
-    	synchronized(_thread) {
-    		try {
-    			init();
-    		} catch (ConnectException e) {
+        synchronized (_thread) {
+            try {
+                init();
+            } catch (ConnectException e) {
                 s_logger.warn("Unable to connect to remote: is there a server running on port " + _port);
-    			return;
-    		} catch (IOException e) {
-    			s_logger.error("Unable to initialize the threads.", e);
-    			return;
-    		} catch (Exception e) {
-    			s_logger.error("Unable to initialize the threads due to unknown exception.", e);
-    			return;
-    		}
-    		_isStartup = true;
-    		_thread.notifyAll();
-    	}
-    	
+                return;
+            } catch (IOException e) {
+                s_logger.error("Unable to initialize the threads.", e);
+                return;
+            } catch (Exception e) {
+                s_logger.error("Unable to initialize the threads due to unknown exception.", e);
+                return;
+            }
+            _isStartup = true;
+            _thread.notifyAll();
+        }
+
         while (_isRunning) {
             try {
                 _selector.select();
@@ -156,7 +156,7 @@ public abstract class NioConnection implements Runnable {
                         connect(sk);
                     }
                 }
-                
+
                 s_logger.trace("Keys Done Processing.");
 
                 processTodos();
@@ -164,13 +164,15 @@ public abstract class NioConnection implements Runnable {
                 s_logger.warn("Caught an exception but continuing on.", e);
             }
         }
-    	synchronized(_thread) {
-    	    _isStartup = false;
-    	}
+        synchronized (_thread) {
+            _isStartup = false;
+        }
     }
 
     abstract void init() throws IOException;
+
     abstract void registerLink(InetSocketAddress saddr, Link link);
+
     abstract void unregisterLink(InetSocketAddress saddr);
 
     protected void accept(SelectionKey key) throws IOException {
@@ -183,7 +185,7 @@ public abstract class NioConnection implements Runnable {
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Connection accepted for " + socket);
         }
-        
+
         // Begin SSL handshake in BLOCKING mode
         socketChannel.configureBlocking(true);
 
@@ -207,7 +209,7 @@ public abstract class NioConnection implements Runnable {
             }
             return;
         }
-        
+
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("SSL: Handshake done");
         }
@@ -220,7 +222,7 @@ public abstract class NioConnection implements Runnable {
         registerLink(saddr, link);
         _executor.execute(task);
     }
-    
+
     protected void terminate(SelectionKey key) {
         Link link = (Link)key.attachment();
         closeConnection(key);
@@ -231,7 +233,7 @@ public abstract class NioConnection implements Runnable {
             _executor.execute(task);
         }
     }
-    
+
     protected void read(SelectionKey key) throws IOException {
         Link link = (Link)key.attachment();
         try {
@@ -253,7 +255,7 @@ public abstract class NioConnection implements Runnable {
             terminate(key);
         }
     }
-    
+
     protected void logTrace(Exception e, SelectionKey key, int loc) {
         if (s_logger.isTraceEnabled()) {
             Socket socket = null;
@@ -263,7 +265,7 @@ public abstract class NioConnection implements Runnable {
                     socket = ch.socket();
                 }
             }
-            
+
             s_logger.trace("Location " + loc + ": Socket " + socket + " closed on read.  Probably -1 returned.");
         }
     }
@@ -277,17 +279,17 @@ public abstract class NioConnection implements Runnable {
                     socket = ch.socket();
                 }
             }
-            
+
             s_logger.debug("Location " + loc + ": Socket " + socket + " closed on read.  Probably -1 returned: " + e.getMessage());
         }
     }
-    
+
     protected void processTodos() {
         List<ChangeRequest> todos;
         if (_todos.size() == 0) {
             return;             // Nothing to do.
         }
-        
+
         synchronized (this) {
             todos = _todos;
             _todos = new ArrayList<ChangeRequest>();
@@ -299,7 +301,7 @@ public abstract class NioConnection implements Runnable {
         SelectionKey key;
         for (ChangeRequest todo : todos) {
             switch (todo.type) {
-                case ChangeRequest.CHANGEOPS :
+                case ChangeRequest.CHANGEOPS:
                     try {
                         key = (SelectionKey)todo.key;
                         if (key != null && key.isValid()) {
@@ -314,7 +316,7 @@ public abstract class NioConnection implements Runnable {
                         s_logger.debug("key has been cancelled");
                     }
                     break;
-                case ChangeRequest.REGISTER :
+                case ChangeRequest.REGISTER:
                     try {
                         key = ((SocketChannel)(todo.key)).register(_selector, todo.ops, todo.att);
                         if (todo.att != null) {
@@ -332,7 +334,7 @@ public abstract class NioConnection implements Runnable {
                         }
                     }
                     break;
-                case ChangeRequest.CLOSE :
+                case ChangeRequest.CLOSE:
                     if (s_logger.isTraceEnabled()) {
                         s_logger.trace("Trying to close " + todo.key);
                     }
@@ -345,7 +347,7 @@ public abstract class NioConnection implements Runnable {
                         }
                     }
                     break;
-                default :
+                default:
                     s_logger.warn("Shouldn't be here");
                     throw new RuntimeException("Shouldn't be here");
             }
@@ -361,7 +363,7 @@ public abstract class NioConnection implements Runnable {
             key.interestOps(SelectionKey.OP_READ);
             Socket socket = socketChannel.socket();
             if (!socket.getKeepAlive()) {
-            	socket.setKeepAlive(true);
+                socket.setKeepAlive(true);
             }
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Connected to " + socket);
@@ -376,9 +378,9 @@ public abstract class NioConnection implements Runnable {
             terminate(key);
         }
     }
-    
+
     protected void scheduleTask(Task task) {
-    	_executor.execute(task);
+        _executor.execute(task);
     }
 
     protected void write(SelectionKey key) throws IOException {
@@ -442,9 +444,9 @@ public abstract class NioConnection implements Runnable {
 
     /* Release the resource used by the instance */
     public void cleanUp() throws IOException {
-       if (_selector != null) {
-           _selector.close();
-       }
+        if (_selector != null) {
+            _selector.close();
+        }
     }
 
     public class ChangeRequest {
@@ -456,7 +458,7 @@ public abstract class NioConnection implements Runnable {
         public int type;
         public int ops;
         public Object att;
-        
+
         public ChangeRequest(Object key, int type, int ops, Object att) {
             this.key = key;
             this.type = type;

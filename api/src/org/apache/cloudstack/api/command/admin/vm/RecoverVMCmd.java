@@ -29,7 +29,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "recoverVirtualMachine", description="Recovers a virtual machine.", responseObject=UserVmResponse.class)
+@APICommand(name = "recoverVirtualMachine", description = "Recovers a virtual machine.", responseObject = UserVmResponse.class)
 public class RecoverVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RecoverVMCmd.class.getName());
 
@@ -39,8 +39,7 @@ public class RecoverVMCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="The ID of the virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -71,9 +70,9 @@ public class RecoverVMCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() throws ResourceAllocationException{
+    public void execute() throws ResourceAllocationException {
         UserVm result = _userVmService.recoverVirtualMachine(this);
-        if (result != null){
+        if (result != null) {
             UserVmResponse recoverVmResponse = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
             recoverVmResponse.setResponseName(getCommandName());
             this.setResponseObject(recoverVmResponse);

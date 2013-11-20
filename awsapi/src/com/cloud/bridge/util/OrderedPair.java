@@ -23,30 +23,30 @@ package com.cloud.bridge.util;
  * @param <T1>
  * @param <T2>
  */
-public class OrderedPair <T1, T2> {
-	T1 first;
-	T2 second;
+public class OrderedPair<T1, T2> {
+    T1 first;
+    T2 second;
 
-	public OrderedPair(T1 t1, T2 t2) {
-		first = t1;
-		second = t2;
-	}
-	
-	public T1 getFirst() {
-		return first;
-	}
-	
-	public OrderedPair<T1, T2> setFirst(T1 t1) {
-		first = t1;
-		return this;
-	}
-	
-	public T2 getSecond() {
-		return second;
-	}
-	
-	public OrderedPair<T1, T2> setSecond(T2 t2) {
-		second = t2;
-		return this;
-	}
+    public OrderedPair(T1 t1, T2 t2) {
+        first = t1;
+        second = t2;
+    }
+
+    public T1 getFirst() {
+        return first;
+    }
+
+    public OrderedPair<T1, T2> setFirst(T1 t1) {
+        first = t1;
+        return this;
+    }
+
+    public T2 getSecond() {
+        return second;
+    }
+
+    public OrderedPair<T1, T2> setSecond(T2 t2) {
+        second = t2;
+        return this;
+    }
 }

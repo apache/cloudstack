@@ -45,7 +45,10 @@ public class CreateSecurityGroupCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the security group. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, description = "an optional domainId for the security group. If the account parameter is used, domainId must also be used.", entityType = DomainResponse.class)
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               description = "an optional domainId for the security group. If the account parameter is used, domainId must also be used.",
+               entityType = DomainResponse.class)
     private Long domainId;
 
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the security group")
@@ -54,7 +57,7 @@ public class CreateSecurityGroupCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the security group")
     private String securityGroupName;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, description = "Create security group for project", entityType=ProjectResponse.class)
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, description = "Create security group for project", entityType = ProjectResponse.class)
     private Long projectId;
 
     // ///////////////////////////////////////////////////

@@ -21,39 +21,39 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EC2DescribeKeyPairs {
-	private EC2KeyPairFilterSet keyFilterSet;
-	private List<String> keyNames;
-	
-	public EC2DescribeKeyPairs() {
-		keyNames = new ArrayList<String>();
-	}
-	
-	/**
-	 * @return the keyNames String Array
-	 */
-	public String[] getKeyNames() {
-		return keyNames.toArray(new String[0]);
-	}
+    private EC2KeyPairFilterSet keyFilterSet;
+    private List<String> keyNames;
 
-	/**
-	 * @param keyName the keyName to add
-	 */
-	public void addKeyName(String keyName) {
-		keyNames.add(keyName);
-	}
+    public EC2DescribeKeyPairs() {
+        keyNames = new ArrayList<String>();
+    }
 
-	/**
-	 * @return the keyFilterSet
-	 */
-	public EC2KeyPairFilterSet getKeyFilterSet() {
-		return keyFilterSet;
-	}
+    /**
+     * @return the keyNames String Array
+     */
+    public String[] getKeyNames() {
+        return keyNames.toArray(new String[0]);
+    }
 
-	/**
-	 * @param keyFilterSet the keyFilterSet to set
-	 */
-	public void setKeyFilterSet(EC2KeyPairFilterSet keyFilterSet) {
-		this.keyFilterSet = keyFilterSet;
-	}
+    /**
+     * @param keyName the keyName to add
+     */
+    public void addKeyName(String keyName) {
+        keyNames.add(keyName);
+    }
+
+    /**
+     * @return the keyFilterSet
+     */
+    public EC2KeyPairFilterSet getKeyFilterSet() {
+        return keyFilterSet;
+    }
+
+    /**
+     * @param keyFilterSet the keyFilterSet to set
+     */
+    public void setKeyFilterSet(EC2KeyPairFilterSet keyFilterSet) {
+        this.keyFilterSet = keyFilterSet;
+    }
 
 }

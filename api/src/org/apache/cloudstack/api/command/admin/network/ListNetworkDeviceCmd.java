@@ -41,17 +41,20 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listNetworkDevice", description="List network devices", responseObject = NetworkDeviceResponse.class)
+@APICommand(name = "listNetworkDevice", description = "List network devices", responseObject = NetworkDeviceResponse.class)
 public class ListNetworkDeviceCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkDeviceCmd.class);
     private static final String s_name = "listnetworkdevice";
 
-    @Inject ExternalNetworkDeviceManager nwDeviceMgr;
+    @Inject
+    ExternalNetworkDeviceManager nwDeviceMgr;
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE, type = CommandType.STRING, description = "Network device type, now supports ExternalDhcp, PxeServer, NetscalerMPXLoadBalancer, NetscalerVPXLoadBalancer, NetscalerSDXLoadBalancer, F5BigIpLoadBalancer, JuniperSRXFirewall, PaloAltoFirewall")
+    @Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE,
+               type = CommandType.STRING,
+               description = "Network device type, now supports ExternalDhcp, PxeServer, NetscalerMPXLoadBalancer, NetscalerVPXLoadBalancer, NetscalerSDXLoadBalancer, F5BigIpLoadBalancer, JuniperSRXFirewall, PaloAltoFirewall")
     private String type;
 
     @Parameter(name = ApiConstants.NETWORK_DEVICE_PARAMETER_LIST, type = CommandType.MAP, description = "parameters for network device")
@@ -66,8 +69,7 @@ public class ListNetworkDeviceCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-    ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
             List<Host> devices = nwDeviceMgr.listNetworkDevice(this);
             List<NetworkDeviceResponse> nwdeviceResponses = new ArrayList<NetworkDeviceResponse>();

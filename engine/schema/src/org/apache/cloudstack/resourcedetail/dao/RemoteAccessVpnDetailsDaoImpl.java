@@ -22,9 +22,8 @@ import org.apache.cloudstack.resourcedetail.RemoteAccessVpnDetailVO;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.springframework.stereotype.Component;
 
-
 @Component
-@Local (value={RemoteAccessVpnDetailsDao.class})
+@Local(value = {RemoteAccessVpnDetailsDao.class})
 public class RemoteAccessVpnDetailsDaoImpl extends ResourceDetailsDaoBase<RemoteAccessVpnDetailVO> implements RemoteAccessVpnDetailsDao {
 
     @Override
@@ -32,4 +31,3 @@ public class RemoteAccessVpnDetailsDaoImpl extends ResourceDetailsDaoBase<Remote
         super.addDetail(new RemoteAccessVpnDetailVO(resourceId, key, value));
     }
 }
-

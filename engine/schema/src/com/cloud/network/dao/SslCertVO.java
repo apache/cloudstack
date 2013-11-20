@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.dao;
 
-
 import com.cloud.network.lb.SslCert;
 import com.cloud.utils.db.Encrypt;
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -29,32 +28,31 @@ import javax.persistence.Table;
 import java.util.UUID;
 
 @Entity
-@Table(name="sslcerts")
+@Table(name = "sslcerts")
 public class SslCertVO implements SslCert {
 
     @Id
-    @Column(name="id")
+    @Column(name = "id")
     private Long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="certificate",length=16384)
+    @Column(name = "certificate", length = 16384)
     private String certificate;
 
-
-    @Column(name="chain",length=2097152)
+    @Column(name = "chain", length = 2097152)
     private String chain;
 
     @Encrypt
-    @Column(name="key",length=16384)
+    @Column(name = "key", length = 16384)
     private String key;
 
     @Encrypt
-    @Column(name="password")
+    @Column(name = "password")
     private String password;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private Long accountId;
 
     @Column(name = "domain_id")
@@ -62,9 +60,6 @@ public class SslCertVO implements SslCert {
 
     @Column(name = "fingerprint")
     String fingerPrint;
-
-
-
 
     public SslCertVO() {
         this.uuid = UUID.randomUUID().toString();
@@ -80,7 +75,6 @@ public class SslCertVO implements SslCert {
         this.fingerPrint = fingerPrint;
         this.uuid = UUID.randomUUID().toString();
     }
-
 
     // Getters
     @Override
@@ -98,12 +92,10 @@ public class SslCertVO implements SslCert {
         return certificate;
     }
 
-
     @Override
     public String getKey() {
         return key;
     }
-
 
     @Override
     public String getChain() {
@@ -120,7 +112,7 @@ public class SslCertVO implements SslCert {
         return password;
     }
 
-   @Override
+    @Override
     public long getDomainId() {
         return domainId;
     }

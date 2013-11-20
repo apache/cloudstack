@@ -33,7 +33,7 @@ import org.apache.log4j.Logger;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 
-@APICommand(name = "deleteSecurityGroup", description="Deletes security group", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteSecurityGroup", description = "Deletes security group", responseObject = SuccessResponse.class)
 public class DeleteSecurityGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSecurityGroupCmd.class.getName());
     private static final String s_name = "deletesecuritygroupresponse";
@@ -42,21 +42,23 @@ public class DeleteSecurityGroupCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account of the security group. Must be specified with domain ID")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account of the security group. Must be specified with domain ID")
     private String accountName;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, description="the domain ID of account owning the security group", entityType=DomainResponse.class)
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, description = "the domain ID of account owning the security group", entityType = DomainResponse.class)
     private Long domainId;
 
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, description="the project of the security group", entityType=ProjectResponse.class)
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, description = "the project of the security group", entityType = ProjectResponse.class)
     private Long projectId;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, description="The ID of the security group. Mutually exclusive with name parameter", entityType=SecurityGroupResponse.class)
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               description = "The ID of the security group. Mutually exclusive with name parameter",
+               entityType = SecurityGroupResponse.class)
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="The ID of the security group. Mutually exclusive with id parameter")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The ID of the security group. Mutually exclusive with id parameter")
     private String name;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -93,8 +95,6 @@ public class DeleteSecurityGroupCmd extends BaseCmd {
         return id;
     }
 
-
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -115,8 +115,8 @@ public class DeleteSecurityGroupCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
-        try{
+    public void execute() {
+        try {
             boolean result = _securityGroupService.deleteSecurityGroup(this);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());

@@ -28,36 +28,35 @@ import org.apache.cloudstack.api.InternalIdentity;
 import com.cloud.vm.VirtualMachine.State;
 
 @Entity
-@Table(name="mockvm")
-
+@Table(name = "mockvm")
 public class MockVMVO implements MockVm, InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="host_id")
+    @Column(name = "host_id")
     private long hostId;
 
-    @Column(name="type")
+    @Column(name = "type")
     private String vmType;
 
-    @Column(name="state")
+    @Column(name = "state")
     private State state;
 
-    @Column(name="vnc_port")
+    @Column(name = "vnc_port")
     private int vncPort;
 
-    @Column(name="memory")
+    @Column(name = "memory")
     private long memory;
 
-    @Column(name="cpu")
+    @Column(name = "cpu")
     private int cpu;
 
-    @Column(name="bootargs")
+    @Column(name = "bootargs")
     private String bootargs;
 
     public MockVMVO() {
@@ -97,7 +96,7 @@ public class MockVMVO implements MockVm, InternalIdentity {
     }
 
     public String getType() {
-	return this.vmType;
+        return this.vmType;
     }
 
     public void setState(State state) {
@@ -129,7 +128,7 @@ public class MockVMVO implements MockVm, InternalIdentity {
     }
 
     public void setType(String type) {
-	this.vmType = type;
+        this.vmType = type;
     }
 
     public String getBootargs() {

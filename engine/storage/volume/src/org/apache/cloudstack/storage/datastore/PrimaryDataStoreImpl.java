@@ -82,8 +82,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
         this.provider = provider;
     }
 
-    public static PrimaryDataStoreImpl createDataStore(StoragePoolVO pdsv, PrimaryDataStoreDriver driver,
-            DataStoreProvider provider) {
+    public static PrimaryDataStoreImpl createDataStore(StoragePoolVO pdsv, PrimaryDataStoreDriver driver, DataStoreProvider provider) {
         PrimaryDataStoreImpl dataStore = ComponentContext.inject(PrimaryDataStoreImpl.class);
         dataStore.configure(pdsv, driver, provider);
         return dataStore;
@@ -213,7 +212,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     public DataObject create(DataObject obj) {
         // create template on primary storage
         if (obj.getType() == DataObjectType.TEMPLATE) {
-            try{
+            try {
                 String templateIdPoolIdString = "templateId:" + obj.getId() + "poolId:" + getId();
                 VMTemplateStoragePoolVO templateStoragePoolRef;
                 GlobalLock lock = GlobalLock.getInternLock(templateIdPoolIdString);
@@ -222,8 +221,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
                     return null;
                 }
                 try {
-                    templateStoragePoolRef = templatePoolDao.findByPoolTemplate(getId(),
-                            obj.getId());
+                    templateStoragePoolRef = templatePoolDao.findByPoolTemplate(getId(), obj.getId());
                     if (templateStoragePoolRef == null) {
 
                         if (s_logger.isDebugEnabled()) {
@@ -233,22 +231,22 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
                         templateStoragePoolRef = templatePoolDao.persist(templateStoragePoolRef);
                     }
                 } catch (Throwable t) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Failed to insert (" + templateIdPoolIdString + ") to template_spool_ref", t);
+                    }
+                    templateStoragePoolRef = templatePoolDao.findByPoolTemplate(getId(), obj.getId());
+                    if (templateStoragePoolRef == null) {
+                        throw new CloudRuntimeException("Failed to create template storage pool entry");
+                    } else {
                         if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Failed to insert (" + templateIdPoolIdString +  ") to template_spool_ref", t);
+                            s_logger.debug("Another thread already inserts " + templateStoragePoolRef.getId() + " to template_spool_ref", t);
                         }
-                        templateStoragePoolRef = templatePoolDao.findByPoolTemplate(getId(), obj.getId());
-                        if (templateStoragePoolRef == null) {
-                            throw new CloudRuntimeException("Failed to create template storage pool entry");
-                        } else {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Another thread already inserts " + templateStoragePoolRef.getId() + " to template_spool_ref", t);
-                            }
-                        }
-                }finally {
-                        lock.unlock();
-                        lock.releaseRef();
+                    }
+                } finally {
+                    lock.unlock();
+                    lock.releaseRef();
                 }
-            } catch (Exception e){
+            } catch (Exception e) {
                 s_logger.debug("Caught exception ", e);
             }
         } else if (obj.getType() == DataObjectType.SNAPSHOT) {
@@ -357,7 +355,8 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public boolean isInMaintenance() {
-        return getStatus() == StoragePoolStatus.PrepareForMaintenance || getStatus() == StoragePoolStatus.Maintenance || getStatus() == StoragePoolStatus.ErrorInMaintenance || getRemoved() != null;
+        return getStatus() == StoragePoolStatus.PrepareForMaintenance || getStatus() == StoragePoolStatus.Maintenance || getStatus() == StoragePoolStatus.ErrorInMaintenance ||
+               getRemoved() != null;
     }
 
     @Override

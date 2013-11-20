@@ -30,7 +30,7 @@ import com.cloud.storage.Volume;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
-public class VolumeDetailResponse extends BaseResponse{
+public class VolumeDetailResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "ID of the volume")
     private String id;
@@ -39,12 +39,12 @@ public class VolumeDetailResponse extends BaseResponse{
     @Param(description = "name of the volume detail")
     private String name;
 
-
     @SerializedName(ApiConstants.VALUE)
     @Param(description = "value of the volume detail")
     private String value;
 
-    @SerializedName(ApiConstants.DISPLAY_VOLUME) @Param(description="an optional field whether to the display the volume to the end user or not.")
+    @SerializedName(ApiConstants.DISPLAY_VOLUME)
+    @Param(description = "an optional field whether to the display the volume to the end user or not.")
     private Boolean displayVm;
 
     public String getId() {

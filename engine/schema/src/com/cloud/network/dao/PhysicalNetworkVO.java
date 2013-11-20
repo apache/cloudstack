@@ -43,67 +43,72 @@ import com.cloud.utils.db.GenericDao;
  *
  */
 @Entity
-@Table(name="physical_network")
+@Table(name = "physical_network")
 public class PhysicalNetworkVO implements PhysicalNetwork {
     @Id
-    @TableGenerator(name="physical_networks_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="physical_networks_seq", allocationSize=1)
-    @Column(name="id")
+    @TableGenerator(name = "physical_networks_sq",
+                    table = "sequence",
+                    pkColumnName = "name",
+                    valueColumnName = "value",
+                    pkColumnValue = "physical_networks_seq",
+                    allocationSize = 1)
+    @Column(name = "id")
     long id;
-    
-    @Column(name="uuid")
-    private String uuid;
-    
-	@Column(name="name")
-	private String name;
 
-    @Column(name="data_center_id")
+    @Column(name = "uuid")
+    private String uuid;
+
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "data_center_id")
     long dataCenterId;
 
-    @Column(name="vnet")
+    @Column(name = "vnet")
     private String vnet = null;
-    
-    @Column(name="speed")
+
+    @Column(name = "speed")
     private String speed = null;
-    
-    @Column(name="domain_id")
+
+    @Column(name = "domain_id")
     Long domainId = null;
 
-    @Column(name="broadcast_domain_range")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "broadcast_domain_range")
+    @Enumerated(value = EnumType.STRING)
     BroadcastDomainRange broadcastDomainRange;
 
-    @Column(name="state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
     State state;
-    
-    @Column(name=GenericDao.REMOVED_COLUMN)
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
 
-    @ElementCollection(targetClass = String.class, fetch=FetchType.EAGER)
-    @Column(name="tag")
-    @CollectionTable(name="physical_network_tags", joinColumns=@JoinColumn(name="physical_network_id"))
+    @ElementCollection(targetClass = String.class, fetch = FetchType.EAGER)
+    @Column(name = "tag")
+    @CollectionTable(name = "physical_network_tags", joinColumns = @JoinColumn(name = "physical_network_id"))
     List<String> tags;
-    
-    @ElementCollection(targetClass = String.class, fetch=FetchType.EAGER)
-    @Column(name="isolation_method")
-    @CollectionTable(name="physical_network_isolation_methods", joinColumns=@JoinColumn(name="physical_network_id"))
+
+    @ElementCollection(targetClass = String.class, fetch = FetchType.EAGER)
+    @Column(name = "isolation_method")
+    @CollectionTable(name = "physical_network_isolation_methods", joinColumns = @JoinColumn(name = "physical_network_id"))
     List<String> isolationMethods;
 
-    public PhysicalNetworkVO(){
-        
+    public PhysicalNetworkVO() {
+
     }
-    
+
     public PhysicalNetworkVO(long id, long dataCenterId, String vnet, String speed, Long domainId, BroadcastDomainRange broadcastDomainRange, String name) {
         this.dataCenterId = dataCenterId;
         this.setVnet(vnet);
         this.setSpeed(speed);
         this.domainId = domainId;
-        if(broadcastDomainRange != null){
+        if (broadcastDomainRange != null) {
             this.broadcastDomainRange = broadcastDomainRange;
-        }else{
+        } else {
             this.broadcastDomainRange = BroadcastDomainRange.POD;
         }
         this.state = State.Disabled;
@@ -186,7 +191,7 @@ public class PhysicalNetworkVO implements PhysicalNetwork {
     public List<String> getIsolationMethods() {
         return isolationMethods != null ? isolationMethods : new ArrayList<String>();
     }
-    
+
     public void addIsolationMethod(String isolationMethod) {
         if (isolationMethods == null) {
             isolationMethods = new ArrayList<String>();
@@ -204,14 +209,14 @@ public class PhysicalNetworkVO implements PhysicalNetwork {
 
     @Override
     public List<Pair<Integer, Integer>> getVnet() {
-        List <Pair<Integer,Integer>>  vnetList = new ArrayList<Pair<Integer, Integer>>();
+        List<Pair<Integer, Integer>> vnetList = new ArrayList<Pair<Integer, Integer>>();
         if (vnet != null) {
-           String [] Temp = vnet.split(",");
-           String [] vnetSplit = null;
-           for (String vnetRange : Temp){
-               vnetSplit = vnetRange.split("-");
-               vnetList.add(new Pair<Integer,Integer>(Integer.parseInt(vnetSplit[0]),Integer.parseInt(vnetSplit[1])));
-           }
+            String[] Temp = vnet.split(",");
+            String[] vnetSplit = null;
+            for (String vnetRange : Temp) {
+                vnetSplit = vnetRange.split("-");
+                vnetList.add(new Pair<Integer, Integer>(Integer.parseInt(vnetSplit[0]), Integer.parseInt(vnetSplit[1])));
+            }
         }
         return vnetList;
     }
@@ -229,18 +234,18 @@ public class PhysicalNetworkVO implements PhysicalNetwork {
     public String getSpeed() {
         return speed;
     }
-    
+
     @Override
     public String getUuid() {
         return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
 
     @Override
-	public String getName() {
-		return name;
-	}
+    public String getName() {
+        return name;
+    }
 }

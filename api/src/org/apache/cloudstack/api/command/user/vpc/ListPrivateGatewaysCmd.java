@@ -31,8 +31,8 @@ import org.apache.log4j.Logger;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listPrivateGateways", description="List private gateways", responseObject=PrivateGatewayResponse.class)
-public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCmd{
+@APICommand(name = "listPrivateGateways", description = "List private gateways", responseObject = PrivateGatewayResponse.class)
+public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPrivateGatewaysCmd.class.getName());
 
     private static final String s_name = "listprivategatewaysresponse";
@@ -40,27 +40,24 @@ public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCm
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=PrivateGatewayResponse.class,
-            description="list private gateway by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PrivateGatewayResponse.class, description = "list private gateway by id")
     private Long id;
 
-    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="list gateways by ip address")
+    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "list gateways by ip address")
     private String ipAddress;
 
-    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="list gateways by vlan")
+    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "list gateways by vlan")
     private String vlan;
 
-    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.UUID, entityType=VpcResponse.class,
-            description="list gateways by vpc")
+    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "list gateways by vpc")
     private Long vpcId;
 
-    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list gateways by state")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "list gateways by state")
     private String state;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     public String getVlan() {
         return vlan;

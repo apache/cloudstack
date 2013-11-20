@@ -34,7 +34,7 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteLBStickinessPolicy", description = "Deletes a LB stickiness policy.", responseObject = SuccessResponse.class, since="3.0.0")
+@APICommand(name = "deleteLBStickinessPolicy", description = "Deletes a LB stickiness policy.", responseObject = SuccessResponse.class, since = "3.0.0")
 public class DeleteLBStickinessPolicyCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteLBStickinessPolicyCmd.class.getName());
     private static final String s_name = "deleteLBstickinessrruleresponse";
@@ -42,8 +42,7 @@ public class DeleteLBStickinessPolicyCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = LBStickinessResponse.class,
-            required = true, description = "the ID of the LB stickiness policy")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = LBStickinessResponse.class, required = true, description = "the ID of the LB stickiness policy")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -103,8 +102,7 @@ public class DeleteLBStickinessPolicyCmd extends BaseAsyncCmd {
 
     @Override
     public Long getSyncObjId() {
-        StickinessPolicy policy = _entityMgr.findById(StickinessPolicy.class,
-                getId());
+        StickinessPolicy policy = _entityMgr.findById(StickinessPolicy.class, getId());
         if (policy == null) {
             throw new InvalidParameterValueException("Unable to find LB stickiness rule: " + id);
         }

@@ -66,7 +66,7 @@ public class GenericSearchBuilder<T, K> extends SearchBase<GenericSearchBuilder<
     protected GenericSearchBuilder(Class<T> entityType, Class<K> resultType) {
         super(entityType, resultType);
     }
-    
+
     /**
      * Adds an AND condition to the SearchBuilder.
      * 
@@ -79,7 +79,7 @@ public class GenericSearchBuilder<T, K> extends SearchBase<GenericSearchBuilder<
         constructCondition(name, " AND ", _specifiedAttrs.get(0), op);
         return this;
     }
-    
+
     /**
      * Adds an AND condition.  Some prefer this method because it looks like
      * the actual SQL query.
@@ -168,7 +168,7 @@ public class GenericSearchBuilder<T, K> extends SearchBase<GenericSearchBuilder<
     public GenericSearchBuilder<T, K> op(String name, Object field, Op op) {
         return left(field, op, name);
     }
-    
+
     /**
      * Adds an OR condition to the SearchBuilder.
      * 
@@ -181,7 +181,7 @@ public class GenericSearchBuilder<T, K> extends SearchBase<GenericSearchBuilder<
         constructCondition(name, " OR ", _specifiedAttrs.get(0), op);
         return this;
     }
-    
+
     /**
      * Adds an OR condition
      * 
@@ -220,14 +220,14 @@ public class GenericSearchBuilder<T, K> extends SearchBase<GenericSearchBuilder<
         sc.setParameters(name, values);
         return sc;
     }
-    
+
     /**
      * Marks the SearchBuilder as completed in building the search conditions.
      */
     public synchronized void done() {
         super.finalize();
     }
-    
+
     public class Preset {
         GenericSearchBuilder<T, K> builder;
         Condition condition;

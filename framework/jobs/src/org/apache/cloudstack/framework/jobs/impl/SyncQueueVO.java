@@ -30,36 +30,35 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 @Entity
-@Table(name="sync_queue")
+@Table(name = "sync_queue")
 public class SyncQueueVO implements InternalIdentity {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(name="sync_objtype")
-
+    @Column(name = "sync_objtype")
     private String syncObjType;
 
-    @Column(name="sync_objid")
+    @Column(name = "sync_objid")
     private Long syncObjId;
 
-    @Column(name="queue_proc_number")
+    @Column(name = "queue_proc_number")
     private Long lastProcessNumber;
 
-    @Column(name="created")
+    @Column(name = "created")
     @Temporal(TemporalType.TIMESTAMP)
     private Date created;
 
-    @Column(name="last_updated")
+    @Column(name = "last_updated")
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastUpdated;
 
-    @Column(name="queue_size")
+    @Column(name = "queue_size")
     private long queueSize = 0;
 
-    @Column(name="queue_size_limit")
+    @Column(name = "queue_size_limit")
     private long queueSizeLimit = 0;
 
     public long getId() {
@@ -81,11 +80,11 @@ public class SyncQueueVO implements InternalIdentity {
     public void setSyncObjId(Long syncObjId) {
         this.syncObjId = syncObjId;
     }
-    
+
     public Long getLastProcessNumber() {
         return lastProcessNumber;
     }
-    
+
     public void setLastProcessNumber(Long number) {
         lastProcessNumber = number;
     }

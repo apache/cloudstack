@@ -33,7 +33,7 @@ public class Upgrade227to228 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "2.2.6", "2.2.7"};
+        return new String[] {"2.2.6", "2.2.7"};
     }
 
     @Override
@@ -52,8 +52,8 @@ public class Upgrade227to228 implements DbUpgrade {
         if (script == null) {
             throw new CloudRuntimeException("Unable to find db/schema-227to228.sql");
         }
-        
-        return new File[] { new File(script) };
+
+        return new File[] {new File(script)};
     }
 
     @Override
@@ -65,24 +65,24 @@ public class Upgrade227to228 implements DbUpgrade {
                 long dcId = rs.getLong(1);
                 pstmt = conn.prepareStatement("select id from host where data_center_id=? and type='SecondaryStorage'");
                 pstmt.setLong(1, dcId);
-                ResultSet rs1 = pstmt.executeQuery();               
+                ResultSet rs1 = pstmt.executeQuery();
                 if (rs1.next()) {
                     long secHostId = rs1.getLong(1);
                     pstmt = conn.prepareStatement("update snapshots set sechost_id=? where data_center_id=?");
                     pstmt.setLong(1, secHostId);
                     pstmt.setLong(2, dcId);
-                    pstmt.executeUpdate();                   
+                    pstmt.executeUpdate();
                 }
             }
 
             pstmt = conn.prepareStatement("update disk_offering set disk_size = disk_size * 1024 * 1024 where disk_size <= 2 * 1024 * 1024 and disk_size != 0");
-            pstmt.executeUpdate(); 
-        
+            pstmt.executeUpdate();
+
         } catch (SQLException e) {
             s_logger.error("Failed to DB migration for multiple secondary storages", e);
             throw new CloudRuntimeException("Failed to DB migration for multiple secondary storages", e);
         }
-            
+
         updateDomainLevelNetworks(conn);
         updateVolumeUsageRecords(conn);
     }
@@ -91,7 +91,7 @@ public class Upgrade227to228 implements DbUpgrade {
     public File[] getCleanupScripts() {
         return null;
     }
-    
+
     private void updateDomainLevelNetworks(Connection conn) {
         s_logger.debug("Updating domain level specific networks...");
         try {
@@ -105,9 +105,9 @@ public class Upgrade227to228 implements DbUpgrade {
             }
             rs.close();
             pstmt.close();
-            
+
             for (Object[] network : networks) {
-                Long networkId = (Long) network[0];
+                Long networkId = (Long)network[0];
                 pstmt = conn.prepareStatement("SELECT * from domain_network_ref where network_id=?");
                 pstmt.setLong(1, networkId);
                 rs = pstmt.executeQuery();
@@ -120,14 +120,14 @@ public class Upgrade227to228 implements DbUpgrade {
                 rs.close();
                 pstmt.close();
             }
-            
+
             s_logger.debug("Successfully updated domain level specific networks");
         } catch (SQLException e) {
             s_logger.error("Failed to set domain specific shared networks due to ", e);
             throw new CloudRuntimeException("Failed to set domain specific shared networks due to ", e);
         }
     }
-    
+
     //this method inserts missing volume.delete events (events were missing when vm failed to create)
     private void updateVolumeUsageRecords(Connection conn) {
         try {
@@ -139,14 +139,14 @@ public class Upgrade227to228 implements DbUpgrade {
                 long accountId = rs.getLong(2);
                 long zoneId = rs.getLong(3);
                 String volumeName = rs.getString(4);
-                
+
                 pstmt = conn.prepareStatement("insert into usage_event (type, account_id, created, zone_id, resource_name, resource_id) values ('VOLUME.DELETE', ?, now(), ?, ?, ?)");
                 pstmt.setLong(1, accountId);
                 pstmt.setLong(2, zoneId);
                 pstmt.setString(3, volumeName);
                 pstmt.setLong(4, volumeId);
-                
-                pstmt.executeUpdate(); 
+
+                pstmt.executeUpdate();
             }
             s_logger.debug("Successfully inserted missing usage_event records for destroyed volumes");
         } catch (SQLException e) {

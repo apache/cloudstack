@@ -36,9 +36,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 
-
 @SuppressWarnings("rawtypes")
-@APICommand(name = "createStoragePool", description="Creates a storage pool.", responseObject=StoragePoolResponse.class)
+@APICommand(name = "createStoragePool", description = "Creates a storage pool.", responseObject = StoragePoolResponse.class)
 public class CreateStoragePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateStoragePoolCmd.class.getName());
 
@@ -48,52 +47,46 @@ public class CreateStoragePoolCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType = ClusterResponse.class,
-            description="the cluster ID for the storage pool")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "the cluster ID for the storage pool")
     private Long clusterId;
 
-    @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="the details for the storage pool")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "the details for the storage pool")
     private Map details;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name for the storage pool")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name for the storage pool")
     private String storagePoolName;
 
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType = PodResponse.class,
-            description="the Pod ID for the storage pool")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "the Pod ID for the storage pool")
     private Long podId;
 
-    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="the tags for the storage pool")
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "the tags for the storage pool")
     private String tags;
 
-    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=true, description="the URL of the storage pool")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "the URL of the storage pool")
     private String url;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            required=true, description="the Zone ID for the storage pool")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the Zone ID for the storage pool")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.PROVIDER, type=CommandType.STRING,
-            required=false, description="the storage provider name")
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, required = false, description = "the storage provider name")
     private String storageProviderName;
 
-    @Parameter(name=ApiConstants.SCOPE, type=CommandType.STRING,
-            required=false, description="the scope of the storage: cluster or zone")
+    @Parameter(name = ApiConstants.SCOPE, type = CommandType.STRING, required = false, description = "the scope of the storage: cluster or zone")
     private String scope;
 
-    @Parameter(name=ApiConstants.MANAGED, type=CommandType.BOOLEAN,
-            required=false, description="whether the storage should be managed by CloudStack")
+    @Parameter(name = ApiConstants.MANAGED, type = CommandType.BOOLEAN, required = false, description = "whether the storage should be managed by CloudStack")
     private Boolean managed;
 
-    @Parameter(name=ApiConstants.CAPACITY_IOPS, type=CommandType.LONG,
-            required=false, description="IOPS CloudStack can provision from this storage pool")
+    @Parameter(name = ApiConstants.CAPACITY_IOPS, type = CommandType.LONG, required = false, description = "IOPS CloudStack can provision from this storage pool")
     private Long capacityIops;
 
-    @Parameter(name=ApiConstants.CAPACITY_BYTES, type=CommandType.LONG,
-            required=false, description="bytes CloudStack can provision from this storage pool")
+    @Parameter(name = ApiConstants.CAPACITY_BYTES, type = CommandType.LONG, required = false, description = "bytes CloudStack can provision from this storage pool")
     private Long capacityBytes;
 
-    @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, required=false,
-            description="hypervisor type of the hosts in zone that will be attached to this storage pool. KVM, VMware supported as of now.")
+    @Parameter(name = ApiConstants.HYPERVISOR,
+               type = CommandType.STRING,
+               required = false,
+               description = "hypervisor type of the hosts in zone that will be attached to this storage pool. KVM, VMware supported as of now.")
     private String hypervisor;
 
     /////////////////////////////////////////////////////
@@ -137,7 +130,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
     }
 
     public Boolean isManaged() {
-    	return managed;
+        return managed;
     }
 
     public Long getCapacityIops() {
@@ -163,7 +156,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         try {
             StoragePool result = _storageService.createPool(this);
             if (result != null) {
@@ -176,7 +169,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
         } catch (ResourceUnavailableException ex1) {
             s_logger.warn("Exception: ", ex1);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex1.getMessage());
-        }catch (ResourceInUseException ex2) {
+        } catch (ResourceInUseException ex2) {
             s_logger.warn("Exception: ", ex2);
             throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, ex2.getMessage());
         } catch (UnknownHostException ex3) {

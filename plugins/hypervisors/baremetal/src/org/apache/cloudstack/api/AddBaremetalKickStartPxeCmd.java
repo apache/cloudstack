@@ -24,9 +24,10 @@ import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.Parameter;
 
 import com.cloud.baremetal.networkservice.BaremetalPxeKickStartResponse;
-@APICommand(name="addBaremetalPxeKickStartServer", description="add a baremetal pxe server", responseObject = BaremetalPxeKickStartResponse.class)
+
+@APICommand(name = "addBaremetalPxeKickStartServer", description = "add a baremetal pxe server", responseObject = BaremetalPxeKickStartResponse.class)
 public class AddBaremetalKickStartPxeCmd extends AddBaremetalPxeCmd {
-    @Parameter(name=ApiConstants.TFTP_DIR, type=CommandType.STRING, required = true, description="Tftp root directory of PXE server")
+    @Parameter(name = ApiConstants.TFTP_DIR, type = CommandType.STRING, required = true, description = "Tftp root directory of PXE server")
     private String tftpDir;
 
     public String getTftpDir() {

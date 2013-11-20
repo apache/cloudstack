@@ -27,7 +27,7 @@ import com.cloud.serializer.Param;
 import com.cloud.storage.Snapshot;
 import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=Snapshot.class)
+@EntityReference(value = Snapshot.class)
 public class SnapshotResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "ID of the snapshot")
@@ -45,10 +45,12 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     @Param(description = "the domain name of the snapshot's account")
     private String domainName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the snapshot")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the snapshot")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the snapshot")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the snapshot")
     private String projectName;
 
     @SerializedName(ApiConstants.SNAPSHOT_TYPE)
@@ -87,11 +89,12 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     @Param(description = "id of the availability zone")
     private String zoneId;
 
-    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with snapshot", responseObject = ResourceTagResponse.class)
+    @SerializedName(ApiConstants.TAGS)
+    @Param(description = "the list of resource tags associated with snapshot", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
     @SerializedName(ApiConstants.REVERTABLE)
-    @Param(description="indicates whether the underlying storage supports reverting the volume to this snapshot")
+    @Param(description = "indicates whether the underlying storage supports reverting the volume to this snapshot")
     private boolean revertable;
 
     @Override

@@ -41,118 +41,118 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.ManagerBase;
 
 public class BaremetalPxeResourceBase extends ManagerBase implements ServerResource {
-	private static final Logger s_logger = Logger.getLogger(BaremetalPxeResourceBase.class);
-	String _name;
-	String _guid;
-	String _username;
-	String _password;
-	String _ip;
-	String _zoneId;
-	String _podId;
-	
-	@Override
-	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-		_name = name;
-		_guid = (String)params.get(BaremetalPxeService.PXE_PARAM_GUID);
-		_ip = (String)params.get(BaremetalPxeService.PXE_PARAM_IP);
-		_username = (String)params.get(BaremetalPxeService.PXE_PARAM_USERNAME);
-		_password = (String)params.get(BaremetalPxeService.PXE_PARAM_PASSWORD);
-		_zoneId = (String)params.get(BaremetalPxeService.PXE_PARAM_ZONE);
-		_podId = (String)params.get(BaremetalPxeService.PXE_PARAM_POD);
+    private static final Logger s_logger = Logger.getLogger(BaremetalPxeResourceBase.class);
+    String _name;
+    String _guid;
+    String _username;
+    String _password;
+    String _ip;
+    String _zoneId;
+    String _podId;
 
-		if (_guid == null) {
-			throw new ConfigurationException("No Guid specified");
-		}
-		
-		if (_zoneId == null) {
-			throw new ConfigurationException("No Zone specified");
-		}
-		
-		if (_ip == null) {
-			throw new ConfigurationException("No IP specified");
-		}
-		
-		if (_username == null) {
-			throw new ConfigurationException("No username specified");
-		}
-		
-		if (_password == null) {
-			throw new ConfigurationException("No password specified");
-		}
-		
-		return true;
-	}
-	
-	protected ReadyAnswer execute(ReadyCommand cmd) {
-		s_logger.debug("Pxe resource " + _name + " is ready");
-		return new ReadyAnswer(cmd);
-	}
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        _name = name;
+        _guid = (String)params.get(BaremetalPxeService.PXE_PARAM_GUID);
+        _ip = (String)params.get(BaremetalPxeService.PXE_PARAM_IP);
+        _username = (String)params.get(BaremetalPxeService.PXE_PARAM_USERNAME);
+        _password = (String)params.get(BaremetalPxeService.PXE_PARAM_PASSWORD);
+        _zoneId = (String)params.get(BaremetalPxeService.PXE_PARAM_ZONE);
+        _podId = (String)params.get(BaremetalPxeService.PXE_PARAM_POD);
 
-	@Override
-	public boolean start() {
-		return true;
-	}
+        if (_guid == null) {
+            throw new ConfigurationException("No Guid specified");
+        }
 
-	@Override
-	public boolean stop() {
-		return true;
-	}
+        if (_zoneId == null) {
+            throw new ConfigurationException("No Zone specified");
+        }
 
-	@Override
-	public String getName() {
-		// TODO Auto-generated method stub
-		return _name;
-	}
+        if (_ip == null) {
+            throw new ConfigurationException("No IP specified");
+        }
 
-	@Override
-	public Type getType() {
-		return Type.BaremetalPxe;
-	}
+        if (_username == null) {
+            throw new ConfigurationException("No username specified");
+        }
 
-	@Override
-	public StartupCommand[] initialize() {
-		StartupPxeServerCommand cmd = new StartupPxeServerCommand();
-		cmd.setName(_name);
-		cmd.setDataCenter(_zoneId);
-		cmd.setPod(_podId);
-		cmd.setPrivateIpAddress(_ip);
-		cmd.setStorageIpAddress("");
-		cmd.setVersion("");
-		cmd.setGuid(_guid);
-		return new StartupCommand[]{cmd};
-	}
+        if (_password == null) {
+            throw new ConfigurationException("No password specified");
+        }
 
-	@Override
-	public PingCommand getCurrentStatus(long id) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+        return true;
+    }
 
-	@Override
-	public void disconnected() {
-		// TODO Auto-generated method stub
+    protected ReadyAnswer execute(ReadyCommand cmd) {
+        s_logger.debug("Pxe resource " + _name + " is ready");
+        return new ReadyAnswer(cmd);
+    }
 
-	}
+    @Override
+    public boolean start() {
+        return true;
+    }
 
-	@Override
-	public IAgentControl getAgentControl() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public boolean stop() {
+        return true;
+    }
 
-	@Override
-	public void setAgentControl(IAgentControl agentControl) {
-		// TODO Auto-generated method stub
+    @Override
+    public String getName() {
+        // TODO Auto-generated method stub
+        return _name;
+    }
 
-	}
-	
-	@Override
-	public Answer executeRequest(Command cmd) {
-		if (cmd instanceof ReadyCommand) {
-			return execute((ReadyCommand) cmd);
-		} else {
-			return Answer.createUnsupportedCommandAnswer(cmd);
-		}
-	}
+    @Override
+    public Type getType() {
+        return Type.BaremetalPxe;
+    }
+
+    @Override
+    public StartupCommand[] initialize() {
+        StartupPxeServerCommand cmd = new StartupPxeServerCommand();
+        cmd.setName(_name);
+        cmd.setDataCenter(_zoneId);
+        cmd.setPod(_podId);
+        cmd.setPrivateIpAddress(_ip);
+        cmd.setStorageIpAddress("");
+        cmd.setVersion("");
+        cmd.setGuid(_guid);
+        return new StartupCommand[] {cmd};
+    }
+
+    @Override
+    public PingCommand getCurrentStatus(long id) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void disconnected() {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public IAgentControl getAgentControl() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void setAgentControl(IAgentControl agentControl) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public Answer executeRequest(Command cmd) {
+        if (cmd instanceof ReadyCommand) {
+            return execute((ReadyCommand)cmd);
+        } else {
+            return Answer.createUnsupportedCommandAnswer(cmd);
+        }
+    }
 
 }

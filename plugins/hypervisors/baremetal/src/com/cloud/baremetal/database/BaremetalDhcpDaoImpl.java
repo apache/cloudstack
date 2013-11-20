@@ -30,11 +30,11 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.GenericQueryBuilder;
 
 @Component
-@Local(value=BaremetalDhcpDao.class)
+@Local(value = BaremetalDhcpDao.class)
 @DB()
 public class BaremetalDhcpDaoImpl extends GenericDaoBase<BaremetalDhcpVO, Long> implements BaremetalDhcpDao {
 
     public BaremetalDhcpDaoImpl() {
     }
-    
+
 }

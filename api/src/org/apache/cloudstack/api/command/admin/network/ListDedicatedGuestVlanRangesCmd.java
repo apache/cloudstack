@@ -26,8 +26,7 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 
-
-@APICommand(name = "listDedicatedGuestVlanRanges", description="Lists dedicated guest vlan ranges", responseObject=GuestVlanRangeResponse.class)
+@APICommand(name = "listDedicatedGuestVlanRanges", description = "Lists dedicated guest vlan ranges", responseObject = GuestVlanRangeResponse.class)
 public class ListDedicatedGuestVlanRangesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDedicatedGuestVlanRangesCmd.class.getName());
 
@@ -37,30 +36,33 @@ public class ListDedicatedGuestVlanRangesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=GuestVlanRangeResponse.class,
-            description="list dedicated guest vlan ranges by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestVlanRangeResponse.class, description = "list dedicated guest vlan ranges by id")
     private Long id;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account with which the guest VLAN range is associated. Must be used with the domainId parameter.")
+    @Parameter(name = ApiConstants.ACCOUNT,
+               type = CommandType.STRING,
+               description = "the account with which the guest VLAN range is associated. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
-            description="project who will own the guest VLAN range")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "project who will own the guest VLAN range")
     private Long projectId;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
-            description="the domain ID with which the guest VLAN range is associated.  If used with the account parameter, returns all guest VLAN ranges for that account in the specified domain.")
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               entityType = DomainResponse.class,
+               description = "the domain ID with which the guest VLAN range is associated.  If used with the account parameter, returns all guest VLAN ranges for that account in the specified domain.")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.GUEST_VLAN_RANGE, type=CommandType.STRING, description="the dedicated guest vlan range")
+    @Parameter(name = ApiConstants.GUEST_VLAN_RANGE, type = CommandType.STRING, description = "the dedicated guest vlan range")
     private String guestVlanRange;
 
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
-            description="physical network id of the guest VLAN range")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = PhysicalNetworkResponse.class,
+               description = "physical network id of the guest VLAN range")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            description="zone of the guest VLAN range")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "zone of the guest VLAN range")
     private Long zoneId;
 
     /////////////////////////////////////////////////////
@@ -95,7 +97,6 @@ public class ListDedicatedGuestVlanRangesCmd extends BaseListCmd {
         return zoneId;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -111,7 +112,7 @@ public class ListDedicatedGuestVlanRangesCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends GuestVlan>, Integer> vlans = _networkService.listDedicatedGuestVlanRanges(this);
         ListResponse<GuestVlanRangeResponse> response = new ListResponse<GuestVlanRangeResponse>();
         List<GuestVlanRangeResponse> guestVlanResponses = new ArrayList<GuestVlanRangeResponse>();

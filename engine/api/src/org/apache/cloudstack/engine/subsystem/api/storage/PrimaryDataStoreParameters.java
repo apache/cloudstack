@@ -194,11 +194,11 @@ public class PrimaryDataStoreParameters {
     }
 
     public void setManaged(boolean managed) {
-    	this.managed = managed;
+        this.managed = managed;
     }
 
     public boolean isManaged() {
-    	return managed;
+        return managed;
     }
 
     public void setCapacityIops(Long capacityIops) {
@@ -262,23 +262,19 @@ public class PrimaryDataStoreParameters {
         this.zoneId = zoneId;
     }
 
-    public long getCapacityBytes()
-    {
-    	return capacityBytes;
+    public long getCapacityBytes() {
+        return capacityBytes;
     }
 
-    public void setCapacityBytes(long capacityBytes)
-    {
-    	this.capacityBytes = capacityBytes;
+    public void setCapacityBytes(long capacityBytes) {
+        this.capacityBytes = capacityBytes;
     }
 
-    public long getUsedBytes()
-    {
-    	return usedBytes;
+    public long getUsedBytes() {
+        return usedBytes;
     }
 
-    public void setUsedBytes(long usedBytes)
-    {
-    	this.usedBytes = usedBytes;
+    public void setUsedBytes(long usedBytes) {
+        this.usedBytes = usedBytes;
     }
 }

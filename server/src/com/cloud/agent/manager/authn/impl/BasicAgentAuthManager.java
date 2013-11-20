@@ -37,16 +37,18 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.utils.component.AdapterBase;
 
 @Component
-@Local(value={AgentAuthorizer.class, StartupCommandProcessor.class})
+@Local(value = {AgentAuthorizer.class, StartupCommandProcessor.class})
 public class BasicAgentAuthManager extends AdapterBase implements AgentAuthorizer, StartupCommandProcessor {
     private static final Logger s_logger = Logger.getLogger(BasicAgentAuthManager.class);
-    @Inject HostDao _hostDao = null;
-    @Inject ConfigurationDao _configDao = null;
-    @Inject AgentManager _agentManager = null;
-    
+    @Inject
+    HostDao _hostDao = null;
+    @Inject
+    ConfigurationDao _configDao = null;
+    @Inject
+    AgentManager _agentManager = null;
+
     @Override
-    public boolean processInitialConnect(StartupCommand[] cmd)
-            throws ConnectionException {
+    public boolean processInitialConnect(StartupCommand[] cmd) throws ConnectionException {
         try {
             authorizeAgent(cmd);
         } catch (AgentAuthnException e) {
@@ -57,13 +59,12 @@ public class BasicAgentAuthManager extends AdapterBase implements AgentAuthorize
     }
 
     @Override
-    public boolean authorizeAgent(StartupCommand[] cmd) throws AgentAuthnException{
+    public boolean authorizeAgent(StartupCommand[] cmd) throws AgentAuthnException {
         return true;
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params)
-            throws ConfigurationException {
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _agentManager.registerForInitialConnects(this, true);
         return true;
     }

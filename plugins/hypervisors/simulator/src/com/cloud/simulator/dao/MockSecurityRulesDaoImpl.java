@@ -28,10 +28,11 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-@Local(value={MockSecurityRulesDao.class})
+@Local(value = {MockSecurityRulesDao.class})
 public class MockSecurityRulesDaoImpl extends GenericDaoBase<MockSecurityRulesVO, Long> implements MockSecurityRulesDao {
-    protected  SearchBuilder<MockSecurityRulesVO> vmIdSearch;
-    protected  SearchBuilder<MockSecurityRulesVO> hostSearch;
+    protected SearchBuilder<MockSecurityRulesVO> vmIdSearch;
+    protected SearchBuilder<MockSecurityRulesVO> hostSearch;
+
     @Override
     public MockSecurityRulesVO findByVmId(Long vmId) {
         SearchCriteria<MockSecurityRulesVO> sc = vmIdSearch.create();

@@ -39,60 +39,56 @@ import org.springframework.stereotype.Component;
 @Component
 public class SampleManagerComponent {
     private static final Logger s_logger = Logger.getLogger(SampleManagerComponent.class);
-	
-	@Inject
-	private MessageBus _eventBus;
- 	
-	@Inject
-	private RpcProvider _rpcProvider;
-	
-	private Timer _timer = new Timer();
-	
-	public SampleManagerComponent() {
-	}
-	
-	@PostConstruct
-	public void init() {
-		_rpcProvider.registerRpcServiceEndpoint(
-			RpcServiceDispatcher.getDispatcher(this));
-			
-		// subscribe to all network events (for example)
-		_eventBus.subscribe("network", 
-			MessageDispatcher.getDispatcher(this));
-		
-		_timer.schedule(new TimerTask() {
-				public void run() {
-					testRpc();
-				}
-			}, 3000);
-	}
-	
-	@RpcServiceHandler(command="NetworkPrepare")
-	void onStartCommand(RpcServerCall call) {
-		call.completeCall("NetworkPrepare completed");
-	}
-	
-	@MessageHandler(topic="network.prepare")
-	void onPrepareNetwork(String sender, String topic, Object args) {
-	}
-	
-	void testRpc() {
-		SampleStoragePrepareCommand cmd = new SampleStoragePrepareCommand();
-		cmd.setStoragePool("Pool1");
-		cmd.setVolumeId("vol1");
-		
-		_rpcProvider.newCall()
-			.setCommand("StoragePrepare").setCommandArg(cmd).setTimeout(10000)
-			.addCallbackListener(new RpcCallbackListener<SampleStoragePrepareAnswer>() {
-				@Override
-				public void onSuccess(SampleStoragePrepareAnswer result) {
-					s_logger.info("StoragePrepare return result: " + result.getResult());
-				}
 
-				@Override
-				public void onFailure(RpcException e) {
-					s_logger.info("StoragePrepare failed");
-				}
-			}).apply();
-	}
+    @Inject
+    private MessageBus _eventBus;
+
+    @Inject
+    private RpcProvider _rpcProvider;
+
+    private Timer _timer = new Timer();
+
+    public SampleManagerComponent() {
+    }
+
+    @PostConstruct
+    public void init() {
+        _rpcProvider.registerRpcServiceEndpoint(RpcServiceDispatcher.getDispatcher(this));
+
+        // subscribe to all network events (for example)
+        _eventBus.subscribe("network", MessageDispatcher.getDispatcher(this));
+
+        _timer.schedule(new TimerTask() {
+            public void run() {
+                testRpc();
+            }
+        }, 3000);
+    }
+
+    @RpcServiceHandler(command = "NetworkPrepare")
+    void onStartCommand(RpcServerCall call) {
+        call.completeCall("NetworkPrepare completed");
+    }
+
+    @MessageHandler(topic = "network.prepare")
+    void onPrepareNetwork(String sender, String topic, Object args) {
+    }
+
+    void testRpc() {
+        SampleStoragePrepareCommand cmd = new SampleStoragePrepareCommand();
+        cmd.setStoragePool("Pool1");
+        cmd.setVolumeId("vol1");
+
+        _rpcProvider.newCall().setCommand("StoragePrepare").setCommandArg(cmd).setTimeout(10000).addCallbackListener(new RpcCallbackListener<SampleStoragePrepareAnswer>() {
+            @Override
+            public void onSuccess(SampleStoragePrepareAnswer result) {
+                s_logger.info("StoragePrepare return result: " + result.getResult());
+            }
+
+            @Override
+            public void onFailure(RpcException e) {
+                s_logger.info("StoragePrepare failed");
+            }
+        }).apply();
+    }
 }

@@ -18,7 +18,6 @@ package com.cloud.agent.api;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
 
-
 public class UpdateHostPasswordCommand extends Command {
     @LogLevel(Log4jLevel.Off)
     protected String _username;

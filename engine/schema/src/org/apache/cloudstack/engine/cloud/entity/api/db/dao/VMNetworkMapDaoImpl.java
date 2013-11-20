@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.engine.cloud.entity.api.db.dao;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.PostConstruct;
@@ -31,7 +30,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = { VMNetworkMapDao.class })
+@Local(value = {VMNetworkMapDao.class})
 public class VMNetworkMapDaoImpl extends GenericDaoBase<VMNetworkMapVO, Long> implements VMNetworkMapDao {
 
     protected SearchBuilder<VMNetworkMapVO> VmIdSearch;

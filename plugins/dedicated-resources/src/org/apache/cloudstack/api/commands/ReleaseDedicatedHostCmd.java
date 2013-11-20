@@ -37,14 +37,14 @@ public class ReleaseDedicatedHostCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReleaseDedicatedHostCmd.class.getName());
 
     private static final String s_name = "releasededicatedhostresponse";
-    @Inject DedicatedService dedicatedService;
+    @Inject
+    DedicatedService dedicatedService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class,
-            required=true, description="the ID of the host")
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "the ID of the host")
     private Long hostId;
 
     /////////////////////////////////////////////////////
@@ -69,7 +69,7 @@ public class ReleaseDedicatedHostCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = dedicatedService.releaseDedicatedResource(null, null, null, getHostId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

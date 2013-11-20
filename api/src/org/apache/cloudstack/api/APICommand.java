@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
 import org.apache.cloudstack.acl.RoleType;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ TYPE })
+@Target({TYPE})
 public @interface APICommand {
     Class<? extends BaseResponse> responseObject();
 

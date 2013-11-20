@@ -23,6 +23,7 @@ import com.cloud.utils.db.GenericDao;
 
 public interface PoolDao extends GenericDao<PoolVO, Long> {
 
-	PoolVO findPool(String poolName);
-	List<PoolVO> listPools();
+    PoolVO findPool(String poolName);
+
+    List<PoolVO> listPools();
 }

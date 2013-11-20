@@ -33,12 +33,14 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-@Local(value={MockVMDao.class})
+@Local(value = {MockVMDao.class})
 public class MockVMDaoImpl extends GenericDaoBase<MockVMVO, Long> implements MockVMDao {
     protected SearchBuilder<MockVMVO> GuidSearch;
     protected SearchBuilder<MockVMVO> vmNameSearch;
     protected SearchBuilder<MockVMVO> vmhostSearch;
-    @Inject MockHostDao _mockHostDao;
+    @Inject
+    MockHostDao _mockHostDao;
+
     @Override
     public List<MockVMVO> findByHostId(long hostId) {
         return new ArrayList<MockVMVO>();

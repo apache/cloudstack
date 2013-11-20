@@ -81,8 +81,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         Map<String, String> configs = _configDao.getConfiguration(null, params);
 
         String globalStorageOverprovisioningFactor = configs.get("storage.overprovisioning.factor");
-        _storageOverprovisioningFactor = new BigDecimal(NumbersUtil.parseFloat(globalStorageOverprovisioningFactor,
-                2.0f));
+        _storageOverprovisioningFactor = new BigDecimal(NumbersUtil.parseFloat(globalStorageOverprovisioningFactor, 2.0f));
 
         _extraBytesPerVolume = 0;
 
@@ -98,20 +97,15 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         return true;
     }
 
-    protected abstract List<StoragePool> select(DiskProfile dskCh,
-            VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid,
-            int returnUpTo);
+    protected abstract List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo);
 
     @Override
-    public List<StoragePool> allocateToPool(DiskProfile dskCh,
-            VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid,
-            int returnUpTo) {
+    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
         List<StoragePool> pools = select(dskCh, vmProfile, plan, avoid, returnUpTo);
         return reOrder(pools, vmProfile, plan);
     }
 
-    protected List<StoragePool> reorderPoolsByNumberOfVolumes(DeploymentPlan plan, List<StoragePool> pools,
-            Account account) {
+    protected List<StoragePool> reorderPoolsByNumberOfVolumes(DeploymentPlan plan, List<StoragePool> pools, Account account) {
         if (account == null) {
             return pools;
         }
@@ -119,11 +113,9 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         Long podId = plan.getPodId();
         Long clusterId = plan.getClusterId();
 
-        List<Long> poolIdsByVolCount = _volumeDao.listPoolIdsByVolumeCount(dcId, podId, clusterId,
-                account.getAccountId());
+        List<Long> poolIdsByVolCount = _volumeDao.listPoolIdsByVolumeCount(dcId, podId, clusterId, account.getAccountId());
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("List of pools in ascending order of number of volumes for account id: "
-                    + account.getAccountId() + " is: " + poolIdsByVolCount);
+            s_logger.debug("List of pools in ascending order of number of volumes for account id: " + account.getAccountId() + " is: " + poolIdsByVolCount);
         }
 
         // now filter the given list of Pools by this ordered list
@@ -143,8 +135,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         return reorderedPools;
     }
 
-    protected List<StoragePool> reOrder(List<StoragePool> pools,
-            VirtualMachineProfile vmProfile, DeploymentPlan plan) {
+    protected List<StoragePool> reOrder(List<StoragePool> pools, VirtualMachineProfile vmProfile, DeploymentPlan plan) {
         if (pools == null) {
             return null;
         }
@@ -153,8 +144,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             account = vmProfile.getOwner();
         }
 
-        if (_allocationAlgorithm.equals("random") || _allocationAlgorithm.equals("userconcentratedpod_random")
-                || (account == null)) {
+        if (_allocationAlgorithm.equals("random") || _allocationAlgorithm.equals("userconcentratedpod_random") || (account == null)) {
             // Shuffle this so that we don't check the pools in the same order.
             Collections.shuffle(pools);
         } else if (_allocationAlgorithm.equals("userdispersing")) {
@@ -166,8 +156,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     protected boolean filter(ExcludeList avoid, StoragePool pool, DiskProfile dskCh, DeploymentPlan plan) {
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Checking if storage pool is suitable, name: " + pool.getName() + " ,poolId: "
-                    + pool.getId());
+            s_logger.debug("Checking if storage pool is suitable, name: " + pool.getName() + " ,poolId: " + pool.getId());
         }
         if (avoid.shouldAvoid(pool)) {
             if (s_logger.isDebugEnabled()) {

@@ -27,22 +27,26 @@ import com.google.gson.annotations.SerializedName;
 
 public class ExceptionResponse extends BaseResponse {
 
-    @SerializedName("uuidList") @Param(description="List of uuids associated with this error")
+    @SerializedName("uuidList")
+    @Param(description = "List of uuids associated with this error")
     private List<ExceptionProxyObject> idList;
 
-    @SerializedName("errorcode") @Param(description="numeric code associated with this error")
+    @SerializedName("errorcode")
+    @Param(description = "numeric code associated with this error")
     private Integer errorCode;
 
-    @SerializedName("cserrorcode") @Param(description="cloudstack exception error code associated with this error")
+    @SerializedName("cserrorcode")
+    @Param(description = "cloudstack exception error code associated with this error")
     private Integer csErrorCode;
 
-    @SerializedName("errortext") @Param(description="the text associated with this error")
+    @SerializedName("errortext")
+    @Param(description = "the text associated with this error")
     private String errorText = "Command failed due to Internal Server Error";
 
-    public ExceptionResponse(){
+    public ExceptionResponse() {
         idList = new ArrayList<ExceptionProxyObject>();
     }
-    
+
     public Integer getErrorCode() {
         return errorCode;
     }

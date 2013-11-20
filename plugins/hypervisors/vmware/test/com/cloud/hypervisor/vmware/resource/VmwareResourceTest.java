@@ -33,35 +33,42 @@ import org.mockito.Spy;
 import org.mockito.MockitoAnnotations;
 import static org.mockito.Mockito.*;
 
-
 public class VmwareResourceTest {
 
-    @Spy VmwareResource _resource = new VmwareResource() {
+    @Spy
+    VmwareResource _resource = new VmwareResource() {
 
         @Override
         public ScaleVmAnswer execute(ScaleVmCommand cmd) {
             return super.execute(cmd);
         }
+
         @Override
         public VmwareHypervisorHost getHyperHost(VmwareContext context, Command cmd) {
             return hyperHost;
         }
     };
 
-    @Mock VmwareContext context;
-    @Mock ScaleVmCommand cmd;
-    @Mock VirtualMachineTO vmSpec;
+    @Mock
+    VmwareContext context;
+    @Mock
+    ScaleVmCommand cmd;
+    @Mock
+    VirtualMachineTO vmSpec;
     @Mock
     VmwareHypervisorHost hyperHost;
-    @Mock VirtualMachineMO vmMo;
-    @Mock VirtualMachineConfigSpec vmConfigSpec;
+    @Mock
+    VirtualMachineMO vmMo;
+    @Mock
+    VirtualMachineConfigSpec vmConfigSpec;
 
     @Before
-    public void setup(){
+    public void setup() {
         MockitoAnnotations.initMocks(this);
         doReturn(context).when(_resource).getServiceContext(null);
         when(cmd.getVirtualMachine()).thenReturn(vmSpec);
     }
+
     //Test successful scaling up the vm
     @Test
     public void testScaleVMF1() throws Exception {

@@ -27,48 +27,53 @@ import com.cloud.baremetal.database.BaremetalDhcpVO;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=BaremetalDhcpVO.class)
+@EntityReference(value = BaremetalDhcpVO.class)
 public class BaremetalDhcpResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="device id of ")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "device id of ")
     private String id;
-    
-    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network to which this external dhcp device belongs to")
+
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
+    @Param(description = "the physical network to which this external dhcp device belongs to")
     private String physicalNetworkId;
-    
-    @SerializedName(ApiConstants.PROVIDER) @Param(description="name of the provider")
+
+    @SerializedName(ApiConstants.PROVIDER)
+    @Param(description = "name of the provider")
     private String providerId;
-    
-    @SerializedName(ApiConstants.DHCP_SERVER_TYPE) @Param(description="name of the provider")
+
+    @SerializedName(ApiConstants.DHCP_SERVER_TYPE)
+    @Param(description = "name of the provider")
     private String deviceType;
 
-    @SerializedName(ApiConstants.URL) @Param(description="url")
+    @SerializedName(ApiConstants.URL)
+    @Param(description = "url")
     private String url;
 
     public String getId() {
-		return id;
-	}
+        return id;
+    }
 
-	public void setId(String id) {
-		this.id = id;
-	}
+    public void setId(String id) {
+        this.id = id;
+    }
 
-	public String getPhysicalNetworkId() {
-		return physicalNetworkId;
-	}
+    public String getPhysicalNetworkId() {
+        return physicalNetworkId;
+    }
 
-	public void setPhysicalNetworkId(String physicalNetworkId) {
-		this.physicalNetworkId = physicalNetworkId;
-	}
+    public void setPhysicalNetworkId(String physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
+    }
 
-	public String getProviderId() {
-		return providerId;
-	}
+    public String getProviderId() {
+        return providerId;
+    }
 
-	public void setProviderId(String providerId) {
-		this.providerId = providerId;
-	}
+    public void setProviderId(String providerId) {
+        this.providerId = providerId;
+    }
 
-	public String getDeviceType() {
+    public String getDeviceType() {
         return deviceType;
     }
 

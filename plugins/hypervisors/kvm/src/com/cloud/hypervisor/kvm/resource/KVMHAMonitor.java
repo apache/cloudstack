@@ -87,23 +87,20 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
                         Connect conn = LibvirtConnection.getConnection();
                         storage = conn.storagePoolLookupByUUIDString(uuid);
                         if (storage == null) {
-                            s_logger.debug("Libvirt storage pool " + uuid
-                                           +" not found, removing from HA list");
+                            s_logger.debug("Libvirt storage pool " + uuid + " not found, removing from HA list");
                             removeStoragePool(uuid);
                             continue;
 
                         } else if (storage.getInfo().state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
-                            s_logger.debug("Libvirt storage pool " + uuid
-                                           +" found, but not running, removing from HA list");
-                            
+                            s_logger.debug("Libvirt storage pool " + uuid + " found, but not running, removing from HA list");
+
                             removeStoragePool(uuid);
                             continue;
                         }
                         s_logger.debug("Found NFS storage pool " + uuid + " in libvirt, continuing");
 
                     } catch (LibvirtException e) {
-                        s_logger.debug("Failed to lookup libvirt storage pool " + uuid
-                                       + " due to: " + e );
+                        s_logger.debug("Failed to lookup libvirt storage pool " + uuid + " due to: " + e);
 
                         // we only want to remove pool if it's not found, not if libvirt
                         // connection fails
@@ -116,26 +113,22 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
                     String result = null;
                     for (int i = 0; i < 5; i++) {
-                        Script cmd = new Script(_heartBeatPath,
-                                _heartBeatUpdateTimeout, s_logger);
+                        Script cmd = new Script(_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
                         cmd.add("-i", primaryStoragePool._poolIp);
                         cmd.add("-p", primaryStoragePool._poolMountSourcePath);
                         cmd.add("-m", primaryStoragePool._mountDestPath);
                         cmd.add("-h", _hostIP);
                         result = cmd.execute();
                         if (result != null) {
-                            s_logger.warn("write heartbeat failed: " + result
-                                    + ", retry: " + i);
+                            s_logger.warn("write heartbeat failed: " + result + ", retry: " + i);
                         } else {
                             break;
                         }
                     }
 
                     if (result != null) {
-                        s_logger.warn("write heartbeat failed: " + result
-                                + "; reboot the host");
-                        Script cmd = new Script(_heartBeatPath,
-                                _heartBeatUpdateTimeout, s_logger);
+                        s_logger.warn("write heartbeat failed: " + result + "; reboot the host");
+                        Script cmd = new Script(_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
                         cmd.add("-i", primaryStoragePool._poolIp);
                         cmd.add("-p", primaryStoragePool._poolMountSourcePath);
                         cmd.add("-m", primaryStoragePool._mountDestPath);

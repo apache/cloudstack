@@ -26,7 +26,7 @@ import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=StickinessPolicy.class)
+@EntityReference(value = StickinessPolicy.class)
 public class LBStickinessResponse extends BaseResponse {
     @SerializedName("lbruleid")
     @Param(description = "the LB rule ID")

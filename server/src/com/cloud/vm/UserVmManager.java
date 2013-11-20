@@ -45,15 +45,15 @@ public interface UserVmManager extends UserVmService {
     static final String EnableDynamicallyScaleVmCK = "enable.dynamic.scale.vm";
     static final ConfigKey<Boolean> EnableDynamicallyScaleVm = new ConfigKey<Boolean>("Advanced", Boolean.class, EnableDynamicallyScaleVmCK, "false",
         "Enables/Diables dynamically scaling a vm", true, ConfigKey.Scope.Zone);
-    
 
-	static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
+    static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
+
     /**
      * @param hostId get all of the virtual machines that belong to one host.
      * @return collection of VirtualMachine.
      */
     List<? extends UserVm> getVirtualMachines(long hostId);
-    
+
     /**
      * @param vmId id of the virtual machine.
      * @return VirtualMachine
@@ -76,19 +76,19 @@ public interface UserVmManager extends UserVmService {
      * @return GetVmStatsAnswer
      */
     HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds);
-    
+
     HashMap<Long, List<VmDiskStatsEntry>> getVmDiskStatistics(long hostId, String hostName, List<Long> vmIds);
-    
+
     boolean deleteVmGroup(long groupId);
 
     boolean addInstanceToGroup(long userVmId, String group);
 
     InstanceGroupVO getGroupForVm(long vmId);
-    
+
     void removeInstanceFromInstanceGroup(long vmId);
 
-	boolean expunge(UserVmVO vm, long callerUserId, Account caller);
-	
+    boolean expunge(UserVmVO vm, long callerUserId, Account caller);
+
     /**
      * Obtains a list of virtual machines by the specified search criteria.
      * Can search by: "userId", "name", "state", "dataCenterId", "podId", "hostId"
@@ -102,16 +102,19 @@ public interface UserVmManager extends UserVmService {
      * @param tags TODO
      * @return List of UserVMs + count
      */
-    Pair<List<UserVmJoinVO>, Integer> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags);
+    Pair<List<UserVmJoinVO>, Integer> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, List<Long> permittedAccounts, boolean listAll,
+        ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags);
 
-    Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams)
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
-    boolean upgradeVirtualMachine(Long id, Long serviceOfferingId) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
+    boolean upgradeVirtualMachine(Long id, Long serviceOfferingId) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
+        VirtualMachineMigrationException;
 
     boolean setupVmForPvlan(boolean add, Long hostId, NicProfile nic);
 
-    void collectVmDiskStatistics (UserVmVO userVm);
+    void collectVmDiskStatistics(UserVmVO userVm);
 
-    UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha, Boolean isDisplayVmEnabled, Long osTypeId, String userData,
-            Boolean isDynamicallyScalable, HTTPMethod httpMethod)throws ResourceUnavailableException, InsufficientCapacityException;
+    UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha, Boolean isDisplayVmEnabled, Long osTypeId, String userData, Boolean isDynamicallyScalable,
+        HTTPMethod httpMethod) throws ResourceUnavailableException, InsufficientCapacityException;
 }

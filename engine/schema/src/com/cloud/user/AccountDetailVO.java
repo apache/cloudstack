@@ -27,21 +27,21 @@ import com.cloud.utils.db.Encrypt;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="account_details")
+@Table(name = "account_details")
 public class AccountDetailVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
     @Encrypt
-    @Column(name="value")
+    @Column(name = "value")
     private String value;
 
     protected AccountDetailVO() {

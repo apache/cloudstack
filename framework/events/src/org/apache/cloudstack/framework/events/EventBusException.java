@@ -19,8 +19,8 @@
 
 package org.apache.cloudstack.framework.events;
 
-public class EventBusException extends Exception{
-    public EventBusException (String msg) {
-      super(msg);
+public class EventBusException extends Exception {
+    public EventBusException(String msg) {
+        super(msg);
     }
 }

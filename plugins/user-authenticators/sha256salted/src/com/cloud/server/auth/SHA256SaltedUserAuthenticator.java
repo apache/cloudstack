@@ -32,7 +32,7 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Local(value={UserAuthenticator.class})
+@Local(value = {UserAuthenticator.class})
 public class SHA256SaltedUserAuthenticator extends DefaultUserAuthenticator {
     public static final Logger s_logger = Logger.getLogger(SHA256SaltedUserAuthenticator.class);
     private static final String s_defaultPassword = "000000000000000000000000000=";
@@ -45,8 +45,7 @@ public class SHA256SaltedUserAuthenticator extends DefaultUserAuthenticator {
      * @see com.cloud.server.auth.UserAuthenticator#authenticate(java.lang.String, java.lang.String, java.lang.Long, java.util.Map)
      */
     @Override
-    public boolean authenticate(String username, String password,
-            Long domainId, Map<String, Object[]> requestParameters) {
+    public boolean authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Retrieving user: " + username);
         }

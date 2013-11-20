@@ -29,45 +29,40 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="guest_os_hypervisor")
+@Table(name = "guest_os_hypervisor")
 public class GuestOSHypervisorVO implements GuestOSHypervisor {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     long id;
 
-    @Column(name="guest_os_id")
+    @Column(name = "guest_os_id")
     private long guestOsId;
 
-    @Column(name="guest_os_name")
+    @Column(name = "guest_os_name")
     String guestOsName;
 
-    @Column(name="hypervisor_type")
+    @Column(name = "hypervisor_type")
     String hypervisorType;
-
 
     @Override
     public long getId() {
-    	return id;
+        return id;
     }
-
 
     @Override
     public String getHypervisorType() {
         return hypervisorType;
     }
 
-
     @Override
     public String getGuestOsName() {
         return guestOsName;
     }
 
-
     @Override
     public long getGuestOsId() {
         return guestOsId;
     }
-
 
 }

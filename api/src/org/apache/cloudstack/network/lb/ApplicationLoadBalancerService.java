@@ -28,15 +28,15 @@ import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.Pair;
 
 public interface ApplicationLoadBalancerService {
-    
-    ApplicationLoadBalancerRule createApplicationLoadBalancer(String name, String description, Scheme scheme, long sourceIpNetworkId, String sourceIp,
-            int sourcePort, int instancePort, String algorithm, long networkId, long lbOwnerId) throws InsufficientAddressCapacityException,
-            NetworkRuleConflictException, InsufficientVirtualNetworkCapcityException;
-    
+
+    ApplicationLoadBalancerRule createApplicationLoadBalancer(String name, String description, Scheme scheme, long sourceIpNetworkId, String sourceIp, int sourcePort,
+        int instancePort, String algorithm, long networkId, long lbOwnerId) throws InsufficientAddressCapacityException, NetworkRuleConflictException,
+        InsufficientVirtualNetworkCapcityException;
+
     boolean deleteApplicationLoadBalancer(long id);
-    
+
     Pair<List<? extends ApplicationLoadBalancerRule>, Integer> listApplicationLoadBalancers(ListApplicationLoadBalancersCmd cmd);
-    
+
     ApplicationLoadBalancerRule getApplicationLoadBalancer(long ruleId);
 
 }

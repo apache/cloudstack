@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.storage.test;
 
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -93,9 +92,8 @@ import com.cloud.user.User;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.Merovingian2;
 
-
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = { "classpath:/fakeDriverTestContext.xml" })
+@ContextConfiguration(locations = {"classpath:/fakeDriverTestContext.xml"})
 public class EndpointSelectorTest {
     @Inject
     SnapshotService snapshotService;
@@ -148,18 +146,18 @@ public class EndpointSelectorTest {
     EndPointSelector endPointSelector;
     @Inject
     AgentManager agentMgr;
+
     @Before
     public void setUp() {
         // create data center
 
-        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,
-                "10.0.0.1/24", null, null, DataCenter.NetworkType.Basic, null, null, true, true, null, null);
+        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, DataCenter.NetworkType.Basic, null,
+            null, true, true, null, null);
         dc = dcDao.persist(dc);
         dcId = dc.getId();
         // create pod
 
-        HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), "10.223.0.1",
-                "10.233.2.2/25", 8, "test");
+        HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), "10.223.0.1", "10.233.2.2/25", 8, "test");
         pod = podDao.persist(pod);
         podId = pod.getId();
         // create xen cluster
@@ -194,7 +192,7 @@ public class EndpointSelectorTest {
         when(accountManager.getSystemAccount()).thenReturn(account);
         when(accountManager.getSystemUser()).thenReturn(user);
 
-        if(Merovingian2.getLockMaster() == null) {
+        if (Merovingian2.getLockMaster() == null) {
             _lockMaster = Merovingian2.createLockMaster(1234);
         } else {
             _lockMaster = Merovingian2.getLockMaster();
@@ -247,7 +245,6 @@ public class EndpointSelectorTest {
         host.setHypervisorType(hypervisorType);
         host.setClusterId(clusterId);
 
-
         host = hostDao.persist(host);
         agentMgr.agentStatusTransitTo(host, Status.Event.AgentConnected, 1L);
         host = hostDao.findById(host.getId());
@@ -295,8 +292,6 @@ public class EndpointSelectorTest {
         when(destStore.getRole()).thenReturn(DataStoreRole.Image);
         when(destStore.getId()).thenReturn(destStoreId);
 
-
-
         DataObject srcObj = mock(DataObject.class);
         DataObject destObj = mock(DataObject.class);
         when(srcObj.getDataStore()).thenReturn(srcStore);
@@ -327,8 +322,6 @@ public class EndpointSelectorTest {
         Assert.assertTrue(ep != null);
         newHost = hostDao.findById(ep.getId());
         Assert.assertTrue(newHost.getHypervisorType() == Hypervisor.HypervisorType.XenServer);
-
-
 
     }
 

@@ -696,11 +696,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 // Don't validate against a URI encoded URI.
                 URI cifsUri = new URI(url);
                 String warnMsg = UriUtils.getCifsUriParametersProblems(cifsUri);
-                if (warnMsg != null)
-                {
+                if (warnMsg != null) {
                     throw new InvalidParameterValueException(warnMsg);
                 }
-	        }
+            }
         } catch (URISyntaxException e) {
             throw new InvalidParameterValueException(url + " is not a valid uri");
         }
@@ -826,15 +825,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
                 _dcDao.releasePrivateIpAddress(host.getPrivateIpAddress(), host.getDataCenterId(), null);
                 _agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.Remove);
-        
+
                 // delete host details
                 _hostDetailsDao.deleteDetails(hostId);
-        
+
                 host.setGuid(null);
                 Long clusterId = host.getClusterId();
                 host.setClusterId(null);
                 _hostDao.update(host.getId(), host);
-        
+
                 _hostDao.remove(hostId);
                 if (clusterId != null) {
                     List<HostVO> hosts = listAllHostsInCluster(clusterId);
@@ -844,16 +843,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         _clusterDao.update(clusterId, cluster);
                     }
                 }
-        
+
                 try {
                     resourceStateTransitTo(host, ResourceState.Event.DeleteHost, _nodeId);
                 } catch (NoTransitionException e) {
                     s_logger.debug("Cannot transmit host " + host.getId() + "to Enabled state", e);
                 }
-        
+
                 // Delete the associated entries in host ref table
                 _storagePoolHostDao.deletePrimaryRecordsForHost(hostId);
-        
+
                 // Make sure any VMs that were marked as being on this host are cleaned up
                 List<VMInstanceVO> vms = _vmDao.listByHostId(hostId);
                 for (VMInstanceVO vm : vms) {
@@ -862,7 +861,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     vm.setHostId(null);
                     _vmDao.persist(vm);
                 }
-        
+
                 // For pool ids you got, delete local storage host entries in pool table
                 // where
                 for (StoragePoolHostVO pool : pools) {
@@ -876,7 +875,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         s_logger.debug("Local storage id=" + poolId + " is removed as a part of host removal id=" + hostId);
                     }
                 }
-        
+
                 // delete the op_host_capacity entry
                 Object[] capacityTypes = {Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY};
                 SearchCriteria<CapacityVO> hostCapacitySC = _capacityDao.createSearchCriteria();
@@ -922,9 +921,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         }
                         throw new CloudRuntimeException("Cluster: " + cmd.getId() + " does not exist");
                     }
-        
+
                     Hypervisor.HypervisorType hypervisorType = cluster.getHypervisorType();
-        
+
                     List<HostVO> hosts = listAllHostsInCluster(cmd.getId());
                     if (hosts.size() > 0) {
                         if (s_logger.isDebugEnabled()) {
@@ -932,7 +931,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         }
                         throw new CloudRuntimeException("Cluster: " + cmd.getId() + " cannot be removed. Cluster still has hosts");
                     }
-        
+
                     // don't allow to remove the cluster if it has non-removed storage
                     // pools
                     List<StoragePoolVO> storagePools = _storagePoolDao.listPoolsByCluster(cmd.getId());
@@ -942,7 +941,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         }
                         throw new CloudRuntimeException("Cluster: " + cmd.getId() + " cannot be removed. Cluster still has storage pools");
                     }
-        
+
                     if (_clusterDao.remove(cmd.getId())) {
                         _capacityDao.removeBy(null, null, null, cluster.getId(), null);
                         // If this cluster is of type vmware, and if the nexus vswitch
@@ -2255,17 +2254,17 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     public List<HostVO> listAllUpAndEnabledHosts(Type type, Long clusterId, Long podId, long dcId) {
         QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         if (type != null) {
-            sc.and(sc.entity().getType(), Op.EQ,type);
+            sc.and(sc.entity().getType(), Op.EQ, type);
         }
         if (clusterId != null) {
-            sc.and(sc.entity().getClusterId(), Op.EQ,clusterId);
+            sc.and(sc.entity().getClusterId(), Op.EQ, clusterId);
         }
         if (podId != null) {
-            sc.and(sc.entity().getPodId(), Op.EQ,podId);
+            sc.and(sc.entity().getPodId(), Op.EQ, podId);
         }
-        sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
-        sc.and(sc.entity().getStatus(), Op.EQ,Status.Up);
-        sc.and(sc.entity().getResourceState(), Op.EQ,ResourceState.Enabled);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+        sc.and(sc.entity().getResourceState(), Op.EQ, ResourceState.Enabled);
         return sc.list();
     }
 
@@ -2278,33 +2277,33 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public List<HostVO> findHostByGuid(long dcId, String guid) {
         QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
-        sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
-        sc.and(sc.entity().getGuid(), Op.EQ,guid);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        sc.and(sc.entity().getGuid(), Op.EQ, guid);
         return sc.list();
     }
 
     @Override
     public List<HostVO> listAllHostsInCluster(long clusterId) {
         QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
-        sc.and(sc.entity().getClusterId(), Op.EQ,clusterId);
+        sc.and(sc.entity().getClusterId(), Op.EQ, clusterId);
         return sc.list();
     }
 
     @Override
     public List<HostVO> listHostsInClusterByStatus(long clusterId, Status status) {
         QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
-        sc.and(sc.entity().getClusterId(), Op.EQ,clusterId);
-        sc.and(sc.entity().getStatus(), Op.EQ,status);
+        sc.and(sc.entity().getClusterId(), Op.EQ, clusterId);
+        sc.and(sc.entity().getStatus(), Op.EQ, status);
         return sc.list();
     }
 
     @Override
     public List<HostVO> listAllUpAndEnabledHostsInOneZoneByType(Type type, long dcId) {
         QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
-        sc.and(sc.entity().getType(), Op.EQ,type);
-        sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
-        sc.and(sc.entity().getStatus(), Op.EQ,Status.Up);
-        sc.and(sc.entity().getResourceState(), Op.EQ,ResourceState.Enabled);
+        sc.and(sc.entity().getType(), Op.EQ, type);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+        sc.and(sc.entity().getResourceState(), Op.EQ, ResourceState.Enabled);
         return sc.list();
     }
 
@@ -2312,9 +2311,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     public List<HostVO> listAllNotInMaintenanceHostsInOneZone(Type type, Long dcId) {
         QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         if (dcId != null) {
-            sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
+            sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
         }
-        sc.and(sc.entity().getType(), Op.EQ,type);
+        sc.and(sc.entity().getType(), Op.EQ, type);
         sc.and(sc.entity().getResourceState(), Op.NIN, ResourceState.Maintenance, ResourceState.ErrorInMaintenance, ResourceState.PrepareForMaintenance, ResourceState.Error);
         return sc.list();
     }
@@ -2322,15 +2321,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public List<HostVO> listAllHostsInOneZoneByType(Type type, long dcId) {
         QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
-        sc.and(sc.entity().getType(), Op.EQ,type);
-        sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
+        sc.and(sc.entity().getType(), Op.EQ, type);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
         return sc.list();
     }
 
     @Override
     public List<HostVO> listAllHostsInAllZonesByType(Type type) {
         QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
-        sc.and(sc.entity().getType(), Op.EQ,type);
+        sc.and(sc.entity().getType(), Op.EQ, type);
         return sc.list();
     }
 
@@ -2360,14 +2359,14 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public HostVO findHostByGuid(String guid) {
         QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
-        sc.and(sc.entity().getGuid(), Op.EQ,guid);
+        sc.and(sc.entity().getGuid(), Op.EQ, guid);
         return sc.find();
     }
 
     @Override
     public HostVO findHostByName(String name) {
         QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
-        sc.and(sc.entity().getName(), Op.EQ,name);
+        sc.and(sc.entity().getName(), Op.EQ, name);
         return sc.find();
     }
 
@@ -2439,10 +2438,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public List<HostVO> listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType type, long dcId) {
         QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
-        sc.and(sc.entity().getHypervisorType(), Op.EQ,type);
-        sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
-        sc.and(sc.entity().getStatus(), Op.EQ,Status.Up);
-        sc.and(sc.entity().getResourceState(), Op.EQ,ResourceState.Enabled);
+        sc.and(sc.entity().getHypervisorType(), Op.EQ, type);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+        sc.and(sc.entity().getResourceState(), Op.EQ, ResourceState.Enabled);
         return sc.list();
     }
 
@@ -2489,6 +2488,5 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // TODO Auto-generated method stub
         return super.start();
     }
-    
-    
+
 }

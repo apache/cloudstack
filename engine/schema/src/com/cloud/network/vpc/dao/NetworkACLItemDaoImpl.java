@@ -69,7 +69,6 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
         MaxNumberSearch.done();
     }
 
-
     @Override
     public boolean setStateToAdd(NetworkACLItemVO rule) {
         SearchCriteria<NetworkACLItemVO> sc = AllFieldsSearch.create();

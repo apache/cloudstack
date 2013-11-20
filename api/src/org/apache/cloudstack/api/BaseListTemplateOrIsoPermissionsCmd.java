@@ -34,8 +34,7 @@ public class BaseListTemplateOrIsoPermissionsCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = TemplatePermissionsResponse.class,
-            required=true, description="the template ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplatePermissionsResponse.class, required = true, description = "the template ID")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -77,7 +76,7 @@ public class BaseListTemplateOrIsoPermissionsCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         List<String> accountNames = _templateService.listTemplatePermissions(this);
 
         Account account = CallContext.current().getCallingAccount();

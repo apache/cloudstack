@@ -34,4 +34,3 @@ public interface AffinityGroupJoinDao extends GenericDao<AffinityGroupJoinVO, Lo
 
     List<AffinityGroupJoinVO> searchByIds(Long... ids);
 }
-

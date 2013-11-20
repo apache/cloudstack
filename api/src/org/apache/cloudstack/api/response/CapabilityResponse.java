@@ -24,13 +24,16 @@ import com.google.gson.annotations.SerializedName;
 
 public class CapabilityResponse extends BaseResponse {
 
-    @SerializedName(ApiConstants.NAME) @Param(description="the capability name")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the capability name")
     private String name;
 
-    @SerializedName(ApiConstants.VALUE) @Param(description="the capability value")
+    @SerializedName(ApiConstants.VALUE)
+    @Param(description = "the capability value")
     private String value;
 
-    @SerializedName(ApiConstants.CAN_CHOOSE_SERVICE_CAPABILITY) @Param(description="can this service capability value can be choosable while creatine network offerings")
+    @SerializedName(ApiConstants.CAN_CHOOSE_SERVICE_CAPABILITY)
+    @Param(description = "can this service capability value can be choosable while creatine network offerings")
     private boolean canChoose;
 
     public String getName() {

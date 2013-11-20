@@ -41,8 +41,7 @@ public class DeleteAutoScalePolicyCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScalePolicyResponse.class,
-            required = true, description = "the ID of the autoscale policy")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScalePolicyResponse.class, required = true, description = "the ID of the autoscale policy")
     private Long id;
 
     // ///////////////////////////////////////////////////

@@ -25,16 +25,13 @@ public class FindLogicalSwitchPortCommand extends Command {
         this.logicalSwitchPortUuid = logicalSwitchPortUuid;
     }
 
-
     public String getLogicalSwitchUuid() {
         return logicalSwitchUuid;
     }
 
-
     public String getLogicalSwitchPortUuid() {
         return logicalSwitchPortUuid;
     }
-
 
     @Override
     public boolean executeInSequence() {

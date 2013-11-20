@@ -59,7 +59,7 @@ public class PhysicalNetworkIsolationMethodDaoImpl extends GenericDaoBase<Physic
 
         return customSearch(sc, null).get(0);
     }
-    
+
     public int clearIsolationMethods(long physicalNetworkId) {
         SearchCriteria<PhysicalNetworkIsolationMethodVO> sc = AllFieldsSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);

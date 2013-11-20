@@ -50,12 +50,14 @@ public class StartVMCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType=UserVmResponse.class,
-            required = true, description = "The ID of the virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
     private Long id;
 
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class,
-            description="destination Host ID to deploy the VM to - parameter available for root admin only", since="3.0.1")
+    @Parameter(name = ApiConstants.HOST_ID,
+               type = CommandType.UUID,
+               entityType = HostResponse.class,
+               description = "destination Host ID to deploy the VM to - parameter available for root admin only",
+               since = "3.0.1")
     private Long hostId;
 
     // ///////////////////////////////////////////////////
@@ -117,7 +119,7 @@ public class StartVMCmd extends BaseAsyncCmd {
         try {
             CallContext.current().setEventDetails("Vm Id: " + getId());
 
-            UserVm result ;
+            UserVm result;
             result = _userVmService.startVirtualMachine(this);
 
             if (result != null) {
@@ -139,7 +141,7 @@ public class StartVMCmd extends BaseAsyncCmd {
         } catch (InsufficientCapacityException ex) {
             StringBuilder message = new StringBuilder(ex.getMessage());
             if (ex instanceof InsufficientServerCapacityException) {
-                if (((InsufficientServerCapacityException) ex).isAffinityApplied()) {
+                if (((InsufficientServerCapacityException)ex).isAffinityApplied()) {
                     message.append(", Please check the affinity groups provided, there may not be sufficient capacity to follow them");
                 }
             }

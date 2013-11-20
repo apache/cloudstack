@@ -32,7 +32,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.net.NetUtils;
 
-
 public class IPRangeConfig {
 
     public static void main(String[] args) {
@@ -44,7 +43,6 @@ public class IPRangeConfig {
     private String usage() {
         return "Usage: ./change_ip_range.sh [add|delete] [public zone | private pod zone] startIP endIP";
     }
-
 
     public void run(String[] args) {
         if (args.length < 2) {
@@ -79,7 +77,8 @@ public class IPRangeConfig {
                 printError(usage());
             }
             String pod = args[2];
-            String zone = args[3];;
+            String zone = args[3];
+            ;
             String startIP = args[4];
             String endIP = null;
             if (args.length == 6) {
@@ -443,7 +442,7 @@ public class IPRangeConfig {
         long startLinkLocalIp = NetUtils.ip2Long(linkLocalIps[0]);
         long endLinkLocalIp = NetUtils.ip2Long(linkLocalIps[1]);
 
-        saveLinkLocalPrivateIPRange(txn, startLinkLocalIp,  endLinkLocalIp, podId, zoneId);
+        saveLinkLocalPrivateIPRange(txn, startLinkLocalIp, endLinkLocalIp, podId, zoneId);
 
         return problemIPs;
     }
@@ -515,7 +514,7 @@ public class IPRangeConfig {
         } catch (Exception ex) {
             System.out.print(ex.getMessage());
             ex.printStackTrace();
-        } 
+        }
 
         return problemIPs;
     }
@@ -556,18 +555,17 @@ public class IPRangeConfig {
 
     public static String getPublicNetmask(String zone) {
         return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`data_center` WHERE name = \"" + zone + "\"", "netmask",
-                "Unable to start DB connection to read public netmask. Please contact Cloud Support.");
+            "Unable to start DB connection to read public netmask. Please contact Cloud Support.");
     }
 
     public static String getPublicGateway(String zone) {
         return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`data_center` WHERE name = \"" + zone + "\"", "gateway",
-                "Unable to start DB connection to read public gateway. Please contact Cloud Support.");
+            "Unable to start DB connection to read public gateway. Please contact Cloud Support.");
     }
 
-    public static String getGuestNetworkCidr(Long zoneId)
-    {
-        return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`data_center` WHERE id = \"" + zoneId + "\"","guest_network_cidr",
-                "Unable to start DB connection to read guest cidr network. Please contact Cloud Support.");
+    public static String getGuestNetworkCidr(Long zoneId) {
+        return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`data_center` WHERE id = \"" + zoneId + "\"", "guest_network_cidr",
+            "Unable to start DB connection to read guest cidr network. Please contact Cloud Support.");
     }
 
 //	public static String getGuestIpNetwork() {
@@ -644,7 +642,7 @@ public class IPRangeConfig {
             int octet;
             try {
                 octet = Integer.parseInt(octetString);
-            } catch(final Exception e) {
+            } catch (final Exception e) {
                 return false;
             }
             // Each octet must be between 0 and 255, inclusive
@@ -669,7 +667,7 @@ public class IPRangeConfig {
         }
 
         long startIPLong = NetUtils.ip2Long(startIP);
-        long endIPLong =  NetUtils.ip2Long(endIP);
+        long endIPLong = NetUtils.ip2Long(endIP);
         return (startIPLong < endIPLong);
     }
 

@@ -23,8 +23,11 @@ import com.cloud.utils.db.GenericDao;
 
 public interface IdentityDao extends GenericDao<IdentityVO, Long> {
     Long getIdentityId(String tableName, String identityString);
-	String getIdentityUuid(String tableName, String identityString);
-	void initializeDefaultUuid(String tableName);
+
+    String getIdentityUuid(String tableName, String identityString);
+
+    void initializeDefaultUuid(String tableName);
+
     /**
      * @param tableName
      * @param identityId

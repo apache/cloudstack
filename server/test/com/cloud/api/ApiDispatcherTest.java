@@ -48,23 +48,21 @@ public class ApiDispatcherTest {
 
     @Mock
     AccountManager accountManager;
-    
+
     public static class TestCmd extends BaseCmd {
 
         @Parameter(name = "strparam1")
         String strparam1;
-        
-        @Parameter(name="intparam1", type=CommandType.INTEGER)
+
+        @Parameter(name = "intparam1", type = CommandType.INTEGER)
         int intparam1;
 
-        @Parameter(name="boolparam1", type=CommandType.BOOLEAN)
+        @Parameter(name = "boolparam1", type = CommandType.BOOLEAN)
         boolean boolparam1;
 
         @Override
-        public void execute() throws ResourceUnavailableException,
-                InsufficientCapacityException, ServerApiException,
-                ConcurrentOperationException, ResourceAllocationException,
-                NetworkRuleConflictException {
+        public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
+            NetworkRuleConflictException {
             // well documented nothing
         }
 
@@ -86,7 +84,7 @@ public class ApiDispatcherTest {
         new ApiDispatcher().init();
         ApiDispatcher.getInstance()._accountMgr = accountManager;
     }
-    
+
     @After
     public void cleanup() {
         CallContext.unregister();

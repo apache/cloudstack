@@ -34,6 +34,5 @@ public interface StartupCommandProcessor extends Adapter {
      * @throws ConnectionException if host has problems 
      */
     boolean processInitialConnect(StartupCommand[] cmd) throws ConnectionException;
-    
-    
+
 }

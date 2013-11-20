@@ -52,20 +52,18 @@ public class XenServer56Resource extends CitrixResourceBase {
     @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof FenceCommand) {
-            return execute((FenceCommand) cmd);
+            return execute((FenceCommand)cmd);
         } else if (cmd instanceof NetworkUsageCommand) {
-            return execute((NetworkUsageCommand) cmd);
+            return execute((NetworkUsageCommand)cmd);
         } else {
             return super.executeRequest(cmd);
         }
     }
-    
 
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
         return CitrixHelper.getXenServerGuestOsType(stdType, bootFromCD);
     }
-
 
     @Override
     protected List<File> getPatchFiles() {
@@ -94,7 +92,7 @@ public class XenServer56Resource extends CitrixResourceBase {
                 if (!pifr.host.getUuid(conn).equalsIgnoreCase(_host.uuid)) {
                     continue;
                 }
-                
+
                 VLAN vlan = pifr.VLANMasterOf;
                 if (vlan != null) {
                     String vlannum = pifr.VLAN.toString();
@@ -110,8 +108,7 @@ public class XenServer56Resource extends CitrixResourceBase {
                         host.forgetDataSourceArchives(conn, "pif_" + device + "." + vlannum + "_tx");
                         host.forgetDataSourceArchives(conn, "pif_" + device + "." + vlannum + "_rx");
                     } catch (XenAPIException e) {
-                        s_logger.info("Catch " + e.getClass().getName() + ": failed to destory VLAN " + device + " on host " + _host.uuid
-                                + " due to "  + e.toString());
+                        s_logger.info("Catch " + e.getClass().getName() + ": failed to destory VLAN " + device + " on host " + _host.uuid + " due to " + e.toString());
                     }
                 }
                 return;
@@ -152,7 +149,7 @@ public class XenServer56Resource extends CitrixResourceBase {
             String publicIp = cmd.getGatewayIP();
 
             String args = "vpc_netusage.sh " + cmd.getPrivateIP();
-            args += " -l " + publicIp+ " ";
+            args += " -l " + publicIp + " ";
             if (option.equals("get")) {
                 args += "-g";
             } else if (option.equals("create")) {
@@ -193,12 +190,12 @@ public class XenServer56Resource extends CitrixResourceBase {
     }
 
     protected NetworkUsageAnswer execute(NetworkUsageCommand cmd) {
-        if ( cmd.isForVpc() ) {
+        if (cmd.isForVpc()) {
             return VPCNetworkUsage(cmd);
         }
         try {
             Connection conn = getConnection();
-            if(cmd.getOption()!=null && cmd.getOption().equals("create") ){
+            if (cmd.getOption() != null && cmd.getOption().equals("create")) {
                 String result = networkUsage(conn, cmd.getPrivateIP(), "create", null);
                 NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
                 return answer;
@@ -208,15 +205,14 @@ public class XenServer56Resource extends CitrixResourceBase {
             return answer;
         } catch (Exception ex) {
             s_logger.warn("Failed to get network usage stats due to ", ex);
-            return new NetworkUsageAnswer(cmd, ex); 
+            return new NetworkUsageAnswer(cmd, ex);
         }
     }
 
     protected FenceAnswer execute(FenceCommand cmd) {
         Connection conn = getConnection();
         try {
-            String result = callHostPluginPremium(conn, "check_heartbeat", "host", cmd.getHostGuid(), "interval",
-                    Integer.toString(_heartbeatInterval * 2));
+            String result = callHostPluginPremium(conn, "check_heartbeat", "host", cmd.getHostGuid(), "interval", Integer.toString(_heartbeatInterval * 2));
             if (!result.contains("> DEAD <")) {
                 s_logger.debug("Heart beat is still going so unable to fence");
                 return new FenceAnswer(cmd, false, "Heartbeat is still going on unable to fence");
@@ -242,8 +238,7 @@ public class XenServer56Resource extends CitrixResourceBase {
     }
 
     @Override
-    protected boolean transferManagementNetwork(Connection conn, Host host, PIF src, PIF.Record spr, PIF dest)
-            throws XmlRpcException, XenAPIException {
+    protected boolean transferManagementNetwork(Connection conn, Host host, PIF src, PIF.Record spr, PIF dest) throws XmlRpcException, XenAPIException {
         dest.reconfigureIp(conn, spr.ipConfigurationMode, spr.IP, spr.netmask, spr.gateway, spr.DNS);
         Host.managementReconfigure(conn, dest);
         String hostUuid = null;
@@ -272,7 +267,7 @@ public class XenServer56Resource extends CitrixResourceBase {
         src.reconfigureIp(conn, IpConfigurationMode.NONE, null, null, null, null);
         return true;
     }
-    
+
     @Override
     public StartupCommand[] initialize() {
         pingXenServer();
@@ -284,8 +279,7 @@ public class XenServer56Resource extends CitrixResourceBase {
     protected CheckOnHostAnswer execute(CheckOnHostCommand cmd) {
         try {
             Connection conn = getConnection();
-            String result = callHostPluginPremium(conn, "check_heartbeat", "host", cmd.getHost().getGuid(), "interval",
-                    Integer.toString(_heartbeatInterval * 2));
+            String result = callHostPluginPremium(conn, "check_heartbeat", "host", cmd.getHost().getGuid(), "interval", Integer.toString(_heartbeatInterval * 2));
             if (result == null) {
                 return new CheckOnHostAnswer(cmd, "Unable to call plugin");
             }

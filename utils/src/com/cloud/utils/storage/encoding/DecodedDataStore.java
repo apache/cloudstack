@@ -26,14 +26,8 @@ public class DecodedDataStore {
     private final String url;
     private final String server;
     private final String path;
-    
-    public DecodedDataStore(String role,
-            String uuid,
-            String providerName,
-            String scheme,
-            String url,
-            String server,
-            String path) {
+
+    public DecodedDataStore(String role, String uuid, String providerName, String scheme, String url, String server, String path) {
         this.role = role;
         this.uuid = uuid;
         this.providerName = providerName;
@@ -42,31 +36,31 @@ public class DecodedDataStore {
         this.server = server;
         this.path = path;
     }
-    
+
     public String getRole() {
         return this.role;
     }
-    
+
     public String getUuid() {
         return this.uuid;
     }
-    
+
     public String getProviderName() {
         return this.providerName;
     }
-    
+
     public String getScheme() {
         return this.scheme;
     }
-    
+
     public String getUrl() {
         return this.url;
     }
-    
+
     public String getServer() {
         return this.server;
     }
-    
+
     public String getPath() {
         return this.path;
     }

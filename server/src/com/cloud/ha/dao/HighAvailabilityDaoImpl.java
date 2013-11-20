@@ -37,7 +37,7 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value={HighAvailabilityDao.class})
+@Local(value = {HighAvailabilityDao.class})
 public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> implements HighAvailabilityDao {
     private static final Logger s_logger = Logger.getLogger(HighAvailabilityDaoImpl.class);
 
@@ -198,7 +198,6 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
 
         return listBy(sc);
     }
-
 
     @Override
     public boolean delete(long instanceId, WorkType type) {

@@ -81,14 +81,14 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
 
     private class CreateVolumeContext<T> extends AsyncRpcContext<T> {
         private final DataObject volume;
+
         public CreateVolumeContext(AsyncCompletionCallback<T> callback, DataObject volume) {
             super(callback);
             this.volume = volume;
         }
     }
 
-    public Void createAsyncCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback,
-            CreateVolumeContext<CreateCmdResult> context) {
+    public Void createAsyncCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback, CreateVolumeContext<CreateCmdResult> context) {
         /*
          * CreateCmdResult result = null; CreateObjectAnswer volAnswer =
          * (CreateObjectAnswer) callback.getResult(); if (volAnswer.getResult())
@@ -115,8 +115,7 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
          */
     }
 
-    public Void deleteCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback,
-            AsyncRpcContext<CommandResult> context) {
+    public Void deleteCallback(AsyncCallbackDispatcher<SamplePrimaryDataStoreDriverImpl, Answer> callback, AsyncRpcContext<CommandResult> context) {
         CommandResult result = new CommandResult();
         Answer answer = callback.getResult();
         if (!answer.getResult()) {

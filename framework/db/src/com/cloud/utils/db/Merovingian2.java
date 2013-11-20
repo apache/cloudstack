@@ -36,7 +36,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.time.InaccurateClock;
 
-
 public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     private static final Logger s_logger = Logger.getLogger(Merovingian2.class);
 
@@ -91,7 +90,6 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         return s_instance;
     }
 
-
     protected void incrCount() {
         Count count = s_tls.get();
         if (count == null) {
@@ -110,7 +108,6 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
 
         count.count--;
     }
-
 
     public boolean acquire(String key, int timeInSeconds) {
         Thread th = Thread.currentThread();
@@ -196,12 +193,12 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
                     incrCount();
                     return true;
                 }
-            } catch(SQLException e) {
+            } catch (SQLException e) {
                 if (!(e.getSQLState().equals("23000") && e.getErrorCode() == 1062)) {
                     throw new CloudRuntimeException("Unable to lock " + key + ".  Waited " + (InaccurateClock.getTime() - startTime), e);
                 }
             }
-        } catch(SQLException e) {
+        } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to lock " + key + ".  Waited " + (InaccurateClock.getTime() - startTime), e);
         } finally {
             try {
@@ -284,8 +281,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             pstmt.setLong(4, threadId);
             int rows = pstmt.executeUpdate();
             assert (rows <= 1) : "hmmm....keys not unique? " + pstmt;
-           
-            
+
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("lck-" + key + " released");
             }
@@ -299,10 +295,10 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
                     s_logger.trace("lck-" + key + " removed");
                 }
                 decrCount();
-            } else  if (rows < 1) {
+            } else if (rows < 1) {
                 s_logger.warn("Was unable to find lock for the key " + key + " and thread id " + threadId);
             }
-            
+
             return rows == 1;
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to release " + key, e);
@@ -356,7 +352,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch(SQLException e) {
+            } catch (SQLException e) {
             }
         }
     }
@@ -430,7 +426,8 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             pstmt.setString(2, threadName);
             pstmt.setInt(3, threadId);
             int rows = pstmt.executeUpdate();
-            assert (false) : "Abandon hope, all ye who enter here....There were still " + rows + ":" + c + " locks not released when the transaction ended, check for lock not released or @DB is not added to the code that using the locks!";
+            assert (false) : "Abandon hope, all ye who enter here....There were still " + rows + ":" + c +
+                             " locks not released when the transaction ended, check for lock not released or @DB is not added to the code that using the locks!";
         } catch (SQLException e) {
             throw new CloudRuntimeException("Can't clear locks " + pstmt, e);
         } finally {
@@ -457,6 +454,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             return false;
         }
     }
+
     protected static class Count {
         public int count = 0;
     }

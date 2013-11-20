@@ -36,18 +36,20 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={SObjectDao.class})
+@Local(value = {SObjectDao.class})
 public class SObjectDaoImpl extends GenericDaoBase<SObjectVO, Long> implements SObjectDao {
-    @Inject SObjectItemDao itemDao;
+    @Inject
+    SObjectItemDao itemDao;
 
-    public SObjectDaoImpl() {}
+    public SObjectDaoImpl() {
+    }
 
     @Override
     public SObjectVO getByNameKey(SBucketVO bucket, String nameKey) {
-        SObjectVO object = null; 
+        SObjectVO object = null;
         SearchBuilder<SObjectVO> SearchByName = createSearchBuilder();
-        SearchByName.and("SBucketID", SearchByName.entity().getBucketID() , SearchCriteria.Op.EQ);
-        SearchByName.and("NameKey", SearchByName.entity().getNameKey() , SearchCriteria.Op.EQ);
+        SearchByName.and("SBucketID", SearchByName.entity().getBucketID(), SearchCriteria.Op.EQ);
+        SearchByName.and("NameKey", SearchByName.entity().getNameKey(), SearchCriteria.Op.EQ);
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         try {
             txn.start();
@@ -56,13 +58,12 @@ public class SObjectDaoImpl extends GenericDaoBase<SObjectVO, Long> implements S
             sc.setParameters("NameKey", nameKey);
             object = findOneBy(sc);
             if (null != object) {
-                Set<SObjectItemVO> items = new HashSet<SObjectItemVO>(
-                        itemDao.getItems(object.getId()));
+                Set<SObjectItemVO> items = new HashSet<SObjectItemVO>(itemDao.getItems(object.getId()));
                 object.setItems(items);
             }
             return object;
 
-        }finally {
+        } finally {
             txn.close();
         }
 
@@ -76,7 +77,7 @@ public class SObjectDaoImpl extends GenericDaoBase<SObjectVO, Long> implements S
         List<SObjectVO> objects = new ArrayList<SObjectVO>();
 
         SearchByBucket.and("SBucketID", SearchByBucket.entity().getBucketID(), SearchCriteria.Op.EQ);
-        SearchByBucket.and("DeletionMark", SearchByBucket.entity().getDeletionMark(), SearchCriteria.Op.NULL);		
+        SearchByBucket.and("DeletionMark", SearchByBucket.entity().getDeletionMark(), SearchCriteria.Op.NULL);
         TransactionLegacy txn = TransactionLegacy.currentTxn();  // Transaction.open("cloudbridge", Transaction.AWSAPI_DB, true);
         try {
             txn.start();
@@ -88,7 +89,7 @@ public class SObjectDaoImpl extends GenericDaoBase<SObjectVO, Long> implements S
                 sObjectVO.setItems(items);
             }
             return objects;
-        }finally {
+        } finally {
             txn.close();
         }
     }
@@ -112,7 +113,7 @@ public class SObjectDaoImpl extends GenericDaoBase<SObjectVO, Long> implements S
                 sObjectVO.setItems(items);
             }
             return objects;
-        }finally {
+        } finally {
             txn.close();
         }
 

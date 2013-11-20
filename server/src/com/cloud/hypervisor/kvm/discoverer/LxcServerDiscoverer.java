@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
 
-@Local(value=Discoverer.class)
+@Local(value = Discoverer.class)
 public class LxcServerDiscoverer extends LibvirtServerDiscoverer {
     private static final Logger s_logger = Logger.getLogger(LxcServerDiscoverer.class);
 

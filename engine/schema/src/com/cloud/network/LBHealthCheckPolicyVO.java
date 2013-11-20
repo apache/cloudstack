@@ -74,8 +74,8 @@ public class LBHealthCheckPolicyVO implements HealthCheckPolicy {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public LBHealthCheckPolicyVO(long loadBalancerId, String pingPath, String description, int responseTime,
-            int healthcheckInterval, int healthcheckThresshold, int unhealthThresshold) {
+    public LBHealthCheckPolicyVO(long loadBalancerId, String pingPath, String description, int responseTime, int healthcheckInterval, int healthcheckThresshold,
+            int unhealthThresshold) {
         this.loadBalancerId = loadBalancerId;
 
         if (pingPath == null || pingPath.isEmpty())

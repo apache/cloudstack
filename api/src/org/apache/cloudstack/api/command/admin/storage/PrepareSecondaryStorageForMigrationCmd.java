@@ -34,7 +34,9 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.ImageStore;
 import com.cloud.user.Account;
 
-@APICommand(name = "prepareSecondaryStorageForMigration", description = "Prepare a NFS secondary storage to migrate to use object store like S3", responseObject = ImageStoreResponse.class)
+@APICommand(name = "prepareSecondaryStorageForMigration",
+            description = "Prepare a NFS secondary storage to migrate to use object store like S3",
+            responseObject = ImageStoreResponse.class)
 public class PrepareSecondaryStorageForMigrationCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(PrepareSecondaryStorageForMigrationCmd.class.getName());
     private static final String s_name = "preparesecondarystorageformigrationresponse";
@@ -43,8 +45,7 @@ public class PrepareSecondaryStorageForMigrationCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class,
-            required = true, description = "Secondary image store ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class, required = true, description = "Secondary image store ID")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -95,9 +96,9 @@ public class PrepareSecondaryStorageForMigrationCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException{
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException {
         ImageStore result = _storageService.prepareSecondaryStorageForObjectStoreMigration(getId());
-        if (result != null){
+        if (result != null) {
             ImageStoreResponse response = _responseGenerator.createImageStoreResponse(result);
             response.setResponseName(getCommandName());
             response.setResponseName("secondarystorage");

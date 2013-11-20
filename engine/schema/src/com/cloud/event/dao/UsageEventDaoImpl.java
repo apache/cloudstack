@@ -42,20 +42,21 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value={UsageEventDao.class})
+@Local(value = {UsageEventDao.class})
 public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implements UsageEventDao {
     public static final Logger s_logger = Logger.getLogger(UsageEventDaoImpl.class.getName());
 
     private final SearchBuilder<UsageEventVO> latestEventsSearch;
     private final SearchBuilder<UsageEventVO> IpeventsSearch;
-    private static final String COPY_EVENTS = "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size) " +
-            "SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size FROM cloud.usage_event vmevt WHERE vmevt.id > ? and vmevt.id <= ? ";
-    private static final String COPY_ALL_EVENTS = "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size) " +
-            "SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size FROM cloud.usage_event vmevt WHERE vmevt.id <= ?";
+    private static final String COPY_EVENTS = "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size) "
+                                              + "SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size FROM cloud.usage_event vmevt WHERE vmevt.id > ? and vmevt.id <= ? ";
+    private static final String COPY_ALL_EVENTS = "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size) "
+                                                  + "SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size FROM cloud.usage_event vmevt WHERE vmevt.id <= ?";
     private static final String MAX_EVENT = "select max(id) from cloud.usage_event where created <= ?";
-    @Inject protected UsageEventDetailsDao usageEventDetailsDao;
+    @Inject
+    protected UsageEventDetailsDao usageEventDetailsDao;
 
-    public UsageEventDaoImpl () {
+    public UsageEventDaoImpl() {
         latestEventsSearch = createSearchBuilder();
         latestEventsSearch.and("processed", latestEventsSearch.entity().isProcessed(), SearchCriteria.Op.EQ);
         latestEventsSearch.and("enddate", latestEventsSearch.entity().getCreateDate(), SearchCriteria.Op.LTEQ);
@@ -126,9 +127,9 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
         try {
             List<UsageEventVO> latestEvents = getLatestEvent();
 
-            if(latestEvents !=null && latestEvents.size() == 1){
+            if (latestEvents != null && latestEvents.size() == 1) {
                 UsageEventVO latestEvent = latestEvents.get(0);
-                if(latestEvent != null){
+                if (latestEvent != null) {
                     return latestEvent.getId();
                 }
             }
@@ -188,7 +189,7 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
 
     @Override
     public void saveDetails(long eventId, Map<String, String> details) {
-         usageEventDetailsDao.persist(eventId, details);
+        usageEventDetailsDao.persist(eventId, details);
     }
 
 }

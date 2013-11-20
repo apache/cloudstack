@@ -27,14 +27,17 @@ import com.google.gson.annotations.SerializedName;
  * Subobject of the load balancer container response
  */
 @SuppressWarnings("unused")
-public class ApplicationLoadBalancerRuleResponse extends BaseResponse{
-    @SerializedName(ApiConstants.SOURCE_PORT) @Param(description = "source port of the load balancer rule")
+public class ApplicationLoadBalancerRuleResponse extends BaseResponse {
+    @SerializedName(ApiConstants.SOURCE_PORT)
+    @Param(description = "source port of the load balancer rule")
     private Integer sourcePort;
-    
-    @SerializedName(ApiConstants.INSTANCE_PORT) @Param(description = "instance port of the load balancer rule")
+
+    @SerializedName(ApiConstants.INSTANCE_PORT)
+    @Param(description = "instance port of the load balancer rule")
     private Integer instancePort;
-    
-    @SerializedName(ApiConstants.STATE) @Param(description = "the state of the load balancer rule")
+
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "the state of the load balancer rule")
     private String state;
 
     public void setSourcePort(Integer sourcePort) {

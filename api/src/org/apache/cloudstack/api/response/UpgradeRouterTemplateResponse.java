@@ -32,7 +32,8 @@ import java.util.Set;
 @EntityReference(value = JobInfo.class)
 @SuppressWarnings("unused")
 public class UpgradeRouterTemplateResponse extends BaseResponse {
-    @SerializedName(ApiConstants.JOB_ID) @Param(description="the id of AsyncJob")
+    @SerializedName(ApiConstants.JOB_ID)
+    @Param(description = "the id of AsyncJob")
     private String asyncJobId;
 
     public String getAsyncJobId() {

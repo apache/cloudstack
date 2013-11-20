@@ -37,75 +37,63 @@ import com.cloud.host.Status;
 import com.cloud.storage.Storage;
 import com.cloud.utils.db.SearchCriteria;
 
-
 public class StorageCapacityListener implements Listener {
-    
+
     CapacityDao _capacityDao;
     StorageManager _storageMgr;
 
     public StorageCapacityListener(CapacityDao capacityDao, StorageManager storageMgr) {
         this._capacityDao = capacityDao;
-        this._storageMgr =  storageMgr;
+        this._storageMgr = storageMgr;
     }
-
 
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
         return false;
     }
 
-
     @Override
     public boolean processCommands(long agentId, long seq, Command[] commands) {
         return false;
     }
 
-
     @Override
-    public AgentControlAnswer processControlCommand(long agentId,
-            AgentControlCommand cmd) {
-        
+    public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
+
         return null;
     }
 
-
     @Override
     public void processConnect(Host server, StartupCommand startup, boolean forRebalance) throws ConnectionException {
-        
+
         if (!(startup instanceof StartupStorageCommand)) {
             return;
         }
 
-        StartupStorageCommand ssCmd = (StartupStorageCommand) startup;
+        StartupStorageCommand ssCmd = (StartupStorageCommand)startup;
         if (ssCmd.getResourceType() == Storage.StorageResourceType.STORAGE_HOST) {
             BigDecimal overProvFactor = _storageMgr.getStorageOverProvisioningFactor(server.getDataCenterId());
-            CapacityVO capacity = new CapacityVO(server.getId(),
-                    server.getDataCenterId(), server.getPodId(), server.getClusterId(), 0L,
-                    (overProvFactor.multiply(new BigDecimal(server.getTotalSize()))).longValue(),
-                    CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED);
+            CapacityVO capacity = new CapacityVO(server.getId(), server.getDataCenterId(), server.getPodId(), server.getClusterId(), 0L, (overProvFactor.multiply(new BigDecimal(
+                server.getTotalSize()))).longValue(), CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED);
             _capacityDao.persist(capacity);
         }
 
     }
-
 
     @Override
     public boolean processDisconnect(long agentId, Status state) {
         return false;
     }
 
-
     @Override
     public boolean isRecurring() {
         return false;
     }
 
- 
     @Override
     public int getTimeout() {
         return 0;
     }
-
 
     @Override
     public boolean processTimeout(long agentId, long seq) {

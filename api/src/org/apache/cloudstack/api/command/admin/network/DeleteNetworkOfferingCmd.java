@@ -28,8 +28,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteNetworkOffering", description="Deletes a network offering.", responseObject=SuccessResponse.class, since="3.0.0")
-public class DeleteNetworkOfferingCmd extends BaseCmd{
+@APICommand(name = "deleteNetworkOffering", description = "Deletes a network offering.", responseObject = SuccessResponse.class, since = "3.0.0")
+public class DeleteNetworkOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteNetworkOfferingCmd.class.getName());
     private static final String s_name = "deletenetworkofferingresponse";
 
@@ -37,8 +37,7 @@ public class DeleteNetworkOfferingCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = NetworkOfferingResponse.class,
-            required=true, description="the ID of the network offering")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, required = true, description = "the ID of the network offering")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -48,7 +47,6 @@ public class DeleteNetworkOfferingCmd extends BaseCmd{
     public Long getId() {
         return id;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -65,7 +63,7 @@ public class DeleteNetworkOfferingCmd extends BaseCmd{
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = _configService.deleteNetworkOffering(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

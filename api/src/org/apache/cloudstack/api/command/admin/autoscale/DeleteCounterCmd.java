@@ -41,8 +41,7 @@ public class DeleteCounterCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=CounterResponse.class,
-            required=true, description="the ID of the counter")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = CounterResponse.class, required = true, description = "the ID of the counter")
     private Long id;
 
     // ///////////////////////////////////////////////////

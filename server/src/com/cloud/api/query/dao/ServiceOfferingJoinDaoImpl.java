@@ -33,14 +33,13 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={ServiceOfferingJoinDao.class})
+@Local(value = {ServiceOfferingJoinDao.class})
 public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJoinVO, Long> implements ServiceOfferingJoinDao {
     public static final Logger s_logger = Logger.getLogger(ServiceOfferingJoinDaoImpl.class);
 
-
     private SearchBuilder<ServiceOfferingJoinVO> sofIdSearch;
 
-     protected ServiceOfferingJoinDaoImpl() {
+    protected ServiceOfferingJoinDaoImpl() {
 
         sofIdSearch = createSearchBuilder();
         sofIdSearch.and("id", sofIdSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -48,8 +47,6 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
 
         this._count = "select count(distinct service_offering_view.id) from service_offering_view WHERE ";
     }
-
-
 
     @Override
     public ServiceOfferingResponse newServiceOfferingResponse(ServiceOfferingJoinVO offering) {
@@ -65,8 +62,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setCpuSpeed(offering.getSpeed());
         offeringResponse.setMemory(offering.getRamSize());
         offeringResponse.setCreated(offering.getCreated());
-        offeringResponse.setStorageType(offering.isUseLocalStorage() ? ServiceOffering.StorageType.local.toString()
-                : ServiceOffering.StorageType.shared.toString());
+        offeringResponse.setStorageType(offering.isUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
         offeringResponse.setOfferHa(offering.isOfferHA());
         offeringResponse.setLimitCpuUse(offering.isLimitCpuUse());
         offeringResponse.setVolatileVm(offering.getVolatileVm());
@@ -86,7 +82,6 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         return offeringResponse;
     }
 
-
     @Override
     public ServiceOfferingJoinVO newServiceOfferingView(ServiceOffering offering) {
         SearchCriteria<ServiceOfferingJoinVO> sc = sofIdSearch.create();
@@ -95,6 +90,5 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         assert offerings != null && offerings.size() == 1 : "No service offering found for offering id " + offering.getId();
         return offerings.get(0);
     }
-
 
 }

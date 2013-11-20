@@ -31,13 +31,9 @@ import org.springframework.core.type.filter.TypeFilter;
 import com.cloud.vm.dao.UserVmCloneSettingDaoImpl;
 
 @Configuration
-@ComponentScan(basePackageClasses={
-        UserVmCloneSettingDaoImpl.class},
-        includeFilters={@Filter(value=UserVmCloneSettingDaoTestConfiguration.Library.class, type=FilterType.CUSTOM)},
-        useDefaultFilters=false
-        )
+@ComponentScan(basePackageClasses = {UserVmCloneSettingDaoImpl.class}, includeFilters = {@Filter(value = UserVmCloneSettingDaoTestConfiguration.Library.class,
+                                                                                                 type = FilterType.CUSTOM)}, useDefaultFilters = false)
 public class UserVmCloneSettingDaoTestConfiguration {
-
 
     public static class Library implements TypeFilter {
 

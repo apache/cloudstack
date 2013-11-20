@@ -27,7 +27,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "listSwifts", description = "List Swift.", responseObject = ImageStoreResponse.class, since="3.0.0")
+@APICommand(name = "listSwifts", description = "List Swift.", responseObject = ImageStoreResponse.class, since = "3.0.0")
 public class ListSwiftsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSwiftsCmd.class.getName());
     private static final String s_name = "listswiftsresponse";
@@ -47,7 +47,6 @@ public class ListSwiftsCmd extends BaseListCmd {
         return id;
     }
 
-
     @Override
     public String getCommandName() {
         return s_name;
@@ -59,7 +58,7 @@ public class ListSwiftsCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
 
         ListImageStoresCmd cmd = new ListImageStoresCmd();
         cmd.setProvider("Swift");

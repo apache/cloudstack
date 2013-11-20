@@ -29,7 +29,7 @@ public class Upgrade2210to2211 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "2.2.10", "2.2.10"};
+        return new String[] {"2.2.10", "2.2.10"};
     }
 
     @Override
@@ -48,8 +48,8 @@ public class Upgrade2210to2211 implements DbUpgrade {
         if (script == null) {
             throw new CloudRuntimeException("Unable to find db/schema-2210to2211.sql");
         }
-        
-        return new File[] { new File(script) };
+
+        return new File[] {new File(script)};
     }
 
     @Override
@@ -60,5 +60,5 @@ public class Upgrade2210to2211 implements DbUpgrade {
     public File[] getCleanupScripts() {
         return null;
     }
- 
+
 }

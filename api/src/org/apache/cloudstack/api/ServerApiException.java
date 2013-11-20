@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.api;
+
 import java.util.ArrayList;
 
 import com.cloud.exception.CloudException;
@@ -40,12 +41,12 @@ public class ServerApiException extends CloudRuntimeException {
     }
 
     // wrap a specific CloudRuntimeException to a ServerApiException
-    public ServerApiException(ApiErrorCode errorCode, String description, Throwable cause){
+    public ServerApiException(ApiErrorCode errorCode, String description, Throwable cause) {
         super(description, cause);
         _errorCode = errorCode;
         _description = description;
         if (cause instanceof CloudRuntimeException) {
-            CloudRuntimeException rt = (CloudRuntimeException) cause;
+            CloudRuntimeException rt = (CloudRuntimeException)cause;
             ArrayList<ExceptionProxyObject> idList = rt.getIdProxyList();
             if (idList != null) {
                 for (int i = 0; i < idList.size(); i++) {
@@ -54,7 +55,7 @@ public class ServerApiException extends CloudRuntimeException {
             }
             setCSErrorCode(rt.getCSErrorCode());
         } else if (cause instanceof CloudException) {
-            CloudException rt = (CloudException) cause;
+            CloudException rt = (CloudException)cause;
             ArrayList<String> idList = rt.getIdProxyList();
             if (idList != null) {
                 for (int i = 0; i < idList.size(); i++) {

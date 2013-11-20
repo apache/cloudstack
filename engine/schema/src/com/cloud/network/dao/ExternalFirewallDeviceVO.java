@@ -35,14 +35,14 @@ import javax.persistence.Table;
   */
 
 @Entity
-@Table(name="external_firewall_devices")
+@Table(name = "external_firewall_devices")
 public class ExternalFirewallDeviceVO implements InternalIdentity, Identity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
     @Column(name = "host_id")
@@ -57,29 +57,27 @@ public class ExternalFirewallDeviceVO implements InternalIdentity, Identity {
     @Column(name = "device_name")
     private String deviceName;
 
-    @Column(name="device_state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "device_state")
+    @Enumerated(value = EnumType.STRING)
     FirewallDeviceState deviceState;
 
-    @Column(name="is_dedicated")
+    @Column(name = "is_dedicated")
     private boolean isDedicatedDevice;
 
     @Column(name = "capacity")
     private long capacity;
 
     @Column(name = "allocation_state")
-    @Enumerated(value=EnumType.STRING)
+    @Enumerated(value = EnumType.STRING)
     private FirewallDeviceAllocationState allocationState;
 
     //keeping it enum for future possible states Maintenance, Shutdown
     public enum FirewallDeviceState {
-        Enabled,
-        Disabled
+        Enabled, Disabled
     }
 
     public enum FirewallDeviceAllocationState {
-        Free,
-        Allocated
+        Free, Allocated
     }
 
     public ExternalFirewallDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name, long capacity, boolean dedicated) {

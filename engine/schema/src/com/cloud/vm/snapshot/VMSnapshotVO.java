@@ -83,15 +83,15 @@ public class VMSnapshotVO implements VMSnapshot {
 
     @Column(name = "current")
     Boolean current;
-    
+
     @Column(name = "parent")
     Long parent;
-    
+
     @Column(name = "updated")
     @Temporal(value = TemporalType.TIMESTAMP)
     Date updated;
-    
-    @Column(name="update_count", updatable = true, nullable=false)
+
+    @Column(name = "update_count", updatable = true, nullable = false)
     protected long updatedCount;
 
     @Transient
@@ -106,14 +106,14 @@ public class VMSnapshotVO implements VMSnapshot {
     }
 
     public Long getParent() {
-		return parent;
-	}
+        return parent;
+    }
 
-	public void setParent(Long parent) {
-		this.parent = parent;
-	}
+    public void setParent(Long parent) {
+        this.parent = parent;
+    }
 
-	public VMSnapshotVO() {
+    public VMSnapshotVO() {
 
     }
 
@@ -121,9 +121,8 @@ public class VMSnapshotVO implements VMSnapshot {
         return removed;
     }
 
-    public VMSnapshotVO(Long accountId, Long domainId, Long vmId,
-            String description, String vmSnapshotName, String vsDisplayName,
-            Long serviceOfferingId, Type type, Boolean current) {
+    public VMSnapshotVO(Long accountId, Long domainId, Long vmId, String description, String vmSnapshotName, String vsDisplayName, Long serviceOfferingId, Type type,
+            Boolean current) {
         this.accountId = accountId;
         this.domainId = domainId;
         this.vmId = vmId;
@@ -204,13 +203,13 @@ public class VMSnapshotVO implements VMSnapshot {
         this.displayName = displayName;
     }
 
-	public Boolean getCurrent() {
-		return current;
-	}
+    public Boolean getCurrent() {
+        return current;
+    }
 
-	public void setCurrent(Boolean current) {
-		this.current = current;
-	}
+    public void setCurrent(Boolean current) {
+        this.current = current;
+    }
 
     @Override
     public long getUpdatedCount() {
@@ -231,7 +230,7 @@ public class VMSnapshotVO implements VMSnapshot {
     public Type getType() {
         return type;
     }
-    
+
     public void setRemoved(Date removed) {
         this.removed = removed;
     }

@@ -34,7 +34,7 @@ import com.cloud.domain.Domain;
 import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
 
-@APICommand(name = "updateDomain", description="Updates a domain with a new name", responseObject=DomainResponse.class)
+@APICommand(name = "updateDomain", description = "Updates a domain with a new name", responseObject = DomainResponse.class)
 public class UpdateDomainCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateDomainCmd.class.getName());
     private static final String s_name = "updatedomainresponse";
@@ -43,17 +43,19 @@ public class UpdateDomainCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            required=true, description="ID of domain to update")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainResponse.class, required = true, description = "ID of domain to update")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="updates domain with this name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "updates domain with this name")
     private String domainName;
 
-    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain for the domain's networks; empty string will update domainName with NULL value")
+    @Parameter(name = ApiConstants.NETWORK_DOMAIN,
+               type = CommandType.STRING,
+               description = "Network domain for the domain's networks; empty string will update domainName with NULL value")
     private String networkDomain;
 
-    @Inject RegionService _regionService;
+    @Inject
+    RegionService _regionService;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -86,9 +88,9 @@ public class UpdateDomainCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Domain Id: "+getId());
-        Domain domain =  _regionService.updateDomain(this);
+    public void execute() {
+        CallContext.current().setEventDetails("Domain Id: " + getId());
+        Domain domain = _regionService.updateDomain(this);
 
         if (domain != null) {
             DomainResponse response = _responseGenerator.createDomainResponse(domain);

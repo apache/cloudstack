@@ -37,14 +37,14 @@ public class ReleaseDedicatedZoneCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReleaseDedicatedZoneCmd.class.getName());
 
     private static final String s_name = "releasededicatedzoneresponse";
-    @Inject DedicatedService dedicatedService;
+    @Inject
+    DedicatedService dedicatedService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType= ZoneResponse.class,
-            required=true, description="the ID of the Zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of the Zone")
     private Long zoneId;
 
     /////////////////////////////////////////////////////
@@ -69,7 +69,7 @@ public class ReleaseDedicatedZoneCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = dedicatedService.releaseDedicatedResource(getZoneId(), null, null, null);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

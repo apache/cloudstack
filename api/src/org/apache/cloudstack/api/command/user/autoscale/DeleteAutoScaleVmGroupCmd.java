@@ -41,8 +41,7 @@ public class DeleteAutoScaleVmGroupCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class,
-            required = true, description = "the ID of the autoscale group")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class, required = true, description = "the ID of the autoscale group")
     private Long id;
 
     // ///////////////////////////////////////////////////

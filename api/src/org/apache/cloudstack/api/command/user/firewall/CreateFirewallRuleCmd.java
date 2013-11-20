@@ -52,8 +52,11 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.UUID, entityType = IPAddressResponse.class,
-            required=true, description = "the IP address id of the port forwarding rule")
+    @Parameter(name = ApiConstants.IP_ADDRESS_ID,
+               type = CommandType.UUID,
+               entityType = IPAddressResponse.class,
+               required = true,
+               description = "the IP address id of the port forwarding rule")
     private Long ipAddressId;
 
     @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "the protocol for the firewall rule. Valid values are TCP/UDP/ICMP.")
@@ -80,7 +83,6 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
-
 
     public Long getIpAddressId() {
         return ipAddressId;
@@ -111,7 +113,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         return s_name;
     }
 
-    public void setSourceCidrList(List<String> cidrs){
+    public void setSourceCidrList(List<String> cidrs) {
         cidrlist = cidrs;
     }
 
@@ -150,7 +152,6 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         // FIXME: We should allow for end user to specify Xid.
         return null;
     }
-
 
     @Override
     public String getUuid() {
@@ -205,7 +206,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
 
         if (ntwkId == null) {
             throw new InvalidParameterValueException("Unable to create firewall rule for the ipAddress id=" + ipAddressId +
-                    " as ip is not associated with any network and no networkId is passed in");
+                                                     " as ip is not associated with any network and no networkId is passed in");
         }
         return ntwkId;
     }
@@ -230,8 +231,8 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     @Override
     public void create() {
         if (getSourceCidrList() != null) {
-            for (String cidr: getSourceCidrList()){
-                if (!NetUtils.isValidCIDR(cidr)){
+            for (String cidr : getSourceCidrList()) {
+                if (!NetUtils.isValidCIDR(cidr)) {
                     throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Source cidrs formatting error " + cidr);
                 }
             }
@@ -298,7 +299,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         if (icmpType != null) {
             return icmpType;
         } else if (protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO)) {
-                return -1;
+            return -1;
 
         }
         return null;

@@ -23,7 +23,6 @@ import org.apache.cloudstack.engine.entity.api.CloudStackEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 
-
 public interface VolumeEntity extends CloudStackEntity {
 
     /**
@@ -73,12 +72,12 @@ public interface VolumeEntity extends CloudStackEntity {
      * Destroy the volume
      */
     void destroy();
-    
+
     long getSize();
-    
+
     DiskFormat getDiskType();
-    
+
     VolumeType getType();
-    
+
     StorageEntity getDataStore();
 }

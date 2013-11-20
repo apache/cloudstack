@@ -28,22 +28,21 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value=VmwareDatacenterZoneMapDao.class)
-public class VmwareDatacenterZoneMapDaoImpl extends GenericDaoBase<VmwareDatacenterZoneMapVO, Long>
-     implements VmwareDatacenterZoneMapDao {
+@Local(value = VmwareDatacenterZoneMapDao.class)
+public class VmwareDatacenterZoneMapDaoImpl extends GenericDaoBase<VmwareDatacenterZoneMapVO, Long> implements VmwareDatacenterZoneMapDao {
 
- protected final SearchBuilder<VmwareDatacenterZoneMapVO> zoneSearch;
- protected final SearchBuilder<VmwareDatacenterZoneMapVO> vmwareDcSearch;
+    protected final SearchBuilder<VmwareDatacenterZoneMapVO> zoneSearch;
+    protected final SearchBuilder<VmwareDatacenterZoneMapVO> vmwareDcSearch;
 
- public VmwareDatacenterZoneMapDaoImpl() {
-     zoneSearch = createSearchBuilder();
-     zoneSearch.and("zoneId", zoneSearch.entity().getZoneId(), Op.EQ);
-     zoneSearch.done();
+    public VmwareDatacenterZoneMapDaoImpl() {
+        zoneSearch = createSearchBuilder();
+        zoneSearch.and("zoneId", zoneSearch.entity().getZoneId(), Op.EQ);
+        zoneSearch.done();
 
-     vmwareDcSearch = createSearchBuilder();
-     vmwareDcSearch.and("vmwareDcId", vmwareDcSearch.entity().getVmwareDcId(), Op.EQ);
-     vmwareDcSearch.done();
- }
+        vmwareDcSearch = createSearchBuilder();
+        vmwareDcSearch.and("vmwareDcId", vmwareDcSearch.entity().getVmwareDcId(), Op.EQ);
+        vmwareDcSearch.done();
+    }
 
     @Override
     public VmwareDatacenterZoneMapVO findByZoneId(long zoneId) {

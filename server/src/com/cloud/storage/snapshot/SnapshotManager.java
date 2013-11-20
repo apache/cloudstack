@@ -59,16 +59,15 @@ public interface SnapshotManager {
 
     String getSecondaryStorageURL(SnapshotVO snapshot);
 
-   //void deleteSnapshotsDirForVolume(String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId);
+    //void deleteSnapshotsDirForVolume(String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId);
 
-	boolean canOperateOnVolume(Volume volume);
+    boolean canOperateOnVolume(Volume volume);
 
-	Answer sendToPool(Volume vol, Command cmd);
+    Answer sendToPool(Volume vol, Command cmd);
 
-	SnapshotVO getParentSnapshot(VolumeInfo volume);
+    SnapshotVO getParentSnapshot(VolumeInfo volume);
 
-	Snapshot backupSnapshot(Long snapshotId);
+    Snapshot backupSnapshot(Long snapshotId);
 
-	SnapshotInfo takeSnapshot(VolumeInfo volume)
-			throws ResourceAllocationException;
+    SnapshotInfo takeSnapshot(VolumeInfo volume) throws ResourceAllocationException;
 }

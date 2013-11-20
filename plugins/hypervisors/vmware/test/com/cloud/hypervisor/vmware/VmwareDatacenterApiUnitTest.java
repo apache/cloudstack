@@ -164,8 +164,8 @@ public class VmwareDatacenterApiUnitTest {
         ComponentContext.initComponentsLifeCycle();
         MockitoAnnotations.initMocks(this);
 
-        DataCenterVO zone = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,  "10.0.0.1/24",
-                null, null, NetworkType.Basic, null, null, true,  true, null, null);
+        DataCenterVO zone = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null,
+            true, true, null, null);
         zoneId = 1L;
 
         HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), zoneId, "192.168.56.1", "192.168.56.0/24", 8, "test");
@@ -296,7 +296,9 @@ public class VmwareDatacenterApiUnitTest {
     }
 
     @Configuration
-    @ComponentScan(basePackageClasses = {VmwareManagerImpl.class}, includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)}, useDefaultFilters = false)
+    @ComponentScan(basePackageClasses = {VmwareManagerImpl.class},
+                   includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
+                   useDefaultFilters = false)
     public static class TestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         @Bean
@@ -388,7 +390,7 @@ public class VmwareDatacenterApiUnitTest {
         public ManagementServerHostPeerDao managementServerHostPeerDao() {
             return Mockito.mock(ManagementServerHostPeerDao.class);
         }
-        
+
         @Bean
         public ConfigurationDao configurationDao() {
             return Mockito.mock(ConfigurationDao.class);
@@ -431,6 +433,7 @@ public class VmwareDatacenterApiUnitTest {
         public DataStoreManager dataStoreManager() {
             return Mockito.mock(DataStoreManager.class);
         }
+
         public static class Library implements TypeFilter {
 
             @Override

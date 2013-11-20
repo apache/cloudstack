@@ -23,16 +23,16 @@ import com.cloud.bridge.service.core.ec2.EC2Instance;
 
 public class EC2RunInstancesResponse {
 
-	private List<EC2Instance> instanceSet = new ArrayList<EC2Instance>();    
+    private List<EC2Instance> instanceSet = new ArrayList<EC2Instance>();
 
-	public EC2RunInstancesResponse() {
-	}
-	
-	public void addInstance( EC2Instance param ) {
-		instanceSet.add( param );
-	}
-	
-	public EC2Instance[] getInstanceSet() {
-		return instanceSet.toArray(new EC2Instance[0]);
-	}
+    public EC2RunInstancesResponse() {
+    }
+
+    public void addInstance(EC2Instance param) {
+        instanceSet.add(param);
+    }
+
+    public EC2Instance[] getInstanceSet() {
+        return instanceSet.toArray(new EC2Instance[0]);
+    }
 }

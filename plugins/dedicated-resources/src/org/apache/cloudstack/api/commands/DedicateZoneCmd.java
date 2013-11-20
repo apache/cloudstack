@@ -38,22 +38,22 @@ import com.cloud.dc.DedicatedResources;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "dedicateZone", description ="Dedicates a zones.", responseObject = DedicateZoneResponse.class)
+@APICommand(name = "dedicateZone", description = "Dedicates a zones.", responseObject = DedicateZoneResponse.class)
 public class DedicateZoneCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DedicateZoneCmd.class.getName());
 
     private static final String s_name = "dedicatezoneresponse";
-    @Inject public DedicatedService dedicatedService;
+    @Inject
+    public DedicatedService dedicatedService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
-            required=true, description="the ID of the zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of the zone")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class, required=true, description="the ID of the containing domain")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, required = true, description = "the ID of the containing domain")
     private Long domainId;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the name of the account which needs dedication. Must be used with domainId.")
@@ -62,7 +62,6 @@ public class DedicateZoneCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     public Long getZoneId() {
         return zoneId;
@@ -91,7 +90,7 @@ public class DedicateZoneCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         List<? extends DedicatedResources> result = dedicatedService.dedicateZone(getZoneId(), getDomainId(), getAccountName());
         ListResponse<DedicateZoneResponse> response = new ListResponse<DedicateZoneResponse>();
         List<DedicateZoneResponse> zoneResponseList = new ArrayList<DedicateZoneResponse>();

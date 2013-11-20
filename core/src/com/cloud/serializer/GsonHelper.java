@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.serializer;
 
-
-
 import java.util.List;
 
 import org.apache.log4j.Logger;

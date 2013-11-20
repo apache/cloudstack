@@ -26,26 +26,27 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name=("network_rule_config"))
+@Table(name = ("network_rule_config"))
 public class NetworkRuleConfigVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(name="security_group_id")
+    @Column(name = "security_group_id")
     private long securityGroupId;
 
-    @Column(name="public_port")
+    @Column(name = "public_port")
     private String publicPort;
 
-    @Column(name="private_port")
+    @Column(name = "private_port")
     private String privatePort;
 
-    @Column(name="protocol")
+    @Column(name = "protocol")
     private String protocol;
-    
-    public NetworkRuleConfigVO() {}
+
+    public NetworkRuleConfigVO() {
+    }
 
     public NetworkRuleConfigVO(long securityGroupId, String publicPort, String privatePort, String protocol) {
         this.securityGroupId = securityGroupId;

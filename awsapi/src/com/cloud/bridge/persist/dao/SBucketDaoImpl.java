@@ -32,45 +32,44 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={SBucketDao.class})
+@Local(value = {SBucketDao.class})
 public class SBucketDaoImpl extends GenericDaoBase<SBucketVO, Long> implements SBucketDao {
-    	
-	public SBucketDaoImpl() {
-	}
 
-	@Override
-	public SBucketVO getByName(String bucketName) {
-	    SearchBuilder<SBucketVO> SearchByName = createSearchBuilder();
-	    SearchByName.and("Name", SearchByName.entity().getName(), SearchCriteria.Op.EQ);
-	    //Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
-	    TransactionLegacy txn = TransactionLegacy.open("cloudbridge", TransactionLegacy.AWSAPI_DB, true);
-	    try {
-		txn.start();
-		SearchCriteria<SBucketVO> sc = SearchByName.create();
-		sc.setParameters("Name", bucketName);
-		return findOneBy(sc);
-		
-	    }finally {
-		txn.close();
-	    }
-	}
-	
-	@Override
-	public List<SBucketVO> listBuckets(String canonicalId) {
-	    SearchBuilder<SBucketVO> ByCanonicalID = createSearchBuilder();
-	    ByCanonicalID.and("OwnerCanonicalID", ByCanonicalID.entity().getOwnerCanonicalId(), SearchCriteria.Op.EQ);
-	    Filter filter = new Filter(SBucketVO.class, "createTime", Boolean.TRUE, null, null);
-	    TransactionLegacy txn = TransactionLegacy.currentTxn();  // Transaction.open("cloudbridge", Transaction.AWSAPI_DB, true);
-	    try {
+    public SBucketDaoImpl() {
+    }
+
+    @Override
+    public SBucketVO getByName(String bucketName) {
+        SearchBuilder<SBucketVO> SearchByName = createSearchBuilder();
+        SearchByName.and("Name", SearchByName.entity().getName(), SearchCriteria.Op.EQ);
+        //Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+        TransactionLegacy txn = TransactionLegacy.open("cloudbridge", TransactionLegacy.AWSAPI_DB, true);
+        try {
+            txn.start();
+            SearchCriteria<SBucketVO> sc = SearchByName.create();
+            sc.setParameters("Name", bucketName);
+            return findOneBy(sc);
+
+        } finally {
+            txn.close();
+        }
+    }
+
+    @Override
+    public List<SBucketVO> listBuckets(String canonicalId) {
+        SearchBuilder<SBucketVO> ByCanonicalID = createSearchBuilder();
+        ByCanonicalID.and("OwnerCanonicalID", ByCanonicalID.entity().getOwnerCanonicalId(), SearchCriteria.Op.EQ);
+        Filter filter = new Filter(SBucketVO.class, "createTime", Boolean.TRUE, null, null);
+        TransactionLegacy txn = TransactionLegacy.currentTxn();  // Transaction.open("cloudbridge", Transaction.AWSAPI_DB, true);
+        try {
             txn.start();
             SearchCriteria<SBucketVO> sc = ByCanonicalID.create();
             sc.setParameters("OwnerCanonicalID", canonicalId);
-		return listBy(sc, filter);
-	    }finally {
+            return listBy(sc, filter);
+        } finally {
             txn.close();
-	    }
+        }
 
-	}
-	
+    }
 
 }

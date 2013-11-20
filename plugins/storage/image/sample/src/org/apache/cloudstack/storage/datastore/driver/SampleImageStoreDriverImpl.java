@@ -48,5 +48,4 @@ public class SampleImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         return null;
     }
 
-
 }

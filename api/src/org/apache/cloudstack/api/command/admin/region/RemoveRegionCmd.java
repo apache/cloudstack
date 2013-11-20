@@ -30,7 +30,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "removeRegion", description="Removes specified region", responseObject=SuccessResponse.class)
+@APICommand(name = "removeRegion", description = "Removes specified region", responseObject = SuccessResponse.class)
 public class RemoveRegionCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveRegionCmd.class.getName());
     private static final String s_name = "removeregionresponse";
@@ -39,11 +39,12 @@ public class RemoveRegionCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.INTEGER, required=true, description="ID of the region to delete")
+    @Parameter(name = ApiConstants.ID, type = CommandType.INTEGER, required = true, description = "ID of the region to delete")
     private Integer id;
 
-    @Inject RegionService _regionService;
-    
+    @Inject
+    RegionService _regionService;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -63,11 +64,11 @@ public class RemoveRegionCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM; 
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = _regionService.removeRegion(id);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

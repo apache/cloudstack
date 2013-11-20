@@ -43,33 +43,42 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-@APICommand(name = "assignToGlobalLoadBalancerRule", description="Assign load balancer rule or list of load " +
-        "balancer rules to a global load balancer rules.", responseObject=SuccessResponse.class)
+@APICommand(name = "assignToGlobalLoadBalancerRule",
+            description = "Assign load balancer rule or list of load " + "balancer rules to a global load balancer rules.",
+            responseObject = SuccessResponse.class)
 public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(AssignToGlobalLoadBalancerRuleCmd.class.getName());
 
     private static final String s_name = "assigntogloballoadbalancerruleresponse";
 
-    @Inject public EntityManager _entityMgr;
+    @Inject
+    public EntityManager _entityMgr;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = GlobalLoadBalancerResponse.class,
-            required=true, description="the ID of the global load balancer rule")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = GlobalLoadBalancerResponse.class,
+               required = true,
+               description = "the ID of the global load balancer rule")
     private Long id;
 
-    @Parameter(name=ApiConstants.LOAD_BALANCER_RULE_LIST, type=CommandType.LIST, collectionType=CommandType.UUID,
-            entityType = FirewallRuleResponse.class, required=true, description="the list load balancer rules that " +
-            "will be assigned to gloabal load balacner rule")
+    @Parameter(name = ApiConstants.LOAD_BALANCER_RULE_LIST,
+               type = CommandType.LIST,
+               collectionType = CommandType.UUID,
+               entityType = FirewallRuleResponse.class,
+               required = true,
+               description = "the list load balancer rules that " + "will be assigned to gloabal load balacner rule")
     private List<Long> loadBalancerRulesIds;
 
-    @Parameter(name=ApiConstants.GSLB_LBRULE_WEIGHT_MAP, type= CommandType.MAP,
-            description = "Map of LB rule id's and corresponding weights (between 1-100) in the GSLB rule, if not specified weight of " +
-                    "a LB rule is defaulted to 1. Specified as 'gslblbruleweightsmap[0].loadbalancerid=UUID" +
-                    "&gslblbruleweightsmap[0].weight=10'", required=false)
+    @Parameter(name = ApiConstants.GSLB_LBRULE_WEIGHT_MAP,
+               type = CommandType.MAP,
+               description = "Map of LB rule id's and corresponding weights (between 1-100) in the GSLB rule, if not specified weight of "
+                             + "a LB rule is defaulted to 1. Specified as 'gslblbruleweightsmap[0].loadbalancerid=UUID" + "&gslblbruleweightsmap[0].weight=10'",
+               required = false)
     private Map gslbLbRuleWieghtMap;
 
     /////////////////////////////////////////////////////
@@ -85,7 +94,7 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     }
 
     public Map<Long, Long> getLoadBalancerRuleWeightMap() {
-        Map <Long, Long> lbRuleWeightMap = new HashMap<Long, Long>();
+        Map<Long, Long> lbRuleWeightMap = new HashMap<Long, Long>();
 
         if (gslbLbRuleWieghtMap == null || gslbLbRuleWieghtMap.isEmpty()) {
             return null;
@@ -94,7 +103,7 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
         Collection lbruleWeightsCollection = gslbLbRuleWieghtMap.values();
         Iterator iter = lbruleWeightsCollection.iterator();
         while (iter.hasNext()) {
-            HashMap<String, String> map = (HashMap<String, String>) iter.next();
+            HashMap<String, String> map = (HashMap<String, String>)iter.next();
             Long weight;
             LoadBalancer lbrule = _entityMgr.findByUuid(LoadBalancer.class, map.get("loadbalancerid"));
             if (lbrule == null) {
@@ -128,8 +137,7 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        GlobalLoadBalancerRule globalLoadBalancerRule = _entityMgr.findById(GlobalLoadBalancerRule.class,
-                getGlobalLoadBalancerRuleId());
+        GlobalLoadBalancerRule globalLoadBalancerRule = _entityMgr.findById(GlobalLoadBalancerRule.class, getGlobalLoadBalancerRuleId());
         if (globalLoadBalancerRule == null) {
             return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
         }
@@ -143,14 +151,12 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "assign load balancer rules " + StringUtils.join(getLoadBalancerRulesIds(), ",") +
-                " to global load balancer rule " + getGlobalLoadBalancerRuleId();
+        return "assign load balancer rules " + StringUtils.join(getLoadBalancerRulesIds(), ",") + " to global load balancer rule " + getGlobalLoadBalancerRuleId();
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Global Load balancer rule Id: "+ getGlobalLoadBalancerRuleId()+ " VmIds: "
-                + StringUtils.join(getLoadBalancerRulesIds(), ","));
+    public void execute() {
+        CallContext.current().setEventDetails("Global Load balancer rule Id: " + getGlobalLoadBalancerRuleId() + " VmIds: " + StringUtils.join(getLoadBalancerRulesIds(), ","));
         boolean result = _gslbService.assignToGlobalLoadBalancerRule(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -168,7 +174,7 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     @Override
     public Long getSyncObjId() {
         GlobalLoadBalancerRule gslb = _gslbService.findById(id);
-        if(gslb == null){
+        if (gslb == null) {
             throw new InvalidParameterValueException("Unable to find load balancer rule: " + id);
         }
         return gslb.getId();

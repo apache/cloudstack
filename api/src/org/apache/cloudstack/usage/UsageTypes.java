@@ -41,28 +41,28 @@ public class UsageTypes {
     public static final int VM_DISK_BYTES_READ = 23;
     public static final int VM_DISK_BYTES_WRITE = 24;
     public static final int VM_SNAPSHOT = 25;
-    
-    public static List<UsageTypeResponse> listUsageTypes(){
-    	List<UsageTypeResponse> responseList = new ArrayList<UsageTypeResponse>();
-    	responseList.add(new UsageTypeResponse(RUNNING_VM, "Running Vm Usage"));
-    	responseList.add(new UsageTypeResponse(ALLOCATED_VM, "Allocated Vm Usage"));
-    	responseList.add(new UsageTypeResponse(IP_ADDRESS, "IP Address Usage"));
-    	responseList.add(new UsageTypeResponse(NETWORK_BYTES_SENT, "Network Usage (Bytes Sent)"));
-    	responseList.add(new UsageTypeResponse(NETWORK_BYTES_RECEIVED, "Network Usage (Bytes Received)"));
-    	responseList.add(new UsageTypeResponse(VOLUME, "Volume Usage"));
-    	responseList.add(new UsageTypeResponse(TEMPLATE, "Template Usage"));
-    	responseList.add(new UsageTypeResponse(ISO, "ISO Usage"));
-    	responseList.add(new UsageTypeResponse(SNAPSHOT, "Snapshot Usage"));
-    	responseList.add(new UsageTypeResponse(SECURITY_GROUP, "Security Group Usage"));
-    	responseList.add(new UsageTypeResponse(LOAD_BALANCER_POLICY, "Load Balancer Usage"));
-    	responseList.add(new UsageTypeResponse(PORT_FORWARDING_RULE, "Port Forwarding Usage"));
-    	responseList.add(new UsageTypeResponse(NETWORK_OFFERING, "Network Offering Usage"));
-    	responseList.add(new UsageTypeResponse(VPN_USERS, "VPN users usage"));
+
+    public static List<UsageTypeResponse> listUsageTypes() {
+        List<UsageTypeResponse> responseList = new ArrayList<UsageTypeResponse>();
+        responseList.add(new UsageTypeResponse(RUNNING_VM, "Running Vm Usage"));
+        responseList.add(new UsageTypeResponse(ALLOCATED_VM, "Allocated Vm Usage"));
+        responseList.add(new UsageTypeResponse(IP_ADDRESS, "IP Address Usage"));
+        responseList.add(new UsageTypeResponse(NETWORK_BYTES_SENT, "Network Usage (Bytes Sent)"));
+        responseList.add(new UsageTypeResponse(NETWORK_BYTES_RECEIVED, "Network Usage (Bytes Received)"));
+        responseList.add(new UsageTypeResponse(VOLUME, "Volume Usage"));
+        responseList.add(new UsageTypeResponse(TEMPLATE, "Template Usage"));
+        responseList.add(new UsageTypeResponse(ISO, "ISO Usage"));
+        responseList.add(new UsageTypeResponse(SNAPSHOT, "Snapshot Usage"));
+        responseList.add(new UsageTypeResponse(SECURITY_GROUP, "Security Group Usage"));
+        responseList.add(new UsageTypeResponse(LOAD_BALANCER_POLICY, "Load Balancer Usage"));
+        responseList.add(new UsageTypeResponse(PORT_FORWARDING_RULE, "Port Forwarding Usage"));
+        responseList.add(new UsageTypeResponse(NETWORK_OFFERING, "Network Offering Usage"));
+        responseList.add(new UsageTypeResponse(VPN_USERS, "VPN users usage"));
         responseList.add(new UsageTypeResponse(VM_DISK_IO_READ, "VM Disk usage(I/O Read)"));
         responseList.add(new UsageTypeResponse(VM_DISK_IO_WRITE, "VM Disk usage(I/O Write)"));
         responseList.add(new UsageTypeResponse(VM_DISK_BYTES_READ, "VM Disk usage(Bytes Read)"));
         responseList.add(new UsageTypeResponse(VM_DISK_BYTES_WRITE, "VM Disk usage(Bytes Write)"));
         responseList.add(new UsageTypeResponse(VM_SNAPSHOT, "VM Snapshot storage usage"));
-    	return responseList;
+        return responseList;
     }
 }

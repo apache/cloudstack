@@ -35,7 +35,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "rebootVirtualMachine", description="Reboots a virtual machine.", responseObject=UserVmResponse.class)
+@APICommand(name = "rebootVirtualMachine", description = "Reboots a virtual machine.", responseObject = UserVmResponse.class)
 public class RebootVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RebootVMCmd.class.getName());
     private static final String s_name = "rebootvirtualmachineresponse";
@@ -44,8 +44,7 @@ public class RebootVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="The ID of the virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -82,7 +81,7 @@ public class RebootVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "rebooting user vm: " + getId();
+        return "rebooting user vm: " + getId();
     }
 
     public ApiCommandJobType getInstanceType() {
@@ -94,12 +93,12 @@ public class RebootVMCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException{
-        CallContext.current().setEventDetails("Vm Id: "+getId());
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException {
+        CallContext.current().setEventDetails("Vm Id: " + getId());
         UserVm result;
         result = _userVmService.rebootVirtualMachine(this);
 
-        if (result !=null){
+        if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);

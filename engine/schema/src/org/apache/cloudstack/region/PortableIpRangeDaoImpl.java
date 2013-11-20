@@ -45,7 +45,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value={PortableIpRangeDao.class})
+@Local(value = {PortableIpRangeDao.class})
 public class PortableIpRangeDaoImpl extends GenericDaoBase<PortableIpRangeVO, Long> implements PortableIpRangeDao {
 
     private final SearchBuilder<PortableIpRangeVO> listByRegionIDSearch;

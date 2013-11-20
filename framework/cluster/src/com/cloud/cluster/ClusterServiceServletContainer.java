@@ -47,27 +47,27 @@ import org.apache.log4j.Logger;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 
 public class ClusterServiceServletContainer {
-	private static final Logger s_logger = Logger.getLogger(ClusterServiceServletContainer.class);
-	
-	private ListenerThread listenerThread;
-	
-	public ClusterServiceServletContainer() {
-	}
-	
-	public boolean start(HttpRequestHandler requestHandler, int port) {
-	
-		listenerThread = new ListenerThread(requestHandler, port);
-		listenerThread.start();
-		
-		return true;
-	}
-	
-	public void stop() {
-		if(listenerThread != null) {
-			listenerThread.stopRunning();
-		}
-	}
-	
+    private static final Logger s_logger = Logger.getLogger(ClusterServiceServletContainer.class);
+
+    private ListenerThread listenerThread;
+
+    public ClusterServiceServletContainer() {
+    }
+
+    public boolean start(HttpRequestHandler requestHandler, int port) {
+
+        listenerThread = new ListenerThread(requestHandler, port);
+        listenerThread.start();
+
+        return true;
+    }
+
+    public void stop() {
+        if (listenerThread != null) {
+            listenerThread.stopRunning();
+        }
+    }
+
     static class ListenerThread extends Thread {
         private HttpService _httpService = null;
         private volatile ServerSocket _serverSocket = null;
@@ -75,8 +75,8 @@ public class ClusterServiceServletContainer {
         private ExecutorService _executor;
 
         public ListenerThread(HttpRequestHandler requestHandler, int port) {
-    		_executor = Executors.newCachedThreadPool(new NamedThreadFactory("Cluster-Listener"));
-        	
+            _executor = Executors.newCachedThreadPool(new NamedThreadFactory("Cluster-Listener"));
+
             try {
                 _serverSocket = new ServerSocket(port);
             } catch (IOException ioex) {
@@ -85,8 +85,7 @@ public class ClusterServiceServletContainer {
             }
 
             _params = new BasicHttpParams();
-            _params
-                .setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 5000)
+            _params.setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 5000)
                 .setIntParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE, 8 * 1024)
                 .setBooleanParameter(CoreConnectionPNames.STALE_CONNECTION_CHECK, false)
                 .setBooleanParameter(CoreConnectionPNames.TCP_NODELAY, true)
@@ -108,21 +107,21 @@ public class ClusterServiceServletContainer {
             _httpService.setParams(_params);
             _httpService.setHandlerResolver(reqistry);
         }
-        
+
         public void stopRunning() {
-        	if(_serverSocket != null) {
-        		try {
-					_serverSocket.close();
-				} catch (IOException e) {
-				}
-				_serverSocket = null;
-        	}
+            if (_serverSocket != null) {
+                try {
+                    _serverSocket.close();
+                } catch (IOException e) {
+                }
+                _serverSocket = null;
+            }
         }
 
         public void run() {
-        	if(s_logger.isInfoEnabled())
-        		s_logger.info("Cluster service servlet container listening on port " + _serverSocket.getLocalPort());
-            
+            if (s_logger.isInfoEnabled())
+                s_logger.info("Cluster service servlet container listening on port " + _serverSocket.getLocalPort());
+
             while (_serverSocket != null) {
                 try {
                     // Set up HTTP connection
@@ -131,22 +130,22 @@ public class ClusterServiceServletContainer {
                     conn.bind(socket, _params);
 
                     _executor.execute(new ManagedContextRunnable() {
-                    	@Override
+                        @Override
                         protected void runInContext() {
                             HttpContext context = new BasicHttpContext(null);
                             try {
-                            	while(!Thread.interrupted() && conn.isOpen()) {
-	                            	if(s_logger.isTraceEnabled())
-	                            		s_logger.trace("dispatching cluster request from " + conn.getRemoteAddress().toString());
-	                            	
-	                                _httpService.handleRequest(conn, context);
-	                                
-	                            	if(s_logger.isTraceEnabled())
-	                            		s_logger.trace("Cluster request from " + conn.getRemoteAddress().toString() + " is processed");
-                            	}
+                                while (!Thread.interrupted() && conn.isOpen()) {
+                                    if (s_logger.isTraceEnabled())
+                                        s_logger.trace("dispatching cluster request from " + conn.getRemoteAddress().toString());
+
+                                    _httpService.handleRequest(conn, context);
+
+                                    if (s_logger.isTraceEnabled())
+                                        s_logger.trace("Cluster request from " + conn.getRemoteAddress().toString() + " is processed");
+                                }
                             } catch (ConnectionClosedException ex) {
-                            	// client close and read time out exceptions are expected
-                            	// when KEEP-AVLIE is enabled
+                                // client close and read time out exceptions are expected
+                                // when KEEP-AVLIE is enabled
                                 s_logger.trace("Client closed connection", ex);
                             } catch (IOException ex) {
                                 s_logger.trace("I/O error", ex);
@@ -159,23 +158,23 @@ public class ClusterServiceServletContainer {
                                     s_logger.error("unexpected exception", ignore);
                                 }
                             }
-                    	}
+                        }
                     });
-                    
+
                 } catch (Throwable e) {
-                	s_logger.error("Unexpected exception ", e);
-                
-                	// back off to avoid spinning if the exception condition keeps coming back
-                	try {
-						Thread.sleep(1000);
-					} catch (InterruptedException e1) {
-					}
-                } 
+                    s_logger.error("Unexpected exception ", e);
+
+                    // back off to avoid spinning if the exception condition keeps coming back
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e1) {
+                    }
+                }
             }
-            
+
             _executor.shutdown();
-        	if(s_logger.isInfoEnabled())
-        		s_logger.info("Cluster service servlet container shutdown");
+            if (s_logger.isInfoEnabled())
+                s_logger.info("Cluster service servlet container shutdown");
         }
     }
 }

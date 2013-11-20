@@ -31,8 +31,7 @@ import org.apache.log4j.Logger;
 
 import java.util.List;
 
-
-@APICommand(name = "scaleVirtualMachine", description="Scales the virtual machine to a new service offering.", responseObject=SuccessResponse.class)
+@APICommand(name = "scaleVirtualMachine", description = "Scales the virtual machine to a new service offering.", responseObject = SuccessResponse.class)
 public class ScaleVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ScaleVMCmd.class.getName());
     private static final String s_name = "scalevirtualmachineresponse";
@@ -42,13 +41,15 @@ public class ScaleVMCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @ACL
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="The ID of the virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
     private Long id;
 
     @ACL
-    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType=ServiceOfferingResponse.class,
-            required=true, description="the ID of the service offering for the virtual machine")
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
+               type = CommandType.UUID,
+               entityType = ServiceOfferingResponse.class,
+               required = true,
+               description = "the ID of the service offering for the virtual machine")
     private Long serviceOfferingId;
 
     /////////////////////////////////////////////////////
@@ -93,11 +94,11 @@ public class ScaleVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "upgrading vm: " + getId() + " to service offering: " + getServiceOfferingId();
+        return "upgrading vm: " + getId() + " to service offering: " + getServiceOfferingId();
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         UserVm result;
         try {
             result = _userVmService.upgradeVirtualMachine(this);
@@ -114,7 +115,7 @@ public class ScaleVMCmd extends BaseAsyncCmd {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
-        if (result != null){
+        if (result != null) {
             List<UserVmResponse> responseList = _responseGenerator.createUserVmResponse("virtualmachine", result);
             UserVmResponse response = responseList.get(0);
             response.setResponseName(getCommandName());

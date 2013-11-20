@@ -43,32 +43,38 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+
 public class AddBaremetalPxeCmd extends BaseAsyncCmd {
     private static final String s_name = "addbaremetalpxeresponse";
     public static final Logger s_logger = Logger.getLogger(AddBaremetalPxeCmd.class);
-    
-    @Inject BaremetalPxeManager pxeMgr;
+
+    @Inject
+    BaremetalPxeManager pxeMgr;
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType=PhysicalNetworkResponse.class, required=true, description="the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = PhysicalNetworkResponse.class,
+               required = true,
+               description = "the Physical Network ID")
     private Long physicalNetworkId;
-    
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class, description="Pod Id")
+
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "Pod Id")
     private Long podId;
-    
-    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the external pxe device")
+
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "URL of the external pxe device")
     private String url;
 
-    @Parameter(name=ApiConstants.PXE_SERVER_TYPE, type=CommandType.STRING, required = true, description="type of pxe device")
+    @Parameter(name = ApiConstants.PXE_SERVER_TYPE, type = CommandType.STRING, required = true, description = "type of pxe device")
     private String deviceType;
-    
-    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="Credentials to reach external pxe device")
+
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Credentials to reach external pxe device")
     private String username;
-    
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Credentials to reach external pxe device")
+
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "Credentials to reach external pxe device")
     private String password;
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_BAREMETAL_PXE_SERVER_ADD;
@@ -80,8 +86,8 @@ public class AddBaremetalPxeCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-            ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
+        NetworkRuleConflictException {
         try {
             BaremetalPxeVO vo = pxeMgr.addPxeServer(this);
             BaremetalPxeResponse rsp = pxeMgr.getApiResponse(vo);
@@ -89,7 +95,7 @@ public class AddBaremetalPxeCmd extends BaseAsyncCmd {
             this.setResponseObject(rsp);
         } catch (Exception e) {
             s_logger.warn("Unable to add external pxe server with url: " + getUrl(), e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage()); 
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
 

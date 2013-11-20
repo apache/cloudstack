@@ -38,8 +38,7 @@ import com.cloud.utils.Pair;
 @Component
 @Local(value = LdapManager.class)
 public class LdapManagerImpl implements LdapManager, LdapValidator {
-    private static final Logger s_logger = Logger
-                                           .getLogger(LdapManagerImpl.class.getName());
+    private static final Logger s_logger = Logger.getLogger(LdapManagerImpl.class.getName());
 
     @Inject
     private LdapConfigurationDao _ldapConfigurationDao;
@@ -54,9 +53,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
         super();
     }
 
-    public LdapManagerImpl(final LdapConfigurationDao ldapConfigurationDao,
-                           final LdapContextFactory ldapContextFactory,
-                           final LdapUserManager ldapUserManager) {
+    public LdapManagerImpl(final LdapConfigurationDao ldapConfigurationDao, final LdapContextFactory ldapContextFactory, final LdapUserManager ldapUserManager) {
         super();
         _ldapConfigurationDao = ldapConfigurationDao;
         _ldapContextFactory = ldapContextFactory;
@@ -64,22 +61,18 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     }
 
     @Override
-    public LdapConfigurationResponse addConfiguration(final String hostname,
-            final int port) throws InvalidParameterValueException {
-        LdapConfigurationVO configuration = _ldapConfigurationDao
-                                            .findByHostname(hostname);
+    public LdapConfigurationResponse addConfiguration(final String hostname, final int port) throws InvalidParameterValueException {
+        LdapConfigurationVO configuration = _ldapConfigurationDao.findByHostname(hostname);
         if (configuration == null) {
             try {
                 final String providerUrl = "ldap://" + hostname + ":" + port;
                 _ldapContextFactory.createBindContext(providerUrl);
                 configuration = new LdapConfigurationVO(hostname, port);
                 _ldapConfigurationDao.persist(configuration);
-                s_logger.info("Added new ldap server with hostname: "
-                              + hostname);
+                s_logger.info("Added new ldap server with hostname: " + hostname);
                 return new LdapConfigurationResponse(hostname, port);
             } catch (final NamingException e) {
-                throw new InvalidParameterValueException(
-                    "Unable to bind to the given LDAP server");
+                throw new InvalidParameterValueException("Unable to bind to the given LDAP server");
             }
         } else {
             throw new InvalidParameterValueException("Duplicate configuration");
@@ -88,18 +81,15 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
 
     @Override
     public boolean canAuthenticate(final String username, final String password) {
-        final String escapedUsername = LdapUtils
-                                       .escapeLDAPSearchFilter(username);
+        final String escapedUsername = LdapUtils.escapeLDAPSearchFilter(username);
         try {
             final LdapUser user = getUser(escapedUsername);
             final String principal = user.getPrincipal();
-            final DirContext context = _ldapContextFactory.createUserContext(
-                                           principal, password);
+            final DirContext context = _ldapContextFactory.createUserContext(principal, password);
             closeContext(context);
             return true;
         } catch (final NamingException e) {
-            s_logger.info("Failed to authenticate user: " + username
-                          + ". incorrect password.");
+            s_logger.info("Failed to authenticate user: " + username + ". incorrect password.");
             return false;
         }
     }
@@ -115,8 +105,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     }
 
     @Override
-    public LdapConfigurationResponse createLdapConfigurationResponse(
-        final LdapConfigurationVO configuration) {
+    public LdapConfigurationResponse createLdapConfigurationResponse(final LdapConfigurationVO configuration) {
         final LdapConfigurationResponse response = new LdapConfigurationResponse();
         response.setHostname(configuration.getHostname());
         response.setPort(configuration.getPort());
@@ -136,18 +125,14 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     }
 
     @Override
-    public LdapConfigurationResponse deleteConfiguration(final String hostname)
-    throws InvalidParameterValueException {
-        final LdapConfigurationVO configuration = _ldapConfigurationDao
-                .findByHostname(hostname);
+    public LdapConfigurationResponse deleteConfiguration(final String hostname) throws InvalidParameterValueException {
+        final LdapConfigurationVO configuration = _ldapConfigurationDao.findByHostname(hostname);
         if (configuration == null) {
-            throw new InvalidParameterValueException(
-                "Cannot find configuration with hostname " + hostname);
+            throw new InvalidParameterValueException("Cannot find configuration with hostname " + hostname);
         } else {
             _ldapConfigurationDao.remove(configuration.getId());
             s_logger.info("Removed ldap server with hostname: " + hostname);
-            return new LdapConfigurationResponse(configuration.getHostname(),
-                                                 configuration.getPort());
+            return new LdapConfigurationResponse(configuration.getHostname(), configuration.getPort());
         }
     }
 
@@ -170,8 +155,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
         try {
             context = _ldapContextFactory.createBindContext();
 
-            final String escapedUsername = LdapUtils
-                                           .escapeLDAPSearchFilter(username);
+            final String escapedUsername = LdapUtils.escapeLDAPSearchFilter(username);
             return _ldapUserManager.getUser(escapedUsername, context);
 
         } catch (final NamingException e) {
@@ -213,26 +197,20 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     }
 
     @Override
-    public Pair<List<? extends LdapConfigurationVO>, Integer> listConfigurations(
-        final LdapListConfigurationCmd cmd) {
+    public Pair<List<? extends LdapConfigurationVO>, Integer> listConfigurations(final LdapListConfigurationCmd cmd) {
         final String hostname = cmd.getHostname();
         final int port = cmd.getPort();
-        final Pair<List<LdapConfigurationVO>, Integer> result = _ldapConfigurationDao
-                .searchConfigurations(hostname, port);
-        return new Pair<List<? extends LdapConfigurationVO>, Integer>(
-                   result.first(), result.second());
+        final Pair<List<LdapConfigurationVO>, Integer> result = _ldapConfigurationDao.searchConfigurations(hostname, port);
+        return new Pair<List<? extends LdapConfigurationVO>, Integer>(result.first(), result.second());
     }
 
     @Override
-    public List<LdapUser> searchUsers(final String username)
-    throws NoLdapUserMatchingQueryException {
+    public List<LdapUser> searchUsers(final String username) throws NoLdapUserMatchingQueryException {
         DirContext context = null;
         try {
             context = _ldapContextFactory.createBindContext();
-            final String escapedUsername = LdapUtils
-                                           .escapeLDAPSearchFilter(username);
-            return _ldapUserManager.getUsers("*" + escapedUsername + "*",
-                                             context);
+            final String escapedUsername = LdapUtils.escapeLDAPSearchFilter(username);
+            return _ldapUserManager.getUsers("*" + escapedUsername + "*", context);
         } catch (final NamingException e) {
             throw new NoLdapUserMatchingQueryException(username);
         } finally {

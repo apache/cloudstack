@@ -44,31 +44,29 @@ public class AlertGenerator {
     private static HostPodDao _podDao;
     protected static EventBus _eventBus = null;
 
-    @Inject DataCenterDao dcDao;
-    @Inject HostPodDao podDao;
+    @Inject
+    DataCenterDao dcDao;
+    @Inject
+    HostPodDao podDao;
 
     public AlertGenerator() {
     }
-    
+
     @PostConstruct
     void init() {
-    	_dcDao = dcDao;
-    	_podDao = podDao;
+        _dcDao = dcDao;
+        _podDao = podDao;
     }
-    
+
     public static void publishAlertOnEventBus(String alertType, long dataCenterId, Long podId, String subject, String body) {
         try {
             _eventBus = ComponentContext.getComponent(EventBus.class);
-        } catch(NoSuchBeanDefinitionException nbe) {
+        } catch (NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
         }
 
-        org.apache.cloudstack.framework.events.Event event =
-                new org.apache.cloudstack.framework.events.Event(ManagementServer.Name,
-                        EventCategory.ALERT_EVENT.getName(),
-                        alertType,
-                        null,
-                        null);
+        org.apache.cloudstack.framework.events.Event event = new org.apache.cloudstack.framework.events.Event(ManagementServer.Name, EventCategory.ALERT_EVENT.getName(),
+            alertType, null, null);
 
         Map<String, String> eventDescription = new HashMap<String, String>();
         DataCenterVO dc = _dcDao.findById(dataCenterId);

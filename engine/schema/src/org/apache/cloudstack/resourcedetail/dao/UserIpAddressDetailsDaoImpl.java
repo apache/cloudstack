@@ -22,9 +22,8 @@ import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.apache.cloudstack.resourcedetail.UserIpAddressDetailVO;
 import org.springframework.stereotype.Component;
 
-
 @Component
-@Local (value={UserIpAddressDetailsDao.class})
+@Local(value = {UserIpAddressDetailsDao.class})
 public class UserIpAddressDetailsDaoImpl extends ResourceDetailsDaoBase<UserIpAddressDetailVO> implements UserIpAddressDetailsDao {
 
     @Override
@@ -32,4 +31,3 @@ public class UserIpAddressDetailsDaoImpl extends ResourceDetailsDaoBase<UserIpAd
         super.addDetail(new UserIpAddressDetailVO(resourceId, key, value));
     }
 }
-

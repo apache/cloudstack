@@ -35,49 +35,49 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={UsageIPAddressDao.class})
+@Local(value = {UsageIPAddressDao.class})
 public class UsageIPAddressDaoImpl extends GenericDaoBase<UsageIPAddressVO, Long> implements UsageIPAddressDao {
-	public static final Logger s_logger = Logger.getLogger(UsageIPAddressDaoImpl.class.getName());
+    public static final Logger s_logger = Logger.getLogger(UsageIPAddressDaoImpl.class.getName());
 
-	protected static final String UPDATE_RELEASED = "UPDATE usage_ip_address SET released = ? WHERE account_id = ? AND public_ip_address = ? and released IS NULL";
-    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released " +
-                                                                 "FROM usage_ip_address " +
-                                                                 "WHERE account_id = ? AND ((released IS NULL AND assigned <= ?) OR (assigned BETWEEN ? AND ?) OR " +
-                                                                 "      (released BETWEEN ? AND ?) OR ((assigned <= ?) AND (released >= ?)))";
-    protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released " +
-                                                                "FROM usage_ip_address " +
-                                                                "WHERE domain_id = ? AND ((released IS NULL AND assigned <= ?) OR (assigned BETWEEN ? AND ?) OR " +
-                                                                "      (released BETWEEN ? AND ?) OR ((assigned <= ?) AND (released >= ?)))";
-    protected static final String GET_ALL_USAGE_RECORDS = "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released " +
-                                                          "FROM usage_ip_address " +
-                                                          "WHERE (released IS NULL AND assigned <= ?) OR (assigned BETWEEN ? AND ?) OR " +
-                                                          "      (released BETWEEN ? AND ?) OR ((assigned <= ?) AND (released >= ?))";
+    protected static final String UPDATE_RELEASED = "UPDATE usage_ip_address SET released = ? WHERE account_id = ? AND public_ip_address = ? and released IS NULL";
+    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released "
+                                                                 + "FROM usage_ip_address "
+                                                                 + "WHERE account_id = ? AND ((released IS NULL AND assigned <= ?) OR (assigned BETWEEN ? AND ?) OR "
+                                                                 + "      (released BETWEEN ? AND ?) OR ((assigned <= ?) AND (released >= ?)))";
+    protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released "
+                                                                + "FROM usage_ip_address "
+                                                                + "WHERE domain_id = ? AND ((released IS NULL AND assigned <= ?) OR (assigned BETWEEN ? AND ?) OR "
+                                                                + "      (released BETWEEN ? AND ?) OR ((assigned <= ?) AND (released >= ?)))";
+    protected static final String GET_ALL_USAGE_RECORDS = "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released "
+                                                          + "FROM usage_ip_address " + "WHERE (released IS NULL AND assigned <= ?) OR (assigned BETWEEN ? AND ?) OR "
+                                                          + "      (released BETWEEN ? AND ?) OR ((assigned <= ?) AND (released >= ?))";
 
-	public UsageIPAddressDaoImpl() {}
+    public UsageIPAddressDaoImpl() {
+    }
 
-	public void update(UsageIPAddressVO usage) {
-	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-		PreparedStatement pstmt = null;
-		try {
-		    txn.start();
-			if (usage.getReleased() != null) {
-				pstmt = txn.prepareAutoCloseStatement(UPDATE_RELEASED);
-				pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getReleased()));
-				pstmt.setLong(2, usage.getAccountId());
-				pstmt.setString(3, usage.getAddress());
-			}
-			pstmt.executeUpdate();
-			txn.commit();
-		} catch (Exception e) {
-			txn.rollback();
-			s_logger.warn("Error updating usageIPAddressVO", e);
-		} finally {
-		    txn.close();
-		}
-	}
+    public void update(UsageIPAddressVO usage) {
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        PreparedStatement pstmt = null;
+        try {
+            txn.start();
+            if (usage.getReleased() != null) {
+                pstmt = txn.prepareAutoCloseStatement(UPDATE_RELEASED);
+                pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getReleased()));
+                pstmt.setLong(2, usage.getAccountId());
+                pstmt.setString(3, usage.getAddress());
+            }
+            pstmt.executeUpdate();
+            txn.commit();
+        } catch (Exception e) {
+            txn.rollback();
+            s_logger.warn("Error updating usageIPAddressVO", e);
+        } finally {
+            txn.close();
+        }
+    }
 
     @Override
-	public List<UsageIPAddressVO> getUsageRecords(Long accountId, Long domainId, Date startDate, Date endDate) {
+    public List<UsageIPAddressVO> getUsageRecords(Long accountId, Long domainId, Date startDate, Date endDate) {
         List<UsageIPAddressVO> usageRecords = new ArrayList<UsageIPAddressVO>();
 
         Long param1 = null;
@@ -141,5 +141,5 @@ public class UsageIPAddressDaoImpl extends GenericDaoBase<UsageIPAddressVO, Long
         }
 
         return usageRecords;
-	}
+    }
 }

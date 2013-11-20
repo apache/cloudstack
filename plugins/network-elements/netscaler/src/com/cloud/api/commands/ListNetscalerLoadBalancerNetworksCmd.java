@@ -40,19 +40,23 @@ import com.cloud.network.Network;
 import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listNetscalerLoadBalancerNetworks", responseObject=NetworkResponse.class, description="lists network that are using a netscaler load balancer device")
+@APICommand(name = "listNetscalerLoadBalancerNetworks", responseObject = NetworkResponse.class, description = "lists network that are using a netscaler load balancer device")
 public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListNetscalerLoadBalancerNetworksCmd.class.getName());
     private static final String s_name = "listnetscalerloadbalancernetworksresponse";
-    @Inject NetscalerLoadBalancerElementService _netsclarLbService;
+    @Inject
+    NetscalerLoadBalancerElementService _netsclarLbService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_ID, type=CommandType.UUID, entityType = NetscalerLoadBalancerResponse.class,
-            required = true, description="netscaler load balancer device ID")
+    @Parameter(name = ApiConstants.LOAD_BALANCER_DEVICE_ID,
+               type = CommandType.UUID,
+               entityType = NetscalerLoadBalancerResponse.class,
+               required = true,
+               description = "netscaler load balancer device ID")
     private Long lbDeviceId;
 
     /////////////////////////////////////////////////////
@@ -70,7 +74,7 @@ public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
-            List<? extends Network> networks  = _netsclarLbService.listNetworks(this);
+            List<? extends Network> networks = _netsclarLbService.listNetworks(this);
             ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();
             List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
 
@@ -84,7 +88,7 @@ public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
             response.setResponses(networkResponses);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

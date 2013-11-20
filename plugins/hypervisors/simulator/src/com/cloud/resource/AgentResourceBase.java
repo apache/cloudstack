@@ -45,7 +45,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-
 public class AgentResourceBase implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(AgentResourceBase.class);
 
@@ -59,16 +58,16 @@ public class AgentResourceBase implements ServerResource {
 
     private Type _type;
 
-    @Inject protected SimulatorManager _simMgr;
+    @Inject
+    protected SimulatorManager _simMgr;
     protected MockHost agentHost = null;
     protected boolean stopped = false;
     protected String hostGuid = null;
 
-
     public AgentResourceBase(long instanceId, AgentType agentType, SimulatorManager simMgr, String hostGuid) {
         _instanceId = instanceId;
 
-        if(s_logger.isDebugEnabled()) {
+        if (s_logger.isDebugEnabled()) {
             s_logger.info("New Routing host instantiated with guid:" + hostGuid);
         }
 
@@ -98,7 +97,7 @@ public class AgentResourceBase implements ServerResource {
     }
 
     public AgentResourceBase() {
-        if(s_logger.isDebugEnabled()) {
+        if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deserializing simulated agent on reconnect");
         }
 
@@ -114,8 +113,7 @@ public class AgentResourceBase implements ServerResource {
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params)
-            throws ConfigurationException {
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         hostGuid = (String)params.get("guid");
 
         _simMgr = ComponentContext.inject(SimulatorManagerImpl.class);
@@ -125,14 +123,12 @@ public class AgentResourceBase implements ServerResource {
         return true;
     }
 
-
     private void reconnect(MockHost host) {
-        if(s_logger.isDebugEnabled()) {
+        if (s_logger.isDebugEnabled()) {
             s_logger.debug("Reconfiguring existing simulated host w/ name: " + host.getName() + " and guid: " + host.getGuid());
         }
         this.agentHost = host;
     }
-
 
     @Override
     public void disconnected() {
@@ -234,8 +230,7 @@ public class AgentResourceBase implements ServerResource {
         File file = null;
         if (url == null) {
             file = new File("./" + script);
-            s_logger.debug("Looking for " + script + " in "
-                    + file.getAbsolutePath());
+            s_logger.debug("Looking for " + script + " in " + file.getAbsolutePath());
             if (!file.exists()) {
                 return null;
             }
@@ -244,7 +239,6 @@ public class AgentResourceBase implements ServerResource {
         }
         return file.getAbsolutePath();
     }
-
 
     @Override
     public Answer executeRequest(Command cmd) {
@@ -282,27 +276,27 @@ public class AgentResourceBase implements ServerResource {
         return this.stopped;
     }
 
-	@Override
-	public void setConfigParams(Map<String, Object> params) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void setConfigParams(Map<String, Object> params) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public Map<String, Object> getConfigParams() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    }
 
-	@Override
-	public int getRunLevel() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public Map<String, Object> getConfigParams() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public void setRunLevel(int level) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public int getRunLevel() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public void setRunLevel(int level) {
+        // TODO Auto-generated method stub
+
+    }
 }

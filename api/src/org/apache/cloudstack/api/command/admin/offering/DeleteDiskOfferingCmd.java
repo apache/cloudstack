@@ -28,7 +28,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteDiskOffering", description="Updates a disk offering.", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteDiskOffering", description = "Updates a disk offering.", responseObject = SuccessResponse.class)
 public class DeleteDiskOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteDiskOfferingCmd.class.getName());
     private static final String s_name = "deletediskofferingresponse";
@@ -37,10 +37,8 @@ public class DeleteDiskOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=DiskOfferingResponse.class,
-            required=true, description="ID of the disk offering")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, required = true, description = "ID of the disk offering")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -49,7 +47,6 @@ public class DeleteDiskOfferingCmd extends BaseCmd {
     public Long getId() {
         return id;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -65,7 +62,7 @@ public class DeleteDiskOfferingCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = _configService.deleteDiskOffering(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

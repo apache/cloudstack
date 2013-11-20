@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
 import org.apache.log4j.Logger;
 
-@APICommand(name = "updateHypervisorCapabilities", description="Updates a hypervisor capabilities.", responseObject=HypervisorCapabilitiesResponse.class, since="3.0.0")
+@APICommand(name = "updateHypervisorCapabilities", description = "Updates a hypervisor capabilities.", responseObject = HypervisorCapabilitiesResponse.class, since = "3.0.0")
 public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateHypervisorCapabilitiesCmd.class.getName());
     private static final String s_name = "updatehypervisorcapabilitiesresponse";
@@ -36,14 +36,13 @@ public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=HypervisorCapabilitiesResponse.class,
-            description="ID of the hypervisor capability")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HypervisorCapabilitiesResponse.class, description = "ID of the hypervisor capability")
     private Long id;
 
-    @Parameter(name=ApiConstants.SECURITY_GROUP_EANBLED, type=CommandType.BOOLEAN, description="set true to enable security group for this hypervisor.")
+    @Parameter(name = ApiConstants.SECURITY_GROUP_EANBLED, type = CommandType.BOOLEAN, description = "set true to enable security group for this hypervisor.")
     private Boolean securityGroupEnabled;
 
-    @Parameter(name=ApiConstants.MAX_GUESTS_LIMIT, type=CommandType.LONG, description="the max number of Guest VMs per host for this hypervisor.")
+    @Parameter(name = ApiConstants.MAX_GUESTS_LIMIT, type = CommandType.LONG, description = "the max number of Guest VMs per host for this hypervisor.")
     private Long maxGuestsLimit;
 
     /////////////////////////////////////////////////////
@@ -66,7 +65,6 @@ public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-
     @Override
     public String getCommandName() {
         return s_name;
@@ -78,9 +76,9 @@ public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         HypervisorCapabilities result = _mgr.updateHypervisorCapabilities(getId(), getMaxGuestsLimit(), getSecurityGroupEnabled());
-        if (result != null){
+        if (result != null) {
             HypervisorCapabilitiesResponse response = _responseGenerator.createHypervisorCapabilitiesResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);

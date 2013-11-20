@@ -18,7 +18,6 @@ package com.cloud.agent.api;
 
 import com.cloud.storage.StoragePool;
 
-
 /**
  * This currently assumes that both primary and secondary storage are mounted on the XenServer.
  */
@@ -43,15 +42,8 @@ public class CreateVolumeFromSnapshotCommand extends SnapshotCommand {
      * @param templatePath             The install path of the template VHD on the secondary, if this a root volume
      */
 
-    public CreateVolumeFromSnapshotCommand(StoragePool pool,
-                                           String secondaryStoragePoolURL,
-                                           Long   dcId,
-                                           Long   accountId,
-                                           Long   volumeId,
-                                           String backedUpSnapshotUuid,
-                                           String backedUpSnapshotName,
-                                           int wait)
-    {
+    public CreateVolumeFromSnapshotCommand(StoragePool pool, String secondaryStoragePoolURL, Long dcId, Long accountId, Long volumeId, String backedUpSnapshotUuid,
+            String backedUpSnapshotName, int wait) {
         super(pool, secondaryStoragePoolURL, backedUpSnapshotUuid, backedUpSnapshotName, dcId, accountId, volumeId);
         setWait(wait);
     }

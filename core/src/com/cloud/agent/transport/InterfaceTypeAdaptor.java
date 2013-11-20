@@ -31,8 +31,7 @@ import com.google.gson.JsonSerializer;
 
 public class InterfaceTypeAdaptor<T> implements JsonDeserializer<T>, JsonSerializer<T> {
 
-    protected Gson              _gson = null;
-
+    protected Gson _gson = null;
 
     public InterfaceTypeAdaptor() {
     }
@@ -46,13 +45,12 @@ public class InterfaceTypeAdaptor<T> implements JsonDeserializer<T>, JsonSeriali
         JsonObject obj = new JsonObject();
         obj.add(src.getClass().getName(), _gson.toJsonTree(src));
         return obj;
-     }
+    }
 
     @Override
     @SuppressWarnings("unchecked")
-    public T deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-    throws JsonParseException {
-        JsonObject element = (JsonObject) json;
+    public T deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+        JsonObject element = (JsonObject)json;
         Map.Entry<String, JsonElement> entry = element.entrySet().iterator().next();
         String name = entry.getKey();
         Class<?> clazz;
@@ -61,6 +59,6 @@ public class InterfaceTypeAdaptor<T> implements JsonDeserializer<T>, JsonSeriali
         } catch (ClassNotFoundException e) {
             throw new CloudRuntimeException("can't find " + name);
         }
-        return (T) _gson.fromJson(entry.getValue(), clazz);
+        return (T)_gson.fromJson(entry.getValue(), clazz);
     }
 }

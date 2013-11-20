@@ -20,14 +20,22 @@ import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface DedicatedResources extends InfrastructureEntity, InternalIdentity, Identity{
+public interface DedicatedResources extends InfrastructureEntity, InternalIdentity, Identity {
     long getId();
+
     Long getDataCenterId();
+
     Long getPodId();
+
     Long getClusterId();
+
     Long getHostId();
+
     Long getDomainId();
+
     Long getAccountId();
+
     String getUuid();
+
     long getAffinityGroupId();
 }

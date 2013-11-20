@@ -27,16 +27,20 @@ import java.util.List;
 
 @EntityReference(value = NetworkACL.class)
 public class NetworkACLResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the ID of the ACL")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the ID of the ACL")
     private String id;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="the Name of the ACL")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the Name of the ACL")
     private String name;
 
-    @SerializedName(ApiConstants.DESCRIPTION) @Param(description="Description of the ACL")
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "Description of the ACL")
     private String description;
 
-    @SerializedName(ApiConstants.VPC_ID) @Param(description="Id of the VPC this ACL is associated with")
+    @SerializedName(ApiConstants.VPC_ID)
+    @Param(description = "Id of the VPC this ACL is associated with")
     private String vpcId;
 
     public void setId(String id) {

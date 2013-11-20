@@ -39,12 +39,11 @@ public class DeletePoolCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class,
-            required = true, description = "Storage pool id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = true, description = "Storage pool id")
     private Long id;
 
-    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force destroy storage pool " +
-            "(force expunge volumes in Destroyed state as a part of pool removal)")
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force destroy storage pool "
+                                                                                                       + "(force expunge volumes in Destroyed state as a part of pool removal)")
     private Boolean forced;
 
     // ///////////////////////////////////////////////////

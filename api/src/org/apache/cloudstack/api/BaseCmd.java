@@ -104,55 +104,98 @@ public abstract class BaseCmd {
     public enum HTTPMethod {
         GET, POST, PUT, DELETE
     }
+
     private HTTPMethod httpMethod;
 
     @Parameter(name = "response", type = CommandType.STRING)
     private String responseType;
 
-    @Inject public ConfigurationService _configService;
-    @Inject public AccountService _accountService;
-    @Inject public UserVmService _userVmService;
-    @Inject public ManagementService _mgr;
-    @Inject public StorageService _storageService;
-    @Inject public VolumeApiService _volumeService;
-    @Inject public ResourceService _resourceService;
-    @Inject public NetworkService _networkService;
-    @Inject public TemplateApiService _templateService;
-    @Inject public SecurityGroupService _securityGroupService;
-    @Inject public SnapshotApiService _snapshotService;
-    @Inject public VpcVirtualNetworkApplianceService _routerService;
-    @Inject public ResponseGenerator _responseGenerator;
-    @Inject public EntityManager _entityMgr;
-    @Inject public RulesService _rulesService;
-    @Inject public AutoScaleService _autoScaleService;
-    @Inject public LoadBalancingRulesService _lbService;
-    @Inject public RemoteAccessVpnService _ravService;
-    @Inject public ProjectService _projectService;
-    @Inject public FirewallService _firewallService;
-    @Inject public DomainService _domainService;
-    @Inject public ResourceLimitService _resourceLimitService;
-    @Inject public IdentityService _identityService;
-    @Inject public StorageNetworkService _storageNetworkService;
-    @Inject public TaggedResourceService _taggedResourceService;
-    @Inject public ResourceMetaDataService _resourceMetaDataService;
-    @Inject public VpcService _vpcService;
-    @Inject public NetworkACLService _networkACLService;
-    @Inject public Site2SiteVpnService _s2sVpnService;
+    @Inject
+    public ConfigurationService _configService;
+    @Inject
+    public AccountService _accountService;
+    @Inject
+    public UserVmService _userVmService;
+    @Inject
+    public ManagementService _mgr;
+    @Inject
+    public StorageService _storageService;
+    @Inject
+    public VolumeApiService _volumeService;
+    @Inject
+    public ResourceService _resourceService;
+    @Inject
+    public NetworkService _networkService;
+    @Inject
+    public TemplateApiService _templateService;
+    @Inject
+    public SecurityGroupService _securityGroupService;
+    @Inject
+    public SnapshotApiService _snapshotService;
+    @Inject
+    public VpcVirtualNetworkApplianceService _routerService;
+    @Inject
+    public ResponseGenerator _responseGenerator;
+    @Inject
+    public EntityManager _entityMgr;
+    @Inject
+    public RulesService _rulesService;
+    @Inject
+    public AutoScaleService _autoScaleService;
+    @Inject
+    public LoadBalancingRulesService _lbService;
+    @Inject
+    public RemoteAccessVpnService _ravService;
+    @Inject
+    public ProjectService _projectService;
+    @Inject
+    public FirewallService _firewallService;
+    @Inject
+    public DomainService _domainService;
+    @Inject
+    public ResourceLimitService _resourceLimitService;
+    @Inject
+    public IdentityService _identityService;
+    @Inject
+    public StorageNetworkService _storageNetworkService;
+    @Inject
+    public TaggedResourceService _taggedResourceService;
+    @Inject
+    public ResourceMetaDataService _resourceMetaDataService;
+    @Inject
+    public VpcService _vpcService;
+    @Inject
+    public NetworkACLService _networkACLService;
+    @Inject
+    public Site2SiteVpnService _s2sVpnService;
 
-    @Inject public QueryService _queryService;
-    @Inject public UsageService _usageService;
-    @Inject public NetworkUsageService _networkUsageService;
-    @Inject public VMSnapshotService _vmSnapshotService;
-    @Inject public DataStoreProviderApiService dataStoreProviderApiService;
-    @Inject public VpcProvisioningService _vpcProvSvc;
-    @Inject public ApplicationLoadBalancerService _newLbSvc;
-    @Inject public ApplicationLoadBalancerService _appLbService;
-    @Inject public AffinityGroupService _affinityGroupService;
-    @Inject public InternalLoadBalancerElementService _internalLbElementSvc;
-    @Inject public InternalLoadBalancerVMService _internalLbSvc;
-    @Inject public NetworkModel _ntwkModel;
+    @Inject
+    public QueryService _queryService;
+    @Inject
+    public UsageService _usageService;
+    @Inject
+    public NetworkUsageService _networkUsageService;
+    @Inject
+    public VMSnapshotService _vmSnapshotService;
+    @Inject
+    public DataStoreProviderApiService dataStoreProviderApiService;
+    @Inject
+    public VpcProvisioningService _vpcProvSvc;
+    @Inject
+    public ApplicationLoadBalancerService _newLbSvc;
+    @Inject
+    public ApplicationLoadBalancerService _appLbService;
+    @Inject
+    public AffinityGroupService _affinityGroupService;
+    @Inject
+    public InternalLoadBalancerElementService _internalLbElementSvc;
+    @Inject
+    public InternalLoadBalancerVMService _internalLbSvc;
+    @Inject
+    public NetworkModel _ntwkModel;
 
-    public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
+    public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException, NetworkRuleConflictException;
 
     public void configure() {
     }
@@ -173,7 +216,7 @@ public abstract class BaseCmd {
                 httpMethod = HTTPMethod.DELETE;
         } else {
             httpMethod = HTTPMethod.GET;
-	}
+        }
     }
 
     public String getResponseType() {
@@ -221,15 +264,15 @@ public abstract class BaseCmd {
     }
 
     // FIXME: move this to a utils method so that maps can be unpacked and integer/long values can be appropriately cast
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public Map<String, Object> unpackParams(Map<String, String> params) {
         Map<String, Object> lowercaseParams = new HashMap<String, Object>();
         for (String key : params.keySet()) {
             int arrayStartIndex = key.indexOf('[');
             int arrayStartLastIndex = key.lastIndexOf('[');
             if (arrayStartIndex != arrayStartLastIndex) {
-                throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
-                        + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
+                throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key +
+                                                                                     "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
             }
 
             if (arrayStartIndex > 0) {
@@ -237,16 +280,16 @@ public abstract class BaseCmd {
                 int arrayEndLastIndex = key.lastIndexOf(']');
                 if ((arrayEndIndex < arrayStartIndex) || (arrayEndIndex != arrayEndLastIndex)) {
                     // malformed parameter
-                    throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
-                            + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
+                    throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key +
+                                                                                         "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
                 }
 
                 // Now that we have an array object, check for a field name in the case of a complex object
                 int fieldIndex = key.indexOf('.');
                 String fieldName = null;
                 if (fieldIndex < arrayEndIndex) {
-                    throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
-                            + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
+                    throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key +
+                                                                                         "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
                 } else {
                     fieldName = key.substring(fieldIndex + 1);
                 }
@@ -270,8 +313,8 @@ public abstract class BaseCmd {
                 }
 
                 if (!parsedIndex) {
-                    throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
-                            + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
+                    throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key +
+                                                                                         "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
                 }
 
                 Object value = lowercaseParams.get(paramName);
@@ -281,7 +324,7 @@ public abstract class BaseCmd {
                     mapValue = new HashMap<String, Object>();
                     mapArray.put(Integer.valueOf(index), mapValue);
                 } else if (value instanceof Map) {
-                    mapArray = (HashMap) value;
+                    mapArray = (HashMap)value;
                     mapValue = mapArray.get(Integer.valueOf(index));
                     if (mapValue == null) {
                         mapValue = new HashMap<String, Object>();
@@ -306,9 +349,7 @@ public abstract class BaseCmd {
     }
 
     public static boolean isAdmin(short accountType) {
-        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
-                (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) ||
-                (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
+        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
     }
 
     public static boolean isRootAdmin(short accountType) {
@@ -339,7 +380,8 @@ public abstract class BaseCmd {
                 if (!enabledOnly || account.getState() == Account.State.enabled) {
                     return account.getId();
                 } else {
-                    throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");
+                    throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() +
+                                                        " as it's no longer active");
                 }
             } else {
                 // idList is not used anywhere, so removed it now
@@ -355,7 +397,8 @@ public abstract class BaseCmd {
                 if (!enabledOnly || project.getState() == Project.State.Active) {
                     return project.getProjectAccountId();
                 } else {
-                    PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() + " as it's no longer active");
+                    PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() +
+                                                                                 " as it's no longer active");
                     ex.addProxyObject(project.getUuid(), "projectId");
                     throw ex;
                 }

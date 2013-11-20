@@ -34,7 +34,7 @@ import com.cloud.network.dao.ExternalFirewallDeviceVO;
 import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import com.cloud.utils.component.PluggableService;
 
-public interface JuniperSRXFirewallElementService  extends PluggableService {
+public interface JuniperSRXFirewallElementService extends PluggableService {
 
     /**
      * adds a SRX firewall device in to a physical network
@@ -73,16 +73,23 @@ public interface JuniperSRXFirewallElementService  extends PluggableService {
 
     public SrxFirewallResponse createSrxFirewallResponse(ExternalFirewallDeviceVO fwDeviceVO);
 
+    @Deprecated
+    // API helper function supported for backward compatibility
+        public
+        Host addExternalFirewall(AddExternalFirewallCmd cmd);
 
-    @Deprecated // API helper function supported for backward compatibility
-    public Host addExternalFirewall(AddExternalFirewallCmd cmd);
+    @Deprecated
+    // API helper function supported for backward compatibility
+        public
+        boolean deleteExternalFirewall(DeleteExternalFirewallCmd cmd);
 
-    @Deprecated // API helper function supported for backward compatibility
-    public boolean deleteExternalFirewall(DeleteExternalFirewallCmd cmd);
-    
-    @Deprecated // API helper function supported for backward compatibility
-    public List<Host> listExternalFirewalls(ListExternalFirewallsCmd cmd);
-    
-    @Deprecated // API helper function supported for backward compatibility
-    public ExternalFirewallResponse createExternalFirewallResponse(Host externalFirewall);
+    @Deprecated
+    // API helper function supported for backward compatibility
+        public
+        List<Host> listExternalFirewalls(ListExternalFirewallsCmd cmd);
+
+    @Deprecated
+    // API helper function supported for backward compatibility
+        public
+        ExternalFirewallResponse createExternalFirewallResponse(Host externalFirewall);
 }

@@ -66,13 +66,13 @@ public class UsageManagerTest extends TestCase {
         System.setProperty("pid", "5678");
         ComponentContext.initComponentsLifeCycle();
         startDate = new Date();
-        endDate = new Date(100000L +  System.currentTimeMillis());
+        endDate = new Date(100000L + System.currentTimeMillis());
     }
 
     @Test
     public void testParse() throws ConfigurationException {
         UsageJobVO job = new UsageJobVO();
-        _usageMgr.parse(job, System.currentTimeMillis(), 100000L +  System.currentTimeMillis());
+        _usageMgr.parse(job, System.currentTimeMillis(), 100000L + System.currentTimeMillis());
     }
 
     @Test

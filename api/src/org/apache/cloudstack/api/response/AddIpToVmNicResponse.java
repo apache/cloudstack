@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.api.response;
+
 import java.util.Date;
 import java.util.List;
 
@@ -26,19 +27,24 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class AddIpToVmNicResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the ID of the secondary private IP addr")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the ID of the secondary private IP addr")
     private Long id;
 
-    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="Secondary IP address")
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    @Param(description = "Secondary IP address")
     private String ipAddr;
 
-    @SerializedName(ApiConstants.NIC_ID) @Param(description="the ID of the nic")
+    @SerializedName(ApiConstants.NIC_ID)
+    @Param(description = "the ID of the nic")
     private Long nicId;
 
-    @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the ID of the network")
-    private  Long nwId;
+    @SerializedName(ApiConstants.NETWORK_ID)
+    @Param(description = "the ID of the network")
+    private Long nwId;
 
-    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="the ID of the vm")
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
+    @Param(description = "the ID of the vm")
     private Long vmId;
 
     public Long getId() {
@@ -80,6 +86,5 @@ public class AddIpToVmNicResponse extends BaseResponse {
     public Long setId(Long id) {
         return id;
     }
-
 
 }

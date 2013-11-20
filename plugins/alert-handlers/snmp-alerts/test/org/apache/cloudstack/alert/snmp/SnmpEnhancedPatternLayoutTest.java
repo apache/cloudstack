@@ -41,31 +41,28 @@ public class SnmpEnhancedPatternLayoutTest {
     @Test
     public void parseAlertTest() {
         LoggingEvent event = mock(LoggingEvent.class);
-        setMessage(" alertType:: 14 // dataCenterId:: 1 // podId:: 1 // " + "clusterId:: null // message:: Management" +
-            " network CIDR is not configured originally. Set it default to 10.102.192.0/22", event);
+        setMessage(" alertType:: 14 // dataCenterId:: 1 // podId:: 1 // " + "clusterId:: null // message:: Management"
+                   + " network CIDR is not configured originally. Set it default to 10.102.192.0/22", event);
         SnmpTrapInfo info = _snmpEnhancedPatternLayout.parseEvent(event);
-        commonAssertions(info, "Management network CIDR is not configured originally. Set it default to 10.102.192" +
-            ".0/22");
+        commonAssertions(info, "Management network CIDR is not configured originally. Set it default to 10.102.192" + ".0/22");
     }
 
     @Test
     public void ParseAlertWithPairDelimeterInMessageTest() {
         LoggingEvent event = mock(LoggingEvent.class);
-        setMessage(" alertType:: 14 // dataCenterId:: 1 // podId:: 1 // " + "clusterId:: null // message:: Management" +
-            " //network CIDR is not configured originally. Set it default to 10.102.192.0/22", event);
+        setMessage(" alertType:: 14 // dataCenterId:: 1 // podId:: 1 // " + "clusterId:: null // message:: Management"
+                   + " //network CIDR is not configured originally. Set it default to 10.102.192.0/22", event);
         SnmpTrapInfo info = _snmpEnhancedPatternLayout.parseEvent(event);
-        commonAssertions(info, "Management //network CIDR is not configured originally. Set it default to 10.102.192" +
-            ".0/22");
+        commonAssertions(info, "Management //network CIDR is not configured originally. Set it default to 10.102.192" + ".0/22");
     }
 
     @Test
     public void ParseAlertWithKeyValueDelimeterInMessageTest() {
         LoggingEvent event = mock(LoggingEvent.class);
-        setMessage(" alertType:: 14 // dataCenterId:: 1 // podId:: 1 // " + "clusterId:: null // message:: Management" +
-            " ::network CIDR is not configured originally. Set it default to 10.102.192.0/22", event);
+        setMessage(" alertType:: 14 // dataCenterId:: 1 // podId:: 1 // " + "clusterId:: null // message:: Management"
+                   + " ::network CIDR is not configured originally. Set it default to 10.102.192.0/22", event);
         SnmpTrapInfo info = _snmpEnhancedPatternLayout.parseEvent(event);
-        commonAssertions(info, "Management ::network CIDR is not configured originally. Set it default to 10.102.192" +
-            ".0/22");
+        commonAssertions(info, "Management ::network CIDR is not configured originally. Set it default to 10.102.192" + ".0/22");
     }
 
     @Test

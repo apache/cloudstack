@@ -98,11 +98,9 @@ public class AddAccountToProjectCmdTest extends TestCase {
         Account account = Mockito.mock(Account.class);
 
         Mockito.when(account.getId()).thenReturn(2L);
-        Mockito.when(projectService.getProject(Mockito.anyLong())).thenReturn(
-                project);
+        Mockito.when(projectService.getProject(Mockito.anyLong())).thenReturn(project);
 
-        Mockito.when(projectService.getProjectOwner(Mockito.anyLong()))
-                .thenReturn(account);
+        Mockito.when(projectService.getProjectOwner(Mockito.anyLong())).thenReturn(account);
         addAccountToProjectCmd._projectService = projectService;
 
         Assert.assertEquals(2L, addAccountToProjectCmd.getEntityOwnerId());
@@ -126,10 +124,10 @@ public class AddAccountToProjectCmdTest extends TestCase {
      */
 
     /***
-	 * 
-	 * 
-	 * 
-	 * ***/
+     * 
+     * 
+     * 
+     * ***/
 
     /*
      * @Test public void testGetEventDescriptionForAccount() {
@@ -147,8 +145,7 @@ public class AddAccountToProjectCmdTest extends TestCase {
         try {
             addAccountToProjectCmd.execute();
         } catch (InvalidParameterValueException exception) {
-            Assert.assertEquals("Either accountName or email is required",
-                    exception.getLocalizedMessage());
+            Assert.assertEquals("Either accountName or email is required", exception.getLocalizedMessage());
         }
 
     }

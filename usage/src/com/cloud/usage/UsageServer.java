@@ -35,9 +35,9 @@ import com.cloud.utils.component.ComponentContext;
 public class UsageServer implements Daemon {
     private static final Logger s_logger = Logger.getLogger(UsageServer.class.getName());
     public static final String Name = "usage-server";
-    
-    UsageManager mgr; 
-    
+
+    UsageManager mgr;
+
     /**
      * @param args
      */
@@ -49,21 +49,21 @@ public class UsageServer implements Daemon {
 
     @Override
     public void init(DaemonContext arg0) throws DaemonInitException, Exception {
-        initLog4j();        
+        initLog4j();
     }
 
     @Override
     public void start() {
-    	ApplicationContext appContext = new ClassPathXmlApplicationContext("usageApplicationContext.xml");
-	    
-    	try {
-    		ComponentContext.initComponentsLifeCycle();
-    	} catch(Exception e) {
-    		e.printStackTrace();
-    	}
-    	
-    	mgr = appContext.getBean(UsageManager.class);
-    	
+        ApplicationContext appContext = new ClassPathXmlApplicationContext("usageApplicationContext.xml");
+
+        try {
+            ComponentContext.initComponentsLifeCycle();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        mgr = appContext.getBean(UsageManager.class);
+
         if (mgr != null) {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("UsageServer ready...");
@@ -82,26 +82,26 @@ public class UsageServer implements Daemon {
     }
 
     static private void initLog4j() {
-    	File file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
-    	if (file != null) {
-	        System.out.println("log4j configuration found at " + file.getAbsolutePath());
-	        try {
-				Log4jConfigurer.initLogging(file.getAbsolutePath());
-			} catch (FileNotFoundException e) {
-			}
-	        DOMConfigurator.configureAndWatch(file.getAbsolutePath());
-	        
-	    } else {
-	        file = PropertiesUtil.findConfigFile("log4j-cloud.properties");
-	        if (file != null) {
-		        System.out.println("log4j configuration found at " + file.getAbsolutePath());
-		        try {
-					Log4jConfigurer.initLogging(file.getAbsolutePath());
-				} catch (FileNotFoundException e) {
-				}
-	            PropertyConfigurator.configureAndWatch(file.getAbsolutePath());
-	        }
-	    }
-   }
+        File file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
+        if (file != null) {
+            System.out.println("log4j configuration found at " + file.getAbsolutePath());
+            try {
+                Log4jConfigurer.initLogging(file.getAbsolutePath());
+            } catch (FileNotFoundException e) {
+            }
+            DOMConfigurator.configureAndWatch(file.getAbsolutePath());
+
+        } else {
+            file = PropertiesUtil.findConfigFile("log4j-cloud.properties");
+            if (file != null) {
+                System.out.println("log4j configuration found at " + file.getAbsolutePath());
+                try {
+                    Log4jConfigurer.initLogging(file.getAbsolutePath());
+                } catch (FileNotFoundException e) {
+                }
+                PropertyConfigurator.configureAndWatch(file.getAbsolutePath());
+            }
+        }
+    }
 
 }

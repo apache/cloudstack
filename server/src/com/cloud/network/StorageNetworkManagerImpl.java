@@ -58,7 +58,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 @Component
-@Local(value = { StorageNetworkManager.class, StorageNetworkService.class })
+@Local(value = {StorageNetworkManager.class, StorageNetworkService.class})
 public class StorageNetworkManagerImpl extends ManagerBase implements StorageNetworkManager, StorageNetworkService {
     private static final Logger s_logger = Logger.getLogger(StorageNetworkManagerImpl.class);
 
@@ -91,7 +91,8 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
         List<StorageNetworkIpRangeVO> curRanges = _sNwIpRangeDao.listByPodId(podId);
         for (StorageNetworkIpRangeVO range : curRanges) {
             if (NetUtils.ipRangesOverlap(startIp, endIp, range.getStartIp(), range.getEndIp())) {
-                throw new InvalidParameterValueException("The Storage network Start IP and endIP address range overlap with private IP :" + range.getStartIp() + " - " + range.getEndIp());
+                throw new InvalidParameterValueException("The Storage network Start IP and endIP address range overlap with private IP :" + range.getStartIp() + " - " +
+                                                         range.getEndIp());
             }
         }
     }
@@ -224,7 +225,7 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
         StorageNetworkIpRangeVO range = null;
 
         final String endIpFinal = endIp;
-        return Transaction.execute(new TransactionCallbackWithException<StorageNetworkIpRangeVO,SQLException>() {
+        return Transaction.execute(new TransactionCallbackWithException<StorageNetworkIpRangeVO, SQLException>() {
             @Override
             public StorageNetworkIpRangeVO doInTransaction(TransactionStatus status) throws SQLException {
                 StorageNetworkIpRangeVO range = new StorageNetworkIpRangeVO(zoneId, podId, nw.getId(), startIp, endIpFinal, vlan, netmask, cmd.getGateWay());
@@ -358,7 +359,8 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
 
     @Override
     public List<SecondaryStorageVmVO> getSSVMWithNoStorageNetwork(long zoneId) {
-        List<SecondaryStorageVmVO> ssvms = _ssvmDao.getSecStorageVmListInStates(null, zoneId, VirtualMachine.State.Starting, VirtualMachine.State.Running, VirtualMachine.State.Stopping);
+        List<SecondaryStorageVmVO> ssvms = _ssvmDao.getSecStorageVmListInStates(null, zoneId, VirtualMachine.State.Starting, VirtualMachine.State.Running,
+            VirtualMachine.State.Stopping);
         return ssvms;
     }
 

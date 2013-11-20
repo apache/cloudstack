@@ -88,8 +88,8 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     public AutoScaleVmProfileVO() {
     }
 
-    public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId, String otherDeployParams, Map counterParamList, Integer destroyVmGraceperiod,
-            long autoscaleUserId) {
+    public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId, String otherDeployParams, Map counterParamList,
+            Integer destroyVmGraceperiod, long autoscaleUserId) {
         this.uuid = UUID.randomUUID().toString();
         this.zoneId = zoneId;
         this.domainId = domainId;

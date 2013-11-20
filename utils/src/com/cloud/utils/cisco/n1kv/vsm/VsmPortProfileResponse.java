@@ -63,8 +63,7 @@ public class VsmPortProfileResponse extends VsmResponse {
                 NodeList readOnlyList = ((Element)list.item(0)).getElementsByTagName("__readonly__");
                 Element readOnly = (Element)readOnlyList.item(0);
 
-                for (Node node = readOnly.getFirstChild();
-                        node != null; node = node.getNextSibling()) {
+                for (Node node = readOnly.getFirstChild(); node != null; node = node.getNextSibling()) {
                     String currentNode = node.getNodeName();
                     String value = node.getTextContent();
                     if ("port_binding".equalsIgnoreCase(currentNode)) {
@@ -117,7 +116,7 @@ public class VsmPortProfileResponse extends VsmResponse {
             } else if ("access".equalsIgnoreCase(firstToken)) {
                 if (tokens.hasMoreTokens()) {
                     String secondToken = tokens.nextToken();
-                    assert("vlan".equalsIgnoreCase(secondToken));
+                    assert ("vlan".equalsIgnoreCase(secondToken));
                     if (tokens.hasMoreTokens()) {
                         _portProfile.vlan = tokens.nextToken();
                     }

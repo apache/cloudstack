@@ -34,13 +34,13 @@ public interface CiscoNexusVSMDeviceDao extends GenericDao<CiscoNexusVSMDeviceVO
      * @param vsmName
      */
     CiscoNexusVSMDeviceVO getVSMbyName(String vsmName);
-    
+
     /**
      * Return a Cisco Nexus VSM VO (db record) given its ipaddress.
      * @param vsmIpaddr
      */
     CiscoNexusVSMDeviceVO getVSMbyIpaddress(String ipaddress);
-    
+
     /**
      * Return a list of VSM devices that use the same VLAN for no matter what interface. Unlikely, but oh well.
      * @param vlanId
@@ -49,63 +49,62 @@ public interface CiscoNexusVSMDeviceDao extends GenericDao<CiscoNexusVSMDeviceVO
      * @return
      */
     List<CiscoNexusVSMDeviceVO> listByVlanId(int vlanId);
-    
+
     /**
      * Return a list of VSM devices that use the same VLAN for their mgmt interface. Again, unlikely, but we'll just keep it around.
      * @param vlanId
      * @return
      */
     List<CiscoNexusVSMDeviceVO> listByMgmtVlan(int vlanId);
-    
+
     /**
      * Lists all configured VSMs on the management server.
      * @return
      */
     List<CiscoNexusVSMDeviceVO> listAllVSMs();
-    
-    
+
     /**
      * Below is a big list of other functions that we may need, but will declare/define/implement once we implement
      * the functions above. Pasting those below to not lose track of them.
      * 
      *  	ListbyZoneId()
-		- Lists all VSMs in the specified zone.
+    	- Lists all VSMs in the specified zone.
 
-	ListbyAccountId()
-		- Lists all VSMs owned by the specified Account.
+    ListbyAccountId()
+    	- Lists all VSMs owned by the specified Account.
 
-	ListbyStorageVLAN(vlanId)
-		- Lists all VSMs whose storage VLAN matches the specified VLAN.
-			- Filters results by the invoker's account Id.
+    ListbyStorageVLAN(vlanId)
+    	- Lists all VSMs whose storage VLAN matches the specified VLAN.
+    		- Filters results by the invoker's account Id.
 
-	ListbyControlVLAN(vlanId)
-		- Lists all VSMs whose control VLAN matches the specified VLAN.
-			- Filters results by the invoker's account Id.
+    ListbyControlVLAN(vlanId)
+    	- Lists all VSMs whose control VLAN matches the specified VLAN.
+    		- Filters results by the invoker's account Id.
 
-	ListbyPacketVLAN(vlanId)
-		- Lists all VSMs whose Packet VLAN matches the specified VLAN.
-			- Filters results by the invoker's account Id.
+    ListbyPacketVLAN(vlanId)
+    	- Lists all VSMs whose Packet VLAN matches the specified VLAN.
+    		- Filters results by the invoker's account Id.
 
-	ListbyConfigMode(mode)	
-		- Lists all VSMs which are currently configured in the specified mode (standalone/HA).
-			- Filters results by the invoker's account Id.
+    ListbyConfigMode(mode)	
+    	- Lists all VSMs which are currently configured in the specified mode (standalone/HA).
+    		- Filters results by the invoker's account Id.
 
-	ListbyConfigState(configState)
-		- Lists all VSMs which are currently configured in the specified state (primary/standby).
-			- Filters results by the invoker's account Id.
+    ListbyConfigState(configState)
+    	- Lists all VSMs which are currently configured in the specified state (primary/standby).
+    		- Filters results by the invoker's account Id.
 
-	ListbyDeviceState(deviceState)
-		- Lists all VSMs which are currently in the specified device state (enabled/disabled).
-			- Filters results by the invoker's account Id.
-
-
-	getBySwitchDomainId(domId)
-		- Retrieves the VSM with the specified switch domain Id. Each VSM has a unique switch domain Id, just like a real physical switch would.
-			- Filters results by invoker's account id.
+    ListbyDeviceState(deviceState)
+    	- Lists all VSMs which are currently in the specified device state (enabled/disabled).
+    		- Filters results by the invoker's account Id.
 
 
-	getbySwitchName(vsmName)
-		- Retrieves the VSM's VO object by the specified vsmName.
+    getBySwitchDomainId(domId)
+    	- Retrieves the VSM with the specified switch domain Id. Each VSM has a unique switch domain Id, just like a real physical switch would.
+    		- Filters results by invoker's account id.
+
+
+    getbySwitchName(vsmName)
+    	- Retrieves the VSM's VO object by the specified vsmName.
 
      */
 }

@@ -66,30 +66,25 @@ public class SnmpHelper {
         if (alertType > 0) {
             trap.add(new VariableBinding(SnmpConstants.snmpTrapOID, getOID(CsSnmpConstants.TRAPS_PREFIX + alertType)));
             if (snmpTrapInfo.getDataCenterId() != 0) {
-                trap.add(new VariableBinding(getOID(CsSnmpConstants.DATA_CENTER_ID),
-                    new UnsignedInteger32(snmpTrapInfo.getDataCenterId())));
+                trap.add(new VariableBinding(getOID(CsSnmpConstants.DATA_CENTER_ID), new UnsignedInteger32(snmpTrapInfo.getDataCenterId())));
             }
 
             if (snmpTrapInfo.getPodId() != 0) {
-                trap.add(new VariableBinding(getOID(CsSnmpConstants.POD_ID), new UnsignedInteger32(snmpTrapInfo
-                    .getPodId())));
+                trap.add(new VariableBinding(getOID(CsSnmpConstants.POD_ID), new UnsignedInteger32(snmpTrapInfo.getPodId())));
             }
 
             if (snmpTrapInfo.getClusterId() != 0) {
-                trap.add(new VariableBinding(getOID(CsSnmpConstants.CLUSTER_ID), new UnsignedInteger32(snmpTrapInfo
-                    .getClusterId())));
+                trap.add(new VariableBinding(getOID(CsSnmpConstants.CLUSTER_ID), new UnsignedInteger32(snmpTrapInfo.getClusterId())));
             }
 
             if (snmpTrapInfo.getMessage() != null) {
-                trap.add(new VariableBinding(getOID(CsSnmpConstants.MESSAGE), new OctetString(snmpTrapInfo.getMessage
-                    ())));
+                trap.add(new VariableBinding(getOID(CsSnmpConstants.MESSAGE), new OctetString(snmpTrapInfo.getMessage())));
             } else {
                 throw new CloudRuntimeException(" What is the use of alert without message ");
             }
 
             if (snmpTrapInfo.getGenerationTime() != null) {
-                trap.add(new VariableBinding(getOID(CsSnmpConstants.GENERATION_TIME),
-                    new OctetString(snmpTrapInfo.getGenerationTime().toString())));
+                trap.add(new VariableBinding(getOID(CsSnmpConstants.GENERATION_TIME), new OctetString(snmpTrapInfo.getGenerationTime().toString())));
             } else {
                 trap.add(new VariableBinding(getOID(CsSnmpConstants.GENERATION_TIME)));
             }

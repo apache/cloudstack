@@ -36,7 +36,7 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
 
-@APICommand(name = "addHost", description="Adds a new host.", responseObject=HostResponse.class)
+@APICommand(name = "addHost", description = "Adds a new host.", responseObject = HostResponse.class)
 public class AddHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddHostCmd.class.getName());
 
@@ -46,37 +46,34 @@ public class AddHostCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType=ClusterResponse.class,
-            description="the cluster ID for the host")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "the cluster ID for the host")
     private Long clusterId;
 
-    @Parameter(name=ApiConstants.CLUSTER_NAME, type=CommandType.STRING, description="the cluster name for the host")
+    @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING, description = "the cluster name for the host")
     private String clusterName;
 
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required=true, description="the password for the host")
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "the password for the host")
     private String password;
 
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class,
-            required=true, description="the Pod ID for the host")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, required = true, description = "the Pod ID for the host")
     private Long podId;
 
-    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=true, description="the host URL")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "the host URL")
     private String url;
 
-    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="the username for the host")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "the username for the host")
     private String username;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
-            required=true, description="the Zone ID for the host")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the Zone ID for the host")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, required=true, description="hypervisor type of the host")
+    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "hypervisor type of the host")
     private String hypervisor;
 
-    @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this Host for allocation of new resources")
+    @Parameter(name = ApiConstants.ALLOCATION_STATE, type = CommandType.STRING, description = "Allocation state of this Host for allocation of new resources")
     private String allocationState;
 
-    @Parameter(name=ApiConstants.HOST_TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="list of tags to be added to the host")
+    @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "list of tags to be added to the host")
     private List<String> hostTags;
 
     /////////////////////////////////////////////////////
@@ -138,7 +135,7 @@ public class AddHostCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         try {
             List<? extends Host> result = _resourceService.discoverHosts(this);
             ListResponse<HostResponse> response = new ListResponse<HostResponse>();

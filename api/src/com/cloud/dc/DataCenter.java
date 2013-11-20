@@ -29,8 +29,7 @@ import com.cloud.org.Grouping;
  */
 public interface DataCenter extends InfrastructureEntity, Grouping, Identity, InternalIdentity {
     public enum NetworkType {
-        Basic,
-        Advanced,
+        Basic, Advanced,
     }
 
     String getDns1();

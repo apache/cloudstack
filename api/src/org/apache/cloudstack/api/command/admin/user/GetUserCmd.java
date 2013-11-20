@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.UserAccount;
 
-@APICommand(name = "getUser", description="Find user account by API key", responseObject=UserResponse.class)
+@APICommand(name = "getUser", description = "Find user account by API key", responseObject = UserResponse.class)
 public class GetUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GetUserCmd.class.getName());
 
@@ -36,7 +36,7 @@ public class GetUserCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.API_KEY, type=CommandType.STRING, required=true, description="API key of the user")
+    @Parameter(name = ApiConstants.API_KEY, type = CommandType.STRING, required = true, description = "API key of the user")
     private String apiKey;
 
     /////////////////////////////////////////////////////
@@ -62,9 +62,9 @@ public class GetUserCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         UserAccount result = _accountService.getUserByApiKey(getApiKey());
-        if(result != null){
+        if (result != null) {
             UserResponse response = _responseGenerator.createUserResponse(result);
             response.setResponseName(getCommandName());
             response.setResponseName(getCommandName());

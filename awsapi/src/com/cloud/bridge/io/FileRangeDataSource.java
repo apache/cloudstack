@@ -27,33 +27,33 @@ import org.apache.log4j.Logger;
 
 public class FileRangeDataSource implements DataSource {
     protected final static Logger logger = Logger.getLogger(FileRangeDataSource.class);
-    
-	private FileRangeInputStream is;
-	
-	public FileRangeDataSource(File file, long startPos, long endPos) throws IOException {
-		is = new FileRangeInputStream(file, startPos, endPos);
-	}
 
-	@Override
-	public String getContentType() {
-		assert(false);
-		return null;
-	}
+    private FileRangeInputStream is;
 
-	@Override
-	public InputStream getInputStream() throws IOException {
-		return is;
-	}
+    public FileRangeDataSource(File file, long startPos, long endPos) throws IOException {
+        is = new FileRangeInputStream(file, startPos, endPos);
+    }
 
-	@Override
-	public String getName() {
-		assert(false);
-		return null;
-	}
+    @Override
+    public String getContentType() {
+        assert (false);
+        return null;
+    }
 
-	@Override
-	public OutputStream getOutputStream() throws IOException {
-		assert(false);
-		return null;
-	}
+    @Override
+    public InputStream getInputStream() throws IOException {
+        return is;
+    }
+
+    @Override
+    public String getName() {
+        assert (false);
+        return null;
+    }
+
+    @Override
+    public OutputStream getOutputStream() throws IOException {
+        assert (false);
+        return null;
+    }
 }

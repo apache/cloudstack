@@ -24,8 +24,11 @@ import com.cloud.utils.db.GenericDao;
 
 public interface AffinityGroupDao extends GenericDao<AffinityGroupVO, Long> {
     List<AffinityGroupVO> listByAccountId(long accountId);
+
     boolean isNameInUse(Long accountId, Long domainId, String name);
+
     AffinityGroupVO findByAccountAndName(Long accountId, String name);
+
     List<AffinityGroupVO> findByAccountAndNames(Long accountId, String... names);
 
     int removeByAccountId(long accountId);

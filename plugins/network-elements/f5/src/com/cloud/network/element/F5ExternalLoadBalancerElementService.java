@@ -75,15 +75,23 @@ public interface F5ExternalLoadBalancerElementService extends PluggableService {
     public F5LoadBalancerResponse createF5LoadBalancerResponse(ExternalLoadBalancerDeviceVO lbDeviceVO);
 
     /* Deprecated API helper function */
-    @Deprecated  // API helper function supported for backward compatibility
-    public Host addExternalLoadBalancer(AddExternalLoadBalancerCmd cmd);
+    @Deprecated
+    // API helper function supported for backward compatibility
+        public
+        Host addExternalLoadBalancer(AddExternalLoadBalancerCmd cmd);
 
-    @Deprecated //  API helper function supported for backward compatibility
-    public boolean deleteExternalLoadBalancer(DeleteExternalLoadBalancerCmd cmd);
+    @Deprecated
+    //  API helper function supported for backward compatibility
+        public
+        boolean deleteExternalLoadBalancer(DeleteExternalLoadBalancerCmd cmd);
 
-    @Deprecated //  API helper function supported for backward compatibility
-    public List<Host> listExternalLoadBalancers(ListExternalLoadBalancersCmd cmd);
+    @Deprecated
+    //  API helper function supported for backward compatibility
+        public
+        List<Host> listExternalLoadBalancers(ListExternalLoadBalancersCmd cmd);
 
-    @Deprecated //  API helper function supported for backward compatibility
-    public ExternalLoadBalancerResponse createExternalLoadBalancerResponse(Host externalLb);
+    @Deprecated
+    //  API helper function supported for backward compatibility
+        public
+        ExternalLoadBalancerResponse createExternalLoadBalancerResponse(Host externalLb);
 }

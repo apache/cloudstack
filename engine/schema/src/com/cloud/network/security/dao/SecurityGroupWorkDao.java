@@ -26,24 +26,21 @@ import com.cloud.utils.db.GenericDao;
 
 public interface SecurityGroupWorkDao extends GenericDao<SecurityGroupWorkVO, Long> {
     SecurityGroupWork findByVmId(long vmId, boolean taken);
-    
+
     SecurityGroupWorkVO findByVmIdStep(long vmId, Step step);
 
+    SecurityGroupWorkVO take(long serverId);
 
-	SecurityGroupWorkVO take(long serverId);
+    void updateStep(Long vmId, Long logSequenceNumber, Step done);
 
-	void updateStep(Long vmId, Long logSequenceNumber, Step done);
-	
-	void updateStep(Long workId, Step done);
-	
-	int deleteFinishedWork(Date timeBefore);
-	
-	List<SecurityGroupWorkVO> findUnfinishedWork(Date timeBefore);
-	
-	List<SecurityGroupWorkVO> findAndCleanupUnfinishedWork(Date timeBefore);
+    void updateStep(Long workId, Step done);
 
-	
-	List<SecurityGroupWorkVO> findScheduledWork();
+    int deleteFinishedWork(Date timeBefore);
 
-    
+    List<SecurityGroupWorkVO> findUnfinishedWork(Date timeBefore);
+
+    List<SecurityGroupWorkVO> findAndCleanupUnfinishedWork(Date timeBefore);
+
+    List<SecurityGroupWorkVO> findScheduledWork();
+
 }

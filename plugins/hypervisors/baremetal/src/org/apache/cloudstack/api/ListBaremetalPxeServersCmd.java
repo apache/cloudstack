@@ -34,7 +34,8 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-@APICommand(name="listBaremetalPxeServers", description="list baremetal pxe server", responseObject = BaremetalPxeResponse.class)
+
+@APICommand(name = "listBaremetalPxeServers", description = "list baremetal pxe server", responseObject = BaremetalPxeResponse.class)
 public class ListBaremetalPxeServersCmd extends BaseListCmd {
     private static final Logger s_logger = Logger.getLogger(ListBaremetalPxeServersCmd.class);
     private static final String s_name = "listbaremetalpxeserversresponse";
@@ -57,8 +58,8 @@ public class ListBaremetalPxeServersCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-            ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
+        NetworkRuleConflictException {
         try {
             ListResponse<BaremetalPxeResponse> response = new ListResponse<BaremetalPxeResponse>();
             List<BaremetalPxeResponse> pxeResponses = _pxeMgr.listPxeServers(this);
@@ -67,7 +68,7 @@ public class ListBaremetalPxeServersCmd extends BaseListCmd {
             response.setObjectName("baremetalpxeservers");
             this.setResponseObject(response);
         } catch (Exception e) {
-            s_logger.debug("Exception happened while executing ListPingPxeServersCmd" ,e);
+            s_logger.debug("Exception happened while executing ListPingPxeServersCmd", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

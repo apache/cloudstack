@@ -36,7 +36,7 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 
 @Component
-@Local(value = { DomainManager.class, DomainService.class })
+@Local(value = {DomainManager.class, DomainService.class})
 public class MockDomainManagerImpl extends ManagerBase implements DomainManager, DomainService {
 
     @Override
@@ -53,8 +53,8 @@ public class MockDomainManagerImpl extends ManagerBase implements DomainManager,
 
     @Override
     public Domain getDomainByName(String name, long parentId) {
-	// TODO Auto-generated method stub
-	return null;
+        // TODO Auto-generated method stub
+        return null;
     }
 
     @Override
@@ -70,15 +70,13 @@ public class MockDomainManagerImpl extends ManagerBase implements DomainManager,
     }
 
     @Override
-    public Pair<List<? extends Domain>, Integer> searchForDomains(ListDomainsCmd cmd)
-            throws PermissionDeniedException {
+    public Pair<List<? extends Domain>, Integer> searchForDomains(ListDomainsCmd cmd) throws PermissionDeniedException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Pair<List<? extends Domain>, Integer> searchForDomainChildren(
-            ListDomainChildrenCmd cmd) throws PermissionDeniedException {
+    public Pair<List<? extends Domain>, Integer> searchForDomainChildren(ListDomainChildrenCmd cmd) throws PermissionDeniedException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -120,8 +118,7 @@ public class MockDomainManagerImpl extends ManagerBase implements DomainManager,
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params)
-            throws ConfigurationException {
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         return true;
     }
 
@@ -144,8 +141,7 @@ public class MockDomainManagerImpl extends ManagerBase implements DomainManager,
     }
 
     @Override
-    public Domain createDomain(String name, Long parentId,
-            String networkDomain, String domainUUID) {
+    public Domain createDomain(String name, Long parentId, String networkDomain, String domainUUID) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -157,8 +153,7 @@ public class MockDomainManagerImpl extends ManagerBase implements DomainManager,
     }
 
     @Override
-    public Domain createDomain(String name, Long parentId, Long ownerId,
-            String networkDomain, String domainUUID) {
+    public Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain, String domainUUID) {
         // TODO Auto-generated method stub
         return null;
     }

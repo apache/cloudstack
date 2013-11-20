@@ -29,25 +29,21 @@ import org.apache.log4j.Logger;
 @APICommand(name = "assignCertToLoadBalancer", description = "Assigns a certificate to a Load Balancer Rule", responseObject = SuccessResponse.class)
 public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
 
-    public static final Logger s_logger = Logger
-            .getLogger(AssignCertToLoadBalancerCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(AssignCertToLoadBalancerCmd.class.getName());
 
     private static final String s_name = "assignCertToLoadBalancer";
 
-
-    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class,
-            required = true, description = "the ID of the load balancer rule")
+    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the load balancer rule")
     Long lbRuleId;
 
-    @Parameter(name = ApiConstants.CERTIFICATE_ID, type = CommandType.UUID, entityType = SslCertResponse.class,
-            required = true, description = "the ID of the certificate")
+    @Parameter(name = ApiConstants.CERTIFICATE_ID, type = CommandType.UUID, entityType = SslCertResponse.class, required = true, description = "the ID of the certificate")
     Long certId;
 
-
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
+        NetworkRuleConflictException {
         //To change body of implemented methods use File | Settings | File Templates.
-        if ( _lbService.assignCertToLoadBalancer( getLbRuleId(), getCertId()) ) {
+        if (_lbService.assignCertToLoadBalancer(getLbRuleId(), getCertId())) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
@@ -70,9 +66,8 @@ public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
         return "Assigining a certificate to a loadbalancer";
     }
 
-
     @Override
-     public long getEntityOwnerId() {
+    public long getEntityOwnerId() {
         LoadBalancer lb = _entityMgr.findById(LoadBalancer.class, getLbRuleId());
         if (lb == null) {
             return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
@@ -80,13 +75,11 @@ public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
         return lb.getAccountId();
     }
 
-
-
-    public Long getCertId(){
+    public Long getCertId() {
         return certId;
     }
 
-    public Long getLbRuleId(){
+    public Long getLbRuleId() {
         return lbRuleId;
     }
 }

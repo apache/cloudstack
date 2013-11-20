@@ -29,35 +29,33 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.component.AdapterBase;
 
-@Local(value=Processor.class)
+@Local(value = Processor.class)
 public class RawImageProcessor extends AdapterBase implements Processor {
     private static final Logger s_logger = Logger.getLogger(RawImageProcessor.class);
     StorageLayer _storage;
-    
-	@Override
-	public boolean configure(String name, Map<String, Object> params)
-			throws ConfigurationException {
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _storage = (StorageLayer)params.get(StorageLayer.InstanceConfigKey);
         if (_storage == null) {
             throw new ConfigurationException("Unable to get storage implementation");
         }
-        
-        return true;
-	}
 
-	@Override
-	public FormatInfo process(String templatePath, ImageFormat format,
-			String templateName) throws InternalErrorException {
-		if (format != null) {
+        return true;
+    }
+
+    @Override
+    public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
+        if (format != null) {
             s_logger.debug("We currently don't handle conversion from " + format + " to raw image.");
             return null;
         }
-        
-		String imgPath = templatePath + File.separator + templateName + "." + ImageFormat.RAW.getFileExtension();
-		if (!_storage.exists(imgPath)) {
-			s_logger.debug("Unable to find raw image:" + imgPath);
-			return null;
-		}
+
+        String imgPath = templatePath + File.separator + templateName + "." + ImageFormat.RAW.getFileExtension();
+        if (!_storage.exists(imgPath)) {
+            s_logger.debug("Unable to find raw image:" + imgPath);
+            return null;
+        }
         FormatInfo info = new FormatInfo();
         info.format = ImageFormat.RAW;
         info.filename = templateName + "." + ImageFormat.RAW.getFileExtension();
@@ -65,7 +63,7 @@ public class RawImageProcessor extends AdapterBase implements Processor {
         info.virtualSize = info.size;
         s_logger.debug("Process raw image " + info.filename + " successfully");
         return info;
-	}
+    }
 
     @Override
     public Long getVirtualSize(File file) {

@@ -266,7 +266,7 @@ public class QemuImg {
             throw new QemuImgException(result);
         }
 
-        HashMap<String,String> info = new HashMap<String,String>();
+        HashMap<String, String> info = new HashMap<String, String>();
         String[] outputBuffer = parser.getLines().trim().split("\n");
         for (int i = 0; i < outputBuffer.length; i++) {
             String[] lineBuffer = outputBuffer[i].split(":", 2);

@@ -24,8 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class ConstantTimeBackoffTest {
-    final static private Log LOG = LogFactory
-            .getLog(ConstantTimeBackoffTest.class);
+    final static private Log LOG = LogFactory.getLog(ConstantTimeBackoffTest.class);
 
     @Test
     public void waitBeforeRetryWithInterrupt() throws InterruptedException {

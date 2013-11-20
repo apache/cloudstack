@@ -41,19 +41,18 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.StoragePoolStatus;
 
-
 public class StoragePoolMonitor implements Listener {
     private static final Logger s_logger = Logger.getLogger(StoragePoolMonitor.class);
     private final StorageManagerImpl _storageManager;
     private final PrimaryDataStoreDao _poolDao;
-    @Inject OCFS2Manager _ocfs2Mgr;
+    @Inject
+    OCFS2Manager _ocfs2Mgr;
 
     public StoragePoolMonitor(StorageManagerImpl mgr, PrimaryDataStoreDao poolDao) {
         this._storageManager = mgr;
         this._poolDao = poolDao;
 
     }
-
 
     @Override
     public boolean isRecurring() {
@@ -74,8 +73,8 @@ public class StoragePoolMonitor implements Listener {
     public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (cmd instanceof StartupRoutingCommand) {
             StartupRoutingCommand scCmd = (StartupRoutingCommand)cmd;
-            if (scCmd.getHypervisorType() == HypervisorType.XenServer || scCmd.getHypervisorType() ==  HypervisorType.KVM ||
-                    scCmd.getHypervisorType() == HypervisorType.VMware || scCmd.getHypervisorType() ==  HypervisorType.Simulator || scCmd.getHypervisorType() == HypervisorType.Ovm) {
+            if (scCmd.getHypervisorType() == HypervisorType.XenServer || scCmd.getHypervisorType() == HypervisorType.KVM || scCmd.getHypervisorType() == HypervisorType.VMware ||
+                scCmd.getHypervisorType() == HypervisorType.Simulator || scCmd.getHypervisorType() == HypervisorType.Ovm) {
                 List<StoragePoolVO> pools = _poolDao.listBy(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER);
                 List<StoragePoolVO> zoneStoragePoolsByTags = _poolDao.findZoneWideStoragePoolsByTags(host.getDataCenterId(), null);
                 List<StoragePoolVO> zoneStoragePoolsByHypervisor = _poolDao.findZoneWideStoragePoolsByHypervisor(host.getDataCenterId(), scCmd.getHypervisorType());
@@ -108,7 +107,6 @@ public class StoragePoolMonitor implements Listener {
             }
         }
     }
-
 
     @Override
     public boolean processCommands(long agentId, long seq, Command[] req) {

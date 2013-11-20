@@ -17,7 +17,7 @@
 package com.cloud.agent.api;
 
 public class GetVncPortAnswer extends Answer {
-	String address;
+    String address;
     int port;
 
     protected GetVncPortAnswer() {
@@ -39,7 +39,7 @@ public class GetVncPortAnswer extends Answer {
     }
 
     public String getAddress() {
-    	return address;
+        return address;
     }
 
     public int getPort() {

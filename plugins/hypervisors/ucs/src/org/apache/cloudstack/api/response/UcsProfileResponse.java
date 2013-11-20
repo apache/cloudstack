@@ -24,7 +24,8 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class UcsProfileResponse extends BaseResponse {
-    @SerializedName(ApiConstants.UCS_DN) @Param(description="ucs profile dn")
+    @SerializedName(ApiConstants.UCS_DN)
+    @Param(description = "ucs profile dn")
     private String dn;
 
     public String getDn() {

@@ -40,21 +40,23 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-@APICommand(name="listBaremetalDhcp", description="list baremetal dhcp servers", responseObject = BaremetalDhcpResponse.class)
+
+@APICommand(name = "listBaremetalDhcp", description = "list baremetal dhcp servers", responseObject = BaremetalDhcpResponse.class)
 public class ListBaremetalDhcpCmd extends BaseListCmd {
     private static final Logger s_logger = Logger.getLogger(ListBaremetalDhcpCmd.class);
     private static final String s_name = "listbaremetaldhcpresponse";
-    @Inject BaremetalDhcpManager _dhcpMgr;
-    
+    @Inject
+    BaremetalDhcpManager _dhcpMgr;
+
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "DHCP server device ID")
     private Long id;
-    
+
     @Parameter(name = ApiConstants.DHCP_SERVER_TYPE, type = CommandType.STRING, description = "Type of DHCP device")
     private String deviceType;
-    
+
     public Long getId() {
         return id;
     }
@@ -72,19 +74,19 @@ public class ListBaremetalDhcpCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-            ResourceAllocationException, NetworkRuleConflictException {
-    	try {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
+        NetworkRuleConflictException {
+        try {
             ListResponse<BaremetalDhcpResponse> response = new ListResponse<BaremetalDhcpResponse>();
             List<BaremetalDhcpResponse> dhcpResponses = _dhcpMgr.listBaremetalDhcps(this);
             response.setResponses(dhcpResponses);
             response.setResponseName(getCommandName());
             response.setObjectName("baremetaldhcps");
             this.setResponseObject(response);
-    	} catch (Exception e) {
-    		s_logger.debug("Exception happend while executing ListBaremetalDhcpCmd");
+        } catch (Exception e) {
+            s_logger.debug("Exception happend while executing ListBaremetalDhcpCmd");
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
-    	}
+        }
 
     }
 

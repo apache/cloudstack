@@ -29,7 +29,7 @@ import java.io.File;
  *
  */
 public interface Processor extends Adapter {
-    
+
     /**
      * Returns image format if it was able to process the original file and
      * 
@@ -39,7 +39,7 @@ public interface Processor extends Adapter {
      *        that exists in case a conversion can be done.
      */
     FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException;
-    
+
     public static class FormatInfo {
         public ImageFormat format;
         public long size;

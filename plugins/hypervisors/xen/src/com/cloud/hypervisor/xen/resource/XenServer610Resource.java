@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -64,7 +63,7 @@ import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VIF;
 import com.xensource.xenapi.VM;
 
-@Local(value=ServerResource.class)
+@Local(value = ServerResource.class)
 public class XenServer610Resource extends XenServer56FP1Resource {
     private static final Logger s_logger = Logger.getLogger(XenServer610Resource.class);
 
@@ -81,7 +80,7 @@ public class XenServer610Resource extends XenServer56FP1Resource {
     protected List<File> getPatchFiles() {
         List<File> files = new ArrayList<File>();
         String patch = "scripts/vm/hypervisor/xenserver/xenserver60/patch";
-        String patchfilePath = Script.findScript("" , patch);
+        String patchfilePath = Script.findScript("", patch);
         if (patchfilePath == null) {
             throw new CloudRuntimeException("Unable to find patch file " + patch);
         }
@@ -93,22 +92,21 @@ public class XenServer610Resource extends XenServer56FP1Resource {
     @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof MigrateWithStorageCommand) {
-            return execute((MigrateWithStorageCommand) cmd);
+            return execute((MigrateWithStorageCommand)cmd);
         } else if (cmd instanceof MigrateWithStorageReceiveCommand) {
-            return execute((MigrateWithStorageReceiveCommand) cmd);
+            return execute((MigrateWithStorageReceiveCommand)cmd);
         } else if (cmd instanceof MigrateWithStorageSendCommand) {
-            return execute((MigrateWithStorageSendCommand) cmd);
+            return execute((MigrateWithStorageSendCommand)cmd);
         } else if (cmd instanceof MigrateWithStorageCompleteCommand) {
-            return execute((MigrateWithStorageCompleteCommand) cmd);
+            return execute((MigrateWithStorageCompleteCommand)cmd);
         } else if (cmd instanceof MigrateVolumeCommand) {
-            return execute((MigrateVolumeCommand) cmd);
+            return execute((MigrateVolumeCommand)cmd);
         } else {
             return super.executeRequest(cmd);
         }
     }
 
-    private List<VolumeObjectTO> getUpdatedVolumePathsOfMigratedVm(Connection connection, VM migratedVm,
-            DiskTO[] volumes) throws CloudRuntimeException {
+    private List<VolumeObjectTO> getUpdatedVolumePathsOfMigratedVm(Connection connection, VM migratedVm, DiskTO[] volumes) throws CloudRuntimeException {
         List<VolumeObjectTO> volumeToList = new ArrayList<VolumeObjectTO>();
 
         try {
@@ -159,7 +157,7 @@ public class XenServer610Resource extends XenServer56FP1Resource {
             other.put("live", "true");
             Network networkForSm = getNativeNetworkForTraffic(connection, TrafficType.Storage, null).getNetwork();
             Host host = Host.getByUuid(connection, _host.uuid);
-            Map<String,String> token = host.migrateReceive(connection, networkForSm, other);
+            Map<String, String> token = host.migrateReceive(connection, networkForSm, other);
 
             // Get the vm to migrate.
             Set<VM> vms = VM.getByNameLabel(connection, vmSpec.getName());
@@ -169,8 +167,7 @@ public class XenServer610Resource extends XenServer56FP1Resource {
             Map<VIF, Network> vifMap = new HashMap<VIF, Network>();
             Map<VDI, SR> vdiMap = new HashMap<VDI, SR>();
             for (Map.Entry<VolumeTO, StorageFilerTO> entry : volumeToFiler.entrySet()) {
-                vdiMap.put(getVDIbyUuid(connection, entry.getKey().getPath()),
-                        getStorageRepository(connection, entry.getValue().getUuid()));
+                vdiMap.put(getVDIbyUuid(connection, entry.getKey().getPath()), getStorageRepository(connection, entry.getValue().getUuid()));
             }
 
             // Check migration with storage is possible.
@@ -181,10 +178,8 @@ public class XenServer610Resource extends XenServer56FP1Resource {
                 waitForTask(connection, task, 1000, timeout);
                 checkForSuccess(connection, task);
             } catch (Types.HandleInvalid e) {
-                s_logger.error("Error while checking if vm " + vmName + " can be migrated to the destination host " +
-                        host, e);
-                throw new CloudRuntimeException("Error while checking if vm " + vmName + " can be migrated to the " +
-                        "destination host " + host, e);
+                s_logger.error("Error while checking if vm " + vmName + " can be migrated to the destination host " + host, e);
+                throw new CloudRuntimeException("Error while checking if vm " + vmName + " can be migrated to the " + "destination host " + host, e);
             }
 
             // Migrate now.
@@ -196,8 +191,7 @@ public class XenServer610Resource extends XenServer56FP1Resource {
                 checkForSuccess(connection, task);
             } catch (Types.HandleInvalid e) {
                 s_logger.error("Error while migrating vm " + vmName + " to the destination host " + host, e);
-                throw new CloudRuntimeException("Error while migrating vm " + vmName + " to the destination host " +
-                        host, e);
+                throw new CloudRuntimeException("Error while migrating vm " + vmName + " to the destination host " + host, e);
             }
 
             // Volume paths would have changed. Return that information.
@@ -207,16 +201,14 @@ public class XenServer610Resource extends XenServer56FP1Resource {
 
             return new MigrateWithStorageAnswer(cmd, volumeToList);
         } catch (Exception e) {
-            s_logger.warn("Catch Exception " + e.getClass().getName() + ". Storage motion failed due to " +
-                    e.toString(), e);
+            s_logger.warn("Catch Exception " + e.getClass().getName() + ". Storage motion failed due to " + e.toString(), e);
             return new MigrateWithStorageAnswer(cmd, e);
         } finally {
             if (task != null) {
                 try {
                     task.destroy(connection);
                 } catch (Exception e) {
-                    s_logger.debug("Unable to destroy task " + task.toString() + " on host " + _host.uuid +" due to " +
-                            e.toString());
+                    s_logger.debug("Unable to destroy task " + task.toString() + " on host " + _host.uuid + " due to " + e.toString());
                 }
             }
 
@@ -250,7 +242,7 @@ public class XenServer610Resource extends XenServer56FP1Resource {
             other.put("live", "true");
             Network network = getNativeNetworkForTraffic(connection, TrafficType.Storage, null).getNetwork();
             Host host = Host.getByUuid(connection, _host.uuid);
-            Map<String,String> token = host.migrateReceive(connection, network, other);
+            Map<String, String> token = host.migrateReceive(connection, network, other);
 
             return new MigrateWithStorageReceiveAnswer(cmd, volumeToSr, nicToNetwork, token);
         } catch (CloudRuntimeException e) {
@@ -287,7 +279,7 @@ public class XenServer610Resource extends XenServer56FP1Resource {
             // Create the vdi map which tells what volumes of the vm need to go on which sr on the destination.
             Map<VDI, SR> vdiMap = new HashMap<VDI, SR>();
             for (Map.Entry<VolumeTO, Object> entry : volumeToSr.entrySet()) {
-                if  (entry.getValue() instanceof SR) {
+                if (entry.getValue() instanceof SR) {
                     SR sr = (SR)entry.getValue();
                     VDI vdi = getVDIbyUuid(connection, entry.getKey().getPath());
                     vdiMap.put(vdi, sr);
@@ -345,8 +337,7 @@ public class XenServer610Resource extends XenServer56FP1Resource {
                 try {
                     task.destroy(connection);
                 } catch (Exception e) {
-                    s_logger.debug("Unable to destroy task " + task.toString() + " on host " + _host.uuid +" due to " +
-                            e.toString());
+                    s_logger.debug("Unable to destroy task " + task.toString() + " on host " + _host.uuid + " due to " + e.toString());
                 }
             }
 
@@ -372,12 +363,11 @@ public class XenServer610Resource extends XenServer56FP1Resource {
 
             // Check the vm is present on the new host.
             if (migratedVm == null) {
-                throw new CloudRuntimeException("Couldn't find the migrated vm " + vmSpec.getName() +
-                        " on the destination host.");
+                throw new CloudRuntimeException("Couldn't find the migrated vm " + vmSpec.getName() + " on the destination host.");
             }
 
             // Volume paths would have changed. Return that information.
-            List<VolumeObjectTO > volumeToSet = getUpdatedVolumePathsOfMigratedVm(connection, migratedVm, vmSpec.getDisks());
+            List<VolumeObjectTO> volumeToSet = getUpdatedVolumePathsOfMigratedVm(connection, migratedVm, vmSpec.getDisks());
             migratedVm.setAffinity(connection, host);
 
             synchronized (_cluster.intern()) {
@@ -421,29 +411,30 @@ public class XenServer610Resource extends XenServer56FP1Resource {
     }
 
     @Override
-    public long getStaticMax(String os, boolean b, long dynamicMinRam, long dynamicMaxRam){
+    public long getStaticMax(String os, boolean b, long dynamicMinRam, long dynamicMaxRam) {
         long recommendedValue = CitrixHelper.getXenServer610StaticMax(os, b);
-        if(recommendedValue == 0){
+        if (recommendedValue == 0) {
             s_logger.warn("No recommended value found for dynamic max, setting static max and dynamic max equal");
             return dynamicMaxRam;
         }
         long staticMax = Math.min(recommendedValue, 4l * dynamicMinRam);  // XS constraint for stability
-        if (dynamicMaxRam > staticMax){ // XS contraint that dynamic max <= static max
-            s_logger.warn("dynamixMax " + dynamicMaxRam + " cant be greater than static max " + staticMax + ", can lead to stability issues. Setting static max as much as dynamic max ");
+        if (dynamicMaxRam > staticMax) { // XS contraint that dynamic max <= static max
+            s_logger.warn("dynamixMax " + dynamicMaxRam + " cant be greater than static max " + staticMax +
+                          ", can lead to stability issues. Setting static max as much as dynamic max ");
             return dynamicMaxRam;
         }
         return staticMax;
     }
 
     @Override
-    public long getStaticMin(String os, boolean b, long dynamicMinRam, long dynamicMaxRam){
+    public long getStaticMin(String os, boolean b, long dynamicMinRam, long dynamicMaxRam) {
         long recommendedValue = CitrixHelper.getXenServer610StaticMin(os, b);
-        if(recommendedValue == 0){
+        if (recommendedValue == 0) {
             s_logger.warn("No recommended value found for dynamic min");
             return dynamicMinRam;
         }
 
-        if(dynamicMinRam < recommendedValue){   // XS contraint that dynamic min > static min
+        if (dynamicMinRam < recommendedValue) {   // XS contraint that dynamic min > static min
             s_logger.warn("Vm is set to dynamixMin " + dynamicMinRam + " less than the recommended static min " + recommendedValue + ", could lead to stability issues");
         }
         return dynamicMinRam;
@@ -452,8 +443,8 @@ public class XenServer610Resource extends XenServer56FP1Resource {
     @Override
     protected void plugDom0Vif(Connection conn, VIF dom0Vif) throws XmlRpcException, XenAPIException {
         // do nothing. In xenserver 6.1 and beyond this step isn't needed.
-    }    
-  
+    }
+
     @Override
     protected String getVMXenToolsVersion(Map<String, String> platform) {
         if (platform.containsKey("device_id")) {
@@ -461,18 +452,18 @@ public class XenServer610Resource extends XenServer56FP1Resource {
         }
         return "xenserver56";
     }
-    
+
     @Override
     protected void finalizeVmMetaData(VM vm, Connection conn, VirtualMachineTO vmSpec) throws Exception {
         Map<String, String> details = vmSpec.getDetails();
-        if ( details!= null ) {
+        if (details != null) {
             String xentoolsversion = details.get("hypervisortoolsversion");
-            if ( xentoolsversion == null || !xentoolsversion.equalsIgnoreCase("xenserver61") ) {
-                 Map<String, String> platform = vm.getPlatform(conn);
-                 platform.remove("device_id");
-                 vm.setPlatform(conn, platform);
-             }
-         }
+            if (xentoolsversion == null || !xentoolsversion.equalsIgnoreCase("xenserver61")) {
+                Map<String, String> platform = vm.getPlatform(conn);
+                platform.remove("device_id");
+                vm.setPlatform(conn, platform);
+            }
+        }
     }
 
 }

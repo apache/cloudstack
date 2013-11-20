@@ -25,46 +25,47 @@ import java.sql.SQLException;
 import java.util.List;
 
 public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
-	
+
     IPAddressVO markAsUnavailable(long ipAddressId);
-    
-	void unassignIpAddress(long ipAddressId);	
 
-	List<IPAddressVO> listByAccount(long accountId);
-	
-	List<IPAddressVO> listByVlanId(long vlanId);
-	
-	List<IPAddressVO> listByDcIdIpAddress(long dcId, String ipAddress);
-	
-	List<IPAddressVO> listByDcId(long dcId); 
-	
-	List<IPAddressVO> listByAssociatedNetwork(long networkId, Boolean isSourceNat);
-	
-	List<IPAddressVO> listStaticNatPublicIps(long networkId);
-	
-	int countIPs(long dcId, long vlanDbId, boolean onlyCountAllocated);
-	
-	int countIPs(long dcId, Long accountId, String vlanId, String vlanGateway, String vlanNetmask);
-	
+    void unassignIpAddress(long ipAddressId);
+
+    List<IPAddressVO> listByAccount(long accountId);
+
+    List<IPAddressVO> listByVlanId(long vlanId);
+
+    List<IPAddressVO> listByDcIdIpAddress(long dcId, String ipAddress);
+
+    List<IPAddressVO> listByDcId(long dcId);
+
+    List<IPAddressVO> listByAssociatedNetwork(long networkId, Boolean isSourceNat);
+
+    List<IPAddressVO> listStaticNatPublicIps(long networkId);
+
+    int countIPs(long dcId, long vlanDbId, boolean onlyCountAllocated);
+
+    int countIPs(long dcId, Long accountId, String vlanId, String vlanGateway, String vlanNetmask);
+
     long countAllocatedIPsForAccount(long accountId);
-	
-	boolean mark(long dcId, Ip ip);
 
-	int countIPsForNetwork(long dcId, boolean onlyCountAllocated, VlanType vlanType);
-	
-	IPAddressVO findByAssociatedVmId(long vmId);
-	
-	IPAddressVO findByIpAndSourceNetworkId(long networkId, String ipAddress);
+    boolean mark(long dcId, Ip ip);
 
-	public IPAddressVO findByIpAndDcId(long dcId, String ipAddress);
+    int countIPsForNetwork(long dcId, boolean onlyCountAllocated, VlanType vlanType);
 
-	List<IPAddressVO> listByPhysicalNetworkId(long physicalNetworkId);
-	
-	List<IPAddressVO> listByAssociatedVpc(long vpcId, Boolean isSourceNat);
+    IPAddressVO findByAssociatedVmId(long vmId);
 
-	long countFreePublicIPs();
-	
+    IPAddressVO findByIpAndSourceNetworkId(long networkId, String ipAddress);
+
+    public IPAddressVO findByIpAndDcId(long dcId, String ipAddress);
+
+    List<IPAddressVO> listByPhysicalNetworkId(long physicalNetworkId);
+
+    List<IPAddressVO> listByAssociatedVpc(long vpcId, Boolean isSourceNat);
+
+    long countFreePublicIPs();
+
     long countFreeIPsInNetwork(long networkId);
+
     IPAddressVO findByVmIp(String vmIp);
 
     IPAddressVO findByAssociatedVmIdAndVmIp(long vmId, String vmIp);
@@ -77,7 +78,7 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
 
     void deletePublicIPRangeExceptAliasIP(long vlanDbId, String aliasIp);
 
-    boolean deletePublicIPRange(long vlanDbId) ;
+    boolean deletePublicIPRange(long vlanDbId);
 
     void lockRange(long vlandbId);
 }

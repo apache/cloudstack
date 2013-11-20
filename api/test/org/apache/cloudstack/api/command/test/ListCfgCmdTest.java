@@ -41,7 +41,7 @@ import org.mockito.Mockito;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ListCfgCmdTest extends TestCase{
+public class ListCfgCmdTest extends TestCase {
 
     private ListCfgsByCmd listCfgsByCmd;
     private ManagementService mgr;
@@ -64,18 +64,14 @@ public class ListCfgCmdTest extends TestCase{
         listCfgsByCmd._mgr = mgr;
         listCfgsByCmd._responseGenerator = responseGenerator;
 
-
-
         List<Configuration> configList = new ArrayList<Configuration>();
         configList.add(cfg);
 
         Pair<List<? extends Configuration>, Integer> result = new Pair<List<? extends Configuration>, Integer>(configList, 1);
 
         try {
-            Mockito.when(
-                    mgr.searchForConfigurations(listCfgsByCmd))
-                    .thenReturn(result);
-        }catch (Exception e){
+            Mockito.when(mgr.searchForConfigurations(listCfgsByCmd)).thenReturn(result);
+        } catch (Exception e) {
             Assert.fail("Received exception when success expected " + e.getMessage());
         }
         ConfigurationResponse cfgResponse = new ConfigurationResponse();
@@ -85,7 +81,7 @@ public class ListCfgCmdTest extends TestCase{
         listCfgsByCmd.execute();
         Mockito.verify(responseGenerator).createConfigurationResponse(cfg);
 
-        ListResponse<ConfigurationResponse> actualResponse = (ListResponse<ConfigurationResponse>) listCfgsByCmd.getResponseObject();
+        ListResponse<ConfigurationResponse> actualResponse = (ListResponse<ConfigurationResponse>)listCfgsByCmd.getResponseObject();
         Assert.assertEquals(cfgResponse, actualResponse.getResponses().get(0));
     }
 

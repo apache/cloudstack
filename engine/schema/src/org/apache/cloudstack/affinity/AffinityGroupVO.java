@@ -60,7 +60,7 @@ public class AffinityGroupVO implements AffinityGroup {
     ControlledEntity.ACLType aclType;
 
     public AffinityGroupVO() {
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public AffinityGroupVO(String name, String type, String description, long domainId, long accountId, ACLType aclType) {
@@ -68,7 +68,7 @@ public class AffinityGroupVO implements AffinityGroup {
         this.description = description;
         this.domainId = domainId;
         this.accountId = accountId;
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
         this.type = type;
         this.aclType = aclType;
     }
@@ -100,11 +100,11 @@ public class AffinityGroupVO implements AffinityGroup {
 
     @Override
     public String getUuid() {
-    	return this.uuid;
+        return this.uuid;
     }
 
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
 
     @Override

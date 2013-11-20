@@ -77,7 +77,7 @@ public class HAProxyConfiguratorTest {
 
         cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "4", true);
         result = genConfig(hpg, cmd);
-        assertTrue("keepalive enabled should not result in 'mode http' in the resulting haproxy config",! result.contains("mode http"));
+        assertTrue("keepalive enabled should not result in 'mode http' in the resulting haproxy config", !result.contains("mode http"));
         // TODO
         // create lb command
         // setup tests for
@@ -86,9 +86,9 @@ public class HAProxyConfiguratorTest {
     }
 
     private String genConfig(HAProxyConfigurator hpg, LoadBalancerConfigCommand cmd) {
-        String [] sa = hpg.generateConfiguration(cmd);
+        String[] sa = hpg.generateConfiguration(cmd);
         StringBuilder sb = new StringBuilder();
-        for(String s: sa) {
+        for (String s : sa) {
             sb.append(s).append('\n');
         }
         return sb.toString();

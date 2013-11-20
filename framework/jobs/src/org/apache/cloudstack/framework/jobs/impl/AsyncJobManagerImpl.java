@@ -211,8 +211,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         final AsyncJobVO job = _jobDao.findById(jobId);
         if (job == null) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("job-" + jobId + " no longer exists, we just log completion info here. " + jobStatus + ", resultCode: " + resultCode + ", result: " +
-                               resultObject);
+                s_logger.debug("job-" + jobId + " no longer exists, we just log completion info here. " + jobStatus + ", resultCode: " + resultCode + ", result: " + resultObject);
             }
 
             return;

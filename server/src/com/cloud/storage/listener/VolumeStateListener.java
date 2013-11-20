@@ -60,17 +60,13 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
 
         try {
             _eventBus = ComponentContext.getComponent(EventBus.class);
-        } catch(NoSuchBeanDefinitionException nbe) {
+        } catch (NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
         }
 
         String resourceName = getEntityFromClassName(Volume.class.getName());
-        org.apache.cloudstack.framework.events.Event eventMsg =  new org.apache.cloudstack.framework.events.Event(
-                ManagementServer.Name,
-                EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(),
-                event,
-                resourceName,
-                vo.getUuid());
+        org.apache.cloudstack.framework.events.Event eventMsg = new org.apache.cloudstack.framework.events.Event(ManagementServer.Name,
+            EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(), event, resourceName, vo.getUuid());
         Map<String, String> eventDescription = new HashMap<String, String>();
         eventDescription.put("resource", resourceName);
         eventDescription.put("id", vo.getUuid());
@@ -92,7 +88,7 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
         int index = entityClassName.lastIndexOf(".");
         String entityName = entityClassName;
         if (index != -1) {
-            entityName = entityClassName.substring(index+1);
+            entityName = entityClassName.substring(index + 1);
         }
         return entityName;
     }

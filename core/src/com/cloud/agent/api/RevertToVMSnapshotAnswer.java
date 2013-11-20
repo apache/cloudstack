@@ -27,8 +27,7 @@ public class RevertToVMSnapshotAnswer extends Answer {
     private List<VolumeObjectTO> volumeTOs;
     private VirtualMachine.State vmState;
 
-    public RevertToVMSnapshotAnswer(RevertToVMSnapshotCommand cmd, boolean result,
-            String message) {
+    public RevertToVMSnapshotAnswer(RevertToVMSnapshotCommand cmd, boolean result, String message) {
         super(cmd, result, message);
     }
 
@@ -36,9 +35,7 @@ public class RevertToVMSnapshotAnswer extends Answer {
         super();
     }
 
-    public RevertToVMSnapshotAnswer(RevertToVMSnapshotCommand cmd,
-            List<VolumeObjectTO> volumeTOs,
-            VirtualMachine.State vmState) {
+    public RevertToVMSnapshotAnswer(RevertToVMSnapshotCommand cmd, List<VolumeObjectTO> volumeTOs, VirtualMachine.State vmState) {
         super(cmd, true, "");
         this.volumeTOs = volumeTOs;
         this.vmState = vmState;

@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
-
 import java.util.Map;
 
 import org.apache.cloudstack.api.APICommand;
@@ -41,12 +40,10 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.user.Account;
 
-
-@APICommand(name = "createLBStickinessPolicy", description = "Creates a Load Balancer stickiness policy ", responseObject = LBStickinessResponse.class, since="3.0.0")
+@APICommand(name = "createLBStickinessPolicy", description = "Creates a Load Balancer stickiness policy ", responseObject = LBStickinessResponse.class, since = "3.0.0")
 @SuppressWarnings("rawtypes")
 public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger
-            .getLogger(CreateLBStickinessPolicyCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(CreateLBStickinessPolicyCmd.class.getName());
 
     private static final String s_name = "createLBStickinessPolicy";
 
@@ -54,8 +51,7 @@ public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class,
-            required = true, description = "the ID of the load balancer rule")
+    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the load balancer rule")
     private Long lbRuleId;
 
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the LB Stickiness policy")
@@ -64,7 +60,10 @@ public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the LB Stickiness policy")
     private String lbStickinessPolicyName;
 
-    @Parameter(name = ApiConstants.METHOD_NAME, type = CommandType.STRING, required = true, description = "name of the LB Stickiness policy method, possible values can be obtained from ListNetworks API ")
+    @Parameter(name = ApiConstants.METHOD_NAME,
+               type = CommandType.STRING,
+               required = true,
+               description = "name of the LB Stickiness policy method, possible values can be obtained from ListNetworks API ")
     private String stickinessMethodName;
 
     @Parameter(name = ApiConstants.PARAM_LIST, type = CommandType.MAP, description = "param list. Example: param[0].name=cookiename&param[0].value=LBCookie ")
@@ -93,7 +92,6 @@ public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
     public Map getparamList() {
         return paramList;
     }
-
 
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
@@ -173,4 +171,3 @@ public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
         return lb.getNetworkId();
     }
 }
-

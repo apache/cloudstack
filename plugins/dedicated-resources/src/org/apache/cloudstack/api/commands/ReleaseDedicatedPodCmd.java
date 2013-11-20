@@ -37,14 +37,14 @@ public class ReleaseDedicatedPodCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReleaseDedicatedPodCmd.class.getName());
 
     private static final String s_name = "releasededicatedpodresponse";
-    @Inject DedicatedService dedicatedService;
+    @Inject
+    DedicatedService dedicatedService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class,
-            required=true, description="the ID of the Pod")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, required = true, description = "the ID of the Pod")
     private Long podId;
 
     /////////////////////////////////////////////////////
@@ -69,7 +69,7 @@ public class ReleaseDedicatedPodCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = dedicatedService.releaseDedicatedResource(null, getPodId(), null, null);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

@@ -24,7 +24,9 @@ import org.apache.log4j.Logger;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
 
-@APICommand(name = "listTemplatePermissions", description="List template visibility and all accounts that have permissions to view this template.", responseObject=TemplatePermissionsResponse.class)
+@APICommand(name = "listTemplatePermissions",
+            description = "List template visibility and all accounts that have permissions to view this template.",
+            responseObject = TemplatePermissionsResponse.class)
 public class ListTemplatePermissionsCmd extends BaseListTemplateOrIsoPermissionsCmd {
     protected String getResponseName() {
         return "listtemplatepermissionsresponse";

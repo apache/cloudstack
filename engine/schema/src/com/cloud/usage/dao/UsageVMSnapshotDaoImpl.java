@@ -31,25 +31,19 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
+
 @Component
-@Local(value={UsageVMSnapshotDao.class})
-public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Long> implements UsageVMSnapshotDao{
+@Local(value = {UsageVMSnapshotDao.class})
+public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Long> implements UsageVMSnapshotDao {
     public static final Logger s_logger = Logger.getLogger(UsageVMSnapshotDaoImpl.class.getName());
-    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = 
-            "SELECT id, zone_id, account_id, domain_id, vm_id, disk_offering_id, size, created, processed " +
-            " FROM usage_vmsnapshot" +
-            " WHERE account_id = ? " +
-            " AND ( (created BETWEEN ? AND ?) OR " +
-            "      (created < ? AND processed is NULL) ) ORDER BY created asc";
-    protected static final String UPDATE_DELETED = 
-            "UPDATE usage_vmsnapshot SET processed = ? WHERE account_id = ? AND id = ? and vm_id = ?  and created = ?";
-    
-    protected static final String PREVIOUS_QUERY = 
-            "SELECT id, zone_id, account_id, domain_id, vm_id, disk_offering_id,size, created, processed " +
-            "FROM usage_vmsnapshot " +
-            "WHERE account_id = ? AND id = ? AND vm_id = ? AND created < ? AND processed IS NULL " +
-            "ORDER BY created desc limit 1";
-    
+    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, vm_id, disk_offering_id, size, created, processed "
+                                                                 + " FROM usage_vmsnapshot" + " WHERE account_id = ? " + " AND ( (created BETWEEN ? AND ?) OR "
+                                                                 + "      (created < ? AND processed is NULL) ) ORDER BY created asc";
+    protected static final String UPDATE_DELETED = "UPDATE usage_vmsnapshot SET processed = ? WHERE account_id = ? AND id = ? and vm_id = ?  and created = ?";
+
+    protected static final String PREVIOUS_QUERY = "SELECT id, zone_id, account_id, domain_id, vm_id, disk_offering_id,size, created, processed " + "FROM usage_vmsnapshot "
+                                                   + "WHERE account_id = ? AND id = ? AND vm_id = ? AND created < ? AND processed IS NULL " + "ORDER BY created desc limit 1";
+
     public void update(UsageVMSnapshotVO usage) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
@@ -70,9 +64,8 @@ public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Lo
             txn.close();
         }
     }
-    
-    public List<UsageVMSnapshotVO> getUsageRecords(Long accountId, Long domainId, 
-            Date startDate, Date endDate) {
+
+    public List<UsageVMSnapshotVO> getUsageRecords(Long accountId, Long domainId, Date startDate, Date endDate) {
         List<UsageVMSnapshotVO> usageRecords = new ArrayList<UsageVMSnapshotVO>();
 
         String sql = GET_USAGE_RECORDS_BY_ACCOUNT;
@@ -96,7 +89,7 @@ public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Lo
                 Long dId = Long.valueOf(rs.getLong(4));
                 Long vmId = Long.valueOf(rs.getLong(5));
                 Long doId = Long.valueOf(rs.getLong(6));
-                if(doId == 0){
+                if (doId == 0) {
                     doId = null;
                 }
                 Long size = Long.valueOf(rs.getLong(7));
@@ -104,7 +97,6 @@ public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Lo
                 Date processDate = null;
                 String createdTS = rs.getString(8);
                 String processed = rs.getString(9);
-                
 
                 if (createdTS != null) {
                     createdDate = DateUtil.parseDateString(s_gmtTimeZone, createdTS);
@@ -112,8 +104,7 @@ public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Lo
                 if (processed != null) {
                     processDate = DateUtil.parseDateString(s_gmtTimeZone, processed);
                 }
-                usageRecords.add(new UsageVMSnapshotVO(vId, zoneId, acctId, dId, vmId, 
-                        doId, size, createdDate, processDate));
+                usageRecords.add(new UsageVMSnapshotVO(vId, zoneId, acctId, dId, vmId, doId, size, createdDate, processDate));
             }
         } catch (Exception e) {
             txn.rollback();
@@ -149,7 +140,7 @@ public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Lo
                 Long dId = Long.valueOf(rs.getLong(4));
                 Long vmId = Long.valueOf(rs.getLong(5));
                 Long doId = Long.valueOf(rs.getLong(6));
-                if(doId == 0){
+                if (doId == 0) {
                     doId = null;
                 }
                 Long size = Long.valueOf(rs.getLong(7));
@@ -157,7 +148,6 @@ public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Lo
                 Date processDate = null;
                 String createdTS = rs.getString(8);
                 String processed = rs.getString(9);
-                
 
                 if (createdTS != null) {
                     createdDate = DateUtil.parseDateString(s_gmtTimeZone, createdTS);
@@ -165,8 +155,7 @@ public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Lo
                 if (processed != null) {
                     processDate = DateUtil.parseDateString(s_gmtTimeZone, processed);
                 }
-                usageRecords.add(new UsageVMSnapshotVO(vId, zoneId, acctId, dId, vmId, 
-                        doId, size, createdDate, processDate));
+                usageRecords.add(new UsageVMSnapshotVO(vId, zoneId, acctId, dId, vmId, doId, size, createdDate, processDate));
             }
         } catch (Exception e) {
             txn.rollback();
@@ -175,7 +164,7 @@ public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Lo
             txn.close();
         }
 
-        if(usageRecords.size() > 0)
+        if (usageRecords.size() > 0)
             return usageRecords.get(0);
         return null;
     }

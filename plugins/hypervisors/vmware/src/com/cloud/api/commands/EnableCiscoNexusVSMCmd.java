@@ -33,19 +33,23 @@ import com.cloud.user.Account;
 import com.cloud.api.response.CiscoNexusVSMResponse;
 import com.cloud.network.CiscoNexusVSMDevice;
 
-@APICommand(name = "enableCiscoNexusVSM", responseObject=CiscoNexusVSMResponse.class, description="Enable a Cisco Nexus VSM device")
+@APICommand(name = "enableCiscoNexusVSM", responseObject = CiscoNexusVSMResponse.class, description = "Enable a Cisco Nexus VSM device")
 public class EnableCiscoNexusVSMCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(EnableCiscoNexusVSMCmd.class.getName());
     private static final String s_name = "enablecisconexusvsmresponse";
-    @Inject CiscoNexusVSMElementService _ciscoNexusVSMService;
+    @Inject
+    CiscoNexusVSMElementService _ciscoNexusVSMService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=CiscoNexusVSMResponse.class,
-            required=true, description="Id of the Cisco Nexus 1000v VSM device to be enabled")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = CiscoNexusVSMResponse.class,
+               required = true,
+               description = "Id of the Cisco Nexus 1000v VSM device to be enabled")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -62,13 +66,13 @@ public class EnableCiscoNexusVSMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
-    	CiscoNexusVSMDevice result = _ciscoNexusVSMService.enableCiscoNexusVSM(this);
+        CiscoNexusVSMDevice result = _ciscoNexusVSMService.enableCiscoNexusVSM(this);
         if (result != null) {
-        	CiscoNexusVSMResponse response = _ciscoNexusVSMService.createCiscoNexusVSMDetailedResponse(result);
-        	response.setResponseName(getCommandName());
-        	this.setResponseObject(response);
+            CiscoNexusVSMResponse response = _ciscoNexusVSMService.createCiscoNexusVSMDetailedResponse(result);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
         } else {
-        	throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to enable Cisco Nexus VSM device");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to enable Cisco Nexus VSM device");
         }
     }
 
@@ -84,11 +88,11 @@ public class EnableCiscoNexusVSMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-    	return "Enabling a Cisco Nexus VSM device";
+        return "Enabling a Cisco Nexus VSM device";
     }
 
     @Override
     public String getEventType() {
-    	return EventTypes.EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_ENABLE;
+        return EventTypes.EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_ENABLE;
     }
 }

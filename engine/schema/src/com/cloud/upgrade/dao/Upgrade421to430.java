@@ -50,7 +50,7 @@ public class Upgrade421to430 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to find db/schema-421to430.sql");
         }
 
-        return new File[] { new File(script) };
+        return new File[] {new File(script)};
     }
 
     @Override
@@ -64,7 +64,7 @@ public class Upgrade421to430 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to find db/schema-421to430-cleanup.sql");
         }
 
-        return new File[] { new File(script) };
+        return new File[] {new File(script)};
     }
 
 }

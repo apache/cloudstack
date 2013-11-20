@@ -31,9 +31,9 @@ import org.apache.log4j.Logger;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listVpnGateways", description="Lists site 2 site vpn gateways", responseObject=Site2SiteVpnGatewayResponse.class)
+@APICommand(name = "listVpnGateways", description = "Lists site 2 site vpn gateways", responseObject = Site2SiteVpnGatewayResponse.class)
 public class ListVpnGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger (ListVpnGatewaysCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListVpnGatewaysCmd.class.getName());
 
     private static final String s_name = "listvpngatewaysresponse";
 
@@ -41,11 +41,10 @@ public class ListVpnGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=Site2SiteVpnGatewayResponse.class,
-            description="id of the vpn gateway")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = Site2SiteVpnGatewayResponse.class, description = "id of the vpn gateway")
     private Long id;
 
-    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.UUID, entityType=VpcResponse.class, description="id of vpc")
+    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "id of vpc")
     private Long vpcId;
 
     /////////////////////////////////////////////////////
@@ -70,7 +69,7 @@ public class ListVpnGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends Site2SiteVpnGateway>, Integer> gws = _s2sVpnService.searchForVpnGateways(this);
         ListResponse<Site2SiteVpnGatewayResponse> response = new ListResponse<Site2SiteVpnGatewayResponse>();
         List<Site2SiteVpnGatewayResponse> gwResponses = new ArrayList<Site2SiteVpnGatewayResponse>();

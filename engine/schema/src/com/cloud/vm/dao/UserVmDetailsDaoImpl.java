@@ -24,12 +24,12 @@ import org.springframework.stereotype.Component;
 import com.cloud.vm.UserVmDetailVO;
 
 @Component
-@Local(value=UserVmDetailsDao.class)
+@Local(value = UserVmDetailsDao.class)
 public class UserVmDetailsDaoImpl extends ResourceDetailsDaoBase<UserVmDetailVO> implements UserVmDetailsDao {
 
     @Override
     public void addDetail(long resourceId, String key, String value) {
         super.addDetail(new UserVmDetailVO(resourceId, key, value));
     }
-    
+
 }

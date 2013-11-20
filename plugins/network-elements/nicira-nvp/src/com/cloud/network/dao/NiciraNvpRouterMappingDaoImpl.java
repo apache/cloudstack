@@ -27,7 +27,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value=NiciraNvpRouterMappingDao.class)
+@Local(value = NiciraNvpRouterMappingDao.class)
 public class NiciraNvpRouterMappingDaoImpl extends GenericDaoBase<NiciraNvpRouterMappingVO, Long> implements NiciraNvpRouterMappingDao {
 
     protected final SearchBuilder<NiciraNvpRouterMappingVO> networkSearch;
@@ -44,6 +44,5 @@ public class NiciraNvpRouterMappingDaoImpl extends GenericDaoBase<NiciraNvpRoute
         sc.setParameters("network_id", id);
         return findOneBy(sc);
     }
-
 
 }

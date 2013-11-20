@@ -25,9 +25,8 @@ public class CreateVMSnapshotAnswer extends Answer {
 
     private List<VolumeObjectTO> volumeTOs;
     private VMSnapshotTO vmSnapshotTo;
-    
- 
-	public List<VolumeObjectTO> getVolumeTOs() {
+
+    public List<VolumeObjectTO> getVolumeTOs() {
         return volumeTOs;
     }
 
@@ -47,13 +46,11 @@ public class CreateVMSnapshotAnswer extends Answer {
 
     }
 
-    public CreateVMSnapshotAnswer(CreateVMSnapshotCommand cmd, boolean success,
-            String result) {
+    public CreateVMSnapshotAnswer(CreateVMSnapshotCommand cmd, boolean success, String result) {
         super(cmd, success, result);
     }
 
-    public CreateVMSnapshotAnswer(CreateVMSnapshotCommand cmd,
-    		VMSnapshotTO vmSnapshotTo, List<VolumeObjectTO> volumeTOs) {
+    public CreateVMSnapshotAnswer(CreateVMSnapshotCommand cmd, VMSnapshotTO vmSnapshotTo, List<VolumeObjectTO> volumeTOs) {
         super(cmd, true, "");
         this.vmSnapshotTo = vmSnapshotTo;
         this.volumeTOs = volumeTOs;

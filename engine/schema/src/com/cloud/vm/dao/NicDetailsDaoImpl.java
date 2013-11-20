@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.vm.NicDetailVO;
 
 @Component
-@Local (value={NicDetailsDao.class})
+@Local(value = {NicDetailsDao.class})
 public class NicDetailsDaoImpl extends ResourceDetailsDaoBase<NicDetailVO> implements NicDetailsDao {
 
     @Override

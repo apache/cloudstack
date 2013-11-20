@@ -39,8 +39,8 @@ public class LoadBalancingRule {
     private LbSslCert sslCert;
     private String lbProtocol;
 
-    public LoadBalancingRule(LoadBalancer lb, List<LbDestination> destinations,
-                             List<LbStickinessPolicy> stickinessPolicies, List<LbHealthCheckPolicy> healthCheckPolicies, Ip sourceIp) {
+    public LoadBalancingRule(LoadBalancer lb, List<LbDestination> destinations, List<LbStickinessPolicy> stickinessPolicies, List<LbHealthCheckPolicy> healthCheckPolicies,
+            Ip sourceIp) {
         this.lb = lb;
         this.destinations = destinations;
         this.stickinessPolicies = stickinessPolicies;
@@ -48,8 +48,8 @@ public class LoadBalancingRule {
         this.sourceIp = sourceIp;
     }
 
-    public LoadBalancingRule(LoadBalancer lb, List<LbDestination> destinations,
-            List<LbStickinessPolicy> stickinessPolicies, List<LbHealthCheckPolicy> healthCheckPolicies, Ip sourceIp, LbSslCert sslCert, String lbProtocol) {
+    public LoadBalancingRule(LoadBalancer lb, List<LbDestination> destinations, List<LbStickinessPolicy> stickinessPolicies, List<LbHealthCheckPolicy> healthCheckPolicies,
+            Ip sourceIp, LbSslCert sslCert, String lbProtocol) {
         this.lb = lb;
         this.destinations = destinations;
         this.stickinessPolicies = stickinessPolicies;
@@ -119,7 +119,6 @@ public class LoadBalancingRule {
         return lb.getNetworkId();
     }
 
-
     public void setDestinations(List<LbDestination> destinations) {
         this.destinations = destinations;
     }
@@ -140,7 +139,7 @@ public class LoadBalancingRule {
         return healthCheckPolicies;
     }
 
-    public LbSslCert getLbSslCert(){
+    public LbSslCert getLbSslCert() {
         return sslCert;
     }
 
@@ -193,13 +192,11 @@ public class LoadBalancingRule {
         private int unhealthThresshold;
         private boolean _revoke;
 
-        public LbHealthCheckPolicy(String pingpath, String description, int responseTime, int healthcheckInterval,
-                int healthcheckThresshold, int unhealthThresshold) {
+        public LbHealthCheckPolicy(String pingpath, String description, int responseTime, int healthcheckInterval, int healthcheckThresshold, int unhealthThresshold) {
             this(pingpath, description, responseTime, healthcheckInterval, healthcheckThresshold, unhealthThresshold, false);
         }
 
-        public LbHealthCheckPolicy(String pingpath, String description, int responseTime, int healthcheckInterval,
-                int healthcheckThresshold, int unhealthThresshold, boolean revoke) {
+        public LbHealthCheckPolicy(String pingpath, String description, int responseTime, int healthcheckInterval, int healthcheckThresshold, int unhealthThresshold, boolean revoke) {
             this.pingpath = pingpath;
             this.description = description;
             this.responseTime = responseTime;
@@ -349,9 +346,8 @@ public class LoadBalancingRule {
         private final String networkId;
         private final String vmName;
 
-        public LbAutoScaleVmProfile(AutoScaleVmProfile profile, String autoScaleUserApiKey,
-                String autoScaleUserSecretKey, String csUrl, String zoneId, String domainId, String serviceOfferingId,
-                String templateId, String vmName, String networkId) {
+        public LbAutoScaleVmProfile(AutoScaleVmProfile profile, String autoScaleUserApiKey, String autoScaleUserSecretKey, String csUrl, String zoneId, String domainId,
+                String serviceOfferingId, String templateId, String vmName, String networkId) {
             this.profile = profile;
             this.autoScaleUserApiKey = autoScaleUserApiKey;
             this.autoScaleUserSecretKey = autoScaleUserSecretKey;
@@ -411,8 +407,7 @@ public class LoadBalancingRule {
         private final LbAutoScaleVmProfile profile;
         private final String currentState;
 
-        public LbAutoScaleVmGroup(AutoScaleVmGroup vmGroup, List<LbAutoScalePolicy> policies,
-                LbAutoScaleVmProfile profile, String currentState) {
+        public LbAutoScaleVmGroup(AutoScaleVmGroup vmGroup, List<LbAutoScalePolicy> policies, LbAutoScaleVmProfile profile, String currentState) {
             this.vmGroup = vmGroup;
             this.policies = policies;
             this.profile = profile;
@@ -439,10 +434,9 @@ public class LoadBalancingRule {
     public static class LbSslCert {
         private String cert;
         private String key;
-        private String password=null;
-        private String chain=null;
+        private String password = null;
+        private String chain = null;
         private boolean revoked;
-
 
         public LbSslCert(String cert, String key, String password, String chain, boolean revoked) {
             this.cert = cert;
@@ -469,7 +463,7 @@ public class LoadBalancingRule {
             return chain;
         }
 
-        public boolean isRevoked(){
+        public boolean isRevoked() {
             return revoked;
         }
     }

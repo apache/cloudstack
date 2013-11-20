@@ -26,22 +26,22 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="host_tags")
+@Table(name = "host_tags")
 public class HostTagVO implements InternalIdentity {
-	@Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
-    
-    @Column(name="host_id")
+
+    @Column(name = "host_id")
     private long hostId;
-    
-    @Column(name="tag")
+
+    @Column(name = "tag")
     private String tag;
-    
+
     protected HostTagVO() {
     }
-    
+
     public HostTagVO(long hostId, String tag) {
         this.hostId = hostId;
         this.tag = tag;

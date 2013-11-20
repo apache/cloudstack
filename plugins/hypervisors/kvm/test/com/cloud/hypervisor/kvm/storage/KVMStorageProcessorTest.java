@@ -29,9 +29,9 @@ public class KVMStorageProcessorTest {
     @Before
     public void setUp() throws ConfigurationException {
     }
+
     @Test
     public void testCloneVolumeFromBaseTemplate() throws Exception {
-
 
     }
 

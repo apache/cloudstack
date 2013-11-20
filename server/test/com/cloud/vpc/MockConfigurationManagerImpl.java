@@ -87,7 +87,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.VirtualMachine.Type;
 
 @Component
-@Local(value = { ConfigurationManager.class, ConfigurationService.class })
+@Local(value = {ConfigurationManager.class, ConfigurationService.class})
 public class MockConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService {
     @Inject
     NetworkOfferingDaoImpl _ntwkOffDao;
@@ -213,7 +213,8 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationService#createVlanAndPublicIpRange(org.apache.cloudstack.api.commands.CreateVlanIpRangeCmd)
      */
     @Override
-    public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, ResourceAllocationException {
+    public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException,
+        ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -394,7 +395,8 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationManager#createPod(long, java.lang.String, long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, boolean)
      */
     @Override
-    public HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp, String allocationState, boolean skipGatewayOverlapCheck) {
+    public HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp, String allocationState,
+        boolean skipGatewayOverlapCheck) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -414,7 +416,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     @Override
     public void checkZoneAccess(Account caller, DataCenter zone) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -423,16 +425,17 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     @Override
     public void checkDiskOfferingAccess(Account caller, DiskOffering dof) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
      * @see com.cloud.configuration.ConfigurationManager#createNetworkOffering(java.lang.String, java.lang.String, com.cloud.network.Networks.TrafficType, java.lang.String, boolean, com.cloud.offering.NetworkOffering.Availability, java.lang.Integer, java.util.Map, boolean, com.cloud.network.Network.GuestType, boolean, java.lang.Long, boolean, java.util.Map, boolean)
      */
     @Override
-    public NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability, Integer networkRate,
-            Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, GuestType type, boolean systemOnly, Long serviceOfferingId, boolean conserveMode,
-            Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent, Map<NetworkOffering.Detail,String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive) {
+    public NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability,
+        Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, GuestType type, boolean systemOnly, Long serviceOfferingId, boolean conserveMode,
+        Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent, Map<NetworkOffering.Detail, String> details,
+        boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -441,8 +444,9 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationManager#createVlanAndPublicIpRange(long, long, long, boolean, java.lang.Long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, com.cloud.user.Account)
      */
     @Override
-    public Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, String vlanId,
-                                           Account vlanOwner, String startIPv6, String endIPv6, String vlanGatewayv6, String vlanCidrv6) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException {
+    public Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, Long podId, String startIP, String endIP,
+        String vlanGateway, String vlanNetmask, String vlanId, Account vlanOwner, String startIPv6, String endIPv6, String vlanGatewayv6, String vlanCidrv6)
+        throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -453,7 +457,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     @Override
     public void createDefaultSystemNetworks(long zoneId) throws ConcurrentOperationException {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -480,7 +484,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     @Override
     public void checkPodCidrSubnets(long zoneId, Long podIdToBeSkipped, String cidr) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -505,24 +509,23 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationManager#createZone(long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.Long, com.cloud.dc.DataCenter.NetworkType, java.lang.String, java.lang.String, boolean, boolean)
      */
     @Override
-    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId, NetworkType zoneType,
-            String allocationState, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled, String ip6Dns1, String ip6Dns2) {
+    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain,
+        Long domainId, NetworkType zoneType, String allocationState, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled, String ip6Dns1,
+        String ip6Dns2) {
         // TODO Auto-generated method stub
         return null;
     }
 
-	@Override
-	public Vlan dedicatePublicIpRange(DedicatePublicIpRangeCmd cmd)
-			throws ResourceAllocationException {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Vlan dedicatePublicIpRange(DedicatePublicIpRangeCmd cmd) throws ResourceAllocationException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public boolean releasePublicIpRange(ReleasePublicIpRangeCmd cmd) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
+    @Override
+    public boolean releasePublicIpRange(ReleasePublicIpRangeCmd cmd) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
 }

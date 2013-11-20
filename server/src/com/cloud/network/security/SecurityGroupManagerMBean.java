@@ -26,31 +26,31 @@ import java.util.Date;
  */
 public interface SecurityGroupManagerMBean {
     void enableUpdateMonitor(boolean enable);
-    
+
     void disableSchedulerForVm(Long vmId);
-    
+
     void enableSchedulerForVm(Long vmId);
-    
+
     Long[] getDisabledVmsForScheduler();
 
     void enableSchedulerForAllVms();
-    
+
     Map<Long, Date> getScheduledTimestamps();
-    
+
     Map<Long, Date> getLastUpdateSentTimestamps();
-    
+
     int getQueueSize();
-    
+
     List<Long> getVmsInQueue();
-    
+
     void scheduleRulesetUpdateForVm(Long vmId);
-    
+
     void tryRulesetUpdateForVmBypassSchedulerVeryDangerous(Long vmId, Long seqno);
 
     void simulateVmStart(Long vmId);
 
     void disableSchedulerEntirelyVeryDangerous(boolean disable);
-    
+
     boolean isSchedulerDisabledEntirely();
 
     void clearSchedulerQueueVeryDangerous();

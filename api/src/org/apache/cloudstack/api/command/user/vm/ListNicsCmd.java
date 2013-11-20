@@ -50,13 +50,11 @@ public class ListNicsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.NIC_ID, type=CommandType.UUID, entityType = NicResponse.class, required = false,
-            description="the ID of the nic to to list IPs")
-            private Long nicId;
+    @Parameter(name = ApiConstants.NIC_ID, type = CommandType.UUID, entityType = NicResponse.class, required = false, description = "the ID of the nic to to list IPs")
+    private Long nicId;
 
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class, required = true,
-            description="the ID of the vm")
-            private Long vmId;
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "the ID of the vm")
+    private Long vmId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -92,7 +90,6 @@ public class ListNicsCmd extends BaseListCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-
     @Override
     public String getCommandName() {
         return s_name;
@@ -103,8 +100,7 @@ public class ListNicsCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, ResourceAllocationException,
-    ConcurrentOperationException, InsufficientCapacityException {
+    public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
 
         try {
             List<? extends Nic> results = _networkService.listNics(this);

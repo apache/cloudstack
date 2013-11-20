@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
-
 import org.apache.cloudstack.api.response.SslCertResponse;
 import com.cloud.exception.*;
 import com.cloud.network.lb.CertService;
@@ -26,31 +25,30 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = "uploadSslCert", description="Upload a certificate to cloudstack", responseObject=SslCertResponse.class)
+@APICommand(name = "uploadSslCert", description = "Upload a certificate to cloudstack", responseObject = SslCertResponse.class)
 public class UploadSslCertCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UploadSslCertCmd.class.getName());
 
     private static final String s_name = "uploadsslcertresponse";
 
-    @Inject CertService _certService;
+    @Inject
+    CertService _certService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name= ApiConstants.CERTIFICATE, type=CommandType.STRING, required=true, description="SSL certificate",length=16384)
+    @Parameter(name = ApiConstants.CERTIFICATE, type = CommandType.STRING, required = true, description = "SSL certificate", length = 16384)
     private String cert;
 
-    @Parameter(name=ApiConstants.PRIVATE_KEY, type=CommandType.STRING, required=true, description="Private key", length=16384)
+    @Parameter(name = ApiConstants.PRIVATE_KEY, type = CommandType.STRING, required = true, description = "Private key", length = 16384)
     private String key;
 
-    @Parameter(name=ApiConstants.CERTIFICATE_CHAIN, type=CommandType.STRING, description="Certificate chain of trust", length=2097152)
+    @Parameter(name = ApiConstants.CERTIFICATE_CHAIN, type = CommandType.STRING, description = "Certificate chain of trust", length = 2097152)
     private String chain;
 
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, description="Password for the private key")
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "Password for the private key")
     private String password;
-
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -72,19 +70,19 @@ public class UploadSslCertCmd extends BaseCmd {
         return password;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
+        NetworkRuleConflictException {
 
-        try{
+        try {
             SslCertResponse response = _certService.uploadSslCert(this);
             setResponseObject(response);
             response.setResponseName(getCommandName());
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
 

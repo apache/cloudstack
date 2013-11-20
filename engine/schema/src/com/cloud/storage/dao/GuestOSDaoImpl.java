@@ -26,7 +26,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = { GuestOSDao.class })
+@Local(value = {GuestOSDao.class})
 public class GuestOSDaoImpl extends GenericDaoBase<GuestOSVO, Long> implements GuestOSDao {
 
     protected final SearchBuilder<GuestOSVO> Search;

@@ -71,9 +71,11 @@ public class ControlClusterStatus {
         public int getErrorStateCount() {
             return errorStateCount;
         }
+
         public int getRegisteredCount() {
             return registeredCount;
         }
+
         public int getActiveCount() {
             return activeCount;
         }

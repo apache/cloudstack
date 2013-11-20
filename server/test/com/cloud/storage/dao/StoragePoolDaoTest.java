@@ -31,7 +31,8 @@ import com.cloud.storage.StoragePoolStatus;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/StoragePoolDaoTestContext.xml")
 public class StoragePoolDaoTest extends TestCase {
-    @Inject PrimaryDataStoreDaoImpl dao;
+    @Inject
+    PrimaryDataStoreDaoImpl dao;
 
     @Test
     public void testCountByStatus() {

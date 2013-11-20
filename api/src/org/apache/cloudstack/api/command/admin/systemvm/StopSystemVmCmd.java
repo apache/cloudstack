@@ -34,7 +34,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "stopSystemVm", description="Stops a system VM.", responseObject=SystemVmResponse.class)
+@APICommand(name = "stopSystemVm", description = "Stops a system VM.", responseObject = SystemVmResponse.class)
 public class StopSystemVmCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StopSystemVmCmd.class.getName());
 
@@ -44,11 +44,10 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=SystemVmResponse.class,
-            required=true, description="The ID of the system virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SystemVmResponse.class, required = true, description = "The ID of the system virtual machine")
     private Long id;
 
-    @Parameter(name=ApiConstants.FORCED, type=CommandType.BOOLEAN, required=false, description="Force stop the VM.  The caller knows the VM is stopped.")
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM.  The caller knows the VM is stopped.")
     private Boolean forced;
 
     /////////////////////////////////////////////////////
@@ -81,17 +80,16 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
     @Override
     public String getEventType() {
         VirtualMachine.Type type = _mgr.findSystemVMTypeById(getId());
-        if(type == VirtualMachine.Type.ConsoleProxy){
+        if (type == VirtualMachine.Type.ConsoleProxy) {
             return EventTypes.EVENT_PROXY_STOP;
-        }
-        else{
+        } else {
             return EventTypes.EVENT_SSVM_STOP;
         }
     }
 
     @Override
     public String getEventDescription() {
-        return  "stopping system vm: " + getId();
+        return "stopping system vm: " + getId();
     }
 
     @Override
@@ -110,7 +108,7 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ConcurrentOperationException {
-        CallContext.current().setEventDetails("Vm Id: "+getId());
+        CallContext.current().setEventDetails("Vm Id: " + getId());
         VirtualMachine result = _mgr.stopSystemVM(this);
         if (result != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(result);

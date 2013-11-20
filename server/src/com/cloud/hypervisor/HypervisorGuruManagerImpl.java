@@ -39,18 +39,19 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.ManagerBase;
 
 @Component
-@Local(value = { HypervisorGuruManager.class } )
+@Local(value = {HypervisorGuruManager.class})
 public class HypervisorGuruManagerImpl extends ManagerBase implements HypervisorGuruManager {
     public static final Logger s_logger = Logger.getLogger(HypervisorGuruManagerImpl.class.getName());
 
-    @Inject HostDao _hostDao;
+    @Inject
+    HostDao _hostDao;
 
     List<HypervisorGuru> _hvGuruList;
     Map<HypervisorType, HypervisorGuru> _hvGurus = new ConcurrentHashMap<HypervisorType, HypervisorGuru>();
 
     @PostConstruct
     public void init() {
-        for(HypervisorGuru guru : _hvGuruList) {
+        for (HypervisorGuru guru : _hvGuruList) {
             _hvGurus.put(guru.getHypervisorType(), guru);
         }
     }
@@ -63,9 +64,9 @@ public class HypervisorGuruManagerImpl extends ManagerBase implements Hypervisor
 
         HypervisorGuru result = _hvGurus.get(hypervisorType);
 
-        if ( result == null ) {
-            for ( HypervisorGuru guru : _hvGuruList ) {
-                if ( guru.getHypervisorType() == hypervisorType ) {
+        if (result == null) {
+            for (HypervisorGuru guru : _hvGuruList) {
+                if (guru.getHypervisorType() == hypervisorType) {
                     _hvGurus.put(hypervisorType, guru);
                     result = guru;
                     break;
@@ -78,7 +79,7 @@ public class HypervisorGuruManagerImpl extends ManagerBase implements Hypervisor
 
     @Override
     public long getGuruProcessedCommandTargetHost(long hostId, Command cmd) {
-        for(HypervisorGuru guru : _hvGuruList) {
+        for (HypervisorGuru guru : _hvGuruList) {
             Pair<Boolean, Long> result = guru.getCommandHostDelegation(hostId, cmd);
             if (result.first()) {
                 return result.second();

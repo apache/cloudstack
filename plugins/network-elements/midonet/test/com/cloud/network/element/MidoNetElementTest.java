@@ -38,7 +38,6 @@ import sun.security.util.Resources_es;
 
 import java.util.*;
 
-
 public class MidoNetElementTest extends TestCase {
 
     /*
@@ -53,8 +52,7 @@ public class MidoNetElementTest extends TestCase {
         DhcpHost mockDhcpHost = mock(DhcpHost.class);
 
         //mockHostCollection
-        ResourceCollection<DhcpHost> hosts =
-                new ResourceCollection<DhcpHost>(new ArrayList<DhcpHost>());
+        ResourceCollection<DhcpHost> hosts = new ResourceCollection<DhcpHost>(new ArrayList<DhcpHost>());
 
         //mockDhcpSubnet
         DhcpSubnet mockSub = mock(DhcpSubnet.class);
@@ -97,8 +95,7 @@ public class MidoNetElementTest extends TestCase {
 
         //mockVm
         @SuppressWarnings("unchecked")
-        VirtualMachineProfile mockVm =
-                (VirtualMachineProfile)mock(VirtualMachineProfile.class);
+        VirtualMachineProfile mockVm = (VirtualMachineProfile)mock(VirtualMachineProfile.class);
         when(mockVm.getType()).thenReturn(VirtualMachine.Type.User);
 
         MidoNetElement elem = new MidoNetElement();
@@ -147,8 +144,7 @@ public class MidoNetElementTest extends TestCase {
         //mockPort
         Port mockPort = mock(Port.class);
 
-        ResourceCollection<Port> peerPorts =
-            new ResourceCollection<Port>(new ArrayList<Port>());
+        ResourceCollection<Port> peerPorts = new ResourceCollection<Port>(new ArrayList<Port>());
 
         peerPorts.add(mockPort);
 

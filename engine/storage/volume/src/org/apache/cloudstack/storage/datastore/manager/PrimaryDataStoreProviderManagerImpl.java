@@ -61,8 +61,7 @@ public class PrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProv
         }
         String providerName = dataStoreVO.getStorageProviderName();
         DataStoreProvider provider = providerManager.getDataStoreProvider(providerName);
-        PrimaryDataStoreImpl dataStore = PrimaryDataStoreImpl.createDataStore(dataStoreVO,
-                driverMaps.get(provider.getName()), provider);
+        PrimaryDataStoreImpl dataStore = PrimaryDataStoreImpl.createDataStore(dataStoreVO, driverMaps.get(provider.getName()), provider);
         return dataStore;
     }
 

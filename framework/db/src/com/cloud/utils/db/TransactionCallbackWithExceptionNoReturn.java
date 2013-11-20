@@ -29,4 +29,3 @@ public abstract class TransactionCallbackWithExceptionNoReturn<E extends Throwab
     public abstract void doInTransactionWithoutResult(TransactionStatus status) throws E;
 
 }
-
