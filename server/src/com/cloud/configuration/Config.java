@@ -413,9 +413,11 @@ public enum Config {
     ExecuteInSequenceNetworkElementCommands("Advanced", NetworkOrchestrationService.class, Boolean.class, "execute.in.sequence.network.element.commands", "false", "If set to true, DhcpEntryCommand, SavePasswordCommand, UserDataCommand, VmDataCommand will be synchronized on the agent side." +
             " If set to false, these commands become asynchronous. Default value is false.", null),
 
-	UCSSyncBladeInterval("Advanced", ManagementServer.class, Integer.class, "ucs.sync.blade.interval", "3600", "the interval cloudstack sync with UCS manager for available blades in case user remove blades from chassis without notifying CloudStack", null);
+	UCSSyncBladeInterval("Advanced", ManagementServer.class, Integer.class, "ucs.sync.blade.interval", "3600", "the interval cloudstack sync with UCS manager for available blades in case user remove blades from chassis without notifying CloudStack", null),
 
-	private final String _category;
+    ManagementServerVendor("Advanced", ManagementServer.class, String.class, "mgt.server.vendor", "ACS", "the vendor of management server", null);
+
+    private final String _category;
 	private final Class<?> _componentClass;
 	private final Class<?> _type;
     private final String _name;
