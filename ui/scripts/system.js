@@ -7390,325 +7390,341 @@
                             return listView;
                         },
                         virtualRouters: function() {
-                            var listView = $.extend(true, {}, cloudStack.sections.system.subsections.virtualRouters.listView, {
-                                
-                            	//???
+                            var listView = $.extend(true, {}, cloudStack.sections.system.subsections.virtualRouters.listView, {                            
                             	actions: {
-                            		upgradeRouterToUseNewerTemplate: {
-                                    	isHeader: true,
-                                    	
-                                        label: 'Upgrade Router to Use Newer Template',
+                            	    upgradeRouterToUseNewerTemplate: {
+                            	        isHeader: true,
 
-                                        messages: {                                           
-                                            notification: function(args) {
-                                                return 'Upgrade Router to Use Newer Template';
-                                            }
-                                        },
+                            	        label: 'Upgrade Router to Use Newer Template',
 
-                                        createForm: {
-                                            title: 'Upgrade Router to Use Newer Template',
-                                            fields: {
-                                            	 zoneid: {
-                                                     label: 'label.zone',                                            
-                                                     select: function(args) {
-                                                    	 var items = [{ id: '', description: '' }];			
-         												 $.ajax({
-         												     url: createURL('listZones'),
-         												     data: {
-         												         listAll: true
-         												     },
-         												     success: function(json) {         												    										    	
-         												    	 var objs = json.listzonesresponse.zone;
-         												    	 if (objs != null) {
-         												    		 for (var i = 0; i < objs.length; i++) {
-         												    			 items.push({ id: objs[i].id, description: objs[i].name });
-         												    		 }
-         												    	 }												    	
-         												         args.response.success({
-         												             data: items
-         												         });
-         												     }
-         												});
-         											 }
-                                                 },  
-                                                 podid: {
-                                                     label: 'Pod',
-                                                     dependsOn: 'zoneid',
-                                                     select: function (args) {                                                       	 
-                                                    	 var items = [{ id: '', description: '' }];	
-                                                    	 if (args.zoneid.length > 0) {
-                                                    		 $.ajax({
-                                                                 url: createURL('listPods'),
-                                                                 data: {
-                                                                	zoneid:  args.zoneid
-                                                                 },
-                                                                 success: function (json) {   				    	
-              												    	 var objs = json.listpodsresponse.pod;
-              												    	 if (objs != null) {
-              												    		 for (var i = 0; i < objs.length; i++) {
-              												    			 items.push({ id: objs[i].id, description: objs[i].name });
-              												    		 }
-              												    	 }												    	
-              												         args.response.success({
-              												             data: items
-              												         });                         
-                                                                 }
-                                                             });
-                                                    	 } else {
-                                                    		 args.response.success({
-      												             data: items
-      												         });   
-                                                    	 }         
-                                                     }
-                                                 },                         
-                                                 clusterid: {
-                                                     label: 'label.cluster',    
-                                                     dependsOn: 'podid',
-                                                     select: function(args) {   
-                                                    	 var items = [{ id: '', description: '' }];	
-                                                    	 if (args.podid.length > 0) {
-                                                    		 $.ajax({
-                                                                 url: createURL('listClusters'),
-                                                                 data: {
-                                                                	podid: args.podid 
-                                                                 },
-                                                                 success: function(json) {
-                                                                	 var objs = json.listclustersresponse.cluster;
-              												    	 if (objs != null) {
-              												    		 for (var i = 0; i < objs.length; i++) {
-              												    			 items.push({ id: objs[i].id, description: objs[i].name });
-              												    		 }
-              												    	 }												    	
-              												         args.response.success({
-              												             data: items
-              												         });    
-                                                                 }
-                                                             });
-                                                    	 } else {
-                                                    		 args.response.success({
-      												             data: items
-      												         });   
-                                                    	 }                                                         
-                                                     }
-                                                 }   
-                                            }
-                                        },
+                            	        messages: {
+                            	            notification: function (args) {
+                            	                return 'Upgrade Router to Use Newer Template';
+                            	            }
+                            	        },
 
-                                        action: function(args) {                                            
-                                        	var data = {};                                        	
-                                        	if (args.data.clusterid.length > 0) {
-                                        		$.extend(data, {
-                                        			clusterid: args.data.clusterid
-                                        		});
-                                        	} else if (args.data.podid.length > 0) {
-                                        		$.extend(data, {
-                                        			podid: args.data.podid
-                                        		});                                        		
-                                        	} else if (args.data.zoneid.length > 0) {
-                                        		$.extend(data, {
-                                        			zoneid: args.data.zoneid
-                                        		});                                        		
-                                        	} else {                                        		
-                                        		args.response.error('Please specify a zone, a pod or a cluster.' );
-                                        		return;
-                                        	}  
-                                        	
-                                            $.ajax({
-                                                url: createURL('upgradeRouterTemplate'),
-                                                data: data,
-                                                success: function(json) {                                                  	
-                                                	//example
-                                                	/*
-                                                	json = {
-                                                		    "upgraderoutertemplateresponse": {
-                                                		        "count": 3,
-                                                		        "asyncjobs": [
-                                                		            {
-                                                		                "jobid": "2d51f1f9-ea39-4871-9512-431f4a65a5f2"
-                                                		            },
-                                                		            {
-                                                		                "jobid": "d66fa7ef-c91f-425f-b820-2f8ff2a0da8c"
-                                                		            },
-                                                		            {
-                                                		                "jobid": "850a3cfd-c265-48f1-880a-f001481fc7f7"
-                                                		            }
-                                                		        ]
-                                                		    }
-                                                		};
-                                                	*/
-                                                	
-                                                	var jobs = json.upgraderoutertemplateresponse.asyncjobs;
-                                                	if (jobs != undefined) {
-                                                		for (var i = 0; i < jobs.length; i++) {   
-                                                			var jid = jobs[i].jobid;   
-                                                            args.response.success({
-                                                                _custom: {
-                                                                    jobId: jid
-                                                                }
-                                                            });   
-                                                            
-                                                            //example begins
-                                                            /*
-                                                            {
-                                                                "queryasyncjobresultresponse": {
-                                                                    "accountid": "ce5820a8-5099-11e3-80db-3c970e739c3e",
-                                                                    "userid": "ce58353e-5099-11e3-80db-3c970e739c3e",
-                                                                    "cmd": "org.apache.cloudstack.api.command.admin.router.RebootRouterCmd",
-                                                                    "jobstatus": 2,
-                                                                    "jobprocstatus": 0,
-                                                                    "jobresultcode": 530,
-                                                                    "jobresulttype": "object",
-                                                                    "jobresult": {
-                                                                        "errorcode": 530,
-                                                                        "errortext": "Resource [DataCenter:1] is unreachable: Unable to reboot domR, it is not in right state Stopped"
-                                                                    },
-                                                                    "created": "2013-11-19T11:41:40-0800",
-                                                                    "jobid": "2d51f1f9-ea39-4871-9512-431f4a65a5f2"
-                                                                }
-                                                            }                                                            
-                                                            {
-                                                                "queryasyncjobresultresponse": {
-                                                                    "accountid": "9b0ea3b4-a699-431c-932b-570388ef7b86",
-                                                                    "userid": "ce58353e-5099-11e3-80db-3c970e739c3e",
-                                                                    "cmd": "org.apache.cloudstack.api.command.admin.router.RebootRouterCmd",
-                                                                    "jobstatus": 0,
-                                                                    "jobprocstatus": 0,
-                                                                    "jobresultcode": 0,
-                                                                    "jobinstancetype": "DomainRouter",
-                                                                    "jobinstanceid": "d6e625ea-76f9-4c35-9f89-0998a04a3b9c",
-                                                                    "created": "2013-11-19T11:41:40-0800",
-                                                                    "jobid": "d66fa7ef-c91f-425f-b820-2f8ff2a0da8c"
-                                                                }
-                                                            }                                                            
-                                                            {
-                                                                "queryasyncjobresultresponse": {
-                                                                    "accountid": "6b5334a2-1c0e-46e0-b4d9-524698549f08",
-                                                                    "userid": "ce58353e-5099-11e3-80db-3c970e739c3e",
-                                                                    "cmd": "org.apache.cloudstack.api.command.admin.router.RebootRouterCmd",
-                                                                    "jobstatus": 2,
-                                                                    "jobprocstatus": 0,
-                                                                    "jobresultcode": 530,
-                                                                    "jobresulttype": "object",
-                                                                    "jobresult": {
-                                                                        "errorcode": 530,
-                                                                        "errortext": "Resource [DataCenter:1] is unreachable: Unable to reboot domR, it is not in right state Starting"
-                                                                    },
-                                                                    "created": "2013-11-19T11:41:40-0800",
-                                                                    "jobid": "850a3cfd-c265-48f1-880a-f001481fc7f7"
-                                                                }
-                                                            }
-                                                            
-                                                            
-                                                            {
-                                                                "queryasyncjobresultresponse": {
-                                                                    "accountid": "9b0ea3b4-a699-431c-932b-570388ef7b86",
-                                                                    "userid": "ce58353e-5099-11e3-80db-3c970e739c3e",
-                                                                    "cmd": "org.apache.cloudstack.api.command.admin.router.RebootRouterCmd",
-                                                                    "jobstatus": 0,
-                                                                    "jobprocstatus": 0,
-                                                                    "jobresultcode": 0,
-                                                                    "jobinstancetype": "DomainRouter",
-                                                                    "jobinstanceid": "d6e625ea-76f9-4c35-9f89-0998a04a3b9c",
-                                                                    "created": "2013-11-19T11:41:40-0800",
-                                                                    "jobid": "d66fa7ef-c91f-425f-b820-2f8ff2a0da8c"
-                                                                }
-                                                            }
-                                                            {
-                                                                "queryasyncjobresultresponse": {
-                                                                    "accountid": "9b0ea3b4-a699-431c-932b-570388ef7b86",
-                                                                    "userid": "ce58353e-5099-11e3-80db-3c970e739c3e",
-                                                                    "cmd": "org.apache.cloudstack.api.command.admin.router.RebootRouterCmd",
-                                                                    "jobstatus": 0,
-                                                                    "jobprocstatus": 0,
-                                                                    "jobresultcode": 0,
-                                                                    "jobinstancetype": "DomainRouter",
-                                                                    "jobinstanceid": "d6e625ea-76f9-4c35-9f89-0998a04a3b9c",
-                                                                    "created": "2013-11-19T11:41:40-0800",
-                                                                    "jobid": "d66fa7ef-c91f-425f-b820-2f8ff2a0da8c"
-                                                                }
-                                                            }
-                                                            {
-                                                                "queryasyncjobresultresponse": {
-                                                                    "accountid": "9b0ea3b4-a699-431c-932b-570388ef7b86",
-                                                                    "userid": "ce58353e-5099-11e3-80db-3c970e739c3e",
-                                                                    "cmd": "org.apache.cloudstack.api.command.admin.router.RebootRouterCmd",
-                                                                    "jobstatus": 1,
-                                                                    "jobprocstatus": 0,
-                                                                    "jobresultcode": 0,
-                                                                    "jobresulttype": "object",
-                                                                    "jobresult": {
-                                                                        "router": {
-                                                                            "id": "d6e625ea-76f9-4c35-9f89-0998a04a3b9c",
-                                                                            "zoneid": "3bfdd7d1-134a-4d75-8621-0ccfc8641660",
-                                                                            "zonename": "jw-adv",
-                                                                            "dns1": "8.8.8.8",
-                                                                            "gateway": "10.223.67.1",
-                                                                            "name": "r-6-VM",
-                                                                            "linklocalip": "169.254.2.29",
-                                                                            "linklocalmacaddress": "0e:00:a9:fe:02:1d",
-                                                                            "linklocalnetmask": "255.255.0.0",
-                                                                            "linklocalnetworkid": "4a02a05f-1312-484a-a82b-246a86ed6949",
-                                                                            "publicip": "10.223.67.6",
-                                                                            "publicmacaddress": "06:8d:22:00:00:18",
-                                                                            "publicnetmask": "255.255.255.0",
-                                                                            "publicnetworkid": "e7056c3c-2c7f-4e84-909e-af288ae170e9",
-                                                                            "templateid": "cd70f70a-5099-11e3-80db-3c970e739c3e",
-                                                                            "created": "2013-11-19T11:36:04-0800",
-                                                                            "state": "Running",
-                                                                            "account": "aaa_admin",
-                                                                            "domainid": "b95a5b02-e45d-4971-b0d8-d1620f7bf44e",
-                                                                            "domain": "aaa",
-                                                                            "serviceofferingid": "7dd7687c-01f0-4a14-846e-8e46067a8ff9",
-                                                                            "serviceofferingname": "System Offering For Software Router",
-                                                                            "isredundantrouter": false,
-                                                                            "redundantstate": "UNKNOWN",
-                                                                            "version": "3.0",
-                                                                            "role": "VIRTUAL_ROUTER",
-                                                                            "nic": [
-                                                                                {
-                                                                                    "id": "d41bf67e-1d58-4ec9-bf61-41903140cc53",
-                                                                                    "networkid": "e7056c3c-2c7f-4e84-909e-af288ae170e9",
-                                                                                    "netmask": "255.255.255.0",
-                                                                                    "gateway": "10.223.67.1",
-                                                                                    "ipaddress": "10.223.67.6",
-                                                                                    "isolationuri": "vlan://159",
-                                                                                    "broadcasturi": "vlan://159",
-                                                                                    "traffictype": "Public",
-                                                                                    "isdefault": true,
-                                                                                    "macaddress": "06:8d:22:00:00:18"
-                                                                                },
-                                                                                {
-                                                                                    "id": "a6d1f6ac-fc45-474e-b372-3571e639fa8e",
-                                                                                    "networkid": "4a02a05f-1312-484a-a82b-246a86ed6949",
-                                                                                    "netmask": "255.255.0.0",
-                                                                                    "gateway": "169.254.0.1",
-                                                                                    "ipaddress": "169.254.2.29",
-                                                                                    "traffictype": "Control",
-                                                                                    "isdefault": false,
-                                                                                    "macaddress": "0e:00:a9:fe:02:1d"
-                                                                                }
-                                                                            ],
-                                                                            "requiresupgrade": true,
-                                                                            "jobid": "d66fa7ef-c91f-425f-b820-2f8ff2a0da8c",
-                                                                            "jobstatus": 0
-                                                                        }
-                                                                    },
-                                                                    "created": "2013-11-19T11:41:40-0800",
-                                                                    "jobid": "d66fa7ef-c91f-425f-b820-2f8ff2a0da8c"
-                                                                }
-                                                            }
-                                                            */
-                                                            //example ends                                                            
-                                                		}
-                                                	}                                                	
-                                                }
-                                            });
-                                        },
-                                        notification: {
-                                            poll: pollAsyncJobResult
-                                        }
-                                    }
-                                },                            	
+                            	        createForm: {
+                            	            title: 'Upgrade Router to Use Newer Template',
+                            	            fields: {
+                            	                zoneid: {
+                            	                    label: 'label.zone',
+                            	                    select: function (args) {
+                            	                        var items = [{
+                            	                            id: '',
+                            	                            description: ''
+                            	                        }];
+                            	                        $.ajax({
+                            	                            url: createURL('listZones'),
+                            	                            data: {
+                            	                                listAll: true
+                            	                            },
+                            	                            success: function (json) {
+                            	                                var objs = json.listzonesresponse.zone;
+                            	                                if (objs != null) {
+                            	                                    for (var i = 0; i < objs.length; i++) {
+                            	                                        items.push({
+                            	                                            id: objs[i].id,
+                            	                                            description: objs[i].name
+                            	                                        });
+                            	                                    }
+                            	                                }
+                            	                                args.response.success({
+                            	                                    data: items
+                            	                                });
+                            	                            }
+                            	                        });
+                            	                    }
+                            	                },
+                            	                podid: {
+                            	                    label: 'Pod',
+                            	                    dependsOn: 'zoneid',
+                            	                    select: function (args) {
+                            	                        var items = [{
+                            	                            id: '',
+                            	                            description: ''
+                            	                        }];
+                            	                        if (args.zoneid.length > 0) {
+                            	                            $.ajax({
+                            	                                url: createURL('listPods'),
+                            	                                data: {
+                            	                                    zoneid: args.zoneid
+                            	                                },
+                            	                                success: function (json) {
+                            	                                    var objs = json.listpodsresponse.pod;
+                            	                                    if (objs != null) {
+                            	                                        for (var i = 0; i < objs.length; i++) {
+                            	                                            items.push({
+                            	                                                id: objs[i].id,
+                            	                                                description: objs[i].name
+                            	                                            });
+                            	                                        }
+                            	                                    }
+                            	                                    args.response.success({
+                            	                                        data: items
+                            	                                    });
+                            	                                }
+                            	                            });
+                            	                        } else {
+                            	                            args.response.success({
+                            	                                data: items
+                            	                            });
+                            	                        }
+                            	                    }
+                            	                },
+                            	                clusterid: {
+                            	                    label: 'label.cluster',
+                            	                    dependsOn: 'podid',
+                            	                    select: function (args) {
+                            	                        var items = [{
+                            	                            id: '',
+                            	                            description: ''
+                            	                        }];
+                            	                        if (args.podid.length > 0) {
+                            	                            $.ajax({
+                            	                                url: createURL('listClusters'),
+                            	                                data: {
+                            	                                    podid: args.podid
+                            	                                },
+                            	                                success: function (json) {
+                            	                                    var objs = json.listclustersresponse.cluster;
+                            	                                    if (objs != null) {
+                            	                                        for (var i = 0; i < objs.length; i++) {
+                            	                                            items.push({
+                            	                                                id: objs[i].id,
+                            	                                                description: objs[i].name
+                            	                                            });
+                            	                                        }
+                            	                                    }
+                            	                                    args.response.success({
+                            	                                        data: items
+                            	                                    });
+                            	                                }
+                            	                            });
+                            	                        } else {
+                            	                            args.response.success({
+                            	                                data: items
+                            	                            });
+                            	                        }
+                            	                    }
+                            	                }
+                            	            }
+                            	        },
+
+                            	        action: function (args) {
+                            	            var data = {};
+                            	            if (args.data.clusterid.length > 0) {
+                            	                $.extend(data, {
+                            	                    clusterid: args.data.clusterid
+                            	                });
+                            	            } else if (args.data.podid.length > 0) {
+                            	                $.extend(data, {
+                            	                    podid: args.data.podid
+                            	                });
+                            	            } else if (args.data.zoneid.length > 0) {
+                            	                $.extend(data, {
+                            	                    zoneid: args.data.zoneid
+                            	                });
+                            	            } else {
+                            	                args.response.error('Please specify a zone, a pod or a cluster.');
+                            	                return;
+                            	            }
+
+                            	            $.ajax({
+                            	                url: createURL('upgradeRouterTemplate'),
+                            	                data: data,
+                            	                success: function (json) {
+                            	                    //example
+                            	                    /*
+                            	                                                	json = {
+                            	                                                		    "upgraderoutertemplateresponse": {
+                            	                                                		        "count": 3,
+                            	                                                		        "asyncjobs": [
+                            	                                                		            {
+                            	                                                		                "jobid": "2d51f1f9-ea39-4871-9512-431f4a65a5f2"
+                            	                                                		            },
+                            	                                                		            {
+                            	                                                		                "jobid": "d66fa7ef-c91f-425f-b820-2f8ff2a0da8c"
+                            	                                                		            },
+                            	                                                		            {
+                            	                                                		                "jobid": "850a3cfd-c265-48f1-880a-f001481fc7f7"
+                            	                                                		            }
+                            	                                                		        ]
+                            	                                                		    }
+                            	                                                		};
+                            	                                                	*/
+
+                            	                    var jobs = json.upgraderoutertemplateresponse.asyncjobs;
+                            	                    if (jobs != undefined) {
+                            	                        for (var i = 0; i < jobs.length; i++) {
+                            	                            var jid = jobs[i].jobid;
+                            	                            args.response.success({
+                            	                                _custom: {
+                            	                                    jobId: jid
+                            	                                }
+                            	                            });
+
+                            	                            //example begins
+                            	                            /*
+                            	                                                            {
+                            	                                                                "queryasyncjobresultresponse": {
+                            	                                                                    "accountid": "ce5820a8-5099-11e3-80db-3c970e739c3e",
+                            	                                                                    "userid": "ce58353e-5099-11e3-80db-3c970e739c3e",
+                            	                                                                    "cmd": "org.apache.cloudstack.api.command.admin.router.RebootRouterCmd",
+                            	                                                                    "jobstatus": 2,
+                            	                                                                    "jobprocstatus": 0,
+                            	                                                                    "jobresultcode": 530,
+                            	                                                                    "jobresulttype": "object",
+                            	                                                                    "jobresult": {
+                            	                                                                        "errorcode": 530,
+                            	                                                                        "errortext": "Resource [DataCenter:1] is unreachable: Unable to reboot domR, it is not in right state Stopped"
+                            	                                                                    },
+                            	                                                                    "created": "2013-11-19T11:41:40-0800",
+                            	                                                                    "jobid": "2d51f1f9-ea39-4871-9512-431f4a65a5f2"
+                            	                                                                }
+                            	                                                            }                                                            
+                            	                                                            {
+                            	                                                                "queryasyncjobresultresponse": {
+                            	                                                                    "accountid": "9b0ea3b4-a699-431c-932b-570388ef7b86",
+                            	                                                                    "userid": "ce58353e-5099-11e3-80db-3c970e739c3e",
+                            	                                                                    "cmd": "org.apache.cloudstack.api.command.admin.router.RebootRouterCmd",
+                            	                                                                    "jobstatus": 0,
+                            	                                                                    "jobprocstatus": 0,
+                            	                                                                    "jobresultcode": 0,
+                            	                                                                    "jobinstancetype": "DomainRouter",
+                            	                                                                    "jobinstanceid": "d6e625ea-76f9-4c35-9f89-0998a04a3b9c",
+                            	                                                                    "created": "2013-11-19T11:41:40-0800",
+                            	                                                                    "jobid": "d66fa7ef-c91f-425f-b820-2f8ff2a0da8c"
+                            	                                                                }
+                            	                                                            }                                                            
+                            	                                                            {
+                            	                                                                "queryasyncjobresultresponse": {
+                            	                                                                    "accountid": "6b5334a2-1c0e-46e0-b4d9-524698549f08",
+                            	                                                                    "userid": "ce58353e-5099-11e3-80db-3c970e739c3e",
+                            	                                                                    "cmd": "org.apache.cloudstack.api.command.admin.router.RebootRouterCmd",
+                            	                                                                    "jobstatus": 2,
+                            	                                                                    "jobprocstatus": 0,
+                            	                                                                    "jobresultcode": 530,
+                            	                                                                    "jobresulttype": "object",
+                            	                                                                    "jobresult": {
+                            	                                                                        "errorcode": 530,
+                            	                                                                        "errortext": "Resource [DataCenter:1] is unreachable: Unable to reboot domR, it is not in right state Starting"
+                            	                                                                    },
+                            	                                                                    "created": "2013-11-19T11:41:40-0800",
+                            	                                                                    "jobid": "850a3cfd-c265-48f1-880a-f001481fc7f7"
+                            	                                                                }
+                            	                                                            }
+                            	                                                            
+                            	                                                            
+                            	                                                            {
+                            	                                                                "queryasyncjobresultresponse": {
+                            	                                                                    "accountid": "9b0ea3b4-a699-431c-932b-570388ef7b86",
+                            	                                                                    "userid": "ce58353e-5099-11e3-80db-3c970e739c3e",
+                            	                                                                    "cmd": "org.apache.cloudstack.api.command.admin.router.RebootRouterCmd",
+                            	                                                                    "jobstatus": 0,
+                            	                                                                    "jobprocstatus": 0,
+                            	                                                                    "jobresultcode": 0,
+                            	                                                                    "jobinstancetype": "DomainRouter",
+                            	                                                                    "jobinstanceid": "d6e625ea-76f9-4c35-9f89-0998a04a3b9c",
+                            	                                                                    "created": "2013-11-19T11:41:40-0800",
+                            	                                                                    "jobid": "d66fa7ef-c91f-425f-b820-2f8ff2a0da8c"
+                            	                                                                }
+                            	                                                            }
+                            	                                                            {
+                            	                                                                "queryasyncjobresultresponse": {
+                            	                                                                    "accountid": "9b0ea3b4-a699-431c-932b-570388ef7b86",
+                            	                                                                    "userid": "ce58353e-5099-11e3-80db-3c970e739c3e",
+                            	                                                                    "cmd": "org.apache.cloudstack.api.command.admin.router.RebootRouterCmd",
+                            	                                                                    "jobstatus": 0,
+                            	                                                                    "jobprocstatus": 0,
+                            	                                                                    "jobresultcode": 0,
+                            	                                                                    "jobinstancetype": "DomainRouter",
+                            	                                                                    "jobinstanceid": "d6e625ea-76f9-4c35-9f89-0998a04a3b9c",
+                            	                                                                    "created": "2013-11-19T11:41:40-0800",
+                            	                                                                    "jobid": "d66fa7ef-c91f-425f-b820-2f8ff2a0da8c"
+                            	                                                                }
+                            	                                                            }
+                            	                                                            {
+                            	                                                                "queryasyncjobresultresponse": {
+                            	                                                                    "accountid": "9b0ea3b4-a699-431c-932b-570388ef7b86",
+                            	                                                                    "userid": "ce58353e-5099-11e3-80db-3c970e739c3e",
+                            	                                                                    "cmd": "org.apache.cloudstack.api.command.admin.router.RebootRouterCmd",
+                            	                                                                    "jobstatus": 1,
+                            	                                                                    "jobprocstatus": 0,
+                            	                                                                    "jobresultcode": 0,
+                            	                                                                    "jobresulttype": "object",
+                            	                                                                    "jobresult": {
+                            	                                                                        "router": {
+                            	                                                                            "id": "d6e625ea-76f9-4c35-9f89-0998a04a3b9c",
+                            	                                                                            "zoneid": "3bfdd7d1-134a-4d75-8621-0ccfc8641660",
+                            	                                                                            "zonename": "jw-adv",
+                            	                                                                            "dns1": "8.8.8.8",
+                            	                                                                            "gateway": "10.223.67.1",
+                            	                                                                            "name": "r-6-VM",
+                            	                                                                            "linklocalip": "169.254.2.29",
+                            	                                                                            "linklocalmacaddress": "0e:00:a9:fe:02:1d",
+                            	                                                                            "linklocalnetmask": "255.255.0.0",
+                            	                                                                            "linklocalnetworkid": "4a02a05f-1312-484a-a82b-246a86ed6949",
+                            	                                                                            "publicip": "10.223.67.6",
+                            	                                                                            "publicmacaddress": "06:8d:22:00:00:18",
+                            	                                                                            "publicnetmask": "255.255.255.0",
+                            	                                                                            "publicnetworkid": "e7056c3c-2c7f-4e84-909e-af288ae170e9",
+                            	                                                                            "templateid": "cd70f70a-5099-11e3-80db-3c970e739c3e",
+                            	                                                                            "created": "2013-11-19T11:36:04-0800",
+                            	                                                                            "state": "Running",
+                            	                                                                            "account": "aaa_admin",
+                            	                                                                            "domainid": "b95a5b02-e45d-4971-b0d8-d1620f7bf44e",
+                            	                                                                            "domain": "aaa",
+                            	                                                                            "serviceofferingid": "7dd7687c-01f0-4a14-846e-8e46067a8ff9",
+                            	                                                                            "serviceofferingname": "System Offering For Software Router",
+                            	                                                                            "isredundantrouter": false,
+                            	                                                                            "redundantstate": "UNKNOWN",
+                            	                                                                            "version": "3.0",
+                            	                                                                            "role": "VIRTUAL_ROUTER",
+                            	                                                                            "nic": [
+                            	                                                                                {
+                            	                                                                                    "id": "d41bf67e-1d58-4ec9-bf61-41903140cc53",
+                            	                                                                                    "networkid": "e7056c3c-2c7f-4e84-909e-af288ae170e9",
+                            	                                                                                    "netmask": "255.255.255.0",
+                            	                                                                                    "gateway": "10.223.67.1",
+                            	                                                                                    "ipaddress": "10.223.67.6",
+                            	                                                                                    "isolationuri": "vlan://159",
+                            	                                                                                    "broadcasturi": "vlan://159",
+                            	                                                                                    "traffictype": "Public",
+                            	                                                                                    "isdefault": true,
+                            	                                                                                    "macaddress": "06:8d:22:00:00:18"
+                            	                                                                                },
+                            	                                                                                {
+                            	                                                                                    "id": "a6d1f6ac-fc45-474e-b372-3571e639fa8e",
+                            	                                                                                    "networkid": "4a02a05f-1312-484a-a82b-246a86ed6949",
+                            	                                                                                    "netmask": "255.255.0.0",
+                            	                                                                                    "gateway": "169.254.0.1",
+                            	                                                                                    "ipaddress": "169.254.2.29",
+                            	                                                                                    "traffictype": "Control",
+                            	                                                                                    "isdefault": false,
+                            	                                                                                    "macaddress": "0e:00:a9:fe:02:1d"
+                            	                                                                                }
+                            	                                                                            ],
+                            	                                                                            "requiresupgrade": true,
+                            	                                                                            "jobid": "d66fa7ef-c91f-425f-b820-2f8ff2a0da8c",
+                            	                                                                            "jobstatus": 0
+                            	                                                                        }
+                            	                                                                    },
+                            	                                                                    "created": "2013-11-19T11:41:40-0800",
+                            	                                                                    "jobid": "d66fa7ef-c91f-425f-b820-2f8ff2a0da8c"
+                            	                                                                }
+                            	                                                            }
+                            	                                                            */
+                            	                            //example ends                                                            
+                            	                        }
+                            	                    }
+                            	                }
+                            	            });
+                            	        },
+                            	        notification: {
+                            	            poll: pollAsyncJobResult
+                            	        }
+                            	    }
+                            	},                            	                                          	
                             	
                             	dataProvider: function(args) {   
                                 	var data = {};
@@ -8148,7 +8164,40 @@
                                     poll: pollAsyncJobResult
                                 }
                             },
-
+                            
+                            upgradeRouterToUseNewerTemplate: {                                
+                                label: 'Upgrade Router to Use Newer Template',
+                                messages: {
+                                	confirm: function(args) {
+                                        return 'Please confirm that you want to upgrade router to use newer template';
+                                    },
+                                    notification: function (args) {
+                                        return 'Upgrade Router to Use Newer Template';
+                                    }
+                                },                                
+                                action: function (args) {     
+                                    $.ajax({
+                                        url: createURL('upgradeRouterTemplate'),
+                                        data: {
+                                        	id: args.context.routers[0].id
+                                        },
+                                        success: function (json) {                                        	
+                                            var jobs = json.upgraderoutertemplateresponse.asyncjobs;
+                                            if (jobs != undefined) {
+                                            	args.response.success({
+                                                    _custom: {
+                                                        jobId: jobs[0].jobid
+                                                    }
+                                                });   
+                                            }
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            }, 
+                            
                             'remove': {
                                 label: 'label.destroy.router',
                                 messages: {
@@ -17491,6 +17540,8 @@
         var jsonObj = args.context.item;
         var allowedActions = [];
 
+        allowedActions.push('upgradeRouterToUseNewerTemplate');
+        
         if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
 
