@@ -96,8 +96,13 @@ public interface AccountManager extends AccountService {
 	void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc,
 			Long domainId, boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
 
+
     void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> sc,
             Long domainId, boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
+
+    void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledEntity> sc,
+            Long domainId, boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria, List<Long> grantedIds,
+            List<Long> revokedIds);
 
 	void buildACLSearchParameters(Account caller, Long id,
 			String accountName, Long projectId, List<Long> permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation);

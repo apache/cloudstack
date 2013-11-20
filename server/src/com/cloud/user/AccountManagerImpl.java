@@ -2468,6 +2468,29 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> sc,
             Long domainId, boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria) {
+        if (listProjectResourcesCriteria != null) {
+            sc.setParameters("accountType", Account.ACCOUNT_TYPE_PROJECT);
+        }
+
+        if (!permittedAccounts.isEmpty()) {
+            sc.setParameters("accountIdIN", permittedAccounts.toArray());
+        } else if (domainId != null) {
+            DomainVO domain = _domainDao.findById(domainId);
+            if (isRecursive) {
+                sc.setParameters("domainPath", domain.getPath() + "%");
+            } else {
+                sc.setParameters("domainId", domainId);
+            }
+        }
+
+    }
+
+    @Override
+    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
+            ListProjectResourcesCriteria listProjectResourcesCriteria, List<Long> grantedIds, List<Long> revokedIds) {
+        if (!revokedIds.isEmpty()) {
+            sc.setParameters("idNIN", revokedIds.toArray());
+        }
 
         if (listProjectResourcesCriteria != null) {
             sc.setParameters("accountType", Account.ACCOUNT_TYPE_PROJECT);
@@ -2482,6 +2505,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             } else {
                 sc.setParameters("domainId", domainId);
             }
+        }
+
+        if (!grantedIds.isEmpty()) {
+            sc.setParameters("idIN", grantedIds.toArray());
         }
     }
 

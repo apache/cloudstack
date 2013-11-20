@@ -378,6 +378,13 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
         // TODO Auto-generated method stub
 
     }
+
+    @Override
+    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
+            ListProjectResourcesCriteria listProjectResourcesCriteria, List<Long> grantedIds, List<Long> revokedIds) {
+        // TODO Auto-generated method stub
+
+    }
     
 
 }

@@ -299,6 +299,13 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         // TODO Auto-generated method stub
     }
 
+    @Override
+    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
+            ListProjectResourcesCriteria listProjectResourcesCriteria, List<Long> grantedIds, List<Long> revokedIds) {
+        // TODO Auto-generated method stub
+
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.user.AccountService#getUserByApiKey(java.lang.String)
      */
