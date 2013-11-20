@@ -2048,6 +2048,9 @@ ServerResource {
                 .getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String[] results = new String[cmd.getIpAddresses().length];
+        for (int i = 0; i < results.length; i++) {
+            results[i] = IpAssocAnswer.errorResult;
+        }
         Connect conn;
         try {
             conn = LibvirtConnection.getConnectionByVmName(routerName);
@@ -2089,17 +2092,16 @@ ServerResource {
                         ip.isSourceNat(), ip.getBroadcastUri(), ip.getVlanGateway(),
                         ip.getVlanNetmask(), ip.getVifMacAddress(), nicNum, newNic);
 
-                if (result != null) {
-                    results[i++] = IpAssocAnswer.errorResult;
-                } else {
+                if (result == null) {
                     results[i++] = ip.getPublicIp() + " - success";
-                    ;
                 }
             }
             return new IpAssocAnswer(cmd, results);
         } catch (LibvirtException e) {
+            s_logger.error("ipassoccmd failed", e);
             return new IpAssocAnswer(cmd, results);
         } catch (InternalErrorException e) {
+            s_logger.error("ipassoccmd failed", e);
             return new IpAssocAnswer(cmd, results);
         }
     }
