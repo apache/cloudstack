@@ -42,7 +42,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -145,6 +144,7 @@ import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.StartRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.StopRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
@@ -271,6 +271,7 @@ import org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.UpdateIsoPermissionsCmd;
 import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.AssignCertToLoadBalancerCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.AssignToLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateApplicationLoadBalancerCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBHealthCheckPolicyCmd;
@@ -280,18 +281,17 @@ import org.apache.cloudstack.api.command.user.loadbalancer.DeleteApplicationLoad
 import org.apache.cloudstack.api.command.user.loadbalancer.DeleteLBHealthCheckPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.DeleteLBStickinessPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.DeleteLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListApplicationLoadBalancersCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLBHealthCheckPoliciesCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLBStickinessPoliciesCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRuleInstancesCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRulesCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListSslCertsCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.RemoveCertFromLoadBalancerCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.RemoveFromLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.ListSslCertsCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.AssignCertToLoadBalancerCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.RemoveCertFromLoadBalancerCmd;
 import org.apache.cloudstack.api.command.user.nat.CreateIpForwardingRuleCmd;
 import org.apache.cloudstack.api.command.user.nat.DeleteIpForwardingRuleCmd;
 import org.apache.cloudstack.api.command.user.nat.DisableStaticNatCmd;
@@ -574,13 +574,12 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
-import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
@@ -818,8 +817,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         for (String id : availableIds) {
             _availableIdsMap.put(id, true);
         }
-
-        _executeInSequence = Boolean.parseBoolean(_configDao.getValue(Config.ExecuteInSequence.key()));
 
         return true;
     }
@@ -3508,11 +3505,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         _encryptionIV = null;
     }
 
-    @Override
-    public boolean getExecuteInSequence() {
-        return  _executeInSequence;
-    }
-
     private static String getBase64EncodedRandomKey(int nBits) {
         SecureRandom random;
         try {
@@ -3906,6 +3898,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     public void setLockMasterListener(LockMasterListener lockMasterListener) {
-        this._lockMasterListener = lockMasterListener;
+        _lockMasterListener = lockMasterListener;
     }
 }

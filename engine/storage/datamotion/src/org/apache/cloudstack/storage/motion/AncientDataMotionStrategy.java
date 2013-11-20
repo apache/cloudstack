@@ -57,7 +57,6 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.Config;
 import com.cloud.host.Host;
-import com.cloud.server.ManagementService;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
@@ -65,6 +64,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachineManager;
 
 @Component
 public class
@@ -80,8 +80,6 @@ AncientDataMotionStrategy implements DataMotionStrategy {
     DataStoreManager dataStoreMgr;
     @Inject
     StorageCacheManager cacheMgr;
-    @Inject
-    ManagementService _mgmtServer;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
@@ -162,7 +160,7 @@ AncientDataMotionStrategy implements DataMotionStrategy {
                 srcForCopy = cacheData = cacheMgr.createCacheObject(srcData, destScope);
             }
 
-            CopyCommand cmd = new CopyCommand(srcForCopy.getTO(), destData.getTO(), _primaryStorageDownloadWait, _mgmtServer.getExecuteInSequence());
+            CopyCommand cmd = new CopyCommand(srcForCopy.getTO(), destData.getTO(), _primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
             EndPoint ep = selector.select(srcForCopy, destData);
             if (ep == null) {
                 String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
@@ -247,7 +245,7 @@ AncientDataMotionStrategy implements DataMotionStrategy {
                 ep = selector.select(snapObj, volObj);
             }
 
-            CopyCommand cmd = new CopyCommand(srcData.getTO(), volObj.getTO(), _createVolumeFromSnapshotWait, _mgmtServer.getExecuteInSequence());
+            CopyCommand cmd = new CopyCommand(srcData.getTO(), volObj.getTO(), _createVolumeFromSnapshotWait, VirtualMachineManager.ExecuteInSequence.value());
             Answer answer = null;
             if (ep == null) {
                 String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
@@ -270,7 +268,7 @@ AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     protected Answer cloneVolume(DataObject template, DataObject volume) {
-        CopyCommand cmd = new CopyCommand(template.getTO(), volume.getTO(), 0, _mgmtServer.getExecuteInSequence());
+        CopyCommand cmd = new CopyCommand(template.getTO(), volume.getTO(), 0, VirtualMachineManager.ExecuteInSequence.value());
         try {
             EndPoint ep = selector.select(volume.getDataStore());
             Answer answer = null;
@@ -320,7 +318,7 @@ AncientDataMotionStrategy implements DataMotionStrategy {
 
             objOnImageStore.processEvent(Event.CopyingRequested);
 
-            CopyCommand cmd = new CopyCommand(objOnImageStore.getTO(), destData.getTO(), _copyvolumewait, _mgmtServer.getExecuteInSequence());
+            CopyCommand cmd = new CopyCommand(objOnImageStore.getTO(), destData.getTO(), _copyvolumewait, VirtualMachineManager.ExecuteInSequence.value());
             EndPoint ep = selector.select(objOnImageStore, destData);
             if (ep == null) {
                 String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
@@ -344,7 +342,7 @@ AncientDataMotionStrategy implements DataMotionStrategy {
             return answer;
         } else {
             DataObject cacheData = cacheMgr.createCacheObject(srcData, destScope);
-            CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _copyvolumewait, _mgmtServer.getExecuteInSequence());
+            CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _copyvolumewait, VirtualMachineManager.ExecuteInSequence.value());
             EndPoint ep = selector.select(cacheData, destData);
             Answer answer = null;
             if (ep == null) {
@@ -457,7 +455,7 @@ AncientDataMotionStrategy implements DataMotionStrategy {
             ep = selector.select(srcData, destData);
         }
 
-        CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _createprivatetemplatefromsnapshotwait, _mgmtServer.getExecuteInSequence());
+        CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _createprivatetemplatefromsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
         Answer answer = null;
         if (ep == null) {
             String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
@@ -486,7 +484,7 @@ AncientDataMotionStrategy implements DataMotionStrategy {
                 Scope selectedScope = pickCacheScopeForCopy(srcData, destData);
                 cacheData = cacheMgr.getCacheObject(srcData, selectedScope);
 
-                CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait, _mgmtServer.getExecuteInSequence());
+                CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
                 cmd.setCacheTO(cacheData.getTO());
                 EndPoint ep = selector.select(srcData, destData);
                 if (ep == null) {
@@ -497,7 +495,7 @@ AncientDataMotionStrategy implements DataMotionStrategy {
                     answer = ep.sendMessage(cmd);
                 }
             } else {
-                CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait, _mgmtServer.getExecuteInSequence());
+                CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
                 EndPoint ep = selector.select(srcData, destData);
                 if (ep == null) {
                     String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";

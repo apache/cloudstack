@@ -35,6 +35,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -50,7 +52,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -281,7 +282,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     Map<VirtualMachine.Type, VirtualMachineGuru> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru>();
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
 
-    static final ConfigKey<Integer> StartRetry = new ConfigKey<Integer>(Integer.class, "start.retry", "Advanced", "10", "Number of times to retry create and start commands", true);
+    static final ConfigKey<Integer> StartRetry = new ConfigKey<Integer>("Advanced", Integer.class, "start.retry", "10", "Number of times to retry create and start commands", true);
     static final ConfigKey<Integer> VmOpWaitInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vm.op.wait.interval", "120",
             "Time (in seconds) to wait before checking if a previous operation has succeeded", true);
 
@@ -297,6 +298,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             "On destroy, force-stop takes this value ", true);
     static final ConfigKey<Integer> ClusterDeltaSyncInterval = new ConfigKey<Integer>("Advanced", Integer.class, "sync.interval", "60", "Cluster Delta sync interval in seconds",
             false);
+
+
 
     ScheduledExecutorService _executor = null;
 
@@ -328,7 +331,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         assert (plan.getClusterId() == null && plan.getPoolId() == null) : "We currently don't support cluster and pool preset yet";
         final VMInstanceVO vmFinal = _vmDao.persist(vm);
-        final LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferingsFinal = dataDiskOfferings == null ? 
+        final LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferingsFinal = dataDiskOfferings == null ?
                 new LinkedHashMap<DiskOffering, Long>() : dataDiskOfferings;
 
 
@@ -560,7 +563,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         while (retry-- != 0) {
             try {
                 final ItWorkVO workFinal = work;
-                Ternary<VMInstanceVO, ReservationContext, ItWorkVO> result = 
+                Ternary<VMInstanceVO, ReservationContext, ItWorkVO> result =
                         Transaction.execute(new TransactionCallbackWithException<Ternary<VMInstanceVO, ReservationContext, ItWorkVO>, NoTransitionException>() {
                     @Override
                     public Ternary<VMInstanceVO, ReservationContext, ItWorkVO> doInTransaction(TransactionStatus status) throws NoTransitionException {
@@ -840,7 +843,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     handlePath(vmTO.getDisks(), vm.getHypervisorType());
 
                     cmds = new Commands(Command.OnError.Stop);
-                    cmds.addCommand(new StartCommand(vmTO, dest.getHost(), getExecuteInSequence()));
+                    cmds.addCommand(new StartCommand(vmTO, dest.getHost(), ExecuteInSequence.value()));
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
 
@@ -883,7 +886,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 s_logger.info("The guru did not like the answers so stopping " + vm);
                             }
 
-                            StopCommand cmd = new StopCommand(vm, getExecuteInSequence());
+                            StopCommand cmd = new StopCommand(vm, ExecuteInSequence.value());
                             StopAnswer answer = (StopAnswer)_agentMgr.easySend(destHostId, cmd);
                             if ( answer != null ) {
                                 String hypervisortoolsversion = answer.getHypervisorToolsVersion();
@@ -1043,13 +1046,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    protected boolean getExecuteInSequence() {
-        return false;
-    }
-
     protected boolean sendStop(VirtualMachineGuru guru, VirtualMachineProfile profile, boolean force) {
         VirtualMachine vm = profile.getVirtualMachine();
-        StopCommand stop = new StopCommand(vm, getExecuteInSequence());
+        StopCommand stop = new StopCommand(vm, ExecuteInSequence.value());
         try {
             StopAnswer answer = (StopAnswer) _agentMgr.send(vm.getHostId(), stop);
             if ( answer != null ) {
@@ -1253,7 +1252,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         vmGuru.prepareStop(profile);
-        StopCommand stop = new StopCommand(vm, getExecuteInSequence());
+        StopCommand stop = new StopCommand(vm, ExecuteInSequence.value());
         boolean stopped = false;
         StopAnswer answer = null;
         try {
@@ -1988,11 +1987,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public Command cleanup(VirtualMachine vm) {
-        return new StopCommand(vm, getExecuteInSequence());
+        return new StopCommand(vm, ExecuteInSequence.value());
     }
 
     public Command cleanup(String vmName) {
-        return new StopCommand(vmName, getExecuteInSequence());
+        return new StopCommand(vmName, ExecuteInSequence.value());
     }
 
     public Commands fullHostSync(final long hostId, StartupRoutingCommand startup) {
@@ -2742,7 +2741,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             this.name = name;
             this.state = state;
             this.vm = vm;
-            this.hostUuid = host;
+            hostUuid = host;
             this.hvtoolsversion= hvtoolsversion;
 
         }
@@ -3389,7 +3388,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {ClusterDeltaSyncInterval, StartRetry, VmDestroyForcestop, VmOpCancelInterval, VmOpCleanupInterval, VmOpCleanupWait, VmOpLockStateRetry,
-                VmOpWaitInterval};
+                VmOpWaitInterval, ExecuteInSequence};
     }
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
@@ -3398,7 +3397,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Inject
     public void setStoragePoolAllocators(List<StoragePoolAllocator> storagePoolAllocators) {
-        this._storagePoolAllocators = storagePoolAllocators;
+        _storagePoolAllocators = storagePoolAllocators;
     }
 
 }

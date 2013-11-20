@@ -20,6 +20,8 @@ import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.deploy.DeployDestination;
@@ -46,11 +48,14 @@ import com.cloud.utils.fsm.NoTransitionException;
  * Manages allocating resources to vms.
  */
 public interface VirtualMachineManager extends Manager {
-	 
-	public interface Topics {
+    static final ConfigKey<Boolean> ExecuteInSequence = new ConfigKey<Boolean>("Advanced", Boolean.class, "execute.in.sequence.hypervisor.commands", "false",
+        "If set to true, StartCommand, StopCommand, CopyCommand will be synchronized on the agent side."
+                + " If set to false, these commands become asynchronous. Default value is false.", true);
+
+    public interface Topics {
         public static final String VM_POWER_STATE = "vm.powerstate";
-	}
-	 
+    }
+
     /**
      * Allocates a new virtual machine instance in the CloudStack DB.  This
      * orchestrates the creation of all virtual resources needed in CloudStack
