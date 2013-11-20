@@ -399,6 +399,7 @@
                             					url: createURL('listHosts'),
                                         		async: false,
                                         		data: {
+                                        			type: 'routing',
                                         			hypervisortype: hypervisor.name,
                                         			page: currentPage,
                                         	        pagesize: pageSize //global variable
@@ -7831,6 +7832,7 @@
                                         					url: createURL('listHosts'),
                                                     		async: false,
                                                     		data: {
+                                                    			type: 'routing',
                                                     			hypervisortype: hypervisor.name,
                                                     			page: currentPage,
                                                     	        pagesize: pageSize //global variable
