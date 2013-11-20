@@ -1750,8 +1750,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         if (pool.getType() == StoragePoolType.CLVM && volFormat == PhysicalDiskFormat.RAW) {
             return "CLVM";
-        } else if ((poolType == StoragePoolType.NetworkFilesystem || poolType == StoragePoolType.SharedMountPoint || poolType == StoragePoolType.Filesystem) &&
-                volFormat == PhysicalDiskFormat.QCOW2) {
+        } else if ((poolType == StoragePoolType.NetworkFilesystem
+                  || poolType == StoragePoolType.SharedMountPoint
+                  || poolType == StoragePoolType.Filesystem
+                  || poolType == StoragePoolType.Gluster)
+                  && volFormat == PhysicalDiskFormat.QCOW2 ) {
             return "QCOW2";
         }
         return null;
@@ -3702,6 +3705,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                      */
                     disk.defNetworkBasedDisk(physicalDisk.getPath().replace("rbd:", ""), pool.getSourceHost(), pool.getSourcePort(), pool.getAuthUserName(),
                             pool.getUuid(), devId, diskBusType, diskProtocol.RBD);
+                } else if (pool.getType() == StoragePoolType.Gluster) {
+                    String mountpoint = pool.getLocalPath();
+                    String path = physicalDisk.getPath();
+                    String glusterVolume = pool.getSourceDir().replace("/", "");
+                    disk.defNetworkBasedDisk(glusterVolume + path.replace(mountpoint, ""), pool.getSourceHost(), pool.getSourcePort(), null,
+                            null, devId, diskBusType, diskProtocol.GLUSTER);
                 } else if (pool.getType() == StoragePoolType.CLVM || physicalDisk.getFormat() == PhysicalDiskFormat.RAW) {
                     disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusType);
                 } else {
@@ -3859,6 +3868,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (attachingPool.getType() == StoragePoolType.RBD) {
                     diskdef.defNetworkBasedDisk(attachingDisk.getPath(), attachingPool.getSourceHost(), attachingPool.getSourcePort(), attachingPool.getAuthUserName(),
                             attachingPool.getUuid(), devId, DiskDef.diskBus.VIRTIO, diskProtocol.RBD);
+                } else if (attachingPool.getType() == StoragePoolType.Gluster) {
+                    diskdef.defNetworkBasedDisk(attachingDisk.getPath(), attachingPool.getSourceHost(), attachingPool.getSourcePort(), null,
+                            null, devId, DiskDef.diskBus.VIRTIO, diskProtocol.GLUSTER);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
                     diskdef.defFileBasedDisk(attachingDisk.getPath(), devId, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.RAW) {

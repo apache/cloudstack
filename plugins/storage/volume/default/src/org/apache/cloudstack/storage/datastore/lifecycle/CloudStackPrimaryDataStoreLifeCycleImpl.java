@@ -166,6 +166,12 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
                 if (uriPath == null) {
                     throw new InvalidParameterValueException("host or path is null, should be rbd://hostname/pool");
                 }
+            } else if (uri.getScheme().equalsIgnoreCase("gluster")) {
+                String uriHost = uri.getHost();
+                String uriPath = uri.getPath();
+                if (uriHost == null || uriPath == null || uriHost.trim().isEmpty() || uriPath.trim().isEmpty()) {
+                    throw new InvalidParameterValueException("host or path is null, should be gluster://hostname/volume");
+                }
             }
         } catch (URISyntaxException e) {
             throw new InvalidParameterValueException(url + " is not a valid uri");
@@ -288,6 +294,14 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             parameters.setHost("clustered");
             parameters.setPort(port);
             parameters.setPath(hostPath);
+        } else if (scheme.equalsIgnoreCase("gluster")) {
+            if (port == -1) {
+                port = 24007;
+            }
+            parameters.setType(StoragePoolType.Gluster);
+            parameters.setHost(storageHost);
+            parameters.setPort(port);
+            parameters.setPath(hostPath);
         } else {
             StoragePoolType type = Enum.valueOf(StoragePoolType.class, scheme);
 
@@ -349,7 +363,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem &&
                 pool.getPoolType() != StoragePoolType.IscsiLUN && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS &&
                 pool.getPoolType() != StoragePoolType.SharedMountPoint && pool.getPoolType() != StoragePoolType.PreSetup && pool.getPoolType() != StoragePoolType.OCFS2 &&
-                pool.getPoolType() != StoragePoolType.RBD && pool.getPoolType() != StoragePoolType.CLVM && pool.getPoolType() != StoragePoolType.SMB) {
+                pool.getPoolType() != StoragePoolType.RBD && pool.getPoolType() != StoragePoolType.CLVM && pool.getPoolType() != StoragePoolType.SMB &&
+                pool.getPoolType() != StoragePoolType.Gluster) {
             s_logger.warn(" Doesn't support storage pool type " + pool.getPoolType());
             return false;
         }

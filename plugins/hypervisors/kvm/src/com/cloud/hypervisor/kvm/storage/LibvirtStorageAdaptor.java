@@ -129,9 +129,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
-    private StoragePool createNfsStoragePool(Connect conn, String uuid, String host, String path) throws LibvirtException {
+    private StoragePool createNetfsStoragePool(poolType fsType, Connect conn, String uuid, String host, String path) throws LibvirtException {
         String targetPath = _mountPoint + File.separator + uuid;
-        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.NETFS, uuid, uuid, host, path, targetPath);
+        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(fsType, uuid, uuid, host, path, targetPath);
         _storageLayer.mkdir(targetPath);
         StoragePool sp = null;
         try {
@@ -170,7 +170,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     }
                     sp.free();
                 } catch (LibvirtException l) {
-                    s_logger.debug("Failed to undefine nfs storage pool with: " + l.toString());
+                    s_logger.debug("Failed to undefine " + fsType.toString() + " storage pool with: " + l.toString());
                 }
             }
             return null;
@@ -345,14 +345,19 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 type = StoragePoolType.RBD;
             } else if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.LOGICAL) {
                 type = StoragePoolType.CLVM;
+            } else if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.GLUSTERFS) {
+                type = StoragePoolType.Gluster;
             }
 
             LibvirtStoragePool pool = new LibvirtStoragePool(uuid, storage.getName(), type, this, storage);
 
-            if (pool.getType() != StoragePoolType.RBD) {
+            if (pool.getType() != StoragePoolType.RBD)
                 pool.setLocalPath(spd.getTargetPath());
-            } else {
+            else
                 pool.setLocalPath("");
+
+            if (pool.getType() == StoragePoolType.RBD
+             || pool.getType() == StoragePoolType.Gluster) {
                 pool.setSourceHost(spd.getSourceHost());
                 pool.setSourcePort(spd.getSourcePort());
                 pool.setSourceDir(spd.getSourceDir());
@@ -484,9 +489,17 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
             if (type == StoragePoolType.NetworkFilesystem) {
                 try {
-                    sp = createNfsStoragePool(conn, name, host, path);
+                    sp = createNetfsStoragePool(poolType.NETFS, conn, name, host, path);
                 } catch (LibvirtException e) {
-                    s_logger.error("Failed to create mount");
+                    s_logger.error("Failed to create netfs mount: " + host + ":" + path , e);
+                    s_logger.error(e.getStackTrace());
+                    throw new CloudRuntimeException(e.toString());
+                }
+            } else if (type == StoragePoolType.Gluster) {
+                try {
+                    sp = createNetfsStoragePool(poolType.GLUSTERFS, conn, name, host, path);
+                } catch (LibvirtException e) {
+                    s_logger.error("Failed to create glusterfs mount: " + host + ":" + path , e);
                     s_logger.error(e.getStackTrace());
                     throw new CloudRuntimeException(e.toString());
                 }

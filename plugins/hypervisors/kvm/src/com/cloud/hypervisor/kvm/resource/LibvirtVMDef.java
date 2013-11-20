@@ -378,7 +378,7 @@ public class LibvirtVMDef {
         }
 
         public enum diskProtocol {
-            RBD("rbd"), SHEEPDOG("sheepdog");
+            RBD("rbd"), SHEEPDOG("sheepdog"), GLUSTER("gluster");
             String _diskProtocol;
 
             diskProtocol(String protocol) {
@@ -664,7 +664,13 @@ public class LibvirtVMDef {
                 diskBuilder.append(" protocol='" + _diskProtocol + "'");
                 diskBuilder.append(" name='" + _sourcePath + "'");
                 diskBuilder.append(">\n");
-                diskBuilder.append("<host name='" + _sourceHost + "' port='" + _sourcePort + "'/>\n");
+                diskBuilder.append("<host name='");
+                diskBuilder.append(_sourceHost);
+                if (_sourcePort != 0) {
+                    diskBuilder.append("' port='");
+                    diskBuilder.append(_sourcePort);
+                }
+                diskBuilder.append("'/>\n");
                 diskBuilder.append("</source>\n");
                 if (_authUserName != null) {
                     diskBuilder.append("<auth username='" + _authUserName + "'>\n");
