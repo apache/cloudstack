@@ -750,3 +750,51 @@ def get_portable_ip_range_services(config):
         services = None
 
     return services
+
+def get_free_vlan(apiclient, zoneid):
+    """
+    Find an unallocated VLAN outside the range allocated to the physical network.
+
+    @note: This does not guarantee that the VLAN is available for use in
+    the deployment's network gear
+    @return: physical_network, shared_vlan_tag
+    """
+    list_physical_networks_response = PhysicalNetwork.list(
+            apiclient,
+            zoneid=zoneid
+        )
+    assert isinstance(list_physical_networks_response, list)
+    assert len(list_physical_networks_response) > 0, "No physical networks found in zone %s" % zoneid
+
+    physical_network = list_physical_networks_response[0]
+    vlans = xsplit(physical_network.vlan, ['-', ','])
+
+    assert len(vlans) > 0
+    assert int(vlans[0]) < int(vlans[-1]), "VLAN range  %s was improperly split" % physical_network.vlan
+
+    usedVlanIds = []
+    networks = list_networks(apiclient, zoneid= zoneid, type='Shared')
+    if isinstance(networks, list) and len(networks) > 0:
+        usedVlanIds = [int(nw.vlan) for nw in networks]
+
+    retriesCount = 20 #Assuming random function will give different integer each time
+
+    shared_ntwk_vlan = None
+
+    while True:
+
+        if retriesCount == 0:
+           break
+
+        free_vlan = int(vlans[-1]) + random.randrange(1, 20)
+
+        if free_vlan > 4095:
+            free_vlan = int(vlans[0]) - random.randrange(1, 20)
+        if free_vlan < 0 or (free_vlan in usedVlanIds):
+            retriesCount -= 1
+            continue
+        else:
+            shared_ntwk_vlan = free_vlan
+            break
+
+    return physical_network, shared_ntwk_vlan
