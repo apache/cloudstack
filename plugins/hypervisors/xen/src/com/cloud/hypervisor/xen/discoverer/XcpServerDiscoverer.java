@@ -312,7 +312,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 DataCenterVO zone = _dcDao.findById(dcId);
                 boolean securityGroupEnabled = zone.isSecurityGroupEnabled();
                 params.put("securitygroupenabled", Boolean.toString(securityGroupEnabled));
-                details.put("securitygroupenabled", Boolean.toString(securityGroupEnabled));
 
                 params.put("wait", Integer.toString(_wait));
                 details.put("wait", Integer.toString(_wait));
@@ -742,6 +741,18 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
 
 		return new DeleteHostAnswer(true);
     }
+
+
+    protected HashMap<String, Object> buildConfigParams(HostVO host){
+        HashMap<String, Object> params = super.buildConfigParams(host);
+        DataCenterVO zone = _dcDao.findById(host.getDataCenterId());
+        if ( zone != null ) {
+            boolean securityGroupEnabled = zone.isSecurityGroupEnabled();
+            params.put("securitygroupenabled", Boolean.toString(securityGroupEnabled));
+        }
+        return params;
+    }
+
 
     @Override
     public boolean stop() {
