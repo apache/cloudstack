@@ -6526,19 +6526,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                         for(int i=0; i<values.size(); ++i) {
                             List<PerfSampleInfo>  infos = ((PerfEntityMetric)values.get(i)).getSampleInfo();
-                            int endMs = infos.get(infos.size()-1).getTimestamp().getSecond() * 1000 + infos.get(infos.size()-1).getTimestamp().getMillisecond();
-                            int beginMs = infos.get(0).getTimestamp().getSecond() * 1000 + infos.get(0).getTimestamp().getMillisecond();
-                            sampleDuration = (endMs - beginMs) /1000;
-                            List<PerfMetricSeries> vals = ((PerfEntityMetric)values.get(i)).getValue();
-                            for(int vi = 0; ((vals!= null) && (vi < vals.size())); ++vi){
-                                if(vals.get(vi) instanceof PerfMetricIntSeries) {
-                                    PerfMetricIntSeries val = (PerfMetricIntSeries)vals.get(vi);
-                                    List<Long> perfValues = val.getValue();
-                                    if (vals.get(vi).getId().getCounterId() == rxPerfCounterInfo.getKey()) {
-                                        networkReadKBs = sampleDuration * perfValues.get(3); //get the average RX rate multiplied by sampled duration
-                                    }
-                                    if (vals.get(vi).getId().getCounterId() == txPerfCounterInfo.getKey()) {
-                                        networkWriteKBs = sampleDuration * perfValues.get(3);//get the average TX rate multiplied by sampled duration
+                            if (infos != null && infos.size() > 0) {
+                                int endMs = infos.get(infos.size()-1).getTimestamp().getSecond() * 1000 + infos.get(infos.size()-1).getTimestamp().getMillisecond();
+                                int beginMs = infos.get(0).getTimestamp().getSecond() * 1000 + infos.get(0).getTimestamp().getMillisecond();
+                                sampleDuration = (endMs - beginMs) /1000;
+                                List<PerfMetricSeries> vals = ((PerfEntityMetric)values.get(i)).getValue();
+                                for(int vi = 0; ((vals!= null) && (vi < vals.size())); ++vi){
+                                    if(vals.get(vi) instanceof PerfMetricIntSeries) {
+                                        PerfMetricIntSeries val = (PerfMetricIntSeries)vals.get(vi);
+                                        List<Long> perfValues = val.getValue();
+                                        if (vals.get(vi).getId().getCounterId() == rxPerfCounterInfo.getKey()) {
+                                            networkReadKBs = sampleDuration * perfValues.get(3); //get the average RX rate multiplied by sampled duration
+                                        }
+                                        if (vals.get(vi).getId().getCounterId() == txPerfCounterInfo.getKey()) {
+                                            networkWriteKBs = sampleDuration * perfValues.get(3);//get the average TX rate multiplied by sampled duration
+                                        }
                                     }
                                 }
                             }
