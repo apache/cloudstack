@@ -29,11 +29,11 @@ public class Test {
     public static void main(String[] args) {
         try {
             /*Connection c = new Connection("192.168.105.155", "oracle", "password");
-            Utils util = new UtilsImpl(c);	
+            Utils util = new UtilsImpl(c);    
             Storage storage = new StorageImpl(c);
             String[] res = util.listDir("/etc", 1);
             for (String s : res) {
-            	System.out.println(s);
+                System.out.println(s);
             }
             
             
@@ -51,7 +51,7 @@ public class Test {
             System.out.println(pool.getAgentVersion());
             String[] srs = storage.listSr();
             for (int i=0; i<srs.length; i++) {
-            	System.out.println(srs[i]);
+                System.out.println(srs[i]);
             }
             String spuuid = storage.createSp(StorageType.OVSSPNFS, "192.168.110.232:/export/frank/nfs");
             System.out.println(spuuid);
@@ -95,11 +95,11 @@ public class Test {
             //OvmHost.Details d = Coder.fromJson(txt, OvmHost.Details.class);
             //OvmHost.Details d = OvmHost.getDetails(c);
             //System.out.println(Coder.toJson(d));
-//			OvmStoragePool.Details pool = new OvmStoragePool.Details();
-//			pool.path = "192.168.110.232:/export/frank/ovs";
-//			pool.type = OvmStoragePool.NFS;
-//			pool.uuid = "123";
-//			System.out.println(pool.toJson());
+//            OvmStoragePool.Details pool = new OvmStoragePool.Details();
+//            pool.path = "192.168.110.232:/export/frank/ovs";
+//            pool.type = OvmStoragePool.NFS;
+//            pool.uuid = "123";
+//            System.out.println(pool.toJson());
 
             String cmd = null;
             System.out.println(args.length);
@@ -169,12 +169,12 @@ public class Test {
             l.add("4b4d8951-f0b6-36c5-b4f3-a82ff2611c65");
             System.out.println(Coder.toJson(l));
 
-//			Map<String, String> res = OvmHost.getPerformanceStats(c, "xenbr0");
-//			System.out.println(res.toString());
-//			String stxt = "{\"vifs\": [{\"bridge\": \"xenbr0\", \"mac\": \"00:16:3E:5C:B1:D1\", \"type\": \"netfront\"}], \"powerState\": \"RUNNING\", \"disks\": [], \"cpuNum\": 1, \"memory\": 536870912, \"rootDisk\": {\"path\": \"/var/ovs/mount/60D0985974CA425AAF5D01A1F161CC8B/running_pool/MyTest/System.img\", \"type\": \"w\"}}";
-//			OvmVm.Details ddd = Coder.fromJson(stxt, OvmVm.Details.class);
-//			System.out.println(ddd.vifs.size());
-//			System.out.println(ddd.rootDisk.path);
+//            Map<String, String> res = OvmHost.getPerformanceStats(c, "xenbr0");
+//            System.out.println(res.toString());
+//            String stxt = "{\"vifs\": [{\"bridge\": \"xenbr0\", \"mac\": \"00:16:3E:5C:B1:D1\", \"type\": \"netfront\"}], \"powerState\": \"RUNNING\", \"disks\": [], \"cpuNum\": 1, \"memory\": 536870912, \"rootDisk\": {\"path\": \"/var/ovs/mount/60D0985974CA425AAF5D01A1F161CC8B/running_pool/MyTest/System.img\", \"type\": \"w\"}}";
+//            OvmVm.Details ddd = Coder.fromJson(stxt, OvmVm.Details.class);
+//            System.out.println(ddd.vifs.size());
+//            System.out.println(ddd.rootDisk.path);
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

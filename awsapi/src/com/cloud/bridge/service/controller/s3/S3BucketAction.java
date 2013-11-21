@@ -893,7 +893,7 @@ public class S3BucketAction implements ServletAction {
     public void executePutBucketWebsite(HttpServletRequest request, HttpServletResponse response) throws IOException {
         // TODO -- LoPri - Undertake checks on Put Bucket Website
         // Tested using configuration <Directory /Users/john1/S3-Mount>\nAllowOverride FileInfo AuthConfig Limit...</Directory> in httpd.conf
-        // 	Need some way of using  AllowOverride to allow use of .htaccess and then pushing .httaccess file to bucket subdirectory of mount point
+        //     Need some way of using  AllowOverride to allow use of .htaccess and then pushing .httaccess file to bucket subdirectory of mount point
         // Currently has noop effect in the sense that a running apachectl process sees the directory contents without further action
         response.setStatus(200);
     }

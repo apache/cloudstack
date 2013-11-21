@@ -36,7 +36,7 @@ import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 
 @APICommand(name = "listExternalFirewalls", description="List external firewall appliances.", responseObject = ExternalFirewallResponse.class)
 public class ListExternalFirewallsCmd extends BaseListCmd {
-	public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
     private static final String s_name = "listexternalfirewallsresponse";
 
     /////////////////////////////////////////////////////
@@ -70,15 +70,15 @@ public class ListExternalFirewallsCmd extends BaseListCmd {
     @Override
     public void execute(){
 
-    	List<? extends Host> externalFirewalls = _paElementService.listExternalFirewalls(this);
+        List<? extends Host> externalFirewalls = _paElementService.listExternalFirewalls(this);
 
         ListResponse<ExternalFirewallResponse> listResponse = new ListResponse<ExternalFirewallResponse>();
         List<ExternalFirewallResponse> responses = new ArrayList<ExternalFirewallResponse>();
         for (Host externalFirewall : externalFirewalls) {
-        	ExternalFirewallResponse response = _paElementService.createExternalFirewallResponse(externalFirewall);
-        	response.setObjectName("externalfirewall");
-        	response.setResponseName(getCommandName());
-        	responses.add(response);
+            ExternalFirewallResponse response = _paElementService.createExternalFirewallResponse(externalFirewall);
+            response.setObjectName("externalfirewall");
+            response.setResponseName(getCommandName());
+            responses.add(response);
         }
 
         listResponse.setResponses(responses);

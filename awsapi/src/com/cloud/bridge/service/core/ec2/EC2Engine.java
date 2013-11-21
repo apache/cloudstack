@@ -861,7 +861,7 @@ public class EC2Engine extends ManagerBase {
 
             CloudStackZone zone = findZone();
             //CloudStackNetwork net = findNetwork(zone);
-//			CloudStackIpAddress resp = getApi().associateIpAddress(null, null, null, "0036952d-48df-4422-9fd0-94b0885e18cb");
+//            CloudStackIpAddress resp = getApi().associateIpAddress(null, null, null, "0036952d-48df-4422-9fd0-94b0885e18cb");
             CloudStackIpAddress resp = getApi().associateIpAddress(zone.getId(), caller.getName(), caller.getDomainId(), null);
             ec2Address.setAssociatedInstanceId(resp.getId());
 
@@ -1213,12 +1213,12 @@ public class EC2Engine extends ManagerBase {
                     throw new EC2ServiceException(ServerError.InternalError, "No Customize Disk Offering Found");
             }
 
-//			// -> no volume name is given in the Amazon request but is required in the cloud API
+//            // -> no volume name is given in the Amazon request but is required in the cloud API
             CloudStackVolume vol = getApi().createVolume(UUID.randomUUID().toString(), null, diskOfferingId, null, size, snapshotId, toZoneId(request.getZoneName(), null));
             if (vol != null) {
                 resp.setAttached(vol.getAttached());
                 resp.setCreated(vol.getCreated());
-//				resp.setDevice();
+//                resp.setDevice();
                 resp.setDeviceId(vol.getDeviceId());
                 resp.setHypervisor(vol.getHypervisor());
                 resp.setId(vol.getId());

@@ -432,7 +432,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             Mac mac = Mac.getInstance("HmacSHA1");
 
             long ts = normalizedHashTime.getTime();
-            ts = ts / 60000;		// round up to 1 minute
+            ts = ts / 60000;        // round up to 1 minute
             String secretKey = s_ms.getHashKey();
 
             SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA1");

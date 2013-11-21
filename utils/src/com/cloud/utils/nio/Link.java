@@ -99,36 +99,36 @@ public class Link {
      * @return bytes read
      * @throws IOException if not read to completion.
     public static byte[] read(SocketChannel ch, ByteBuffer buff) throws IOException {
-    	synchronized(buff) {
-        	buff.clear();
-        	buff.limit(4);
+        synchronized(buff) {
+            buff.clear();
+            buff.limit(4);
 
-        	while (buff.hasRemaining()) {
-    	    	if (ch.read(buff) == -1) {
-    	    		throw new IOException("Connection closed with -1 on reading size.");
-    	    	}
-        	}
+            while (buff.hasRemaining()) {
+                if (ch.read(buff) == -1) {
+                    throw new IOException("Connection closed with -1 on reading size.");
+                }
+            }
 
-        	buff.flip();
+            buff.flip();
 
-        	int length = buff.getInt();
-        	ByteArrayOutputStream output = new ByteArrayOutputStream(length);
-        	WritableByteChannel outCh = Channels.newChannel(output);
+            int length = buff.getInt();
+            ByteArrayOutputStream output = new ByteArrayOutputStream(length);
+            WritableByteChannel outCh = Channels.newChannel(output);
 
-        	int count = 0;
-        	while (count < length) {
-            	buff.clear();
-        		int read = ch.read(buff);
-        		if (read < 0) {
-        			throw new IOException("Connection closed with -1 on reading data.");
-        		}
-        		count += read;
-        		buff.flip();
-        		outCh.write(buff);
-        	}
+            int count = 0;
+            while (count < length) {
+                buff.clear();
+                int read = ch.read(buff);
+                if (read < 0) {
+                    throw new IOException("Connection closed with -1 on reading data.");
+                }
+                count += read;
+                buff.flip();
+                outCh.write(buff);
+            }
 
             return output.toByteArray();
-    	}
+        }
     }
      */
 

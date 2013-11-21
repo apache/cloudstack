@@ -74,7 +74,7 @@ public class KeystoreTest extends TestCase {
 
     /*
         public void testKeystoreSave() throws Exception {
-        	KeystoreVO ksVo;
+            KeystoreVO ksVo;
 
             ComponentLocator locator = ComponentLocator.getCurrentLocator();
 
@@ -98,15 +98,15 @@ public class KeystoreTest extends TestCase {
         }
 
         public void testStripeKey() throws Exception {
-        	Pattern regex = Pattern.compile("(^[\\-]+[^\\-]+[\\-]+[\\n]?)([^\\-]+)([\\-]+[^\\-]+[\\-]+$)");
-        	Matcher m = regex.matcher("-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAm4bLUORp9oM65GV9XrPrbs+K563DjUR1M8mP1HaE+Y4lX5pk\nvQjC/xoEqSs5pxDDWXAkoexvxij8A4AWcsKU1Q+ep2E+GcytBoz8XINGvgb8cQNn\n/4PlVWKp7j5SDDNCfleYvmiRn8k6P4mxVJOHKzwb/IwQcKghyqAF1w==\n-----END RSA PRIVATE KEY-----");
-        	if(m.find()) {
-        		String content = m.group(2);
-        		assertTrue(content.startsWith("MIIEpAIBAAKCAQE"));
-        		assertTrue(content.endsWith("KghyqAF1w==\n"));
-        	} else {
-        		assertTrue(false);
-        	}
+            Pattern regex = Pattern.compile("(^[\\-]+[^\\-]+[\\-]+[\\n]?)([^\\-]+)([\\-]+[^\\-]+[\\-]+$)");
+            Matcher m = regex.matcher("-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAm4bLUORp9oM65GV9XrPrbs+K563DjUR1M8mP1HaE+Y4lX5pk\nvQjC/xoEqSs5pxDDWXAkoexvxij8A4AWcsKU1Q+ep2E+GcytBoz8XINGvgb8cQNn\n/4PlVWKp7j5SDDNCfleYvmiRn8k6P4mxVJOHKzwb/IwQcKghyqAF1w==\n-----END RSA PRIVATE KEY-----");
+            if(m.find()) {
+                String content = m.group(2);
+                assertTrue(content.startsWith("MIIEpAIBAAKCAQE"));
+                assertTrue(content.endsWith("KghyqAF1w==\n"));
+            } else {
+                assertTrue(false);
+            }
         }
 
         public void testKeystoreManager() throws Exception {
@@ -122,10 +122,10 @@ public class KeystoreTest extends TestCase {
             assertTrue(ksBits != null);
 
             try {
-            	KeyStore ks = CertificateHelper.loadKeystore(ksBits, "vmops.com");
-            	assertTrue(ks != null);
+                KeyStore ks = CertificateHelper.loadKeystore(ksBits, "vmops.com");
+                assertTrue(ks != null);
             } catch(Exception e) {
-            	assertTrue(false);
+                assertTrue(false);
             }
 
             KeystoreDao ksDao = locator.getDao(KeystoreDao.class);
@@ -137,18 +137,18 @@ public class KeystoreTest extends TestCase {
         UserVmResponse vm = new UserVmResponse();
         vm.setId(Long.toString(3L));
         /*
-            	vm.setAccountName("admin");
-            	vm.setName("i-2-3-KY");
-            	vm.setDisplayName("i-2-3-KY");
-            	vm.setDomainId(1L);
-            	vm.setDomainName("ROOT");
-            	vm.setCreated(new Date());
-            	vm.setState("Running");
-            	vm.setZoneId(1L);
-            	vm.setZoneName("KY");
-            	vm.setHostId(1L);
+                vm.setAccountName("admin");
+                vm.setName("i-2-3-KY");
+                vm.setDisplayName("i-2-3-KY");
+                vm.setDomainId(1L);
+                vm.setDomainName("ROOT");
+                vm.setCreated(new Date());
+                vm.setState("Running");
+                vm.setZoneId(1L);
+                vm.setZoneName("KY");
+                vm.setHostId(1L);
 
-            	vm.setObjectName("virtualmachine");
+                vm.setObjectName("virtualmachine");
         */
         String result = ApiSerializerHelper.toSerializedString(vm);
         // String result = "org.apache.cloudstack.api.response.UserVmResponse/virtualmachine/{\"id\":{\"_tableName\":\"vm_instance\",\"_value\":3},\"name\":\"i-2-3-KY\",\"displayname\":\"i-2-3-KY\",\"account\":\"admin\",\"projectid\":{\"_tableName\":\"projects\"},\"domainid\":{\"_tableName\":\"domain\",\"_value\":1},\"domain\":\"ROOT\",\"created\":\"2011-11-02T21:54:07-0700\",\"state\":\"Running\",\"haenable\":false,\"groupid\":{\"_tableName\":\"instance_group\"},\"zoneid\":{\"_tableName\":\"data_center\",\"_value\":1},\"zonename\":\"KY\",\"hostid\":{\"_tableName\":\"host\",\"_value\":1},\"hostname\":\"xenserver-basic\",\"templateid\":{\"_tableName\":\"vm_template\",\"_value\":2},\"templatename\":\"CentOS 5.3(64-bit) no GUI (XenServer)\",\"templatedisplaytext\":\"CentOS 5.3(64-bit) no GUI (XenServer)\",\"passwordenabled\":false,\"isoid\":{\"_tableName\":\"vm_template\"},\"serviceofferingid\":{\"_tableName\":\"disk_offering\",\"_value\":7},\"serviceofferingname\":\"Small Instance\",\"cpunumber\":1,\"cpuspeed\":500,\"memory\":512,\"guestosid\":{\"_tableName\":\"guest_os\",\"_value\":12},\"rootdeviceid\":0,\"rootdevicetype\":\"NetworkFilesystem\",\"securitygroup\":[],\"jobid\":{\"_tableName\":\"async_job\"},\"nic\":[{\"id\":7,\"networkid\":200,\"netmask\":\"255.255.255.0\",\"gateway\":\"10.1.1.1\",\"ipaddress\":\"10.1.1.116\",\"isolationuri\":\"vlan://1699\",\"broadcasturi\":\"vlan://1699\",\"traffictype\":\"Guest\",\"type\":\"Virtual\",\"isdefault\":true,\"macaddress\":\"02:00:39:a7:00:01\"}],\"hypervisor\":\"XenServer\"}";

@@ -602,7 +602,7 @@ public enum Config {
     MigrateWait("Advanced", AgentManager.class, Integer.class, "migratewait", "3600", "Time (in seconds) to wait for VM migrate finish", null),
     HAWorkers("Advanced", AgentManager.class, Integer.class, "ha.workers", "5", "Number of ha worker threads.", null),
     MountParent("Advanced", ManagementServer.class, String.class, "mount.parent", "/var/cloudstack/mnt", "The mount point on the Management Server for Secondary Storage.", null),
-//	UpgradeURL("Advanced", ManagementServer.class, String.class, "upgrade.url", "http://example.com:8080/client/agent/update.zip", "The upgrade URL is the URL of the management server that agents will connect to in order to automatically upgrade.", null),
+//    UpgradeURL("Advanced", ManagementServer.class, String.class, "upgrade.url", "http://example.com:8080/client/agent/update.zip", "The upgrade URL is the URL of the management server that agents will connect to in order to automatically upgrade.", null),
     SystemVMUseLocalStorage(
             "Advanced",
             ManagementServer.class,

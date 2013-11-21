@@ -287,11 +287,11 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         }
 
         return null;
-//    	String ipAddress = _ipAddressDao.assignIpAddress(accountId, domainId, vlan.getId(), false).getAddress();
-//    	if (ipAddress == null) {
-//    		return null;
-//    	}
-//		return new Pair<String, VlanVO>(ipAddress, vlan);
+//        String ipAddress = _ipAddressDao.assignIpAddress(accountId, domainId, vlan.getId(), false).getAddress();
+//        if (ipAddress == null) {
+//            return null;
+//        }
+//        return new Pair<String, VlanVO>(ipAddress, vlan);
 
     }
 

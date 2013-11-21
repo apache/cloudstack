@@ -972,7 +972,7 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
             s_logger.warn("Unable to associate LUN ", uhe);
             throw new ServerException("Unable to associate LUN", uhe);
         } catch (NaAPIFailedException naf) {
-            if (naf.getErrno() == 9008) { //initiator group already contains node				
+            if (naf.getErrno() == 9008) { //initiator group already contains node                
                 return returnVal;
             }
             s_logger.warn("Unable to associate LUN ", naf);

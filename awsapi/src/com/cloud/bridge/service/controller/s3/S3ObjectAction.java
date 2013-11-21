@@ -599,7 +599,7 @@ public class S3ObjectAction implements ServletAction {
                 //System.out.println( oneLine.length() + " body data: " + oneLine );
                 temp.append(oneLine);
             }
-//			else System.out.println( oneLine.length() + " preamble: " + oneLine );
+//            else System.out.println( oneLine.length() + " preamble: " + oneLine );
         }
 
         // [B] Authenticate the POST request after we have all the headers

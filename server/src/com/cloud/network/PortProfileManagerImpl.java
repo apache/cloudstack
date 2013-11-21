@@ -40,7 +40,7 @@ public class PortProfileManagerImpl {
     @DB
     public PortProfileVO addPortProfile(String portProfName, long vsmId, int vlanId, PortType pType, BindingType bType) {
 
-        // In this function, we create a port profile record in the port_profile table.    	
+        // In this function, we create a port profile record in the port_profile table.        
         // First, check if a port profile with the given name already exists. If it does, throw an exception.
 
         if (_portProfileDao.findByName(portProfName) != null) {
@@ -63,7 +63,7 @@ public class PortProfileManagerImpl {
 
         // In this function, we create a port profile record in the port_profile table.
 
-        // First, check if a port profile with the given name already exists. If it does, throw an exception.    	    	
+        // First, check if a port profile with the given name already exists. If it does, throw an exception.                
         PortProfileVO portProfileObj;
 
         portProfileObj = _portProfileDao.findByName(portProfName);

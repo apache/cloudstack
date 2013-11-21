@@ -26,7 +26,7 @@ public class AsyncCallFuture<T> implements Future<T>, AsyncCompletionCallback<T>
 
     Object _completed = new Object();
     boolean _done = false;
-    T _resultObject;		// we will store a copy of the result object
+    T _resultObject;        // we will store a copy of the result object
 
     public AsyncCallFuture() {
     }

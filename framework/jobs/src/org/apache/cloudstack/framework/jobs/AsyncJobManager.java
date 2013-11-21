@@ -75,7 +75,7 @@ public interface AsyncJobManager extends Manager {
      * 
      * @param jobId upper job that is going to wait the completion of a down-level job
      * @param joinJobId down-level job
-     * @Param wakeupHandler	wake-up handler
+     * @Param wakeupHandler    wake-up handler
      * @Param wakeupDispatcher wake-up dispatcher
      * @param wakeupTopicsOnMessageBus
      * @param wakeupIntervalInMilliSeconds
@@ -97,11 +97,11 @@ public interface AsyncJobManager extends Manager {
      * 
      * @param joinJobId down-level job for upper level job to join with
      * @param joinStatus AsyncJobConstants status code to indicate success or failure of the
-     * 					down-level job
+     *                     down-level job
      * @param joinResult object-stream serialized result object
-     * 					this is primarily used by down-level job to pass error exception objects
-     * 					for legacy code to work. To help pass exception object easier, we use
-     * 					object-stream based serialization instead of GSON
+     *                     this is primarily used by down-level job to pass error exception objects
+     *                     for legacy code to work. To help pass exception object easier, we use
+     *                     object-stream based serialization instead of GSON
      */
     void completeJoin(long joinJobId, JobInfo.Status joinStatus, String joinResult);
 
@@ -118,7 +118,7 @@ public interface AsyncJobManager extends Manager {
      * @param timeoutInMiliseconds time out to break out the whole wait process
      * @param predicate
      * @return true, predicate condition is satisfied
-     * 			false, wait is timed out
+     *             false, wait is timed out
      */
     boolean waitAndCheck(AsyncJob job, String[] wakupTopicsOnMessageBus, long checkIntervalInMilliSeconds, long timeoutInMiliseconds, Predicate predicate);
 

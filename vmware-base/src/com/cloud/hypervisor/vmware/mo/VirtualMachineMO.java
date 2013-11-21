@@ -795,9 +795,9 @@ public class VirtualMachineMO extends BaseMO {
         String vmxFilePath = fileInfo.getVmPathName();
         String vmxPathTokens[] = vmxFilePath.split("\\[|\\]|/");
         assert (vmxPathTokens.length == 4);
-        pathInfo[1] = vmxPathTokens[1].trim();							// vSphere vm name
-        pathInfo[2] = dcInfo.second();									// vSphere datacenter name
-        pathInfo[3] = vmxPathTokens[0].trim();							// vSphere datastore name
+        pathInfo[1] = vmxPathTokens[1].trim();                            // vSphere vm name
+        pathInfo[2] = dcInfo.second();                                    // vSphere datacenter name
+        pathInfo[3] = vmxPathTokens[0].trim();                            // vSphere datastore name
         return pathInfo;
     }
 
@@ -1429,7 +1429,7 @@ public class VirtualMachineMO extends BaseMO {
                             Script command = new Script(false, "tar", 0, s_logger);
                             command.setWorkDir(exportDir);
                             command.add("-cf", exportName + ".ova");
-                            command.add(exportName + ".ovf");		// OVF file should be the first file in OVA archive
+                            command.add(exportName + ".ovf");        // OVF file should be the first file in OVA archive
                             for (String name : fileNames) {
                                 command.add((new File(name).getName()));
                             }

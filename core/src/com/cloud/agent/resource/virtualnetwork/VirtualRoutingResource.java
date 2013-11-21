@@ -1014,54 +1014,54 @@ public class VirtualRoutingResource implements Manager {
     }
 
     //    protected Answer execute(final SetFirewallRuleCommand cmd) {
-    //    	String args;
-    //    	if(cmd.getProtocol().toLowerCase().equals(NetUtils.NAT_PROTO)){
-    //    		//1:1 NAT needs instanceip;publicip;domrip;op
-    //    		if(cmd.isCreate()) {
+    //        String args;
+    //        if(cmd.getProtocol().toLowerCase().equals(NetUtils.NAT_PROTO)){
+    //            //1:1 NAT needs instanceip;publicip;domrip;op
+    //            if(cmd.isCreate()) {
     //                args = "-A";
     //            } else {
     //                args = "-D";
     //            }
     //
-    //    		args += " -l " + cmd.getPublicIpAddress();
-    //    		args += " -i " + cmd.getRouterIpAddress();
-    //    		args += " -r " + cmd.getPrivateIpAddress();
-    //    		args += " -G " + cmd.getProtocol();
-    //    	}else{
-    //    		if (cmd.isEnable()) {
-    //    			args = "-A";
-    //    		} else {
-    //    			args = "-D";
-    //    		}
+    //            args += " -l " + cmd.getPublicIpAddress();
+    //            args += " -i " + cmd.getRouterIpAddress();
+    //            args += " -r " + cmd.getPrivateIpAddress();
+    //            args += " -G " + cmd.getProtocol();
+    //        }else{
+    //            if (cmd.isEnable()) {
+    //                args = "-A";
+    //            } else {
+    //                args = "-D";
+    //            }
     //
-    //    		args += " -P " + cmd.getProtocol().toLowerCase();
-    //    		args += " -l " + cmd.getPublicIpAddress();
-    //    		args += " -p " + cmd.getPublicPort();
-    //    		args += " -n " + cmd.getRouterName();
-    //    		args += " -i " + cmd.getRouterIpAddress();
-    //    		args += " -r " + cmd.getPrivateIpAddress();
-    //    		args += " -d " + cmd.getPrivatePort();
-    //    		args += " -N " + cmd.getVlanNetmask();
+    //            args += " -P " + cmd.getProtocol().toLowerCase();
+    //            args += " -l " + cmd.getPublicIpAddress();
+    //            args += " -p " + cmd.getPublicPort();
+    //            args += " -n " + cmd.getRouterName();
+    //            args += " -i " + cmd.getRouterIpAddress();
+    //            args += " -r " + cmd.getPrivateIpAddress();
+    //            args += " -d " + cmd.getPrivatePort();
+    //            args += " -N " + cmd.getVlanNetmask();
     //
-    //    		String oldPrivateIP = cmd.getOldPrivateIP();
-    //    		String oldPrivatePort = cmd.getOldPrivatePort();
+    //            String oldPrivateIP = cmd.getOldPrivateIP();
+    //            String oldPrivatePort = cmd.getOldPrivatePort();
     //
-    //    		if (oldPrivateIP != null) {
-    //    			args += " -w " + oldPrivateIP;
-    //    		}
+    //            if (oldPrivateIP != null) {
+    //                args += " -w " + oldPrivateIP;
+    //            }
     //
-    //    		if (oldPrivatePort != null) {
-    //    			args += " -x " + oldPrivatePort;
-    //    		}
-    //    	}
+    //            if (oldPrivatePort != null) {
+    //                args += " -x " + oldPrivatePort;
+    //            }
+    //        }
     //
-    //    	final Script command = new Script(_firewallPath, _timeout, s_logger);
-    //    	String [] argsArray = args.split(" ");
-    //    	for (String param : argsArray) {
-    //    		command.add(param);
-    //    	}
-    //    	String result = command.execute();
-    //    	return new Answer(cmd, result == null, result);
+    //        final Script command = new Script(_firewallPath, _timeout, s_logger);
+    //        String [] argsArray = args.split(" ");
+    //        for (String param : argsArray) {
+    //            command.add(param);
+    //        }
+    //        String result = command.execute();
+    //        return new Answer(cmd, result == null, result);
     //    }
 
     protected String getDefaultScriptsDir() {

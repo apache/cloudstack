@@ -41,7 +41,7 @@ public class TestDbSetup {
     public static void startMysqlServer(int port, String startMysqlScript) throws Exception {
 
        try {
-	   String cwd = new java.io.File(".").getCanonicalPath();
+       String cwd = new java.io.File(".").getCanonicalPath();
             Runtime r = Runtime.getRuntime();
             String script = startMysqlScript;
             if (script == null) {

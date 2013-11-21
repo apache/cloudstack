@@ -50,7 +50,7 @@ public class EC2VolumeFilterSet {
         filterTypes.put("tag-key", "string");
         filterTypes.put("tag-value", "string");
         filterTypes.put("volume-id", "string");
-        //		filterTypes.put( "tag:*",                            "null" );
+        //        filterTypes.put( "tag:*",                            "null" );
     }
 
     public void addFilter(EC2Filter param) {

@@ -77,7 +77,7 @@ public class BaremetalDnsmasqResource extends BaremetalDhcpResourceBase {
             /*
             String prepareCmd = String.format("sh /usr/bin/prepare_dnsmasq.sh %1$s %2$s %3$s", _gateway, _dns, _ip);
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, prepareCmd)) {
-            	throw new ConfigurationException("prepare dnsmasq at " + _ip + " failed");
+                throw new ConfigurationException("prepare dnsmasq at " + _ip + " failed");
             }
             */
 

@@ -31,8 +31,8 @@ import com.cloud.bridge.service.exception.UnsupportedException;
  * canonicalUserID
  */
 public class S3Grant {
-    private int grantee;			// SAcl.GRANTEE_USER etc
-    private int permission;			// SAcl.PERMISSION_READ etc
+    private int grantee;            // SAcl.GRANTEE_USER etc
+    private int permission;            // SAcl.PERMISSION_READ etc
     private String canonicalUserID;
 
     public S3Grant() {

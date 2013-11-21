@@ -46,7 +46,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
 
     //
     // query SQL for returnning console proxy assignment info as following
-    // 		proxy vm id, count of assignment
+    //         proxy vm id, count of assignment
     //
     private static final String PROXY_ASSIGNMENT_MATRIX = "SELECT c.id, count(runningVm.id) AS count "
                                                           + " FROM console_proxy AS c LEFT JOIN vm_instance AS i ON c.id=i.id LEFT JOIN"

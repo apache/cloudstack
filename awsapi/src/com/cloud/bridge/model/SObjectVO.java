@@ -54,7 +54,7 @@ public class SObjectVO {
     private int nextSequence;
 
     @Column(name = "DeletionMark")
-    private String deletionMark;	// This must also a unique ID to give to the REST client
+    private String deletionMark;    // This must also a unique ID to give to the REST client
 
     @Column(name = "CreateTime")
     @Temporal(value = TemporalType.TIMESTAMP)

@@ -96,12 +96,12 @@ import java.io.StringWriter;
 
 
 public class MockablePaloAltoResource extends PaloAltoResource {
-	private HashMap<String, String> context;
-	public void setMockContext(HashMap<String, String> context) {
-		this.context = context;
-	}
+    private HashMap<String, String> context;
+    public void setMockContext(HashMap<String, String> context) {
+        this.context = context;
+    }
 
-	/* Fake the calls to the Palo Alto API */
+    /* Fake the calls to the Palo Alto API */
     protected String request(PaloAltoMethod method, Map<String, String> params) throws ExecutionException {
         if (method != PaloAltoMethod.GET && method != PaloAltoMethod.POST) {
             throw new ExecutionException("Invalid http method used to access the Palo Alto API.");
@@ -116,8 +116,8 @@ public class MockablePaloAltoResource extends PaloAltoResource {
         
         // 'config' requests
         if (params.containsKey("type") && params.get("type").equals("config") && params.containsKey("action")) {
-        	// action = 'get'
-        	if (params.get("action").equals("get")) {
+            // action = 'get'
+            if (params.get("action").equals("get")) {
                 // get interface for type
                 // | public_using_ethernet
                 if (params.get("xpath").equals("/config/devices/entry/network/interface/ethernet/entry[@name='ethernet1/1']")) {
@@ -146,7 +146,7 @@ public class MockablePaloAltoResource extends PaloAltoResource {
                     }
                 }
 
-        		// get public interface IP | has_public_interface
+                // get public interface IP | has_public_interface
                 if (params.get("xpath").equals("/config/devices/entry/network/interface/ethernet/entry[@name='ethernet1/1']/layer3/units/entry[@name='ethernet1/1.9999']/ip/entry[@name='192.168.80.102/32']")) {
                     if (context.containsKey("has_public_interface") && context.get("has_public_interface").equals("true")) {
                         response = "<response status=\"success\" code=\"19\"><result total-count=\"1\" count=\"1\"><entry name=\"192.168.80.102/32\" admin=\"admin\" time=\"2013/07/05 13:02:37\"/></result></response>";
@@ -169,7 +169,7 @@ public class MockablePaloAltoResource extends PaloAltoResource {
                     response = "<response status=\"success\" code=\"19\"><result total-count=\"1\" count=\"1\"><entry name=\"10.3.96.1/20\"/></result></response>";
                 }
 
-        		// get source nat | has_src_nat_rule
+                // get source nat | has_src_nat_rule
                 if (params.get("xpath").equals("/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/nat/rules/entry[@name='src_nat.3954']")) {
                     if (context.containsKey("has_src_nat_rule") && context.get("has_src_nat_rule").equals("true")) {
                         response = "<response status=\"success\" code=\"19\"><result total-count=\"1\" count=\"1\"><entry name=\"src_nat.3954\" admin=\"admin\" time=\"2013/07/05 13:02:38\"><to admin=\"admin\" time=\"2013/07/05 13:02:38\"><member admin=\"admin\" time=\"2013/07/05 13:02:38\">untrust</member></to><from><member>trust</member></from><source><member>10.5.80.1/20</member></source><destination><member>any</member></destination><service>any</service><nat-type>ipv4</nat-type><to-interface>ethernet1/1.9999</to-interface><source-translation><dynamic-ip-and-port><interface-address><ip>192.168.80.102/32</ip><interface>ethernet1/1.9999</interface></interface-address></dynamic-ip-and-port></source-translation></entry></result></response>";
@@ -241,10 +241,10 @@ public class MockablePaloAltoResource extends PaloAltoResource {
                     }
                 }
 
-        	}
+            }
 
-        	// action = 'set'
-        	if (params.get("action").equals("set")) {
+            // action = 'set'
+            if (params.get("action").equals("set")) {
                 // set management profile
                 if (params.get("xpath").equals("/config/devices/entry/network/profiles/interface-management-profile/entry[@name='Ping']")) {
                     response = "<response status=\"success\" code=\"20\"><msg>command succeeded</msg></response>";
@@ -324,10 +324,10 @@ public class MockablePaloAltoResource extends PaloAltoResource {
                     response = "<response status=\"success\" code=\"20\"><msg>command succeeded</msg></response>";
                     context.put("has_service_tcp_80", "true");
                 }
-        	}
+            }
 
-        	// action = 'delete'
-        	if (params.get("action").equals("delete")) {
+            // action = 'delete'
+            if (params.get("action").equals("delete")) {
                 // remove egress firewall rule
                 if (params.get("xpath").equals("/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='policy_0']")) {
                     response = "<response status=\"success\" code=\"20\"><msg>command succeeded</msg></response>";
@@ -396,24 +396,24 @@ public class MockablePaloAltoResource extends PaloAltoResource {
                     context.remove("has_private_interface");
                 }
 
-        	}
+            }
         } // end 'config'
 
         // 'op' requests
         if (params.containsKey("type") && params.get("type").equals("op")) {
-        	// check if there are pending changes
-        	if (params.get("cmd").equals("<check><pending-changes></pending-changes></check>")) {
+            // check if there are pending changes
+            if (params.get("cmd").equals("<check><pending-changes></pending-changes></check>")) {
                 if (context.containsKey("firewall_has_pending_changes") && context.get("firewall_has_pending_changes").equals("true")) {
                     response = "<response status=\"success\"><result>yes</result></response>";
                 } else {
                     response = "<response status=\"success\"><result>no</result></response>";
                 }
-        	}
+            }
 
-        	// add a config lock
-        	if (params.get("cmd").equals("<request><config-lock><add></add></config-lock></request>")) {
+            // add a config lock
+            if (params.get("cmd").equals("<request><config-lock><add></add></config-lock></request>")) {
                 response = "<response status=\"success\"><result>Successfully acquired lock. Other administrators will not be able to modify configuration for scope shared until lock is released</result></response>";
-        	}
+            }
 
             // check job status
             if (params.get("cmd").equals("<show><jobs><id>1</id></jobs></show>")) {
@@ -424,23 +424,23 @@ public class MockablePaloAltoResource extends PaloAltoResource {
                 }
             }
 
-        	// load from running config
-        	if (params.get("cmd").equals("<load><config><from>running-config.xml</from></config></load>")) {
+            // load from running config
+            if (params.get("cmd").equals("<load><config><from>running-config.xml</from></config></load>")) {
                 response = "<response status=\"success\"><result><msg><line>Config loaded from running-config.xml</line></msg></result></response>";
-        	}
+            }
 
-        	// remove config lock
-        	if (params.get("cmd").equals("<request><config-lock><remove></remove></config-lock></request>")) {
+            // remove config lock
+            if (params.get("cmd").equals("<request><config-lock><remove></remove></config-lock></request>")) {
                 response = "<response status=\"success\"><result>Config lock released for scope shared</result></response>";
-        	}
+            }
         } // end 'op'
 
         // 'commit' requests
         if (params.containsKey("type") && params.get("type").equals("commit")) {
-        	// cmd = '<commit></commit>'
-        	if (params.get("cmd").equals("<commit></commit>")) {
+            // cmd = '<commit></commit>'
+            if (params.get("cmd").equals("<commit></commit>")) {
                 response = "<response status=\"success\" code=\"19\"><result><msg><line>Commit job enqueued with jobid 1</line></msg><job>1</job></result></response>";
-        	}
+            }
         } // end 'commit'
 
 

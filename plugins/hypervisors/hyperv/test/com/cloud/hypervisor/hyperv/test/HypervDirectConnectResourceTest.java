@@ -194,7 +194,7 @@ public class HypervDirectConnectResourceTest {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-		}
+        }
         Assert.assertTrue(
                 "Need to put a sample working virtual disk at "
                         + testVolWorks.getPath(), testVolWorks.exists());

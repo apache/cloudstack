@@ -117,7 +117,7 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     private boolean limitCpuUse;
 
     @Column(name = "update_count", updatable = true, nullable = false)
-    protected long updated;	// This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
+    protected long updated;    // This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
 
     @Column(name = GenericDao.CREATED_COLUMN)
     protected Date created;

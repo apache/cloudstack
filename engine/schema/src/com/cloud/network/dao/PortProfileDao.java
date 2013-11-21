@@ -44,7 +44,7 @@ public interface PortProfileDao extends GenericDao<PortProfileVO, Long> {
      * List<PortProfileVO> listByVlanId(int vlanId);
      * 
      * List all uplink portprofiles (these represent physical ports).
-     * List<PortProfileVO> listAllUplinkPortProfiles();	// we may have to provide some filter, like clusterId or zoneId or something.
+     * List<PortProfileVO> listAllUplinkPortProfiles();    // we may have to provide some filter, like clusterId or zoneId or something.
      * 
      */
 }

@@ -68,7 +68,7 @@ public class EC2RestAuth {
         } catch (Exception e) {
         }
 
-        // -> the time zone is GMT if not defined	
+        // -> the time zone is GMT if not defined    
         try {
             formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
             cal.setTime(formatter.parse(created));

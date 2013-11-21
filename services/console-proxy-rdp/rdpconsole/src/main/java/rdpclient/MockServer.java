@@ -41,157 +41,157 @@ public class MockServer implements Runnable {
     protected boolean verbose = System.getProperty("rdpclient.MockServer.debug", "false").equals("true");
 
     public MockServer(Packet packets[]) {
-	this.packets = packets;
+    this.packets = packets;
     }
 
     public void start() throws IOException {
-	serverSocket = new ServerSocket(0);
+    serverSocket = new ServerSocket(0);
 
-	shutdown = false;
-	exception = null;
-	shutdowned = false;
+    shutdown = false;
+    exception = null;
+    shutdowned = false;
 
-	new Thread(this).start();
+    new Thread(this).start();
     }
 
     public void run() {
 
-	try {
-	    Socket socket = serverSocket.accept();
+    try {
+        Socket socket = serverSocket.accept();
 
-	    InputStream is = socket.getInputStream();
-	    OutputStream os = socket.getOutputStream();
+        InputStream is = socket.getInputStream();
+        OutputStream os = socket.getOutputStream();
 
-	    try {
-		for (int i = 0; i < packets.length && !shutdown; i++) {
+        try {
+        for (int i = 0; i < packets.length && !shutdown; i++) {
 
-		    Packet packet = packets[i];
-		    switch (packet.type) {
-		    case CLIENT: {
-			// Read client data and compare it with mock data
-			// (unless "ignore" option is set)
-			byte actualData[] = new byte[packet.data.length];
-			int actualDataLength = is.read(actualData);
+            Packet packet = packets[i];
+            switch (packet.type) {
+            case CLIENT: {
+            // Read client data and compare it with mock data
+            // (unless "ignore" option is set)
+            byte actualData[] = new byte[packet.data.length];
+            int actualDataLength = is.read(actualData);
 
-			if (verbose)
-			    System.out.println("[" + this + "] INFO: Data is read: {" + Arrays.toString(Arrays.copyOf(actualData, actualDataLength)) + "}.");
+            if (verbose)
+                System.out.println("[" + this + "] INFO: Data is read: {" + Arrays.toString(Arrays.copyOf(actualData, actualDataLength)) + "}.");
 
-			if (!packet.ignore) {
-			    // Compare actual data with expected data
-			    if (actualDataLength != packet.data.length) {
-				throw new AssertionError("Actual length of client request for packet #" + (i + 1) + " (\"" + packet.id + "\")"
-					+ " does not match length of expected client request. Actual length: " + actualDataLength + ", expected legnth: "
-					+ packet.data.length + ".");
-			    }
+            if (!packet.ignore) {
+                // Compare actual data with expected data
+                if (actualDataLength != packet.data.length) {
+                throw new AssertionError("Actual length of client request for packet #" + (i + 1) + " (\"" + packet.id + "\")"
+                    + " does not match length of expected client request. Actual length: " + actualDataLength + ", expected legnth: "
+                    + packet.data.length + ".");
+                }
 
-			    for (int j = 0; j < packet.data.length; j++) {
+                for (int j = 0; j < packet.data.length; j++) {
 
-				if (packet.data[j] != actualData[j]) {
-				    throw new AssertionError("Actual byte #" + (j + 1) + " of client request for packet #" + (i + 1) + " (\"" + packet.id
-					    + "\")" + " does not match corresponding byte of expected client request. Actual byte: " + actualData[j]
-					    + ", expected byte: " + packet.data[j] + ".");
-				}
-			    }
-			}
-			break;
-		    }
-		    case SERVER: {
-			// Send mock data to client
-			os.write(packet.data);
+                if (packet.data[j] != actualData[j]) {
+                    throw new AssertionError("Actual byte #" + (j + 1) + " of client request for packet #" + (i + 1) + " (\"" + packet.id
+                        + "\")" + " does not match corresponding byte of expected client request. Actual byte: " + actualData[j]
+                        + ", expected byte: " + packet.data[j] + ".");
+                }
+                }
+            }
+            break;
+            }
+            case SERVER: {
+            // Send mock data to client
+            os.write(packet.data);
 
-			if (verbose)
-			    System.out.println("[" + this + "] INFO: Data is written: {" + Arrays.toString(packet.data) + "}.");
+            if (verbose)
+                System.out.println("[" + this + "] INFO: Data is written: {" + Arrays.toString(packet.data) + "}.");
 
-			break;
-		    }
-		    case UPGRADE_TO_SSL: {
-			// Attach SSL context to socket
+            break;
+            }
+            case UPGRADE_TO_SSL: {
+            // Attach SSL context to socket
 
-			final SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-			SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket(socket, null, serverSocket.getLocalPort(), true);
-			sslSocket.setEnabledCipherSuites(sslSocket.getSupportedCipherSuites());
-			sslSocket.setUseClientMode(false);
-			sslSocket.startHandshake();
-			is = sslSocket.getInputStream();
-			os = sslSocket.getOutputStream();
+            final SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+            SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket(socket, null, serverSocket.getLocalPort(), true);
+            sslSocket.setEnabledCipherSuites(sslSocket.getSupportedCipherSuites());
+            sslSocket.setUseClientMode(false);
+            sslSocket.startHandshake();
+            is = sslSocket.getInputStream();
+            os = sslSocket.getOutputStream();
 
-			break;
-		    }
-		    default:
-			throw new RuntimeException("Unknown packet type: " + packet.type);
-		    }
+            break;
+            }
+            default:
+            throw new RuntimeException("Unknown packet type: " + packet.type);
+            }
 
-		}
-	    } finally {
-		try {
-		    is.close();
-		} catch (Throwable e) {
-		}
-		try {
-		    os.close();
-		} catch (Throwable e) {
-		}
-		try {
-		    socket.close();
-		} catch (Throwable e) {
-		}
-		try {
-		    serverSocket.close();
-		} catch (Throwable e) {
-		}
-	    }
-	} catch (Throwable e) {
-	    System.err.println("Error in mock server: " + e.getMessage());
-	    e.printStackTrace(System.err);
-	    exception = e;
-	}
-	shutdowned = true;
-	if (verbose)
-	    System.out.println("[" + this + "] INFO: Mock server shutdowned.");
+        }
+        } finally {
+        try {
+            is.close();
+        } catch (Throwable e) {
+        }
+        try {
+            os.close();
+        } catch (Throwable e) {
+        }
+        try {
+            socket.close();
+        } catch (Throwable e) {
+        }
+        try {
+            serverSocket.close();
+        } catch (Throwable e) {
+        }
+        }
+    } catch (Throwable e) {
+        System.err.println("Error in mock server: " + e.getMessage());
+        e.printStackTrace(System.err);
+        exception = e;
+    }
+    shutdowned = true;
+    if (verbose)
+        System.out.println("[" + this + "] INFO: Mock server shutdowned.");
 
     }
 
     public void shutdown() {
-	shutdown = true;
+    shutdown = true;
     }
 
     public InetSocketAddress getAddress() {
-	return (InetSocketAddress) serverSocket.getLocalSocketAddress();
+    return (InetSocketAddress) serverSocket.getLocalSocketAddress();
     }
 
     public Throwable getException() {
-	return exception;
+    return exception;
     }
 
     public static class Packet {
-	public static enum PacketType {
-	    SERVER, CLIENT, UPGRADE_TO_SSL;
-	}
+    public static enum PacketType {
+        SERVER, CLIENT, UPGRADE_TO_SSL;
+    }
 
-	public String id = "";
+    public String id = "";
 
-	public Packet() {
-	}
+    public Packet() {
+    }
 
-	public Packet(String id) {
-	    this.id = id;
-	}
+    public Packet(String id) {
+        this.id = id;
+    }
 
-	public PacketType type;
+    public PacketType type;
 
-	public boolean ignore = false;
+    public boolean ignore = false;
 
-	public byte data[];
+    public byte data[];
     }
 
     public boolean isShutdowned() {
-	return shutdowned;
+    return shutdowned;
     }
 
     public void waitUntilShutdowned(long timeToWaitMiliseconds) throws InterruptedException {
-	long deadline = System.currentTimeMillis() + timeToWaitMiliseconds;
-	while (!shutdowned && System.currentTimeMillis() < deadline) {
-	    Thread.sleep(10);
-	}
+    long deadline = System.currentTimeMillis() + timeToWaitMiliseconds;
+    while (!shutdowned && System.currentTimeMillis() < deadline) {
+        Thread.sleep(10);
+    }
     }
 }

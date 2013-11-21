@@ -146,13 +146,13 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     *
     *     */
     private static final String LIST_CLUSTERS_CROSSING_THRESHOLD = "SELECT clusterList.cluster_id "
-                                                                   + "FROM (	SELECT cluster.cluster_id cluster_id, ( (sum(cluster.used) + sum(cluster.reserved) + ?)/sum(cluster.total) ) ratio, cluster.configValue value "
-                                                                   + "FROM (	SELECT capacity.cluster_id cluster_id, capacity.used_capacity used, capacity.reserved_capacity reserved, capacity.total_capacity * overcommit.value total, "
+                                                                   + "FROM (    SELECT cluster.cluster_id cluster_id, ( (sum(cluster.used) + sum(cluster.reserved) + ?)/sum(cluster.total) ) ratio, cluster.configValue value "
+                                                                   + "FROM (    SELECT capacity.cluster_id cluster_id, capacity.used_capacity used, capacity.reserved_capacity reserved, capacity.total_capacity * overcommit.value total, "
                                                                    + "CASE (SELECT count(*) FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ? ) "
-                                                                   + "WHEN 1 THEN (	CASE WHEN (SELECT details.value FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ?) is NULL "
+                                                                   + "WHEN 1 THEN (    CASE WHEN (SELECT details.value FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ?) is NULL "
                                                                    + "THEN (SELECT config.value FROM `cloud`.`configuration` config WHERE config.name = ?)"
                                                                    + "ELSE (SELECT details.value FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ? ) END )"
-                                                                   + "ELSE (	SELECT config.value FROM `cloud`.`configuration` config WHERE config.name = ?) "
+                                                                   + "ELSE (    SELECT config.value FROM `cloud`.`configuration` config WHERE config.name = ?) "
                                                                    + "END configValue "
                                                                    + "FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`cluster_details` overcommit ON overcommit.cluster_id = capacity.cluster_id "
                                                                    + "WHERE capacity.data_center_id = ? AND capacity.capacity_type = ? AND capacity.total_capacity > 0 AND overcommit.name = ?) cluster "

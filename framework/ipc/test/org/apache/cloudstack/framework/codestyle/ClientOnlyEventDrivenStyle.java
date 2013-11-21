@@ -32,7 +32,7 @@ public class ClientOnlyEventDrivenStyle {
         String cmd = new String();
         RpcCallbackDispatcher<ClientOnlyEventDrivenStyle> callbackDispatcher = RpcCallbackDispatcher.create(this);
         callbackDispatcher.setCallback(callbackDispatcher.getTarget().OnAsyncCallRpcServiceCallback(null, null));
-        _rpcProvider.newCall("host-2").setCommand("TestCommand").setCommandArg(cmd).setTimeout(10000).setCallbackDispatcher(callbackDispatcher).setContext("Context Object")		// save context object for callback handler
+        _rpcProvider.newCall("host-2").setCommand("TestCommand").setCommandArg(cmd).setTimeout(10000).setCallbackDispatcher(callbackDispatcher).setContext("Context Object")        // save context object for callback handler
             .apply();
     }
 

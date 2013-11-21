@@ -262,10 +262,10 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 
         /*
         try {
-        	_canBridgeFirewall = canBridgeFirewall();
+            _canBridgeFirewall = canBridgeFirewall();
         } catch (XmlRpcException e) {
-        	s_logger.error("Failed to detect whether the host supports security groups.", e);
-        	_canBridgeFirewall = false;
+            s_logger.error("Failed to detect whether the host supports security groups.", e);
+            _canBridgeFirewall = false;
         }
         */
 

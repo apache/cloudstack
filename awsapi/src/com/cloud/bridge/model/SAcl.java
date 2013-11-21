@@ -65,35 +65,35 @@ public interface SAcl {
      */
     //public static OrderedPair <Integer,Integer> getCannedAccessControls ( String aclRequestString, String target );
 
-    /*		{
-    		    if ( aclRequestString.equalsIgnoreCase( "public-read" )) 
-    	             // All users granted READ access.
-    		    	 return new OrderedPair <Integer,Integer> (PERMISSION_READ,GRANTEE_ALLUSERS);
-    		    else if (aclRequestString.equalsIgnoreCase( "public-read-write" )) 
-    		    	 // All users granted READ and WRITE access
-    		    	return new OrderedPair <Integer,Integer> ((PERMISSION_READ | PERMISSION_WRITE),GRANTEE_ALLUSERS);
-    		    else if (aclRequestString.equalsIgnoreCase( "authenticated-read" )) 
-    			     // Authenticated users have READ access
-    		    	return new OrderedPair <Integer,Integer> (PERMISSION_READ,GRANTEE_AUTHENTICATED);
-    		    else if (aclRequestString.equalsIgnoreCase( "private" )) 
-    			     // Only Owner gets FULL_CONTROL
-    		    	return new OrderedPair <Integer,Integer> (PERMISSION_FULL,GRANTEE_USER);
-    		    else if (aclRequestString.equalsIgnoreCase( "bucket-owner-read" ))
-    		    {
-    		    	 // Object Owner gets FULL_CONTROL, Bucket Owner gets READ
-    		    	 if ( target.equalsIgnoreCase( "SBucket" ))  
-    		    		 return new OrderedPair <Integer,Integer> (PERMISSION_READ, GRANTEE_USER);
-    		    	 else
-    		    		  return new OrderedPair <Integer,Integer> (PERMISSION_FULL, GRANTEE_USER);   		 	    		 
-    		    }
-    		    else if (aclRequestString.equalsIgnoreCase( "bucket-owner-full-control" )) 
-    		    {
-    		    	 // Object Owner gets FULL_CONTROL, Bucket Owner gets FULL_CONTROL
-    		    	 // This is equivalent to private when used with PUT Bucket
-    		    	return new OrderedPair <Integer,Integer> (PERMISSION_FULL,GRANTEE_USER);
-    		    }
-    		    else throw new UnsupportedException( "Unknown Canned Access Policy: " + aclRequestString + " is not supported" );
-    		}
+    /*        {
+                if ( aclRequestString.equalsIgnoreCase( "public-read" )) 
+                     // All users granted READ access.
+                     return new OrderedPair <Integer,Integer> (PERMISSION_READ,GRANTEE_ALLUSERS);
+                else if (aclRequestString.equalsIgnoreCase( "public-read-write" )) 
+                     // All users granted READ and WRITE access
+                    return new OrderedPair <Integer,Integer> ((PERMISSION_READ | PERMISSION_WRITE),GRANTEE_ALLUSERS);
+                else if (aclRequestString.equalsIgnoreCase( "authenticated-read" )) 
+                     // Authenticated users have READ access
+                    return new OrderedPair <Integer,Integer> (PERMISSION_READ,GRANTEE_AUTHENTICATED);
+                else if (aclRequestString.equalsIgnoreCase( "private" )) 
+                     // Only Owner gets FULL_CONTROL
+                    return new OrderedPair <Integer,Integer> (PERMISSION_FULL,GRANTEE_USER);
+                else if (aclRequestString.equalsIgnoreCase( "bucket-owner-read" ))
+                {
+                     // Object Owner gets FULL_CONTROL, Bucket Owner gets READ
+                     if ( target.equalsIgnoreCase( "SBucket" ))  
+                         return new OrderedPair <Integer,Integer> (PERMISSION_READ, GRANTEE_USER);
+                     else
+                          return new OrderedPair <Integer,Integer> (PERMISSION_FULL, GRANTEE_USER);                             
+                }
+                else if (aclRequestString.equalsIgnoreCase( "bucket-owner-full-control" )) 
+                {
+                     // Object Owner gets FULL_CONTROL, Bucket Owner gets FULL_CONTROL
+                     // This is equivalent to private when used with PUT Bucket
+                    return new OrderedPair <Integer,Integer> (PERMISSION_FULL,GRANTEE_USER);
+                }
+                else throw new UnsupportedException( "Unknown Canned Access Policy: " + aclRequestString + " is not supported" );
+            }
     */
     /** Return a Triple 
      *         < permission1, permission2, symbol >
@@ -111,39 +111,39 @@ public interface SAcl {
      * @param ownerID - An ID for the owner, if used in place of symbols "A" or "*"
      */
     //public static Triple <Integer,Integer,String> getCannedAccessControls ( String aclRequestString, String target, String ownerID );
-    /*	     throws UnsupportedException
-    	{
-    	    if ( aclRequestString.equalsIgnoreCase( "public-read" )) 
+    /*         throws UnsupportedException
+        {
+            if ( aclRequestString.equalsIgnoreCase( "public-read" )) 
                  // Owner gets FULL_CONTROL and the anonymous principal (the 'A' symbol here) is granted READ access.
-    	    	 return new Triple <Integer, Integer, String> (PERMISSION_FULL, PERMISSION_READ,"A");
-    	    else if (aclRequestString.equalsIgnoreCase( "public-read-write" )) 
-    	    	 // Owner gets FULL_CONTROL and the anonymous principal (the 'A' symbol here) is granted READ and WRITE access
-    	    	return new Triple <Integer, Integer, String> (PERMISSION_FULL, (PERMISSION_READ | PERMISSION_WRITE),"A");
-    	    else if (aclRequestString.equalsIgnoreCase( "authenticated-read" )) 
-    		     // Owner gets FULL_CONTROL and ANY principal authenticated as a registered S3 user (the '*' symbol here) is granted READ access
-    	    	return new Triple <Integer, Integer, String> (PERMISSION_FULL, PERMISSION_READ,"*");
-    	    else if (aclRequestString.equalsIgnoreCase( "private" )) 
-    		     // This is termed the "private" or default ACL, "Owner gets FULL_CONTROL"
-    	    	return new Triple <Integer, Integer, String> (PERMISSION_FULL, PERMISSION_FULL,null);
-    	    else if (aclRequestString.equalsIgnoreCase( "bucket-owner-read" ))
-    	    {
-    	    	 // Object Owner gets FULL_CONTROL, Bucket Owner gets READ
-    	    	 // This is equivalent to private when used with PUT Bucket
-    	    	 if ( target.equalsIgnoreCase( "SBucket" ))  
-    	    		  return new Triple <Integer, Integer, String> (PERMISSION_FULL,PERMISSION_FULL ,null);   		 
-    	    	 else 
-    	    		 return new Triple <Integer, Integer, String> (PERMISSION_FULL,PERMISSION_READ,ownerID);
-    	    }
-    	    else if (aclRequestString.equalsIgnoreCase( "bucket-owner-full-control" )) 
-    	    {
-    	    	 // Object Owner gets FULL_CONTROL, Bucket Owner gets FULL_CONTROL
-    	    	 // This is equivalent to private when used with PUT Bucket
-    	    	 if ( target.equalsIgnoreCase( "SBucket" ))  
-    	    		 return new Triple <Integer, Integer, String> (PERMISSION_FULL, PERMISSION_FULL, null);    		 
-    	    	 else 
-    	    		 return new Triple <Integer, Integer, String> (PERMISSION_FULL,PERMISSION_FULL, ownerID);
-    	    }
-    	    else throw new UnsupportedException( "Unknown Canned Access Policy: " + aclRequestString + " is not supported" );
-    	}
+                 return new Triple <Integer, Integer, String> (PERMISSION_FULL, PERMISSION_READ,"A");
+            else if (aclRequestString.equalsIgnoreCase( "public-read-write" )) 
+                 // Owner gets FULL_CONTROL and the anonymous principal (the 'A' symbol here) is granted READ and WRITE access
+                return new Triple <Integer, Integer, String> (PERMISSION_FULL, (PERMISSION_READ | PERMISSION_WRITE),"A");
+            else if (aclRequestString.equalsIgnoreCase( "authenticated-read" )) 
+                 // Owner gets FULL_CONTROL and ANY principal authenticated as a registered S3 user (the '*' symbol here) is granted READ access
+                return new Triple <Integer, Integer, String> (PERMISSION_FULL, PERMISSION_READ,"*");
+            else if (aclRequestString.equalsIgnoreCase( "private" )) 
+                 // This is termed the "private" or default ACL, "Owner gets FULL_CONTROL"
+                return new Triple <Integer, Integer, String> (PERMISSION_FULL, PERMISSION_FULL,null);
+            else if (aclRequestString.equalsIgnoreCase( "bucket-owner-read" ))
+            {
+                 // Object Owner gets FULL_CONTROL, Bucket Owner gets READ
+                 // This is equivalent to private when used with PUT Bucket
+                 if ( target.equalsIgnoreCase( "SBucket" ))  
+                      return new Triple <Integer, Integer, String> (PERMISSION_FULL,PERMISSION_FULL ,null);            
+                 else 
+                     return new Triple <Integer, Integer, String> (PERMISSION_FULL,PERMISSION_READ,ownerID);
+            }
+            else if (aclRequestString.equalsIgnoreCase( "bucket-owner-full-control" )) 
+            {
+                 // Object Owner gets FULL_CONTROL, Bucket Owner gets FULL_CONTROL
+                 // This is equivalent to private when used with PUT Bucket
+                 if ( target.equalsIgnoreCase( "SBucket" ))  
+                     return new Triple <Integer, Integer, String> (PERMISSION_FULL, PERMISSION_FULL, null);             
+                 else 
+                     return new Triple <Integer, Integer, String> (PERMISSION_FULL,PERMISSION_FULL, ownerID);
+            }
+            else throw new UnsupportedException( "Unknown Canned Access Policy: " + aclRequestString + " is not supported" );
+        }
     */
 }

@@ -445,6 +445,7 @@
     <outputDirectory>${basedir}/${cs.target.dir}/classes</outputDirectory>
     <testOutputDirectory>${basedir}/${cs.target.dir}/test-classes</testOutputDirectory>
     <plugins>
+	<!--
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
@@ -474,6 +475,7 @@
           <excludes>**\/target\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat</excludes>
         </configuration>
       </plugin>
+	  -->
     </plugins>
     <pluginManagement>
       <plugins>

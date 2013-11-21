@@ -163,7 +163,7 @@ public class HttpNfcLeaseMO extends BaseMO {
         public void run() {
             while (!_done) {
                 try {
-                    Thread.sleep(1000);			// update progess every 1 second
+                    Thread.sleep(1000);            // update progess every 1 second
                     updateLeaseProgress(_percent);
                 } catch (InterruptedException e) {
                     if (s_logger.isInfoEnabled())

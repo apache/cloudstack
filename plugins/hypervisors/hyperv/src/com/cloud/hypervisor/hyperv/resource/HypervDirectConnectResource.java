@@ -294,7 +294,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
     @Override
     public final PingCommand getCurrentStatus(final long id) {
-    	// TODO, need to report VM states on host
+        // TODO, need to report VM states on host
         PingCommand pingCmd = new PingRoutingCommand(getType(), id, null, null);
 
         if (s_logger.isDebugEnabled()) {

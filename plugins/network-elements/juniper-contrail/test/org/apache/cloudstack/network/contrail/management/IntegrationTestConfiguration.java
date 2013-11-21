@@ -531,12 +531,12 @@ public class IntegrationTestConfiguration {
         AffinityGroupService mock = Mockito.mock(AffinityGroupService.class);
         try {
             final AffinityGroupVO gmock = new AffinityGroupVO("grp1", "grp-type", "affinity group", 1, AccountVO.ACCOUNT_ID_SYSTEM, ControlledEntity.ACLType.Account); 
-	    Transaction.execute(new TransactionCallbackNoReturn() {
-		    @Override
-		    public void doInTransactionWithoutResult(TransactionStatus status) {
-			_affinityGroupDao.persist(gmock);		
-		    }
-	    });
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+            _affinityGroupDao.persist(gmock);        
+            }
+        });
             Mockito.when(mock.createAffinityGroupInternal(Mockito.any(String.class), Mockito.any(Long.class), Mockito.any(String.class), Mockito.any(String.class), Mockito.any(String.class))).thenReturn(gmock);
         } catch (Exception e) {
             e.printStackTrace();

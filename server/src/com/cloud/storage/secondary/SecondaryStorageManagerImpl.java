@@ -140,18 +140,18 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 //
 // Possible secondary storage vm state transition cases
-//		Creating -> Destroyed
-//		Creating -> Stopped --> Starting -> Running
-//		HA -> Stopped -> Starting -> Running
-//		Migrating -> Running	(if previous state is Running before it enters into Migrating state
-//		Migrating -> Stopped	(if previous state is not Running before it enters into Migrating state)
-//		Running -> HA			(if agent lost connection)
-//		Stopped -> Destroyed
+//        Creating -> Destroyed
+//        Creating -> Stopped --> Starting -> Running
+//        HA -> Stopped -> Starting -> Running
+//        Migrating -> Running    (if previous state is Running before it enters into Migrating state
+//        Migrating -> Stopped    (if previous state is not Running before it enters into Migrating state)
+//        Running -> HA            (if agent lost connection)
+//        Stopped -> Destroyed
 //
-//		Creating state indicates of record creating and IP address allocation are ready, it is a transient
-// 		state which will soon be switching towards Running if everything goes well.
-//		Stopped state indicates the readiness of being able to start (has storage and IP resources allocated)
-//		Starting state can only be entered from Stopped states
+//        Creating state indicates of record creating and IP address allocation are ready, it is a transient
+//         state which will soon be switching towards Running if everything goes well.
+//        Stopped state indicates the readiness of being able to start (has storage and IP resources allocated)
+//        Starting state can only be entered from Stopped states
 //
 // Starting, HA, Migrating, Creating and Running state are all counted as "Open" for available capacity calculation
 // because sooner or later, it will be driven into Running state
@@ -212,7 +212,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     UserVmDetailsDao _vmDetailsDao;
     @Inject
     protected ResourceManager _resourceMgr;
-    //@Inject			// TODO this is a very strange usage, a singleton class need to inject itself?
+    //@Inject            // TODO this is a very strange usage, a singleton class need to inject itself?
     protected SecondaryStorageVmManager _ssvmMgr;
     @Inject
     NetworkDao _networkDao;
@@ -1286,42 +1286,42 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         /*
         StartupCommand firstCmd = startup[0];
         if (!(firstCmd instanceof StartupStorageCommand)) {
-        	return null;
+            return null;
         }
 
         com.cloud.host.Host.Type type = null;
         StartupStorageCommand ssCmd = ((StartupStorageCommand) firstCmd);
         if (ssCmd.getHostType() == Host.Type.SecondaryStorageCmdExecutor) {
-        	type = ssCmd.getHostType();
+            type = ssCmd.getHostType();
         } else {
-        	if (ssCmd.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE) {
-        		type = Host.Type.SecondaryStorage;
-        		if (resource != null && resource instanceof DummySecondaryStorageResource) {
-        			host.setResource(null);
-        		}
-        	} else if (ssCmd.getResourceType() == Storage.StorageResourceType.LOCAL_SECONDARY_STORAGE) {
-        		type = Host.Type.LocalSecondaryStorage;
-        	} else {
-        		type = Host.Type.Storage;
-        	}
+            if (ssCmd.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE) {
+                type = Host.Type.SecondaryStorage;
+                if (resource != null && resource instanceof DummySecondaryStorageResource) {
+                    host.setResource(null);
+                }
+            } else if (ssCmd.getResourceType() == Storage.StorageResourceType.LOCAL_SECONDARY_STORAGE) {
+                type = Host.Type.LocalSecondaryStorage;
+            } else {
+                type = Host.Type.Storage;
+            }
 
-        	final Map<String, String> hostDetails = ssCmd.getHostDetails();
-        	if (hostDetails != null) {
-        		if (details != null) {
-        			details.putAll(hostDetails);
-        		} else {
-        			details = hostDetails;
-        		}
-        	}
+            final Map<String, String> hostDetails = ssCmd.getHostDetails();
+            if (hostDetails != null) {
+                if (details != null) {
+                    details.putAll(hostDetails);
+                } else {
+                    details = hostDetails;
+                }
+            }
 
-        	host.setDetails(details);
-        	host.setParent(ssCmd.getParent());
-        	host.setTotalSize(ssCmd.getTotalSize());
-        	host.setHypervisorType(HypervisorType.None);
-        	host.setType(type);
-        	if (ssCmd.getNfsShare() != null) {
-        		host.setStorageUrl(ssCmd.getNfsShare());
-        	}
+            host.setDetails(details);
+            host.setParent(ssCmd.getParent());
+            host.setTotalSize(ssCmd.getTotalSize());
+            host.setHypervisorType(HypervisorType.None);
+            host.setType(type);
+            if (ssCmd.getNfsShare() != null) {
+                host.setStorageUrl(ssCmd.getNfsShare());
+            }
         }
          */
         return null; // no need to handle this event anymore since secondary storage is not in host table anymore.

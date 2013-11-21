@@ -1085,7 +1085,7 @@ public class DatabaseConfig {
         } catch (SQLException ex) {
             s_logger.error("error creating vm template: " + ex);
         } finally {
-        	txn.close();
+            txn.close();
         }
          */
         /*
@@ -1108,7 +1108,7 @@ public class DatabaseConfig {
         } catch (SQLException ex) {
             s_logger.error("error creating vm template: " + ex);
         } finally {
-        	txn.close();
+            txn.close();
         }
          */
     }
@@ -1294,7 +1294,7 @@ public class DatabaseConfig {
         } catch (SQLException ex) {
             s_logger.error("error updating admin user", ex);
         } finally {
-        	txn.close();
+            txn.close();
         }
 
         updateSql = "update account set domain_id = 1 where id = 1";
@@ -1305,7 +1305,7 @@ public class DatabaseConfig {
         } catch (SQLException ex) {
             s_logger.error("error updating system user", ex);
         } finally {
-        	txn.close();
+            txn.close();
         }
          */
     }

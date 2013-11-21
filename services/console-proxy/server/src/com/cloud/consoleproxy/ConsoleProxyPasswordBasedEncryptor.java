@@ -176,7 +176,7 @@ public class ConsoleProxyPasswordBasedEncryptor {
             random.nextBytes(ivBytes);
 
             KeyIVPair keyIvPair = new KeyIVPair("8x/xUBgX0Up+3UEo39dSeG277JhVj31+ElHkN5+EC0Q=", "Y2SUiIN6JXTdKNK/ZMDyVtLB7gAM9MCCiyrP1xd3bSQ=");
-            //keyIvPair.setKeyBytes(keyBytes);	
+            //keyIvPair.setKeyBytes(keyBytes);    
             //keyIvPair.setIvBytes(ivBytes);
 
             Gson gson = new GsonBuilder().create();

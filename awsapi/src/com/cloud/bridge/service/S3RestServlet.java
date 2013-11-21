@@ -392,7 +392,7 @@ public class S3RestServlet extends HttpServlet {
             return new S3BucketAction();   // for ListAllMyBuckets
         }
 
-        // Because there is a leading / at position 0 of pathInfo, now subtract this to process the remainder	
+        // Because there is a leading / at position 0 of pathInfo, now subtract this to process the remainder    
         pathInfo = pathInfo.substring(1);
 
         if (ServiceProvider.getInstance().getUseSubDomain())

@@ -228,7 +228,7 @@ public class StressTestDirectAttach {
                                             usageIterator = 1;
 
                                         }
-                                        else {	
+                                        else {    
                                             s_logger.info("Skipping events and usage records for this user: usageIterator " + usageIterator+ " and number of Threads " + numThreads);
                                             usageIterator++;
                                         }
@@ -839,7 +839,7 @@ public class StressTestDirectAttach {
             } 
         }
         return 200;
-    }			
+    }            
 
 
 
@@ -988,25 +988,25 @@ public class StressTestDirectAttach {
             return responseCode;
         } 
 
-////		// -----------------------------
-////		// DISABLE USER
-////		// -----------------------------
-//		{
-//			url = server + "?command=disableUser&id=" + userId;
-//			client = new HttpClient();
-//			method = new GetMethod(url);
-//			responseCode = client.executeMethod(method);
-//			s_logger.info("disable user response code: " + responseCode);
-//			if (responseCode == 200) {
-//				InputStream input = method.getResponseBodyAsStream();
-//				Element el = queryAsyncJobResult(server, input);
-//				s_logger
-//						.info("Disabled user successfully");
-//			} else  {
-//				s_logger.error("disable user failed with error code: " + responseCode + ". Following URL was sent: " + url);
-//				return responseCode;
-//			} 
-//		}
+////        // -----------------------------
+////        // DISABLE USER
+////        // -----------------------------
+//        {
+//            url = server + "?command=disableUser&id=" + userId;
+//            client = new HttpClient();
+//            method = new GetMethod(url);
+//            responseCode = client.executeMethod(method);
+//            s_logger.info("disable user response code: " + responseCode);
+//            if (responseCode == 200) {
+//                InputStream input = method.getResponseBodyAsStream();
+//                Element el = queryAsyncJobResult(server, input);
+//                s_logger
+//                        .info("Disabled user successfully");
+//            } else  {
+//                s_logger.error("disable user failed with error code: " + responseCode + ". Following URL was sent: " + url);
+//                return responseCode;
+//            } 
+//        }
 
         // -----------------------------
         // DELETE USER
@@ -1186,22 +1186,22 @@ public class StressTestDirectAttach {
                 }
             }
 
-//			{
-//				url = server + "?command=deleteUser&id=" + userId;
-//				client = new HttpClient();
-//				method = new GetMethod(url);
-//				responseCode = client.executeMethod(method);
-//				s_logger.info("delete user response code: " + responseCode);
-//				if (responseCode == 200) {
-//					InputStream input = method.getResponseBodyAsStream();
-//					Element el = queryAsyncJobResult(server, input);
-//					s_logger
-//							.info("Deleted user successfully");
-//				} else  {
-//					s_logger.error("delete user failed with error code: " + responseCode + ". Following URL was sent: " + url);
-//					return responseCode;
-//				} 
-//			}
+//            {
+//                url = server + "?command=deleteUser&id=" + userId;
+//                client = new HttpClient();
+//                method = new GetMethod(url);
+//                responseCode = client.executeMethod(method);
+//                s_logger.info("delete user response code: " + responseCode);
+//                if (responseCode == 200) {
+//                    InputStream input = method.getResponseBodyAsStream();
+//                    Element el = queryAsyncJobResult(server, input);
+//                    s_logger
+//                            .info("Deleted user successfully");
+//                } else  {
+//                    s_logger.error("delete user failed with error code: " + responseCode + ". Following URL was sent: " + url);
+//                    return responseCode;
+//                } 
+//            }
 
 
         }

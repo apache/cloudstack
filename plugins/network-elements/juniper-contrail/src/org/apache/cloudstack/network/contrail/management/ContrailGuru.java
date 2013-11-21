@@ -76,7 +76,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public String getName() {
-	return "ContrailGuru";
+    return "ContrailGuru";
     }
 
     @Override

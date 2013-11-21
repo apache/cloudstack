@@ -650,17 +650,17 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
     
     @Override
     public void createPublicNetworks() {
-    	List<TrafficType> types = new ArrayList<TrafficType>(Arrays.asList(TrafficType.Public));
-    	List<NetworkVO> dbNets = findJuniperManagedNetworks(types);
-    	if (dbNets == null) {
-    	    return;
-    	}
-    	for (NetworkVO net: dbNets) {
-    	    VirtualNetworkModel vnModel = _database.lookupVirtualNetwork(net.getUuid(), getCanonicalName(net),
-    	            TrafficType.Public);
-    	    if (vnModel != null) {
-    	        continue;
-    	    }
+        List<TrafficType> types = new ArrayList<TrafficType>(Arrays.asList(TrafficType.Public));
+        List<NetworkVO> dbNets = findJuniperManagedNetworks(types);
+        if (dbNets == null) {
+            return;
+        }
+        for (NetworkVO net: dbNets) {
+            VirtualNetworkModel vnModel = _database.lookupVirtualNetwork(net.getUuid(), getCanonicalName(net),
+                    TrafficType.Public);
+            if (vnModel != null) {
+                continue;
+            }
             vnModel = new VirtualNetworkModel(net, net.getUuid(), getCanonicalName(net), net.getTrafficType());
             vnModel.build(_controller, net);
             try {
@@ -678,7 +678,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
             Map<String, String> providerMap = new HashMap<String, String>();
             providerMap.put(Service.Connectivity.getName(), Provider.JuniperContrail.getName());
             _networksDao.update(net.getId(), net, providerMap);
-    	}
+        }
     }
 
     public boolean createFloatingIp(PublicIpAddress ip) {

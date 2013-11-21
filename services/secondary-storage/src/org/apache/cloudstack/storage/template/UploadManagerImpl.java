@@ -611,21 +611,21 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             command = new Script("/bin/bash", s_logger);
             command.add("-c");
             command.add("iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j DROP;" +
-            	        "iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j HTTP;" +
-            	        "iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j DROP;" +
-            	        "iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j HTTP;" +
-            	        "iptables -F HTTP;" +
-            	        "iptables -X HTTP;" +
-            	        "iptables -N HTTP;" +
-            		    "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j DROP;" +
-            		    "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j DROP;" +
-            		    "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j HTTP;" +
+                        "iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j HTTP;" +
+                        "iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j DROP;" +
+                        "iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j HTTP;" +
+                        "iptables -F HTTP;" +
+                        "iptables -X HTTP;" +
+                        "iptables -N HTTP;" +
+                        "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j DROP;" +
+                        "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j DROP;" +
+                        "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j HTTP;" +
                         "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j HTTP;");
 
             result = command.execute();
             if (result != null) {
-            	s_logger.warn("Error in opening up httpd port err=" + result );
-            	return false;
+                s_logger.warn("Error in opening up httpd port err=" + result );
+                return false;
             }*/
 
             command = new Script("/bin/bash", s_logger);

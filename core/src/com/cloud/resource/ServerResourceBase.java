@@ -108,7 +108,7 @@ public abstract class ServerResourceBase implements ServerResource {
                     }
                 }
                 //      } catch (final SocketException e) {
-                //    	s_logger.warn("Error looking at " + nicName, e);
+                //        s_logger.warn("Error looking at " + nicName, e);
                 //  }
                 s_logger.debug("Skipping nic " + nicName);
             }

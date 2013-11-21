@@ -26,13 +26,13 @@ public class AsyncSampleListenerStyleCaller {
     public void MethodThatWillCallAsyncMethod() {
         String vol = new String();
 
-        /*	_ds.createVolume(vol,
-        		new AsyncCompletionCallback<String>() {
-        			@Override
-        			public void complete(String resultObject) {
-        				// TODO Auto-generated method stub
-        				
-        			}
-        	});*/
+        /*    _ds.createVolume(vol,
+                new AsyncCompletionCallback<String>() {
+                    @Override
+                    public void complete(String resultObject) {
+                        // TODO Auto-generated method stub
+                        
+                    }
+            });*/
     }
 }

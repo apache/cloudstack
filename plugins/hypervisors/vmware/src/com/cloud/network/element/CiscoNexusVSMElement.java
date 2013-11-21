@@ -171,7 +171,7 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     @Override
     public List<CiscoNexusVSMDeviceVO> getCiscoNexusVSMs(ListCiscoNexusVSMsCmd cmd) {
         // If clusterId is defined, then it takes precedence, and we will return
-        // the VSM associated with this cluster.    	
+        // the VSM associated with this cluster.        
 
         Long clusterId = cmd.getClusterId();
         Long zoneId = cmd.getZoneId();

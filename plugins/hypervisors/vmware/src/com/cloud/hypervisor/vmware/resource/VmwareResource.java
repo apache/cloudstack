@@ -313,9 +313,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected String _name;
 
-    protected final long _ops_timeout = 900000; 		// 15 minutes time out to time
+    protected final long _ops_timeout = 900000;         // 15 minutes time out to time
 
-    protected final int _shutdown_waitMs = 300000;		// wait up to 5 minutes for shutdown
+    protected final int _shutdown_waitMs = 300000;        // wait up to 5 minutes for shutdown
 
     @Inject
     protected VolumeOrchestrationService volMgr;

@@ -144,12 +144,12 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 //
 // Possible console proxy state transition cases
-//		Stopped --> Starting -> Running
-//		HA -> Stopped -> Starting -> Running
-//		Migrating -> Running	(if previous state is Running before it enters into Migrating state
-//		Migrating -> Stopped	(if previous state is not Running before it enters into Migrating state)
-//		Running -> HA			(if agent lost connection)
-//		Stopped -> Destroyed
+//        Stopped --> Starting -> Running
+//        HA -> Stopped -> Starting -> Running
+//        Migrating -> Running    (if previous state is Running before it enters into Migrating state
+//        Migrating -> Stopped    (if previous state is not Running before it enters into Migrating state)
+//        Running -> HA            (if agent lost connection)
+//        Stopped -> Destroyed
 //
 // Starting, HA, Migrating, Running state are all counted as "Open" for available capacity calculation
 // because sooner or later, it will be driven into Running state

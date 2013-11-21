@@ -81,7 +81,7 @@ public class ServiceProvider extends ManagerBase {
     private final Timer timer = new Timer();
     private MHostVO mhost;
     private Properties properties;
-    private boolean useSubDomain = false;		 // use DNS sub domain for bucket name
+    private boolean useSubDomain = false;         // use DNS sub domain for bucket name
     private String serviceEndpoint = null;
     private String multipartDir = null;          // illegal bucket name used as a folder for storing multiparts
     private String masterDomain = ".s3.amazonaws.com";

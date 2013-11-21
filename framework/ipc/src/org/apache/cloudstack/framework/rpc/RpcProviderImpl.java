@@ -35,7 +35,7 @@ public class RpcProviderImpl implements RpcProvider {
 
     private TransportProvider _transportProvider;
     private String _transportAddress;
-    private RpcTransportEndpoint _transportEndpoint = new RpcTransportEndpoint();	// transport attachment at RPC layer
+    private RpcTransportEndpoint _transportEndpoint = new RpcTransportEndpoint();    // transport attachment at RPC layer
 
     private MessageSerializer _messageSerializer;
     private List<RpcServiceEndpoint> _serviceEndpoints = new ArrayList<RpcServiceEndpoint>();

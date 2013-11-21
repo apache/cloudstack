@@ -75,7 +75,7 @@ public class PodZoneConfig {
 
     private String checkPodCidrSubnets(long dcId, HashMap<Long, Vector<Object>> currentPodCidrSubnets) {
 
-//		DataCenterDao _dcDao = null;
+//        DataCenterDao _dcDao = null;
 //        final ComponentLocator locator = ComponentLocator.getLocator("management-server");
 
 //        _dcDao = locator.getDao(DataCenterDao.class);
@@ -86,7 +86,7 @@ public class PodZoneConfig {
         String zoneName = PodZoneConfig.getZoneName(dcId);
 
         //get the guest network cidr and guest netmask from the zone
-//		DataCenterVO dcVo = _dcDao.findById(dcId);
+//        DataCenterVO dcVo = _dcDao.findById(dcId);
 
         String guestNetworkCidr = IPRangeConfig.getGuestNetworkCidr(dcId);
 
@@ -236,9 +236,9 @@ public class PodZoneConfig {
             String newVlanSubnet = NetUtils.getSubNet(vlanGateway, vlanNetmask);
             List<VlanVO> vlans = _vlanDao.findByZone(zoneId);
             for (VlanVO vlan : vlans) {
-            	String currentVlanSubnet = NetUtils.getSubNet(vlan.getVlanGateway(), vlan.getVlanNetmask());
-            	if (newVlanSubnet.equals(currentVlanSubnet))
-            		return genReturnList("false", "The VLAN with ID " + vlan.getVlanId() + " in zone " + zone + " has the same subnet. Please specify a different gateway/netmask.");
+                String currentVlanSubnet = NetUtils.getSubNet(vlan.getVlanGateway(), vlan.getVlanNetmask());
+                if (newVlanSubnet.equals(currentVlanSubnet))
+                    return genReturnList("false", "The VLAN with ID " + vlan.getVlanId() + " in zone " + zone + " has the same subnet. Please specify a different gateway/netmask.");
             }
              */
 
@@ -259,20 +259,20 @@ public class PodZoneConfig {
         /*
         else {
 
-        	// Check if a VLAN actually exists in the specified zone
-        	long vlanDbId = getVlanDbId(zone, vlanId);
-        	if (vlanDbId == -1)
-        		return genReturnList("false", "A VLAN with ID " + vlanId + " does not exist in zone " + zone);
+            // Check if a VLAN actually exists in the specified zone
+            long vlanDbId = getVlanDbId(zone, vlanId);
+            if (vlanDbId == -1)
+                return genReturnList("false", "A VLAN with ID " + vlanId + " does not exist in zone " + zone);
 
-        	// Check if there are any public IPs that are in the specified vlan.
-        	List<IPAddressVO> ips = _publicIpAddressDao.listByVlanDbId(vlanDbId);
-        	if (ips.size() != 0)
-        		return genReturnList("false", "Please delete all IP addresses that are in VLAN " + vlanId + " before deleting the VLAN.");
+            // Check if there are any public IPs that are in the specified vlan.
+            List<IPAddressVO> ips = _publicIpAddressDao.listByVlanDbId(vlanDbId);
+            if (ips.size() != 0)
+                return genReturnList("false", "Please delete all IP addresses that are in VLAN " + vlanId + " before deleting the VLAN.");
 
-        	// Delete the vlan
-        	_vlanDao.delete(vlanDbId);
+            // Delete the vlan
+            _vlanDao.delete(vlanDbId);
 
-        	return genReturnList("true", "Successfully deleted VLAN.");
+            return genReturnList("true", "Successfully deleted VLAN.");
         }
          */
     }

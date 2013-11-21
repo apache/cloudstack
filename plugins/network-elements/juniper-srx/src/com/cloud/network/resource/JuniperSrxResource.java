@@ -3209,7 +3209,7 @@ public class JuniperSrxResource implements ServerResource {
     }
 
     /*
-     * Usage	
+     * Usage    
      */
 
     private ExternalNetworkResourceUsageAnswer getUsageAnswer(ExternalNetworkResourceUsageCommand cmd) throws ExecutionException {

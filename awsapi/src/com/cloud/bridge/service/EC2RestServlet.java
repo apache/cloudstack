@@ -492,7 +492,7 @@ public class EC2RestServlet extends HttpServlet {
                 response.sendError(530, "Missing cert parameter");
                 return;
             }
-//    	    logger.debug( "SetCertificate cert: [" + certificate[0] + "]" );
+//            logger.debug( "SetCertificate cert: [" + certificate[0] + "]" );
 
             String[] accessKey = request.getParameterValues("AWSAccessKeyId");
             if (null == accessKey || 0 == accessKey.length) {
@@ -574,7 +574,7 @@ public class EC2RestServlet extends HttpServlet {
                 certStore.store(fsOut, keystorePassword.toCharArray());
 
                 // -> dis-associate the cert's uniqueId with the Cloud API keys
-                /*	     	     UserCredentialsDao credentialDao = new UserCredentialsDao();
+                /*                  UserCredentialsDao credentialDao = new UserCredentialsDao();
                  credentialDao.setCertificateId( accessKey[0], null );
 
                  */txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);

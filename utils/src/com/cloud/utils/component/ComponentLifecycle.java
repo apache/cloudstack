@@ -21,12 +21,12 @@ import java.util.Map;
 import javax.naming.ConfigurationException;
 
 public interface ComponentLifecycle extends Named {
-    public static final int RUN_LEVEL_SYSTEM_BOOTSTRAP = 0;		// for system level bootstrap components
-    public static final int RUN_LEVEL_SYSTEM = 1;				// for system level service components (i.e., DAOs)
-    public static final int RUN_LEVEL_FRAMEWORK_BOOTSTRAP = 2;	// for framework startup checkers (i.e., DB migration check)
-    public static final int RUN_LEVEL_FRAMEWORK = 3;			// for framework bootstrap components(i.e., clustering management components)
-    public static final int RUN_LEVEL_COMPONENT_BOOTSTRAP = 4;	// general manager components
-    public static final int RUN_LEVEL_COMPONENT = 5;			// regular adapters, plugin components
+    public static final int RUN_LEVEL_SYSTEM_BOOTSTRAP = 0;        // for system level bootstrap components
+    public static final int RUN_LEVEL_SYSTEM = 1;                // for system level service components (i.e., DAOs)
+    public static final int RUN_LEVEL_FRAMEWORK_BOOTSTRAP = 2;    // for framework startup checkers (i.e., DB migration check)
+    public static final int RUN_LEVEL_FRAMEWORK = 3;            // for framework bootstrap components(i.e., clustering management components)
+    public static final int RUN_LEVEL_COMPONENT_BOOTSTRAP = 4;    // general manager components
+    public static final int RUN_LEVEL_COMPONENT = 5;            // regular adapters, plugin components
     public static final int RUN_LEVEL_APPLICATION_MAINLOOP = 6;
     public static final int MAX_RUN_LEVELS = 7;
 

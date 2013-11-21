@@ -311,7 +311,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         throw new Exception("Unable to create a dummy VM for volume creation");
                     }
 
-                    String vmdkFilePair[] = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, null, vmdkName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, true	// we only use the first file in the pair, linked or not will not matter
+                    String vmdkFilePair[] = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, null, vmdkName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, true    // we only use the first file in the pair, linked or not will not matter
                     );
                     String volumeDatastorePath = vmdkFilePair[0];
                     synchronized (this) {

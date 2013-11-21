@@ -29,7 +29,7 @@ public class EC2RunInstances {
     private String keyName;
     private int maxCount;
     private int minCount;
-    private Integer size;  		// <- in gigs
+    private Integer size;          // <- in gigs
     private List<String> groupIdSet;
     private List<String> groupNameSet;
 

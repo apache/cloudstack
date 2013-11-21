@@ -152,7 +152,7 @@ public class VmwareContextPool {
 
     private void doIdleCheck() {
         List<VmwareContext> l = new ArrayList<VmwareContext>();
-        int batchSize = (int)(_idleCheckIntervalMs / 1000);	// calculate batch size at 1 request/sec rate
+        int batchSize = (int)(_idleCheckIntervalMs / 1000);    // calculate batch size at 1 request/sec rate
         getIdleCheckContexts(l, batchSize);
 
         for (VmwareContext context : l) {
@@ -184,7 +184,7 @@ public class VmwareContextPool {
 
     private void doKeepAlive() {
         List<VmwareContext> l = new ArrayList<VmwareContext>();
-        int batchSize = (int)(_idleCheckIntervalMs / 1000);	// calculate batch size at 1 request/sec rate
+        int batchSize = (int)(_idleCheckIntervalMs / 1000);    // calculate batch size at 1 request/sec rate
         getKeepAliveCheckContexts(l, batchSize);
 
         for (VmwareContext context : l) {

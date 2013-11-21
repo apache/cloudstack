@@ -749,7 +749,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface {
 
     /**
      *  ec2-run-instances
-     *	
+     *    
      * @param runInstances
      * 
      * @see <a href="http://docs.amazonwebservices.com/AWSEC2/2010-11-15/APIReference/index.html?ApiReference-query-RunInstances.html">RunInstances</a>
@@ -885,7 +885,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface {
 
     /**
      * @param modifyInstanceAttribute
-     * @return	
+     * @return    
      */
     public static ModifyInstanceAttributeResponse toModifyInstanceAttributeResponse(Boolean status) {
         ModifyInstanceAttributeResponse miat = new ModifyInstanceAttributeResponse();
@@ -1453,7 +1453,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface {
             Calendar cal = inst.getCreated();
             if (null == cal) {
                 cal = Calendar.getInstance();
-//	        	 cal.set( 1970, 1, 1 );
+//                 cal.set( 1970, 1, 1 );
             }
             param7.setLaunchTime(cal);
 
@@ -1924,7 +1924,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface {
         Calendar cal = EC2RestAuth.parseDateString(engineResponse.getCreated());
         if (null == cal) {
             cal = Calendar.getInstance();
-//        	 cal.set( 1970, 1, 1 );
+//             cal.set( 1970, 1, 1 );
         }
         param1.setCreateTime(cal);
 
@@ -1974,7 +1974,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface {
                 param3.setStatus("error");
                 param3.setProgress("0%");
             }
-//	         param3.setStatus( snap.getState());
+//             param3.setStatus( snap.getState());
 
             String ownerId = snap.getDomainId() + ":" + snap.getAccountName();
 

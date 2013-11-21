@@ -116,7 +116,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         Script command = new Script(false, "tar", 0, s_logger);
         command.setWorkDir(path);
         command.add("-cf", name + ".ova");
-        command.add(name + ".ovf");		// OVF file should be the first file in OVA archive
+        command.add(name + ".ovf");        // OVF file should be the first file in OVA archive
         command.add(name + "-disk0.vmdk");
 
         s_logger.info("Package OVA with commmand: " + command.toString());
@@ -214,7 +214,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 Script command = new Script(false, "tar", 0, s_logger);
                 command.setWorkDir(installFullPath);
                 command.add("-cf", volumeUuid + ".ova");
-                command.add(volumeUuid + ".ovf");		// OVF file should be the first file in OVA archive
+                command.add(volumeUuid + ".ovf");        // OVF file should be the first file in OVA archive
                 command.add(volumeUuid + "-disk0.vmdk");
 
                 command.execute();

@@ -43,7 +43,7 @@ public interface DownloadManager extends Manager {
      * @param url  the url from where to download from
      * @param hvm  whether the template is a hardware virtual machine
      * @param accountId the accountId of the iso owner (null if public iso)
-     * @param descr	description of the template
+     * @param descr    description of the template
      * @param user username used for authentication to the server
      * @param password password used for authentication to the server
      * @param maxDownloadSizeInBytes (optional) max download size for the template, in bytes.

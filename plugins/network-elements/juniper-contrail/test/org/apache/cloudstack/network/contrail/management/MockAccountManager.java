@@ -67,14 +67,14 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     private static final Logger s_logger =
             Logger.getLogger(MockAccountManager.class);
 
-	@Inject AccountDao _accountDao;
+    @Inject AccountDao _accountDao;
         @Inject ResourceCountDao _resourceCountDao;
 
         @Inject AccountJoinDao _accountJoinDao;
-	@Inject UserDao _userDao;
-	
-	UserVO _systemUser;
-	AccountVO _systemAccount;
+    @Inject UserDao _userDao;
+    
+    UserVO _systemUser;
+    AccountVO _systemAccount;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -335,38 +335,38 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
         return null;
     }
 
-	@Override
-	public Account getActiveAccountById(long accountId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Account getActiveAccountById(long accountId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Account getAccount(long accountId) {
+    @Override
+    public Account getAccount(long accountId) {
                return _systemAccount;
-	}
+    }
 
-	@Override
-	public Account createAccount(String accountName, short accountType,
-			Long domainId, String networkDomain, Map<String, String> details,
-			String uuid) {
-	    final AccountVO account = new AccountVO(accountName, domainId, networkDomain, accountType, uuid);
-	    Transaction.execute(new TransactionCallbackNoReturn() {
-	        @Override
-		public void doInTransactionWithoutResult(TransactionStatus status) {
+    @Override
+    public Account createAccount(String accountName, short accountType,
+            Long domainId, String networkDomain, Map<String, String> details,
+            String uuid) {
+        final AccountVO account = new AccountVO(accountName, domainId, networkDomain, accountType, uuid);
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+        public void doInTransactionWithoutResult(TransactionStatus status) {
 
-		    _accountDao.persist(account);
-		    _resourceCountDao.createResourceCounts(account.getId(), ResourceLimit.ResourceOwnerType.Account);
-		}
-	    });
+            _accountDao.persist(account);
+            _resourceCountDao.createResourceCounts(account.getId(), ResourceLimit.ResourceOwnerType.Account);
+        }
+        });
             return account;
-	}
+    }
 
-	@Override
-	public void logoutUser(long userId) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void logoutUser(long userId) {
+        // TODO Auto-generated method stub
+        
+    }
     
 
 }

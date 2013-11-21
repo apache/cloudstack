@@ -74,24 +74,24 @@ import com.cloud.network.IpAddress;
 public class ContrailElementImpl extends AdapterBase
     implements ContrailElement, IpDeployer, StaticNatServiceProvider {
 
-	private static final Map<Service, Map<Capability, String>> _capabilities = InitCapabilities();
+    private static final Map<Service, Map<Capability, String>> _capabilities = InitCapabilities();
 
-	@Inject ContrailManager _manager;
-	@Inject NicDao _nicDao;
-	@Inject ServerDBSync  _dbSync;
-	private static final Logger s_logger =
-			Logger.getLogger(ContrailElement.class);
-	
+    @Inject ContrailManager _manager;
+    @Inject NicDao _nicDao;
+    @Inject ServerDBSync  _dbSync;
+    private static final Logger s_logger =
+            Logger.getLogger(ContrailElement.class);
+    
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-    	s_logger.debug("configure");
-    	return true;
+        s_logger.debug("configure");
+        return true;
     }
 
     // PluggableService
     @Override
     public List<Class<?>> getCommands() {
-    	List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(CreateServiceInstanceCmd.class);
         return cmdList;
     }
@@ -103,212 +103,212 @@ public class ContrailElementImpl extends AdapterBase
     }
 
     private static Map<Service, Map<Capability, String>> InitCapabilities() {
-    	Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
-    	capabilities.put(Service.Connectivity, null);
-    	capabilities.put(Service.Dhcp, new HashMap<Capability, String>());
+        Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
+        capabilities.put(Service.Connectivity, null);
+        capabilities.put(Service.Dhcp, new HashMap<Capability, String>());
         capabilities.put(Service.StaticNat, null);
         capabilities.put(Service.SourceNat, null);
 
-    	return capabilities;
+        return capabilities;
     }
 
-	@Override
-	public Map<Service, Map<Capability, String>> getCapabilities() {
-		return _capabilities;
-	}
+    @Override
+    public Map<Service, Map<Capability, String>> getCapabilities() {
+        return _capabilities;
+    }
 
-	/**
-	 * Network add/update.
-	 */
-	@Override
-	public boolean implement(Network network, NetworkOffering offering,
-			DeployDestination dest, ReservationContext context)
-			throws ConcurrentOperationException, ResourceUnavailableException,
-			InsufficientCapacityException {
-	    s_logger.debug("NetworkElement implement: " + network.getName() + ", traffic type: " + network.getTrafficType());
-	    if (network.getTrafficType() == TrafficType.Guest) {
-	        s_logger.debug("ignore network " + network.getName());
-	        return true;        
-	    }
-	    VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(), 
-	            _manager.getCanonicalName(network), network.getTrafficType());
-
-	    if (vnModel == null) {
-	        vnModel = new VirtualNetworkModel(network, network.getUuid(), 
-	                _manager.getCanonicalName(network), network.getTrafficType());
-	        vnModel.setProperties(_manager.getModelController(), network);
-	    }
-	    try {
-	        if (!vnModel.verify(_manager.getModelController())) {
-	            vnModel.update(_manager.getModelController());
-	        }
-	        _manager.getDatabase().getVirtualNetworks().add(vnModel);   
-	    } catch (Exception ex) {
-	        s_logger.warn("virtual-network update: ", ex);
-	    }
-	    return true;
-	}
-
-	@Override
-	public boolean prepare(Network network, NicProfile nicProfile,
-			VirtualMachineProfile vm,
-			DeployDestination dest, ReservationContext context)
-			throws ConcurrentOperationException, ResourceUnavailableException,
-			InsufficientCapacityException {
-
-	    s_logger.debug("NetworkElement prepare: " + network.getName() + ", traffic type: " + network.getTrafficType());
-
-	    if (network.getTrafficType() == TrafficType.Guest) {
-	        s_logger.debug("ignore network " + network.getName());
-	        return true;
-	    }
-
-	    s_logger.debug("network: " + network.getId());
-	    
-	    VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(), 
+    /**
+     * Network add/update.
+     */
+    @Override
+    public boolean implement(Network network, NetworkOffering offering,
+            DeployDestination dest, ReservationContext context)
+            throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
+        s_logger.debug("NetworkElement implement: " + network.getName() + ", traffic type: " + network.getTrafficType());
+        if (network.getTrafficType() == TrafficType.Guest) {
+            s_logger.debug("ignore network " + network.getName());
+            return true;        
+        }
+        VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(), 
                 _manager.getCanonicalName(network), network.getTrafficType());
-	    
-	    if (vnModel == null) {
-	        // There is no notification after a physical network is associated with the VRouter NetworkOffering
-	        // this may be the first time we see this network.
-	        return false;
-	    }
 
-	    VirtualMachineModel vmModel = _manager.getDatabase().lookupVirtualMachine(vm.getUuid());
-	    if (vmModel == null) {
-	        VMInstanceVO vmVo = (VMInstanceVO) vm.getVirtualMachine();
-	        vmModel = new VirtualMachineModel(vmVo, vm.getUuid());
-	        vmModel.setProperties(_manager.getModelController(), vmVo);
-	    }
+        if (vnModel == null) {
+            vnModel = new VirtualNetworkModel(network, network.getUuid(), 
+                    _manager.getCanonicalName(network), network.getTrafficType());
+            vnModel.setProperties(_manager.getModelController(), network);
+        }
+        try {
+            if (!vnModel.verify(_manager.getModelController())) {
+                vnModel.update(_manager.getModelController());
+            }
+            _manager.getDatabase().getVirtualNetworks().add(vnModel);   
+        } catch (Exception ex) {
+            s_logger.warn("virtual-network update: ", ex);
+        }
+        return true;
+    }
 
-	    NicVO nic = _nicDao.findById(nicProfile.getId());
-	    assert nic != null;
+    @Override
+    public boolean prepare(Network network, NicProfile nicProfile,
+            VirtualMachineProfile vm,
+            DeployDestination dest, ReservationContext context)
+            throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
 
-	    VMInterfaceModel vmiModel = vmModel.getVMInterface(nic.getUuid());
-	    if (vmiModel == null) {
-	        vmiModel = new VMInterfaceModel(nic.getUuid());
-	        vmiModel.addToVirtualMachine(vmModel);	
+        s_logger.debug("NetworkElement prepare: " + network.getName() + ", traffic type: " + network.getTrafficType());
+
+        if (network.getTrafficType() == TrafficType.Guest) {
+            s_logger.debug("ignore network " + network.getName());
+            return true;
+        }
+
+        s_logger.debug("network: " + network.getId());
+        
+        VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(), 
+                _manager.getCanonicalName(network), network.getTrafficType());
+        
+        if (vnModel == null) {
+            // There is no notification after a physical network is associated with the VRouter NetworkOffering
+            // this may be the first time we see this network.
+            return false;
+        }
+
+        VirtualMachineModel vmModel = _manager.getDatabase().lookupVirtualMachine(vm.getUuid());
+        if (vmModel == null) {
+            VMInstanceVO vmVo = (VMInstanceVO) vm.getVirtualMachine();
+            vmModel = new VirtualMachineModel(vmVo, vm.getUuid());
+            vmModel.setProperties(_manager.getModelController(), vmVo);
+        }
+
+        NicVO nic = _nicDao.findById(nicProfile.getId());
+        assert nic != null;
+
+        VMInterfaceModel vmiModel = vmModel.getVMInterface(nic.getUuid());
+        if (vmiModel == null) {
+            vmiModel = new VMInterfaceModel(nic.getUuid());
+            vmiModel.addToVirtualMachine(vmModel);    
                 vmiModel.addToVirtualNetwork(vnModel);          
-	    }
-	    
-	    try {
-	        vmiModel.build(_manager.getModelController(), (VMInstanceVO) vm.getVirtualMachine(), nic);
-	    } catch (IOException ex) {
-	        s_logger.warn("vm interface set", ex);
-	        return false;
-	    }
+        }
+        
+        try {
+            vmiModel.build(_manager.getModelController(), (VMInstanceVO) vm.getVirtualMachine(), nic);
+        } catch (IOException ex) {
+            s_logger.warn("vm interface set", ex);
+            return false;
+        }
 
-	    InstanceIpModel ipModel = vmiModel.getInstanceIp();
-	    if (ipModel == null) {
-	        ipModel = new InstanceIpModel(vm.getInstanceName(), nic.getDeviceId());
-	        ipModel.addToVMInterface(vmiModel);
-	    }
-	    ipModel.setAddress(nicProfile.getIp4Address());
+        InstanceIpModel ipModel = vmiModel.getInstanceIp();
+        if (ipModel == null) {
+            ipModel = new InstanceIpModel(vm.getInstanceName(), nic.getDeviceId());
+            ipModel.addToVMInterface(vmiModel);
+        }
+        ipModel.setAddress(nicProfile.getIp4Address());
 
-	    try {
-	        vmModel.update(_manager.getModelController());
-	    } catch (Exception ex) {
-	        s_logger.warn("virtual-machine-update", ex);
-	        return false;
-	    }
-	    _manager.getDatabase().getVirtualMachines().add(vmModel);   
+        try {
+            vmModel.update(_manager.getModelController());
+        } catch (Exception ex) {
+            s_logger.warn("virtual-machine-update", ex);
+            return false;
+        }
+        _manager.getDatabase().getVirtualMachines().add(vmModel);   
 
-	    return true;
-	}
+        return true;
+    }
 
-	@Override
-	public boolean release(Network network, NicProfile nicProfile,
-			VirtualMachineProfile vm,
-			ReservationContext context) throws ConcurrentOperationException,
-			ResourceUnavailableException {
-	    if (network.getTrafficType() == TrafficType.Guest) {
-	        return true;
-	    } else if (!_manager.isManagedPhysicalNetwork(network)) {
-	        s_logger.debug("release ignore network " + network.getId());
-	        return true;
-	    }
+    @Override
+    public boolean release(Network network, NicProfile nicProfile,
+            VirtualMachineProfile vm,
+            ReservationContext context) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        if (network.getTrafficType() == TrafficType.Guest) {
+            return true;
+        } else if (!_manager.isManagedPhysicalNetwork(network)) {
+            s_logger.debug("release ignore network " + network.getId());
+            return true;
+        }
 
-	    NicVO nic = _nicDao.findById(nicProfile.getId());
-	    assert nic != null;
+        NicVO nic = _nicDao.findById(nicProfile.getId());
+        assert nic != null;
 
-	    VirtualMachineModel vmModel = _manager.getDatabase().lookupVirtualMachine(vm.getUuid());
-	    if (vmModel == null) {
-	        s_logger.debug("vm " + vm.getInstanceName() + " not in local database");
-	        return true;
-	    }
-	    VMInterfaceModel vmiModel = vmModel.getVMInterface(nic.getUuid());
-	    if (vmiModel != null) {
-	        try {
-	            vmiModel.destroy(_manager.getModelController());
-	        } catch (IOException ex) {
-	            s_logger.warn("virtual-machine-interface delete", ex);
-	        }
-	        vmModel.removeSuccessor(vmiModel);
-	    }
+        VirtualMachineModel vmModel = _manager.getDatabase().lookupVirtualMachine(vm.getUuid());
+        if (vmModel == null) {
+            s_logger.debug("vm " + vm.getInstanceName() + " not in local database");
+            return true;
+        }
+        VMInterfaceModel vmiModel = vmModel.getVMInterface(nic.getUuid());
+        if (vmiModel != null) {
+            try {
+                vmiModel.destroy(_manager.getModelController());
+            } catch (IOException ex) {
+                s_logger.warn("virtual-machine-interface delete", ex);
+            }
+            vmModel.removeSuccessor(vmiModel);
+        }
 
-	    if (!vmModel.hasDescendents()) {
-	        _manager.getDatabase().getVirtualMachines().remove(vmModel);
-	        try {
-	            vmModel.delete(_manager.getModelController());
-	        } catch (IOException e) {
-	            return false;
-	        }
-	    }
+        if (!vmModel.hasDescendents()) {
+            _manager.getDatabase().getVirtualMachines().remove(vmModel);
+            try {
+                vmModel.delete(_manager.getModelController());
+            } catch (IOException e) {
+                return false;
+            }
+        }
 
-	    return true;
-	}
+        return true;
+    }
 
-	/**
-	 * Network disable
-	 */
-	@Override
-	public boolean shutdown(Network network, ReservationContext context,
-			boolean cleanup) throws ConcurrentOperationException,
-			ResourceUnavailableException {
-		s_logger.debug("NetworkElement shutdown");
-		return true;
-	}
+    /**
+     * Network disable
+     */
+    @Override
+    public boolean shutdown(Network network, ReservationContext context,
+            boolean cleanup) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        s_logger.debug("NetworkElement shutdown");
+        return true;
+    }
 
-	/**
-	 * Network delete
-	 */
-	@Override
-	public boolean destroy(Network network, ReservationContext context)
-			throws ConcurrentOperationException, ResourceUnavailableException {
-		s_logger.debug("NetworkElement destroy");
-		return true;
-	}
+    /**
+     * Network delete
+     */
+    @Override
+    public boolean destroy(Network network, ReservationContext context)
+            throws ConcurrentOperationException, ResourceUnavailableException {
+        s_logger.debug("NetworkElement destroy");
+        return true;
+    }
 
-	@Override
-	public boolean isReady(PhysicalNetworkServiceProvider provider) {
-		return true;
-	}
+    @Override
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        return true;
+    }
 
-	@Override
-	public boolean shutdownProviderInstances(
-			PhysicalNetworkServiceProvider provider, ReservationContext context)
-			throws ConcurrentOperationException, ResourceUnavailableException {
-		s_logger.debug("NetworkElement shutdown ProviderInstances");
-		return true;
-	}
+    @Override
+    public boolean shutdownProviderInstances(
+            PhysicalNetworkServiceProvider provider, ReservationContext context)
+            throws ConcurrentOperationException, ResourceUnavailableException {
+        s_logger.debug("NetworkElement shutdown ProviderInstances");
+        return true;
+    }
 
-	@Override
-	public boolean canEnableIndividualServices() {
-		return true;
-	}
+    @Override
+    public boolean canEnableIndividualServices() {
+        return true;
+    }
 
-	@Override
-	public boolean verifyServicesCombination(Set<Service> services) {
-		// TODO Auto-generated method stub
-		s_logger.debug("NetworkElement verifyServices");
-		s_logger.debug("Services: " + services);
-		return true;
-	}
+    @Override
+    public boolean verifyServicesCombination(Set<Service> services) {
+        // TODO Auto-generated method stub
+        s_logger.debug("NetworkElement verifyServices");
+        s_logger.debug("Services: " + services);
+        return true;
+    }
 
 
     @Override
     public IpDeployer getIpDeployer(Network network) {
-	return this;
+    return this;
     }
 
     @Override

@@ -122,7 +122,7 @@ public class PublicNetworkTest extends TestCase {
 
     @Test
     public void testPublicNetwork() throws IOException {
-    	DataCenter zone = _server.getZone();
+        DataCenter zone = _server.getZone();
         List<NetworkVO> networks = _networksDao.listByZoneAndTrafficType(zone.getId(), TrafficType.Public);
         assertNotNull(networks);
         assertFalse(networks.isEmpty());

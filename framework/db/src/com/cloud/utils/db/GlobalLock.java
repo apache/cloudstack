@@ -31,16 +31,16 @@ import com.cloud.utils.Profiler;
 //
 // Example of using dynamic named locks
 //
-//		GlobalLock lock = GlobalLock.getInternLock("some table name" + rowId);
-//		
-//		if(lock.lock()) {
-//			try {
-//				do something
-//			} finally {
-//				lock.unlock();
-//			}
-//		}
-//		lock.releaseRef();
+//        GlobalLock lock = GlobalLock.getInternLock("some table name" + rowId);
+//        
+//        if(lock.lock()) {
+//            try {
+//                do something
+//            } finally {
+//                lock.unlock();
+//            }
+//        }
+//        lock.releaseRef();
 //
 public class GlobalLock {
     protected final static Logger s_logger = Logger.getLogger(GlobalLock.class);

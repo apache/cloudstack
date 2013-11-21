@@ -112,13 +112,13 @@ public class DatacenterMO extends BaseMO {
                             if (prop.getName().equalsIgnoreCase("name")) {
                                 if (prop.getVal().toString().equals(vmLabel)) {
                                     list.add(new VirtualMachineMO(_context, oc.getObj()));
-                                    break;		// break out inner loop
+                                    break;        // break out inner loop
                                 }
                             } else if (prop.getVal() instanceof CustomFieldStringValue) {
                                 String val = ((CustomFieldStringValue)prop.getVal()).getValue();
                                 if (val.equals(vmLabel)) {
                                     list.add(new VirtualMachineMO(_context, oc.getObj()));
-                                    break;		// break out inner loop
+                                    break;        // break out inner loop
                                 }
                             }
                         }

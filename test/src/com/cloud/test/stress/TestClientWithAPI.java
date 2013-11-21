@@ -710,7 +710,7 @@ public class TestClientWithAPI {
                     long publicIpId = Long.parseLong(values.get("id"));
                     s_logger.info("Associate IP's Id: " + publicIpId);
                     _publicIpId.set(values.get("id"));         
-                }	
+                }    
             } else {
                 s_logger.error("associate ip address for windows vm failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;

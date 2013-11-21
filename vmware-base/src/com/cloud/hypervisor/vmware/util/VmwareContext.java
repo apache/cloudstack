@@ -59,7 +59,7 @@ public class VmwareContext {
     private static int MAX_CONNECT_RETRY = 5;
     private static int CONNECT_RETRY_INTERVAL = 1000;
 
-    private int _CHUNKSIZE = 1 * 1024 * 1024;		// 1M
+    private int _CHUNKSIZE = 1 * 1024 * 1024;        // 1M
 
     private VmwareClient _vimClient;
     private String _serverAddress;
@@ -495,7 +495,7 @@ public class VmwareContext {
      * Sample content returned by query a datastore directory
      *
      * Url for the query
-     * 	https://vsphere-1.lab.vmops.com/folder/Fedora-clone-test?dcPath=cupertino&dsName=NFS+datastore
+     *     https://vsphere-1.lab.vmops.com/folder/Fedora-clone-test?dcPath=cupertino&dsName=NFS+datastore
      *
      * Returned conent from vSphere
      *
@@ -507,25 +507,25 @@ public class VmwareContext {
           <body>
         <h1>Index of Fedora-clone-test on datastore NFS datastore in datacenter cupertino</h1>
         <table>
-    	    <tr><th>Name</th><th>Last modified</th><th>Size</th></tr><tr><th colspan="3"><hr></th></tr>
-    	    <tr><td><a href="/folder?dcPath=cupertino&amp;dsName=NFS%20datastore">Parent Directory</a></td><td>&nbsp;</td><td align="right">  - </td></tr>
-    	    <tr><td><a href="/folder/Fedora%2dclone%2dtest/Fedora%2dclone%2dtest%2da2013465%2ehlog?dcPath=cupertino&amp;dsName=NFS%20datastore">Fedora-clone-test-a2013465.hlog</a></td><td align="right">15-Aug-2010 00:13</td><td align="right">1</td></tr>
-    	    <tr><td><a href="/folder/Fedora%2dclone%2dtest/Fedora%2dclone%2dtest%2da2013465%2evswp?dcPath=cupertino&amp;dsName=NFS%20datastore">Fedora-clone-test-a2013465.vswp</a></td><td align="right">14-Aug-2010 23:01</td><td align="right">402653184</td></tr>
-    	    <tr><td><a href="/folder/Fedora%2dclone%2dtest/Fedora%2dclone%2dtest%2dflat%2evmdk?dcPath=cupertino&amp;dsName=NFS%20datastore">Fedora-clone-test-flat.vmdk</a></td><td align="right">26-Aug-2010 18:43</td><td align="right">17179869184</td></tr>
-    	    <tr><td><a href="/folder/Fedora%2dclone%2dtest/Fedora%2dclone%2dtest%2envram?dcPath=cupertino&amp;dsName=NFS%20datastore">Fedora-clone-test.nvram</a></td><td align="right">15-Aug-2010 00:13</td><td align="right">8684</td></tr>
-    	    <tr><td><a href="/folder/Fedora%2dclone%2dtest/Fedora%2dclone%2dtest%2evmdk?dcPath=cupertino&amp;dsName=NFS%20datastore">Fedora-clone-test.vmdk</a></td><td align="right">15-Aug-2010 00:13</td><td align="right">479</td></tr>
-    	    <tr><td><a href="/folder/Fedora%2dclone%2dtest/Fedora%2dclone%2dtest%2evmsd?dcPath=cupertino&amp;dsName=NFS%20datastore">Fedora-clone-test.vmsd</a></td><td align="right">14-Aug-2010 16:59</td><td align="right">0</td></tr>
-    	    <tr><td><a href="/folder/Fedora%2dclone%2dtest/Fedora%2dclone%2dtest%2evmx?dcPath=cupertino&amp;dsName=NFS%20datastore">Fedora-clone-test.vmx</a></td><td align="right">15-Aug-2010 00:13</td><td align="right">3500</td></tr>
-    	    <tr><td><a href="/folder/Fedora%2dclone%2dtest/Fedora%2dclone%2dtest%2evmxf?dcPath=cupertino&amp;dsName=NFS%20datastore">Fedora-clone-test.vmxf</a></td><td align="right">15-Aug-2010 00:13</td><td align="right">272</td></tr>
-    	    <tr><td><a href="/folder/Fedora%2dclone%2dtest/test%2etxt?dcPath=cupertino&amp;dsName=NFS%20datastore">test.txt</a></td><td align="right">24-Aug-2010 01:03</td><td align="right">12</td></tr>
-    	    <tr><td><a href="/folder/Fedora%2dclone%2dtest/vmware%2d2%2elog?dcPath=cupertino&amp;dsName=NFS%20datastore">vmware-2.log</a></td><td align="right">14-Aug-2010 16:51</td><td align="right">80782</td></tr>
-    	    <tr><td><a href="/folder/Fedora%2dclone%2dtest/vmware%2d3%2elog?dcPath=cupertino&amp;dsName=NFS%20datastore">vmware-3.log</a></td><td align="right">14-Aug-2010 19:07</td><td align="right">58573</td></tr>
-    	    <tr><td><a href="/folder/Fedora%2dclone%2dtest/vmware%2d4%2elog?dcPath=cupertino&amp;dsName=NFS%20datastore">vmware-4.log</a></td><td align="right">14-Aug-2010 23:00</td><td align="right">49751</td></tr>
-    	    <tr><td><a href="/folder/Fedora%2dclone%2dtest/vmware%2d5%2elog?dcPath=cupertino&amp;dsName=NFS%20datastore">vmware-5.log</a></td><td align="right">15-Aug-2010 00:04</td><td align="right">64024</td></tr>
-    	    <tr><td><a href="/folder/Fedora%2dclone%2dtest/vmware%2d6%2elog?dcPath=cupertino&amp;dsName=NFS%20datastore">vmware-6.log</a></td><td align="right">15-Aug-2010 00:11</td><td align="right">59742</td></tr>
-    	    <tr><td><a href="/folder/Fedora%2dclone%2dtest/vmware%2d7%2elog?dcPath=cupertino&amp;dsName=NFS%20datastore">vmware-7.log</a></td><td align="right">15-Aug-2010 00:13</td><td align="right">59859</td></tr>
-    	    <tr><td><a href="/folder/Fedora%2dclone%2dtest/vmware%2elog?dcPath=cupertino&amp;dsName=NFS%20datastore">vmware.log</a></td><td align="right">15-Aug-2010 00:23</td><td align="right">47157</td></tr>
-    	    <tr><th colspan="5"><hr></th></tr>
+            <tr><th>Name</th><th>Last modified</th><th>Size</th></tr><tr><th colspan="3"><hr></th></tr>
+            <tr><td><a href="/folder?dcPath=cupertino&amp;dsName=NFS%20datastore">Parent Directory</a></td><td>&nbsp;</td><td align="right">  - </td></tr>
+            <tr><td><a href="/folder/Fedora%2dclone%2dtest/Fedora%2dclone%2dtest%2da2013465%2ehlog?dcPath=cupertino&amp;dsName=NFS%20datastore">Fedora-clone-test-a2013465.hlog</a></td><td align="right">15-Aug-2010 00:13</td><td align="right">1</td></tr>
+            <tr><td><a href="/folder/Fedora%2dclone%2dtest/Fedora%2dclone%2dtest%2da2013465%2evswp?dcPath=cupertino&amp;dsName=NFS%20datastore">Fedora-clone-test-a2013465.vswp</a></td><td align="right">14-Aug-2010 23:01</td><td align="right">402653184</td></tr>
+            <tr><td><a href="/folder/Fedora%2dclone%2dtest/Fedora%2dclone%2dtest%2dflat%2evmdk?dcPath=cupertino&amp;dsName=NFS%20datastore">Fedora-clone-test-flat.vmdk</a></td><td align="right">26-Aug-2010 18:43</td><td align="right">17179869184</td></tr>
+            <tr><td><a href="/folder/Fedora%2dclone%2dtest/Fedora%2dclone%2dtest%2envram?dcPath=cupertino&amp;dsName=NFS%20datastore">Fedora-clone-test.nvram</a></td><td align="right">15-Aug-2010 00:13</td><td align="right">8684</td></tr>
+            <tr><td><a href="/folder/Fedora%2dclone%2dtest/Fedora%2dclone%2dtest%2evmdk?dcPath=cupertino&amp;dsName=NFS%20datastore">Fedora-clone-test.vmdk</a></td><td align="right">15-Aug-2010 00:13</td><td align="right">479</td></tr>
+            <tr><td><a href="/folder/Fedora%2dclone%2dtest/Fedora%2dclone%2dtest%2evmsd?dcPath=cupertino&amp;dsName=NFS%20datastore">Fedora-clone-test.vmsd</a></td><td align="right">14-Aug-2010 16:59</td><td align="right">0</td></tr>
+            <tr><td><a href="/folder/Fedora%2dclone%2dtest/Fedora%2dclone%2dtest%2evmx?dcPath=cupertino&amp;dsName=NFS%20datastore">Fedora-clone-test.vmx</a></td><td align="right">15-Aug-2010 00:13</td><td align="right">3500</td></tr>
+            <tr><td><a href="/folder/Fedora%2dclone%2dtest/Fedora%2dclone%2dtest%2evmxf?dcPath=cupertino&amp;dsName=NFS%20datastore">Fedora-clone-test.vmxf</a></td><td align="right">15-Aug-2010 00:13</td><td align="right">272</td></tr>
+            <tr><td><a href="/folder/Fedora%2dclone%2dtest/test%2etxt?dcPath=cupertino&amp;dsName=NFS%20datastore">test.txt</a></td><td align="right">24-Aug-2010 01:03</td><td align="right">12</td></tr>
+            <tr><td><a href="/folder/Fedora%2dclone%2dtest/vmware%2d2%2elog?dcPath=cupertino&amp;dsName=NFS%20datastore">vmware-2.log</a></td><td align="right">14-Aug-2010 16:51</td><td align="right">80782</td></tr>
+            <tr><td><a href="/folder/Fedora%2dclone%2dtest/vmware%2d3%2elog?dcPath=cupertino&amp;dsName=NFS%20datastore">vmware-3.log</a></td><td align="right">14-Aug-2010 19:07</td><td align="right">58573</td></tr>
+            <tr><td><a href="/folder/Fedora%2dclone%2dtest/vmware%2d4%2elog?dcPath=cupertino&amp;dsName=NFS%20datastore">vmware-4.log</a></td><td align="right">14-Aug-2010 23:00</td><td align="right">49751</td></tr>
+            <tr><td><a href="/folder/Fedora%2dclone%2dtest/vmware%2d5%2elog?dcPath=cupertino&amp;dsName=NFS%20datastore">vmware-5.log</a></td><td align="right">15-Aug-2010 00:04</td><td align="right">64024</td></tr>
+            <tr><td><a href="/folder/Fedora%2dclone%2dtest/vmware%2d6%2elog?dcPath=cupertino&amp;dsName=NFS%20datastore">vmware-6.log</a></td><td align="right">15-Aug-2010 00:11</td><td align="right">59742</td></tr>
+            <tr><td><a href="/folder/Fedora%2dclone%2dtest/vmware%2d7%2elog?dcPath=cupertino&amp;dsName=NFS%20datastore">vmware-7.log</a></td><td align="right">15-Aug-2010 00:13</td><td align="right">59859</td></tr>
+            <tr><td><a href="/folder/Fedora%2dclone%2dtest/vmware%2elog?dcPath=cupertino&amp;dsName=NFS%20datastore">vmware.log</a></td><td align="right">15-Aug-2010 00:23</td><td align="right">47157</td></tr>
+            <tr><th colspan="5"><hr></th></tr>
         </table>
           </body>
         </html>

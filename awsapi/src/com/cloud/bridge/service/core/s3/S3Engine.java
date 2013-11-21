@@ -120,7 +120,7 @@ public class S3Engine {
     static SAclDao s_saclDao;
     static BucketPolicyDao s_bPolicy;
 
-    private final int LOCK_ACQUIRING_TIMEOUT_SECONDS = 10;		// ten seconds
+    private final int LOCK_ACQUIRING_TIMEOUT_SECONDS = 10;        // ten seconds
 
     private final Map<Integer, S3BucketAdapter> bucketAdapters = new HashMap<Integer, S3BucketAdapter>();
 
@@ -775,7 +775,7 @@ public class S3Engine {
         if (bucket == null)
             throw new NoSuchObjectException("Bucket " + bucketName + " does not exist");
 
-        // Is the caller allowed to write the object?	
+        // Is the caller allowed to write the object?    
         // The allocObjectItem checks for the bucket policy PutObject permissions
         OrderedPair<SObjectVO, SObjectItemVO> object_objectitem_pair = allocObjectItem(bucket, key, meta, acl, null);
         OrderedPair<SHostVO, String> host_storagelocation_pair = getBucketStorageHost(bucket);
@@ -1028,7 +1028,7 @@ public class S3Engine {
             return response;
         }
 
-        // [D] Return the contents of the object inline	
+        // [D] Return the contents of the object inline    
         // -> extract the meta data that corresponds the specific versioned item 
 
         List<SMetaVO> itemMetaData = metaDao.getByTarget("SObjectItem", item.getId());
@@ -1137,7 +1137,7 @@ public class S3Engine {
                     response.setResultDescription("<VersionId>" + wantVersion + "</VersionId>");
                 }
             }
-        } else {	 // If versioning is off then we do delete the null object
+        } else {     // If versioning is off then we do delete the null object
             S3PolicyContext context = new S3PolicyContext(PolicyActions.DeleteObject, bucketName);
             context.setKeyName(nameKey);
             verifyAccess(context, "SBucket", sbucket.getId(), SAcl.PERMISSION_WRITE);
@@ -1540,7 +1540,7 @@ public class S3Engine {
      * Note that canned policies can be set when the object's contents are set
      */
     public void setCannedAccessControls(String cannedAccessPolicy, String target, long objectId, SBucketVO bucket) {
-        // Find the permission and symbol for the principal corresponding to the requested cannedAccessPolicy	
+        // Find the permission and symbol for the principal corresponding to the requested cannedAccessPolicy    
         Triple<Integer, Integer, String> permission_permission_symbol_triple = SAclVO.getCannedAccessControls(cannedAccessPolicy, target, bucket.getOwnerCanonicalId());
         if (null == permission_permission_symbol_triple.getThird())
             setSingleAcl(target, objectId, permission_permission_symbol_triple.getFirst());
@@ -1672,7 +1672,7 @@ public class S3Engine {
             if (hasPermission(s_saclDao.listGrants(target, targetId, "*"), requestedPermission))
                 return;
         }
-        // No privileges implies that no access is allowed	in the case of an anonymous user
+        // No privileges implies that no access is allowed    in the case of an anonymous user
         throw new PermissionDeniedException("Access Denied - ACLs do not give user the required permission");
     }
 

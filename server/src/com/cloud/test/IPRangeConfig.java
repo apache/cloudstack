@@ -568,30 +568,30 @@ public class IPRangeConfig {
             "Unable to start DB connection to read guest cidr network. Please contact Cloud Support.");
     }
 
-//	public static String getGuestIpNetwork() {
-//		return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`configuration` WHERE name = \"guest.ip.network\"", "value",
-//		"Unable to start DB connection to read guest IP network. Please contact Cloud Support.");
-//	}
-//	
-//	public static String getGuestNetmask() {
-//		return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`configuration` WHERE name = \"guest.netmask\"", "value",
-//		"Unable to start DB connection to read guest netmask. Please contact Cloud Support.");
-//	}
+//    public static String getGuestIpNetwork() {
+//        return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`configuration` WHERE name = \"guest.ip.network\"", "value",
+//        "Unable to start DB connection to read guest IP network. Please contact Cloud Support.");
+//    }
+//    
+//    public static String getGuestNetmask() {
+//        return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`configuration` WHERE name = \"guest.netmask\"", "value",
+//        "Unable to start DB connection to read guest netmask. Please contact Cloud Support.");
+//    }
 
-//	public static String getGuestSubnet() {
-//		String guestIpNetwork = getGuestIpNetwork();
-//		String guestNetmask = getGuestNetmask();
-//		
-//		if (guestIpNetwork == null || guestIpNetwork.isEmpty()) printError("Please enter a valid guest IP network address.");
-//		if (guestNetmask == null || guestNetmask.isEmpty()) printError("Please enter a valid guest IP network netmask");
-//		
-//		return NetUtils.getSubNet(guestIpNetwork, guestNetmask);
-//	}
+//    public static String getGuestSubnet() {
+//        String guestIpNetwork = getGuestIpNetwork();
+//        String guestNetmask = getGuestNetmask();
+//        
+//        if (guestIpNetwork == null || guestIpNetwork.isEmpty()) printError("Please enter a valid guest IP network address.");
+//        if (guestNetmask == null || guestNetmask.isEmpty()) printError("Please enter a valid guest IP network netmask");
+//        
+//        return NetUtils.getSubNet(guestIpNetwork, guestNetmask);
+//    }
 
-//	public static long getGuestCidrSize() {
-//		String guestNetmask = getGuestNetmask();
-//		return NetUtils.getCidrSize(guestNetmask);
-//	}
+//    public static long getGuestCidrSize() {
+//        String guestNetmask = getGuestNetmask();
+//        return NetUtils.getCidrSize(guestNetmask);
+//    }
 
     public static boolean validCIDR(final String cidr) {
         if (cidr == null || cidr.isEmpty()) {

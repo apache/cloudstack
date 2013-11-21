@@ -42,8 +42,8 @@ public class CloudStackClient {
 
     private String _serviceUrl;
 
-    private long _pollIntervalMs = 2000;			// 1 second polling interval
-    private long _pollTimeoutMs = 600000;			// 10 minutes polling timeout
+    private long _pollIntervalMs = 2000;            // 1 second polling interval
+    private long _pollTimeoutMs = 600000;            // 10 minutes polling timeout
 
     public CloudStackClient(String serviceRootUrl) {
         assert (serviceRootUrl != null);
