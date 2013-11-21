@@ -1168,7 +1168,7 @@ namespace HypervResource
         /// With V2 API, there are two kinds of lan endpoint:  one on the computer system and one on the switch
         /// e.g. Msvm_ExternalEthernetPort -> LANEndpoint -> LANEdnpoint -> EthernetSwitchPort -> VirtualEthernetSwitch
         /// </remarks>
-        public static VirtualEthernetSwitch GetExternalVirtSwitch()
+        public static VirtualEthernetSwitch GetExternalVirtSwitch(String vSwitchName)
         {
             // Work back from the first *bound* external NIC we find.
             var externNICs = ExternalEthernetPort.GetInstances("IsBound = TRUE");
