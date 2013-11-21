@@ -1,3 +1,9 @@
+cloudstack (4.4.0-snapshot) unstable; urgency=low
+
+  * Update the version to 4.4.0.snapshot
+
+ -- Hugo Trippaers <hugo@apache.org>  Thu, 21 Nov 2013 12:00:00 -0400
+
 cloudstack (4.3.0-snapshot) unstable; urgency=low
 
   * Update the version to 4.3.0.snapshot
