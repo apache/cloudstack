@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-
 public class ApiConstants {
     public static final String ACCOUNT = "account";
     public static final String ACCOUNTS = "accounts";
@@ -247,7 +246,7 @@ public class ApiConstants {
     public static final String VIRTUAL_MACHINE_IDS = "virtualmachineids";
     public static final String VLAN = "vlan";
     public static final String VLAN_RANGE = "vlanrange";
-    public static final String REMOVE_VLAN="removevlan";
+    public static final String REMOVE_VLAN = "removevlan";
     public static final String VLAN_ID = "vlanid";
     public static final String ISOLATED_PVLAN = "isolatedpvlan";
     public static final String VM_AVAILABLE = "vmavailable";
@@ -410,7 +409,8 @@ public class ApiConstants {
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_ID = "vsmdeviceid";
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_NAME = "vsmdevicename";
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_STATE = "vsmdevicestate";
-    // Would we need to have a capacity field for Cisco N1KV VSM? Max hosts managed by it perhaps? May remove this later.
+    // Would we need to have a capacity field for Cisco N1KV VSM? Max hosts managed by it perhaps? May remove this
+// later.
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_CAPACITY = "vsmdevicecapacity";
     public static final String CISCO_NEXUS_VSM_NAME = "vsmname";
     public static final String VSM_USERNAME = "vsmusername";
@@ -534,6 +534,7 @@ public class ApiConstants {
     public static final String FOR_DISPLAY = "fordisplay";
     public static final String PASSIVE = "passive";
     public static final String VERSION = "version";
+    public static final String START = "start";
 
     public enum HostDetails {
         all, capacity, events, stats, min;
